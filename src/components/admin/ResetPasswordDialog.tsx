@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Loader2, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PasswordInput, PasswordConfirmInput, usePasswordValidation } from '@/components/password';
 
 interface InstanceUser {
   id: string;
@@ -32,32 +33,27 @@ const ResetPasswordDialog = ({
   instanceId, 
   user 
 }: ResetPasswordDialogProps) => {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-
-  const resetForm = () => {
-    setPassword('');
-    setConfirmPassword('');
-  };
+  const {
+    password,
+    confirmPassword,
+    setPassword,
+    setConfirmPassword,
+    validation,
+    strength,
+    confirmMatch,
+    isFormValid,
+    reset,
+  } = usePasswordValidation({ username: user?.username });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) return;
 
-    if (!password) {
-      toast.error('Hasło jest wymagane');
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error('Hasło musi mieć co najmniej 6 znaków');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error('Hasła nie są identyczne');
+    if (!isFormValid) {
+      toast.error(t('password.req.minLength'));
       return;
     }
 
@@ -88,7 +84,7 @@ const ResetPasswordDialog = ({
       }
 
       toast.success('Hasło zostało zresetowane');
-      resetForm();
+      reset();
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error resetting password:', error);
@@ -102,7 +98,7 @@ const ResetPasswordDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
+      if (!isOpen) reset();
       onOpenChange(isOpen);
     }}>
       <DialogContent className="sm:max-w-[425px]">
@@ -117,29 +113,20 @@ const ResetPasswordDialog = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">Nowe hasło</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 6 znaków"
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordInput
+            label={t('password.confirmLabel') === 'Potwierdź hasło' ? 'Nowe hasło' : undefined}
+            value={password}
+            onChange={setPassword}
+            validation={validation}
+            strength={strength}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Potwierdź hasło</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Powtórz hasło"
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordConfirmInput
+            label="Potwierdź hasło"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            match={confirmMatch}
+          />
 
           <DialogFooter>
             <Button 
@@ -150,7 +137,7 @@ const ResetPasswordDialog = ({
             >
               Anuluj
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !isFormValid}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Resetuj hasło
             </Button>

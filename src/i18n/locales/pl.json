@@ -2115,7 +2115,32 @@
     "types": {
       "group_basic": "Grupowe podstawowe",
       "individual": "Indywidualne",
-      "master": "MASTER z instruktorem"
+    "master": "MASTER z instruktorem"
+    }
+  },
+  "password": {
+    "placeholder": "Minimum 8 znaków",
+    "confirmLabel": "Potwierdź hasło",
+    "confirmPlaceholder": "Powtórz hasło",
+    "match": "Hasła są identyczne",
+    "noMatch": "Hasła nie są identyczne",
+    "strength": {
+      "empty": "",
+      "weak": "Słabe hasło",
+      "fair": "Średnie hasło",
+      "good": "Dobre hasło",
+      "strong": "Silne hasło"
+    },
+    "req": {
+      "minLength": "Minimum 8 znaków",
+      "hasUppercase": "Wielka litera (A-Z)",
+      "hasLowercase": "Mała litera (a-z)",
+      "hasNumber": "Cyfra (0-9)",
+      "hasSpecial": "Znak specjalny (!@#$%...)",
+      "noSequence": "Brak sekwencji klawiszowych (qwerty, 123456...)",
+      "noRepeating": "Brak powtarzających się znaków (aaa, 111...)",
+      "notCommon": "Nie jest popularnym hasłem",
+      "noUsername": "Nie zawiera nazwy użytkownika"
     }
   }
 }
