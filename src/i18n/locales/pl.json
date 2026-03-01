@@ -2149,5 +2149,10 @@
       "required": "Podaj swoje hasło administratora",
       "invalid": "Nieprawidłowe hasło administratora"
     }
+  },
+  "login": {
+    "attemptsRemaining": "Pozostało prób: {{count}}",
+    "accountBlocked": "Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.",
+    "accountBlockedShort": "Konto zablokowane. Skontaktuj się z administratorem."
   }
 }

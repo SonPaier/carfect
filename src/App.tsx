@@ -18,6 +18,8 @@ import HallView from "./pages/HallView";
 import PublicOfferView from "./pages/PublicOfferView";
 import PublicProtocolView from "./pages/PublicProtocolView";
 import EmbedLeadForm from "./pages/EmbedLeadForm";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
@@ -119,6 +121,8 @@ const InstanceAdminRoutes = ({ subdomain }: { subdomain: string }) => (
   <Routes>
     {/* Login page - must be first */}
     <Route path="/login" element={<InstanceAuth subdomainSlug={subdomain} />} />
+    <Route path="/forgot-password" element={<ForgotPassword subdomainSlug={subdomain} />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     
     {/* Public routes - BEFORE catch-all */}
     <Route path="/offers/:token" element={<PublicOfferView />} />
@@ -192,8 +196,12 @@ const DevRoutes = () => (
     <Route path="/protocols/:token" element={<PublicProtocolView />} />
     {/* Instance-specific login route */}
     <Route path="/:slug/login" element={<InstanceAuth />} />
+    <Route path="/:slug/forgot-password" element={<ForgotPassword />} />
+    <Route path="/:slug/reset-password" element={<ResetPassword />} />
     {/* Default login without slug - use demo instance for dev */}
     <Route path="/login" element={<InstanceAuth subdomainSlug="demo" />} />
+    <Route path="/forgot-password" element={<ForgotPassword subdomainSlug="demo" />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     {/* Role-based redirect after login */}
     <Route path="/dashboard" element={<RoleBasedRedirect />} />
     <Route 
