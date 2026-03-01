@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from 'react-i18next';
+import { PasswordInput, PasswordConfirmInput, usePasswordValidation } from '@/components/password';
 import {
   Dialog,
   DialogContent,
@@ -47,17 +48,26 @@ const AddInstanceUserDialog = ({
 }: AddInstanceUserDialogProps) => {
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'employee' | 'admin' | 'hall'>('employee');
   const [loading, setLoading] = useState(false);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState<'admin' | null>(null);
 
+  const {
+    password,
+    confirmPassword,
+    setPassword,
+    setConfirmPassword,
+    validation,
+    strength,
+    confirmMatch,
+    isFormValid: isPasswordValid,
+    reset: resetPassword,
+  } = usePasswordValidation({ username });
+
   const resetForm = () => {
     setUsername('');
-    setPassword('');
-    setConfirmPassword('');
+    resetPassword();
     setRole('employee');
     setPendingRole(null);
   };
@@ -97,18 +107,8 @@ const AddInstanceUserDialog = ({
       return;
     }
 
-    if (!password) {
-      toast.error(t('addUser.passwordRequired'));
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error(t('addUser.passwordMinLength'));
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error(t('addUser.passwordMismatch'));
+    if (!isPasswordValid) {
+      toast.error(t('password.req.minLength'));
       return;
     }
 
@@ -177,29 +177,20 @@ const AddInstanceUserDialog = ({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Hasło</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 znaków"
-                autoComplete="new-password"
-              />
-            </div>
+            <PasswordInput
+              label="Hasło"
+              value={password}
+              onChange={setPassword}
+              validation={validation}
+              strength={strength}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Potwierdź hasło</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Powtórz hasło"
-                autoComplete="new-password"
-              />
-            </div>
+            <PasswordConfirmInput
+              label="Potwierdź hasło"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              match={confirmMatch}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="role">Rola</Label>
@@ -231,7 +222,7 @@ const AddInstanceUserDialog = ({
               >
                 Anuluj
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || !isPasswordValid}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Utwórz użytkownika
               </Button>
