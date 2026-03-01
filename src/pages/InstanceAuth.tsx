@@ -302,7 +302,7 @@ const InstanceAuth = ({
 
                 <div className="flex justify-end">
                   <Link
-                    to={slug ? `/${slug}/forgot-password` : '/forgot-password'}
+                    to={subdomainSlug ? '/forgot-password' : (slug ? `/${slug}/forgot-password` : '/forgot-password')}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Zapomniałeś hasła?
