@@ -2141,6 +2141,13 @@
       "noRepeating": "Brak powtarzających się znaków (aaa, 111...)",
       "notCommon": "Nie jest popularnym hasłem",
       "noUsername": "Nie zawiera nazwy użytkownika"
+    },
+    "adminConfirm": {
+      "label": "Twoje hasło administratora",
+      "hint": "Podaj swoje hasło, aby potwierdzić tożsamość przed zmianą hasła użytkownika.",
+      "placeholder": "Twoje aktualne hasło",
+      "required": "Podaj swoje hasło administratora",
+      "invalid": "Nieprawidłowe hasło administratora"
     }
   }
 }

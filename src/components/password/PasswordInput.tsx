@@ -93,7 +93,7 @@ const PasswordInput = ({
               />
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm font-medium text-foreground">
             {t(strength.label)}
           </p>
         </div>

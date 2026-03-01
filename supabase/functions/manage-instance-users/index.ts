@@ -9,10 +9,11 @@ const corsHeaders = {
 interface ManageUserRequest {
   action: 'list' | 'create' | 'update' | 'delete' | 'block' | 'unblock' | 'reset-password';
   instanceId: string;
-  userId?: string; // Required for update, delete, block, unblock, reset-password
+  userId?: string;
   username?: string;
   password?: string;
   role?: 'admin' | 'employee' | 'hall';
+  adminPassword?: string; // Required for reset-password: caller's own password to confirm identity
 }
 
 Deno.serve(async (req) => {
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body: ManageUserRequest = await req.json();
-    const { action, instanceId, userId, username, password, role } = body;
+    const { action, instanceId, userId, username, password, role, adminPassword } = body;
 
     if (!instanceId) {
       return new Response(
@@ -389,6 +390,27 @@ Deno.serve(async (req) => {
           );
         }
 
+        // Require admin's own password for identity confirmation
+        if (!adminPassword) {
+          return new Response(
+            JSON.stringify({ error: 'Wymagane potwierdzenie hasłem administratora' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Verify admin's password by attempting sign-in
+        const { error: verifyError } = await supabase.auth.signInWithPassword({
+          email: caller.email!,
+          password: adminPassword,
+        });
+
+        if (verifyError) {
+          return new Response(
+            JSON.stringify({ error: 'Nieprawidłowe hasło administratora' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         // Verify user belongs to this instance
         const { data: targetProfile } = await supabase
           .from('profiles')
@@ -418,7 +440,7 @@ Deno.serve(async (req) => {
           );
         }
 
-        console.log(`Password reset for user: ${userId} in instance ${instanceId}`);
+        console.log(`Password reset for user: ${userId} in instance ${instanceId} by admin: ${caller.id}`);
 
         return new Response(
           JSON.stringify({ success: true, message: 'Hasło zostało zresetowane' }),
