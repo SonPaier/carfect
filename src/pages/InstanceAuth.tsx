@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Car, User, Lock, ArrowRight, Loader2, Building2, Eye, EyeOff, Phone, Mail, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,7 @@ const InstanceAuth = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const returnTo = '/dashboard';
 
   // Fetch instance by slug
@@ -116,9 +117,21 @@ const InstanceAuth = ({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  const trackLoginAttempt = async (profileId: string, instanceId: string, success: boolean) => {
+    try {
+      const { data } = await supabase.functions.invoke('track-login-attempt', {
+        body: { profile_id: profileId, instance_id: instanceId, success },
+      });
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setRemainingAttempts(null);
     if (!validateForm()) {
       return;
     }
@@ -152,16 +165,25 @@ const InstanceAuth = ({
         error
       } = await signIn(profile.email, password);
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        // Track failed attempt
+        const trackResult = await trackLoginAttempt(profile.id, instance.id, false);
+        
+        if (trackResult?.blocked) {
           setErrors({
-            general: 'Nieprawidłowy login lub hasło'
+            general: 'Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.'
           });
         } else {
           setErrors({
-            general: error.message
+            general: 'Nieprawidłowy login lub hasło'
           });
+          // Show remaining attempts from 3rd failure
+          if (trackResult?.show_warning && trackResult?.remaining_attempts != null) {
+            setRemainingAttempts(trackResult.remaining_attempts);
+          }
         }
       } else {
+        // Track successful attempt (resets counter)
+        await trackLoginAttempt(profile.id, instance.id, true);
         navigate(returnTo);
       }
     } catch (err) {
@@ -242,6 +264,11 @@ const InstanceAuth = ({
               {/* General error */}
               {errors.general && <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                   <p className="text-sm text-destructive">{errors.general}</p>
+                  {remainingAttempts !== null && remainingAttempts > 0 && (
+                    <p className="text-xs text-destructive/80 mt-1">
+                      Pozostało prób: {remainingAttempts}
+                    </p>
+                  )}
                 </div>}
 
               {/* Form */}
@@ -271,6 +298,15 @@ const InstanceAuth = ({
                     </button>
                   </div>
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                </div>
+
+                <div className="flex justify-end">
+                  <Link
+                    to={slug ? `/${slug}/forgot-password` : '/forgot-password'}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Zapomniałeś hasła?
+                  </Link>
                 </div>
 
                 <Button type="submit" className="w-full h-12 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold" disabled={loading}>

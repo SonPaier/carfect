@@ -1115,6 +1115,48 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          instance_id: string
+          ip_hint: string | null
+          profile_id: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instance_id: string
+          ip_hint?: string | null
+          profile_id: string
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instance_id?: string
+          ip_hint?: string | null
+          profile_id?: string
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "login_attempts_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "login_attempts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -3820,6 +3862,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_old_login_attempts: { Args: never; Returns: undefined }
       copy_global_scopes_to_instance: {
         Args: { _instance_id: string }
         Returns: number
