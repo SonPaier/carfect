@@ -32,7 +32,7 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
     try {
       // Determine reset redirect URL based on current location
       const origin = window.location.origin;
-      const resetPath = slug ? `/${slug}/reset-password` : '/reset-password';
+      const resetPath = subdomainSlug ? '/reset-password' : (slug ? `/${slug}/reset-password` : '/reset-password');
       const redirectTo = `${origin}${resetPath}`;
 
       // Send branded reset email via SMTP (same as offers)
@@ -54,7 +54,7 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
     }
   };
 
-  const loginPath = slug ? `/${slug}/login` : '/login';
+  const loginPath = subdomainSlug ? '/login' : (slug ? `/${slug}/login` : '/login');
 
   if (sent) {
     return (
