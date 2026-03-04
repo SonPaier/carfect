@@ -1506,7 +1506,7 @@ const AdminCalendar = ({
           )}
           
           {/* Main scrollable container */}
-          <div ref={gridScrollRef} onScroll={!isMobile ? handleGridScroll : undefined} className="flex-1 overflow-auto" style={{
+          <div ref={gridScrollRef} onScroll={!isMobile ? handleGridScroll : undefined} onTouchStart={isMobile ? handleScrollTouchStart : undefined} onTouchMove={isMobile ? handleScrollTouchMove : undefined} onTouchEnd={isMobile ? handleScrollTouchEnd : undefined} className="flex-1 overflow-auto" style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
           }}>
