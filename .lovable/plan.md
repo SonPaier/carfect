@@ -1,40 +1,51 @@
 
 
-## Plan: Pole `sms_sender_name` w tabeli `instances`
+## Plan: Oczyszczenie mock danych i logika zamówień Sales CRM
 
-### Co robimy
-Dodajemy kolumnę `sms_sender_name` (text, nullable) do tabeli `instances`. Gdy ma wartość (np. "Arm Car" dla armcar), SMSAPI wysyła SMS z tym nadawcą (`from` param). Gdy null — zachowanie jak dotychczas (domyślny nadawca SMSAPI).
+### 1. Usunięcie mock danych
 
-### Zmiany
+**`src/data/salesMockData.ts`** — wyczyścić `mockSalesOrders` do pustej tablicy `[]`, zachować interfejsy.
 
-**1. Migracja bazy danych**
-- Dodanie kolumny `sms_sender_name TEXT DEFAULT NULL` do `instances`
-- UPDATE dla instancji armcar: `SET sms_sender_name = 'Arm Car'` (po slug)
+**`src/components/sales/SalesOrdersView.tsx`** — zamiast `useState(mockSalesOrders)` → `useState<SalesOrder[]>([])`. Usunąć import `mockSalesOrders`.
 
-**2. Edge functions — dodanie `from` do URLSearchParams**
-We wszystkich 6 miejscach gdzie jest `fetch("https://api.smsapi.pl/sms.do", ...)`, trzeba:
-- Pobrać `sms_sender_name` z instancji (tam gdzie jeszcze nie mamy tego w kontekście)
-- Jeśli wartość nie jest null, dodać `from: senderName` do URLSearchParams
+**`src/components/sales/AddSalesOrderDrawer.tsx`** — usunąć `mockCustomers` i `mockProducts` (linie 32-58). Zastąpić pustymi tablicami `[]` na razie (docelowo będą z bazy).
 
-Pliki do zmiany:
-- `supabase/functions/send-sms-message/index.ts` — już ma instanceId, dociągnąć sender name
-- `supabase/functions/send-sms-code/index.ts` — już pobiera instancję, dodać pole
-- `supabase/functions/send-reminders/index.ts` — już ma dane instancji, dodać pole
-- `supabase/functions/send-offer-reminders/index.ts` — dociągnąć z instancji
-- `supabase/functions/create-reservation-direct/index.ts` — już pobiera instancję
-- `supabase/functions/verify-sms-code/index.ts` — już pobiera instancję
+**`src/components/sales/SalesCustomersView.tsx`** — usunąć `mockCustomers` i `caretakers`, użyć pustej tablicy.
 
-W każdym: warunkowo dodać `from` do params:
-```typescript
-const params: Record<string, string> = {
-  to: normalizedPhone,
-  message: message,
-  format: "json",
-  encoding: "utf-8",
-};
-if (senderName) params.from = senderName;
-```
+**`src/components/sales/SalesProductsView.tsx`** — usunąć `generateMockProducts`, użyć pustej tablicy.
 
-**3. Brak zmian w UI**
-Pole nie jest edytowalne przez admina instancji — ustawiane tylko z poziomu bazy / super admina. Na razie nie dodajemy UI.
+### 2. Nr zamówienia: format `[nr_w_miesiacu]/[MM]/[YY]`
+
+W `SalesOrdersView` i `AddSalesOrderDrawer` — dodać helper `getNextOrderNumber()` który na razie zwraca `1/MM/YYYY` (bo nie ma danych z bazy). Docelowo będzie liczony z bazy.
+
+W `AddSalesOrderDrawer` — tytuł drawera: `Dodaj zamówienie: {nextOrderNumber}`.
+
+### 3. Sortowanie kolumn w tabeli zamówień
+
+Dodać stan `sortColumn` i `sortDirection` do `SalesOrdersView`. Kolumny sortowalne: Nr, Klient, Data utw., Status, Kwota netto. Nr listu przewozowego — niesortowalna.
+
+Ikona strzałki (ArrowUpDown / ArrowUp / ArrowDown) wyświetlana **tylko** na aktywnie sortowanej kolumnie. Pozostałe kolumny klikalne ale bez ikony. Domyślne sortowanie: po numerze zamówienia malejąco.
+
+Nagłówki kolumn jako `<button>` z `onClick` do zmiany sortowania.
+
+### 4. Rozszerzenie wyszukiwania
+
+Placeholder: `"Szukaj po firmie, mieście, osobie, produkcie..."`.
+
+Filtrowanie po: `customerName`, `orderNumber`, `city` (nowe pole w `SalesOrder`), `contactPerson` (nowe pole), oraz `products[].name`. Na razie pola `city`/`contactPerson` dodamy do interfejsu `SalesOrder` jako opcjonalne — będą wypełniane z bazy.
+
+### 5. Rabat na poziomie klienta (nie zamówienia)
+
+W `AddSalesOrderDrawer`:
+- Usunąć obecny blok rabatu (percent/amount toggle + input, linie 331-366)
+- Zamiast tego: jeśli `selectedCustomer` ma `discountPercent > 0`, wyświetlić info `Rabat: X%` z toggle `Switch` "Zastosuj rabat" (domyślnie włączony)
+- Dodać pole `discountPercent` do interfejsu klienta
+- Obliczenia: jeśli toggle włączony i klient ma rabat → rabat procentowy od subtotal
+
+### Pliki do zmiany
+- `src/data/salesMockData.ts` — wyczyścić mock, zachować typy
+- `src/components/sales/SalesOrdersView.tsx` — puste dane, sortowanie, rozszerzony search
+- `src/components/sales/AddSalesOrderDrawer.tsx` — puste dane, nr zamówienia w tytule, rabat z klienta + toggle
+- `src/components/sales/SalesCustomersView.tsx` — puste dane
+- `src/components/sales/SalesProductsView.tsx` — puste dane
 
