@@ -743,8 +743,10 @@ const AddReservationDialogV2 = ({
     // Calculate new end time based on total duration
     if (totalDurationMinutes > 0) {
       const [h, m] = manualStartTime.split(':').map(Number);
-      const endMinutes = h * 60 + m + totalDurationMinutes;
-      const newEndTime = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
+      const rawEndMinutes = h * 60 + m + totalDurationMinutes;
+      // Round UP to nearest 15-minute slot so it matches Select options
+      const roundedEndMinutes = Math.ceil(rawEndMinutes / 15) * 15;
+      const newEndTime = `${Math.floor(roundedEndMinutes / 60).toString().padStart(2, '0')}:${(roundedEndMinutes % 60).toString().padStart(2, '0')}`;
       setManualEndTime(newEndTime);
     }
 
@@ -907,32 +909,50 @@ const AddReservationDialogV2 = ({
     return () => clearTimeout(timer);
   }, [phone, searchByPhone, selectedCustomerId]);
 
-  // Load all vehicles for a phone number (for pills display)
-  const loadCustomerVehicles = useCallback(async (phoneNumber: string) => {
+  // Load all vehicles for a phone number (and optionally customer_id) for pills display
+  const loadCustomerVehicles = useCallback(async (phoneNumber: string, customerId?: string | null) => {
     const normalized = normalizePhone(phoneNumber);
-    if (normalized.length !== 9) {
+    if (normalized.length !== 9 && !customerId) {
       setCustomerVehicles([]);
       setSelectedVehicleId(null);
       return;
     }
 
     try {
+      // Build OR filter: match by phone variants AND by customer_id
+      const orFilters: string[] = [];
+      if (normalized.length === 9) {
+        orFilters.push(`phone.eq.${normalized}`, `phone.eq.+48${normalized}`, `phone.eq.48${normalized}`);
+      }
+      if (customerId) {
+        orFilters.push(`customer_id.eq.${customerId}`);
+      }
+
       const { data } = await supabase.
       from('customer_vehicles').
       select('id, phone, model, plate, customer_id, car_size, last_used_at').
       eq('instance_id', instanceId).
-      or(`phone.eq.${normalized},phone.eq.+48${normalized}`).
+      or(orFilters.join(',')).
       order('last_used_at', { ascending: false });
 
       if (data && data.length > 0) {
-        setCustomerVehicles(data);
+        // Deduplicate by model (same car might appear with different phone formats)
+        const seen = new Set<string>();
+        const unique = data.filter((v) => {
+          const key = v.model.toLowerCase().trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        setCustomerVehicles(unique);
         // Default select the first (most recently used)
-        setSelectedVehicleId(data[0].id);
+        setSelectedVehicleId(unique[0].id);
         // Auto-fill model from first vehicle
-        setCarModel(data[0].model);
+        setCarModel(unique[0].model);
         // Set car size
-        if (data[0].car_size === 'S') setCarSize('small');else
-        if (data[0].car_size === 'L') setCarSize('large');else
+        if (unique[0].car_size === 'S') setCarSize('small');else
+        if (unique[0].car_size === 'L') setCarSize('large');else
         setCarSize('medium');
       } else {
         setCustomerVehicles([]);
@@ -999,8 +1019,8 @@ const AddReservationDialogV2 = ({
       setNoShowWarning(null);
     }
 
-    // Also load all vehicles for this phone
-    loadCustomerVehicles(vehicle.phone);
+    // Also load all vehicles for this phone and customer_id
+    loadCustomerVehicles(vehicle.phone, vehicle.customer_id);
   };
 
   // Dynamic time range based on working hours for selected day
@@ -1474,6 +1494,9 @@ const AddReservationDialogV2 = ({
                   } else {
                     setNoShowWarning(null);
                   }
+
+                  // Load all vehicles for this customer (by phone + customer_id)
+                  loadCustomerVehicles(customer.phone, customer.id);
                 }}
                 onClearCustomer={() => {
                   setSelectedCustomerId(null);
