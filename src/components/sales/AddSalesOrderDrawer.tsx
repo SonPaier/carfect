@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, X, Plus, Percent, Minus } from 'lucide-react';
+import { Search, X, Plus, Minus } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
   Command,
   CommandEmpty,
@@ -27,35 +28,20 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { type SalesOrder } from '@/data/salesMockData';
+import { getNextOrderNumber } from './SalesOrdersView';
 
-// Mock customers
-const mockCustomers = [
-  { id: '1', name: 'Auto Detailing Kraków Sp. z o.o.' },
-  { id: '2', name: 'Wrap Studio Warszawa' },
-  { id: '3', name: 'PPF Master Poznań' },
-  { id: '4', name: 'FolioTech Wrocław' },
-  { id: '5', name: 'CarWrap Pro Gdańsk' },
-  { id: '6', name: 'Detailing Center Łódź' },
-  { id: '7', name: 'Auto Spa Premium Katowice' },
-  { id: '8', name: 'Shield Car Studio Lublin' },
-  { id: '9', name: 'MaxProtect Szczecin' },
-  { id: '10', name: 'Elite Detailing Białystok' },
-];
+interface SalesCustomerRef {
+  id: string;
+  name: string;
+  discountPercent?: number;
+}
 
-// Mock products
-const mockProducts = [
-  { id: 'p1', name: 'Folia ochronna PPF ULTRAFIT Premium 152cm', priceNet: 1200 },
-  { id: 'p2', name: 'Folia ochronna PPF ULTRAFIT Matte 152cm', priceNet: 1800 },
-  { id: 'p3', name: 'Folia ochronna PPF ULTRAFIT Gloss 152cm', priceNet: 1400 },
-  { id: 'p4', name: 'Folia ochronna PPF ULTRAFIT Gloss 76cm', priceNet: 650 },
-  { id: 'p5', name: 'Folia ochronna PPF ULTRAFIT Matte 76cm', priceNet: 950 },
-  { id: 'p6', name: 'Folia przyciemniająca ULTRAFIT IR Nano 50cm', priceNet: 300 },
-  { id: 'p7', name: 'Folia przyciemniająca ULTRAFIT IR Nano 76cm', priceNet: 500 },
-  { id: 'p8', name: 'Folia przyciemniająca ULTRAFIT Hybrid 50cm', priceNet: 350 },
-  { id: 'p9', name: 'Folia przyciemniająca ULTRAFIT Hybrid 76cm', priceNet: 550 },
-  { id: 'p10', name: 'Folia ochronna przedniej szyby ULTRAFIT 100cm', priceNet: 475 },
-  { id: 'p11', name: 'Folia ochronna przedniej szyby ULTRAFIT 130cm', priceNet: 675 },
-];
+interface SalesProductRef {
+  id: string;
+  name: string;
+  priceNet: number;
+}
 
 interface OrderProduct {
   productId: string;
@@ -72,23 +58,29 @@ const formatCurrency = (value: number) =>
 interface AddSalesOrderDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  orders: SalesOrder[];
 }
 
-const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) => {
+const AddSalesOrderDrawer = ({ open, onOpenChange, orders }: AddSalesOrderDrawerProps) => {
   const [customerSearch, setCustomerSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string } | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<SalesCustomerRef | null>(null);
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
 
   const [productPopoverOpen, setProductPopoverOpen] = useState(false);
   const [products, setProducts] = useState<OrderProduct[]>([]);
 
-  const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
-  const [discountValue, setDiscountValue] = useState('');
+  const [applyDiscount, setApplyDiscount] = useState(true);
 
   const [sendEmail, setSendEmail] = useState(false);
   const [comment, setComment] = useState('');
 
-  const addProduct = (product: typeof mockProducts[0]) => {
+  // Will be replaced with DB data
+  const customers: SalesCustomerRef[] = [];
+  const availableProducts: SalesProductRef[] = [];
+
+  const nextOrderNumber = useMemo(() => getNextOrderNumber(orders), [orders]);
+
+  const addProduct = (product: SalesProductRef) => {
     if (products.find((p) => p.productId === product.id)) return;
     setProducts((prev) => [
       ...prev,
@@ -113,11 +105,10 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
     [products]
   );
 
-  const discountAmount = useMemo(() => {
-    const val = parseFloat(discountValue) || 0;
-    if (discountType === 'percent') return subtotalNet * (val / 100);
-    return val;
-  }, [discountType, discountValue, subtotalNet]);
+  const customerDiscount = selectedCustomer?.discountPercent || 0;
+  const discountAmount = applyDiscount && customerDiscount > 0
+    ? subtotalNet * (customerDiscount / 100)
+    : 0;
 
   const totalNet = Math.max(0, subtotalNet - discountAmount);
   const totalGross = totalNet * (1 + VAT_RATE);
@@ -135,8 +126,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
     setSelectedCustomer(null);
     setCustomerSearch('');
     setProducts([]);
-    setDiscountValue('');
-    setDiscountType('percent');
+    setApplyDiscount(true);
     setSendEmail(false);
     setComment('');
   };
@@ -159,7 +149,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
         {/* Fixed Header */}
         <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <div className="flex items-center justify-between">
-            <SheetTitle>Dodaj zamówienie</SheetTitle>
+            <SheetTitle>Dodaj zamówienie: {nextOrderNumber}</SheetTitle>
             <button
               type="button"
               onClick={handleClose}
@@ -210,7 +200,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
                       <CommandList>
                         <CommandEmpty>Nie znaleziono klientów</CommandEmpty>
                         <CommandGroup>
-                          {mockCustomers
+                          {customers
                             .filter((c) =>
                               c.name.toLowerCase().includes(customerSearch.toLowerCase())
                             )
@@ -302,7 +292,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
                     <CommandList>
                       <CommandEmpty>Nie znaleziono produktu</CommandEmpty>
                       <CommandGroup>
-                        {mockProducts
+                        {availableProducts
                           .filter((p) => !products.find((op) => op.productId === p.id))
                           .map((p) => (
                             <CommandItem key={p.id} onSelect={() => addProduct(p)}>
@@ -328,42 +318,22 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
                 <div className="space-y-3">
                   <Label>Podsumowanie</Label>
 
-                  {/* Discount */}
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Rabat</p>
-                    <div className="flex items-center gap-2">
-                      <div className="flex border border-border rounded-md overflow-hidden">
-                        <button
-                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                            discountType === 'percent'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-card text-muted-foreground hover:bg-muted/20'
-                          }`}
-                          onClick={() => setDiscountType('percent')}
-                        >
-                          <Percent className="w-3 h-3" />
-                        </button>
-                        <button
-                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                            discountType === 'amount'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-card text-muted-foreground hover:bg-muted/20'
-                          }`}
-                          onClick={() => setDiscountType('amount')}
-                        >
-                          zł
-                        </button>
+                  {/* Customer discount info */}
+                  {selectedCustomer && customerDiscount > 0 && (
+                    <div className="flex items-center justify-between bg-muted/20 border border-border rounded-md px-3 py-2">
+                      <span className="text-sm">Rabat: {customerDiscount}%</span>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="apply-discount" className="text-xs text-muted-foreground font-normal">
+                          Zastosuj
+                        </Label>
+                        <Switch
+                          id="apply-discount"
+                          checked={applyDiscount}
+                          onCheckedChange={setApplyDiscount}
+                        />
                       </div>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder={discountType === 'percent' ? '0' : '0.00'}
-                        value={discountValue}
-                        onChange={(e) => setDiscountValue(e.target.value)}
-                        className="w-28 h-8 text-sm"
-                      />
                     </div>
-                  </div>
+                  )}
 
                   {/* Totals */}
                   <div className="bg-card border border-border rounded-md p-3 space-y-1.5 text-sm">
@@ -373,14 +343,16 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-destructive">
-                        <span>Rabat</span>
+                        <span>Rabat ({customerDiscount}%)</span>
                         <span className="tabular-nums">-{formatCurrency(discountAmount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Netto po rabacie</span>
-                      <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
-                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Netto po rabacie</span>
+                        <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
+                      </div>
+                    )}
                     <Separator className="my-1" />
                     <div className="flex justify-between font-semibold">
                       <span>Brutto (23% VAT)</span>
@@ -394,8 +366,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
                       <span className="text-muted-foreground">Adres wysyłki</span>
                       <button className="text-xs text-primary hover:underline">Edytuj adres wysyłki</button>
                     </div>
-                    <p className="text-foreground">ul. Krakowska 15/3</p>
-                    <p className="text-foreground">30-150 Kraków</p>
+                    <p className="text-muted-foreground">—</p>
                   </div>
                 </div>
               </>
@@ -418,7 +389,6 @@ const AddSalesOrderDrawer = ({ open, onOpenChange }: AddSalesOrderDrawerProps) =
               <Label htmlFor="order-comment">Uwagi do zamówienia</Label>
               <Textarea
                 id="order-comment"
-                placeholder="Opcjonalne uwagi..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={3}
