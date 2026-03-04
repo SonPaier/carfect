@@ -1,18 +1,28 @@
-## Mobile calendar scroll fix — DONE
+
+
+## Plan: Axis-locking scroll na mobile
 
 ### Problem
-Kalendarz na mobile "pływał" — nagłówki stacji skakały, oś czasu nie trzymała pozycji, scroll wracał do pozycji.
-
-### Przyczyna
-1. Dwa zagnieżdżone kontenery scrolla (content-wrapper + gridScrollRef)
-2. Nagłówki stacji i grid to oddzielne `overflow-x-auto` kontenery synchronizowane przez JS (`onScroll` + `scrollLeft =`) — momentum scroll na iOS powodował opóźnienia
-3. Touch axis-locking (`handleScrollTouchMove`) manipulował `overflow` w trakcie gestów
+Kod axis-locking (`handleScrollTouchStart/Move/End`, linie 358-395) istnieje, ale **nie jest podpięty** do `gridScrollRef` na mobile. Efekt: scroll po skosie przesuwa jednocześnie oś X i Y.
 
 ### Rozwiązanie
-1. **Na mobile**: nagłówki stacji przeniesione WEWNĄTRZ `gridScrollRef` jako `sticky top-0` — native CSS sticky, zero JS sync
-2. **Na desktop**: zachowane dotychczasowe zachowanie (dwa kontenery + JS sync)
-3. Usunięte touch handlers z gridScrollRef na mobile (niepotrzebne przy jednym kontenerze)
-4. Wyekstrahowano `renderDayStationHeaders()` — współdzielony render nagłówków między mobile i desktop
+Podpiąć touch handlery do `gridScrollRef` na mobile. Obecna implementacja (manipulacja `overflowX`/`overflowY`) jest poprawna koncepcyjnie, ale wymaga drobnej poprawki — na mobile w jednym kontenerze scrollowalnym blokowanie overflow w jednej osi skutecznie zablokuje scroll po skosie.
 
-### Pliki zmienione
-- `src/components/admin/AdminCalendar.tsx`
+### Zmiana
+
+**`src/components/admin/AdminCalendar.tsx`**, linia ~1509 — dodać touch handlery do kontenera gridu na mobile:
+
+```tsx
+<div 
+  ref={gridScrollRef} 
+  onScroll={!isMobile ? handleGridScroll : undefined} 
+  onTouchStart={isMobile ? handleScrollTouchStart : undefined}
+  onTouchMove={isMobile ? handleScrollTouchMove : undefined}
+  onTouchEnd={isMobile ? handleScrollTouchEnd : undefined}
+  className="flex-1 overflow-auto"
+  ...
+>
+```
+
+Jedna zmiana, jeden plik.
+
