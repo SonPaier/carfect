@@ -1,28 +1,45 @@
 
 
-## Plan: Axis-locking scroll na mobile
+## Plan: Axis-locking scroll na mobile w N2Service
 
 ### Problem
-Kod axis-locking (`handleScrollTouchStart/Move/End`, linie 358-395) istnieje, ale **nie jest podpięty** do `gridScrollRef` na mobile. Efekt: scroll po skosie przesuwa jednocześnie oś X i Y.
+`AdminCalendar.tsx` w projekcie [N2Service](/projects/1982c817-3fc7-408f-8f64-5e5f54dbcf4b) ma dokładnie ten sam stary kod axis-lockingu (React `onTouch` props + manipulacja `overflowX`/`overflowY`), który nie działa poprawnie — scroll po skosie nadal możliwy, skoki pozycji.
 
-### Rozwiązanie
-Podpiąć touch handlery do `gridScrollRef` na mobile. Obecna implementacja (manipulacja `overflowX`/`overflowY`) jest poprawna koncepcyjnie, ale wymaga drobnej poprawki — na mobile w jednym kontenerze scrollowalnym blokowanie overflow w jednej osi skutecznie zablokuje scroll po skosie.
+Employee calendars (`employee-calendars/`) to widoki listowe/kartowe — nie mają własnego gridu do scrollowania, więc nie wymagają zmian.
 
-### Zmiana
+### Zmiana — 1 plik: `src/components/admin/AdminCalendar.tsx`
 
-**`src/components/admin/AdminCalendar.tsx`**, linia ~1509 — dodać touch handlery do kontenera gridu na mobile:
+**Krok 1:** Zamienić stare React handlery (linie 233-262) na natywne event listenery z `useEffect`:
 
 ```tsx
-<div 
-  ref={gridScrollRef} 
-  onScroll={!isMobile ? handleGridScroll : undefined} 
-  onTouchStart={isMobile ? handleScrollTouchStart : undefined}
-  onTouchMove={isMobile ? handleScrollTouchMove : undefined}
-  onTouchEnd={isMobile ? handleScrollTouchEnd : undefined}
-  className="flex-1 overflow-auto"
-  ...
->
+const scrollTouchStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
+const scrollDirectionRef = useRef<'horizontal' | 'vertical' | null>(null);
+const AXIS_LOCK_THRESHOLD = 8;
+
+useEffect(() => {
+  if (!isMobile) return;
+  const timerId = setTimeout(() => {
+    const el = gridScrollRef.current;
+    if (!el) return;
+    // Native touchstart/touchmove(passive:false)/touchend
+    // Lock axis after 8px, e.preventDefault() + manual scrollLeft/scrollTop
+  }, 50);
+  return () => { clearTimeout(timerId); cleanup(); };
+}, [isMobile, currentDate, viewMode]);
 ```
 
-Jedna zmiana, jeden plik.
+Usunąć `handleScrollTouchStart`, `handleScrollTouchMove`, `handleScrollTouchEnd` jako osobne `useCallback`.
+
+**Krok 2:** Usunąć React touch props z gridu (linia 957):
+
+```tsx
+// Przed:
+<div ref={gridScrollRef} onScroll={handleGridScroll} 
+     onTouchStart={handleScrollTouchStart} onTouchMove={handleScrollTouchMove} onTouchEnd={handleScrollTouchEnd} ...>
+
+// Po:
+<div ref={gridScrollRef} onScroll={handleGridScroll} ...>
+```
+
+Identyczna logika jak w N2Wash — `preventDefault` + ręczne ustawianie `scrollLeft`/`scrollTop` w zablokowanej osi.
 
