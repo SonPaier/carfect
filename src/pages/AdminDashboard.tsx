@@ -1262,7 +1262,8 @@ const AdminDashboard = () => {
         if (status === 'SUBSCRIBED') {
           setRealtimeConnected(true);
           retryCount = 0;
-          // Sync trainings after reconnect to recover any missed events
+          // Sync after reconnect to recover any missed events
+          fetchReservationsRef.current();
           fetchTrainingsRef.current();
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           setRealtimeConnected(false);
@@ -1576,12 +1577,9 @@ const AdminDashboard = () => {
     setAddReservationOpen(true);
   };
   const handleReservationAdded = (reservationId?: string) => {
-    // For edit mode, refresh reservations to show updated data in UI
-    // Realtime debounce was blocking updates for locally edited reservations
-    if (reservationId || editingReservation?.id) {
-      // Refresh immediately to show updated reservation
-      fetchReservations();
-    }
+    // Always refresh reservations to ensure new/updated data shows in calendar
+    // Realtime may have delays or miss events, so explicit fetch is more reliable
+    fetchReservations();
     setEditingReservation(null);
   };
   const handleAddBreak = (stationId: string, date: string, time: string) => {
