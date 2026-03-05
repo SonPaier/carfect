@@ -53,6 +53,7 @@ interface OfferScopeRef {
   name: string;
   description?: string | null;
   is_extras_scope?: boolean;
+  photo_urls?: string[] | null;
 }
 
 interface OfferOptionItem {

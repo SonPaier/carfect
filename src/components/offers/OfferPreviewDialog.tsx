@@ -252,6 +252,7 @@ export const OfferPreviewDialog = ({
           name: scopes[opt.scopeId].name,
           description: scopes[opt.scopeId].description,
           is_extras_scope: scopes[opt.scopeId].is_extras_scope,
+          photo_urls: scopes[opt.scopeId].photo_urls,
         } : null,
         offer_option_items: opt.items.map(item => ({
           id: item.id,

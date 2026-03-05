@@ -59,7 +59,8 @@ const PublicOfferView = () => {
                 id,
                 name,
                 description,
-                is_extras_scope
+                is_extras_scope,
+                photo_urls
               ),
               offer_option_items (
                 *
