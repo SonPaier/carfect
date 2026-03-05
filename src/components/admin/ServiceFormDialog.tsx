@@ -884,6 +884,18 @@ const ServiceFormContent = ({
                 </div>
               )}
             </div>
+
+            {/* Zdjęcia usługi */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label className="text-sm font-medium text-muted-foreground">Zdjęcia usługi</Label>
+              <ProtocolPhotosUploader
+                photos={formData.photo_urls as string[]}
+                onPhotosChange={(photos) => setFormData(prev => ({ ...prev, photo_urls: photos }))}
+                maxPhotos={10}
+                bucketName="service-photos"
+                filePrefix="service"
+              />
+            </div>
           </CollapsibleContent>
         </Collapsible>
       </div>
