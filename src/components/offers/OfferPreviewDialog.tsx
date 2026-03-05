@@ -269,8 +269,8 @@ export const OfferPreviewDialog = ({
           unit: item.unit,
           discount_percent: item.discountPercent,
           is_optional: item.isOptional,
-          unified_services: item.productId && productDescriptions[item.productId] 
-            ? { description: productDescriptions[item.productId] } 
+          unified_services: item.productId && (productDescriptions[item.productId] || productPhotoUrls[item.productId])
+            ? { description: productDescriptions[item.productId], photo_urls: productPhotoUrls[item.productId] || null } 
             : null,
         })),
       })),
