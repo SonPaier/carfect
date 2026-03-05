@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { shouldSkipCompression, getFileExtension, getContentType } from '@/lib/imageUtils';
 import { PhotoFullscreenDialog } from './PhotoFullscreenDialog';
 import {
   AlertDialog,
