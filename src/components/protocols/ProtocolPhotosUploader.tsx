@@ -78,6 +78,8 @@ export const ProtocolPhotosUploader = ({
   label = 'Zrób zdjęcie lub wybierz z galerii',
   disabled = false,
   protocolId,
+  bucketName = 'protocol-photos',
+  filePrefix = 'protokol-szkoda',
 }: ProtocolPhotosUploaderProps) => {
   const [uploading, setUploading] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
