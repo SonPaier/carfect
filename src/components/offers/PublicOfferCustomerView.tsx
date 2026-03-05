@@ -68,6 +68,7 @@ interface OfferOptionItem {
   is_optional: boolean;
   unified_services?: {
     description?: string;
+    photo_urls?: string[] | null;
   } | null;
 }
 

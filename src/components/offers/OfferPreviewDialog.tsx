@@ -161,17 +161,22 @@ export const OfferPreviewDialog = ({
         if (productIds.length > 0) {
           const { data: productsData } = await supabase
             .from('unified_services')
-            .select('id, description')
+            .select('id, description, photo_urls')
             .in('id', productIds);
           
           if (productsData) {
             const descMap: Record<string, string> = {};
+            const photoMap: Record<string, string[]> = {};
             productsData.forEach(p => {
               if (p.description) {
                 descMap[p.id] = p.description;
               }
+              if (p.photo_urls && p.photo_urls.length > 0) {
+                photoMap[p.id] = p.photo_urls;
+              }
             });
             setProductDescriptions(descMap);
+            setProductPhotoUrls(photoMap);
           }
         }
 
