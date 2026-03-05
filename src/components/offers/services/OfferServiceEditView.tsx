@@ -346,6 +346,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         setDefaultPaymentTerms(scope.default_payment_terms || '');
         setDefaultNotes(scope.default_notes || '');
         setDefaultServiceInfo(scope.default_service_info || '');
+        setPhotoUrls((scope as any).photo_urls || []);
       }
 
       // Fetch scope products with product details
