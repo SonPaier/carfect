@@ -549,8 +549,9 @@ export const PublicOfferCustomerView = ({
         
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
         
-        // Get scope description - prefer from scope, fallback to option description
+        // Get scope description and photos
         const scopeDescription = opt.scope?.description ?? opt.description ?? null;
+        const scopePhotoUrls = opt.scope?.photo_urls ?? [];
 
         if (!acc[key]) {
           acc[key] = {
