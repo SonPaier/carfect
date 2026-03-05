@@ -11,6 +11,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { format, parseISO } from 'date-fns';
 import AddEditSalesCustomerDrawer from './AddEditSalesCustomerDrawer';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
 
@@ -59,6 +60,27 @@ const SalesCustomersView = () => {
   const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
   const [orderCustomer, setOrderCustomer] = useState<{ id: string; name: string; discountPercent?: number } | null>(null);
 
+  // Last order dates per customer
+  const [lastOrderDates, setLastOrderDates] = useState<Record<string, string>>({});
+
+  const fetchLastOrderDates = useCallback(async () => {
+    if (!instanceId) return;
+    const { data, error } = await (supabase
+      .from('sales_orders')
+      .select('customer_id, created_at')
+      .eq('instance_id', instanceId)
+      .order('created_at', { ascending: false }) as any);
+    if (!error && data) {
+      const map: Record<string, string> = {};
+      for (const row of data as { customer_id: string; created_at: string }[]) {
+        if (row.customer_id && !map[row.customer_id]) {
+          map[row.customer_id] = row.created_at;
+        }
+      }
+      setLastOrderDates(map);
+    }
+  }, [instanceId]);
+
   const fetchCustomers = useCallback(async () => {
     if (!instanceId) return;
     setLoading(true);
@@ -79,7 +101,8 @@ const SalesCustomersView = () => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [fetchCustomers]);
+    fetchLastOrderDates();
+  }, [fetchCustomers, fetchLastOrderDates]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -108,11 +131,13 @@ const SalesCustomersView = () => {
         const cmp = a.name.localeCompare(b.name, 'pl');
         return sortDir === 'asc' ? cmp : -cmp;
       }
-      // last_order — placeholder, no data yet so keep original order
-      return 0;
+      const dateA = lastOrderDates[a.id] || '';
+      const dateB = lastOrderDates[b.id] || '';
+      const cmp = dateA.localeCompare(dateB);
+      return sortDir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  }, [search, customers, sortField, sortDir]);
+  }, [search, customers, sortField, sortDir, lastOrderDates]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -222,7 +247,13 @@ const SalesCustomersView = () => {
                         {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                       </TableCell>
                       <TableCell className="font-medium max-w-[220px] truncate">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">—</TableCell>
+                      <TableCell className="text-sm">
+                        {lastOrderDates[c.id] ? (
+                          <span>{format(parseISO(lastOrderDates[c.id]), 'dd.MM.yyyy')}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="text-primary hover:underline text-sm whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           {c.phone}
@@ -350,6 +381,7 @@ const SalesCustomersView = () => {
         onOpenChange={setOrderDrawerOpen}
         orders={[]}
         initialCustomer={orderCustomer}
+        onOrderCreated={() => { fetchCustomers(); fetchLastOrderDates(); }}
       />
     </div>
   );

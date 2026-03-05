@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { format, parseISO } from 'date-fns';
 import { X, Pencil } from 'lucide-react';
 import {
   Sheet,
@@ -71,6 +72,26 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState('data');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  const fetchOrders = useCallback(async () => {
+    if (!customer?.id) return;
+    setOrdersLoading(true);
+    const { data } = await (supabase
+      .from('sales_orders')
+      .select('id, order_number, created_at, total_net, currency, status')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false }) as any);
+    setOrders((data as any[]) || []);
+    setOrdersLoading(false);
+  }, [customer?.id]);
+
+  useEffect(() => {
+    if (open && customer?.id && activeTab === 'orders') {
+      fetchOrders();
+    }
+  }, [open, customer?.id, activeTab, fetchOrders]);
 
   const isFormMode = !isEdit || editMode;
 
@@ -210,7 +231,30 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
       </TabsContent>
 
       <TabsContent value="orders" className="flex-1 overflow-y-auto">
-        <p className="text-sm text-muted-foreground text-center py-8">Brak zamówień</p>
+        {ordersLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-8">Ładowanie...</p>
+        ) : orders.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">Brak zamówień</p>
+        ) : (
+          <div className="space-y-2">
+            {orders.map((o: any) => (
+              <div key={o.id} className="border rounded-md p-3 text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{o.order_number}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {format(parseISO(o.created_at), 'dd.MM.yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="capitalize">{o.status}</span>
+                  <span>
+                    {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} {o.currency === 'EUR' ? '€' : 'zł'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   );
