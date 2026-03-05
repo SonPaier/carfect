@@ -2816,8 +2816,8 @@ const AdminDashboard = () => {
       onSendConfirmationSms={handleSendConfirmationSms} />
 
 
-      {/* Add/Edit Reservation Dialog V2 */}
-      {instanceId &&
+      {/* Add/Edit Reservation Dialog V2 — Sheet mode for mobile or non-calendar views */}
+      {instanceId && (isMobile || currentView !== 'calendar') &&
     <AddReservationDialogV2
       open={addReservationOpen || addReservationV2Open}
       onClose={() => {
@@ -2825,7 +2825,6 @@ const AdminDashboard = () => {
         setAddReservationV2Open(false);
         setEditingReservation(null);
         setSlotPreview(null);
-        // Close details drawer too when edit drawer closes (after save or cancel)
         setSelectedReservation(null);
       }}
       onSlotPreviewChange={handleSlotPreviewChange}
@@ -2860,7 +2859,6 @@ const AdminDashboard = () => {
       currentUsername={username}
       trainingsEnabled={trainingsEnabled}
       onSwitchToTraining={handleSwitchToTraining} />
-
     }
 
       {/* Add Training Drawer */}
