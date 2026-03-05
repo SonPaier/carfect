@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { parseMarkdownLists } from '@/lib/textUtils';
 import { TruncatedDescription } from './TruncatedDescription';
+import { ScopePhotoCarousel } from './ScopePhotoCarousel';
 import { useTranslation } from 'react-i18next';
 import { 
   FileText, 
