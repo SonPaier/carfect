@@ -139,7 +139,7 @@ export const OfferPreviewDialog = ({
         if (scopeIds.length > 0) {
           const { data: scopesData } = await supabase
             .from('offer_scopes')
-            .select('id, name, description, is_extras_scope')
+            .select('id, name, description, is_extras_scope, photo_urls')
             .in('id', scopeIds);
           
           if (scopesData) {
