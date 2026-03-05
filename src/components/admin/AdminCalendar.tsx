@@ -1628,7 +1628,7 @@ const AdminCalendar = ({
               if (isPastDay) {
                 pastHatchHeight = totalVisibleHeight;
               }
-              return <div key={station.id} className={cn("relative transition-colors duration-150 shrink-0", !isMobile && "flex-1", !isMobile && !isCompact && "min-w-[220px]", !isMobile && isCompact && "min-w-0", idx < visibleStations.length - 1 && "border-r border-border", dragOverStation === station.id && !dragOverSlot && "bg-primary/10")} style={{
+              return <div key={station.id} className={cn("relative transition-colors duration-150 shrink-0", !isMobile && "flex-1", !isMobile && !effectiveCompact && "min-w-[220px]", !isMobile && effectiveCompact && "min-w-0", idx < visibleStations.length - 1 && "border-r border-border", dragOverStation === station.id && !dragOverSlot && "bg-primary/10")} style={{
                       ...(isMobile ? getMobileColumnStyle(visibleStations.length) : {}),
                       ...(station.color && !dragOverStation ? { backgroundColor: getStationCellBg(station.color) } : {}),
                     }} onDragOver={(e) => handleDragOver(e, station.id, currentDateStr)} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, station.id, currentDateStr)}>
