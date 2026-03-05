@@ -2057,7 +2057,7 @@ const AdminCalendar = ({
                   </div>
                   {/* Station headers for this day */}
                   <div className="flex">
-                    {visibleStations.map((station, stationIdx) => <div key={`${dayStr}-${station.id}`} className={cn("flex-1 p-1 md:p-2 text-center font-medium text-[10px] md:text-xs", !isMobile && !isCompact && "min-w-[220px]", stationIdx < visibleStations.length - 1 && "border-r border-border")} style={station.color ? { backgroundColor: station.color } : undefined}>
+                    {visibleStations.map((station, stationIdx) => <div key={`${dayStr}-${station.id}`} className={cn("flex-1 p-1 md:p-2 text-center font-medium text-[10px] md:text-xs", !isMobile && !effectiveCompact && "min-w-[220px]", stationIdx < visibleStations.length - 1 && "border-r border-border")} style={station.color ? { backgroundColor: station.color } : undefined}>
                         <div className={cn("text-foreground", isMobile ? "truncate" : "whitespace-normal break-words")}>{station.name}</div>
                       </div>)}
                   </div>
