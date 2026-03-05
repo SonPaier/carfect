@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,7 +35,10 @@ interface OrderProduct {
   name: string;
   priceNet: number;
   quantity: number;
+  vehicle: string;
 }
+
+type DeliveryType = 'shipping' | 'pickup' | 'uber';
 
 const VAT_RATE = 0.23;
 
@@ -70,7 +74,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
   const [products, setProducts] = useState<OrderProduct[]>([]);
 
   const [applyDiscount, setApplyDiscount] = useState(true);
-  const [vehicle, setVehicle] = useState('');
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('shipping');
 
   const [sendEmail, setSendEmail] = useState(false);
   const [comment, setComment] = useState('');
@@ -190,6 +194,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
           name: s.shortName || s.fullName,
           priceNet: s.priceNet,
           quantity: 1,
+          vehicle: '',
         };
       });
     });
@@ -203,6 +208,12 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
     if (quantity < 1) return;
     setProducts((prev) =>
       prev.map((p) => (p.productId === productId ? { ...p, quantity } : p))
+    );
+  };
+
+  const updateVehicle = (productId: string, vehicle: string) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.productId === productId ? { ...p, vehicle } : p))
     );
   };
 
@@ -246,7 +257,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
           total_gross: totalGross,
           currency: 'PLN',
           comment: comment || null,
-          vehicle: vehicle || null,
+          delivery_type: deliveryType,
           status: 'nowy',
           created_by: user?.id || null,
         })
@@ -263,6 +274,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
           name: p.name,
           quantity: p.quantity,
           price_net: p.priceNet,
+          vehicle: p.vehicle || null,
           sort_order: idx,
         }));
         await (supabase.from('sales_order_items').insert(items) as any);
@@ -284,7 +296,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
     setCustomerSearch('');
     setProducts([]);
     setApplyDiscount(true);
-    setVehicle('');
+    setDeliveryType('shipping');
     setSendEmail(false);
     setComment('');
   };
@@ -382,17 +394,6 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
               )}
             </div>
 
-            {/* Vehicle */}
-            <div className="space-y-2">
-              <Label htmlFor="order-vehicle">Pojazd</Label>
-              <Input
-                id="order-vehicle"
-                placeholder="np. BMW X5 2020"
-                value={vehicle}
-                onChange={(e) => setVehicle(e.target.value)}
-              />
-            </div>
-
             {/* Products */}
             <div className="space-y-2">
               <Label>Produkty</Label>
@@ -401,48 +402,60 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
                   {products.map((p) => (
                     <div
                       key={p.productId}
-                      className="flex items-start gap-3 bg-card border border-border rounded-md p-3"
+                      className="bg-card border border-border rounded-md p-3 space-y-2"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatCurrency(p.priceNet)} netto/szt.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(p.productId, p.quantity - 1)}
-                          disabled={p.quantity <= 1}
+                      {/* Row 1: Name + Price */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatCurrency(p.priceNet)} netto/szt.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeProduct(p.productId)}
+                          className="text-muted-foreground hover:text-destructive shrink-0"
                         >
-                          <Minus className="w-3 h-3" />
-                        </Button>
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {/* Row 2: Quantity + Vehicle */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => updateQuantity(p.productId, p.quantity - 1)}
+                            disabled={p.quantity <= 1}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={p.quantity}
+                            onChange={(e) =>
+                              updateQuantity(p.productId, parseInt(e.target.value) || 1)
+                            }
+                            className="w-14 h-7 text-center text-sm px-1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => updateQuantity(p.productId, p.quantity + 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <Input
-                          type="number"
-                          min={1}
-                          value={p.quantity}
-                          onChange={(e) =>
-                            updateQuantity(p.productId, parseInt(e.target.value) || 1)
-                          }
-                          className="w-14 h-7 text-center text-sm px-1"
+                          placeholder="Pojazd"
+                          value={p.vehicle}
+                          onChange={(e) => updateVehicle(p.productId, e.target.value)}
+                          className="h-7 text-sm flex-1"
                         />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(p.productId, p.quantity + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
                       </div>
-                      <button
-                        onClick={() => removeProduct(p.productId)}
-                        className="text-muted-foreground hover:text-destructive mt-0.5"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
                     </div>
                   ))}
                 </div>
@@ -453,6 +466,31 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
                 {products.length > 0 ? 'Zmień produkty' : 'Dodaj produkt'}
               </Button>
             </div>
+
+            {/* Delivery type */}
+            {products.length > 0 && (
+              <div className="space-y-2">
+                <Label>Rodzaj dostawy</Label>
+                <RadioGroup
+                  value={deliveryType}
+                  onValueChange={(v) => setDeliveryType(v as DeliveryType)}
+                  className="flex gap-4"
+                >
+                  {([
+                    ['shipping', 'Wysyłka'],
+                    ['pickup', 'Odbiór osobisty'],
+                    ['uber', 'Uber'],
+                  ] as const).map(([value, label]) => (
+                    <div key={value} className="flex items-center gap-1.5">
+                      <RadioGroupItem value={value} id={`delivery-${value}`} />
+                      <Label htmlFor={`delivery-${value}`} className="text-sm font-normal cursor-pointer">
+                        {label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
 
             {/* Summary */}
             {products.length > 0 && (

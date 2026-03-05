@@ -80,7 +80,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
     setOrdersLoading(true);
     const { data } = await (supabase
       .from('sales_orders')
-      .select('id, order_number, created_at, total_net, currency, status')
+      .select('id, order_number, created_at, total_net, currency, status, delivery_type')
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false }) as any);
     setOrders((data as any[]) || []);
@@ -246,7 +246,14 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="capitalize">{o.status}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="capitalize">{o.status}</span>
+                    {o.delivery_type && (
+                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {o.delivery_type === 'shipping' ? 'Wysyłka' : o.delivery_type === 'pickup' ? 'Odbiór osobisty' : o.delivery_type === 'uber' ? 'Uber' : o.delivery_type}
+                      </span>
+                    )}
+                  </div>
                   <span>
                     {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} {o.currency === 'EUR' ? '€' : 'zł'}
                   </span>
