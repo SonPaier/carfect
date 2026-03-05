@@ -463,7 +463,19 @@ export default function OffersView({ instanceId, instanceData, onReserveFromOffe
   };
 
   const handleReserveFromOffer = (offer: OfferWithOptions) => {
-    setReservationFromOffer({ open: true, offer });
+    if (onReserveFromOffer) {
+      // Lift to parent (AdminDashboard) — navigates to calendar first
+      onReserveFromOffer({
+        id: '',
+        ...getReservationDataFromOffer(offer),
+        reservation_date: '',
+        start_time: '',
+        end_time: '',
+        station_id: null,
+      });
+    } else {
+      setReservationFromOffer({ open: true, offer });
+    }
   };
 
   const getReservationDataFromOffer = (offer: OfferWithOptions) => {
