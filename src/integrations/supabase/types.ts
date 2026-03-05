@@ -2803,6 +2803,7 @@ export type Database = {
           product_id: string | null
           quantity: number
           sort_order: number
+          vehicle: string | null
         }
         Insert: {
           created_at?: string
@@ -2813,6 +2814,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           sort_order?: number
+          vehicle?: string | null
         }
         Update: {
           created_at?: string
@@ -2823,6 +2825,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           sort_order?: number
+          vehicle?: string | null
         }
         Relationships: [
           {
@@ -2844,6 +2847,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           customer_name: string
+          delivery_type: string | null
           id: string
           instance_id: string
           order_number: string
@@ -2864,6 +2868,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           customer_name: string
+          delivery_type?: string | null
           id?: string
           instance_id: string
           order_number: string
@@ -2884,6 +2889,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           customer_name?: string
+          delivery_type?: string | null
           id?: string
           instance_id?: string
           order_number?: string
