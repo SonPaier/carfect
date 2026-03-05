@@ -142,6 +142,8 @@ interface AdminCalendarProps {
   trainings?: Training[];
   onTrainingClick?: (training: Training) => void;
   trainingsEnabled?: boolean;
+  /** Force compact column mode (no min-width) — used when inline drawer is open */
+  forceCompact?: boolean;
 }
 
 // Default hours from 9:00 to 19:00
