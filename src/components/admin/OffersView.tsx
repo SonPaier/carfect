@@ -149,6 +149,7 @@ interface InstanceData {
 interface OffersViewProps {
   instanceId: string | null;
   instanceData?: InstanceData | null;
+  onReserveFromOffer?: (offerData: any) => void;
 }
 
 export default function OffersView({ instanceId, instanceData }: OffersViewProps) {
