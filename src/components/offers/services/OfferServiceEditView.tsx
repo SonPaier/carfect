@@ -333,7 +333,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
       // Fetch scope
       const { data: scope } = await supabase
         .from('offer_scopes')
-        .select('short_name, name, description, is_extras_scope, default_warranty, default_payment_terms, default_notes, default_service_info')
+        .select('short_name, name, description, is_extras_scope, default_warranty, default_payment_terms, default_notes, default_service_info, photo_urls')
         .eq('id', scopeId)
         .single();
 
