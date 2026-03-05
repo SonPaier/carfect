@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { type SalesOrder } from '@/data/salesMockData';
 import { getNextOrderNumber } from './SalesOrdersView';
 import AddEditSalesCustomerDrawer from './AddEditSalesCustomerDrawer';
+import SalesProductSelectionDrawer, { type SalesProductOption } from './SalesProductSelectionDrawer';
 
 interface SalesCustomerRef {
   id: string;
@@ -27,11 +28,6 @@ interface SalesCustomerRef {
   discountPercent?: number;
 }
 
-interface SalesProductRef {
-  id: string;
-  name: string;
-  priceNet: number;
-}
 
 interface OrderProduct {
   productId: string;
@@ -70,7 +66,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [addCustomerInitialQuery, setAddCustomerInitialQuery] = useState('');
 
-  const [productPopoverOpen, setProductPopoverOpen] = useState(false);
+  const [productDrawerOpen, setProductDrawerOpen] = useState(false);
   const [products, setProducts] = useState<OrderProduct[]>([]);
 
   const [applyDiscount, setApplyDiscount] = useState(true);
@@ -184,13 +180,19 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
 
   const nextOrderNumber = useMemo(() => getNextOrderNumber(orders), [orders]);
 
-  const addProduct = (product: SalesProductRef) => {
-    if (products.find((p) => p.productId === product.id)) return;
-    setProducts((prev) => [
-      ...prev,
-      { productId: product.id, name: product.name, priceNet: product.priceNet, quantity: 1 },
-    ]);
-    setProductPopoverOpen(false);
+  const handleProductsConfirm = (selected: SalesProductOption[]) => {
+    setProducts(prev => {
+      const existingMap = new Map(prev.map(p => [p.productId, p]));
+      return selected.map(s => {
+        const existing = existingMap.get(s.id);
+        return existing || {
+          productId: s.id,
+          name: s.shortName || s.fullName,
+          priceNet: s.priceNet,
+          quantity: 1,
+        };
+      });
+    });
   };
 
   const removeProduct = (productId: string) => {
@@ -446,9 +448,9 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
                 </div>
               )}
 
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => toast.info('Produkty w przygotowaniu')}>
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => setProductDrawerOpen(true)}>
                 <Plus className="w-4 h-4" />
-                Dodaj produkt
+                {products.length > 0 ? 'Zmień produkty' : 'Dodaj produkt'}
               </Button>
             </div>
 
@@ -553,13 +555,22 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, onOr
     </Sheet>
 
     {instanceId && (
-      <AddEditSalesCustomerDrawer
-        open={addCustomerOpen}
-        onOpenChange={setAddCustomerOpen}
-        customer={null}
-        instanceId={instanceId}
-        onSaved={handleCustomerSaved}
-      />
+      <>
+        <AddEditSalesCustomerDrawer
+          open={addCustomerOpen}
+          onOpenChange={setAddCustomerOpen}
+          customer={null}
+          instanceId={instanceId}
+          onSaved={handleCustomerSaved}
+        />
+        <SalesProductSelectionDrawer
+          open={productDrawerOpen}
+          onClose={() => setProductDrawerOpen(false)}
+          instanceId={instanceId}
+          selectedProductIds={products.map(p => p.productId)}
+          onConfirm={handleProductsConfirm}
+        />
+      </>
     )}
     </>
   );
