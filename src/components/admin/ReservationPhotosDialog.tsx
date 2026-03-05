@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, X, Loader2, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { compressImage } from '@/lib/imageUtils';
+import { compressImage, shouldSkipCompression, getFileExtension, getContentType } from '@/lib/imageUtils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
