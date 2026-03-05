@@ -298,6 +298,7 @@ const ServiceFormContent = ({
         is_popular: service.is_popular ?? false,
         trwalosc_produktu_w_mesiacach: service.metadata?.trwalosc_produktu_w_mesiacach ?? null,
         produkt_do_lakierow: (service.metadata?.produkt_do_lakierow as 'matowe' | 'ciemne' | 'dowolny' | null) ?? null,
+        photo_urls: service.photo_urls || [],
       });
     }
   }, [service?.id, defaultCategoryId]);
