@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ScopeProductSelectionDrawer } from './ScopeProductSelectionDrawer';
+import { ProtocolPhotosUploader } from '@/components/protocols/ProtocolPhotosUploader';
 import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
 import {
   DndContext,
@@ -228,6 +229,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
   const [defaultNotes, setDefaultNotes] = useState('');
   const [defaultServiceInfo, setDefaultServiceInfo] = useState('');
   const [scopeProducts, setScopeProducts] = useState<ScopeProduct[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [categoryMap, setCategoryMap] = useState<Record<string, string>>({}); // id -> name
   const [categoryOrder, setCategoryOrder] = useState<Record<string, number>>({});
@@ -331,7 +333,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
       // Fetch scope
       const { data: scope } = await supabase
         .from('offer_scopes')
-        .select('short_name, name, description, is_extras_scope, default_warranty, default_payment_terms, default_notes, default_service_info')
+        .select('short_name, name, description, is_extras_scope, default_warranty, default_payment_terms, default_notes, default_service_info, photo_urls')
         .eq('id', scopeId)
         .single();
 
@@ -344,6 +346,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         setDefaultPaymentTerms(scope.default_payment_terms || '');
         setDefaultNotes(scope.default_notes || '');
         setDefaultServiceInfo(scope.default_service_info || '');
+        setPhotoUrls((scope as any).photo_urls || []);
       }
 
       // Fetch scope products with product details
@@ -480,7 +483,8 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         default_warranty: defaultWarranty || null,
         default_payment_terms: defaultPaymentTerms || null,
         default_notes: defaultNotes || null,
-        default_service_info: defaultServiceInfo || null
+        default_service_info: defaultServiceInfo || null,
+        photo_urls: photoUrls.length > 0 ? photoUrls : null,
       };
 
       if (isEditMode && scopeId) {
@@ -607,6 +611,18 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
               placeholder="Opis usługi..."
               rows={12}
               className="bg-white resize-none"
+            />
+          </div>
+
+          {/* Zdjęcia szablonu */}
+          <div className="space-y-2">
+            <Label>Zdjęcia szablonu</Label>
+            <ProtocolPhotosUploader
+              photos={photoUrls}
+              onPhotosChange={setPhotoUrls}
+              maxPhotos={10}
+              bucketName="service-photos"
+              filePrefix="scope"
             />
           </div>
 

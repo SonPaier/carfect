@@ -44,6 +44,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ProtocolPhotosUploader } from '@/components/protocols/ProtocolPhotosUploader';
 
 interface ServiceCategory {
   id: string;
@@ -89,6 +90,7 @@ export interface ServiceData {
   reminder_template_id?: string | null;
   is_popular?: boolean | null;
   metadata?: ServiceMetadata | null;
+  photo_urls?: string[] | null;
 }
 
 interface ExistingService {
@@ -214,6 +216,7 @@ const ServiceFormContent = ({
           is_popular: service?.is_popular ?? false,
           trwalosc_produktu_w_mesiacach: service?.metadata?.trwalosc_produktu_w_mesiacach ?? null,
           produkt_do_lakierow: (service?.metadata?.produkt_do_lakierow as 'matowe' | 'ciemne' | 'dowolny' | null) ?? null,
+          photo_urls: service?.photo_urls || [],
         });
 
   // Fetch reminder templates
@@ -295,6 +298,7 @@ const ServiceFormContent = ({
         is_popular: service.is_popular ?? false,
         trwalosc_produktu_w_mesiacach: service.metadata?.trwalosc_produktu_w_mesiacach ?? null,
         produkt_do_lakierow: (service.metadata?.produkt_do_lakierow as 'matowe' | 'ciemne' | 'dowolny' | null) ?? null,
+        photo_urls: service.photo_urls || [],
       });
     }
   }, [service?.id, defaultCategoryId]);
@@ -370,6 +374,7 @@ const ServiceFormContent = ({
         is_popular: formData.is_popular,
         active: true,
         metadata: updatedMetadata,
+        photo_urls: (formData.photo_urls as string[]).length > 0 ? formData.photo_urls : null,
       };
 
       if (service?.id) {
@@ -878,6 +883,18 @@ const ServiceFormContent = ({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Zdjęcia usługi */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label className="text-sm font-medium text-muted-foreground">Zdjęcia usługi</Label>
+              <ProtocolPhotosUploader
+                photos={formData.photo_urls as string[]}
+                onPhotosChange={(photos) => setFormData(prev => ({ ...prev, photo_urls: photos }))}
+                maxPhotos={10}
+                bucketName="service-photos"
+                filePrefix="service"
+              />
             </div>
           </CollapsibleContent>
         </Collapsible>
