@@ -80,6 +80,7 @@ export const OfferPreviewDialog = ({
   const [instance, setInstance] = useState<Instance | null>(null);
   const [scopes, setScopes] = useState<Record<string, ScopeData>>({});
   const [productDescriptions, setProductDescriptions] = useState<Record<string, string>>({});
+  const [productPhotoUrls, setProductPhotoUrls] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
