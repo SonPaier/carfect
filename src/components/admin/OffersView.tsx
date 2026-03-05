@@ -209,7 +209,7 @@ export default function OffersView({ instanceId, instanceData, onReserveFromOffe
   // View history dialog state
   const [viewsDialog, setViewsDialog] = useState<{ open: boolean; offerId: string; viewedAt: string | null }>({ open: false, offerId: '', viewedAt: null });
 
-  // Reservation from offer state
+  // Reservation from offer state (only used when no external handler)
   const [reservationFromOffer, setReservationFromOffer] = useState<{
     open: boolean;
     offer: OfferWithOptions | null;
