@@ -1842,6 +1842,7 @@ export type Database = {
           instance_id: string | null
           is_extras_scope: boolean
           name: string
+          photo_urls: string[] | null
           price_from: number | null
           short_name: string | null
           sort_order: number | null
@@ -1863,6 +1864,7 @@ export type Database = {
           instance_id?: string | null
           is_extras_scope?: boolean
           name: string
+          photo_urls?: string[] | null
           price_from?: number | null
           short_name?: string | null
           sort_order?: number | null
@@ -1884,6 +1886,7 @@ export type Database = {
           instance_id?: string | null
           is_extras_scope?: boolean
           name?: string
+          photo_urls?: string[] | null
           price_from?: number | null
           short_name?: string | null
           sort_order?: number | null
@@ -3647,6 +3650,7 @@ export type Database = {
           is_popular: boolean | null
           metadata: Json | null
           name: string
+          photo_urls: string[] | null
           price_from: number | null
           price_large: number | null
           price_medium: number | null
@@ -3683,6 +3687,7 @@ export type Database = {
           is_popular?: boolean | null
           metadata?: Json | null
           name: string
+          photo_urls?: string[] | null
           price_from?: number | null
           price_large?: number | null
           price_medium?: number | null
@@ -3719,6 +3724,7 @@ export type Database = {
           is_popular?: boolean | null
           metadata?: Json | null
           name?: string
+          photo_urls?: string[] | null
           price_from?: number | null
           price_large?: number | null
           price_medium?: number | null
