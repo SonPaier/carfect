@@ -107,7 +107,7 @@ export const ProtocolPhotosUploader = ({
         const blob = skipCompress ? file : await compressImage(file);
         const ext = getFileExtension(file);
         const contentType = getContentType(file);
-        const fileName = `protokol-szkoda-${format(new Date(), 'yyyyMMdd-HHmmss')}${ext}`;
+        const fileName = `${filePrefix}-${format(new Date(), 'yyyyMMdd-HHmmss')}${ext}`;
 
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
