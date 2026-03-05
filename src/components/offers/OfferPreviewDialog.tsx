@@ -276,7 +276,7 @@ export const OfferPreviewDialog = ({
       })),
       instances: instance,
     };
-  }, [instance, offer, scopes, productDescriptions, instanceId, calculateTotalNet, calculateTotalGross]);
+  }, [instance, offer, scopes, productDescriptions, productPhotoUrls, instanceId, calculateTotalNet, calculateTotalGross]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
