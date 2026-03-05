@@ -68,6 +68,7 @@ interface OfferOptionItem {
   is_optional: boolean;
   unified_services?: {
     description?: string;
+    photo_urls?: string[] | null;
   } | null;
 }
 
@@ -1129,41 +1130,74 @@ export const PublicOfferCustomerView = ({
                                   {variantLabel}
                                 </p>
                               )}
-                              <div className="flex items-start justify-between gap-3">
-                                <span className="font-medium text-base flex-1" style={{ color: branding.offer_section_text_color }}>
-                                  {productName}
-                                </span>
-                                <div className="flex items-center gap-3 shrink-0">
-                                  {!offer.hide_unit_prices && (
-                                    <div className="text-right">
-                                      <span className="font-bold text-lg" style={{ color: branding.offer_section_text_color }}>
-                                        {formatItemPrice(itemTotal)}
+                              
+                              {/* Layout: description left, photos right on desktop */}
+                              {(() => {
+                                const servicePhotos = item.unified_services?.photo_urls || [];
+                                const hasPhotos = servicePhotos.length > 0;
+                                
+                                return (
+                                  <>
+                                    {/* Name + price row */}
+                                    <div className="flex items-start justify-between gap-3">
+                                      <span className="font-medium text-base flex-1" style={{ color: branding.offer_section_text_color }}>
+                                        {productName}
                                       </span>
-                                      <div className="text-[12px] text-muted-foreground">{vatAnnotation}</div>
+                                      <div className="flex items-center gap-3 shrink-0">
+                                        {!offer.hide_unit_prices && (
+                                          <div className="text-right">
+                                            <span className="font-bold text-lg" style={{ color: branding.offer_section_text_color }}>
+                                              {formatItemPrice(itemTotal)}
+                                            </span>
+                                            <div className="text-[12px] text-muted-foreground">{vatAnnotation}</div>
+                                          </div>
+                                        )}
+                                        {!readonlyMode && (
+                                          <Button
+                                            variant={isItemSelected ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (!interactionsDisabled) {
+                                                handleToggleScope(section.key, option.id, item.id);
+                                              }
+                                            }}
+                                            disabled={interactionsDisabled}
+                                            className="shrink-0"
+                                            style={isItemSelected ? { backgroundColor: branding.offer_primary_color, color: primaryButtonTextColor } : {}}
+                                          >
+                                            {isItemSelected ? (<><Check className="w-4 h-4 mr-1" />Dodana</>) : 'Dodaj'}
+                                          </Button>
+                                        )}
+                                      </div>
                                     </div>
-                                  )}
-                                  {!readonlyMode && (
-                                    <Button
-                                      variant={isItemSelected ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (!interactionsDisabled) {
-                                          handleToggleScope(section.key, option.id, item.id);
-                                        }
-                                      }}
-                                      disabled={interactionsDisabled}
-                                      className="shrink-0"
-                                      style={isItemSelected ? { backgroundColor: branding.offer_primary_color, color: primaryButtonTextColor } : {}}
-                                    >
-                                      {isItemSelected ? (<><Check className="w-4 h-4 mr-1" />Dodana</>) : 'Dodaj'}
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                              {description && (
-                                <div className="mt-2">{renderDescription(description)}</div>
-                              )}
+                                    
+                                    {/* Description + Photos */}
+                                    {(description || hasPhotos) && (
+                                      <div className={cn(
+                                        "mt-2",
+                                        hasPhotos && description
+                                          ? "flex flex-col md:flex-row md:gap-4"
+                                          : ""
+                                      )}>
+                                        {description && (
+                                          <div className={cn(hasPhotos ? "md:flex-1" : "")}>
+                                            {renderDescription(description)}
+                                          </div>
+                                        )}
+                                        {hasPhotos && (
+                                          <div className={cn(
+                                            "mt-3 md:mt-0",
+                                            description ? "md:flex-1" : "w-full"
+                                          )}>
+                                            <ScopePhotoCarousel photos={servicePhotos} />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           );
                         })}

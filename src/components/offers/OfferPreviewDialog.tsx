@@ -80,6 +80,7 @@ export const OfferPreviewDialog = ({
   const [instance, setInstance] = useState<Instance | null>(null);
   const [scopes, setScopes] = useState<Record<string, ScopeData>>({});
   const [productDescriptions, setProductDescriptions] = useState<Record<string, string>>({});
+  const [productPhotoUrls, setProductPhotoUrls] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
@@ -161,17 +162,22 @@ export const OfferPreviewDialog = ({
         if (productIds.length > 0) {
           const { data: productsData } = await supabase
             .from('unified_services')
-            .select('id, description')
+            .select('id, description, photo_urls')
             .in('id', productIds);
           
           if (productsData) {
             const descMap: Record<string, string> = {};
+            const photoMap: Record<string, string[]> = {};
             productsData.forEach(p => {
               if (p.description) {
                 descMap[p.id] = p.description;
               }
+              if (p.photo_urls && p.photo_urls.length > 0) {
+                photoMap[p.id] = p.photo_urls;
+              }
             });
             setProductDescriptions(descMap);
+            setProductPhotoUrls(photoMap);
           }
         }
 
@@ -263,14 +269,14 @@ export const OfferPreviewDialog = ({
           unit: item.unit,
           discount_percent: item.discountPercent,
           is_optional: item.isOptional,
-          unified_services: item.productId && productDescriptions[item.productId] 
-            ? { description: productDescriptions[item.productId] } 
+          unified_services: item.productId && (productDescriptions[item.productId] || productPhotoUrls[item.productId])
+            ? { description: productDescriptions[item.productId], photo_urls: productPhotoUrls[item.productId] || null } 
             : null,
         })),
       })),
       instances: instance,
     };
-  }, [instance, offer, scopes, productDescriptions, instanceId, calculateTotalNet, calculateTotalGross]);
+  }, [instance, offer, scopes, productDescriptions, productPhotoUrls, instanceId, calculateTotalNet, calculateTotalGross]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>

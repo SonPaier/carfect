@@ -112,31 +112,29 @@ const PublicOfferView = () => {
           )
         )] as string[];
         
-        let productDescriptions: Record<string, string> = {};
+        let productDetails: Record<string, { description?: string; photo_urls?: string[] | null }> = {};
         if (productIds.length > 0) {
           const { data: productsData } = await supabase
             .from('unified_services')
-            .select('id, description')
+            .select('id, description, photo_urls')
             .in('id', productIds);
           
           if (productsData) {
             productsData.forEach(p => {
-              if (p.description) {
-                productDescriptions[p.id] = p.description;
-              }
+              productDetails[p.id] = { description: p.description ?? undefined, photo_urls: p.photo_urls };
             });
           }
         }
 
-        // Enrich offer_option_items with unified_services descriptions
+        // Enrich offer_option_items with unified_services data
         const enrichedData = {
           ...data,
           offer_options: (data.offer_options || []).map((opt: { offer_option_items?: { product_id?: string }[] }) => ({
             ...opt,
             offer_option_items: (opt.offer_option_items || []).map((item: { product_id?: string }) => ({
               ...item,
-              unified_services: item.product_id && productDescriptions[item.product_id]
-                ? { description: productDescriptions[item.product_id] }
+              unified_services: item.product_id && productDetails[item.product_id]
+                ? productDetails[item.product_id]
                 : null,
             })),
           })),
