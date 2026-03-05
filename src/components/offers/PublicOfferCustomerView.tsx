@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { parseMarkdownLists } from '@/lib/textUtils';
 import { TruncatedDescription } from './TruncatedDescription';
+import { ScopePhotoCarousel } from './ScopePhotoCarousel';
 import { useTranslation } from 'react-i18next';
 import { 
   FileText, 
@@ -53,6 +54,7 @@ interface OfferScopeRef {
   name: string;
   description?: string | null;
   is_extras_scope?: boolean;
+  photo_urls?: string[] | null;
 }
 
 interface OfferOptionItem {
@@ -548,14 +550,16 @@ export const PublicOfferCustomerView = ({
         
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
         
-        // Get scope description - prefer from scope, fallback to option description
+        // Get scope description and photos
         const scopeDescription = opt.scope?.description ?? opt.description ?? null;
+        const scopePhotoUrls = opt.scope?.photo_urls ?? [];
 
         if (!acc[key]) {
           acc[key] = {
             key,
             scopeName: inferredScopeName,
             scopeDescription,
+            scopePhotoUrls: scopePhotoUrls as string[],
             sortKey: opt.sort_order ?? 0,
             isExtrasScope,
             options: [] as OfferOption[],
@@ -566,7 +570,7 @@ export const PublicOfferCustomerView = ({
       },
       {} as Record<
         string,
-        { key: string; scopeName: string; scopeDescription: string | null; sortKey: number; isExtrasScope: boolean; options: OfferOption[] }
+        { key: string; scopeName: string; scopeDescription: string | null; scopePhotoUrls: string[]; sortKey: number; isExtrasScope: boolean; options: OfferOption[] }
       >
     )
   ).sort((a, b) => a.sortKey - b.sortKey);
@@ -1061,9 +1065,31 @@ export const PublicOfferCustomerView = ({
                         <FileText className="w-5 h-5" style={{ color: branding.offer_primary_color }} />
                         {section.scopeName}
                       </h2>
-                      {scopeDescription && (
-                        <div className="mt-1">
-                          {renderDescription(scopeDescription, branding.offer_scope_header_text_color)}
+                      
+                      {/* Description + Photos layout */}
+                      {(scopeDescription || section.scopePhotoUrls.length > 0) && (
+                        <div className={cn(
+                          "mt-2",
+                          section.scopePhotoUrls.length > 0 && scopeDescription
+                            ? "flex flex-col md:flex-row md:gap-6"
+                            : ""
+                        )}>
+                          {scopeDescription && (
+                            <div className={cn(
+                              "mt-1",
+                              section.scopePhotoUrls.length > 0 ? "md:flex-1 md:order-1" : ""
+                            )}>
+                              {renderDescription(scopeDescription, branding.offer_scope_header_text_color)}
+                            </div>
+                          )}
+                          {section.scopePhotoUrls.length > 0 && (
+                            <div className={cn(
+                              "mt-3 md:mt-0",
+                              scopeDescription ? "md:flex-1 md:order-2" : "w-full"
+                            )}>
+                              <ScopePhotoCarousel photos={section.scopePhotoUrls} />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

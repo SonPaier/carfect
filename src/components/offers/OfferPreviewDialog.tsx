@@ -63,6 +63,7 @@ interface ScopeData {
   name: string;
   description: string | null;
   is_extras_scope: boolean;
+  photo_urls?: string[] | null;
 }
 
 export const OfferPreviewDialog = ({
@@ -138,7 +139,7 @@ export const OfferPreviewDialog = ({
         if (scopeIds.length > 0) {
           const { data: scopesData } = await supabase
             .from('offer_scopes')
-            .select('id, name, description, is_extras_scope')
+            .select('id, name, description, is_extras_scope, photo_urls')
             .in('id', scopeIds);
           
           if (scopesData) {
@@ -251,6 +252,7 @@ export const OfferPreviewDialog = ({
           name: scopes[opt.scopeId].name,
           description: scopes[opt.scopeId].description,
           is_extras_scope: scopes[opt.scopeId].is_extras_scope,
+          photo_urls: scopes[opt.scopeId].photo_urls,
         } : null,
         offer_option_items: opt.items.map(item => ({
           id: item.id,
