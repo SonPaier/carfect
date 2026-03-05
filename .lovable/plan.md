@@ -1,20 +1,41 @@
 
 
-## Plan: Usunięcie wymuszania aparatu — wybór zdjęcia z galerii lub aparatu
+## Plan: Rozbudowa widoku Klienci w Sales CRM
 
-### Problem
-Atrybut `capture="environment"` na inputach `<input type="file">` wymusza otwarcie aparatu na urządzeniach mobilnych, nie dając użytkownikowi opcji wyboru zdjęcia z galerii.
+### Zakres zmian
 
-### Rozwiązanie
-Usunąć `capture="environment"` ze wszystkich inputów do uploadu zdjęć. Bez tego atrybutu przeglądarka mobilna wyświetli natywny dialog z wyborem: aparat **lub** galeria zdjęć.
+**1. Migracja bazy danych** — dodanie kolumny `is_net_payer` (boolean, default false) do tabeli `customers`.
 
-### Pliki do edycji (6 plików, 1 zmiana w każdym)
-1. `src/components/protocols/ProtocolPhotosUploader.tsx` — linia 159
-2. `src/components/protocols/DamagePointDrawer.tsx` — linia 212
-3. `src/components/admin/ReservationPhotosDialog.tsx` — linia 182
-4. `src/pages/HallView.tsx` — linia 1722
-5. `src/components/admin/employees/WorkerTimeDialog.tsx` — linia 264
-6. `src/components/admin/employees/AddEditEmployeeDialog.tsx` — linia 238
+**2. SalesCustomersView.tsx** — zmiany w tabeli:
+- Usunąć kolumnę "Opiekun"
+- Dodać kolumnę "Ostatnie zamówienie" (na razie placeholder "—", bo zamówienia nie są jeszcze w DB)
+- Dodać kolumnę "Płatnik" — wyświetla "netto" lub "brutto" na podstawie `is_net_payer` z danych klienta
+- Podłączyć dane klientów z Supabase (zamiast pustej tablicy `[]`)
+- Otwieranie drawera po kliknięciu wiersza + "Dodaj klienta"
 
-W każdym pliku: usunięcie linii `capture="environment"`.
+**3. Nowy komponent: `NipLookupForm.tsx`** — skopiowany z N2Service, lookup NIP z GUS API (`wl-api.mf.gov.pl`), pola: NIP + przycisk "Pobierz z GUS", nazwa firmy, ulica, kod pocztowy, miasto. Tryb readOnly do widoku.
+
+**4. Nowy komponent: `AddEditSalesCustomerDrawer.tsx`** — Sheet z formularzem:
+- **Sekcja główna:** Nazwa, Osoba kontaktowa, Telefon, Email
+- **Toggle Rabat** + pole liczbowe % (zapisuje do `discount_percent`)
+- **Toggle Płatnik netto** (zapisuje do `is_net_payer`)
+- Notatki (textarea)
+- **Separator + Adres wysyłki:** Adresat, Ulica, Kod pocztowy, Miasto (zapisuje do `shipping_*` kolumn)
+- **Separator + Dane firmy** (Collapsible): NipLookupForm — NIP z GUS lookup, nazwa firmy, adres fakturowy (zapisuje do `nip`, `company`, `billing_*`)
+- **Tryb widoku** z tabami "Dane" / "Zamówienia" (wzór z N2Service CustomerEditDrawer)
+- Sticky header + footer z przyciskami Zapisz/Anuluj/Edytuj
+
+**5. Zapis do Supabase:** INSERT/UPDATE na tabeli `customers` z `source: 'sales'`, używając istniejących kolumn (`contact_person`, `discount_percent`, `is_net_payer`, `shipping_*`, `billing_*`, `nip`, `company`, `sales_notes`).
+
+### Pliki do utworzenia
+- `src/components/sales/NipLookupForm.tsx` — kopia z N2Service
+- `src/components/sales/AddEditSalesCustomerDrawer.tsx` — nowy drawer
+
+### Pliki do edycji
+- `src/components/sales/SalesCustomersView.tsx` — przebudowa tabeli + integracja z DB i drawerem
+
+### Migracja
+```sql
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS is_net_payer boolean NOT NULL DEFAULT false;
+```
 
