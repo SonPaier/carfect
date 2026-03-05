@@ -294,6 +294,7 @@ const AdminCalendar = ({
     return localStorage.getItem('calendar-compact-mode') === 'true';
   });
   const isMobile = useIsMobile();
+  const effectiveCompact = isCompact || forceCompact;
 
   // Helper: mix station color 5% with 95% white for cell background
   const getStationCellBg = (color: string): string => {
