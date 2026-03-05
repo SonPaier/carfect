@@ -150,7 +150,7 @@ export const ProtocolPhotosUploader = ({
       const urlParts = photoUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
       if (fileName) {
-        await supabase.storage.from('protocol-photos').remove([fileName]);
+        await supabase.storage.from(bucketName).remove([fileName]);
       }
     } catch (error) {
       console.error('Error deleting photo from storage:', error);
