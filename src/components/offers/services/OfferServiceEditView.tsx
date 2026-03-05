@@ -483,7 +483,8 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         default_warranty: defaultWarranty || null,
         default_payment_terms: defaultPaymentTerms || null,
         default_notes: defaultNotes || null,
-        default_service_info: defaultServiceInfo || null
+        default_service_info: defaultServiceInfo || null,
+        photo_urls: photoUrls.length > 0 ? photoUrls : null,
       };
 
       if (isEditMode && scopeId) {
