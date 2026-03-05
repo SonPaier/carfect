@@ -1388,22 +1388,11 @@ const AddReservationDialogV2 = ({
   // Show dropdown for switching to training when conditions met
   const showTrainingDropdown = trainingsEnabled && !editingReservation && mode === 'reservation';
 
-  return (
+  // Shared form content — used in both Sheet and inline modes
+  const formContent = (
     <>
-      <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()} modal={false}>
-        <SheetContent
-          side="right"
-          className={cn(
-            "w-full sm:max-w-[27rem] flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60",
-            isMobile && isDrawerHidden && "!hidden"
-          )}
-          hideOverlay
-          hideCloseButton
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}>
-
           {/* Fixed Header with Close button */}
-          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+          <div className="px-6 pt-6 pb-4 border-b shrink-0">
             <div className="flex items-center justify-between">
               {showTrainingDropdown ? (
                 <DropdownMenu>
@@ -1425,19 +1414,18 @@ const AddReservationDialogV2 = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <SheetTitle>
+                <h2 className="text-lg font-semibold text-foreground">
                   {getDialogTitle()}
-                </SheetTitle>
+                </h2>
               )}
               <button
                 type="button"
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-muted transition-colors">
-
                 <X className="w-6 h-6" />
               </button>
             </div>
-          </SheetHeader>
+          </div>
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
