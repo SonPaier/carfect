@@ -211,7 +211,7 @@ const ServiceFormContent = ({
           duration_large: service?.duration_large ?? null,
           category_id: service?.category_id || defaultCategoryId || '',
           service_type: service?.service_type || 'both',
-          visibility: (service?.service_type || 'both') === 'both' ? (service?.visibility || 'everywhere') : 'everywhere',
+          visibility: 'everywhere',
           reminder_template_id: service?.reminder_template_id || '__none__',
           is_popular: service?.is_popular ?? false,
           trwalosc_produktu_w_mesiacach: service?.metadata?.trwalosc_produktu_w_mesiacach ?? null,
@@ -293,7 +293,7 @@ const ServiceFormContent = ({
         duration_large: service.duration_large ?? null,
         category_id: service.category_id || defaultCategoryId || '',
         service_type: service.service_type || 'both',
-        visibility: (service.service_type || 'both') === 'both' ? (service.visibility || 'everywhere') : 'everywhere',
+        visibility: 'everywhere',
         reminder_template_id: service.reminder_template_id || '__none__',
         is_popular: service.is_popular ?? false,
         trwalosc_produktu_w_mesiacach: service.metadata?.trwalosc_produktu_w_mesiacach ?? null,
@@ -368,7 +368,7 @@ const ServiceFormContent = ({
         category_id: formData.category_id || null,
         service_type: formData.service_type,
         // visibility is meaningful only for unified services (service_type='both')
-        visibility: formData.service_type === 'both' ? formData.visibility : 'everywhere',
+        visibility: 'everywhere',
         requires_size: showSizePrices || showSizeDurations,
         reminder_template_id: formData.reminder_template_id === '__none__' ? null : formData.reminder_template_id,
         is_popular: formData.is_popular,
@@ -741,26 +741,7 @@ const ServiceFormContent = ({
               )}
             </div>
 
-            {/* Visibility - controls where service appears in UI drawers */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label className="text-sm">{t('priceList.form.visibilityService', 'Widoczność usługi')}</Label>
-                <FieldInfo tooltip="Gdzie usługa będzie widoczna w drawerach wyboru" />
-              </div>
-              <Select
-                value={formData.visibility}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, visibility: v as 'everywhere' | 'only_reservations' | 'only_offers' }))}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="everywhere">{t('priceList.form.visibilityAll', 'Wszędzie')}</SelectItem>
-                  <SelectItem value="only_reservations">{t('priceList.form.visibilityReservations', 'Tylko rezerwacje')}</SelectItem>
-                  <SelectItem value="only_offers">{t('priceList.form.visibilityOffers', 'Tylko oferty')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Visibility is always 'everywhere' - removed UI dropdown to avoid confusion */}
 
             {/* Is Popular - shortcut in reservation form */}
             <div className="flex items-center gap-3">
