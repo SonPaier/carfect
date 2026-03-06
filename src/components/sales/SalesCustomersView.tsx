@@ -35,7 +35,7 @@ interface SalesCustomer {
   billing_city: string | null;
 }
 
-type SortField = 'name' | 'last_order';
+type SortField = 'name' | 'last_order' | 'city';
 type SortDir = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
@@ -122,13 +122,20 @@ const SalesCustomersView = () => {
           c.name.toLowerCase().includes(q) ||
           (c.nip && c.nip.includes(q)) ||
           (c.email && c.email.toLowerCase().includes(q)) ||
-          c.phone.includes(q)
+          c.phone.includes(q) ||
+          (c.shipping_city && c.shipping_city.toLowerCase().includes(q))
       );
     }
     // Sort
     const sorted = [...list].sort((a, b) => {
       if (sortField === 'name') {
         const cmp = a.name.localeCompare(b.name, 'pl');
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
+      if (sortField === 'city') {
+        const cityA = (a.shipping_city || '').toLowerCase();
+        const cityB = (b.shipping_city || '').toLowerCase();
+        const cmp = cityA.localeCompare(cityB, 'pl');
         return sortDir === 'asc' ? cmp : -cmp;
       }
       const dateA = lastOrderDates[a.id] || '';
@@ -218,6 +225,7 @@ const SalesCustomersView = () => {
               <TableHead className="w-[30px]" />
               <SortableHead field="name">Nazwa</SortableHead>
               <SortableHead field="last_order">Ostatnie zamówienie</SortableHead>
+              <SortableHead field="city">Miasto</SortableHead>
               <TableHead>Telefon</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Płatnik</TableHead>
@@ -227,13 +235,13 @@ const SalesCustomersView = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Ładowanie...
                 </TableCell>
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Brak wyników
                 </TableCell>
               </TableRow>
@@ -253,6 +261,9 @@ const SalesCustomersView = () => {
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {c.shipping_city || <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell>
                         <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="text-primary hover:underline text-sm whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -291,7 +302,7 @@ const SalesCustomersView = () => {
                     </TableRow>
                     {isExpanded && (
                       <TableRow className="hover:bg-transparent" onClick={(e) => e.stopPropagation()}>
-                        <TableCell colSpan={7} className="p-0">
+                        <TableCell colSpan={8} className="p-0">
                           <div className="bg-muted/30 px-8 py-4 grid grid-cols-3 gap-6 text-sm border-t">
                             <div>
                               <p className="text-muted-foreground text-xs font-medium mb-1">NIP</p>
