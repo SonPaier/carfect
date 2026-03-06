@@ -2296,7 +2296,7 @@ const AdminCalendar = ({
           const isDayClosed = isDateClosed(dayStr);
           const selectedStationId = weekViewStationId || stations[0]?.id;
           const dayReservations = selectedStationId ? getReservationsForStationAndDate(selectedStationId, dayStr) : [];
-          return <div key={dayStr} className={cn("flex-1 p-2 md:p-3 text-center font-medium text-xs md:text-sm min-w-[80px] cursor-pointer hover:bg-muted/50 transition-colors", idx < 6 && "border-r border-border", isDayToday && "bg-primary/10", isDayClosed && "bg-red-500/10")} onClick={() => {
+          return <div key={dayStr} className={cn("flex-1 p-2 md:p-3 text-center font-medium text-xs md:text-sm min-w-[80px] cursor-pointer hover:bg-hover-strong transition-colors", idx < 6 && "border-r border-border", isDayToday && "bg-primary/10", isDayClosed && "bg-red-500/10")} onClick={() => {
             setCurrentDate(day);
             setViewMode('day');
           }}>
