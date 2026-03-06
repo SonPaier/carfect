@@ -390,6 +390,41 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
               />
             </div>
 
+            {/* Bank Accounts */}
+            <div className="space-y-2">
+              <Label>Nr konta bankowego</Label>
+              {bankAccounts.map((account, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={account}
+                    onChange={(e) => {
+                      const updated = [...bankAccounts];
+                      updated[index] = e.target.value;
+                      setBankAccounts(updated);
+                    }}
+                    placeholder="00 0000 0000 0000 0000 0000 0000"
+                    className="font-mono"
+                  />
+                  {bankAccounts.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setBankAccounts(bankAccounts.filter((_, i) => i !== index))}
+                      className="text-sm text-destructive hover:underline shrink-0"
+                    >
+                      Usuń
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setBankAccounts([...bankAccounts, ''])}
+                className="text-sm text-primary hover:underline"
+              >
+                + Dodaj numer konta bankowego
+              </button>
+            </div>
+
             {/* Website */}
             <div className="space-y-2">
               <Label htmlFor="website">{t('instanceSettings.website')}</Label>
