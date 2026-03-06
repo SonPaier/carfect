@@ -100,6 +100,8 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
 
   const [applyDiscount, setApplyDiscount] = useState(true);
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('shipping');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
 
   const [sendEmail, setSendEmail] = useState(false);
   const [comment, setComment] = useState('');
