@@ -537,7 +537,7 @@ export const SummaryStep = ({
                         return (
                           <div
                             key={item.id}
-                            className="grid grid-cols-12 gap-2 px-2 py-2 border-b last:border-0 group hover:bg-muted/30"
+                            className="grid grid-cols-12 gap-2 px-2 py-2 border-b last:border-0 group hover:bg-hover"
                           >
                             <div className="col-span-5 flex items-center gap-1">
                               {/* Default selection for optional items / upsells */}
