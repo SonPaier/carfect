@@ -164,6 +164,16 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Outfit', sans-serif;
   }
+
+  /*
+   * GLOBAL FORM CONTROL STANDARD:
+   * All form controls (Input, Select, Textarea, DatePicker popover)
+   * use: bg-input (white), border-foreground/60 (dark border),
+   * focus:ring-primary, focus:border-primary.
+   * Defined in component files: input.tsx, select.tsx, textarea.tsx,
+   * popover.tsx, dropdown-menu.tsx.
+   * To change globally, update --input and --foreground tokens.
+   */
 }
 
 @layer components {
