@@ -145,9 +145,10 @@ const SalesOrdersView = () => {
         o.orderNumber.toLowerCase().includes(q) ||
         (o.city && o.city.toLowerCase().includes(q)) ||
         (o.contactPerson && o.contactPerson.toLowerCase().includes(q)) ||
-        o.products.some((p) => p.name.toLowerCase().includes(q))
+        o.products.some((p) => p.name.toLowerCase().includes(q)) ||
+        ((o as any).customerId && customerCompanyMap[(o as any).customerId]?.toLowerCase().includes(q))
     );
-  }, [orders, searchQuery]);
+  }, [orders, searchQuery, customerCompanyMap]);
 
   const sortedOrders = useMemo(() => {
     const sorted = [...filteredOrders];
