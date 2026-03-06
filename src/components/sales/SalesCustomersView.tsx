@@ -225,6 +225,7 @@ const SalesCustomersView = () => {
               <TableHead className="w-[30px]" />
               <SortableHead field="name">Nazwa</SortableHead>
               <SortableHead field="last_order">Ostatnie zamówienie</SortableHead>
+              <SortableHead field="city">Miasto</SortableHead>
               <TableHead>Telefon</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Płatnik</TableHead>
