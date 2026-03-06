@@ -292,7 +292,7 @@ const ClientSearchAutocomplete = ({
               type="button"
               className={cn(
                 "w-full p-4 text-left transition-colors flex flex-col border-b border-border last:border-0",
-                index === activeIndex ? "bg-accent" : "hover:bg-muted/30"
+                index === activeIndex ? "bg-accent" : "hover:bg-hover"
               )}
               onClick={() => handleSelectCustomer(customer)}
               onMouseEnter={() => setActiveIndex(index)}

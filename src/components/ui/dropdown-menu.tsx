@@ -118,7 +118,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors bg-white hover:bg-gray-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-gray-100 focus:text-accent-foreground",
+      "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors bg-white hover:bg-hover data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-hover focus:text-accent-foreground",
       className,
     )}
     {...props}
