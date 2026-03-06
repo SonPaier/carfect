@@ -281,7 +281,7 @@ const AddEditHallDrawer = ({
                 {stations.map((station) => (
                   <label
                     key={station.id}
-                    className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                     className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-hover-strong transition-colors"
                   >
                     <Checkbox
                       checked={selectedStationIds.includes(station.id)}
