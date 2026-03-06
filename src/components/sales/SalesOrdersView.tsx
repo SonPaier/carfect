@@ -389,7 +389,7 @@ const SalesOrdersView = () => {
                                     : 'border-amber-500 text-amber-600 cursor-pointer'
                                 }
                               >
-                                {order.status}
+                              {order.status === 'nowy' ? 'Nowy' : order.status === 'wysłany' ? 'Wysłany' : order.status}
                               </Badge>
                             </button>
                           </DropdownMenuTrigger>
