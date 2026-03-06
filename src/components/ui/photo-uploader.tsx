@@ -38,7 +38,7 @@ export const PhotoUploader = ({
   photos,
   onPhotosChange,
   onPhotoUploaded,
-  maxPhotos = 20,
+  maxPhotos = 50,
   disabled = false,
   bucketName = 'protocol-photos',
   filePrefix = 'protokol-szkoda',
@@ -191,6 +191,9 @@ export const PhotoUploader = ({
                 <Camera className="h-14 w-14 text-muted-foreground" />
                 <span className="text-xs font-medium leading-tight text-center text-muted-foreground">
                   Dodaj zdjęcie
+                </span>
+                <span className="text-[10px] text-muted-foreground/60">
+                  max {maxPhotos} zdjęć
                 </span>
               </>
             )}
