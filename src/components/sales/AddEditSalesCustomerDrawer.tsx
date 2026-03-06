@@ -257,6 +257,11 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
                         {o.delivery_type === 'shipping' ? 'Wysyłka' : o.delivery_type === 'pickup' ? 'Odbiór osobisty' : o.delivery_type === 'uber' ? 'Uber' : o.delivery_type}
                       </span>
                     )}
+                    {o.payment_method && (
+                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {o.payment_method === 'cod' ? 'Za pobraniem' : o.payment_method === 'transfer' ? 'Przelew' : o.payment_method}
+                      </span>
+                    )}
                   </div>
                   <span>
                     {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} {o.currency === 'EUR' ? '€' : 'zł'}

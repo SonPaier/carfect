@@ -258,6 +258,8 @@ const SalesOrdersView = () => {
         vehicle: item.vehicle || '',
       })),
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
+      paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer',
+      bankAccountNumber: orderData?.bank_account_number || '',
       comment: orderData?.comment || '',
       sendEmail: false,
     });
