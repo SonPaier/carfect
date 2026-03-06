@@ -61,6 +61,7 @@ const SalesOrdersView = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<SalesOrder[]>([]);
+  const [customerCompanyMap, setCustomerCompanyMap] = useState<Record<string, string>>({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
