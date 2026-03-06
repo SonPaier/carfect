@@ -132,6 +132,12 @@ const SalesCustomersView = () => {
         const cmp = a.name.localeCompare(b.name, 'pl');
         return sortDir === 'asc' ? cmp : -cmp;
       }
+      if (sortField === 'city') {
+        const cityA = (a.shipping_city || '').toLowerCase();
+        const cityB = (b.shipping_city || '').toLowerCase();
+        const cmp = cityA.localeCompare(cityB, 'pl');
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
       const dateA = lastOrderDates[a.id] || '';
       const dateB = lastOrderDates[b.id] || '';
       const cmp = dateA.localeCompare(dateB);
