@@ -276,7 +276,7 @@ const ClientSearchAutocomplete = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 rounded-full hover:bg-muted transition-colors"
+              className="p-1 rounded-full hover:bg-hover transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
