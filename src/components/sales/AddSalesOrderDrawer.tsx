@@ -558,27 +558,50 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             </div>
 
             {/* Delivery type */}
-            {products.length > 0 && (
+            <div className="space-y-2">
+              <Label>Rodzaj dostawy</Label>
+              <Select value={deliveryType} onValueChange={(v) => setDeliveryType(v as DeliveryType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shipping">Wysyłka</SelectItem>
+                  <SelectItem value="pickup">Odbiór osobisty</SelectItem>
+                  <SelectItem value="uber">Uber</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Payment method */}
+            <div className="space-y-2">
+              <Label>Sposób płatności</Label>
+              <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cod">Za pobraniem</SelectItem>
+                  <SelectItem value="transfer">Przelew</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Bank account selection */}
+            {paymentMethod === 'transfer' && bankAccounts.length > 0 && (
               <div className="space-y-2">
-                <Label>Rodzaj dostawy</Label>
-                <RadioGroup
-                  value={deliveryType}
-                  onValueChange={(v) => setDeliveryType(v as DeliveryType)}
-                  className="flex gap-4"
-                >
-                  {([
-                    ['shipping', 'Wysyłka'],
-                    ['pickup', 'Odbiór osobisty'],
-                    ['uber', 'Uber'],
-                  ] as const).map(([value, label]) => (
-                    <div key={value} className="flex items-center gap-1.5">
-                      <RadioGroupItem value={value} id={`delivery-${value}`} />
-                      <Label htmlFor={`delivery-${value}`} className="text-sm font-normal cursor-pointer">
-                        {label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                <Label>Numer konta</Label>
+                <Select value={bankAccountNumber} onValueChange={setBankAccountNumber}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz konto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankAccounts.map((account, idx) => (
+                      <SelectItem key={idx} value={account}>
+                        {account}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
