@@ -342,6 +342,8 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             currency: 'PLN',
             comment: comment || null,
             delivery_type: deliveryType,
+            payment_method: paymentMethod,
+            bank_account_number: paymentMethod === 'transfer' ? (bankAccountNumber || null) : null,
             status: 'nowy',
             created_by: user?.id || null,
           })
