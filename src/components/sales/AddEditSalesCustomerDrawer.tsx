@@ -395,7 +395,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
     <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
       <SheetContent
         side="right"
-        className="flex flex-col p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)]"
+        className="flex flex-col p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
         style={{ width: isMobile ? '100vw' : '440px', maxWidth: '100vw' }}
         hideCloseButton
         hideOverlay
@@ -426,7 +426,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
 
         {/* Sticky footer */}
         {isFormMode && (
-          <div className="flex items-center gap-2 px-5 py-3 border-t shrink-0 bg-background">
+          <div className="flex items-center gap-2 px-5 py-3 border-t shrink-0 bg-white">
             <Button
               variant="outline"
               className="flex-1"
