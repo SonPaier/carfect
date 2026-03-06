@@ -35,7 +35,7 @@ interface SalesCustomer {
   billing_city: string | null;
 }
 
-type SortField = 'name' | 'last_order';
+type SortField = 'name' | 'last_order' | 'city';
 type SortDir = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
