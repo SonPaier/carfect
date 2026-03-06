@@ -535,7 +535,7 @@ const ReservationsView = ({
       <div
         key={training.id}
         onClick={() => onTrainingClick?.(training)}
-        className="p-4 transition-colors cursor-pointer hover:bg-muted/20"
+        className="p-4 transition-colors cursor-pointer hover:bg-hover"
       >
         {/* Desktop layout */}
         <div className="hidden sm:flex items-start justify-between gap-4">
