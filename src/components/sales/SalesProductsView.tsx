@@ -26,6 +26,7 @@ export interface SalesProduct {
   id: string;
   shortName: string;
   fullName: string;
+  description?: string;
   priceNet: number;
   priceUnit: string;
 }
@@ -44,13 +45,14 @@ const SalesProductsView = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState<SalesProduct | null>(null);
 
   const fetchProducts = useCallback(async () => {
     if (!instanceId) return;
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, short_name, full_name, price_net, price_unit')
+      .select('id, short_name, full_name, description, price_net, price_unit')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
@@ -58,6 +60,7 @@ const SalesProductsView = () => {
       id: p.id,
       shortName: p.short_name,
       fullName: p.full_name,
+      description: p.description || undefined,
       priceNet: Number(p.price_net),
       priceUnit: p.price_unit,
     })));
@@ -110,7 +113,7 @@ const SalesProductsView = () => {
             className="pl-9"
           />
         </div>
-        <Button size="sm" onClick={() => setDrawerOpen(true)}>
+        <Button size="sm" onClick={() => { setEditProduct(null); setDrawerOpen(true); }}>
           <Plus className="w-4 h-4" />
           Dodaj produkt
         </Button>
@@ -149,7 +152,7 @@ const SalesProductsView = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toast.info('Edycja produktu w przygotowaniu')}>
+                        <DropdownMenuItem onClick={() => { setEditProduct(product); setDrawerOpen(true); }}>
                           Edytuj
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -196,6 +199,7 @@ const SalesProductsView = () => {
           onOpenChange={setDrawerOpen}
           instanceId={instanceId}
           onSaved={fetchProducts}
+          product={editProduct}
         />
       )}
     </div>
