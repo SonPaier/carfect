@@ -452,7 +452,7 @@ const CustomerEditDrawer = ({
                       variant="ghost"
                       size="icon"
                       onClick={handleCall}
-                      className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
                     >
                       <Phone className="w-4 h-4" />
                     </Button>
