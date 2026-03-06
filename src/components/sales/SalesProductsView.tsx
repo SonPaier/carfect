@@ -59,6 +59,7 @@ const SalesProductsView = () => {
       id: p.id,
       shortName: p.short_name,
       fullName: p.full_name,
+      description: p.description || undefined,
       priceNet: Number(p.price_net),
       priceUnit: p.price_unit,
     })));
