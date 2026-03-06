@@ -349,7 +349,7 @@ const ReservationsView = ({
         key={reservation.id}
         onClick={() => onReservationClick(reservation)}
         className={cn(
-          "p-4 transition-colors cursor-pointer hover:bg-muted/20",
+          "p-4 transition-colors cursor-pointer hover:bg-hover",
           isPending && "bg-amber-500/5"
         )}
       >
