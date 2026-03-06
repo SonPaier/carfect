@@ -63,6 +63,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
     website: '',
     contact_person: '',
   });
+  const [bankAccounts, setBankAccounts] = useState<string[]>(['']);
 
   // Populate form when instanceData changes
   useEffect(() => {
