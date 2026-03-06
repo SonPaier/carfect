@@ -104,6 +104,7 @@ interface SummaryStepV2Props {
   instanceId: string;
   offer: OfferState;
   showUnitPrices: boolean;
+  isEditing?: boolean; // true when editing a pre-existing offer (not auto-saved new)
   onUpdateOffer: (data: Partial<OfferState>) => void;
   calculateTotalNet: () => number;
   calculateTotalGross: () => number;
