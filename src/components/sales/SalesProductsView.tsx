@@ -43,6 +43,7 @@ const SalesProductsView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<SalesProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<SalesProduct | null>(null);
 
