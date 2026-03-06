@@ -2044,7 +2044,7 @@ const AdminCalendar = ({
           const isDayClosed = dayHoursInfo.isClosed || isDateClosed(dayStr);
           return <div key={dayStr} className={cn("flex-1 flex flex-col", dayIdx < 1 && "border-r-2 border-border")}>
                   {/* Day header */}
-                  <div className={cn("p-1 md:p-2 text-center font-medium text-xs border-b border-border cursor-pointer hover:bg-muted/50 transition-colors", isDayToday && "bg-primary/10", isDayClosed && "bg-red-500/10")} onClick={() => {
+                  <div className={cn("p-1 md:p-2 text-center font-medium text-xs border-b border-border cursor-pointer hover:bg-hover-strong transition-colors", isDayToday && "bg-primary/10", isDayClosed && "bg-red-500/10")} onClick={() => {
               setCurrentDate(day);
               setViewMode('day');
             }}>
