@@ -631,7 +631,7 @@ export const SummaryStep = ({
                         return (
                           <div
                             key={item.id}
-                            className="flex justify-between py-1 group hover:bg-muted/30 px-1 rounded"
+                            className="flex justify-between py-1 group hover:bg-hover px-1 rounded"
                           >
                             <div className="flex items-center gap-1">
                               {/* Default selection for optional items / upsells */}
