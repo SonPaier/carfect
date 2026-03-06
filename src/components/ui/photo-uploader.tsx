@@ -192,6 +192,9 @@ export const PhotoUploader = ({
                 <span className="text-xs font-medium leading-tight text-center text-muted-foreground">
                   Dodaj zdjęcie
                 </span>
+                <span className="text-[10px] text-muted-foreground/60">
+                  max {maxPhotos} zdjęć
+                </span>
               </>
             )}
           </button>
