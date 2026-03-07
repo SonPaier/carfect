@@ -47,7 +47,19 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   const [description, setDescription] = useState('');
   const [priceNet, setPriceNet] = useState('');
   const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('piece');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('unified_categories')
+      .select('id, name')
+      .eq('instance_id', instanceId)
+      .order('sort_order')
+      .then(({ data }) => setCategories(data || []));
+  }, [instanceId]);
 
   const resetForm = () => {
     setFullName('');
@@ -55,6 +67,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
     setDescription('');
     setPriceNet('');
     setPriceUnit('piece');
+    setCategoryId('');
   };
 
   useEffect(() => {
