@@ -101,6 +101,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
         description: description.trim() || null,
         price_net: parseFloat(priceNet) || 0,
         price_unit: priceUnit,
+        category_id: categoryId || null,
       };
 
       if (isEdit && product) {
