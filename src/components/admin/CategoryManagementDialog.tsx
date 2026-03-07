@@ -305,7 +305,7 @@ export function CategoryManagementDialog({
           name: newCategoryName.trim(),
           slug,
           sort_order: maxOrder,
-          category_type: 'both',
+          category_type: categoryType,
           active: true,
         })
         .select()
