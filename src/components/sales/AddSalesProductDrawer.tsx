@@ -78,6 +78,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       setDescription(product.description || '');
       setPriceNet(product.priceNet ? String(product.priceNet) : '');
       setPriceUnit((product.priceUnit as 'piece' | 'meter') || 'piece');
+      setCategoryId(product.categoryId || '');
     } else {
       resetForm();
     }
