@@ -365,7 +365,7 @@ serve(async (req: Request): Promise<Response> => {
           continue;
         }
 
-        const reservationUrl = `https://${instanceInfo.slug}.n2wash.com/res?code=${reservation.confirmation_code}`;
+        const reservationUrl = `https://${instanceInfo.slug}.carfect.pl/res?code=${reservation.confirmation_code}`;
         const formattedTime = reservation.start_time.slice(0, 5);
 
         const includeEditLink = await shouldIncludeEditLink(supabase, reservation.instance_id, reservation.customer_phone);

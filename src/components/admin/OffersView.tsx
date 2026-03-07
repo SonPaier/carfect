@@ -328,11 +328,11 @@ export default function OffersView({ instanceId, instanceData, onReserveFromOffe
     const hostname = window.location.hostname;
     let publicUrl: string;
     
-    // On admin subdomain (armcar.admin.n2wash.com) → generate link to public (armcar.n2wash.com)
-    if (hostname.endsWith('.admin.n2wash.com')) {
-      const instanceSlug = hostname.replace('.admin.n2wash.com', '');
-      publicUrl = `https://${instanceSlug}.n2wash.com/offers/${token}`;
-    } else if (hostname.endsWith('.n2wash.com')) {
+    // On admin subdomain (armcar.admin.carfect.pl) → generate link to public (armcar.carfect.pl)
+    if (hostname.endsWith('.admin.carfect.pl')) {
+      const instanceSlug = hostname.replace('.admin.carfect.pl', '');
+      publicUrl = `https://${instanceSlug}.carfect.pl/offers/${token}`;
+    } else if (hostname.endsWith('.carfect.pl')) {
       // Already on public subdomain
       publicUrl = `${window.location.origin}/offers/${token}`;
     } else {

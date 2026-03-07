@@ -324,7 +324,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   // Get already selected service IDs for drawer
   const selectedExtrasIds = config.extras.map(e => e.service_id);
 
-  const embedUrl = `https://${instanceSlug}.n2wash.com/embed`;
+  const embedUrl = `https://${instanceSlug}.carfect.pl/embed`;
   const iframeCode = `<iframe 
   src="${embedUrl}" 
   width="100%" 

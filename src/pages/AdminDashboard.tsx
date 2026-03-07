@@ -178,7 +178,7 @@ const AdminDashboard = () => {
   const adminBasePath = location.pathname.startsWith('/admin') ? '/admin' : '';
 
   const setCurrentView = (newView: ViewType) => {
-    // For subdomain mode: empty adminBasePath means we're on *.admin.n2wash.com
+    // For subdomain mode: empty adminBasePath means we're on *.admin.carfect.pl
     // Calendar should be at '/' and views at '/:view'
     if (!adminBasePath) {
       // Subdomain mode
@@ -1907,7 +1907,7 @@ const AdminDashboard = () => {
 
       const instName = instData.short_name || instData.name || 'Myjnia';
       const mapsLink = instData.google_maps_url ? ` Dojazd: ${instData.google_maps_url}` : '';
-      const reservationUrl = `https://${instData.slug}.n2wash.com/res?code=${reservation.confirmation_code}`;
+      const reservationUrl = `https://${instData.slug}.carfect.pl/res?code=${reservation.confirmation_code}`;
       const editLink = includeEditLink ? ` Zmien lub anuluj: ${reservationUrl}` : '';
 
       const smsMessage = `${instName}: Rezerwacja potwierdzona! ${dayNum} ${monthNameFull} o ${reservation.start_time.slice(0, 5)}.${mapsLink}${editLink}`;
@@ -2115,7 +2115,7 @@ const AdminDashboard = () => {
     try {
       const dateFormatted = format(new Date(changeRequest.reservation_date), 'd MMMM', { locale: pl });
       const timeFormatted = changeRequest.start_time.slice(0, 5);
-      const manageUrl = `https://${instanceData?.slug || 'demo'}.n2wash.com/res?code=${originalCode}`;
+      const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalCode}`;
 
       // Use short_name if available, fallback to name
       const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
@@ -2182,7 +2182,7 @@ const AdminDashboard = () => {
       try {
         const dateFormatted = format(new Date(originalReservation.reservation_date), 'd MMMM', { locale: pl });
         const timeFormatted = originalReservation.start_time.slice(0, 5);
-        const manageUrl = `https://${instanceData?.slug || 'demo'}.n2wash.com/res?code=${originalReservation.confirmation_code}`;
+        const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalReservation.confirmation_code}`;
 
         // Use short_name if available, fallback to name
         const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
@@ -2415,7 +2415,7 @@ const AdminDashboard = () => {
 
   return <>
       <Helmet>
-        <title>Panel Admina - {instanceData?.name || 'N2Wash'}</title>
+        <title>Panel Admina - {instanceData?.name || 'Carfect'}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 

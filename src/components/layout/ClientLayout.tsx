@@ -24,8 +24,8 @@ const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(({
       const hostname = window.location.hostname;
       let slug = 'demo'; // default fallback
 
-      if (hostname.endsWith('.n2wash.com')) {
-        slug = hostname.replace('.n2wash.com', '');
+      if (hostname.endsWith('.carfect.pl')) {
+        slug = hostname.replace('.carfect.pl', '');
       }
       const {
         data
@@ -57,8 +57,8 @@ const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(({
       {!hideFooter && <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background shrink-0">
           <div className="container py-3">
             <p className="text-sm text-muted-foreground text-center">
-              <a href="https://n2wash.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-2">
-                <img src="/n2wash-logo.svg" alt="N2Wash" className="h-4 opacity-60" />
+              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-2">
+                <img src="/n2wash-logo.svg" alt="Carfect" className="h-4 opacity-60" />
               </a> - System rezerwacji online
             </p>
           </div>

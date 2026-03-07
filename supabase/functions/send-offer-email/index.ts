@@ -62,7 +62,7 @@ const buildEmailHtml = (
 </td></tr>
 <tr><td style="padding:20px 12px 30px;text-align:center;border-top:1px solid #e0e0e0;margin-top:16px;">
   <p style="margin:0;font-size:11px;color:#bbb;font-family:'Inter',Arial,sans-serif;">
-    Wygenerowano przy użyciu systemu dla myjni i studio detailingu <a href="https://n2wash.com" style="color:#999;text-decoration:underline;">n2wash.com</a>
+    Wygenerowano przy użyciu systemu dla myjni i studio detailingu <a href="https://carfect.pl" style="color:#999;text-decoration:underline;">carfect.pl</a>
   </p>
 </td></tr>
 </table>
@@ -129,7 +129,7 @@ serve(async (req) => {
 
     // Generate offer URL - use public subdomain
     const instanceSlug = offer.instances?.slug || "app";
-    const offerUrl = `https://${instanceSlug}.n2wash.com/offers/${offer.public_token}`;
+    const offerUrl = `https://${instanceSlug}.carfect.pl/offers/${offer.public_token}`;
     const instanceName = offer.instances?.name || "";
     const contactPerson = offer.instances?.contact_person || "";
     const phone = offer.instances?.phone || "";

@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
-    <title>N2W - System Rezerwacji</title>
+    <title>Carfect - System Rezerwacji</title>
     <meta name="description" content="System rezerwacji usług myjni samochodowej. Zarezerwuj mycie, detailing i inne usługi online." />
-    <meta name="author" content="N2W" />
+    <meta name="author" content="Carfect" />
     
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -18,7 +18,7 @@
     <meta name="theme-color" content="#1a1a2e" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="N2W" />
+    <meta name="apple-mobile-web-app-title" content="Carfect" />
     <link rel="manifest" id="dynamic-manifest" href="/manifest.webmanifest" />
     <script>
       (function() {
@@ -27,23 +27,23 @@
         var slug = null;
         
         // New subdomain structure:
-        // armcar.admin.n2wash.com → admin context, slug = armcar
-        // armcar.n2wash.com → public context, slug = armcar
-        // super.admin.n2wash.com → super admin (no manifest needed)
+        // armcar.admin.carfect.pl → admin context, slug = armcar
+        // armcar.carfect.pl → public context, slug = armcar
+        // super.admin.carfect.pl → super admin (no manifest needed)
         
-        if (hostname.endsWith('.admin.n2wash.com')) {
-          // Instance admin: armcar.admin.n2wash.com
+        if (hostname.endsWith('.admin.carfect.pl')) {
+          // Instance admin: armcar.admin.carfect.pl
           context = 'admin';
-          slug = hostname.replace('.admin.n2wash.com', '');
-          if (slug === 'super') slug = null; // super.admin.n2wash.com has no instance
-        } else if (hostname.endsWith('.n2wash.com')) {
-          // Instance public: armcar.n2wash.com
+          slug = hostname.replace('.admin.carfect.pl', '');
+          if (slug === 'super') slug = null; // super.admin.carfect.pl has no instance
+        } else if (hostname.endsWith('.carfect.pl')) {
+          // Instance public: armcar.carfect.pl
           context = 'public';
-          slug = hostname.replace('.n2wash.com', '');
+          slug = hostname.replace('.carfect.pl', '');
         }
         
         if (slug) {
-          var manifestUrl = 'https://vklavozvzfqhxzoczqnp.supabase.co/functions/v1/get-manifest?context=' + context + '&slug=' + slug;
+          var manifestUrl = 'https://xsscqmlrnrodwydmgvac.supabase.co/functions/v1/get-manifest?context=' + context + '&slug=' + slug;
           var link = document.getElementById('dynamic-manifest');
           if (link) link.href = manifestUrl;
         }
@@ -51,13 +51,13 @@
     </script>
 
     <!-- Open Graph -->
-    <meta property="og:title" content="N2W - System Rezerwacji" />
+    <meta property="og:title" content="Carfect - System Rezerwacji" />
     <meta property="og:description" content="System rezerwacji usług myjni samochodowej" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/pwa-512x512.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="N2W - System Rezerwacji" />
+    <meta name="twitter:title" content="Carfect - System Rezerwacji" />
     <meta name="twitter:image" content="/pwa-512x512.png" />
   </head>
 

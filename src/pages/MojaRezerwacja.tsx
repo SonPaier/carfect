@@ -215,7 +215,7 @@ const MojaRezerwacja = () => {
     if (!reservation) return;
     
     const hostname = window.location.hostname;
-    const isDevOrStaging = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.lovable.app');
+    const isDevOrStaging = hostname === 'localhost' || hostname === '127.0.0.1';
     
     // In dev/staging mode, navigate to /rezerwacje
     // In production with subdomains, the slug is already in the subdomain
@@ -504,7 +504,7 @@ const MojaRezerwacja = () => {
         <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background">
           <div className="container py-3">
             <p className="text-sm text-muted-foreground text-center">
-              <a href="https://n2wash.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">N2Wash.com</a> - System rezerwacji online
+              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Carfect.pl</a> - System rezerwacji online
             </p>
           </div>
         </footer>

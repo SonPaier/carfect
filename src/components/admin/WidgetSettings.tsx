@@ -15,7 +15,7 @@ export default function WidgetSettings({ instanceSlug }: WidgetSettingsProps) {
   const [copied, setCopied] = useState(false);
 
   const slug = instanceSlug || 'your-instance';
-  const embedUrl = `https://${slug}.n2wash.com/embed`;
+  const embedUrl = `https://${slug}.carfect.pl/embed`;
   
   const iframeCode = `<iframe 
   src="${embedUrl}" 

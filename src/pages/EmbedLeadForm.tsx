@@ -101,8 +101,8 @@ function EmbedLeadFormContent() {
   // Get instance slug from hostname
   const getInstanceSlug = () => {
     const hostname = window.location.hostname;
-    if (hostname.endsWith('.n2wash.com')) {
-      return hostname.replace('.n2wash.com', '').replace('.admin', '');
+    if (hostname.endsWith('.carfect.pl')) {
+      return hostname.replace('.carfect.pl', '').replace('.admin', '');
     }
     // Dev mode - use armcar as default
     return 'armcar';

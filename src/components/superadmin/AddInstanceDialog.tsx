@@ -534,8 +534,8 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                 <AlertDescription className="text-xs">
                   <p className="font-medium mb-2">Po utworzeniu skonfiguruj DNS:</p>
                   <div className="space-y-1 font-mono text-[11px]">
-                    <div>• {slug}.n2wash.com → widok klienta</div>
-                    <div>• {slug}.admin.n2wash.com → panel admina</div>
+                    <div>• {slug}.carfect.pl → widok klienta</div>
+                    <div>• {slug}.admin.carfect.pl → panel admina</div>
                   </div>
                 </AlertDescription>
               </Alert>

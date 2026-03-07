@@ -67,7 +67,7 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
 
   // Generate full URL for this hall - use simple number for user-friendly URLs
   const getHallUrl = () => {
-    return `https://${instanceSlug}.admin.n2wash.com/halls/${hallNumber}`;
+    return `https://${instanceSlug}.admin.carfect.pl/halls/${hallNumber}`;
   };
 
   // Get dev/preview URL for this hall

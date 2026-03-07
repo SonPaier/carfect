@@ -24,7 +24,7 @@ const buildResetEmailHtml = (
         <img src="${instance.logo_url}" alt="${instance.name || ''}" style="max-height:60px;max-width:200px;" />
       </div>`
     : `<div style="text-align:center;padding:30px 0 20px;">
-        <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${instance.name || 'N2Wash'}</h1>
+        <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${instance.name || 'Carfect'}</h1>
       </div>`;
 
   const footerParts: string[] = [];
@@ -74,7 +74,7 @@ const buildResetEmailHtml = (
 </td></tr>
 <tr><td style="padding:20px 12px 30px;text-align:center;border-top:1px solid #e0e0e0;margin-top:16px;">
   <p style="margin:0;font-size:11px;color:#bbb;font-family:'Inter',Arial,sans-serif;">
-    Wygenerowano przy użyciu systemu dla myjni i studio detailingu <a href="https://n2wash.com" style="color:#999;text-decoration:underline;">n2wash.com</a>
+    Wygenerowano przy użyciu systemu dla myjni i studio detailingu <a href="https://carfect.pl" style="color:#999;text-decoration:underline;">carfect.pl</a>
   </p>
 </td></tr>
 </table>
@@ -255,7 +255,7 @@ serve(async (req) => {
       },
     });
 
-    const fromName = instance.name || "N2Wash";
+    const fromName = instance.name || "Carfect";
 
     await client.send({
       from: `${fromName} <${smtpUser}>`,

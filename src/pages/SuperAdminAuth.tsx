@@ -26,7 +26,7 @@ const SuperAdminAuth = () => {
   // Determine redirect path based on domain
   const getRedirectPath = () => {
     const hostname = window.location.hostname;
-    if (hostname === 'super.admin.n2wash.com') {
+    if (hostname === 'super.admin.carfect.pl') {
       return '/';
     }
     return '/super-admin';
@@ -114,8 +114,8 @@ const SuperAdminAuth = () => {
   return (
     <>
       <Helmet>
-        <title>Super Admin - N2Wash</title>
-        <meta name="description" content="Panel Super Admina N2Wash" />
+        <title>Super Admin - Carfect</title>
+        <meta name="description" content="Panel Super Admina Carfect" />
       </Helmet>
 
       <div className="min-h-screen flex">
@@ -222,14 +222,14 @@ const SuperAdminAuth = () => {
           {/* Footer */}
           <div className="p-6 border-t border-slate-100 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs text-slate-400">
-              <span>© {new Date().getFullYear()} N2Works</span>
+              <span>© {new Date().getFullYear()} Carfect</span>
               <a
-                href="https://n2wash.com"
+                href="https://carfect.pl"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
-                n2wash.com
+                carfect.pl
               </a>
               <a
                 href="tel:+48666610222"
@@ -239,11 +239,11 @@ const SuperAdminAuth = () => {
                 +48 666 610 222
               </a>
               <a
-                href="mailto:hello@n2wash.com"
+                href="mailto:hello@carfect.pl"
                 className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 <Mail className="w-3 h-3" />
-                hello@n2wash.com
+                hello@carfect.pl
               </a>
             </div>
           </div>
@@ -266,7 +266,7 @@ const SuperAdminAuth = () => {
               </div>
               <h2 className="text-3xl font-bold">Super Admin</h2>
               <p className="text-white/70 text-lg">
-                Zarządzaj wszystkimi instancjami, użytkownikami i ustawieniami systemu N2Wash.
+                Zarządzaj wszystkimi instancjami, użytkownikami i ustawieniami systemu Carfect.
               </p>
             </div>
           </div>

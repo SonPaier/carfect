@@ -39,9 +39,9 @@ const queryClient = new QueryClient({
 
 // Helper function to detect subdomain from hostname
 // New structure:
-// - armcar.n2wash.com → public calendar
-// - armcar.admin.n2wash.com → admin panel
-// - super.admin.n2wash.com → super admin panel
+// - armcar.carfect.pl → public calendar
+// - armcar.admin.carfect.pl → admin panel
+// - super.admin.carfect.pl → super admin panel
 const getSubdomainInfo = () => {
   const hostname = window.location.hostname;
   
@@ -53,33 +53,27 @@ const getSubdomainInfo = () => {
     return { type: 'dev', subdomain: null };
   }
   
-  // Check for n2wash.com domain
-  if (hostname.endsWith('.n2wash.com')) {
-    const subdomain = hostname.replace('.n2wash.com', '');
+  // Check for carfect.pl domain
+  if (hostname.endsWith('.carfect.pl')) {
+    const subdomain = hostname.replace('.carfect.pl', '');
     console.log('[Subdomain Detection] subdomain extracted:', subdomain);
     
-    // Super admin subdomain: super.admin.n2wash.com
+    // Super admin subdomain: super.admin.carfect.pl
     if (subdomain === 'super.admin') {
       console.log('[Subdomain Detection] → super_admin mode');
       return { type: 'super_admin', subdomain: 'super.admin' };
     }
     
-    // Instance admin subdomain: armcar.admin.n2wash.com
+    // Instance admin subdomain: armcar.admin.carfect.pl
     if (subdomain.endsWith('.admin')) {
       const instanceSlug = subdomain.replace('.admin', '');
       console.log('[Subdomain Detection] → instance_admin mode:', instanceSlug);
       return { type: 'instance_admin', subdomain: instanceSlug };
     }
     
-    // Instance public subdomain: armcar.n2wash.com
+    // Instance public subdomain: armcar.carfect.pl
     console.log('[Subdomain Detection] → instance_public mode:', subdomain);
     return { type: 'instance_public', subdomain };
-  }
-  
-  // Lovable staging domain - treat as dev
-  if (hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com')) {
-    console.log('[Subdomain Detection] → dev mode (lovable staging)');
-    return { type: 'dev', subdomain: null };
   }
   
   // Default - unknown domain
@@ -103,7 +97,7 @@ const SuperAdminRoutes = () => (
   </Routes>
 );
 
-// Instance Public Routes - for armcar.n2wash.com (public calendar only)
+// Instance Public Routes - for armcar.carfect.pl (public calendar only)
 const InstancePublicRoutes = ({ subdomain }: { subdomain: string }) => (
   <Routes>
     <Route path="/" element={<Rezerwacje instanceSubdomain={subdomain} />} />
@@ -116,7 +110,7 @@ const InstancePublicRoutes = ({ subdomain }: { subdomain: string }) => (
   </Routes>
 );
 
-// Instance Admin Routes - for armcar.admin.n2wash.com (admin panel)
+// Instance Admin Routes - for armcar.admin.carfect.pl (admin panel)
 const InstanceAdminRoutes = ({ subdomain }: { subdomain: string }) => (
   <Routes>
     {/* Login page - must be first */}

@@ -286,7 +286,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Send SMS based on confirmation status
     const SMSAPI_TOKEN = Deno.env.get("SMSAPI_TOKEN");
-    const reservationUrl = `https://${instanceData?.slug}.n2wash.com/res?code=${confirmationCode}`;
+    const reservationUrl = `https://${instanceData?.slug}.carfect.pl/res?code=${confirmationCode}`;
     
     // Format date for SMS
     const dateObj = new Date(reservationData.date);

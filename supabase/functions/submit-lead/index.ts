@@ -63,8 +63,8 @@ Deno.serve(async (req) => {
       if (referer) {
         const url = new URL(referer);
         const hostname = url.hostname;
-        if (hostname.endsWith('.n2wash.com')) {
-          instanceSlug = hostname.replace('.n2wash.com', '').replace('.admin', '');
+        if (hostname.endsWith('.carfect.pl')) {
+          instanceSlug = hostname.replace('.carfect.pl', '').replace('.admin', '');
         }
       }
     }
@@ -355,7 +355,7 @@ async function sendLeadConfirmationEmail(
   const addressRow = instance.address ? `<div style="margin-bottom:8px;">📍 ${instance.address}</div>` : '';
   const websiteRow = instance.website ? `<div style="margin-bottom:8px;">🌐 <a href="${instance.website}" style="color:#2563eb;text-decoration:none;">${instance.website}</a></div>` : '';
 
-  const emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;margin:0;padding:0;"><div style="max-width:600px;margin:0 auto;padding:20px;"><p>Dzień dobry <strong>${customerData.name}</strong>,</p><p>dziękujemy za przesłanie zapytania! Poniżej znajdziesz podsumowanie Twojego zgłoszenia.</p><div style="background-color:#f8f9fa;border-radius:8px;padding:16px;margin:20px 0;"><div style="font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px;">Pojazd</div><div style="font-size:14px;margin-bottom:12px;">${vehicleInfo}</div><div style="font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px;">Wybrane usługi</div><ul style="margin:0 0 12px 0;padding-left:20px;">${servicesHtml}</ul>${extrasSection}${budgetSection}${notesSection}</div><p>Twoje zapytanie zostało przekazane do naszego zespołu. Skontaktujemy się z Tobą wkrótce z indywidualną wyceną.</p>${portfolioSection}<div style="margin-top:30px;padding-top:20px;border-top:1px solid #e5e5e5;font-size:13px;color:#666;"><p style="margin-bottom:15px;">Pozdrawiamy serdecznie,<br><strong>${instance.name}</strong>${instance.contact_person ? `<br>${instance.contact_person}` : ''}</p>${phoneRow}${addressRow}${websiteRow}</div><div style="margin-top:20px;padding-top:15px;border-top:1px solid #e5e5e5;font-size:10px;color:#999;text-align:center;">Email generowany automatycznie przy użyciu systemu CRM dla studiów detailingu i myjni n2wash.com</div></div></body></html>`;
+  const emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.6;color:#333;margin:0;padding:0;"><div style="max-width:600px;margin:0 auto;padding:20px;"><p>Dzień dobry <strong>${customerData.name}</strong>,</p><p>dziękujemy za przesłanie zapytania! Poniżej znajdziesz podsumowanie Twojego zgłoszenia.</p><div style="background-color:#f8f9fa;border-radius:8px;padding:16px;margin:20px 0;"><div style="font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px;">Pojazd</div><div style="font-size:14px;margin-bottom:12px;">${vehicleInfo}</div><div style="font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px;">Wybrane usługi</div><ul style="margin:0 0 12px 0;padding-left:20px;">${servicesHtml}</ul>${extrasSection}${budgetSection}${notesSection}</div><p>Twoje zapytanie zostało przekazane do naszego zespołu. Skontaktujemy się z Tobą wkrótce z indywidualną wyceną.</p>${portfolioSection}<div style="margin-top:30px;padding-top:20px;border-top:1px solid #e5e5e5;font-size:13px;color:#666;"><p style="margin-bottom:15px;">Pozdrawiamy serdecznie,<br><strong>${instance.name}</strong>${instance.contact_person ? `<br>${instance.contact_person}` : ''}</p>${phoneRow}${addressRow}${websiteRow}</div><div style="margin-top:20px;padding-top:15px;border-top:1px solid #e5e5e5;font-size:10px;color:#999;text-align:center;">Email generowany automatycznie przy użyciu systemu CRM dla studiów detailingu i myjni carfect.pl</div></div></body></html>`;
 
   const client = new SMTPClient({
     connection: {

@@ -1,4 +1,4 @@
-project_id = "vklavozvzfqhxzoczqnp"
+project_id = "xsscqmlrnrodwydmgvac"
 
 [functions.create-user]
 verify_jwt = true
@@ -7,9 +7,6 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.init-admin]
-verify_jwt = false
-
-[functions.suggest-car-size]
 verify_jwt = false
 
 [functions.send-sms-code]
@@ -28,9 +25,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-offer-pdf]
-verify_jwt = false
-
-[functions.extract-price-list]
 verify_jwt = false
 
 
@@ -57,12 +51,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-offer-reminders]
-verify_jwt = false
-
-[functions.seed-e2e-reset]
-verify_jwt = false
-
-[functions.seed-e2e-scenario]
 verify_jwt = false
 
 [functions.get-embed-config]

@@ -70,10 +70,10 @@ export function SendOfferEmailDialog({
   // Generate offer URL
   const getOfferUrl = () => {
     const hostname = window.location.hostname;
-    if (hostname.endsWith('.admin.n2wash.com')) {
-      const instanceSlug = hostname.replace('.admin.n2wash.com', '');
-      return `https://${instanceSlug}.n2wash.com/offers/${offer.public_token}`;
-    } else if (hostname.endsWith('.n2wash.com')) {
+    if (hostname.endsWith('.admin.carfect.pl')) {
+      const instanceSlug = hostname.replace('.admin.carfect.pl', '');
+      return `https://${instanceSlug}.carfect.pl/offers/${offer.public_token}`;
+    } else if (hostname.endsWith('.carfect.pl')) {
       return `${window.location.origin}/offers/${offer.public_token}`;
     }
     return `${window.location.origin}/offers/${offer.public_token}`;

@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
       if (referer) {
         const url = new URL(referer);
         const hostname = url.hostname;
-        // Extract subdomain: armcar.n2wash.com -> armcar
-        if (hostname.endsWith('.n2wash.com')) {
-          instanceSlug = hostname.replace('.n2wash.com', '').replace('.admin', '');
+        // Extract subdomain: armcar.carfect.pl -> armcar
+        if (hostname.endsWith('.carfect.pl')) {
+          instanceSlug = hostname.replace('.carfect.pl', '').replace('.admin', '');
         }
       }
     }

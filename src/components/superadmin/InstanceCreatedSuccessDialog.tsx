@@ -18,8 +18,8 @@ export function InstanceCreatedSuccessDialog({
 }: InstanceCreatedSuccessDialogProps) {
   if (!data) return null;
 
-  const publicDomain = `${data.slug}.n2wash.com`;
-  const adminDomain = `${data.slug}.admin.n2wash.com`;
+  const publicDomain = `${data.slug}.carfect.pl`;
+  const adminDomain = `${data.slug}.admin.carfect.pl`;
 
   const handleCopyAll = () => {
     const text = `Instancja: ${data.instanceName}
@@ -89,7 +89,7 @@ Dane logowania:
             </div>
             
             <p className="text-xs text-muted-foreground">
-              Dodaj rekordy CNAME w IONOS, a następnie skonfiguruj domeny w Lovable → Settings → Custom Domains.
+              Dodaj rekordy CNAME w DNS, wskazujące na serwer Vercel.
             </p>
           </div>
 

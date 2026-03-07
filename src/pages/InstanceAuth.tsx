@@ -322,17 +322,17 @@ const InstanceAuth = ({
           {/* Footer */}
           <div className="p-6 border-t border-slate-100 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs text-slate-400">
-              <span>© {new Date().getFullYear()} N2Works</span>
-              <a href="https://n2wash.com" target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                n2wash.com
+              <span>© {new Date().getFullYear()} Carfect</span>
+              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                carfect.pl
               </a>
               <a href="tel:+48666610222" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                 <Phone className="w-3 h-3" />
                 +48 666 610 222
               </a>
-              <a href="mailto:hello@n2wash.com" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              <a href="mailto:hello@carfect.pl" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                 <Mail className="w-3 h-3" />
-                hello@n2wash.com
+                hello@carfect.pl
               </a>
             </div>
           </div>
@@ -350,7 +350,7 @@ const InstanceAuth = ({
           {/* Content */}
           <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
             <div className="max-w-md text-center space-y-6 flex flex-col items-center">
-              <img src="/n2wash-logo.svg" alt="N2Wash" className="h-12 brightness-0 invert" />
+              <img src="/n2wash-logo.svg" alt="Carfect" className="h-12 brightness-0 invert" />
               <p className="text-white/70 text-lg">
                 Zarządzaj rezerwacjami, usługami i klientami w jednym miejscu.
               </p>
