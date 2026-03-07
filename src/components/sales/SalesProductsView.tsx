@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Plus, MoreHorizontal } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, FolderOpen } from 'lucide-react';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AddSalesProductDrawer from './AddSalesProductDrawer';
+import { CategoryManagementDialog } from '@/components/admin/CategoryManagementDialog';
 
 export interface SalesProduct {
   id: string;
@@ -29,6 +30,8 @@ export interface SalesProduct {
   description?: string;
   priceNet: number;
   priceUnit: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 const formatCurrency = (value: number) =>
