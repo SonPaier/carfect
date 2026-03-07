@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Plus, MoreHorizontal } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, FolderOpen } from 'lucide-react';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AddSalesProductDrawer from './AddSalesProductDrawer';
+import { CategoryManagementDialog } from '@/components/admin/CategoryManagementDialog';
 
 export interface SalesProduct {
   id: string;
@@ -29,6 +30,8 @@ export interface SalesProduct {
   description?: string;
   priceNet: number;
   priceUnit: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 const formatCurrency = (value: number) =>
@@ -46,15 +49,23 @@ const SalesProductsView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<SalesProduct | null>(null);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     if (!instanceId) return;
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, short_name, full_name, description, price_net, price_unit')
+      .select('id, short_name, full_name, description, price_net, price_unit, category_id')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
+
+    // Fetch categories to map names
+    const { data: cats } = await supabase
+      .from('unified_categories')
+      .select('id, name')
+      .eq('instance_id', instanceId);
+    const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
 
     setProducts((data || []).map((p: any) => ({
       id: p.id,
@@ -63,6 +74,8 @@ const SalesProductsView = () => {
       description: p.description || undefined,
       priceNet: Number(p.price_net),
       priceUnit: p.price_unit,
+      categoryId: p.category_id || null,
+      categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
     })));
     setLoading(false);
   }, [instanceId]);
@@ -113,6 +126,10 @@ const SalesProductsView = () => {
             className="pl-9"
           />
         </div>
+        <Button size="sm" variant="outline" onClick={() => setCategoryDialogOpen(true)}>
+          <FolderOpen className="w-4 h-4" />
+          Kategorie
+        </Button>
         <Button size="sm" onClick={() => { setEditProduct(null); setDrawerOpen(true); }}>
           <Plus className="w-4 h-4" />
           Dodaj produkt
@@ -125,6 +142,7 @@ const SalesProductsView = () => {
             <TableRow className="hover:bg-transparent">
               <TableHead>Nazwa</TableHead>
               <TableHead>Nazwa pełna</TableHead>
+              <TableHead>Kategoria</TableHead>
               <TableHead className="text-right w-[120px]">Cena netto</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
@@ -132,7 +150,7 @@ const SalesProductsView = () => {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   {loading ? 'Ładowanie...' : 'Brak produktów spełniających kryteria'}
                 </TableCell>
               </TableRow>
@@ -141,6 +159,7 @@ const SalesProductsView = () => {
                 <TableRow key={product.id} className="hover:bg-hover-strong">
                   <TableCell className="font-medium">{product.shortName}</TableCell>
                   <TableCell className="text-sm">{product.fullName}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{product.categoryName || '—'}</TableCell>
                   <TableCell className="text-right text-sm tabular-nums">
                     {formatCurrency(product.priceNet)}
                   </TableCell>
@@ -194,13 +213,25 @@ const SalesProductsView = () => {
         </div>
       )}
       {instanceId && (
-        <AddSalesProductDrawer
-          open={drawerOpen}
-          onOpenChange={setDrawerOpen}
-          instanceId={instanceId}
-          onSaved={fetchProducts}
-          product={editProduct}
-        />
+        <>
+          <AddSalesProductDrawer
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            instanceId={instanceId}
+            onSaved={fetchProducts}
+            product={editProduct}
+          />
+          <CategoryManagementDialog
+            open={categoryDialogOpen}
+            onOpenChange={setCategoryDialogOpen}
+            instanceId={instanceId}
+            serviceCounts={products.reduce((acc, p) => {
+              if (p.categoryId) acc[p.categoryId] = (acc[p.categoryId] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>)}
+            onCategoriesChanged={fetchProducts}
+          />
+        </>
       )}
     </div>
   );

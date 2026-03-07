@@ -2932,6 +2932,7 @@ export type Database = {
       }
       sales_products: {
         Row: {
+          category_id: string | null
           created_at: string
           description: string | null
           full_name: string
@@ -2943,6 +2944,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           description?: string | null
           full_name: string
@@ -2954,6 +2956,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           description?: string | null
           full_name?: string
@@ -2965,6 +2968,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "unified_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_products_instance_id_fkey"
             columns: ["instance_id"]

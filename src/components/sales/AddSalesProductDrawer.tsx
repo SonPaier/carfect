@@ -12,6 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,6 +29,7 @@ interface SalesProductData {
   description?: string;
   priceNet: number;
   priceUnit: string;
+  categoryId?: string | null;
 }
 
 interface AddSalesProductDrawerProps {
@@ -39,7 +47,19 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   const [description, setDescription] = useState('');
   const [priceNet, setPriceNet] = useState('');
   const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('piece');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('unified_categories')
+      .select('id, name')
+      .eq('instance_id', instanceId)
+      .order('sort_order')
+      .then(({ data }) => setCategories(data || []));
+  }, [instanceId]);
 
   const resetForm = () => {
     setFullName('');
@@ -47,6 +67,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
     setDescription('');
     setPriceNet('');
     setPriceUnit('piece');
+    setCategoryId('');
   };
 
   useEffect(() => {
@@ -57,6 +78,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       setDescription(product.description || '');
       setPriceNet(product.priceNet ? String(product.priceNet) : '');
       setPriceUnit((product.priceUnit as 'piece' | 'meter') || 'piece');
+      setCategoryId(product.categoryId || '');
     } else {
       resetForm();
     }
@@ -79,6 +101,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
         description: description.trim() || null,
         price_net: parseFloat(priceNet) || 0,
         price_unit: priceUnit,
+        category_id: categoryId || null,
       };
 
       if (isEdit && product) {
@@ -155,6 +178,22 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
                 value={shortName}
                 onChange={(e) => setShortName(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Kategoria</Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Wybierz kategorię" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

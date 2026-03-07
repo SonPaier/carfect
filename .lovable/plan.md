@@ -1,29 +1,41 @@
 
 
-## Plan: Kategorie produktów w Sales CRM
+## Plan: Rozbudowa widoku Klienci w Sales CRM
 
-### 1. Migracja bazy danych
-Dodanie kolumny `category_id` do tabeli `sales_products` z FK do `unified_categories`:
-```sql
-ALTER TABLE public.sales_products 
-  ADD COLUMN category_id uuid REFERENCES public.unified_categories(id) ON DELETE SET NULL;
-```
+### Zakres zmian
 
-### 2. SalesProductsView.tsx
-- Dodać przycisk "Kategorie" obok "Dodaj produkt" (identycznie jak w ProductsView — `FolderOpen` icon)
-- Zaimportować i użyć istniejącego `CategoryManagementDialog` z `serviceCounts` wyliczanym z produktów
-- Rozszerzyć fetch o `category_id` i przekazywać do drawera
-- Dodać kolumnę "Kategoria" w tabeli
+**1. Migracja bazy danych** — dodanie kolumny `is_net_payer` (boolean, default false) do tabeli `customers`.
 
-### 3. AddSalesProductDrawer.tsx
-- Dodać Select z kategoriami (pobieranymi z `unified_categories` dla danego `instanceId`) po polu "Skrócona nazwa produktu"
-- Zapisywać `category_id` w payload INSERT/UPDATE
-- Rozszerzyć `SalesProductData` o `categoryId`
+**2. SalesCustomersView.tsx** — zmiany w tabeli:
+- Usunąć kolumnę "Opiekun"
+- Dodać kolumnę "Ostatnie zamówienie" (na razie placeholder "—", bo zamówienia nie są jeszcze w DB)
+- Dodać kolumnę "Płatnik" — wyświetla "netto" lub "brutto" na podstawie `is_net_payer` z danych klienta
+- Podłączyć dane klientów z Supabase (zamiast pustej tablicy `[]`)
+- Otwieranie drawera po kliknięciu wiersza + "Dodaj klienta"
+
+**3. Nowy komponent: `NipLookupForm.tsx`** — skopiowany z N2Service, lookup NIP z GUS API (`wl-api.mf.gov.pl`), pola: NIP + przycisk "Pobierz z GUS", nazwa firmy, ulica, kod pocztowy, miasto. Tryb readOnly do widoku.
+
+**4. Nowy komponent: `AddEditSalesCustomerDrawer.tsx`** — Sheet z formularzem:
+- **Sekcja główna:** Nazwa, Osoba kontaktowa, Telefon, Email
+- **Toggle Rabat** + pole liczbowe % (zapisuje do `discount_percent`)
+- **Toggle Płatnik netto** (zapisuje do `is_net_payer`)
+- Notatki (textarea)
+- **Separator + Adres wysyłki:** Adresat, Ulica, Kod pocztowy, Miasto (zapisuje do `shipping_*` kolumn)
+- **Separator + Dane firmy** (Collapsible): NipLookupForm — NIP z GUS lookup, nazwa firmy, adres fakturowy (zapisuje do `nip`, `company`, `billing_*`)
+- **Tryb widoku** z tabami "Dane" / "Zamówienia" (wzór z N2Service CustomerEditDrawer)
+- Sticky header + footer z przyciskami Zapisz/Anuluj/Edytuj
+
+**5. Zapis do Supabase:** INSERT/UPDATE na tabeli `customers` z `source: 'sales'`, używając istniejących kolumn (`contact_person`, `discount_percent`, `is_net_payer`, `shipping_*`, `billing_*`, `nip`, `company`, `sales_notes`).
+
+### Pliki do utworzenia
+- `src/components/sales/NipLookupForm.tsx` — kopia z N2Service
+- `src/components/sales/AddEditSalesCustomerDrawer.tsx` — nowy drawer
 
 ### Pliki do edycji
-- `src/components/sales/SalesProductsView.tsx` — btn Kategorie + dialog + kolumna w tabeli
-- `src/components/sales/AddSalesProductDrawer.tsx` — Select kategorii w formularzu
+- `src/components/sales/SalesCustomersView.tsx` — przebudowa tabeli + integracja z DB i drawerem
 
-### Reużyte komponenty
-- `CategoryManagementDialog` — bez zmian, ten sam komponent co w Panel Studio
+### Migracja
+```sql
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS is_net_payer boolean NOT NULL DEFAULT false;
+```
 
