@@ -213,13 +213,25 @@ const SalesProductsView = () => {
         </div>
       )}
       {instanceId && (
-        <AddSalesProductDrawer
-          open={drawerOpen}
-          onOpenChange={setDrawerOpen}
-          instanceId={instanceId}
-          onSaved={fetchProducts}
-          product={editProduct}
-        />
+        <>
+          <AddSalesProductDrawer
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            instanceId={instanceId}
+            onSaved={fetchProducts}
+            product={editProduct}
+          />
+          <CategoryManagementDialog
+            open={categoryDialogOpen}
+            onOpenChange={setCategoryDialogOpen}
+            instanceId={instanceId}
+            serviceCounts={products.reduce((acc, p) => {
+              if (p.categoryId) acc[p.categoryId] = (acc[p.categoryId] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>)}
+            onCategoriesChanged={fetchProducts}
+          />
+        </>
       )}
     </div>
   );
