@@ -126,6 +126,10 @@ const SalesProductsView = () => {
             className="pl-9"
           />
         </div>
+        <Button size="sm" variant="outline" onClick={() => setCategoryDialogOpen(true)}>
+          <FolderOpen className="w-4 h-4" />
+          Kategorie
+        </Button>
         <Button size="sm" onClick={() => { setEditProduct(null); setDrawerOpen(true); }}>
           <Plus className="w-4 h-4" />
           Dodaj produkt
