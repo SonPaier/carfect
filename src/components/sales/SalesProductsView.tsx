@@ -150,7 +150,7 @@ const SalesProductsView = () => {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   {loading ? 'Ładowanie...' : 'Brak produktów spełniających kryteria'}
                 </TableCell>
               </TableRow>
