@@ -64,7 +64,8 @@ const SalesProductsView = () => {
     const { data: cats } = await supabase
       .from('unified_categories')
       .select('id, name')
-      .eq('instance_id', instanceId);
+      .eq('instance_id', instanceId)
+      .eq('category_type', 'sales');
     const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
 
     setProducts((data || []).map((p: any) => ({
