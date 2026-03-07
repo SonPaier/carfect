@@ -142,6 +142,7 @@ const SalesProductsView = () => {
             <TableRow className="hover:bg-transparent">
               <TableHead>Nazwa</TableHead>
               <TableHead>Nazwa pełna</TableHead>
+              <TableHead>Kategoria</TableHead>
               <TableHead className="text-right w-[120px]">Cena netto</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
