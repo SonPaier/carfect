@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Plus, MoreHorizontal, FolderOpen } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Settings2 } from 'lucide-react';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
