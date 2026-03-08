@@ -1,1 +1,0 @@
-ALTER TABLE public.instances ADD COLUMN bank_accounts jsonb DEFAULT '[]'::jsonb;

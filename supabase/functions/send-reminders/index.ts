@@ -344,18 +344,6 @@ serve(async (req: Request): Promise<Response> => {
           continue;
         }
 
-        const sendAtTime = reminder1daySetting?.send_at_time || "19:00:00";
-        const [sendHour, sendMinute] = sendAtTime.split(":").map(Number);
-        
-        const currentTotalMinutes = nowLocal.hours * 60 + nowLocal.minutes;
-        const sendTotalMinutes = sendHour * 60 + sendMinute;
-        const timeDiff = Math.abs(currentTotalMinutes - sendTotalMinutes);
-        
-        if (timeDiff > 5) {
-          skippedTimezone++;
-          continue;
-        }
-
         console.log(`[1-day] MATCH! res=${reservation.id} (${reservation.confirmation_code})`);
 
         const claimed = await claimReservationFor1DayReminder(supabase, reservation.id, BACKOFF_MINUTES);
@@ -620,7 +608,7 @@ async function sendSms(
       return { success: false, errorReason: errorCode };
     }
 
-    await supabase.from('sms_logs').insert({
+    const { error: logError } = await supabase.from('sms_logs').insert({
       instance_id: instanceId,
       phone: normalizedPhone,
       message: message,
@@ -629,6 +617,10 @@ async function sendSms(
       status: 'sent',
       smsapi_response: result,
     });
+
+    if (logError) {
+      console.error("Failed to insert sms_log:", logError);
+    }
 
     return { success: true };
   } catch (error) {

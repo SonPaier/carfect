@@ -1,1 +1,0 @@
-ALTER TABLE public.sales_products ADD COLUMN IF NOT EXISTS category_id uuid REFERENCES public.unified_categories(id) ON DELETE SET NULL;

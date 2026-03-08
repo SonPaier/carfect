@@ -1,1 +1,0 @@
-ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS is_net_payer boolean NOT NULL DEFAULT false;

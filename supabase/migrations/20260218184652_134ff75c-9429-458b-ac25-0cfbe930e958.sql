@@ -1,1 +1,0 @@
-ALTER TABLE public.stations ADD COLUMN color text DEFAULT NULL;

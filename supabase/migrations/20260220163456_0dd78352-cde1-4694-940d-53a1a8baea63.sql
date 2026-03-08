@@ -1,1 +1,0 @@
-ALTER TABLE public.trainings ALTER COLUMN training_type TYPE text USING training_type::text;

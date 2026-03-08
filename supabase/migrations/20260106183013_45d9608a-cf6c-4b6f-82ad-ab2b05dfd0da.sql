@@ -1,1 +1,0 @@
-ALTER TABLE public.instances ADD COLUMN contact_person text;
