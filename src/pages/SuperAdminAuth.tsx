@@ -126,8 +126,8 @@ const SuperAdminAuth = () => {
               {/* Logo */}
               <div className="space-y-4 text-center">
                 <div className="flex justify-center mb-6">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10">
-                    <Shield className="w-8 h-8 text-amber-500" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#A57C00]/10">
+                    <Shield className="w-8 h-8 text-[#A57C00]" />
                   </div>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
@@ -203,7 +203,7 @@ const SuperAdminAuth = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 gap-2 bg-amber-500 hover:bg-amber-600 text-white text-base font-semibold"
+                  className="w-full h-12 gap-2 bg-[#A57C00] hover:bg-[#A57C00]/90 text-white text-base font-semibold"
                   disabled={loading}
                 >
                   {loading ? (
@@ -250,19 +250,19 @@ const SuperAdminAuth = () => {
         </div>
 
         {/* Right side - Decorative */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute inset-0">
-            <div className="absolute top-20 right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-40 left-10 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute top-20 right-20 w-64 h-64 bg-[#A57C00]/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-40 left-10 w-48 h-48 bg-[#A57C00]/5 rounded-full blur-2xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#A57C00]/5 rounded-full blur-3xl" />
           </div>
 
           {/* Content */}
           <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
             <div className="max-w-md text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm mb-4">
-                <Shield className="w-10 h-10" />
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#A57C00]/10 backdrop-blur-sm mb-4">
+                <Shield className="w-10 h-10 text-[#A57C00]" />
               </div>
               <h2 className="text-3xl font-bold">Super Admin</h2>
               <p className="text-white/70 text-lg">

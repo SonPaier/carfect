@@ -1056,7 +1056,7 @@ export default function CustomerBookingWizard({
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Loader2 className="w-16 h-16 animate-spin text-primary" />
-        <img src="/n2wash-logo.svg" alt="Carfect" className="h-8 mt-4 opacity-60" />
+        <img src="/carfect-logo.svg" alt="Carfect" className="h-8 mt-4 opacity-60" />
       </div>
     );
   }

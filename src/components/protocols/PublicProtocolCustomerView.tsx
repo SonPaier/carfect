@@ -311,7 +311,7 @@ export const PublicProtocolCustomerView = ({
           <div className="text-center text-xs text-muted-foreground pt-4">
             Protokół sporządzono przy użyciu{' '}
             <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity">
-              <img src="/n2wash-logo.svg" alt="Carfect" className="h-3 inline opacity-60" />
+              <img src="/carfect-logo.svg" alt="Carfect" className="h-3 inline opacity-60" />
             </a>
           </div>
         </div>

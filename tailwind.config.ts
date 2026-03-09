@@ -91,8 +91,8 @@ export default {
   				foreground: 'hsl(var(--warning-foreground))'
   			},
 			hover: {
-				DEFAULT: 'hsl(var(--hover) / 0.10)',
-				strong: 'hsl(var(--hover) / 0.15)'
+				DEFAULT: 'hsl(var(--hover))',
+				strong: 'hsl(var(--hover))'
 			},
 			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',

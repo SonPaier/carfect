@@ -58,7 +58,7 @@ const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(({
           <div className="container py-3">
             <p className="text-sm text-muted-foreground text-center">
               <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-2">
-                <img src="/n2wash-logo.svg" alt="Carfect" className="h-4 opacity-60" />
+                <img src="/carfect-logo.svg" alt="Carfect" className="h-4 opacity-60" />
               </a> - System rezerwacji online
             </p>
           </div>

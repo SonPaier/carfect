@@ -309,7 +309,7 @@ const InstanceAuth = ({
                   </Link>
                 </div>
 
-                <Button type="submit" className="w-full h-12 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full h-12 gap-2 bg-[#A57C00] hover:bg-[#A57C00]/90 text-white text-base font-semibold" disabled={loading}>
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>
                       Zaloguj się
                       <ArrowRight className="w-5 h-5" />
@@ -339,19 +339,19 @@ const InstanceAuth = ({
         </div>
 
         {/* Right side - Decorative */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-blue-600 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute inset-0">
-            <div className="absolute top-20 right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-40 left-10 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute top-20 right-20 w-64 h-64 bg-[#A57C00]/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-40 left-10 w-48 h-48 bg-[#A57C00]/5 rounded-full blur-2xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#A57C00]/5 rounded-full blur-3xl" />
           </div>
           
           {/* Content */}
           <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
             <div className="max-w-md text-center space-y-6 flex flex-col items-center">
-              <img src="/n2wash-logo.svg" alt="Carfect" className="h-12 brightness-0 invert" />
-              <p className="text-white/70 text-lg">
+              <img src="/carfect-logo.svg" alt="Carfect" className="h-12" />
+              <p className="text-white/60 text-lg">
                 Zarządzaj rezerwacjami, usługami i klientami w jednym miejscu.
               </p>
             </div>
