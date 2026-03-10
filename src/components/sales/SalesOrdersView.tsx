@@ -222,14 +222,14 @@ const SalesOrdersView = () => {
     // Fetch order items with vehicle info from DB
     const { data: items } = await (supabase
       .from('sales_order_items')
-      .select('product_id, name, price_net, quantity, vehicle, sort_order')
+      .select('product_id, variant_id, name, price_net, quantity, vehicle, sort_order')
       .eq('order_id', order.id)
       .order('sort_order') as any);
-    
+
     // Fetch delivery_type from the order
     const { data: orderData } = await (supabase
       .from('sales_orders')
-      .select('delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name')
+      .select('delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages')
       .eq('id', order.id)
       .single() as any);
 
@@ -252,11 +252,13 @@ const SalesOrdersView = () => {
       customerDiscount,
       products: (items || []).map((item: any) => ({
         productId: item.product_id || item.name,
+        variantId: item.variant_id || undefined,
         name: item.name,
         priceNet: Number(item.price_net),
         quantity: item.quantity,
         vehicle: item.vehicle || '',
       })),
+      packages: orderData?.packages || [],
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
       paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer',
       bankAccountNumber: orderData?.bank_account_number || '',

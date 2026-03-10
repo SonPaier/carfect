@@ -17,6 +17,29 @@ export interface SalesProductOption {
   shortName: string;
   priceNet: number;
   priceUnit: string;
+  hasVariants?: boolean;
+  variants?: SalesProductVariantOption[];
+}
+
+export interface SalesProductVariantOption {
+  id: string;
+  productId: string;
+  variantName: string;
+  fullName: string;
+  shortName: string;
+  priceNet: number;
+  priceUnit: string;
+}
+
+export interface SelectedProductItem {
+  id: string;
+  productId: string;
+  variantId?: string;
+  fullName: string;
+  shortName: string;
+  variantName?: string;
+  priceNet: number;
+  priceUnit: string;
 }
 
 interface SalesProductSelectionDrawerProps {
@@ -24,7 +47,8 @@ interface SalesProductSelectionDrawerProps {
   onClose: () => void;
   instanceId: string;
   selectedProductIds: string[];
-  onConfirm: (products: SalesProductOption[]) => void;
+  selectedVariantIds?: string[];
+  onConfirm: (products: SelectedProductItem[]) => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -34,39 +58,80 @@ const SalesProductSelectionDrawer = ({
   open,
   onClose,
   instanceId,
-  selectedProductIds: initialSelectedIds,
+  selectedProductIds: initialSelectedProductIds,
+  selectedVariantIds: initialSelectedVariantIds = [],
   onConfirm,
 }: SalesProductSelectionDrawerProps) => {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<SalesProductOption[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
-      setSelectedIds(initialSelectedIds);
+      const keys = new Set<string>();
+      initialSelectedProductIds.forEach(id => keys.add(id));
+      initialSelectedVariantIds.forEach(id => keys.add(`variant:${id}`));
+      setSelectedKeys(keys);
       setSearchQuery('');
       setTimeout(() => searchInputRef.current?.focus(), 300);
     }
-  }, [open, initialSelectedIds]);
+  }, [open, initialSelectedProductIds, initialSelectedVariantIds]);
 
   const fetchProducts = useCallback(async () => {
     if (!open || !instanceId) return;
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, full_name, short_name, price_net, price_unit')
+      .select('id, full_name, short_name, price_net, price_unit, has_variants')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
-    setProducts((data || []).map((p: any) => ({
+    const allProducts: SalesProductOption[] = (data || []).map((p: any) => ({
       id: p.id,
       fullName: p.full_name,
       shortName: p.short_name || '',
       priceNet: Number(p.price_net),
       priceUnit: p.price_unit || 'szt.',
-    })));
+      hasVariants: p.has_variants || false,
+      variants: [],
+    }));
+
+    // Fetch variants for products that have them
+    const variantProductIds = allProducts.filter(p => p.hasVariants).map(p => p.id);
+    if (variantProductIds.length > 0) {
+      const { data: variants } = await (supabase
+        .from('sales_product_variants')
+        .select('id, product_id, name, price_net, sort_order')
+        .in('product_id', variantProductIds)
+        .order('sort_order') as any);
+
+      const variantsByProduct = new Map<string, SalesProductVariantOption[]>();
+      (variants || []).forEach((v: any) => {
+        const parent = allProducts.find(p => p.id === v.product_id);
+        if (!parent) return;
+        const list = variantsByProduct.get(v.product_id) || [];
+        list.push({
+          id: v.id,
+          productId: v.product_id,
+          variantName: v.name,
+          fullName: parent.fullName,
+          shortName: parent.shortName,
+          priceNet: Number(v.price_net),
+          priceUnit: parent.priceUnit,
+        });
+        variantsByProduct.set(v.product_id, list);
+      });
+
+      allProducts.forEach(p => {
+        if (p.hasVariants) {
+          p.variants = variantsByProduct.get(p.id) || [];
+        }
+      });
+    }
+
+    setProducts(allProducts);
     setLoading(false);
   }, [open, instanceId]);
 
@@ -77,30 +142,77 @@ const SalesProductSelectionDrawer = ({
     const q = searchQuery.toLowerCase();
     return products.filter(p =>
       p.fullName.toLowerCase().includes(q) ||
-      p.shortName.toLowerCase().includes(q)
+      p.shortName.toLowerCase().includes(q) ||
+      (p.variants || []).some(v => v.variantName.toLowerCase().includes(q))
     );
   }, [products, searchQuery]);
 
-  const toggleProduct = (productId: string) => {
-    setSelectedIds(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+  const toggleKey = (key: string) => {
+    setSelectedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
-  const selectedProducts = useMemo(() => {
-    return selectedIds
-      .map(id => products.find(p => p.id === id))
-      .filter((p): p is SalesProductOption => p !== undefined);
-  }, [selectedIds, products]);
+  const selectedCount = selectedKeys.size;
 
   const totalNet = useMemo(() => {
-    return selectedProducts.reduce((sum, p) => sum + p.priceNet, 0);
-  }, [selectedProducts]);
+    let total = 0;
+    selectedKeys.forEach(key => {
+      if (key.startsWith('variant:')) {
+        const variantId = key.slice(8);
+        for (const product of products) {
+          const variant = product.variants?.find(v => v.id === variantId);
+          if (variant) { total += variant.priceNet; break; }
+        }
+      } else {
+        const product = products.find(p => p.id === key);
+        if (product) total += product.priceNet;
+      }
+    });
+    return total;
+  }, [selectedKeys, products]);
 
   const handleConfirm = () => {
-    onConfirm(selectedProducts);
+    const selected: SelectedProductItem[] = [];
+
+    selectedKeys.forEach(key => {
+      if (key.startsWith('variant:')) {
+        const variantId = key.slice(8);
+        for (const product of products) {
+          const variant = product.variants?.find(v => v.id === variantId);
+          if (variant) {
+            selected.push({
+              id: variantId,
+              productId: product.id,
+              variantId: variantId,
+              fullName: product.fullName,
+              shortName: product.shortName,
+              variantName: variant.variantName,
+              priceNet: variant.priceNet,
+              priceUnit: variant.priceUnit,
+            });
+            break;
+          }
+        }
+      } else {
+        const product = products.find(p => p.id === key);
+        if (product) {
+          selected.push({
+            id: product.id,
+            productId: product.id,
+            fullName: product.fullName,
+            shortName: product.shortName,
+            priceNet: product.priceNet,
+            priceUnit: product.priceUnit,
+          });
+        }
+      }
+    });
+
+    onConfirm(selected);
     onClose();
   };
 
@@ -167,12 +279,65 @@ const SalesProductSelectionDrawer = ({
           ) : (
             <div className="pb-4">
               {filteredProducts.map((product) => {
-                const isSelected = selectedIds.includes(product.id);
+                // Product with variants
+                if (product.hasVariants && product.variants && product.variants.length > 0) {
+                  return (
+                    <div key={product.id}>
+                      {/* Parent product header (non-selectable) */}
+                      <div className="w-full flex items-center px-4 py-2 border-b border-border/50 bg-muted/30">
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="font-bold text-foreground text-sm">{product.shortName || product.fullName}</p>
+                          {product.shortName && (
+                            <p className="text-muted-foreground text-xs leading-tight truncate">{product.fullName}</p>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {product.variants.length} {product.variants.length === 1 ? 'wariant' : 'wariantów'}
+                        </span>
+                      </div>
+                      {/* Variant rows (selectable) */}
+                      {product.variants.map((variant) => {
+                        const variantKey = `variant:${variant.id}`;
+                        const isSelected = selectedKeys.has(variantKey);
+                        return (
+                          <button
+                            key={variant.id}
+                            type="button"
+                            onClick={() => toggleKey(variantKey)}
+                            className={cn(
+                              "w-full flex items-center px-4 pl-8 py-2.5 border-b border-border/50 transition-colors",
+                              isSelected ? "bg-primary/5" : "hover:bg-primary/5"
+                            )}
+                          >
+                            <div className="flex-1 text-left min-w-0">
+                              <p className="font-medium text-foreground text-sm">{variant.variantName}</p>
+                            </div>
+                            <div className="text-right mr-4 shrink-0">
+                              <p className="font-semibold text-foreground text-sm">{formatCurrency(variant.priceNet)}</p>
+                              <p className="text-xs text-muted-foreground">netto/{variant.priceUnit}</p>
+                            </div>
+                            <div className={cn(
+                              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                              isSelected
+                                ? "bg-primary border-primary"
+                                : "border-muted-foreground/40"
+                            )}>
+                              {isSelected && <Check className="w-4 h-4 text-primary-foreground" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                // Non-variant product (unchanged logic)
+                const isSelected = selectedKeys.has(product.id);
                 return (
                   <button
                     key={product.id}
                     type="button"
-                    onClick={() => toggleProduct(product.id)}
+                    onClick={() => toggleKey(product.id)}
                     className={cn(
                       "w-full flex items-center px-4 py-3 border-b border-border/50 transition-colors",
                       isSelected ? "bg-primary/5" : "hover:bg-primary/5"
@@ -214,10 +379,10 @@ const SalesProductSelectionDrawer = ({
           <div className="mb-3 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-lg font-semibold text-foreground">
-                Wybrano: {selectedIds.length}
+                Wybrano: {selectedCount}
               </span>
             </div>
-            {selectedIds.length > 0 && (
+            {selectedCount > 0 && (
               <div className="text-right">
                 <span className="text-xl font-bold text-foreground">
                   {formatCurrency(totalNet)} netto
@@ -227,7 +392,7 @@ const SalesProductSelectionDrawer = ({
           </div>
           <Button
             onClick={handleConfirm}
-            disabled={selectedIds.length === 0}
+            disabled={selectedCount === 0}
             className="w-full"
             size="lg"
           >
