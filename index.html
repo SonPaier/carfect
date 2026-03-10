@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <title>Carfect - System Rezerwacji</title>
+    <meta name="description" content="System rezerwacji usług myjni samochodowej. Zarezerwuj mycie, detailing i inne usługi online." />
+    <meta name="author" content="Carfect" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Carfect" />
+    <link rel="manifest" id="dynamic-manifest" href="/manifest.webmanifest" />
+    <script>
+      (function() {
+        var hostname = window.location.hostname;
+        var context = 'public';
+        var slug = null;
+        
+        // New subdomain structure:
+        // armcar.admin.carfect.pl → admin context, slug = armcar
+        // armcar.carfect.pl → public context, slug = armcar
+        // super.admin.carfect.pl → super admin (no manifest needed)
+        
+        if (hostname.endsWith('.admin.carfect.pl')) {
+          // Instance admin: armcar.admin.carfect.pl
+          context = 'admin';
+          slug = hostname.replace('.admin.carfect.pl', '');
+          if (slug === 'super') slug = null; // super.admin.carfect.pl has no instance
+        } else if (hostname.endsWith('.carfect.pl')) {
+          // Instance public: armcar.carfect.pl
+          context = 'public';
+          slug = hostname.replace('.carfect.pl', '');
+        }
+        
+        if (slug) {
+          var manifestUrl = 'https://xsscqmlrnrodwydmgvac.supabase.co/functions/v1/get-manifest?context=' + context + '&slug=' + slug;
+          var link = document.getElementById('dynamic-manifest');
+          if (link) link.href = manifestUrl;
+        }
+      })();
+    </script>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Carfect - System Rezerwacji" />
+    <meta property="og:description" content="System rezerwacji usług myjni samochodowej" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/pwa-512x512.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Carfect - System Rezerwacji" />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
