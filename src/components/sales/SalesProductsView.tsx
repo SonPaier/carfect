@@ -32,6 +32,10 @@ export interface SalesProduct {
   priceUnit: string;
   categoryId?: string | null;
   categoryName?: string | null;
+  hasVariants?: boolean;
+  variantCount?: number;
+  variantPriceMin?: number;
+  variantPriceMax?: number;
 }
 
 const formatCurrency = (value: number) =>
@@ -61,7 +65,7 @@ const SalesProductsView = () => {
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, short_name, full_name, description, price_net, price_unit, category_id')
+      .select('id, short_name, full_name, description, price_net, price_unit, category_id, has_variants')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
@@ -73,16 +77,42 @@ const SalesProductsView = () => {
       .eq('category_type', 'sales');
     const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
 
-    setProducts((data || []).map((p: any) => ({
-      id: p.id,
-      shortName: p.short_name,
-      fullName: p.full_name,
-      description: p.description || undefined,
-      priceNet: Number(p.price_net),
-      priceUnit: p.price_unit,
-      categoryId: p.category_id || null,
-      categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
-    })));
+    // Fetch variant info for products with variants
+    const variantProductIds = (data || []).filter((p: any) => p.has_variants).map((p: any) => p.id);
+    const variantMap = new Map<string, { count: number; minPrice: number; maxPrice: number }>();
+
+    if (variantProductIds.length > 0) {
+      const { data: variants } = await (supabase
+        .from('sales_product_variants')
+        .select('product_id, price_net')
+        .in('product_id', variantProductIds) as any);
+
+      (variants || []).forEach((v: any) => {
+        const entry = variantMap.get(v.product_id) || { count: 0, minPrice: Infinity, maxPrice: -Infinity };
+        entry.count++;
+        entry.minPrice = Math.min(entry.minPrice, Number(v.price_net));
+        entry.maxPrice = Math.max(entry.maxPrice, Number(v.price_net));
+        variantMap.set(v.product_id, entry);
+      });
+    }
+
+    setProducts((data || []).map((p: any) => {
+      const vInfo = variantMap.get(p.id);
+      return {
+        id: p.id,
+        shortName: p.short_name,
+        fullName: p.full_name,
+        description: p.description || undefined,
+        priceNet: Number(p.price_net),
+        priceUnit: p.price_unit,
+        categoryId: p.category_id || null,
+        categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
+        hasVariants: p.has_variants || false,
+        variantCount: vInfo?.count || 0,
+        variantPriceMin: vInfo?.minPrice,
+        variantPriceMax: vInfo?.maxPrice,
+      };
+    }));
     setLoading(false);
   }, [instanceId]);
 
@@ -212,7 +242,19 @@ const SalesProductsView = () => {
                   <TableCell className="text-sm">{product.fullName}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{product.categoryName || '—'}</TableCell>
                   <TableCell className="text-right text-sm tabular-nums">
-                    {formatCurrency(product.priceNet)}
+                    {product.hasVariants && product.variantCount && product.variantCount > 0 ? (
+                      <span className="text-muted-foreground">
+                        {product.variantPriceMin === product.variantPriceMax
+                          ? formatCurrency(product.variantPriceMin!)
+                          : `${formatCurrency(product.variantPriceMin!)} – ${formatCurrency(product.variantPriceMax!)}`
+                        }
+                        <span className="text-xs ml-1">({product.variantCount} war.)</span>
+                      </span>
+                    ) : product.hasVariants ? (
+                      <span className="text-muted-foreground text-xs">Brak wariantów</span>
+                    ) : (
+                      formatCurrency(product.priceNet)
+                    )}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

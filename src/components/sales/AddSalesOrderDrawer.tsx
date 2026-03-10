@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Search, X, Plus, Minus, Loader2 } from 'lucide-react';
+import { Search, X, Plus, Minus, Loader2, AlertTriangle } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -21,6 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,7 +32,7 @@ import { useInstanceData } from '@/hooks/useInstanceData';
 import { type SalesOrder } from '@/data/salesMockData';
 import { getNextOrderNumber } from './SalesOrdersView';
 import AddEditSalesCustomerDrawer from './AddEditSalesCustomerDrawer';
-import SalesProductSelectionDrawer, { type SalesProductOption } from './SalesProductSelectionDrawer';
+import SalesProductSelectionDrawer, { type SelectedProductItem } from './SalesProductSelectionDrawer';
 
 interface SalesCustomerRef {
   id: string;
@@ -39,6 +43,7 @@ interface SalesCustomerRef {
 
 interface OrderProduct {
   productId: string;
+  variantId?: string;
   name: string;
   priceNet: number;
   quantity: number;
@@ -47,19 +52,40 @@ interface OrderProduct {
 
 type DeliveryType = 'shipping' | 'pickup' | 'uber';
 type PaymentMethod = 'cod' | 'transfer';
+type PackagingType = 'karton' | 'tuba';
+
+interface KartonDimensions {
+  length: number;
+  width: number;
+  height: number;
+}
+
+interface TubaDimensions {
+  length: number;
+  diameter: number;
+}
+
+export interface OrderPackage {
+  id: string;
+  shippingMethod: DeliveryType;
+  packagingType?: PackagingType;
+  dimensions?: KartonDimensions | TubaDimensions;
+  productKeys: string[];
+}
 
 const VAT_RATE = 0.23;
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
 
-interface EditOrderData {
+export interface EditOrderData {
   id: string;
   orderNumber: string;
   customerId: string;
   customerName: string;
   customerDiscount?: number;
   products: OrderProduct[];
+  packages?: OrderPackage[];
   deliveryType: DeliveryType;
   paymentMethod: PaymentMethod;
   bankAccountNumber: string;
@@ -75,6 +101,227 @@ interface AddSalesOrderDrawerProps {
   editOrder?: EditOrderData | null;
   onOrderCreated?: () => void;
 }
+
+/* ─── PackageCard ─── */
+
+interface PackageCardProps {
+  pkg: OrderPackage;
+  index: number;
+  products: OrderProduct[];
+  getItemKey: (p: OrderProduct) => string;
+  availableProducts: OrderProduct[];
+  onRemove: () => void;
+  onShippingMethodChange: (method: DeliveryType) => void;
+  onPackagingTypeChange: (type: PackagingType) => void;
+  onDimensionChange: (field: string, value: number) => void;
+  onToggleProduct: (productKey: string) => void;
+}
+
+const PackageCard = ({
+  pkg,
+  index,
+  products,
+  getItemKey,
+  availableProducts,
+  onRemove,
+  onShippingMethodChange,
+  onPackagingTypeChange,
+  onDimensionChange,
+  onToggleProduct,
+}: PackageCardProps) => {
+  return (
+    <div className="bg-card border border-border rounded-md p-3 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold">Paczka #{index + 1}</span>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-muted-foreground hover:text-destructive shrink-0"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Shipping method toggle */}
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Sposób wysyłki</Label>
+        <ToggleGroup
+          type="single"
+          value={pkg.shippingMethod}
+          onValueChange={(v) => { if (v) onShippingMethodChange(v as DeliveryType); }}
+          variant="outline"
+          size="sm"
+          className="justify-start"
+        >
+          <ToggleGroupItem value="shipping" className="text-xs px-3">Wysyłka</ToggleGroupItem>
+          <ToggleGroupItem value="pickup" className="text-xs px-3">Odbiór osobisty</ToggleGroupItem>
+          <ToggleGroupItem value="uber" className="text-xs px-3">Uber</ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {/* Conditional: packaging fields (only for "shipping") */}
+      {pkg.shippingMethod === 'shipping' && (
+        <div className="space-y-2 pl-1">
+          <RadioGroup
+            value={pkg.packagingType || 'karton'}
+            onValueChange={(v) => onPackagingTypeChange(v as PackagingType)}
+            className="flex gap-4"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="karton" id={`pkg-${pkg.id}-karton`} />
+              <Label htmlFor={`pkg-${pkg.id}-karton`} className="text-sm font-normal cursor-pointer">
+                Karton
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="tuba" id={`pkg-${pkg.id}-tuba`} />
+              <Label htmlFor={`pkg-${pkg.id}-tuba`} className="text-sm font-normal cursor-pointer">
+                Tuba
+              </Label>
+            </div>
+          </RadioGroup>
+
+          {pkg.packagingType === 'tuba' ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Długość (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={(pkg.dimensions as TubaDimensions)?.length || ''}
+                  onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Średnica (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={(pkg.dimensions as TubaDimensions)?.diameter || ''}
+                  onChange={(e) => onDimensionChange('diameter', parseFloat(e.target.value) || 0)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Długość (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={(pkg.dimensions as KartonDimensions)?.length || ''}
+                  onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Szerokość (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={(pkg.dimensions as KartonDimensions)?.width || ''}
+                  onChange={(e) => onDimensionChange('width', parseFloat(e.target.value) || 0)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Wysokość (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={(pkg.dimensions as KartonDimensions)?.height || ''}
+                  onChange={(e) => onDimensionChange('height', parseFloat(e.target.value) || 0)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Products in package - multiselect */}
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Produkty w paczce</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start text-sm font-normal h-auto min-h-[2rem] py-1.5"
+            >
+              {pkg.productKeys.length === 0 ? (
+                <span className="text-muted-foreground">Wybierz produkty...</span>
+              ) : (
+                <span className="truncate">
+                  {pkg.productKeys.length} {pkg.productKeys.length === 1 ? 'produkt' : pkg.productKeys.length < 5 ? 'produkty' : 'produktów'}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="p-2" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+            {availableProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                Brak dostępnych produktów
+              </p>
+            ) : (
+              <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                {availableProducts.map(product => {
+                  const key = getItemKey(product);
+                  const isChecked = pkg.productKeys.includes(key);
+                  return (
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={() => onToggleProduct(key)}
+                      />
+                      <span className="text-sm truncate flex-1">{product.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        ({product.quantity} szt.)
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+
+        {/* Tags for assigned products */}
+        {pkg.productKeys.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {pkg.productKeys.map(key => {
+              const product = products.find(p => getItemKey(p) === key);
+              if (!product) return null;
+              return (
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1 bg-muted/40 border border-border rounded px-1.5 py-0.5 text-xs"
+                >
+                  {product.name}
+                  <button
+                    type="button"
+                    onClick={() => onToggleProduct(key)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Main Drawer ─── */
 
 const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, editOrder, onOrderCreated }: AddSalesOrderDrawerProps) => {
   const { roles } = useAuth();
@@ -97,6 +344,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
 
   const [productDrawerOpen, setProductDrawerOpen] = useState(false);
   const [products, setProducts] = useState<OrderProduct[]>([]);
+  const [packages, setPackages] = useState<OrderPackage[]>([]);
 
   const [applyDiscount, setApplyDiscount] = useState(true);
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('shipping');
@@ -117,6 +365,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
         discountPercent: editOrder.customerDiscount,
       });
       setProducts(editOrder.products);
+      setPackages(editOrder.packages || []);
       setDeliveryType(editOrder.deliveryType);
       setPaymentMethod(editOrder.paymentMethod || 'cod');
       setBankAccountNumber(editOrder.bankAccountNumber || '');
@@ -157,7 +406,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
       .ilike('name', `%${q}%`)
       .order('name')
       .limit(10) as any);
-    
+
     const results: SalesCustomerRef[] = (data || []).map((c: any) => ({
       id: c.id,
       name: c.name,
@@ -232,14 +481,24 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
 
   const nextOrderNumber = useMemo(() => getNextOrderNumber(orders), [orders]);
 
-  const handleProductsConfirm = (selected: SalesProductOption[]) => {
+  const getItemKey = (p: OrderProduct) => p.variantId || p.productId;
+
+  const handleProductsConfirm = (selected: SelectedProductItem[]) => {
     setProducts(prev => {
-      const existingMap = new Map(prev.map(p => [p.productId, p]));
+      const existingMap = new Map(prev.map(p => [getItemKey(p), p]));
       return selected.map(s => {
-        const existing = existingMap.get(s.id);
-        return existing || {
-          productId: s.id,
-          name: s.shortName || s.fullName,
+        const key = s.variantId || s.productId;
+        const existing = existingMap.get(key);
+        if (existing) return existing;
+
+        const displayName = s.variantName
+          ? `${s.shortName || s.fullName} - ${s.variantName}`
+          : s.shortName || s.fullName;
+
+        return {
+          productId: s.productId,
+          variantId: s.variantId,
+          name: displayName,
           priceNet: s.priceNet,
           quantity: 1,
           vehicle: '',
@@ -248,22 +507,135 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     });
   };
 
-  const removeProduct = (productId: string) => {
-    setProducts((prev) => prev.filter((p) => p.productId !== productId));
+  const removeProduct = (key: string) => {
+    setProducts((prev) => prev.filter((p) => getItemKey(p) !== key));
+    // Also remove from any package assignments
+    setPackages((prev) =>
+      prev.map(pkg => ({
+        ...pkg,
+        productKeys: pkg.productKeys.filter(k => k !== key),
+      }))
+    );
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (key: string, quantity: number) => {
     if (quantity < 1) return;
     setProducts((prev) =>
-      prev.map((p) => (p.productId === productId ? { ...p, quantity } : p))
+      prev.map((p) => (getItemKey(p) === key ? { ...p, quantity } : p))
     );
   };
 
-  const updateVehicle = (productId: string, vehicle: string) => {
+  const updateVehicle = (key: string, vehicle: string) => {
     setProducts((prev) =>
-      prev.map((p) => (p.productId === productId ? { ...p, vehicle } : p))
+      prev.map((p) => (getItemKey(p) === key ? { ...p, vehicle } : p))
     );
   };
+
+  // Clean orphaned product keys from packages when products change
+  useEffect(() => {
+    const currentKeys = new Set(products.map(getItemKey));
+    setPackages(prev => {
+      const cleaned = prev.map(pkg => ({
+        ...pkg,
+        productKeys: pkg.productKeys.filter(k => currentKeys.has(k)),
+      }));
+      if (JSON.stringify(cleaned) !== JSON.stringify(prev)) return cleaned;
+      return prev;
+    });
+  }, [products]);
+
+  /* ── Package handlers ── */
+
+  const addPackage = () => {
+    setPackages(prev => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        shippingMethod: 'shipping',
+        packagingType: 'karton',
+        dimensions: { length: 0, width: 0, height: 0 },
+        productKeys: [],
+      },
+    ]);
+  };
+
+  const removePackage = (packageId: string) => {
+    setPackages(prev => prev.filter(pkg => pkg.id !== packageId));
+  };
+
+  const updatePackageShippingMethod = (packageId: string, method: DeliveryType) => {
+    setPackages(prev =>
+      prev.map(pkg => {
+        if (pkg.id !== packageId) return pkg;
+        if (method === 'shipping') {
+          return {
+            ...pkg,
+            shippingMethod: method,
+            packagingType: pkg.packagingType || 'karton',
+            dimensions: pkg.dimensions || { length: 0, width: 0, height: 0 },
+          };
+        }
+        return { ...pkg, shippingMethod: method, packagingType: undefined, dimensions: undefined };
+      })
+    );
+  };
+
+  const updatePackagePackagingType = (packageId: string, type: PackagingType) => {
+    setPackages(prev =>
+      prev.map(pkg => {
+        if (pkg.id !== packageId) return pkg;
+        const dimensions = type === 'karton'
+          ? { length: 0, width: 0, height: 0 }
+          : { length: 0, diameter: 0 };
+        return { ...pkg, packagingType: type, dimensions };
+      })
+    );
+  };
+
+  const updatePackageDimension = (packageId: string, field: string, value: number) => {
+    setPackages(prev =>
+      prev.map(pkg => {
+        if (pkg.id !== packageId || !pkg.dimensions) return pkg;
+        return { ...pkg, dimensions: { ...pkg.dimensions, [field]: value } };
+      })
+    );
+  };
+
+  const toggleProductInPackage = (packageId: string, productKey: string) => {
+    setPackages(prev =>
+      prev.map(pkg => {
+        if (pkg.id !== packageId) return pkg;
+        const keys = pkg.productKeys.includes(productKey)
+          ? pkg.productKeys.filter(k => k !== productKey)
+          : [...pkg.productKeys, productKey];
+        return { ...pkg, productKeys: keys };
+      })
+    );
+  };
+
+  /* ── Derived: unassigned products ── */
+
+  const assignedProductKeys = useMemo(() => {
+    const assigned = new Set<string>();
+    packages.forEach(pkg => pkg.productKeys.forEach(key => assigned.add(key)));
+    return assigned;
+  }, [packages]);
+
+  const unassignedProducts = useMemo(() => {
+    return products.filter(p => !assignedProductKeys.has(getItemKey(p)));
+  }, [products, assignedProductKeys]);
+
+  const getAvailableProductsForPackage = useCallback((packageId: string) => {
+    const otherPackagesKeys = new Set<string>();
+    packages.forEach(pkg => {
+      if (pkg.id !== packageId) {
+        pkg.productKeys.forEach(key => otherPackagesKeys.add(key));
+      }
+    });
+    return products.filter(p => !otherPackagesKeys.has(getItemKey(p)));
+  }, [packages, products]);
+
+  /* ── Totals ── */
 
   const subtotalNet = useMemo(
     () => products.reduce((sum, p) => sum + p.priceNet * p.quantity, 0),
@@ -288,11 +660,18 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     if (!instanceId) { toast.error('Brak instancji'); return; }
     if (!selectedCustomer) { toast.error('Wybierz klienta'); return; }
     if (products.length === 0) { toast.error('Dodaj przynajmniej jeden produkt'); return; }
+    if (packages.length > 0 && unassignedProducts.length > 0) {
+      toast.error('Przypisz wszystkie produkty do paczek');
+      return;
+    }
 
     setSaving(true);
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
+
+      const packagesPayload = packages.length > 0 ? packages : null;
+      const effectiveDeliveryType = packages.length > 0 ? packages[0].shippingMethod : deliveryType;
 
       if (isEdit && editOrder) {
         // Update existing order
@@ -304,9 +683,10 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             total_net: totalNet,
             total_gross: totalGross,
             comment: comment || null,
-            delivery_type: deliveryType,
+            delivery_type: effectiveDeliveryType,
             payment_method: paymentMethod,
             bank_account_number: bankAccountNumber || null,
+            packages: packagesPayload,
           })
           .eq('id', editOrder.id) as any);
 
@@ -318,6 +698,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
           const items = products.map((p, idx) => ({
             order_id: editOrder.id,
             product_id: p.productId || null,
+            variant_id: p.variantId || null,
             name: p.name,
             quantity: p.quantity,
             price_net: p.priceNet,
@@ -341,11 +722,12 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             total_gross: totalGross,
             currency: 'PLN',
             comment: comment || null,
-            delivery_type: deliveryType,
+            delivery_type: effectiveDeliveryType,
             payment_method: paymentMethod,
             bank_account_number: bankAccountNumber || null,
             status: 'nowy',
             created_by: user?.id || null,
+            packages: packagesPayload,
           })
           .select('id')
           .single() as any);
@@ -357,6 +739,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
           const items = products.map((p, idx) => ({
             order_id: order.id,
             product_id: p.productId || null,
+            variant_id: p.variantId || null,
             name: p.name,
             quantity: p.quantity,
             price_net: p.priceNet,
@@ -401,6 +784,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     setSelectedCustomer(null);
     setCustomerSearch('');
     setProducts([]);
+    setPackages([]);
     setApplyDiscount(true);
     setDeliveryType('shipping');
     setPaymentMethod('cod');
@@ -507,65 +891,68 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
               <Label>Produkty</Label>
               {products.length > 0 && (
                 <div className="space-y-2">
-                  {products.map((p) => (
-                    <div
-                      key={p.productId}
-                      className="bg-card border border-border rounded-md p-3 space-y-2"
-                    >
-                      {/* Row 1: Name + Price */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatCurrency(p.priceNet)} netto/szt.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => removeProduct(p.productId)}
-                          className="text-muted-foreground hover:text-destructive shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      {/* Row 2: Quantity + Vehicle */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateQuantity(p.productId, p.quantity - 1)}
-                            disabled={p.quantity <= 1}
+                  {products.map((p) => {
+                    const itemKey = getItemKey(p);
+                    return (
+                      <div
+                        key={itemKey}
+                        className="bg-card border border-border rounded-md p-3 space-y-2"
+                      >
+                        {/* Row 1: Name + Price */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {formatCurrency(p.priceNet)} netto/szt.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeProduct(itemKey)}
+                            className="text-muted-foreground hover:text-destructive shrink-0"
                           >
-                            <Minus className="w-3 h-3" />
-                          </Button>
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {/* Row 2: Quantity + Vehicle */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => updateQuantity(itemKey, p.quantity - 1)}
+                              disabled={p.quantity <= 1}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={p.quantity}
+                              onChange={(e) =>
+                                updateQuantity(itemKey, parseInt(e.target.value) || 1)
+                              }
+                              className="w-14 h-7 text-center text-sm px-1"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => updateQuantity(itemKey, p.quantity + 1)}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
                           <Input
-                            type="number"
-                            min={1}
-                            value={p.quantity}
-                            onChange={(e) =>
-                              updateQuantity(p.productId, parseInt(e.target.value) || 1)
-                            }
-                            className="w-14 h-7 text-center text-sm px-1"
+                            placeholder="Pojazd"
+                            value={p.vehicle}
+                            onChange={(e) => updateVehicle(itemKey, e.target.value)}
+                            className="h-7 text-sm flex-1"
                           />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateQuantity(p.productId, p.quantity + 1)}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
                         </div>
-                        <Input
-                          placeholder="Pojazd"
-                          value={p.vehicle}
-                          onChange={(e) => updateVehicle(p.productId, e.target.value)}
-                          className="h-7 text-sm flex-1"
-                        />
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -575,19 +962,45 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
               </Button>
             </div>
 
-            {/* Delivery type */}
+            {/* Packages */}
             <div className="space-y-2">
-              <Label>Rodzaj dostawy</Label>
-              <Select value={deliveryType} onValueChange={(v) => setDeliveryType(v as DeliveryType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shipping">Wysyłka</SelectItem>
-                  <SelectItem value="pickup">Odbiór osobisty</SelectItem>
-                  <SelectItem value="uber">Uber</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Paczki</Label>
+
+              {/* Unassigned products warning */}
+              {products.length > 0 && packages.length > 0 && unassignedProducts.length > 0 && (
+                <Alert className="border-amber-500/50 bg-amber-50 text-amber-900 [&>svg]:text-amber-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Nieprzypisane produkty: {unassignedProducts.map(p => p.name).join(', ')}.
+                    Każdy produkt musi być w paczce.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {packages.length > 0 && (
+                <div className="space-y-3">
+                  {packages.map((pkg, index) => (
+                    <PackageCard
+                      key={pkg.id}
+                      pkg={pkg}
+                      index={index}
+                      products={products}
+                      getItemKey={getItemKey}
+                      availableProducts={getAvailableProductsForPackage(pkg.id)}
+                      onRemove={() => removePackage(pkg.id)}
+                      onShippingMethodChange={(method) => updatePackageShippingMethod(pkg.id, method)}
+                      onPackagingTypeChange={(type) => updatePackagePackagingType(pkg.id, type)}
+                      onDimensionChange={(field, value) => updatePackageDimension(pkg.id, field, value)}
+                      onToggleProduct={(productKey) => toggleProductInPackage(pkg.id, productKey)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={addPackage}>
+                <Plus className="w-4 h-4" />
+                Dodaj paczkę
+              </Button>
             </div>
 
             {/* Payment method */}
@@ -725,7 +1138,8 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
           open={productDrawerOpen}
           onClose={() => setProductDrawerOpen(false)}
           instanceId={instanceId}
-          selectedProductIds={products.map(p => p.productId)}
+          selectedProductIds={products.filter(p => !p.variantId).map(p => p.productId)}
+          selectedVariantIds={products.filter(p => p.variantId).map(p => p.variantId!)}
           onConfirm={handleProductsConfirm}
         />
       </>

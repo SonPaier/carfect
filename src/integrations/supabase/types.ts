@@ -2809,6 +2809,7 @@ export type Database = {
           product_id: string | null
           quantity: number
           sort_order: number
+          variant_id: string | null
           vehicle: string | null
         }
         Insert: {
@@ -2820,6 +2821,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           sort_order?: number
+          variant_id?: string | null
           vehicle?: string | null
         }
         Update: {
@@ -2831,6 +2833,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           sort_order?: number
+          variant_id?: string | null
           vehicle?: string | null
         }
         Relationships: [
@@ -2839,6 +2842,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "sales_product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -2858,6 +2868,7 @@ export type Database = {
           id: string
           instance_id: string
           order_number: string
+          packages: Json | null
           payment_method: string
           shipped_at: string | null
           status: string
@@ -2881,6 +2892,7 @@ export type Database = {
           id?: string
           instance_id: string
           order_number: string
+          packages?: Json | null
           payment_method?: string
           shipped_at?: string | null
           status?: string
@@ -2904,6 +2916,7 @@ export type Database = {
           id?: string
           instance_id?: string
           order_number?: string
+          packages?: Json | null
           payment_method?: string
           shipped_at?: string | null
           status?: string
@@ -2930,12 +2943,48 @@ export type Database = {
           },
         ]
       }
+      sales_product_variants: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          price_net: number
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          price_net?: number
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          price_net?: number
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "sales_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_products: {
         Row: {
           category_id: string | null
           created_at: string
           description: string | null
           full_name: string
+          has_variants: boolean
           id: string
           instance_id: string
           price_net: number
@@ -2948,6 +2997,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           full_name: string
+          has_variants?: boolean
           id?: string
           instance_id: string
           price_net?: number
@@ -2960,6 +3010,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           full_name?: string
+          has_variants?: boolean
           id?: string
           instance_id?: string
           price_net?: number
