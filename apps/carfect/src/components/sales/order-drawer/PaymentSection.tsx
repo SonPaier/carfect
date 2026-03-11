@@ -40,18 +40,24 @@ export const PaymentSection = ({
       </div>
 
       {bankAccounts.length > 0 && (
-        <Select value={bankAccountNumber} onValueChange={setBankAccountNumber}>
-          <SelectTrigger>
-            <SelectValue placeholder="Wybierz konto" />
-          </SelectTrigger>
-          <SelectContent>
-            {bankAccounts.map((account, idx) => (
-              <SelectItem key={idx} value={account}>
-                {account}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <Label>Numer konta</Label>
+          <Select
+            value={bankAccountNumber || undefined}
+            onValueChange={setBankAccountNumber}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Wybierz konto" />
+            </SelectTrigger>
+            <SelectContent>
+              {bankAccounts.map((account, idx) => (
+                <SelectItem key={idx} value={account}>
+                  {account}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
     </>
   );
