@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd ../.. && pnpm --filter carfect-landing-page run build",
+  "installCommand": "cd ../.. && pnpm install",
+  "framework": "nextjs"
+}

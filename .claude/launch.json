@@ -16,6 +16,13 @@
       "autoPort": true
     },
     {
+      "name": "landing-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/tomasznastaly/Documents/programming/carfect && pnpm --filter carfect-landing-page run dev --port $PORT"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
       "name": "yuna-dev",
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "cd /Users/tomasznastaly/Documents/programming/potentialy/yuna-web && node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng serve --c=dev --port $PORT"],

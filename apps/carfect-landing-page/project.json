@@ -1,0 +1,14 @@
+{
+  "name": "carfect-landing-page",
+  "sourceRoot": "apps/carfect-landing-page/src",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "command": "pnpm --filter carfect-landing-page run dev"
+    },
+    "build": {
+      "command": "pnpm --filter carfect-landing-page run build",
+      "dependsOn": ["^build"]
+    }
+  }
+}

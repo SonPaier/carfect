@@ -1,0 +1,158 @@
+{
+  "hero": {
+    "title": "Skup się na detailingu, chaos zostaw nam.",
+    "subtitle": "Poznaj jedyny CRM i system rezerwacji stworzony przy udziale doświadczonych detailerów i właścicieli myjni ręcznych.",
+    "cta": "Umów się na prezentację",
+    "placeholder": "Twój email lub numer telefonu",
+    "success": "Dziękujemy! Skontaktujemy się wkrótce.",
+    "error": "Wystąpił błąd. Spróbuj ponownie.",
+    "validationError": "Podaj poprawny email lub numer telefonu (9 cyfr)"
+  },
+  "appPreview": {
+    "title": "Jeden system, wszystkie urządzenia",
+    "subtitle": "Zarządzaj rezerwacjami z laptopa, tabletu lub telefonu"
+  },
+  "benefits": {
+    "sectionTitle": "Dlaczego Carfect.pl?",
+    "sectionSubtitle": "Korzyści, które zmienią Twój biznes",
+    "features": [
+      {
+        "title": "Centrum Dowodzenia: pełna kontrola bez chaosu",
+        "subtitle": "Zapomnij o zeszytach i rozrzuconych notatkach. Twój główny kalendarz to inteligentne serce firmy, które łączy grafik z bazą klientów.",
+        "points": [
+          "Koniec z chaosem: Intuicyjny widok, który pozwala błyskawicznie sprawdzić obłożenie i statusy prac.",
+          "Baza klientów na wyciągnięcie ręki: Każda rezerwacja jest połączona z profilem klienta. Historia wizyt, numery telefonów i pojazdy są dostępne jednym kliknięciem.",
+          "Błyskawiczny kontakt: Musisz coś wyjaśnić? Klikasz w rezerwację i dzwonisz do klienta prosto z aplikacji.",
+          "Wszystko w jednym miejscu: Sprawdzaj terminy, twórz oferty i zarządzaj zespołem bez przełączania się między narzędziami."
+        ]
+      },
+      {
+        "title": "Twój biznes działa 24/7 – nawet gdy śpisz",
+        "subtitle": "Klienci rezerwują usługi wtedy, gdy o nich myślą – często wieczorami lub w weekendy. Daj im tę wolność i przestań tracić zlecenia po godzinach pracy.",
+        "points": [
+          "Rezerwacje 24/7: Zewnętrzny kalendarz pozwala klientom bookować terminy bez zakładania konta - Ty tylko je potwierdzasz.",
+          "Mniej telefonów, więcej spokoju: Każda rezerwacja online to o jeden telefon mniej.",
+          "Wygoda dla klienta: Możliwość zmiany lub odwołania wizyty dwoma kliknięciami buduje lojalność i profesjonalny wizerunek.",
+          "Automatyczne przypomnienia: SMS-y o nadchodzących wizytach redukują liczbę klientów, którzy nie przyjeżdżają."
+        ]
+      },
+      {
+        "title": "Maksymalna wydajność hali i zero pomyłek",
+        "subtitle": "Twój zespół zawsze wie, co robić, a Ty masz pełną kontrolę nad grafikiem, niezależnie od tego, gdzie jesteś.",
+        "points": [
+          "Precyzyjne planowanie: Czas usługi automatycznie dostosowany do rozmiaru auta. Koniec z \"dziurami\" w grafiku i nakładającymi się terminami.",
+          "Podgląd na żywo dla pracowników: Ekran na hali zastępuje bieganie do biura. Pracownicy widzą zmiany w czasie rzeczywistym.",
+          "Zarządzanie zespołem: Planuj pracę w oparciu o realną dostępność załogi i miej pewność, że każde stanowisko jest optymalnie wykorzystane."
+        ]
+      },
+      {
+        "title": "Wyższe zyski dzięki profesjonalnym ofertom",
+        "subtitle": "Przestań tracić pieniądze przez zapomniane dodatki i nieaktualne cenniki. Zarabiaj więcej na każdym aucie.",
+        "points": [
+          "Błyskawiczny detailing: Twórz profesjonalnie wyglądające oferty w kilka minut – zwiększ swoją szansę na domknięcie sprzedaży.",
+          "Wsparcie sprzedaży: System automatycznie podpowiada usługi dodatkowe, o których Ty (lub Twój pracownik) moglibyście zapomnieć.",
+          "Pilnujemy Twoich pieniędzy: System pamięta o klientach po usługach premium. W odpowiednim czasie sam wyśle zaproszenie na płatny przegląd powłoki."
+        ]
+      },
+      {
+        "title": "Pełna kontrola nad zespołem",
+        "subtitle": "Miej realny wgląd w pracę załogi i planuj grafik w oparciu o faktyczną dostępność.",
+        "points": [
+          "Ewidencja czasu pracy: Pracownicy raportują czas bezpośrednio z tabletu lub telefonu – na koniec miesiąca masz gotowe podsumowanie.",
+          "Przypisywanie do stanowisk: Określ, kto pracuje na jakim stanowisku lub przy jakiej rezerwacji – zero nieporozumień.",
+          "Planowanie grafiku: Układaj dyżury w oparciu o dostępność załogi i obłożenie – zawsze masz właściwe osoby w odpowiednim czasie."
+        ]
+      },
+      {
+        "title": "Koniec z papierami – profesjonalne protokoły przyjęć",
+        "subtitle": "Dokumentuj stan pojazdu szybko, czytelnie i bezpiecznie – bez kartek i nieczytelnych podpisów.",
+        "points": [
+          "Bez kartek i bałaganu: Protokół uzupełniony już o dane z oferty – nie przepisujesz niczego ręcznie.",
+          "Zdjęcia w jednym miejscu: Wgraj zdjęcia stanu auta bezpośrednio do protokołu – wszystko udokumentowane.",
+          "Automatyczna wysyłka i podpis: Protokół trafia do klienta automatycznie, z możliwością złożenia podpisu cyfrowego."
+        ]
+      }
+    ]
+  },
+  "testimonials": {
+    "sectionTitle": "Opinie naszych klientów",
+    "sectionSubtitle": "Sprawdź, co mówią o nas właściciele myjni i detailerzy",
+    "items": [
+      {
+        "name": "Armen",
+        "company": "ARM-CAR Detailing & Wrapping",
+        "companyUrl": "https://armcarautospa.pl/",
+        "location": "Gdańsk",
+        "logo": "armcar",
+        "text": "Na początku byłem sceptyczny, ale ten system serio ułatwił mi życie. Z kalendarza łatwo się korzysta na telefonie - wiem kto i kiedy przyjeżdża, nie muszę wszystkiego pamiętać, a powiadomienia SMS poprawiły punktualność i obecność klientów. Fajny jest też widok hali, bo chłopaki widzą co jest do roboty i nie ma biegania z pytaniami. Mnie najbardziej pomaga tworzenie ofert - kiedyś liczyłem wszystko na kartce, dobieranie dodatków, wiele wariantów... teraz w kilka kliknięć mam gotową wycenę.\n\nPodsumowując: mniej chaosu, mniej gadania, więcej czasu na rozwój biznesu.",
+        "rating": 5
+      }
+    ]
+  },
+  "pricing": {
+    "sectionTitle": "Prosty i przejrzysty cennik",
+    "sectionSubtitle": "Płacisz tylko za to, czego potrzebujesz",
+    "pricePerStation": 75,
+    "currency": "zł",
+    "currencyCode": "PLN",
+    "perStation": "za stanowisko",
+    "perMonth": "miesięcznie",
+    "perYear": "rocznie",
+    "netPrice": "netto",
+    "stations": "stanowiska",
+    "station": "stanowisko",
+    "monthly": "Miesięcznie",
+    "yearly": "Rocznie",
+    "yearlyDiscount": "20% taniej",
+    "totalMonthly": "Razem miesięcznie",
+    "totalYearly": "Razem rocznie",
+    "cta": "Umów prezentację",
+    "additionalModules": {
+      "title": "Moduły dodatkowe",
+      "subtitle": "Wycena indywidualna",
+      "items": [
+        "Widok dla pracowników",
+        "Tworzenie i zarządzanie ofertami detailingu",
+        "Protokoły przyjęcia pojazdu",
+        "Wsparcie sprzedaży",
+        "Zaawansowana analityka i raporty"
+      ]
+    }
+  },
+  "footer": {
+    "contact": "Kontakt",
+    "email": "hello@carfect.pl",
+    "phone1": "+48 666 610 222",
+    "phone2": "+48 666 610 011",
+    "website": "carfect.pl",
+    "copyright": "© 2026 Carfect.pl. Wszelkie prawa zastrzeżone.",
+    "privacy": "Polityka prywatności",
+    "terms": "Regulamin"
+  },
+  "nav": {
+    "crm": "CRM",
+    "crmMyjnia": "CRM dla myjni samochodowych",
+    "crmDetailing": "CRM dla studia detailingu",
+    "funkcje": "Funkcje",
+    "crmKlientow": "CRM klientów",
+    "kalendarzRezerwacji": "Kalendarz rezerwacji",
+    "generatorOfert": "Generator ofert",
+    "rezerwacjeOnline": "Rezerwacje online",
+    "smsPrzypomnienia": "SMS przypomnienia",
+    "zarzadzanieZespolem": "Zarządzanie zespołem",
+    "protokolPrzyjecia": "Protokół przyjęcia pojazdu",
+    "analitykaRaporty": "Analityka i raporty",
+    "cennik": "Cennik",
+    "opinie": "Opinie",
+    "caseStudies": "Case Studies",
+    "dlaczegoN2wash": "Dlaczego Carfect?",
+    "blog": "Blog",
+    "blogZyski": "Jak zwiększyć zyski w myjni",
+    "blogRezerwacje": "Jak nie zgubić rezerwacji",
+    "blogKlienci": "Jak zarządzać klientami",
+    "blogCrmVsZeszyt": "CRM vs zeszyt w myjni",
+    "umowPrezentacje": "Umów prezentację",
+    "demo": "Demo",
+    "kontakt": "Kontakt"
+  }
+}
