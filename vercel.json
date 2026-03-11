@@ -1,4 +1,8 @@
 {
+  "buildCommand": "pnpm --filter carfect run build",
+  "outputDirectory": "apps/carfect/dist",
+  "installCommand": "pnpm install",
+  "framework": "vite",
   "redirects": [
     {
       "source": "/(.*)",

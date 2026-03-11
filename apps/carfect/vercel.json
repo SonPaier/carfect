@@ -1,0 +1,31 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.n2wash.com" }],
+      "destination": "https://carfect.pl/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "n2wash.com" }],
+      "destination": "https://carfect.pl/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "(?<slug>.*)\\.admin\\.n2wash\\.com" }],
+      "destination": "https://$slug.admin.carfect.pl/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "(?<slug>.*)\\.n2wash\\.com" }],
+      "destination": "https://$slug.carfect.pl/$1",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

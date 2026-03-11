@@ -1,0 +1,368 @@
+import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Car, User, Lock, ArrowRight, Loader2, Building2, Eye, EyeOff, Phone, Mail, Bug } from 'lucide-react';
+import { Button } from '@shared/ui';
+import { Input } from '@shared/ui';
+import { Label } from '@shared/ui';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import * as Sentry from '@sentry/react';
+import { toast } from 'sonner';
+interface Instance {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  active: boolean;
+}
+interface InstanceAuthProps {
+  subdomainSlug?: string;
+}
+interface FormErrors {
+  username?: string;
+  password?: string;
+  general?: string;
+}
+const InstanceAuth = ({
+  subdomainSlug
+}: InstanceAuthProps) => {
+  const {
+    slug: paramSlug
+  } = useParams<{
+    slug: string;
+  }>();
+  const slug = subdomainSlug || paramSlug;
+  const navigate = useNavigate();
+  const {
+    user,
+    loading: authLoading,
+    signIn,
+    hasRole,
+    hasInstanceRole
+  } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [instance, setInstance] = useState<Instance | null>(null);
+  const [instanceLoading, setInstanceLoading] = useState(true);
+  const [instanceError, setInstanceError] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const returnTo = '/dashboard';
+
+  // Fetch instance by slug
+  useEffect(() => {
+    const fetchInstance = async () => {
+      if (!slug) {
+        setInstanceError('Brak identyfikatora instancji');
+        setInstanceLoading(false);
+        return;
+      }
+      const {
+        data,
+        error
+      } = await supabase.from('instances').select('id, name, slug, logo_url, primary_color, active').eq('slug', slug).maybeSingle();
+      if (error) {
+        setInstanceError('Wystąpił błąd podczas wczytywania instancji');
+        setInstanceLoading(false);
+        return;
+      }
+      if (!data) {
+        setInstanceError('Nie znaleziono instancji');
+        setInstanceLoading(false);
+        return;
+      }
+      if (!data.active) {
+        setInstanceError('Ta instancja jest nieaktywna');
+        setInstanceLoading(false);
+        return;
+      }
+      setInstance(data);
+      setInstanceLoading(false);
+    };
+    fetchInstance();
+  }, [slug]);
+
+  // Redirect if already logged in with proper role
+  useEffect(() => {
+    if (authLoading || instanceLoading || !user || !instance) return;
+    const hasAccess = hasRole('super_admin') || hasInstanceRole('admin', instance.id) || hasInstanceRole('employee', instance.id) || hasInstanceRole('hall', instance.id);
+    if (hasAccess) {
+      supabase.from('profiles').select('is_blocked').eq('id', user.id).single().then(({
+        data
+      }) => {
+        if (data?.is_blocked) {
+          setErrors({
+            general: 'Twoje konto zostało zablokowane'
+          });
+          return;
+        }
+        navigate(returnTo, {
+          replace: true
+        });
+      });
+    }
+  }, [authLoading, instanceLoading, user, instance, hasRole, hasInstanceRole, navigate, returnTo]);
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!username.trim()) {
+      newErrors.username = 'Login jest wymagany';
+    }
+    if (!password) {
+      newErrors.password = 'Hasło jest wymagane';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const trackLoginAttempt = async (profileId: string, instanceId: string, success: boolean) => {
+    try {
+      const { data } = await supabase.functions.invoke('track-login-attempt', {
+        body: { profile_id: profileId, instance_id: instanceId, success },
+      });
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    setRemainingAttempts(null);
+    if (!validateForm()) {
+      return;
+    }
+    if (!instance) {
+      setErrors({
+        general: 'Nie można zalogować - brak instancji'
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const {
+        data: profile,
+        error: lookupError
+      } = await supabase.from('profiles').select('id, email, is_blocked').eq('username', username).eq('instance_id', instance.id).maybeSingle();
+      if (lookupError || !profile?.email) {
+        setErrors({
+          general: 'Nieprawidłowy login lub hasło'
+        });
+        setLoading(false);
+        return;
+      }
+      if (profile.is_blocked) {
+        setErrors({
+          general: 'Twoje konto zostało zablokowane. Skontaktuj się z administratorem.'
+        });
+        setLoading(false);
+        return;
+      }
+      const {
+        error
+      } = await signIn(profile.email, password);
+      if (error) {
+        // Track failed attempt
+        const trackResult = await trackLoginAttempt(profile.id, instance.id, false);
+        
+        if (trackResult?.blocked) {
+          setErrors({
+            general: 'Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.'
+          });
+        } else {
+          setErrors({
+            general: 'Nieprawidłowy login lub hasło'
+          });
+          // Show remaining attempts from 3rd failure
+          if (trackResult?.show_warning && trackResult?.remaining_attempts != null) {
+            setRemainingAttempts(trackResult.remaining_attempts);
+          }
+        }
+      } else {
+        // Track successful attempt (resets counter)
+        await trackLoginAttempt(profile.id, instance.id, true);
+        navigate(returnTo);
+      }
+    } catch (err) {
+      setErrors({
+        general: 'Wystąpił błąd. Spróbuj ponownie.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const clearFieldError = (field: keyof FormErrors) => {
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+  const handleTestFrontendError = () => {
+    throw new Error('This is your first error!');
+  };
+  const handleTestBackendError = async () => {
+    try {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('test-sentry-error');
+      if (error) {
+        toast.error('Backend test failed: ' + error.message);
+        return;
+      }
+      toast.success('Backend error sent to Sentry! Event ID: ' + (data?.eventId || 'unknown'));
+      console.log('[Sentry Test] Backend response:', data);
+    } catch (err) {
+      toast.error('Backend test failed');
+      console.error('[Sentry Test] Backend error:', err);
+    }
+  };
+  if (instanceLoading || authLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>;
+  }
+  if (instanceError) {
+    return <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/10 mb-4">
+            <Building2 className="w-8 h-8 text-destructive" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground">{instanceError}</h1>
+          <p className="text-muted-foreground">
+            Sprawdź czy adres URL jest poprawny
+          </p>
+        </div>
+      </div>;
+  }
+  return <>
+      <Helmet>
+        <title>Logowanie - {instance?.name || 'Panel'}</title>
+        <meta name="description" content={`Zaloguj się do panelu ${instance?.name}`} />
+      </Helmet>
+
+      <div className="min-h-screen flex">
+        {/* Left side - Form */}
+        <div className="w-full lg:w-1/2 flex flex-col bg-white dark:bg-slate-950">
+          <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12">
+            <div className="w-full max-w-md space-y-8">
+              {/* Logo */}
+              <div className="space-y-4 text-center">
+                {instance?.logo_url && <div className="flex justify-center mb-6">
+                    <img src={instance.logo_url} alt={instance.name} className="h-20 object-scale-down" />
+                  </div>}
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                  Logowanie do panelu administracyjnego
+                </h1>
+              </div>
+
+              {/* General error */}
+              {errors.general && <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm text-destructive">{errors.general}</p>
+                  {remainingAttempts !== null && remainingAttempts > 0 && (
+                    <p className="text-xs text-destructive/80 mt-1">
+                      Pozostało prób: {remainingAttempts}
+                    </p>
+                  )}
+                </div>}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">Login</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Input id="username" type="text" value={username} onChange={e => {
+                    setUsername(e.target.value);
+                    clearFieldError('username');
+                  }} className={`pl-10 h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${errors.username ? 'border-destructive focus-visible:ring-destructive' : ''}`} autoComplete="username" />
+                  </div>
+                  {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Hasło</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => {
+                    setPassword(e.target.value);
+                    clearFieldError('password');
+                  }} className={`pl-10 pr-10 h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`} autoComplete="current-password" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                </div>
+
+                <div className="flex justify-end">
+                  <Link
+                    to={subdomainSlug ? '/forgot-password' : (slug ? `/${slug}/forgot-password` : '/forgot-password')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Zapomniałeś hasła?
+                  </Link>
+                </div>
+
+                <Button type="submit" className="w-full h-12 gap-2 bg-[#A57C00] hover:bg-[#A57C00]/90 text-white text-base font-semibold" disabled={loading}>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>
+                      Zaloguj się
+                      <ArrowRight className="w-5 h-5" />
+                    </>}
+                </Button>
+              </form>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs text-slate-400">
+              <span>© {new Date().getFullYear()} Carfect</span>
+              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                carfect.pl
+              </a>
+              <a href="tel:+48666610222" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <Phone className="w-3 h-3" />
+                +48 666 610 222
+              </a>
+              <a href="mailto:hello@carfect.pl" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <Mail className="w-3 h-3" />
+                hello@carfect.pl
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side - Decorative */}
+        <div className="hidden lg:flex lg:w-1/2 bg-black relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute inset-0">
+            <div className="absolute top-20 right-20 w-64 h-64 bg-[#A57C00]/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-40 left-10 w-48 h-48 bg-[#A57C00]/5 rounded-full blur-2xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#A57C00]/5 rounded-full blur-3xl" />
+          </div>
+          
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
+            <div className="max-w-md text-center space-y-6 flex flex-col items-center">
+              <img src="/carfect-logo.svg" alt="Carfect" className="h-12" />
+              <p className="text-white/60 text-lg">
+                Zarządzaj rezerwacjami, usługami i klientami w jednym miejscu.
+              </p>
+            </div>
+          </div>
+
+          {/* Grid pattern overlay */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }} />
+        </div>
+      </div>
+    </>;
+};
+export default InstanceAuth;

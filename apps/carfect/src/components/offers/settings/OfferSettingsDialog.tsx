@@ -1,0 +1,251 @@
+import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
+import { Tabs, TabsContent } from '@shared/ui';
+import { AdminTabsList, AdminTabsTrigger } from '@/components/admin/AdminTabsList';
+import { Button } from '@shared/ui';
+import { Label } from '@shared/ui';
+import { Textarea } from '@shared/ui';
+import { Input } from '@shared/ui';
+import { ScrollArea } from '@shared/ui';
+import { OfferBrandingSettings, OfferBrandingSettingsRef } from './OfferBrandingSettings';
+import { OfferTrustHeaderSettings, OfferTrustHeaderSettingsRef } from './OfferTrustHeaderSettings';
+import { WidgetSettingsTab } from './WidgetSettingsTab';
+import { Settings, Save, Loader2, FileText, Palette, Award, Code } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+interface OfferSettingsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  instanceId: string;
+}
+
+export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSettingsDialogProps) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState('general');
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  
+  // General settings state
+  const [defaultPaymentTerms, setDefaultPaymentTerms] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankCompanyName, setBankCompanyName] = useState('');
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  const brandingRef = useRef<OfferBrandingSettingsRef>(null);
+  const trustHeaderRef = useRef<OfferTrustHeaderSettingsRef>(null);
+
+  // Fetch settings on open
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!open || !instanceId) return;
+      setLoadingSettings(true);
+      
+      const { data } = await supabase
+        .from('instances')
+        .select('offer_default_payment_terms, offer_bank_name, offer_bank_account_number, offer_bank_company_name')
+        .eq('id', instanceId)
+        .single();
+      
+      if (data) {
+        setDefaultPaymentTerms(data.offer_default_payment_terms || '');
+        setBankName(data.offer_bank_name || '');
+        setBankAccountNumber(data.offer_bank_account_number || '');
+        setBankCompanyName(data.offer_bank_company_name || '');
+      }
+      setLoadingSettings(false);
+    };
+
+    fetchSettings();
+  }, [open, instanceId]);
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      // Save general settings
+      const { error: settingsError } = await supabase
+        .from('instances')
+        .update({ 
+          offer_default_payment_terms: defaultPaymentTerms || null,
+          offer_bank_name: bankName || null,
+          offer_bank_account_number: bankAccountNumber || null,
+          offer_bank_company_name: bankCompanyName || null,
+        })
+        .eq('id', instanceId);
+
+      if (settingsError) throw settingsError;
+
+      // Save branding
+      const brandingResult = await brandingRef.current?.saveAll();
+
+      // Save trust header
+      const trustHeaderResult = await trustHeaderRef.current?.saveAll();
+
+      if (brandingResult !== false && trustHeaderResult !== false) {
+        toast.success(t('offerSettings.saveSuccess'));
+        setHasChanges(false);
+      }
+    } catch (error) {
+      console.error('Error saving:', error);
+      toast.error(t('offerSettings.saveError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = () => {
+    setHasChanges(true);
+  };
+
+  const handleClose = (open: boolean) => {
+    if (!open && hasChanges) {
+      if (confirm(t('offerSettings.unsavedChanges'))) {
+        setHasChanges(false);
+        onOpenChange(false);
+      }
+    } else {
+      onOpenChange(open);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0">
+        {/* Fixed Header */}
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            {t('offerSettings.title')}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+            <div className="px-6 pt-4 flex-shrink-0">
+              <AdminTabsList columns={4}>
+                <AdminTabsTrigger value="general">
+                  <FileText className="h-4 w-4" />
+                  {t('offerSettings.general')}
+                </AdminTabsTrigger>
+                <AdminTabsTrigger value="branding">
+                  <Palette className="h-4 w-4" />
+                  {t('offerSettings.brandingTab')}
+                </AdminTabsTrigger>
+                <AdminTabsTrigger value="trustHeader">
+                  <Award className="h-4 w-4" />
+                  Nagłówek
+                </AdminTabsTrigger>
+                <AdminTabsTrigger value="widget">
+                  <Code className="h-4 w-4" />
+                  Wtyczka
+                </AdminTabsTrigger>
+              </AdminTabsList>
+            </div>
+
+            <ScrollArea className="flex-1 px-6">
+              <TabsContent value="general" className="mt-6 mb-6">
+                {loadingSettings ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {t('common.loading')}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Bank payment details */}
+                    <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                      <h4 className="font-medium">Dane do płatności</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Te dane będą widoczne w sekcji płatności na ofercie.
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <Label>Nazwa firmy na fakturę</Label>
+                        <Input
+                          value={bankCompanyName}
+                          onChange={(e) => { setBankCompanyName(e.target.value); handleChange(); }}
+                          disabled={saving}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Nazwa banku</Label>
+                        <Input
+                          value={bankName}
+                          onChange={(e) => { setBankName(e.target.value); handleChange(); }}
+                          disabled={saving}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Numer konta</Label>
+                        <Input
+                          value={bankAccountNumber}
+                          onChange={(e) => { setBankAccountNumber(e.target.value); handleChange(); }}
+                          disabled={saving}
+                          className="font-mono"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Default payment terms */}
+                    <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                      <h4 className="font-medium">{t('offerSettings.defaultValues')}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Te ustawienia będą dziedziczone przez każdą nowo utworzoną usługę.
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <Label>{t('offerSettings.defaultPaymentTerms')}</Label>
+                        <Textarea
+                          value={defaultPaymentTerms}
+                          onChange={(e) => { setDefaultPaymentTerms(e.target.value); handleChange(); }}
+                          rows={5}
+                          disabled={saving}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="branding" className="mt-6 mb-6">
+                <OfferBrandingSettings ref={brandingRef} instanceId={instanceId} onChange={handleChange} />
+              </TabsContent>
+
+              <TabsContent value="trustHeader" className="mt-6 mb-6">
+                <OfferTrustHeaderSettings ref={trustHeaderRef} instanceId={instanceId} onChange={handleChange} />
+              </TabsContent>
+
+              <TabsContent value="widget" className="mt-6 mb-6">
+                <WidgetSettingsTab instanceId={instanceId} onChange={handleChange} />
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+        </div>
+
+        {/* Fixed Footer */}
+        <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
+          <Button variant="outline" onClick={() => handleClose(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={handleSaveAll} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t('common.saving')}
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {t('common.save')}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

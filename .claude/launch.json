@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "carfect", "run", "dev", "--port", "$PORT"],
+      "port": 8080,
+      "autoPort": true
+    },
+    {
+      "name": "yuna-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/tomasznastaly/Documents/programming/potentialy/yuna-web && node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng serve --c=dev --port $PORT"],
+      "port": 4200,
+      "autoPort": true
+    }
+  ]
+}

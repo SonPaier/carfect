@@ -1,0 +1,21 @@
+{
+  "name": "carfect",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/carfect/src",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "command": "pnpm --filter carfect run dev"
+    },
+    "build": {
+      "command": "pnpm --filter carfect run build",
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "command": "pnpm --filter carfect run lint"
+    },
+    "preview": {
+      "command": "pnpm --filter carfect run preview"
+    }
+  }
+}
