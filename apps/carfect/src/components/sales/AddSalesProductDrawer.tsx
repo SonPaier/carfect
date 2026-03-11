@@ -285,28 +285,6 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Cena za</Label>
-              <RadioGroup
-                value={priceUnit}
-                onValueChange={(v) => setPriceUnit(v as 'piece' | 'meter')}
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="piece" id="unit-piece" />
-                  <Label htmlFor="unit-piece" className="font-normal cursor-pointer">
-                    Sztukę
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="meter" id="unit-meter" />
-                  <Label htmlFor="unit-meter" className="font-normal cursor-pointer">
-                    m²
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
             <div className="flex items-center gap-2">
               <Checkbox
                 id="has-variants"
@@ -361,18 +339,42 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label htmlFor="product-price">Cena netto</Label>
-                <Input
-                  id="product-price"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="0.00"
-                  value={priceNet}
-                  onChange={(e) => setPriceNet(e.target.value)}
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="product-price">Cena netto</Label>
+                  <Input
+                    id="product-price"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="0.00"
+                    value={priceNet}
+                    onChange={(e) => setPriceNet(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cena za</Label>
+                  <RadioGroup
+                    value={priceUnit}
+                    onValueChange={(v) => setPriceUnit(v as 'piece' | 'meter')}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="piece" id="unit-piece" />
+                      <Label htmlFor="unit-piece" className="font-normal cursor-pointer">
+                        Sztukę
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="meter" id="unit-meter" />
+                      <Label htmlFor="unit-meter" className="font-normal cursor-pointer">
+                        m²
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </>
             )}
           </div>
         </div>
