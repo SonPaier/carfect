@@ -256,7 +256,9 @@ const SalesDashboard = () => {
 
           {/* Content area */}
           <div className="flex-1 overflow-auto p-4 md:p-6">
-            {renderContent()}
+            <div className="max-w-[var(--sales-content-max-width)] mx-auto">
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>

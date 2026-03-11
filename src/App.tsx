@@ -21,6 +21,7 @@ import EmbedLeadForm from "./pages/EmbedLeadForm";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import DesignSystem from "./pages/DesignSystem";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRedirect from "./components/RoleBasedRedirect";
 
@@ -259,6 +260,8 @@ const DevRoutes = () => (
         </ProtectedRoute>
       } 
     />
+    {/* Design system - component showcase */}
+    <Route path="/design-system" element={<DesignSystem />} />
     {/* Legacy routes - redirect to login */}
     <Route path="/admin/login" element={<InstanceAuth />} />
     <Route path="/super-admin/login" element={<SuperAdminAuth />} />

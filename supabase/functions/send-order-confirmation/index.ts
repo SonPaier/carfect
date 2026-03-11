@@ -163,6 +163,15 @@ serve(async (req) => {
 <p style="margin:4px 0 0;font-size:15px;line-height:1.7;color:#333;font-weight:600;">Suma całkowita brutto: ${totalGrossDisplay}</p>`;
     }
 
+    // Build attachments HTML (formatki images)
+    const orderAttachments = Array.isArray(order.attachments) ? order.attachments : [];
+    const attachmentsHtml = orderAttachments.length > 0
+      ? `<div style="margin:16px 0 0;">
+<p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;font-weight:700;">Formatki:</p>
+${orderAttachments.map((a: any) => `<img src="${a.url}" alt="${a.name || "Formatka"}" style="max-width:100%;border-radius:8px;margin:0 0 8px;display:block;" />`).join("\n")}
+</div>`
+      : "";
+
     const deliveryLabel = deliveryLabels[order.delivery_type] || order.delivery_type || "—";
     const paymentLabel = paymentLabels[order.payment_method] || order.payment_method || "—";
 
@@ -181,6 +190,7 @@ serve(async (req) => {
 <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;font-weight:700;">Lista zamówionych produktów:</p>
 ${productsHtml}
 ${totalHtml}
+${attachmentsHtml}
 <br>
 <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;">Sposób dostawy: ${deliveryLabel}</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#333;">Sposób płatności: ${paymentLabel}</p>

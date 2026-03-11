@@ -104,6 +104,7 @@ const SalesOrdersView = () => {
       comment: o.comment || undefined,
       status: o.status as 'nowy' | 'wysłany',
       trackingNumber: o.tracking_number || undefined,
+      trackingUrl: o.apaczka_tracking_url || undefined,
     }));
 
     setOrders(mapped);
@@ -222,14 +223,14 @@ const SalesOrdersView = () => {
     // Fetch order items with vehicle info from DB
     const { data: items } = await (supabase
       .from('sales_order_items')
-      .select('product_id, variant_id, name, price_net, quantity, vehicle, sort_order')
+      .select('product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order')
       .eq('order_id', order.id)
       .order('sort_order') as any);
 
     // Fetch delivery_type from the order
     const { data: orderData } = await (supabase
       .from('sales_orders')
-      .select('delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages')
+      .select('delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments')
       .eq('id', order.id)
       .single() as any);
 
@@ -255,6 +256,7 @@ const SalesOrdersView = () => {
         variantId: item.variant_id || undefined,
         name: item.name,
         priceNet: Number(item.price_net),
+        priceUnit: item.price_unit || 'szt.',
         quantity: item.quantity,
         vehicle: item.vehicle || '',
       })),
@@ -264,6 +266,7 @@ const SalesOrdersView = () => {
       bankAccountNumber: orderData?.bank_account_number || '',
       comment: orderData?.comment || '',
       sendEmail: false,
+      attachments: (orderData?.attachments as any[] || []).map((a: any) => a.url),
     });
     setDrawerOpen(true);
   };
@@ -362,12 +365,16 @@ const SalesOrdersView = () => {
                       <TableCell>
                         {order.trackingNumber ? (
                           <a
-                            href="#"
+                            href={order.trackingUrl || '#'}
+                            target={order.trackingUrl ? '_blank' : undefined}
+                            rel={order.trackingUrl ? 'noopener noreferrer' : undefined}
                             className="text-sm text-primary hover:underline truncate block max-w-[160px]"
                             onClick={(e) => {
                               e.stopPropagation();
-                              e.preventDefault();
-                              toast.info('Śledzenie przesyłki w przygotowaniu');
+                              if (!order.trackingUrl) {
+                                e.preventDefault();
+                                toast.info('Śledzenie przesyłki w przygotowaniu');
+                              }
                             }}
                           >
                             {order.trackingNumber}

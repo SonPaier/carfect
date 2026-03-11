@@ -60,6 +60,8 @@
     --ring: 216 19% 26%;
 
     --radius: 0.25rem;
+    --drawer-width: 550px;
+    --sales-content-max-width: 960px;
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 222 47% 11%;

@@ -20,6 +20,7 @@ export interface SalesOrder {
   comment?: string;
   status: 'nowy' | 'wysłany';
   trackingNumber?: string;
+  trackingUrl?: string;
 }
 
 export const mockSalesOrders: SalesOrder[] = [];
