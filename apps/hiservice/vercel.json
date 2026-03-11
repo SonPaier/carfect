@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd ../.. && pnpm --filter hiservice run build",
+  "outputDirectory": "dist",
+  "installCommand": "cd ../.. && pnpm install",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
