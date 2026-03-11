@@ -7,6 +7,7 @@ import PackageCard from './PackageCard';
 interface PackagesSectionProps {
   packages: OrderPackage[];
   products: OrderProduct[];
+  instanceId: string | null;
   onRemovePackage: (packageId: string) => void;
   onShippingMethodChange: (packageId: string, method: DeliveryType) => void;
   onPackagingTypeChange: (packageId: string, type: PackagingType) => void;
@@ -15,12 +16,14 @@ interface PackagesSectionProps {
   onRemoveProduct: (packageId: string, productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
+  onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
   onAddPackage: () => void;
 }
 
 export const PackagesSection = ({
   packages,
   products,
+  instanceId,
   onRemovePackage,
   onShippingMethodChange,
   onPackagingTypeChange,
@@ -29,6 +32,7 @@ export const PackagesSection = ({
   onRemoveProduct,
   onUpdateQuantity,
   onUpdateVehicle,
+  onUpdateRollAssignment,
   onAddPackage,
 }: PackagesSectionProps) => {
   return (
@@ -51,6 +55,8 @@ export const PackagesSection = ({
               onRemoveProduct={(productKey) => onRemoveProduct(pkg.id, productKey)}
               onUpdateQuantity={(productKey, qty) => onUpdateQuantity(productKey, qty)}
               onUpdateVehicle={(productKey, vehicle) => onUpdateVehicle(productKey, vehicle)}
+              instanceId={instanceId}
+              onUpdateRollAssignment={onUpdateRollAssignment ? (productKey, rollId, usageM2, widthMm) => onUpdateRollAssignment(productKey, rollId, usageM2, widthMm) : undefined}
             />
           ))}
         </div>

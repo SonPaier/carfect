@@ -1,0 +1,82 @@
+export interface SalesRoll {
+  id: string;
+  instanceId: string;
+  brand: string;
+  productName: string;
+  description?: string;
+  productCode?: string;
+  barcode?: string;
+  widthMm: number;
+  lengthM: number;
+  initialLengthM: number;
+  deliveryDate?: string;
+  photoUrl?: string;
+  status: 'active' | 'archived';
+  extractionConfidence?: Record<string, number>;
+  createdAt: string;
+  updatedAt: string;
+  // Computed client-side from usages
+  currentUsageMb?: number;
+  remainingMb?: number;
+  remainingM2?: number;
+}
+
+export interface SalesRollUsage {
+  id: string;
+  rollId: string;
+  orderId: string;
+  orderItemId: string;
+  usedM2: number;
+  usedMb: number;
+  createdAt: string;
+}
+
+export type RollScanStatus = 'uploading' | 'extracting' | 'review' | 'confirmed' | 'error';
+
+export interface RollScanResult {
+  tempId: string;
+  file: File;
+  thumbnailUrl: string;
+  photoUrl?: string;
+  extractedData: Partial<SalesRoll>;
+  confidence: Record<string, number>;
+  warnings: string[];
+  status: RollScanStatus;
+  error?: string;
+}
+
+export interface ExtractRollDataResponse {
+  brand: string;
+  productName: string;
+  description: string;
+  productCode: string;
+  barcode: string;
+  widthMm: number;
+  lengthM: number;
+  deliveryDate: string | null;
+  confidence: Record<string, number>;
+  warnings: string[];
+  rawText?: string;
+}
+
+// Helpers
+export function rollWidthM(roll: { widthMm: number }): number {
+  return roll.widthMm / 1000;
+}
+
+export function mbToM2(mb: number, widthMm: number): number {
+  return mb * (widthMm / 1000);
+}
+
+export function m2ToMb(m2: number, widthMm: number): number {
+  return m2 / (widthMm / 1000);
+}
+
+export function formatRollSize(widthMm: number, lengthM: number): string {
+  return `${widthMm}mm × ${lengthM}m`;
+}
+
+export function formatMbM2(mb: number, widthMm: number): string {
+  const m2 = mbToM2(mb, widthMm);
+  return `${mb.toFixed(1)} mb / ${m2.toFixed(2)} m²`;
+}

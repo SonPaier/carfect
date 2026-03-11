@@ -1,0 +1,26 @@
+project_id = "czwrpwdlkvcgaibfzbyk"
+
+[functions.send-sms]
+verify_jwt = false
+
+[functions.invoicing-api]
+verify_jwt = false
+
+[functions.fakturownia-webhook]
+verify_jwt = false
+
+[functions.sync-invoice-statuses]
+verify_jwt = false
+
+[functions.import-customers]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.bulk-import-mapped]
+verify_jwt = false
+
+[functions.geocode-addresses]
+verify_jwt = false
+

@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noFallthroughCasesInSwitch": false,
+    "strictNullChecks": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/ui": ["../../libs/ui/src/index.ts"],
+      "@shared/ui/*": ["../../libs/ui/src/*"],
+      "@shared/utils": ["../../libs/shared-utils/src/index.ts"]
+    }
+  },
+  "include": [
+    "src",
+    "../../libs/ui/src",
+    "../../libs/shared-utils/src"
+  ]
+}

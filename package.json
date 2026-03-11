@@ -6,7 +6,9 @@
     "dev": "nx run carfect:dev",
     "build": "nx run carfect:build",
     "lint": "nx run-many --target=lint",
-    "dev:carfect": "nx run carfect:dev"
+    "dev:carfect": "nx run carfect:dev",
+    "dev:hiservice": "nx run hiservice:dev",
+    "build:hiservice": "nx run hiservice:build"
   },
   "devDependencies": {
     "nx": "^21.3.2",
