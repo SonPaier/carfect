@@ -1,0 +1,21 @@
+{
+  "name": "hiservice",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/hiservice/src",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "command": "pnpm --filter hiservice run dev"
+    },
+    "build": {
+      "command": "pnpm --filter hiservice run build",
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "command": "pnpm --filter hiservice run lint"
+    },
+    "preview": {
+      "command": "pnpm --filter hiservice run preview"
+    }
+  }
+}

@@ -4,6 +4,7 @@ import {
   ShoppingCart,
   Users,
   Package,
+  Cylinder,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -16,6 +17,7 @@ import { useInstanceData } from '@/hooks/useInstanceData';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
 import SalesProductsView from '@/components/sales/SalesProductsView';
 import SalesCustomersView from '@/components/sales/SalesCustomersView';
+import SalesRollsView from '@/components/sales/SalesRollsView';
 import { Button } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import {
@@ -28,9 +30,9 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
-type SalesViewType = 'orders' | 'customers' | 'products';
+type SalesViewType = 'orders' | 'customers' | 'products' | 'rolls';
 
-const validViews: SalesViewType[] = ['orders', 'customers', 'products'];
+const validViews: SalesViewType[] = ['orders', 'customers', 'products', 'rolls'];
 
 const SalesDashboard = () => {
   const navigate = useNavigate();
@@ -82,6 +84,7 @@ const SalesDashboard = () => {
     { key: 'orders', label: 'Zamówienia', icon: ShoppingCart },
     { key: 'customers', label: 'Klienci', icon: Users },
     { key: 'products', label: 'Produkty', icon: Package },
+    { key: 'rolls', label: 'Rolki', icon: Cylinder },
   ];
 
   const renderContent = () => {
@@ -92,6 +95,8 @@ const SalesDashboard = () => {
         return <SalesCustomersView />;
       case 'products':
         return <SalesProductsView />;
+      case 'rolls':
+        return <SalesRollsView />;
     }
   };
 

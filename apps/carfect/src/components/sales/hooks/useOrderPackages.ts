@@ -30,6 +30,9 @@ export interface OrderProduct {
   priceUnit: string;
   quantity: number;
   vehicle: string;
+  rollId?: string;
+  rollUsageM2?: number;
+  rollWidthMm?: number;
 }
 
 export const getItemKey = (p: OrderProduct) => p.variantId || p.productId;
@@ -138,6 +141,21 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
+  const updateRollAssignment = (key: string, rollId: string | null, rollUsageM2: number, rollWidthMm?: number) => {
+    setProducts(prev =>
+      prev.map(p =>
+        getItemKey(p) === key
+          ? {
+              ...p,
+              rollId: rollId || undefined,
+              rollUsageM2: rollId ? rollUsageM2 : undefined,
+              rollWidthMm: rollId ? rollWidthMm : undefined,
+            }
+          : p
+      )
+    );
+  };
+
   const addPackage = () => {
     setPackages(prev => [...prev, createDefaultPackage()]);
   };
@@ -209,6 +227,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     removeProductFromPackage,
     updateQuantity,
     updateVehicle,
+    updateRollAssignment,
     addPackage,
     removePackage,
     updatePackageShippingMethod,

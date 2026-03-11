@@ -22,6 +22,8 @@ import SalesProductSelectionDrawer from './SalesProductSelectionDrawer';
 import { ImagePasteZone } from '@/components/ui/image-paste-zone';
 
 import { VAT_RATE } from './constants';
+import { createRollUsage, deleteRollUsagesByOrder } from './services/rollService';
+import { m2ToMb } from './types/rolls';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
 import {
   useOrderPackages,
@@ -214,6 +216,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
 
         if (error) throw error;
 
+        // Delete old items and their roll usages (cascade handles usages)
         await (supabase.from('sales_order_items').delete().eq('order_id', editOrder.id) as any);
         if (products.length > 0) {
           const items = products.map((p, idx) => ({
@@ -227,7 +230,27 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             vehicle: p.vehicle || null,
             sort_order: idx,
           }));
-          await (supabase.from('sales_order_items').insert(items) as any);
+          const { data: insertedItems } = await (supabase.from('sales_order_items').insert(items).select('id') as any);
+
+          // Create roll usages for meter-based products
+          if (insertedItems) {
+            for (let i = 0; i < products.length; i++) {
+              const p = products[i];
+              if (p.rollId && p.rollUsageM2 && insertedItems[i]?.id) {
+                try {
+                  await createRollUsage({
+                    rollId: p.rollId,
+                    orderId: editOrder.id,
+                    orderItemId: insertedItems[i].id,
+                    usedM2: p.rollUsageM2,
+                    usedMb: m2ToMb(p.rollUsageM2, p.rollWidthMm || 1524),
+                  });
+                } catch (e) {
+                  console.warn('Roll usage creation failed:', e);
+                }
+              }
+            }
+          }
         }
 
         toast.success('Zamówienie zaktualizowane');
@@ -268,7 +291,27 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             vehicle: p.vehicle || null,
             sort_order: idx,
           }));
-          await (supabase.from('sales_order_items').insert(items) as any);
+          const { data: insertedItems } = await (supabase.from('sales_order_items').insert(items).select('id') as any);
+
+          // Create roll usages for meter-based products
+          if (insertedItems) {
+            for (let i = 0; i < products.length; i++) {
+              const p = products[i];
+              if (p.rollId && p.rollUsageM2 && insertedItems[i]?.id) {
+                try {
+                  await createRollUsage({
+                    rollId: p.rollId,
+                    orderId: order.id,
+                    orderItemId: insertedItems[i].id,
+                    usedM2: p.rollUsageM2,
+                    usedMb: m2ToMb(p.rollUsageM2, p.rollWidthMm || 1524),
+                  });
+                } catch (e) {
+                  console.warn('Roll usage creation failed:', e);
+                }
+              }
+            }
+          }
         }
 
         toast.success('Zamówienie zostało dodane');
@@ -365,6 +408,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
             <PackagesSection
               packages={orderPackages.packages}
               products={products}
+              instanceId={instanceId}
               onRemovePackage={orderPackages.removePackage}
               onShippingMethodChange={orderPackages.updatePackageShippingMethod}
               onPackagingTypeChange={orderPackages.updatePackagePackagingType}
@@ -373,6 +417,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
               onRemoveProduct={orderPackages.removeProductFromPackage}
               onUpdateQuantity={orderPackages.updateQuantity}
               onUpdateVehicle={orderPackages.updateVehicle}
+              onUpdateRollAssignment={orderPackages.updateRollAssignment}
               onAddPackage={orderPackages.addPackage}
             />
 

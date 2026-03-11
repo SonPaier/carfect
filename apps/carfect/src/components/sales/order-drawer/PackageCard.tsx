@@ -13,11 +13,13 @@ import {
   type TubaDimensions,
 } from '../hooks/useOrderPackages';
 import { formatCurrency } from '../constants';
+import RollSelectAutocomplete from '../rolls/RollSelectAutocomplete';
 
 interface PackageCardProps {
   pkg: OrderPackage;
   index: number;
   packageProducts: OrderProduct[];
+  instanceId: string | null;
   onRemove: () => void;
   onShippingMethodChange: (method: DeliveryType) => void;
   onPackagingTypeChange: (type: PackagingType) => void;
@@ -26,12 +28,14 @@ interface PackageCardProps {
   onRemoveProduct: (productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
+  onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
 }
 
 const PackageCard = ({
   pkg,
   index,
   packageProducts,
+  instanceId,
   onRemove,
   onShippingMethodChange,
   onPackagingTypeChange,
@@ -40,6 +44,7 @@ const PackageCard = ({
   onRemoveProduct,
   onUpdateQuantity,
   onUpdateVehicle,
+  onUpdateRollAssignment,
 }: PackageCardProps) => {
   return (
     <div className="bg-card border border-border rounded-md p-3 space-y-3">
@@ -85,6 +90,18 @@ const PackageCard = ({
                     </div>
                     <Input placeholder="Pojazd" value={p.vehicle} onChange={(e) => onUpdateVehicle(itemKey, e.target.value)} className="h-6 text-sm flex-1" />
                   </div>
+                  {/* Roll assignment for meter-based products */}
+                  {p.priceUnit === 'meter' && onUpdateRollAssignment && (
+                    <RollSelectAutocomplete
+                      instanceId={instanceId}
+                      productName={p.name.split(' - ')[0]}
+                      usageM2={p.rollUsageM2 || 0}
+                      selectedRollId={p.rollId || null}
+                      onSelect={(rollId, usageM2, widthMm) =>
+                        onUpdateRollAssignment(itemKey, rollId, usageM2, widthMm)
+                      }
+                    />
+                  )}
                 </div>
               );
             })}
