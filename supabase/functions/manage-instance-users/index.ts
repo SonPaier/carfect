@@ -12,7 +12,7 @@ interface ManageUserRequest {
   userId?: string;
   username?: string;
   password?: string;
-  role?: 'admin' | 'employee' | 'hall';
+  role?: 'admin' | 'employee' | 'hall' | 'sales';
   adminPassword?: string; // Required for reset-password: caller's own password to confirm identity
 }
 
@@ -116,10 +116,12 @@ Deno.serve(async (req) => {
 
         const users = (profiles || []).map((profile: any) => {
           const userRoles = (roles || []).filter((r: any) => r.user_id === profile.id).map((r: any) => r.role);
-          // Determine role priority: admin > hall > employee
+          // Determine role priority: admin > sales > hall > employee
           let userRole = 'employee';
           if (userRoles.includes('admin')) {
             userRole = 'admin';
+          } else if (userRoles.includes('sales')) {
+            userRole = 'sales';
           } else if (userRoles.includes('hall')) {
             userRole = 'hall';
           }
@@ -148,9 +150,9 @@ Deno.serve(async (req) => {
         }
 
         // Validate role
-        if (role !== 'admin' && role !== 'employee' && role !== 'hall') {
+        if (role !== 'admin' && role !== 'employee' && role !== 'hall' && role !== 'sales') {
           return new Response(
-            JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall' }),
+            JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }

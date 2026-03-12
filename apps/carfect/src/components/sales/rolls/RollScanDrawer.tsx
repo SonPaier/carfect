@@ -40,17 +40,19 @@ const RollScanDrawer = ({
     onOpenChange(false);
   };
 
-  const handleSaveConfirmed = async () => {
+  const savableResults = scan.results.filter(
+    (r) => r.status === 'confirmed' || r.status === 'review'
+  );
+
+  const handleSave = async () => {
     if (!instanceId) return;
 
-    const confirmed = scan.confirmedResults;
-    if (confirmed.length === 0) {
-      toast.error('Brak potwierdzonych rolek do zapisania');
+    if (savableResults.length === 0) {
+      toast.error('Brak rolek do zapisania');
       return;
     }
 
-    // Validate all confirmed have required fields
-    for (const item of confirmed) {
+    for (const item of savableResults) {
       const d = item.extractedData;
       if (!d.productName || !d.widthMm || !d.lengthM) {
         toast.error(
@@ -62,7 +64,7 @@ const RollScanDrawer = ({
 
     setSaving(true);
     try {
-      const rollsToCreate = confirmed.map((item) => ({
+      const rollsToCreate = savableResults.map((item) => ({
         instanceId,
         brand: item.extractedData.brand || 'ULTRAFIT',
         productName: item.extractedData.productName!,
@@ -77,7 +79,7 @@ const RollScanDrawer = ({
       }));
 
       await createRollsBatch(rollsToCreate);
-      toast.success(`Zapisano ${confirmed.length} ${confirmed.length === 1 ? 'rolkę' : 'rolek'}`);
+      toast.success(`Zapisano ${savableResults.length} ${savableResults.length === 1 ? 'rolkę' : 'rolek'}`);
       scan.reset();
       onOpenChange(false);
       onSaved?.();
@@ -92,7 +94,7 @@ const RollScanDrawer = ({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-4xl flex flex-col"
+        className="w-[700px] sm:max-w-[700px] flex flex-col"
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
@@ -108,13 +110,11 @@ const RollScanDrawer = ({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto py-4 space-y-6">
-          {/* Upload zone */}
           <RollScanUploadZone
             onFilesSelected={scan.addFiles}
             disabled={scan.processing}
           />
 
-          {/* Progress */}
           <RollScanProgressList
             results={scan.results}
             currentIndex={scan.currentIndex}
@@ -122,7 +122,6 @@ const RollScanDrawer = ({
             processing={scan.processing}
           />
 
-          {/* Error summary */}
           {scan.errorResults.length > 0 && (
             <div className="p-3 rounded-md bg-red-50 border border-red-200">
               <p className="text-sm font-medium text-red-800">
@@ -137,12 +136,8 @@ const RollScanDrawer = ({
             </div>
           )}
 
-          {/* Results table */}
           <RollScanResultsTable
             results={scan.results}
-            onUpdateField={scan.updateExtractedField}
-            onConfirm={scan.confirmResult}
-            onConfirmAll={scan.confirmAll}
             onRemove={scan.removeResult}
           />
         </div>
@@ -151,15 +146,15 @@ const RollScanDrawer = ({
           <Button variant="outline" onClick={handleClose} disabled={saving}>
             {scan.results.length > 0 ? 'Anuluj' : 'Zamknij'}
           </Button>
-          {scan.confirmedResults.length > 0 && (
-            <Button onClick={handleSaveConfirmed} disabled={saving || scan.processing}>
+          {savableResults.length > 0 && (
+            <Button onClick={handleSave} disabled={saving || scan.processing}>
               {saving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Save className="w-4 h-4 mr-2" />
               )}
-              Zapisz {scan.confirmedResults.length}{' '}
-              {scan.confirmedResults.length === 1 ? 'rolkę' : 'rolek'}
+              Zapisz {savableResults.length}{' '}
+              {savableResults.length === 1 ? 'rolkę' : 'rolek'}
             </Button>
           )}
         </SheetFooter>

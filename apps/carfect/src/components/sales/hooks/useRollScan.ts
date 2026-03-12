@@ -110,7 +110,7 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
           const extracted = await extractRollData(base64, mediaType);
 
           updateResult(item.tempId, {
-            status: 'review',
+            status: 'confirmed',
             photoUrl,
             extractedData: {
               brand: extracted.brand,

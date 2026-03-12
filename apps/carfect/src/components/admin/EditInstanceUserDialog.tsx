@@ -37,7 +37,7 @@ import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
 interface InstanceUser {
   id: string;
   username: string;
-  role: 'admin' | 'employee';
+  role: 'admin' | 'employee' | 'hall' | 'sales';
 }
 
 interface EditInstanceUserDialogProps {
@@ -62,7 +62,7 @@ const EditInstanceUserDialog = ({
 }: EditInstanceUserDialogProps) => {
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
-  const [role, setRole] = useState<'employee' | 'admin'>('employee');
+  const [role, setRole] = useState<'employee' | 'admin' | 'hall' | 'sales'>('employee');
   const [loading, setLoading] = useState(false);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState<'admin' | null>(null);
@@ -105,7 +105,7 @@ const EditInstanceUserDialog = ({
     }
   };
 
-  const handleRoleChange = (newRole: 'employee' | 'admin') => {
+  const handleRoleChange = (newRole: 'employee' | 'admin' | 'hall' | 'sales') => {
     if (newRole === 'admin' && role !== 'admin') {
       setPendingRole('admin');
       setShowAdminConfirm(true);
@@ -255,12 +255,18 @@ const EditInstanceUserDialog = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">{t('editUser.roleEmployee')}</SelectItem>
+                  <SelectItem value="hall">{t('editUser.roleHall') || 'Widok Hali (Kiosk)'}</SelectItem>
+                  <SelectItem value="sales">{t('editUser.roleSales') || 'Sprzedaż (CRM)'}</SelectItem>
                   <SelectItem value="admin">{t('editUser.roleAdmin')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {role === 'admin' 
+                {role === 'admin'
                   ? t('editUser.adminHint')
+                  : role === 'hall'
+                  ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
+                  : role === 'sales'
+                  ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
                   : t('editUser.employeeHint')}
               </p>
             </div>
