@@ -48,7 +48,7 @@ const AddInstanceUserDialog = ({
 }: AddInstanceUserDialogProps) => {
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
-  const [role, setRole] = useState<'employee' | 'admin' | 'hall'>('employee');
+  const [role, setRole] = useState<'employee' | 'admin' | 'hall' | 'sales'>('employee');
   const [loading, setLoading] = useState(false);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState<'admin' | null>(null);
@@ -72,7 +72,7 @@ const AddInstanceUserDialog = ({
     setPendingRole(null);
   };
 
-  const handleRoleChange = (newRole: 'employee' | 'admin' | 'hall') => {
+  const handleRoleChange = (newRole: 'employee' | 'admin' | 'hall' | 'sales') => {
     if (newRole === 'admin') {
       setPendingRole('admin');
       setShowAdminConfirm(true);
@@ -201,14 +201,17 @@ const AddInstanceUserDialog = ({
                 <SelectContent>
                   <SelectItem value="employee">Pracownik</SelectItem>
                   <SelectItem value="hall">Widok Hali (Kiosk)</SelectItem>
+                  <SelectItem value="sales">Sprzedaż (CRM)</SelectItem>
                   <SelectItem value="admin">Admin Instancji</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {role === 'admin' 
+                {role === 'admin'
                   ? 'Admin ma pełny dostęp do ustawień i zarządzania użytkownikami'
                   : role === 'hall'
                   ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
+                  : role === 'sales'
+                  ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
                   : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
               </p>
             </div>

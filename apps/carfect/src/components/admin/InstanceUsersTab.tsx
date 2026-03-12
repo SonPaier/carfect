@@ -26,7 +26,7 @@ interface InstanceUser {
   email: string;
   is_blocked: boolean;
   created_at: string;
-  role: 'admin' | 'employee';
+  role: 'admin' | 'employee' | 'hall' | 'sales';
 }
 
 interface InstanceUsersTabProps {
@@ -139,12 +139,28 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
     setDeleteDialogOpen(true);
   };
 
-  const getRoleBadge = (role: 'admin' | 'employee') => {
+  const getRoleBadge = (role: 'admin' | 'employee' | 'hall' | 'sales') => {
     if (role === 'admin') {
       return (
         <Badge variant="default" className="gap-1">
           <Shield className="w-3 h-3" />
           {t('instanceUsers.admin')}
+        </Badge>
+      );
+    }
+    if (role === 'sales') {
+      return (
+        <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-800">
+          <User className="w-3 h-3" />
+          Sprzedaż
+        </Badge>
+      );
+    }
+    if (role === 'hall') {
+      return (
+        <Badge variant="secondary" className="gap-1 bg-purple-100 text-purple-800">
+          <User className="w-3 h-3" />
+          Hala
         </Badge>
       );
     }

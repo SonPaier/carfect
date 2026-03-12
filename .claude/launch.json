@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "carfect", "run", "dev", "--port", "$PORT"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/tomasznastaly/Documents/programming/carfect && pnpm --filter carfect run dev --port $PORT"],
       "port": 8080,
       "autoPort": true
     },
