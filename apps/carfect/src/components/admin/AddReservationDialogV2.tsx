@@ -1637,7 +1637,7 @@ const AddReservationDialogV2 = ({
                 carSize={carSize}
                 selectedServiceIds={selectedServices}
                 stationType="universal"
-                hasUnifiedServices={isEditMode ? editingReservation?.has_unified_services ?? false : true}
+                hasUnifiedServices={isYardMode ? true : isEditMode ? editingReservation?.has_unified_services ?? false : true}
                 hideSelectedSection={true}
                 onConfirm={(serviceIds, duration, servicesData) => {
                   markUserEditing();

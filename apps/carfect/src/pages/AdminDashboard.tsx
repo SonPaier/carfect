@@ -281,6 +281,8 @@ const AdminDashboard = () => {
 
   // Yard vehicle count for badge
   const [yardVehicleCount, setYardVehicleCount] = useState(0);
+  // Track yard vehicle ID when creating reservation from yard
+  const pendingYardVehicleIdRef = useRef<string | null>(null);
 
   // Unread notifications count for badge
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
@@ -1578,7 +1580,8 @@ const AdminDashboard = () => {
     setAddReservationOpen(true);
   };
   // Create reservation from yard vehicle — opens drawer pre-filled with yard data
-  const handleCreateReservationFromYard = (vehicle: { customer_name: string; customer_phone: string; vehicle_plate: string; car_size: 'small' | 'medium' | 'large' | null; service_ids: string[]; notes: string | null }) => {
+  const handleCreateReservationFromYard = (vehicle: { id: string; customer_name: string; customer_phone: string; vehicle_plate: string; car_size: 'small' | 'medium' | 'large' | null; service_ids: string[]; notes: string | null }) => {
+    pendingYardVehicleIdRef.current = vehicle.id;
     setSelectedReservation(null);
     setEditingReservation({
       id: '', // Empty = new reservation (not edit)
@@ -1604,11 +1607,21 @@ const AdminDashboard = () => {
     setAddReservationV2Open(true);
   };
 
-  const handleReservationAdded = (reservationId?: string) => {
+  const handleReservationAdded = async (reservationId?: string) => {
     // Always refresh reservations to ensure new/updated data shows in calendar
     // Realtime may have delays or miss events, so explicit fetch is more reliable
     fetchReservations();
     setEditingReservation(null);
+
+    // If reservation was created from a yard vehicle, mark it as completed
+    if (pendingYardVehicleIdRef.current) {
+      const yardId = pendingYardVehicleIdRef.current;
+      pendingYardVehicleIdRef.current = null;
+      await supabase
+        .from('yard_vehicles')
+        .update({ status: 'completed' })
+        .eq('id', yardId);
+    }
   };
   const handleAddBreak = (stationId: string, date: string, time: string) => {
     setNewBreakData({
@@ -2695,6 +2708,7 @@ const AdminDashboard = () => {
                           setEditingReservation(null);
                           setSlotPreview(null);
                           setSelectedReservation(null);
+                          pendingYardVehicleIdRef.current = null;
                         }}
                         onSlotPreviewChange={handleSlotPreviewChange}
                         instanceId={instanceId}
@@ -2862,6 +2876,7 @@ const AdminDashboard = () => {
         setEditingReservation(null);
         setSlotPreview(null);
         setSelectedReservation(null);
+        pendingYardVehicleIdRef.current = null;
       }}
       onSlotPreviewChange={handleSlotPreviewChange}
       instanceId={instanceId}
