@@ -207,6 +207,7 @@ const AddReservationDialogV2 = ({
   const [foundCustomers, setFoundCustomers] = useState<Customer[]>([]);
   const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [dropdownCloseSignal, setDropdownCloseSignal] = useState(0);
 
   // Ref to suppress phone search after programmatic phone value set (edit mode)
   const suppressPhoneSearchRef = useRef(false);
@@ -1429,7 +1430,7 @@ const AddReservationDialogV2 = ({
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4" onScroll={() => setDropdownCloseSignal(c => c + 1)}>
             <div className="space-y-4">
               {/* Customer Section */}
               <CustomerSection
@@ -1489,7 +1490,9 @@ const AddReservationDialogV2 = ({
                 phoneInputRef={phoneInputRef}
                 setCarModel={setCarModel}
                 setCarSize={setCarSize}
-                noShowWarning={noShowWarning} />
+                noShowWarning={noShowWarning}
+                onClosePhoneDropdown={() => setShowPhoneDropdown(false)}
+                closeSignal={dropdownCloseSignal} />
 
 
               {/* Vehicle Section */}
@@ -1536,7 +1539,8 @@ const AddReservationDialogV2 = ({
                   setCarSize('medium');
                 }}
                 suppressAutoOpen={isEditMode}
-                carModelRef={carModelRef} />
+                carModelRef={carModelRef}
+                closeSignal={dropdownCloseSignal} />
 
 
               {/* Services Section */}

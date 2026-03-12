@@ -23,6 +23,7 @@ interface VehicleSectionProps {
   onVehicleSelect: (vehicle: CustomerVehicle) => void;
   suppressAutoOpen?: boolean;
   carModelRef: RefObject<HTMLDivElement>;
+  closeSignal?: number;
 }
 
 export const VehicleSection = ({
@@ -36,6 +37,7 @@ export const VehicleSection = ({
   onVehicleSelect,
   suppressAutoOpen,
   carModelRef,
+  closeSignal,
 }: VehicleSectionProps) => {
   const { t } = useTranslation();
 
@@ -51,6 +53,7 @@ export const VehicleSection = ({
             onChange={onCarModelChange}
             suppressAutoOpen={suppressAutoOpen}
             error={!!carModelError}
+            closeSignal={closeSignal}
           />
         </div>
 

@@ -31,6 +31,8 @@ interface CarSearchAutocompleteProps {
   /** When true, prevents dropdown from opening automatically on focus (used in edit mode) */
   suppressAutoOpen?: boolean;
   inputClassName?: string;
+  /** Increment to force-close the dropdown (e.g. on parent scroll) */
+  closeSignal?: number;
 }
 
 // Normalize text for searching
@@ -63,6 +65,7 @@ export const CarSearchAutocomplete = ({
   onClear,
   suppressAutoOpen = false,
   inputClassName,
+  closeSignal,
 }: CarSearchAutocompleteProps) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState(value);
@@ -72,6 +75,13 @@ export const CarSearchAutocomplete = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on external signal (e.g. parent scroll)
+  useEffect(() => {
+    if (closeSignal !== undefined && closeSignal > 0) {
+      setIsOpen(false);
+    }
+  }, [closeSignal]);
 
   // Sync inputValue with external value
   useEffect(() => {

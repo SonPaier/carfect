@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, X, Search } from 'lucide-react';
 import { Input } from '@shared/ui';
@@ -32,6 +32,8 @@ interface ClientSearchAutocompleteProps {
   disabled?: boolean;
   /** When true, disables auto-search on mount/value change (used in edit mode) */
   suppressAutoSearch?: boolean;
+  /** Increment to force-close the dropdown (e.g. on parent scroll) */
+  closeSignal?: number;
 }
 
 const ClientSearchAutocomplete = ({
@@ -44,6 +46,7 @@ const ClientSearchAutocomplete = ({
   className,
   disabled = false,
   suppressAutoSearch = false,
+  closeSignal,
 }: ClientSearchAutocompleteProps) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState(value || '');
@@ -130,6 +133,13 @@ const ClientSearchAutocomplete = ({
     }, 300);
     return () => clearTimeout(timer);
   }, [inputValue, searchCustomers, suppressAutoSearch, hasUserInteracted, justSelected]);
+
+  // Close dropdown on external signal (e.g. parent scroll)
+  useEffect(() => {
+    if (closeSignal !== undefined && closeSignal > 0) {
+      setDropdownOpen(false);
+    }
+  }, [closeSignal]);
 
   // Close dropdown on outside click
   useEffect(() => {

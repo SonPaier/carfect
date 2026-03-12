@@ -6,7 +6,7 @@ import ClientSearchAutocomplete from '@/components/ui/client-search-autocomplete
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay } from '@shared/utils';
 import { CustomerVehicle, CarSize } from './types';
-import { RefObject } from 'react';
+import { RefObject, useEffect } from 'react';
 
 interface CustomerSectionProps {
   instanceId: string;
@@ -18,6 +18,7 @@ interface CustomerSectionProps {
   searchingCustomer: boolean;
   foundVehicles: CustomerVehicle[];
   showPhoneDropdown: boolean;
+  onClosePhoneDropdown: () => void;
   onSelectVehicle: (vehicle: CustomerVehicle) => void;
   onCustomerSelect: (customer: { id: string; name: string; phone: string; has_no_show?: boolean }) => void;
   onClearCustomer: () => void;
@@ -26,6 +27,7 @@ interface CustomerSectionProps {
   setCarModel: (model: string) => void;
   setCarSize: (size: CarSize) => void;
   noShowWarning?: { customerName: string; date: string; serviceName: string } | null;
+  closeSignal?: number;
 }
 
 export const CustomerSection = ({
@@ -38,6 +40,7 @@ export const CustomerSection = ({
   searchingCustomer,
   foundVehicles,
   showPhoneDropdown,
+  onClosePhoneDropdown,
   onSelectVehicle,
   onCustomerSelect,
   onClearCustomer,
@@ -46,8 +49,16 @@ export const CustomerSection = ({
   setCarModel,
   setCarSize,
   noShowWarning,
+  closeSignal,
 }: CustomerSectionProps) => {
   const { t } = useTranslation();
+
+  // Close phone dropdown on external signal (e.g. parent scroll)
+  useEffect(() => {
+    if (closeSignal !== undefined && closeSignal > 0) {
+      onClosePhoneDropdown();
+    }
+  }, [closeSignal]);
 
   // Normalize phone: remove spaces and country code (+48, 0048, 48 at start)
   const normalizePhone = (phoneValue: string): string => {
@@ -116,6 +127,7 @@ export const CustomerSection = ({
           onSelect={handleCustomerSelect}
           onClear={onClearCustomer}
           suppressAutoSearch={suppressAutoSearch}
+          closeSignal={closeSignal}
         />
       </div>
 
