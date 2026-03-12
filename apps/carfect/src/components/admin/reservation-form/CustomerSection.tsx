@@ -120,7 +120,7 @@ export const CustomerSection = ({
       </div>
 
       {/* Phone */}
-      <div className="space-y-2" ref={phoneInputRef}>
+      <div className="space-y-2 relative" ref={phoneInputRef}>
         <div className="flex items-center gap-2">
           <Label>
             {t('addReservation.customerPhone')} <span className="text-destructive">*</span>

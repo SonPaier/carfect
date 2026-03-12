@@ -144,6 +144,8 @@ interface AdminCalendarProps {
   trainingsEnabled?: boolean;
   /** Force compact column mode (no min-width) — used when inline drawer is open */
   forceCompact?: boolean;
+  /** Callback when user wants to create reservation from yard vehicle */
+  onCreateReservationFromYard?: (vehicle: YardVehicle) => void;
 }
 
 // Default hours from 9:00 to 19:00
@@ -252,7 +254,8 @@ const AdminCalendar = ({
   trainings = [],
   onTrainingClick,
   trainingsEnabled = false,
-  forceCompact = false
+  forceCompact = false,
+  onCreateReservationFromYard
 }: AdminCalendarProps) => {
   const {
     t
@@ -2598,7 +2601,7 @@ const AdminCalendar = ({
               <X className="w-4 h-4" />
             </Button>
           </SheetHeader>
-          {instanceId && <YardVehiclesList instanceId={instanceId} hallMode={hallMode} />}
+          {instanceId && <YardVehiclesList instanceId={instanceId} hallMode={hallMode} onCreateReservation={onCreateReservationFromYard ? (vehicle) => { setPlacDrawerOpen(false); onCreateReservationFromYard(vehicle); } : undefined} />}
         </SheetContent>
       </Sheet>
 

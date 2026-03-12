@@ -1,7 +1,7 @@
 import { useState, useEffect, DragEvent } from 'react';
 import { format, isToday, isTomorrow, parseISO, isBefore, startOfDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Phone, Clock, Trash2, Plus, Pencil } from 'lucide-react';
+import { Phone, Clock, Trash2, Plus, Pencil, CalendarPlus } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import AddReservationDialogV2, { YardVehicle } from './AddReservationDialogV2';
@@ -32,6 +32,7 @@ interface YardVehiclesListProps {
   instanceId: string;
   onVehicleDragStart?: (e: DragEvent<HTMLDivElement>, vehicle: YardVehicle) => void;
   hallMode?: boolean; // When true, only show vehicles from today or earlier
+  onCreateReservation?: (vehicle: YardVehicle) => void;
 }
 
 // Group vehicles by arrival date
@@ -57,12 +58,12 @@ const groupVehiclesByDate = (vehicles: YardVehicle[]) => {
 
 const getDateLabel = (dateStr: string): string => {
   const date = parseISO(dateStr);
-  if (isToday(date)) return 'Dzisiaj';
-  if (isTomorrow(date)) return 'Jutro';
-  return format(date, 'd MMMM', { locale: pl });
+  if (isToday(date)) return 'Podstawione dzisiaj';
+  if (isTomorrow(date)) return 'Podstawione jutro';
+  return `Podstawione ${format(date, 'd MMMM', { locale: pl })}`;
 };
 
-export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = false }: YardVehiclesListProps) {
+export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = false, onCreateReservation }: YardVehiclesListProps) {
   const [vehicles, setVehicles] = useState<YardVehicle[]>([]);
   const [services, setServices] = useState<Record<string, Service>>({});
   const [loading, setLoading] = useState(true);
@@ -237,7 +238,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
                   key={vehicle.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, vehicle)}
-                  className="bg-slate-100 rounded-lg p-3 space-y-2 border border-slate-200 cursor-grab active:cursor-grabbing hover:border-slate-300 hover:shadow-sm transition-all select-none"
+                  className="bg-white rounded-lg p-3 space-y-2 border border-slate-200 cursor-grab active:cursor-grabbing hover:border-slate-300 hover:shadow-sm transition-all select-none"
                 >
                   {/* Vehicle info */}
                   <div className="flex items-start justify-between gap-2">
@@ -303,6 +304,22 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
                         </span>
                       )}
                     </div>
+                  )}
+
+                  {/* Create reservation button */}
+                  {onCreateReservation && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs border-slate-300 hover:bg-white hover:border-primary hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateReservation(vehicle);
+                      }}
+                    >
+                      <CalendarPlus className="w-3.5 h-3.5" />
+                      Stwórz rezerwację
+                    </Button>
                   )}
                 </div>
               ))}

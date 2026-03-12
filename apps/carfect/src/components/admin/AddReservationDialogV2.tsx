@@ -383,7 +383,7 @@ const AddReservationDialogV2 = ({
         setSelectedServices(editingYardVehicle.service_ids || []);
         setArrivalDate(new Date(editingYardVehicle.arrival_date));
         setPickupDate(editingYardVehicle.pickup_date ? new Date(editingYardVehicle.pickup_date) : null);
-        setDeadlineTime(editingYardVehicle.deadline_time || '');
+        setDeadlineTime(editingYardVehicle.deadline_time?.substring(0, 5) || '');
         setAdminNotes(editingYardVehicle.notes || '');
         setFoundVehicles([]);
         setFoundCustomers([]);

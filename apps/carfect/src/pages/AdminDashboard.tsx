@@ -1577,6 +1577,33 @@ const AdminDashboard = () => {
     });
     setAddReservationOpen(true);
   };
+  // Create reservation from yard vehicle — opens drawer pre-filled with yard data
+  const handleCreateReservationFromYard = (vehicle: { customer_name: string; customer_phone: string; vehicle_plate: string; car_size: 'small' | 'medium' | 'large' | null; service_ids: string[]; notes: string | null }) => {
+    setSelectedReservation(null);
+    setEditingReservation({
+      id: '', // Empty = new reservation (not edit)
+      customer_name: vehicle.customer_name,
+      customer_phone: vehicle.customer_phone,
+      vehicle_plate: vehicle.vehicle_plate,
+      car_size: vehicle.car_size,
+      service_ids: vehicle.service_ids,
+      service_id: vehicle.service_ids[0] || '',
+      reservation_date: '',
+      start_time: '',
+      end_time: '',
+      station_id: null,
+      admin_notes: vehicle.notes || '',
+      price: null,
+      offer_number: null,
+      has_unified_services: true,
+      end_date: null,
+      service_items: null,
+      assigned_employee_ids: [],
+    } as any);
+    setNewReservationData({ stationId: '', date: '', time: '', stationType: '' });
+    setAddReservationV2Open(true);
+  };
+
   const handleReservationAdded = (reservationId?: string) => {
     // Always refresh reservations to ensure new/updated data shows in calendar
     // Realtime may have delays or miss events, so explicit fetch is more reliable
@@ -2648,7 +2675,7 @@ const AdminDashboard = () => {
             {/* View Content */}
             {currentView === 'calendar' && <div className="flex-1 min-h-[600px] h-full relative flex">
                 <div className="flex-1 min-w-0 transition-all duration-300 ease-in-out">
-                  <AdminCalendar stations={stations} reservations={reservations} breaks={breaks} closedDays={closedDays} workingHours={workingHours} onReservationClick={handleReservationClick} onAddReservation={handleAddReservation} onAddBreak={handleAddBreak} onDeleteBreak={handleDeleteBreak} onToggleClosedDay={handleToggleClosedDay} onReservationMove={handleReservationMove} onConfirmReservation={handleConfirmReservation} onYardVehicleDrop={handleYardVehicleDrop} onDateChange={handleCalendarDateChange} instanceId={instanceId || undefined} yardVehicleCount={yardVehicleCount} selectedReservationId={selectedReservation?.id || editingReservation?.id} slotPreview={slotPreview} isLoadingMore={isLoadingMoreReservations} employees={cachedEmployees} stationEmployeesMap={stationEmployeesMap} showEmployeesOnStations={instanceSettings?.assign_employees_to_stations ?? false} showEmployeesOnReservations={instanceSettings?.assign_employees_to_reservations ?? false} trainings={trainings} onTrainingClick={handleTrainingClick} trainingsEnabled={trainingsEnabled} forceCompact={!isMobile && (addReservationOpen || addReservationV2Open)} />
+                  <AdminCalendar stations={stations} reservations={reservations} breaks={breaks} closedDays={closedDays} workingHours={workingHours} onReservationClick={handleReservationClick} onAddReservation={handleAddReservation} onAddBreak={handleAddBreak} onDeleteBreak={handleDeleteBreak} onToggleClosedDay={handleToggleClosedDay} onReservationMove={handleReservationMove} onConfirmReservation={handleConfirmReservation} onYardVehicleDrop={handleYardVehicleDrop} onDateChange={handleCalendarDateChange} instanceId={instanceId || undefined} yardVehicleCount={yardVehicleCount} selectedReservationId={selectedReservation?.id || editingReservation?.id} slotPreview={slotPreview} isLoadingMore={isLoadingMoreReservations} employees={cachedEmployees} stationEmployeesMap={stationEmployeesMap} showEmployeesOnStations={instanceSettings?.assign_employees_to_stations ?? false} showEmployeesOnReservations={instanceSettings?.assign_employees_to_reservations ?? false} trainings={trainings} onTrainingClick={handleTrainingClick} trainingsEnabled={trainingsEnabled} forceCompact={!isMobile && (addReservationOpen || addReservationV2Open)} onCreateReservationFromYard={handleCreateReservationFromYard} />
                 </div>
                 {/* Inline reservation drawer on desktop — animated slide */}
                 {!isMobile && instanceId && (
