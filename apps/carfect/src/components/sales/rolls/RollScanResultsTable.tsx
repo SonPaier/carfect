@@ -42,7 +42,6 @@ const RollScanResultsTable = ({
               <TableHead>Kod kreskowy</TableHead>
               <TableHead>Szer. (mm)</TableHead>
               <TableHead>Dł. (m)</TableHead>
-              <TableHead>Data dostawy</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -65,7 +64,6 @@ const RollScanResultsTable = ({
                   <TableCell className="text-xs font-mono">{d.barcode || '—'}</TableCell>
                   <TableCell className="text-xs">{d.widthMm || '—'}</TableCell>
                   <TableCell className="text-xs">{d.lengthM || '—'}</TableCell>
-                  <TableCell className="text-xs">{d.deliveryDate || '—'}</TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"

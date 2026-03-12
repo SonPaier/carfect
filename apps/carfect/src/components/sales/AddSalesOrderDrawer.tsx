@@ -190,20 +190,24 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     if (!customerSearch.selectedCustomer) { toast.error('Wybierz klienta'); return; }
     if (products.length === 0) { toast.error('Dodaj przynajmniej jeden produkt'); return; }
 
-    // Validate roll availability before saving
-    const productsWithRolls = products.filter(p => p.rollId && p.rollUsageM2);
-    if (productsWithRolls.length > 0) {
+    // Validate roll availability before saving (multi-roll assignments)
+    const allAssignments = products.flatMap((p) =>
+      (p.rollAssignments || [])
+        .filter((a) => a.rollId && a.usageM2 > 0)
+        .map((a) => ({ ...a, productName: p.name }))
+    );
+    if (allAssignments.length > 0) {
       setSaving(true);
       try {
-        for (const p of productsWithRolls) {
+        for (const a of allAssignments) {
           const rollData = await fetchRollRemainingMb(
-            p.rollId!,
+            a.rollId,
             isEdit ? editOrder?.id : undefined
           );
           const remainingM2 = mbToM2(rollData.remainingMb, rollData.widthMm);
-          if (p.rollUsageM2! > remainingM2) {
-            const shortage = (p.rollUsageM2! - remainingM2).toFixed(2);
-            toast.error(`Rolka przypisana do „${p.name}" ma za mało materiału. Zostało ${remainingM2.toFixed(2)} m², brakuje ${shortage} m².`);
+          if (a.usageM2 > remainingM2) {
+            const shortage = (a.usageM2 - remainingM2).toFixed(2);
+            toast.error(`Rolka przypisana do „${a.productName}" ma za mało materiału. Zostało ${remainingM2.toFixed(2)} m², brakuje ${shortage} m².`);
             setSaving(false);
             return;
           }
@@ -258,21 +262,24 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
           }));
           const { data: insertedItems } = await (supabase.from('sales_order_items').insert(items).select('id') as any);
 
-          // Create roll usages for meter-based products
+          // Create roll usages for meter-based products (multi-roll)
           if (insertedItems) {
             for (let i = 0; i < products.length; i++) {
               const p = products[i];
-              if (p.rollId && p.rollUsageM2 && insertedItems[i]?.id) {
-                try {
-                  await createRollUsage({
-                    rollId: p.rollId,
-                    orderId: editOrder.id,
-                    orderItemId: insertedItems[i].id,
-                    usedM2: p.rollUsageM2,
-                    usedMb: m2ToMb(p.rollUsageM2, p.rollWidthMm || 1524),
-                  });
-                } catch (e) {
-                  console.warn('Roll usage creation failed:', e);
+              const assignments = p.rollAssignments || [];
+              for (const a of assignments) {
+                if (a.rollId && a.usageM2 > 0 && insertedItems[i]?.id) {
+                  try {
+                    await createRollUsage({
+                      rollId: a.rollId,
+                      orderId: editOrder.id,
+                      orderItemId: insertedItems[i].id,
+                      usedM2: a.usageM2,
+                      usedMb: m2ToMb(a.usageM2, a.widthMm),
+                    });
+                  } catch (e) {
+                    console.warn('Roll usage creation failed:', e);
+                  }
                 }
               }
             }
@@ -319,21 +326,24 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
           }));
           const { data: insertedItems } = await (supabase.from('sales_order_items').insert(items).select('id') as any);
 
-          // Create roll usages for meter-based products
+          // Create roll usages for meter-based products (multi-roll)
           if (insertedItems) {
             for (let i = 0; i < products.length; i++) {
               const p = products[i];
-              if (p.rollId && p.rollUsageM2 && insertedItems[i]?.id) {
-                try {
-                  await createRollUsage({
-                    rollId: p.rollId,
-                    orderId: order.id,
-                    orderItemId: insertedItems[i].id,
-                    usedM2: p.rollUsageM2,
-                    usedMb: m2ToMb(p.rollUsageM2, p.rollWidthMm || 1524),
-                  });
-                } catch (e) {
-                  console.warn('Roll usage creation failed:', e);
+              const assignments = p.rollAssignments || [];
+              for (const a of assignments) {
+                if (a.rollId && a.usageM2 > 0 && insertedItems[i]?.id) {
+                  try {
+                    await createRollUsage({
+                      rollId: a.rollId,
+                      orderId: order.id,
+                      orderItemId: insertedItems[i].id,
+                      usedM2: a.usageM2,
+                      usedMb: m2ToMb(a.usageM2, a.widthMm),
+                    });
+                  } catch (e) {
+                    console.warn('Roll usage creation failed:', e);
+                  }
                 }
               }
             }
@@ -400,18 +410,16 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
         resetForm();
         onOpenChange(false);
       }
-    }} modal={false}>
+    }}>
       <SheetContent
         side="right"
-        className="w-full flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white text-foreground [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60 [&_label]:text-foreground sm:max-w-[var(--drawer-width)]"
-        hideOverlay
+        className="w-full flex flex-col h-full p-0 gap-0 bg-white text-foreground [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60 [&_label]:text-foreground sm:max-w-[80vw]"
+        hasDarkOverlay
         hideCloseButton
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         {/* Fixed Header */}
         <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="max-w-[1000px] ml-auto w-full flex items-center justify-between">
             <SheetTitle>{isEdit ? `Edytuj zamówienie: ${editOrder?.orderNumber}` : `Dodaj zamówienie: ${nextOrderNumber}`}</SheetTitle>
             <button
               type="button"
@@ -425,7 +433,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="space-y-4">
+          <div className="max-w-[1000px] ml-auto space-y-4">
             <CustomerSearchSection
               {...customerSearch}
               onAddNewCustomer={handleAddNewCustomer}
@@ -444,6 +452,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
               onUpdateQuantity={orderPackages.updateQuantity}
               onUpdateVehicle={orderPackages.updateVehicle}
               onUpdateRollAssignment={orderPackages.updateRollAssignment}
+              onSetRollAssignments={orderPackages.setRollAssignments}
               onAddPackage={orderPackages.addPackage}
             />
 
@@ -504,7 +513,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
 
         {/* Fixed Footer */}
         <SheetFooter className="px-6 py-4 border-t shrink-0">
-          <div className="flex gap-3 w-full">
+          <div className="max-w-[1000px] ml-auto flex gap-3 w-full">
             <Button variant="outline" className="flex-1" onClick={handleClose}>
               Anuluj
             </Button>

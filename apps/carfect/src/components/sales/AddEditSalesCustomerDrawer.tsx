@@ -72,7 +72,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [activeTab, setActiveTab] = useState('data');
+  const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
@@ -99,7 +99,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
   useEffect(() => {
     if (!open) {
       setEditMode(false);
-      setActiveTab('data');
+      setActiveTab('orders');
       return;
     }
     if (initialEditMode && isEdit) {
@@ -192,8 +192,8 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
   const renderViewMode = () => (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
       <TabsList className="bg-background border border-border/50 grid grid-cols-2 w-full">
-        <TabsTrigger value="data" className="data-[state=active]:bg-primary/5 data-[state=active]:text-foreground hover:bg-primary/5 hover:text-foreground">Dane</TabsTrigger>
         <TabsTrigger value="orders" className="data-[state=active]:bg-primary/5 data-[state=active]:text-foreground hover:bg-primary/5 hover:text-foreground">Zamówienia</TabsTrigger>
+        <TabsTrigger value="data" className="data-[state=active]:bg-primary/5 data-[state=active]:text-foreground hover:bg-primary/5 hover:text-foreground">Dane</TabsTrigger>
       </TabsList>
 
       <TabsContent value="data" className="flex-1 overflow-y-auto space-y-4 pr-1">

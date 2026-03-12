@@ -52,12 +52,14 @@ interface SheetContentProps
     VariantProps<typeof sheetVariants> {
   hideOverlay?: boolean;
   hideCloseButton?: boolean;
+  /** Light overlay (bg-black/20) instead of default dark (bg-black/80) */
+  hasDarkOverlay?: boolean;
 }
 
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = "right", className, children, hideOverlay, hideCloseButton, ...props }, ref) => (
+  ({ side = "right", className, children, hideOverlay, hideCloseButton, hasDarkOverlay, ...props }, ref) => (
     <SheetPortal>
-      {!hideOverlay && <SheetOverlay />}
+      {!hideOverlay && <SheetOverlay className={hasDarkOverlay ? "bg-black/20" : undefined} />}
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
         {children}
         {!hideCloseButton && (

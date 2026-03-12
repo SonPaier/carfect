@@ -19,6 +19,8 @@ export interface SalesRoll {
   currentUsageMb?: number;
   remainingMb?: number;
   remainingM2?: number;
+  /** Unique customer names that have ordered this roll */
+  customerNames?: string[];
 }
 
 export interface SalesRollUsage {
@@ -53,7 +55,6 @@ export interface ExtractRollDataResponse {
   barcode: string;
   widthMm: number;
   lengthM: number;
-  deliveryDate: string | null;
   confidence: Record<string, number>;
   warnings: string[];
   rawText?: string;

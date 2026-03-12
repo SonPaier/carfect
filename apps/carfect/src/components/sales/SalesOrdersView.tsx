@@ -252,9 +252,6 @@ const SalesOrdersView = () => {
       .select('order_item_id, roll_id, used_m2')
       .eq('order_id', order.id) as any);
 
-    console.log('[EditOrder] rollUsages:', rollUsages, 'error:', rollUsagesErr);
-    console.log('[EditOrder] items:', items?.map((i: any) => ({ id: i.id, name: i.name, price_unit: i.price_unit })));
-
     // Fetch roll widths for assigned rolls
     const rollIds = [...new Set((rollUsages || []).map((u: any) => u.roll_id))] as string[];
     let rollWidthMap: Record<string, number> = {};
@@ -270,18 +267,21 @@ const SalesOrdersView = () => {
       }
     }
 
-    // Build usage map by order_item_id
-    const usageByItemId: Record<string, { rollId: string; usedM2: number }> = {};
+    // Build usage map by order_item_id (multi-roll: array per item)
+    const usagesByItemId: Record<string, Array<{ rollId: string; usedM2: number; widthMm: number }>> = {};
     for (const u of (rollUsages || []) as { order_item_id: string; roll_id: string; used_m2: number }[]) {
-      usageByItemId[u.order_item_id] = { rollId: u.roll_id, usedM2: Number(u.used_m2) };
+      if (!usagesByItemId[u.order_item_id]) usagesByItemId[u.order_item_id] = [];
+      usagesByItemId[u.order_item_id].push({
+        rollId: u.roll_id,
+        usedM2: Number(u.used_m2),
+        widthMm: rollWidthMap[u.roll_id] || 1524,
+      });
     }
 
-    console.log('[EditOrder] usageByItemId:', usageByItemId);
-
     const editProducts = (items || []).map((item: any) => {
-      const usage = usageByItemId[item.id];
-      console.log('[EditOrder] item.id:', item.id, 'usage:', usage);
+      const usages = usagesByItemId[item.id] || [];
       return {
+        instanceKey: crypto.randomUUID(),
         productId: item.product_id || item.name,
         variantId: item.variant_id || undefined,
         name: item.name,
@@ -289,13 +289,13 @@ const SalesOrdersView = () => {
         priceUnit: item.price_unit || 'szt.',
         quantity: item.quantity,
         vehicle: item.vehicle || '',
-        rollId: usage?.rollId,
-        rollUsageM2: usage?.usedM2,
-        rollWidthMm: usage ? rollWidthMap[usage.rollId] : undefined,
+        rollAssignments: usages.map((u) => ({
+          rollId: u.rollId,
+          usageM2: u.usedM2,
+          widthMm: u.widthMm,
+        })),
       };
     });
-
-    console.log('[EditOrder] final products:', editProducts);
 
     setEditOrder({
       id: order.id,

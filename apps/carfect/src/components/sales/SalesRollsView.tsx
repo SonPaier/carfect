@@ -21,13 +21,13 @@ import { ConfirmDialog } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
 import { formatRollSize, formatMbM2 } from './types/rolls';
-import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
+import { fetchRolls, deleteRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
-import RollUsageDrawer from './rolls/RollUsageDrawer';
+import RollDetailsDrawer from './rolls/RollDetailsDrawer';
 
-type TabType = 'active' | 'archived';
-type SortColumn = 'productName' | 'productCode' | 'barcode' | 'widthMm' | 'remainingMb' | 'deliveryDate';
+type TabType = 'active' | 'sold';
+type SortColumn = 'productName' | 'productCode' | 'widthMm' | 'remainingMb' | 'deliveryDate';
 type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
@@ -48,8 +48,8 @@ const SalesRollsView = () => {
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [editRoll, setEditRoll] = useState<SalesRoll | null>(null);
-  const [usageDrawerOpen, setUsageDrawerOpen] = useState(false);
-  const [usageRoll, setUsageRoll] = useState<SalesRoll | null>(null);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [detailsRoll, setDetailsRoll] = useState<SalesRoll | null>(null);
 
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -104,9 +104,6 @@ const SalesRollsView = () => {
         case 'productCode':
           cmp = (a.productCode || '').localeCompare(b.productCode || '');
           break;
-        case 'barcode':
-          cmp = (a.barcode || '').localeCompare(b.barcode || '');
-          break;
         case 'widthMm':
           cmp = a.widthMm - b.widthMm;
           break;
@@ -159,26 +156,6 @@ const SalesRollsView = () => {
     }
   };
 
-  const handleArchive = async (roll: SalesRoll) => {
-    try {
-      await archiveRoll(roll.id);
-      toast.success('Rolka zarchiwizowana');
-      loadRolls();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
-
-  const handleRestore = async (roll: SalesRoll) => {
-    try {
-      await restoreRoll(roll.id);
-      toast.success('Rolka przywrócona na stan');
-      loadRolls();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
-
   const handleEditClick = (roll: SalesRoll) => {
     setEditRoll(roll);
     setEditDrawerOpen(true);
@@ -225,13 +202,13 @@ const SalesRollsView = () => {
         </button>
         <button
           className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'archived'
+            activeTab === 'sold'
               ? 'bg-background shadow-sm text-foreground'
               : 'text-muted-foreground hover:text-foreground'
           }`}
-          onClick={() => setActiveTab('archived')}
+          onClick={() => setActiveTab('sold')}
         >
-          Archiwum
+          Sprzedane
         </button>
       </div>
 
@@ -265,12 +242,6 @@ const SalesRollsView = () => {
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none"
-                onClick={() => handleSort('barcode')}
-              >
-                Kod kreskowy <SortIcon col="barcode" />
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
                 onClick={() => handleSort('widthMm')}
               >
                 Rozmiar <SortIcon col="widthMm" />
@@ -295,32 +266,33 @@ const SalesRollsView = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   Ładowanie...
                 </TableCell>
               </TableRow>
             ) : paginatedRolls.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   {searchQuery
                     ? 'Brak wyników wyszukiwania'
                     : activeTab === 'active'
                     ? 'Brak rolek na stanie'
-                    : 'Archiwum jest puste'}
+                    : 'Brak sprzedanych rolek'}
                 </TableCell>
               </TableRow>
             ) : (
               paginatedRolls.map((roll) => (
-                <TableRow key={roll.id}>
+                <TableRow
+                  key={roll.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => { setDetailsRoll(roll); setDetailsDrawerOpen(true); }}
+                >
                   <TableCell>
                     <div className="font-medium">{roll.productName}</div>
                     <div className="text-xs text-muted-foreground">{roll.brand}</div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {roll.productCode || '—'}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {roll.barcode || '—'}
                   </TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
                     {formatRollSize(roll.widthMm, roll.initialLengthM)}
@@ -349,7 +321,7 @@ const SalesRollsView = () => {
                       ? format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')
                       : '—'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -360,18 +332,9 @@ const SalesRollsView = () => {
                         <DropdownMenuItem onClick={() => handleEditClick(roll)}>
                           Edytuj
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { setUsageRoll(roll); setUsageDrawerOpen(true); }}>
-                          Zobacz zużycie
+                        <DropdownMenuItem onClick={() => { setDetailsRoll(roll); setDetailsDrawerOpen(true); }}>
+                          Szczegóły
                         </DropdownMenuItem>
-                        {activeTab === 'active' ? (
-                          <DropdownMenuItem onClick={() => handleArchive(roll)}>
-                            Archiwizuj
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => handleRestore(roll)}>
-                            Przywróć na stan
-                          </DropdownMenuItem>
-                        )}
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() =>
@@ -442,10 +405,11 @@ const SalesRollsView = () => {
         onSaved={loadRolls}
       />
 
-      <RollUsageDrawer
-        open={usageDrawerOpen}
-        onOpenChange={setUsageDrawerOpen}
-        roll={usageRoll}
+      <RollDetailsDrawer
+        open={detailsDrawerOpen}
+        onOpenChange={setDetailsDrawerOpen}
+        roll={detailsRoll}
+        onEdit={handleEditClick}
       />
 
       {/* Delete confirm */}

@@ -39,16 +39,27 @@ function mapUsageRow(row: any): SalesRollUsage {
 
 // ─── Fetch Rolls ────────────────────────────────────────────
 
+const SOLD_THRESHOLD_MB = 1.5;
+
 export async function fetchRolls(
   instanceId: string,
-  status: 'active' | 'archived'
+  tab: 'active' | 'sold'
 ): Promise<SalesRoll[]> {
-  const { data: rollRows, error } = await (supabase
+  // For 'sold' tab we need all rolls that have usages and remaining < threshold
+  // For 'active' we fetch only active-status rolls
+  const query = supabase
     .from('sales_rolls')
     .select('*')
     .eq('instance_id', instanceId)
-    .eq('status', status)
-    .order('created_at', { ascending: false }) as any);
+    .order('created_at', { ascending: false });
+
+  // Active tab: only active status
+  // Sold tab: any status (active or archived) — we'll filter by usage+remaining client-side
+  if (tab === 'active') {
+    (query as any).eq('status', 'active');
+  }
+
+  const { data: rollRows, error } = await (query as any);
 
   if (error) throw new Error(error.message);
   if (!rollRows || rollRows.length === 0) return [];
@@ -56,33 +67,65 @@ export async function fetchRolls(
   const rolls = rollRows.map(mapDbRow);
   const rollIds = rolls.map((r) => r.id);
 
-  // Fetch aggregated usages
+  // Fetch aggregated usages with order → customer info
   const { data: usageRows, error: usageErr } = await (supabase
     .from('sales_roll_usages')
-    .select('roll_id, used_mb')
+    .select('roll_id, used_mb, order_id')
     .in('roll_id', rollIds) as any);
 
   if (usageErr) throw new Error(usageErr.message);
 
   // Aggregate usage per roll
   const usageMap = new Map<string, number>();
+  const rollOrderIds = new Map<string, Set<string>>();
   for (const u of usageRows || []) {
     const current = usageMap.get(u.roll_id) || 0;
     usageMap.set(u.roll_id, current + Number(u.used_mb));
+    if (u.order_id) {
+      if (!rollOrderIds.has(u.roll_id)) rollOrderIds.set(u.roll_id, new Set());
+      rollOrderIds.get(u.roll_id)!.add(u.order_id);
+    }
   }
 
-  // Compute remaining
-  return rolls.map((roll) => {
+  // Fetch customer names for orders
+  const allOrderIds = [...new Set((usageRows || []).map((u: any) => u.order_id).filter(Boolean))];
+  const orderCustomerMap = new Map<string, string>();
+  if (allOrderIds.length > 0) {
+    const { data: orderRows } = await (supabase
+      .from('sales_orders')
+      .select('id, customer_name')
+      .in('id', allOrderIds) as any);
+    for (const o of orderRows || []) {
+      if (o.customer_name) orderCustomerMap.set(o.id, o.customer_name);
+    }
+  }
+
+  // Compute remaining + customer names
+  const enriched = rolls.map((roll) => {
     const usedMb = usageMap.get(roll.id) || 0;
     const remainingMb = Math.max(0, roll.lengthM - usedMb);
     const widthM = roll.widthMm / 1000;
+    const orderIds = rollOrderIds.get(roll.id);
+    const customerNames = orderIds
+      ? [...new Set([...orderIds].map(oid => orderCustomerMap.get(oid)).filter(Boolean) as string[])]
+      : [];
     return {
       ...roll,
       currentUsageMb: usedMb,
       remainingMb,
       remainingM2: remainingMb * widthM,
+      customerNames,
     };
   });
+
+  if (tab === 'sold') {
+    // Sold = has usages AND remaining < threshold
+    return enriched.filter(
+      (r) => (r.currentUsageMb || 0) > 0 && (r.remainingMb || 0) < SOLD_THRESHOLD_MB
+    );
+  }
+
+  return enriched;
 }
 
 // ─── CRUD ───────────────────────────────────────────────────
@@ -369,7 +412,6 @@ export async function extractRollData(imageBase64: string, mediaType?: string) {
     barcode: string;
     widthMm: number;
     lengthM: number;
-    deliveryDate: string | null;
     confidence: Record<string, number>;
     warnings: string[];
     rawText?: string;

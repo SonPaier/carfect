@@ -25,7 +25,7 @@ export const PaymentSection = ({
   bankAccounts,
 }: PaymentSectionProps) => {
   return (
-    <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="space-y-2">
         <Label>Sposób płatności</Label>
         <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
@@ -59,6 +59,6 @@ export const PaymentSection = ({
           </Select>
         </div>
       )}
-    </>
+    </div>
   );
 };
