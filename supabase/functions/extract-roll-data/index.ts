@@ -57,14 +57,6 @@ async function callGoogleVision(
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function inchesToMm(inches: number): number {
-  return Math.round(inches * 25.4);
-}
-
-function feetToM(feet: number): number {
-  return +(feet * 0.3048).toFixed(2);
-}
-
 // Lines that are descriptions (not product names)
 const DESCRIPTION_PATTERNS = [
   /paint\s*protection\s*film/i,
@@ -85,7 +77,6 @@ function isNoiseLine(line: string): boolean {
   const s = line.replace(/\s/g, "");
   if (/^\d{8,}$/.test(s)) return true; // barcode
   if (/^[A-Z0-9]{2,}-[A-Z0-9]{2,}-/.test(line)) return true; // product code
-  if (/\d+["″"]\s*[x×X]/i.test(line)) return true; // dimension
   if (/\d+\s*mm\s*[x×X]/i.test(line)) return true; // metric dimension
   if (/^\d+(?:\.\d+)?$/.test(s)) return true; // just a number
   if (/^(?:made\s*in|country|lot|batch|www\.|http)/i.test(line)) return true;
@@ -106,7 +97,6 @@ function parseRollLabel(rawText: string) {
     barcode: "",
     widthMm: 0,
     lengthM: 0,
-    deliveryDate: null,
   };
 
   const confidence: Record<string, number> = {
@@ -117,7 +107,6 @@ function parseRollLabel(rawText: string) {
     barcode: 0,
     widthMm: 0,
     lengthM: 0,
-    deliveryDate: 0,
   };
 
   // Track which lines we've "consumed" for each role
@@ -236,24 +225,6 @@ function parseRollLabel(rawText: string) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Imperial: 60" × 50 ft
-    const imp =
-      line.match(/(\d+(?:\.\d+)?)\s*["″"]\s*[x×X]\s*(\d+(?:\.\d+)?)\s*(?:['′']|ft|feet)/i) ||
-      line.match(/(\d+(?:\.\d+)?)\s*(?:in(?:ch(?:es)?)?)\s*[x×X]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet)/i) ||
-      line.match(/(\d+(?:\.\d+)?)\s*["″"]\s*[x×X]\s*(\d+(?:\.\d+)?)\s*["″"'′']/i);
-
-    if (imp) {
-      const w = parseFloat(imp[1]);
-      const l = parseFloat(imp[2]);
-      result.widthMm = w < 100 ? inchesToMm(w) : w;
-      result.lengthM = l > 30 ? feetToM(l) : l;
-      confidence.widthMm = 0.95;
-      confidence.lengthM = 0.95;
-      consumed.add(i);
-      dimFound = true;
-      break;
-    }
-
     // Metric: 1524mm × 15m / 1,524mm x 15m (comma as thousands separator)
     const met =
       line.match(/(\d[\d,]*(?:\.\d+)?)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i) ||
@@ -271,23 +242,12 @@ function parseRollLabel(rawText: string) {
   }
 
   if (!dimFound) {
-    // Standalone inch width
-    const wInch = rawText.match(/\b(\d{2})\s*["″"]\b/);
-    if (wInch) {
-      result.widthMm = inchesToMm(parseFloat(wInch[1]));
-      confidence.widthMm = 0.5;
-    }
     const wMm = rawText.match(/\b(\d{3,4})\s*mm\b/i);
-    if (wMm && !result.widthMm) {
+    if (wMm) {
       result.widthMm = parseFloat(wMm[1]);
       confidence.widthMm = 0.6;
     }
 
-    const lFt = rawText.match(/\b(\d{2,3})\s*(?:ft|feet|['′'])\b/i);
-    if (lFt) {
-      result.lengthM = feetToM(parseFloat(lFt[1]));
-      confidence.lengthM = 0.5;
-    }
     const lM = rawText.match(/\b(\d{1,3}(?:\.\d+)?)\s*m\b/i);
     if (lM && !result.lengthM) {
       const val = parseFloat(lM[1]);
@@ -297,6 +257,10 @@ function parseRollLabel(rawText: string) {
       }
     }
   }
+
+  // Round dimensions to 1 decimal place
+  if (result.widthMm) result.widthMm = Math.round((result.widthMm as number) * 10) / 10;
+  if (result.lengthM) result.lengthM = Math.round((result.lengthM as number) * 10) / 10;
 
   // ══════════════════════════════════════════════════════════
   // 5. BRAND & PRODUCT NAME — from remaining unconsumed lines
@@ -348,38 +312,6 @@ function parseRollLabel(rawText: string) {
         confidence.productName = 0.85;
       }
     }
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // 6. DELIVERY DATE
-  // ══════════════════════════════════════════════════════════
-  const datePats = [
-    { re: /\b(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\b/, fmt: "dmy" },   // 27. 02. 2026 or 27.02.2026
-    { re: /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/, fmt: "dmy" },          // 27/02/2026
-    { re: /\b(\d{4})-(\d{2})-(\d{2})\b/, fmt: "ymd" },                // 2026-02-27
-    { re: /\b(\d{2})-(\d{2})-(\d{4})\b/, fmt: "dmy" },                // 27-02-2026
-  ];
-  for (const line of lines) {
-    for (const { re, fmt } of datePats) {
-      const match = line.match(re);
-      if (match) {
-        let y: string, m: string, d: string;
-        if (fmt === "ymd") {
-          [, y, m, d] = match;
-        } else {
-          [, d, m, y] = match;
-        }
-        const year = parseInt(y);
-        const month = parseInt(m);
-        const day = parseInt(d);
-        if (year >= 2020 && year <= 2030 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-          result.deliveryDate = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-          confidence.deliveryDate = 0.7;
-          break;
-        }
-      }
-    }
-    if (result.deliveryDate) break;
   }
 
   return { result, confidence };

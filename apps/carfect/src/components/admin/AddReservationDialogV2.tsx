@@ -359,13 +359,14 @@ const AddReservationDialogV2 = ({
   useEffect(() => {
     if (open) {
       // PROTECTION: Skip re-initialization if user is actively editing the same reservation
-      if (isUserEditingRef.current && editingReservation?.id === lastEditingReservationIdRef.current) {
+      const currentEditId = editingReservation?.id || null;
+      if (isUserEditingRef.current && currentEditId === lastEditingReservationIdRef.current) {
         console.log('[ReservationDialog] Skipping re-init - user is actively editing');
         return;
       }
 
       // Track which reservation we're editing
-      lastEditingReservationIdRef.current = editingReservation?.id || null;
+      lastEditingReservationIdRef.current = currentEditId;
 
       // Reset user editing flags for new dialog session
       setUserModifiedEndTime(false);

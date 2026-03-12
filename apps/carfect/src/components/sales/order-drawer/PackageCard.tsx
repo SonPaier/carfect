@@ -11,9 +11,11 @@ import {
   type PackagingType,
   type KartonDimensions,
   type TubaDimensions,
+  type RollAssignment,
+  getItemKey,
 } from '../hooks/useOrderPackages';
 import { formatCurrency } from '../constants';
-import RollSelectAutocomplete from '../rolls/RollSelectAutocomplete';
+import MultiRollAssignment from '../rolls/MultiRollAssignment';
 
 interface PackageCardProps {
   pkg: OrderPackage;
@@ -29,6 +31,7 @@ interface PackageCardProps {
   onUpdateQuantity: (productKey: string, qty: number) => void;
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
   onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
+  onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
 }
 
 const PackageCard = ({
@@ -45,6 +48,7 @@ const PackageCard = ({
   onUpdateQuantity,
   onUpdateVehicle,
   onUpdateRollAssignment,
+  onSetRollAssignments,
 }: PackageCardProps) => {
   return (
     <div className="bg-card border border-border rounded-md p-3 space-y-3">
@@ -60,157 +64,163 @@ const PackageCard = ({
         </button>
       </div>
 
-      {/* Products in package */}
-      <div className="space-y-1.5">
-        <Label className="text-sm">Produkty</Label>
-        {packageProducts.length > 0 && (
+      {/* Two-column layout: products (left) | separator | shipping (right) */}
+      <div className="grid grid-cols-1 sm:grid-cols-[600px_1px_1fr] gap-0">
+        {/* Left: Products */}
+        <div className="space-y-1.5 sm:pr-4">
+          <Label className="text-sm">Produkty</Label>
+          {packageProducts.length > 0 && (
+            <div className="space-y-1.5">
+              {packageProducts.map((p) => {
+                const itemKey = getItemKey(p);
+                return (
+                  <div key={itemKey} className="bg-amber-50 rounded px-2.5 py-2 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
+                        <p className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit || 'szt.'}</p>
+                      </div>
+                      <button type="button" onClick={() => onRemoveProduct(itemKey)} className="text-muted-foreground hover:text-destructive shrink-0">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {(!p.priceUnit || p.priceUnit === 'szt.') && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity - 1)} disabled={p.quantity <= 1}>
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <Input type="number" min={1} value={p.quantity} onChange={(e) => onUpdateQuantity(itemKey, parseInt(e.target.value) || 1)} className="w-12 h-6 text-center text-sm px-1" />
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity + 1)}>
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                      <Input placeholder="Pojazd" value={p.vehicle} onChange={(e) => onUpdateVehicle(itemKey, e.target.value)} className="h-6 text-sm flex-1" />
+                    </div>
+                    {/* Roll assignment for meter-based products */}
+                    {p.priceUnit === 'meter' && onSetRollAssignments && (
+                      <MultiRollAssignment
+                        instanceId={instanceId}
+                        assignments={p.rollAssignments || []}
+                        onChange={(assignments) => onSetRollAssignments(itemKey, assignments)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <Button variant="outline" size="sm" className="w-full gap-1.5 text-sm font-medium" onClick={onAddProduct}>
+            <Plus className="w-4 h-4" />
+            {packageProducts.length > 0 ? 'Dodaj kolejny produkt' : 'Dodaj produkt'}
+          </Button>
+        </div>
+
+        {/* Vertical separator */}
+        <div className="hidden sm:block bg-border" />
+
+        {/* Right: Shipping */}
+        <div className="space-y-3 sm:pl-4">
           <div className="space-y-1.5">
-            {packageProducts.map((p) => {
-              const itemKey = p.variantId || p.productId;
-              return (
-                <div key={itemKey} className="bg-amber-50 rounded px-2.5 py-2 space-y-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
-                      <p className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit || 'szt.'}</p>
-                    </div>
-                    <button type="button" onClick={() => onRemoveProduct(itemKey)} className="text-muted-foreground hover:text-destructive shrink-0">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity - 1)} disabled={p.quantity <= 1}>
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <Input type="number" min={1} value={p.quantity} onChange={(e) => onUpdateQuantity(itemKey, parseInt(e.target.value) || 1)} className="w-12 h-6 text-center text-sm px-1" />
-                      <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity + 1)}>
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <Input placeholder="Pojazd" value={p.vehicle} onChange={(e) => onUpdateVehicle(itemKey, e.target.value)} className="h-6 text-sm flex-1" />
-                  </div>
-                  {/* Roll assignment for meter-based products */}
-                  {p.priceUnit === 'meter' && onUpdateRollAssignment && (
-                    <RollSelectAutocomplete
-                      instanceId={instanceId}
-                      productName={p.name.split(' - ')[0]}
-                      usageM2={p.rollUsageM2 || 0}
-                      selectedRollId={p.rollId || null}
-                      onSelect={(rollId, usageM2, widthMm) =>
-                        onUpdateRollAssignment(itemKey, rollId, usageM2, widthMm)
-                      }
-                    />
-                  )}
-                </div>
-              );
-            })}
+            <Label className="text-sm">Sposób wysyłki</Label>
+            <ToggleGroup
+              type="single"
+              value={pkg.shippingMethod}
+              onValueChange={(v) => { if (v) onShippingMethodChange(v as DeliveryType); }}
+              variant="outline"
+              size="sm"
+              className="justify-start flex-wrap"
+            >
+              <ToggleGroupItem value="shipping" className="text-xs px-3">Wysyłka</ToggleGroupItem>
+              <ToggleGroupItem value="pickup" className="text-xs px-3">Odbiór osobisty</ToggleGroupItem>
+              <ToggleGroupItem value="uber" className="text-xs px-3">Uber</ToggleGroupItem>
+            </ToggleGroup>
           </div>
-        )}
-        <Button variant="outline" size="sm" className="w-full gap-1.5 text-sm font-medium" onClick={onAddProduct}>
-          <Plus className="w-4 h-4" />
-          Dodaj produkt
-        </Button>
-      </div>
 
-      {/* Shipping method toggle */}
-      <div className="space-y-1.5">
-        <Label className="text-sm">Sposób wysyłki</Label>
-        <ToggleGroup
-          type="single"
-          value={pkg.shippingMethod}
-          onValueChange={(v) => { if (v) onShippingMethodChange(v as DeliveryType); }}
-          variant="outline"
-          size="sm"
-          className="justify-start"
-        >
-          <ToggleGroupItem value="shipping" className="text-xs px-3">Wysyłka</ToggleGroupItem>
-          <ToggleGroupItem value="pickup" className="text-xs px-3">Odbiór osobisty</ToggleGroupItem>
-          <ToggleGroupItem value="uber" className="text-xs px-3">Uber</ToggleGroupItem>
-        </ToggleGroup>
-      </div>
+          {/* Conditional: packaging fields (only for "shipping") */}
+          {pkg.shippingMethod === 'shipping' && (
+            <div className="space-y-2">
+              <RadioGroup
+                value={pkg.packagingType || 'karton'}
+                onValueChange={(v) => onPackagingTypeChange(v as PackagingType)}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="karton" id={`pkg-${pkg.id}-karton`} />
+                  <Label htmlFor={`pkg-${pkg.id}-karton`} className="text-sm font-normal cursor-pointer">
+                    Karton
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="tuba" id={`pkg-${pkg.id}-tuba`} />
+                  <Label htmlFor={`pkg-${pkg.id}-tuba`} className="text-sm font-normal cursor-pointer">
+                    Tuba
+                  </Label>
+                </div>
+              </RadioGroup>
 
-      {/* Conditional: packaging fields (only for "shipping") */}
-      {pkg.shippingMethod === 'shipping' && (
-        <div className="space-y-2 pl-1">
-          <RadioGroup
-            value={pkg.packagingType || 'karton'}
-            onValueChange={(v) => onPackagingTypeChange(v as PackagingType)}
-            className="flex gap-4"
-          >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="karton" id={`pkg-${pkg.id}-karton`} />
-              <Label htmlFor={`pkg-${pkg.id}-karton`} className="text-sm font-normal cursor-pointer">
-                Karton
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="tuba" id={`pkg-${pkg.id}-tuba`} />
-              <Label htmlFor={`pkg-${pkg.id}-tuba`} className="text-sm font-normal cursor-pointer">
-                Tuba
-              </Label>
-            </div>
-          </RadioGroup>
-
-          {pkg.packagingType === 'tuba' ? (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Długość (cm)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={(pkg.dimensions as TubaDimensions)?.length || ''}
-                  onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Średnica (cm)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={(pkg.dimensions as TubaDimensions)?.diameter || ''}
-                  onChange={(e) => onDimensionChange('diameter', parseFloat(e.target.value) || 0)}
-                  className="h-8 text-sm"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Długość (cm)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={(pkg.dimensions as KartonDimensions)?.length || ''}
-                  onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Szerokość (cm)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={(pkg.dimensions as KartonDimensions)?.width || ''}
-                  onChange={(e) => onDimensionChange('width', parseFloat(e.target.value) || 0)}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Wysokość (cm)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={(pkg.dimensions as KartonDimensions)?.height || ''}
-                  onChange={(e) => onDimensionChange('height', parseFloat(e.target.value) || 0)}
-                  className="h-8 text-sm"
-                />
-              </div>
+              {pkg.packagingType === 'tuba' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Długość (cm)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as TubaDimensions)?.length || ''}
+                      onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Średnica (cm)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as TubaDimensions)?.diameter || ''}
+                      onChange={(e) => onDimensionChange('diameter', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Dł. (cm)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as KartonDimensions)?.length || ''}
+                      onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Szer. (cm)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as KartonDimensions)?.width || ''}
+                      onChange={(e) => onDimensionChange('width', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Wys. (cm)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as KartonDimensions)?.height || ''}
+                      onChange={(e) => onDimensionChange('height', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

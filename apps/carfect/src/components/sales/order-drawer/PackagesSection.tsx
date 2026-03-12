@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
-import { type OrderPackage, type OrderProduct, type DeliveryType, type PackagingType, getItemKey } from '../hooks/useOrderPackages';
+import { type OrderPackage, type OrderProduct, type DeliveryType, type PackagingType, type RollAssignment, getItemKey } from '../hooks/useOrderPackages';
 import PackageCard from './PackageCard';
 
 interface PackagesSectionProps {
@@ -17,6 +17,7 @@ interface PackagesSectionProps {
   onUpdateQuantity: (productKey: string, qty: number) => void;
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
   onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
+  onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
   onAddPackage: () => void;
 }
 
@@ -33,6 +34,7 @@ export const PackagesSection = ({
   onUpdateQuantity,
   onUpdateVehicle,
   onUpdateRollAssignment,
+  onSetRollAssignments,
   onAddPackage,
 }: PackagesSectionProps) => {
   return (
@@ -57,6 +59,7 @@ export const PackagesSection = ({
               onUpdateVehicle={(productKey, vehicle) => onUpdateVehicle(productKey, vehicle)}
               instanceId={instanceId}
               onUpdateRollAssignment={onUpdateRollAssignment ? (productKey, rollId, usageM2, widthMm) => onUpdateRollAssignment(productKey, rollId, usageM2, widthMm) : undefined}
+              onSetRollAssignments={onSetRollAssignments}
             />
           ))}
         </div>
@@ -64,7 +67,7 @@ export const PackagesSection = ({
 
       <Button variant="outline" size="sm" className="w-full gap-2" onClick={onAddPackage}>
         <Plus className="w-4 h-4" />
-        Dodaj paczkę
+        {packages.length > 0 ? 'Dodaj kolejną paczkę' : 'Dodaj paczkę'}
       </Button>
     </div>
   );

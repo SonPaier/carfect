@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { useRollScan } from '../hooks/useRollScan';
 import { createRollsBatch } from '../services/rollService';
+import { supabase } from '@/integrations/supabase/client';
 import RollScanUploadZone from './RollScanUploadZone';
 import RollScanProgressList from './RollScanProgressList';
 import RollScanResultsTable from './RollScanResultsTable';
@@ -62,6 +63,33 @@ const RollScanDrawer = ({
       }
     }
 
+    // Check productCode uniqueness
+    const productCodes = savableResults
+      .map((r) => r.extractedData.productCode)
+      .filter((code): code is string => !!code);
+
+    const batchDupes = productCodes.filter(
+      (code, i) => productCodes.indexOf(code) !== i
+    );
+    if (batchDupes.length > 0) {
+      toast.error(`Zduplikowane kody produktów w skanowaniu: ${[...new Set(batchDupes)].join(', ')}`);
+      return;
+    }
+
+    if (productCodes.length > 0) {
+      const { data: existing } = await (supabase
+        .from('sales_rolls')
+        .select('product_code')
+        .eq('instance_id', instanceId)
+        .in('product_code', productCodes) as any);
+
+      const existingCodes = (existing || []).map((r: any) => r.product_code);
+      if (existingCodes.length > 0) {
+        toast.error(`Rolki z tymi kodami już istnieją: ${existingCodes.join(', ')}`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const rollsToCreate = savableResults.map((item) => ({
@@ -73,7 +101,6 @@ const RollScanDrawer = ({
         barcode: item.extractedData.barcode,
         widthMm: Number(item.extractedData.widthMm),
         lengthM: Number(item.extractedData.lengthM),
-        deliveryDate: item.extractedData.deliveryDate,
         photoUrl: item.photoUrl,
         extractionConfidence: item.confidence,
       }));

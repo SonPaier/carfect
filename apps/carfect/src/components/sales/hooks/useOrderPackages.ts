@@ -22,7 +22,15 @@ export interface OrderPackage {
   productKeys: string[];
 }
 
+export interface RollAssignment {
+  rollId: string;
+  usageM2: number;
+  widthMm: number;
+}
+
 export interface OrderProduct {
+  /** Unique instance key — allows the same product to appear multiple times */
+  instanceKey: string;
   productId: string;
   variantId?: string;
   name: string;
@@ -30,12 +38,16 @@ export interface OrderProduct {
   priceUnit: string;
   quantity: number;
   vehicle: string;
+  /** @deprecated Use rollAssignments instead */
   rollId?: string;
+  /** @deprecated Use rollAssignments instead */
   rollUsageM2?: number;
+  /** @deprecated Use rollAssignments instead */
   rollWidthMm?: number;
+  rollAssignments?: RollAssignment[];
 }
 
-export const getItemKey = (p: OrderProduct) => p.variantId || p.productId;
+export const getItemKey = (p: OrderProduct) => p.instanceKey;
 
 export const createDefaultPackage = (): OrderPackage => ({
   id: crypto.randomUUID(),
@@ -79,35 +91,32 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   }>) => {
     if (!activePackageId) return;
 
-    const newKeys = selected.map(s => s.variantId || s.productId);
-
-    setProducts(prev => {
-      const existingMap = new Map(prev.map(p => [getItemKey(p), p]));
-      for (const s of selected) {
-        const key = s.variantId || s.productId;
-        if (!existingMap.has(key)) {
-          const displayName = s.variantName
-            ? `${s.shortName || s.fullName} - ${s.variantName}`
-            : s.shortName || s.fullName;
-          existingMap.set(key, {
-            productId: s.productId,
-            variantId: s.variantId,
-            name: displayName,
-            priceNet: s.priceNet,
-            priceUnit: s.priceUnit || 'szt.',
-            quantity: 1,
-            vehicle: '',
-          });
-        }
-      }
-      return Array.from(existingMap.values());
+    // Each selected product becomes a new instance with a unique key
+    const newProducts: OrderProduct[] = selected.map(s => {
+      const displayName = s.variantName
+        ? `${s.shortName || s.fullName} - ${s.variantName}`
+        : s.shortName || s.fullName;
+      return {
+        instanceKey: crypto.randomUUID(),
+        productId: s.productId,
+        variantId: s.variantId,
+        name: displayName,
+        priceNet: s.priceNet,
+        priceUnit: s.priceUnit || 'szt.',
+        quantity: 1,
+        vehicle: '',
+      };
     });
+
+    const newKeys = newProducts.map(p => p.instanceKey);
+
+    setProducts(prev => [...prev, ...newProducts]);
 
     setPackages(prev => prev.map(pkg => {
       if (pkg.id === activePackageId) {
-        return { ...pkg, productKeys: newKeys };
+        return { ...pkg, productKeys: [...pkg.productKeys, ...newKeys] };
       }
-      return { ...pkg, productKeys: pkg.productKeys.filter(k => !newKeys.includes(k)) };
+      return pkg;
     }));
 
     setActivePackageId(null);
@@ -151,6 +160,16 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
               rollUsageM2: rollId ? rollUsageM2 : undefined,
               rollWidthMm: rollId ? rollWidthMm : undefined,
             }
+          : p
+      )
+    );
+  };
+
+  const setRollAssignments = (key: string, assignments: RollAssignment[]) => {
+    setProducts(prev =>
+      prev.map(p =>
+        getItemKey(p) === key
+          ? { ...p, rollAssignments: assignments }
           : p
       )
     );
@@ -228,6 +247,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updateQuantity,
     updateVehicle,
     updateRollAssignment,
+    setRollAssignments,
     addPackage,
     removePackage,
     updatePackageShippingMethod,

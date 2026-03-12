@@ -122,7 +122,6 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
               barcode: extracted.barcode,
               widthMm: extracted.widthMm,
               lengthM: extracted.lengthM,
-              deliveryDate: extracted.deliveryDate || undefined,
             },
             confidence: extracted.confidence || {},
             warnings: extracted.warnings || [],
