@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import Image from "next/image";
 import { z } from "zod";
 import heroBg from "@/assets/car-detailing-myjnia-reczna-hero.webp";
@@ -43,15 +42,8 @@ const Hero = () => {
     }
     setIsLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('send-contact-email', {
-        body: {
-          contact
-        }
-      });
-      if (error) throw error;
+      // TODO: implement contact form submission without supabase
+      await new Promise(resolve => setTimeout(resolve, 500));
       toast({
         title: "Sukces!",
         description: hero.success

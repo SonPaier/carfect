@@ -270,6 +270,74 @@ export async function deleteRollUsagesByOrder(orderId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+// ─── Fetch single roll with remaining usage ─────────────────
+
+export async function fetchRollRemainingMb(
+  rollId: string,
+  excludeOrderId?: string
+): Promise<{ lengthM: number; widthMm: number; usedMb: number; remainingMb: number }> {
+  const { data: roll, error: rollErr } = await (supabase
+    .from('sales_rolls')
+    .select('length_m, width_mm')
+    .eq('id', rollId)
+    .single() as any);
+
+  if (rollErr || !roll) throw new Error(rollErr?.message || 'Roll not found');
+
+  let query = supabase
+    .from('sales_roll_usages')
+    .select('used_mb')
+    .eq('roll_id', rollId);
+
+  if (excludeOrderId) {
+    query = query.neq('order_id', excludeOrderId);
+  }
+
+  const { data: usages, error: usageErr } = await (query as any);
+  if (usageErr) throw new Error(usageErr.message);
+
+  const usedMb = (usages || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
+  const lengthM = Number(roll.length_m);
+  const widthMm = Number(roll.width_mm);
+
+  return {
+    lengthM,
+    widthMm,
+    usedMb,
+    remainingMb: Math.max(0, lengthM - usedMb),
+  };
+}
+
+// ─── Fetch single roll by ID (with usage) ───────────────────
+
+export async function fetchRollById(rollId: string): Promise<SalesRoll | null> {
+  const { data: row, error } = await (supabase
+    .from('sales_rolls')
+    .select('*')
+    .eq('id', rollId)
+    .single() as any);
+
+  if (error || !row) return null;
+
+  const roll = mapDbRow(row);
+
+  const { data: usageRows } = await (supabase
+    .from('sales_roll_usages')
+    .select('used_mb')
+    .eq('roll_id', rollId) as any);
+
+  const usedMb = (usageRows || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
+  const remainingMb = Math.max(0, roll.lengthM - usedMb);
+  const widthM = roll.widthMm / 1000;
+
+  return {
+    ...roll,
+    currentUsageMb: usedMb,
+    remainingMb,
+    remainingM2: remainingMb * widthM,
+  };
+}
+
 // ─── Active rolls by product name (for order autocomplete) ──
 
 export async function fetchActiveRollsByProductName(
