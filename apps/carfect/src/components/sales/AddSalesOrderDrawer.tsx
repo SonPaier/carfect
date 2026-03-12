@@ -22,8 +22,8 @@ import SalesProductSelectionDrawer from './SalesProductSelectionDrawer';
 import { ImagePasteZone } from '@/components/ui/image-paste-zone';
 
 import { VAT_RATE } from './constants';
-import { createRollUsage, deleteRollUsagesByOrder } from './services/rollService';
-import { m2ToMb } from './types/rolls';
+import { createRollUsage, deleteRollUsagesByOrder, fetchRollRemainingMb } from './services/rollService';
+import { m2ToMb, mbToM2 } from './types/rolls';
 import { useCustomerSearch } from './hooks/useCustomerSearch';
 import {
   useOrderPackages,
@@ -189,6 +189,32 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     if (!instanceId) { toast.error('Brak instancji'); return; }
     if (!customerSearch.selectedCustomer) { toast.error('Wybierz klienta'); return; }
     if (products.length === 0) { toast.error('Dodaj przynajmniej jeden produkt'); return; }
+
+    // Validate roll availability before saving
+    const productsWithRolls = products.filter(p => p.rollId && p.rollUsageM2);
+    if (productsWithRolls.length > 0) {
+      setSaving(true);
+      try {
+        for (const p of productsWithRolls) {
+          const rollData = await fetchRollRemainingMb(
+            p.rollId!,
+            isEdit ? editOrder?.id : undefined
+          );
+          const remainingM2 = mbToM2(rollData.remainingMb, rollData.widthMm);
+          if (p.rollUsageM2! > remainingM2) {
+            const shortage = (p.rollUsageM2! - remainingM2).toFixed(2);
+            toast.error(`Rolka przypisana do „${p.name}" ma za mało materiału. Zostało ${remainingM2.toFixed(2)} m², brakuje ${shortage} m².`);
+            setSaving(false);
+            return;
+          }
+        }
+      } catch (err: any) {
+        toast.error('Błąd walidacji rolek: ' + (err.message || ''));
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
 
     setSaving(true);
     try {

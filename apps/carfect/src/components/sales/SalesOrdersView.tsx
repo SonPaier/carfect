@@ -223,7 +223,7 @@ const SalesOrdersView = () => {
     // Fetch order items with vehicle info from DB
     const { data: items } = await (supabase
       .from('sales_order_items')
-      .select('product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order')
+      .select('id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order')
       .eq('order_id', order.id)
       .order('sort_order') as any);
 
@@ -245,13 +245,42 @@ const SalesOrdersView = () => {
       customerDiscount = cust?.discount_percent ?? undefined;
     }
 
-    setEditOrder({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customerId: orderData?.customer_id || '',
-      customerName: orderData?.customer_name || order.customerName,
-      customerDiscount,
-      products: (items || []).map((item: any) => ({
+    // Fetch existing roll usages for this order
+    const { data: rollUsages, error: rollUsagesErr } = await (supabase
+      .from('sales_roll_usages')
+      .select('order_item_id, roll_id, used_m2')
+      .eq('order_id', order.id) as any);
+
+    console.log('[EditOrder] rollUsages:', rollUsages, 'error:', rollUsagesErr);
+    console.log('[EditOrder] items:', items?.map((i: any) => ({ id: i.id, name: i.name, price_unit: i.price_unit })));
+
+    // Fetch roll widths for assigned rolls
+    const rollIds = [...new Set((rollUsages || []).map((u: any) => u.roll_id))] as string[];
+    let rollWidthMap: Record<string, number> = {};
+    if (rollIds.length > 0) {
+      const { data: rollsData } = await (supabase
+        .from('sales_rolls')
+        .select('id, width_mm')
+        .in('id', rollIds) as any);
+      if (rollsData) {
+        for (const r of rollsData as { id: string; width_mm: number }[]) {
+          rollWidthMap[r.id] = Number(r.width_mm);
+        }
+      }
+    }
+
+    // Build usage map by order_item_id
+    const usageByItemId: Record<string, { rollId: string; usedM2: number }> = {};
+    for (const u of (rollUsages || []) as { order_item_id: string; roll_id: string; used_m2: number }[]) {
+      usageByItemId[u.order_item_id] = { rollId: u.roll_id, usedM2: Number(u.used_m2) };
+    }
+
+    console.log('[EditOrder] usageByItemId:', usageByItemId);
+
+    const editProducts = (items || []).map((item: any) => {
+      const usage = usageByItemId[item.id];
+      console.log('[EditOrder] item.id:', item.id, 'usage:', usage);
+      return {
         productId: item.product_id || item.name,
         variantId: item.variant_id || undefined,
         name: item.name,
@@ -259,7 +288,22 @@ const SalesOrdersView = () => {
         priceUnit: item.price_unit || 'szt.',
         quantity: item.quantity,
         vehicle: item.vehicle || '',
-      })),
+        rollId: usage?.rollId,
+        rollUsageM2: usage?.usedM2,
+        rollWidthMm: usage ? rollWidthMap[usage.rollId] : undefined,
+      };
+    });
+
+    console.log('[EditOrder] final products:', editProducts);
+
+    setEditOrder({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customerId: orderData?.customer_id || '',
+      customerName: orderData?.customer_name || order.customerName,
+      customerDiscount,
+      products: editProducts,
+      }),
       packages: orderData?.packages || [],
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
       paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer',

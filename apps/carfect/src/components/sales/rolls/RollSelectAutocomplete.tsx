@@ -3,7 +3,7 @@ import { ChevronDown, AlertCircle, Package } from 'lucide-react';
 import { Input, Button, Label } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
 import { mbToM2 } from '../types/rolls';
-import { fetchActiveRollsByProductName } from '../services/rollService';
+import { fetchActiveRollsByProductName, fetchRollById } from '../services/rollService';
 
 interface RollSelectAutocompleteProps {
   instanceId: string | null;
@@ -21,12 +21,12 @@ const RollSelectAutocomplete = ({
   onSelect,
 }: RollSelectAutocompleteProps) => {
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!(instanceId && productName));
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch rolls matching product name
+  // Fetch rolls matching product name + ensure selected roll is included
   useEffect(() => {
     if (!instanceId || !productName) {
       setRolls([]);
@@ -37,7 +37,15 @@ const RollSelectAutocomplete = ({
     setLoading(true);
 
     fetchActiveRollsByProductName(instanceId, productName)
-      .then((data) => {
+      .then(async (data) => {
+        if (cancelled) return;
+        // If selected roll is not in the active list (e.g. archived), fetch it separately
+        if (selectedRollId && !data.find((r) => r.id === selectedRollId)) {
+          const roll = await fetchRollById(selectedRollId);
+          if (roll && !cancelled) {
+            data = [roll, ...data];
+          }
+        }
         if (!cancelled) setRolls(data);
       })
       .catch(() => {
@@ -50,7 +58,7 @@ const RollSelectAutocomplete = ({
     return () => {
       cancelled = true;
     };
-  }, [instanceId, productName]);
+  }, [instanceId, productName, selectedRollId]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -93,14 +101,19 @@ const RollSelectAutocomplete = ({
     setSearch('');
   }, [onSelect]);
 
-  if (rolls.length === 0 && !loading) return null;
+  if (rolls.length === 0 && !loading && !selectedRollId) return null;
 
   return (
     <div ref={containerRef} className="mt-2 space-y-2">
       <Label className="text-xs text-muted-foreground">Rolka</Label>
 
       {/* Selected roll display */}
-      {selectedRoll ? (
+      {selectedRollId && !selectedRoll && loading ? (
+        <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
+          <Package className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-xs text-muted-foreground">Ładowanie rolki...</span>
+        </div>
+      ) : selectedRoll ? (
         <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
           <div className="flex-1 min-w-0">

@@ -24,6 +24,7 @@ import { formatRollSize, formatMbM2 } from './types/rolls';
 import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
+import RollUsageDrawer from './rolls/RollUsageDrawer';
 
 type TabType = 'active' | 'archived';
 type SortColumn = 'productName' | 'productCode' | 'barcode' | 'widthMm' | 'remainingMb' | 'deliveryDate';
@@ -47,6 +48,8 @@ const SalesRollsView = () => {
   const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [editRoll, setEditRoll] = useState<SalesRoll | null>(null);
+  const [usageDrawerOpen, setUsageDrawerOpen] = useState(false);
+  const [usageRoll, setUsageRoll] = useState<SalesRoll | null>(null);
 
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -357,6 +360,9 @@ const SalesRollsView = () => {
                         <DropdownMenuItem onClick={() => handleEditClick(roll)}>
                           Edytuj
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setUsageRoll(roll); setUsageDrawerOpen(true); }}>
+                          Zobacz zużycie
+                        </DropdownMenuItem>
                         {activeTab === 'active' ? (
                           <DropdownMenuItem onClick={() => handleArchive(roll)}>
                             Archiwizuj
@@ -434,6 +440,12 @@ const SalesRollsView = () => {
         instanceId={instanceId}
         roll={editRoll}
         onSaved={loadRolls}
+      />
+
+      <RollUsageDrawer
+        open={usageDrawerOpen}
+        onOpenChange={setUsageDrawerOpen}
+        roll={usageRoll}
       />
 
       {/* Delete confirm */}
