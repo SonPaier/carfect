@@ -303,7 +303,6 @@ const SalesOrdersView = () => {
       customerName: orderData?.customer_name || order.customerName,
       customerDiscount,
       products: editProducts,
-      }),
       packages: orderData?.packages || [],
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
       paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer',
