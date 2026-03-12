@@ -84,11 +84,13 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
         status: 'uploading' as RollScanStatus,
       }));
 
-      setResults((prev) => [...prev, ...newResults]);
+      let startIdx = 0;
+      setResults((prev) => {
+        startIdx = prev.length;
+        return [...prev, ...newResults];
+      });
       setTotalCount((prev) => prev + files.length);
       setProcessing(true);
-
-      const startIdx = results.length;
 
       // Process sequentially
       for (let i = 0; i < newResults.length; i++) {
@@ -135,7 +137,7 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
 
       setProcessing(false);
     },
-    [instanceId, results.length, updateResult]
+    [instanceId, updateResult]
   );
 
   const confirmedResults = results.filter((r) => r.status === 'confirmed');

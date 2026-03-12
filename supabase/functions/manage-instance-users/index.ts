@@ -297,9 +297,9 @@ Deno.serve(async (req) => {
 
         // Update role if provided
         if (role) {
-          if (role !== 'admin' && role !== 'employee' && role !== 'hall') {
+          if (role !== 'admin' && role !== 'employee' && role !== 'hall' && role !== 'sales') {
             return new Response(
-              JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall' }),
+              JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales' }),
               { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }

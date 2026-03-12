@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
 import { Search, Plus, ChevronDown, ChevronRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, MoreHorizontal, ArrowUp, ArrowDown } from 'lucide-react';
@@ -210,6 +210,7 @@ const SalesOrdersView = () => {
 
   const handleDeleteOrder = async (orderId: string) => {
     try {
+      await (supabase.from('sales_roll_usages').delete().eq('order_id', orderId) as any);
       await (supabase.from('sales_order_items').delete().eq('order_id', orderId) as any);
       await (supabase.from('sales_orders').delete().eq('id', orderId) as any);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
@@ -382,9 +383,8 @@ const SalesOrdersView = () => {
                 const isExpanded = expandedRows.has(order.id);
 
                 return (
-                  <>
+                  <Fragment key={order.id}>
                     <TableRow
-                      key={order.id}
                       className="group hover:bg-hover-strong cursor-pointer"
                       onClick={() => toggleExpand(order.id)}
                     >
@@ -513,7 +513,7 @@ const SalesOrdersView = () => {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })
             )}
