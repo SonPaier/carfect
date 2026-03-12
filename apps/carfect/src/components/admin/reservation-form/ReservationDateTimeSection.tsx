@@ -216,6 +216,15 @@ export const ReservationDateTimeSection = ({
                   markUserEditing();
                   onClearDateRangeError();
                   setDateRange(range);
+                  // Prefill times from working hours when selecting date in multi mode
+                  if (range?.from && !manualStartTime && !manualEndTime && workingHours) {
+                    const dayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][range.from.getDay()];
+                    const dayHours = workingHours[dayName];
+                    if (dayHours) {
+                      setManualStartTime(dayHours.open.substring(0, 5));
+                      setManualEndTime(dayHours.close.substring(0, 5));
+                    }
+                  }
                   if (range?.from && range?.to) {
                     setDateRangeOpen(false);
                   }

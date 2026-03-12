@@ -606,7 +606,8 @@ const AddReservationDialogV2 = ({
       prevManualStartTimeRef.current = '';
       setServicesWithCategory([]); // Reset services list for next open
     }
-  }, [open, getNextWorkingDay, editingReservation, isYardMode, editingYardVehicle, initialDate, initialTime, initialStationId, services, selectedServices, carSize]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedServices and carSize intentionally excluded to prevent re-init loop when user edits form
+  }, [open, getNextWorkingDay, editingReservation, isYardMode, editingYardVehicle, initialDate, initialTime, initialStationId, services]);
 
 
   // Keep employee assignments in sync with backend when opening edit mode
@@ -1162,7 +1163,7 @@ const AddReservationDialogV2 = ({
     if (!manualStartTime || !manualEndTime) {
       errors.time = 'Wybierz godzinę rozpoczęcia i zakończenia';
     }
-    if (!manualStationId && (isEditMode || initialStationId === undefined)) {
+    if (!manualStationId && (isEditMode || !initialStationId)) {
       errors.station = 'Wybierz stanowisko';
     }
 
@@ -1728,7 +1729,7 @@ const AddReservationDialogV2 = ({
                 markUserEditing={markUserEditing}
                 dateRangeRef={dateRangeRef}
                 timeRef={timeRef}
-                showStationSelector={isEditMode || initialStationId === undefined} />
+                showStationSelector={isEditMode || !initialStationId} />
 
               }
 

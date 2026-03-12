@@ -1550,9 +1550,10 @@ const AdminDashboard = () => {
     setAddReservationOpen(true);
   };
 
-  // Open edit reservation dialog (keeps details drawer open, edit drawer goes on top)
+  // Open edit reservation dialog — close details drawer first so it doesn't block
   const handleEditReservation = (reservation: Reservation) => {
     const station = stations.find((s) => s.id === reservation.station_id);
+    setSelectedReservation(null);
     setEditingReservation(reservation);
     setNewReservationData({
       stationId: reservation.station_id || '',
@@ -1560,7 +1561,6 @@ const AdminDashboard = () => {
       time: reservation.start_time?.substring(0, 5) || '',
       stationType: station?.type || ''
     });
-    // Don't close details drawer here - we close both after save/close
     setAddReservationOpen(true);
   };
 
@@ -2748,6 +2748,7 @@ const AdminDashboard = () => {
 
             {currentView === 'offers' && <OffersView instanceId={instanceId} instanceData={instanceData} onReserveFromOffer={(offerData) => {
               setCurrentView('calendar');
+              setNewReservationData({ stationId: '', date: '', time: '', stationType: '' });
               setEditingReservation(offerData);
               setAddReservationV2Open(true);
             }} />}

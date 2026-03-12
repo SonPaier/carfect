@@ -457,7 +457,7 @@ const SalesRollsView = () => {
         title="Usuń rolkę"
         description={`Czy na pewno chcesz usunąć rolkę "${deleteConfirm.rollName}"? Tej operacji nie można cofnąć.`}
         onConfirm={handleDelete}
-        confirmText="Usuń"
+        confirmLabel="Usuń"
         variant="destructive"
       />
     </div>

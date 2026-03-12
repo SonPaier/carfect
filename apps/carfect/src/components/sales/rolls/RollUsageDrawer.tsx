@@ -112,7 +112,7 @@ const RollUsageDrawer = ({ open, onOpenChange, roll }: RollUsageDrawerProps) => 
           {roll && (
             <p className="text-sm text-muted-foreground">
               {roll.barcode || roll.productCode || 'Brak kodu'} &middot;{' '}
-              Na stanie: {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot;{' '}
+              Stan początkowy: {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot;{' '}
               Zużyto: {formatMbM2(totalUsedMb, roll.widthMm)} &middot;{' '}
               Pozostało: {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
             </p>
