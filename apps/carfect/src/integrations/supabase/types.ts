@@ -296,6 +296,7 @@ export type Database = {
           phone_country_code: string | null
           phone_verified: boolean | null
           sales_notes: string | null
+          shipping_addressee: string | null
           shipping_city: string | null
           shipping_country_code: string | null
           shipping_postal_code: string | null
@@ -337,6 +338,7 @@ export type Database = {
           phone_country_code?: string | null
           phone_verified?: boolean | null
           sales_notes?: string | null
+          shipping_addressee?: string | null
           shipping_city?: string | null
           shipping_country_code?: string | null
           shipping_postal_code?: string | null
@@ -378,6 +380,7 @@ export type Database = {
           phone_country_code?: string | null
           phone_verified?: boolean | null
           sales_notes?: string | null
+          shipping_addressee?: string | null
           shipping_city?: string | null
           shipping_country_code?: string | null
           shipping_postal_code?: string | null

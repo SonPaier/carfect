@@ -21,11 +21,14 @@ interface SalesCustomer {
   contact_person: string | null;
   phone: string;
   email: string | null;
+  default_currency: string | null;
   nip: string | null;
   company: string | null;
   is_net_payer: boolean;
   discount_percent: number | null;
   sales_notes: string | null;
+  shipping_addressee: string | null;
+  shipping_country_code: string | null;
   shipping_street: string | null;
   shipping_street_line2: string | null;
   shipping_postal_code: string | null;
@@ -87,7 +90,7 @@ const SalesCustomersView = () => {
     setLoading(true);
     const { data, error } = await (supabase
       .from('customers')
-      .select('id, name, contact_person, phone, email, nip, company, is_net_payer, discount_percent, sales_notes, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city')
+      .select('id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city')
       .eq('instance_id', instanceId)
       .eq('source', 'sales')
       .order('name') as any);

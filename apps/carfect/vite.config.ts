@@ -59,6 +59,7 @@ export default defineConfig(({ mode }) => ({
     }),
   ].filter(Boolean),
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@shared/ui": path.resolve(__dirname, "../../libs/ui/src/index.ts"),
       "@shared/utils": path.resolve(__dirname, "../../libs/shared-utils/src/index.ts"),

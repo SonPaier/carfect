@@ -12,6 +12,7 @@ import { Textarea } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@shared/ui';
@@ -23,13 +24,16 @@ interface SalesCustomer {
   contact_person: string | null;
   phone: string;
   email: string | null;
+  default_currency: string | null;
   discount_percent: number | null;
   is_net_payer: boolean;
   sales_notes: string | null;
+  shipping_addressee: string | null;
+  shipping_country_code: string | null;
   shipping_street: string | null;
+  shipping_street_line2: string | null;
   shipping_postal_code: string | null;
   shipping_city: string | null;
-  shipping_street_line2: string | null;
   nip: string | null;
   company: string | null;
   billing_street: string | null;
@@ -46,17 +50,66 @@ interface Props {
   initialEditMode?: boolean;
 }
 
+const CURRENCIES = [
+  { value: 'PLN', label: 'PLN (zł)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'USD', label: 'USD ($)' },
+] as const;
+
+const COUNTRIES = [
+  { code: 'PL', name: 'Polska' },
+  { code: 'DE', name: 'Niemcy' },
+  { code: 'CZ', name: 'Czechy' },
+  { code: 'SK', name: 'Słowacja' },
+  { code: 'UA', name: 'Ukraina' },
+  { code: 'LT', name: 'Litwa' },
+  { code: 'FR', name: 'Francja' },
+  { code: 'GB', name: 'Wielka Brytania' },
+  { code: 'IT', name: 'Włochy' },
+  { code: 'ES', name: 'Hiszpania' },
+  { code: 'NL', name: 'Holandia' },
+  { code: 'BE', name: 'Belgia' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'CH', name: 'Szwajcaria' },
+  { code: 'SE', name: 'Szwecja' },
+  { code: 'NO', name: 'Norwegia' },
+  { code: 'DK', name: 'Dania' },
+  { code: 'FI', name: 'Finlandia' },
+  { code: 'PT', name: 'Portugalia' },
+  { code: 'IE', name: 'Irlandia' },
+  { code: 'HU', name: 'Węgry' },
+  { code: 'RO', name: 'Rumunia' },
+  { code: 'BG', name: 'Bułgaria' },
+  { code: 'HR', name: 'Chorwacja' },
+  { code: 'SI', name: 'Słowenia' },
+  { code: 'EE', name: 'Estonia' },
+  { code: 'LV', name: 'Łotwa' },
+  { code: 'GR', name: 'Grecja' },
+  { code: 'US', name: 'Stany Zjednoczone' },
+  { code: 'CA', name: 'Kanada' },
+  { code: 'CN', name: 'Chiny' },
+  { code: 'JP', name: 'Japonia' },
+  { code: 'KR', name: 'Korea Południowa' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'BY', name: 'Białoruś' },
+  { code: 'TR', name: 'Turcja' },
+  { code: 'RU', name: 'Rosja' },
+] as const;
+
 const emptyForm = {
   name: '',
   contactPerson: '',
   phone: '',
   email: '',
+  currency: 'PLN',
   discountEnabled: false,
   discountPercent: 0,
   isNetPayer: false,
   notes: '',
   shippingAddressee: '',
+  shippingCountry: 'PL',
   shippingStreet: '',
+  shippingStreetLine2: '',
   shippingPostalCode: '',
   shippingCity: '',
   nip: '',
@@ -111,12 +164,15 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
         contactPerson: customer.contact_person || '',
         phone: customer.phone || '',
         email: customer.email || '',
+        currency: customer.default_currency || 'PLN',
         discountEnabled: (customer.discount_percent ?? 0) > 0,
         discountPercent: customer.discount_percent ?? 0,
         isNetPayer: customer.is_net_payer ?? false,
         notes: customer.sales_notes || '',
-        shippingAddressee: customer.shipping_street_line2 || '',
+        shippingAddressee: customer.shipping_addressee || '',
+        shippingCountry: customer.shipping_country_code || 'PL',
         shippingStreet: customer.shipping_street || '',
+        shippingStreetLine2: customer.shipping_street_line2 || '',
         shippingPostalCode: customer.shipping_postal_code || '',
         shippingCity: customer.shipping_city || '',
         nip: customer.nip || '',
@@ -149,11 +205,14 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
         contact_person: form.contactPerson.trim() || null,
         phone: form.phone.trim(),
         email: form.email.trim() || null,
+        default_currency: form.currency || 'PLN',
         discount_percent: form.discountEnabled ? form.discountPercent : null,
         is_net_payer: form.isNetPayer,
         sales_notes: form.notes.trim() || null,
-        shipping_street_line2: form.shippingAddressee.trim() || null,
+        shipping_addressee: form.shippingAddressee.trim() || null,
+        shipping_country_code: form.shippingCountry || 'PL',
         shipping_street: form.shippingStreet.trim() || null,
+        shipping_street_line2: form.shippingStreetLine2.trim() || null,
         shipping_postal_code: form.shippingPostalCode.trim() || null,
         shipping_city: form.shippingCity.trim() || null,
         nip: form.nip.trim() || null,
@@ -202,6 +261,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
           <ViewField label="Osoba kontaktowa" value={form.contactPerson} />
           <ViewField label="Telefon" value={form.phone} isPhone />
           <ViewField label="Email" value={form.email} isEmail />
+          <ViewField label="Waluta" value={CURRENCIES.find(c => c.value === form.currency)?.label || form.currency} />
           {form.discountEnabled && (
             <ViewField label="Rabat" value={`${form.discountPercent}%`} />
           )}
@@ -209,13 +269,14 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
           <ViewField label="Notatki" value={form.notes} />
         </div>
 
-        {(form.shippingStreet || form.shippingCity) && (
+        {(form.shippingStreet || form.shippingCity || form.shippingAddressee) && (
           <>
             <Separator />
             <div className="space-y-3 text-sm">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Adres wysyłki</h4>
               {form.shippingAddressee && <ViewField label="Adresat" value={form.shippingAddressee} />}
-              <ViewField label="Adres" value={[form.shippingStreet, `${form.shippingPostalCode} ${form.shippingCity}`].filter(Boolean).join(', ')} />
+              <ViewField label="Kraj" value={COUNTRIES.find(c => c.code === form.shippingCountry)?.name || form.shippingCountry} />
+              <ViewField label="Adres" value={[form.shippingStreet, form.shippingStreetLine2, `${form.shippingPostalCode} ${form.shippingCity}`].filter(Boolean).join(', ')} />
             </div>
           </>
         )}
@@ -296,6 +357,19 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         </div>
+        <div>
+          <Label htmlFor="currency">Waluta</Label>
+          <Select value={form.currency} onValueChange={(value) => setForm({ ...form, currency: value })}>
+            <SelectTrigger id="currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Separator />
@@ -352,8 +426,22 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
           <Input id="ship-addressee" value={form.shippingAddressee} onChange={(e) => setForm({ ...form, shippingAddressee: e.target.value })} />
         </div>
         <div>
-          <Label htmlFor="ship-street">Ulica</Label>
+          <Label htmlFor="ship-country">Kraj</Label>
+          <Select value={form.shippingCountry} onValueChange={(value) => setForm({ ...form, shippingCountry: value })}>
+            <SelectTrigger id="ship-country">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map((c) => (
+                <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="ship-street">Adres</Label>
           <Input id="ship-street" value={form.shippingStreet} onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })} />
+          <Input id="ship-street-line2" className="mt-1" placeholder="Linia 2 (opcjonalne)" value={form.shippingStreetLine2} onChange={(e) => setForm({ ...form, shippingStreetLine2: e.target.value })} />
         </div>
         <div className="grid grid-cols-[120px_1fr] gap-2">
           <div>
