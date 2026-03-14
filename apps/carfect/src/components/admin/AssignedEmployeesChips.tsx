@@ -53,9 +53,7 @@ export function AssignedEmployeesChips({
     'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium transition-colors leading-none';
 
   const variantClasses = {
-    default: readonly
-      ? 'bg-muted text-muted-foreground'
-      : 'bg-foreground text-background',
+    default: 'bg-muted text-foreground',
     blue: 'bg-muted text-foreground border border-border',
   };
 

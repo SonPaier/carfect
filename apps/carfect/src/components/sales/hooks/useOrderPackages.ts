@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export type DeliveryType = 'shipping' | 'pickup' | 'uber';
-export type PackagingType = 'karton' | 'tuba';
+export type PackagingType = 'karton' | 'tuba' | 'koperta';
 
 export interface KartonDimensions {
   length: number;
@@ -220,7 +220,9 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
         if (pkg.id !== packageId) return pkg;
         const dimensions = type === 'karton'
           ? { length: 0, width: 0, height: 0 }
-          : { length: 0, diameter: 0 };
+          : type === 'tuba'
+            ? { length: 0, diameter: 0 }
+            : undefined;
         return { ...pkg, packagingType: type, dimensions };
       })
     );

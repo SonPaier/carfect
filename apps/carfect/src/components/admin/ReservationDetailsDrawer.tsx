@@ -780,9 +780,9 @@ const ReservationDetailsDrawer = ({
                     {/* Existing services with X button */}
                     {reservation.services_data && reservation.services_data.length > 0 ? (
                       reservation.services_data.map((svc, idx) => (
-                        <span 
-                          key={svc.id || idx} 
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                        <span
+                          key={svc.id || idx}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium"
                         >
                           {svc.name}
                           {svc.id && (
@@ -790,7 +790,7 @@ const ReservationDetailsDrawer = ({
                               type="button"
                               onClick={() => handleRemoveService(svc.id!)}
                               disabled={savingService}
-                              className="hover:bg-white/20 rounded-full p-0.5 transition-colors disabled:opacity-50"
+                              className="hover:bg-foreground/10 rounded-full p-0.5 transition-colors disabled:opacity-50"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -798,7 +798,7 @@ const ReservationDetailsDrawer = ({
                         </span>
                       ))
                     ) : reservation.service ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
                         {reservation.service.name}
                       </span>
                     ) : null}
@@ -836,14 +836,14 @@ const ReservationDetailsDrawer = ({
                       return (
                         <span
                           key={empId}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium"
                         >
                           {name}
                           <button
                             type="button"
                             onClick={() => handleRemoveEmployee(empId)}
                             disabled={savingEmployees}
-                            className="hover:bg-white/20 rounded-full p-0.5 transition-colors disabled:opacity-50"
+                            className="hover:bg-foreground/10 rounded-full p-0.5 transition-colors disabled:opacity-50"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>

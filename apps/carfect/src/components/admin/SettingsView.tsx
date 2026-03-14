@@ -63,7 +63,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
     website: '',
     contact_person: '',
   });
-  const [bankAccounts, setBankAccounts] = useState<string[]>(['']);
+  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([{ name: '', number: '' }]);
 
   // Populate form when instanceData changes
   useEffect(() => {
@@ -86,9 +86,12 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
       });
       const accounts = instanceData.bank_accounts;
       if (Array.isArray(accounts) && accounts.length > 0) {
-        setBankAccounts(accounts);
+        const normalized = (accounts as any[]).map((a: any) =>
+          typeof a === 'string' ? { name: '', number: a } : { name: a.name || '', number: a.number || '' }
+        );
+        setBankAccounts(normalized);
       } else {
-        setBankAccounts(['']);
+        setBankAccounts([{ name: '', number: '' }]);
       }
     }
   }, [instanceData]);
@@ -212,7 +215,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
           google_maps_url: companyForm.google_maps_url || null,
           website: companyForm.website || null,
           contact_person: companyForm.contact_person || null,
-          bank_accounts: bankAccounts.filter(a => a.trim() !== ''),
+          bank_accounts: bankAccounts.filter(a => a.number.trim() !== ''),
         })
         .eq('id', instanceId);
 
@@ -396,14 +399,24 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
               {bankAccounts.map((account, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
-                    value={account}
+                    value={account.name}
                     onChange={(e) => {
                       const updated = [...bankAccounts];
-                      updated[index] = e.target.value;
+                      updated[index] = { ...updated[index], name: e.target.value };
+                      setBankAccounts(updated);
+                    }}
+                    placeholder="Nazwa konta"
+                    className="w-40 shrink-0"
+                  />
+                  <Input
+                    value={account.number}
+                    onChange={(e) => {
+                      const updated = [...bankAccounts];
+                      updated[index] = { ...updated[index], number: e.target.value };
                       setBankAccounts(updated);
                     }}
                     placeholder="00 0000 0000 0000 0000 0000 0000"
-                    className="font-mono"
+                    className="font-mono flex-1"
                   />
                   {bankAccounts.length > 1 && (
                     <button
@@ -418,7 +431,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
               ))}
               <button
                 type="button"
-                onClick={() => setBankAccounts([...bankAccounts, ''])}
+                onClick={() => setBankAccounts([...bankAccounts, { name: '', number: '' }])}
                 className="text-sm text-primary hover:underline"
               >
                 + Dodaj numer konta bankowego

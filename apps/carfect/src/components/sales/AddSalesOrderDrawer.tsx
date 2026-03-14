@@ -72,7 +72,13 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
   const { roles } = useAuth();
   const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
   const { data: instanceData } = useInstanceData(instanceId);
-  const bankAccounts: string[] = (instanceData?.bank_accounts as string[] | null) || [];
+  const bankAccounts = useMemo(() => {
+    const raw = instanceData?.bank_accounts;
+    if (!Array.isArray(raw) || raw.length === 0) return [];
+    return raw.map((a: any) =>
+      typeof a === 'string' ? { name: '', number: a } : { name: a.name || '', number: a.number || '' }
+    ).filter((a: { number: string }) => a.number.trim() !== '');
+  }, [instanceData?.bank_accounts]);
 
   // Hooks
   const customerSearch = useCustomerSearch(instanceId);
@@ -132,7 +138,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
   // Set default bank account when instance data loads
   useEffect(() => {
     if (bankAccounts.length > 0 && !bankAccountNumber) {
-      setBankAccountNumber(bankAccounts[0]);
+      setBankAccountNumber(bankAccounts[0].number);
     }
   }, [bankAccounts]);
 
@@ -179,7 +185,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     orderPackages.setActivePackageId(null);
     setApplyDiscount(true);
     setPaymentMethod('cod');
-    setBankAccountNumber(bankAccounts.length > 0 ? bankAccounts[0] : '');
+    setBankAccountNumber(bankAccounts.length > 0 ? bankAccounts[0].number : '');
     setSendEmail(false);
     setComment('');
     setAttachments([]);

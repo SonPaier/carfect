@@ -54,6 +54,12 @@ interface SalesProductSelectionDrawerProps {
 const formatCurrency = (value: number) =>
   value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
 
+const formatPriceUnit = (unit: string): string => {
+  if (unit === 'piece') return 'szt.';
+  if (unit === 'meter') return 'm²';
+  return unit;
+};
+
 const SalesProductSelectionDrawer = ({
   open,
   onClose,
@@ -314,7 +320,7 @@ const SalesProductSelectionDrawer = ({
                             </div>
                             <div className="text-right mr-4 shrink-0">
                               <p className="font-semibold text-foreground text-sm">{formatCurrency(variant.priceNet)}</p>
-                              <p className="text-xs text-muted-foreground">netto/{variant.priceUnit}</p>
+                              <p className="text-xs text-muted-foreground">netto/{formatPriceUnit(variant.priceUnit)}</p>
                             </div>
                             <div className={cn(
                               "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
@@ -356,7 +362,7 @@ const SalesProductSelectionDrawer = ({
 
                     <div className="text-right mr-4 shrink-0">
                       <p className="font-semibold text-foreground text-sm">{formatCurrency(product.priceNet)}</p>
-                      <p className="text-xs text-muted-foreground">netto/{product.priceUnit}</p>
+                      <p className="text-xs text-muted-foreground">netto/{formatPriceUnit(product.priceUnit)}</p>
                     </div>
 
                     <div className={cn(
