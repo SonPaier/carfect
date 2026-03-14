@@ -29,6 +29,7 @@ export function useCustomerSearch(instanceId: string | null) {
       .from('customers')
       .select('id, name, discount_percent')
       .eq('instance_id', instanceId)
+      .eq('source', 'sales')
       .ilike('name', `%${q}%`)
       .order('name')
       .limit(10) as any);

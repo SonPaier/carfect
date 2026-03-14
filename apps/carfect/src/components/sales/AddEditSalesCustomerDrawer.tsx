@@ -13,6 +13,7 @@ import { Switch } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Badge } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@shared/ui';
@@ -201,6 +202,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
     try {
       const payload: Record<string, any> = {
         instance_id: instanceId,
+        source: 'sales',
         name: form.name.trim(),
         contact_person: form.contactPerson.trim() || null,
         phone: form.phone.trim(),
@@ -315,14 +317,14 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
                       {o.status === 'nowy' ? 'Nowy' : o.status === 'wysłany' ? 'Wysłany' : o.status}
                     </span>
                     {o.delivery_type && (
-                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                      <Badge>
                         {o.delivery_type === 'shipping' ? 'Wysyłka' : o.delivery_type === 'pickup' ? 'Odbiór osobisty' : o.delivery_type === 'uber' ? 'Uber' : o.delivery_type}
-                      </span>
+                      </Badge>
                     )}
                     {o.payment_method && (
-                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                      <Badge>
                         {o.payment_method === 'cod' ? 'Za pobraniem' : o.payment_method === 'transfer' ? 'Przelew' : o.payment_method}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   <span>
@@ -439,7 +441,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
         </div>
         <div>
           <Label htmlFor="ship-street">Adres</Label>
-          <Input id="ship-street" value={form.shippingStreet} onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })} />
+          <Input id="ship-street" placeholder="Linia 1" value={form.shippingStreet} onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })} />
           <Input id="ship-street-line2" className="mt-1" placeholder="Linia 2 (opcjonalne)" value={form.shippingStreetLine2} onChange={(e) => setForm({ ...form, shippingStreetLine2: e.target.value })} />
         </div>
         <div className="grid grid-cols-[120px_1fr] gap-2">

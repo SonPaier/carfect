@@ -78,14 +78,14 @@ const PackageCard = ({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
-                        <p className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit || 'szt.'}</p>
+                        <p className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.'}</p>
                       </div>
                       <button type="button" onClick={() => onRemoveProduct(itemKey)} className="text-muted-foreground hover:text-destructive shrink-0">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      {(!p.priceUnit || p.priceUnit === 'szt.') && (
+                      {(!p.priceUnit || p.priceUnit === 'szt.' || p.priceUnit === 'piece') && (
                         <div className="flex items-center gap-1 shrink-0">
                           <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity - 1)} disabled={p.quantity <= 1}>
                             <Minus className="w-3 h-3" />
@@ -158,9 +158,15 @@ const PackageCard = ({
                     Tuba
                   </Label>
                 </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="koperta" id={`pkg-${pkg.id}-koperta`} />
+                  <Label htmlFor={`pkg-${pkg.id}-koperta`} className="text-sm font-normal cursor-pointer">
+                    Koperta
+                  </Label>
+                </div>
               </RadioGroup>
 
-              {pkg.packagingType === 'tuba' ? (
+              {pkg.packagingType === 'koperta' ? null : pkg.packagingType === 'tuba' ? (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Długość (cm)</Label>
