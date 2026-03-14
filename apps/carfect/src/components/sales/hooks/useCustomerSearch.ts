@@ -26,10 +26,9 @@ export function useCustomerSearch(instanceId: string | null) {
     }
     setSearching(true);
     const { data } = await (supabase
-      .from('customers')
+      .from('sales_customers')
       .select('id, name, discount_percent')
       .eq('instance_id', instanceId)
-      .eq('source', 'sales')
       .ilike('name', `%${q}%`)
       .order('name')
       .limit(10) as any);

@@ -113,7 +113,7 @@ const SalesOrdersView = () => {
     const customerIds: string[] = Array.from(new Set((data || []).map((o: any) => o.customer_id).filter((id: any): id is string => typeof id === 'string' && id.length > 0)));
     if (customerIds.length > 0) {
       const { data: customers } = await (supabase
-        .from('customers')
+        .from('sales_customers')
         .select('id, company')
         .in('id', customerIds) as any);
       if (customers) {
@@ -239,7 +239,7 @@ const SalesOrdersView = () => {
     let customerDiscount: number | undefined;
     if (orderData?.customer_id) {
       const { data: cust } = await (supabase
-        .from('customers')
+        .from('sales_customers')
         .select('discount_percent')
         .eq('id', orderData.customer_id)
         .single() as any);

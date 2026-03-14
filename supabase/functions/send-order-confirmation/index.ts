@@ -112,12 +112,12 @@ serve(async (req) => {
 
     // Fetch customer
     const { data: customer } = await supabase
-      .from("customers")
-      .select("contact_email, email, is_net_payer")
+      .from("sales_customers")
+      .select("email, is_net_payer")
       .eq("id", order.customer_id)
       .single();
 
-    const customerEmail = (customer?.contact_email || customer?.email || "").replace(/^mailto:/i, "").trim();
+    const customerEmail = (customer?.email || "").replace(/^mailto:/i, "").trim();
     if (!customerEmail) {
       return new Response(JSON.stringify({ error: "No customer email" }), {
         status: 400,
