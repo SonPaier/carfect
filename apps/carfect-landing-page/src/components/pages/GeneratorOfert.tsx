@@ -7,8 +7,6 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import szablonyOfertImg from "@/assets/studio-detailing-szablony-ofert.webp";
 import generatorOfertImg from "@/assets/studio-detailing-generator-ofert-korzysci.webp";
-import ofertaKlientImg from "@/assets/studio-detailing-oferta-klient.webp";
-import listaOfertImg from "@/assets/studio-detailingu-lista-ofert.webp";
 
 const GeneratorOfert = () => {
   return (
@@ -16,7 +14,7 @@ const GeneratorOfert = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-sky-900 text-white py-32 md:py-48">
+        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-32 md:py-48">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Generator Ofert Detailingowych – Twórz Profesjonalne Wyceny w 5 Minut
@@ -196,33 +194,6 @@ const GeneratorOfert = () => {
               </div>
             </div>
 
-            {/* Offer Preview Screenshot */}
-
-            <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-12 max-w-5xl mx-auto">
-
-              <div className="flex-1 flex flex-col items-center">
-                <h3 className="text-xl font-semibold text-foreground mb-4 text-center">Co widzi Klient</h3>
-                <div className="rounded-2xl overflow-hidden border border-border bg-muted shadow-lg max-w-[280px] sm:max-w-[320px]">
-                  <Image
-                    src={ofertaKlientImg}
-                    alt="Widok oferty detailingowej na telefonie klienta z wariantami PPF i cenami"
-                    className="w-full h-auto"
-                    sizes="(max-width: 640px) 280px, 320px"
-                  />
-                </div>
-              </div>
-              <div className="flex-1 flex flex-col items-center">
-                <h3 className="text-xl font-semibold text-foreground mb-4 text-center">Lista Twoich ofert</h3>
-                <div className="rounded-2xl overflow-hidden border border-border bg-muted shadow-lg max-w-[280px] sm:max-w-[320px]">
-                  <Image
-                    src={listaOfertImg}
-                    alt="Lista ofert detailingowych ze statusami obejrzana, zaakceptowana w panelu Carfect"
-                    className="w-full h-auto"
-                    sizes="(max-width: 640px) 280px, 320px"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -306,7 +277,7 @@ const GeneratorOfert = () => {
         </article>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-20 bg-gradient-to-br from-primary via-primary/90 to-sky-900 text-white">
+        <section className="py-16 md:py-20 bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6">
               Stwórz pierwszą ofertę w 5 minut

@@ -16,7 +16,7 @@ const StatBox = ({
   className
 }: StatBoxProps) => {
   const variantStyles = {
-    primary: "border-primary/30 bg-gradient-to-br from-primary/5 to-sky-500/5",
+    primary: "border-primary/30 bg-gradient-to-br from-primary/5 to-amber-500/5",
     success: "border-green-500/30 bg-gradient-to-br from-green-500/5 to-emerald-500/5",
     warning: "border-red-500/30 bg-gradient-to-br from-red-500/5 to-orange-500/5",
     neutral: "border-border bg-card"

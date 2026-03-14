@@ -65,7 +65,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
                     e.stopPropagation();
                     setOpenDropdown(openDropdown === item.label ? null : item.label);
                   }}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                 >
                   {item.label}
                   <ChevronDown
@@ -82,7 +82,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
                         key={child.href}
                         href={child.href}
                         onClick={onItemClick}
-                        className="px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/30 rounded-lg transition-colors"
+                        className="px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-primary/8 rounded-lg transition-colors"
                       >
                         {child.label}
                       </Link>
@@ -94,7 +94,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
               <a
                 href={item.href}
                 onClick={(e) => handleAnchorClick(e, item.href)}
-                className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
+                className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
               >
                 {item.label}
               </a>
@@ -102,7 +102,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
               <Link
                 href={item.href}
                 onClick={onItemClick}
-                className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent/50 rounded-lg transition-colors"
+                className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
               >
                 {item.label}
               </Link>
@@ -130,7 +130,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
                 className={cn(
                   "flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors",
                   isScrolled
-                    ? "text-foreground/80 hover:text-primary hover:bg-accent/50"
+                    ? "text-foreground/80 hover:text-primary hover:bg-primary/10"
                     : "text-white hover:text-white/80 hover:bg-white/10"
                 )}
               >
@@ -149,7 +149,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
                       key={child.href}
                       href={child.href}
                       onClick={onItemClick}
-                      className="block px-4 py-2 text-sm text-foreground/80 hover:text-primary hover:bg-accent/50 transition-colors"
+                      className="block px-4 py-2 text-sm text-foreground/80 hover:text-primary hover:bg-primary/10 transition-colors"
                     >
                       {child.label}
                     </Link>
@@ -164,7 +164,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg transition-colors",
                 isScrolled
-                  ? "text-foreground/80 hover:text-primary hover:bg-accent/50"
+                  ? "text-foreground/80 hover:text-primary hover:bg-primary/10"
                   : "text-white hover:text-white/80 hover:bg-white/10"
               )}
             >
@@ -177,7 +177,7 @@ const HeaderNav = ({ items, isScrolled, onItemClick, isMobile = false }: HeaderN
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg transition-colors",
                 isScrolled
-                  ? "text-foreground/80 hover:text-primary hover:bg-accent/50"
+                  ? "text-foreground/80 hover:text-primary hover:bg-primary/10"
                   : "text-white hover:text-white/80 hover:bg-white/10"
               )}
             >

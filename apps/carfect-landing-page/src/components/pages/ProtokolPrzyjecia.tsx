@@ -14,7 +14,7 @@ const ProtokolPrzyjecia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-sky-900 text-white py-32 md:py-48">
+        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-32 md:py-48">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Protokół Przyjęcia Pojazdu dla Studia Detailingu – Cyfrowy Protokół ze Zdjęciami
@@ -157,35 +157,6 @@ const ProtokolPrzyjecia = () => {
           </div>
         </section>
 
-        {/* Creating Protocol Section */}
-        <section className="py-16 md:py-20 border-b border-border">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-6">
-              Cały proces w 3-5 minut
-            </h2>
-
-            <div className="max-w-3xl mx-auto">
-              <p className="text-muted-foreground text-lg text-center mb-8">
-                Przyjmujesz pojazd, robisz kilka zdjęć telefonem, zaznaczasz uszkodzenia na diagramie i klient podpisuje na tablecie. Gotowe – protokół automatycznie zapisany w systemie i wysłany na maila klienta.
-              </p>
-
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-center">
-                <p className="text-foreground font-medium mb-2">
-                  Zobacz przykładowy protokół widziany przez klienta:
-                </p>
-                <a
-                  href="https://demo.carfect.pl/protocols/xrvblqar1lkh"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline font-medium"
-                >
-                  Protokoł przyjęcia pojazdu
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Public Link Section */}
         <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
@@ -304,7 +275,7 @@ const ProtokolPrzyjecia = () => {
         </article>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-20 bg-gradient-to-br from-primary via-primary/90 to-sky-900 text-white">
+        <section className="py-16 md:py-20 bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6">
               Koniec z papierowymi protokołami

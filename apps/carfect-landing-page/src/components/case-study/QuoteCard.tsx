@@ -42,7 +42,7 @@ const QuoteCard = ({
   return (
     <div 
       className={cn(
-        "bg-gradient-to-br from-primary/5 via-primary/3 to-sky-500/5 rounded-2xl border border-primary/10",
+        "bg-gradient-to-br from-primary/5 via-primary/3 to-amber-500/5 rounded-2xl border border-primary/10",
         sizeStyles[size].padding,
         className
       )}

@@ -7,8 +7,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import HeaderNav from "./HeaderNav";
-// import Image from "next/image";
-// import logoCarfect from "@/assets/n2washcom-logo.svg";
+import CarfectLogo from "./CarfectLogo";
 
 const Header = () => {
   const { t } = useTranslation();
@@ -71,7 +70,7 @@ const Header = () => {
         hasSolidBackground
           ? isHomePage
             ? "bg-background/95 backdrop-blur-md shadow-sm border-b border-border"
-            : "bg-primary shadow-sm"
+            : "bg-black shadow-sm"
           : "bg-transparent"
       }`}
     >
@@ -82,20 +81,9 @@ const Header = () => {
             href="/"
             className="transition-all hover:opacity-80"
           >
-            {/* TODO: Podmienić na nowe logo SVG */}
-            {/* <Image
-              src={logoCarfect}
-              alt="Carfect.pl"
-              className={`h-6 md:h-7 w-auto transition-all duration-300 ${
-                hasSolidBackground && isHomePage ? "" : "brightness-0 invert"
-              }`}
-              priority
-            /> */}
-            <span className={`text-xl md:text-2xl font-bold tracking-tight transition-all duration-300 ${
+            <CarfectLogo className={`h-6 md:h-7 w-auto transition-all duration-300 ${
               hasSolidBackground && isHomePage ? "text-foreground" : "text-white"
-            }`}>
-              CARFECT
-            </span>
+            }`} />
           </Link>
 
           {/* Desktop Navigation */}
@@ -104,11 +92,7 @@ const Header = () => {
           {/* CTA Button - Desktop */}
           <Link
             href="/umow-prezentacje"
-            className={`hidden md:inline-flex items-center justify-center px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
-              hasSolidBackground && isHomePage
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-white text-primary hover:bg-white/90"
-            }`}
+            className="hidden md:inline-flex items-center justify-center px-5 py-2 text-sm font-medium rounded-sm transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {nav.umowPrezentacje}
           </Link>

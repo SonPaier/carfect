@@ -66,7 +66,7 @@ const Hero = () => {
         <Image src={heroBg} alt="" className="w-full h-full object-cover object-center" fill priority sizes="100vw" />
       </div>
       {/* Dark blue overlay with multiply blend to enhance photo colors */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/70 to-sky-900/80 mix-blend-multiply" />
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-950/90 via-yellow-950/80 to-stone-900/90 mix-blend-multiply" />
       
       <div className="container relative z-10 px-4 py-20 md:py-32">
         <div className="max-w-4xl mx-auto text-center animate-fade-in">
@@ -80,7 +80,7 @@ const Hero = () => {
           
           <form onSubmit={handleSubmit} className="mt-10 md:mt-12 flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
             <Input type="text" placeholder={hero.placeholder} value={contact} onChange={e => setContact(e.target.value)} className="h-14 px-6 text-base rounded-xl border-border bg-card text-foreground focus:border-primary" />
-            <Button type="submit" disabled={isLoading} className="h-14 px-8 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-sky-500 hover:from-primary/90 hover:to-sky-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5">
+            <Button type="submit" disabled={isLoading} className="h-14 px-8 text-base font-semibold rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5">
               {isLoading ? "Wysyłanie..." : hero.cta}
             </Button>
           </form>

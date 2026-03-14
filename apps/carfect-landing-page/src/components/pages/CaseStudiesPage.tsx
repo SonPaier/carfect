@@ -245,7 +245,7 @@ Co więcej, Armen nie musi już prowadzić oddzielnych arkuszy czasu pracy, dzwo
         </article>
 
         {/* CTA Section */}
-        <section className="py-12 md:py-16 bg-gradient-to-br from-primary/5 via-primary/3 to-sky-500/5">
+        <section className="py-12 md:py-16 bg-gradient-to-br from-primary/5 via-primary/3 to-amber-500/5">
           <div className="container px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h2 id="twoj-biznes-tez-moze-dzialac-bez-twojej-ciaglej-obecnosci" className="text-xl md:text-3xl font-bold text-foreground mb-4">

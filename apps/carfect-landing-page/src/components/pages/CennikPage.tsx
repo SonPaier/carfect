@@ -88,7 +88,7 @@ const CennikPage = () => {
 
             {/* Trial CTA Box */}
             <div className="mt-16 max-w-3xl mx-auto">
-              <div className="bg-gradient-to-r from-primary/10 to-sky-500/10 rounded-3xl p-8 md:p-12 text-center border border-primary/20">
+              <div className="bg-gradient-to-r from-primary/10 to-amber-500/10 rounded-3xl p-8 md:p-12 text-center border border-primary/20">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-6">
                   <Check className="w-8 h-8 text-primary" />
                 </div>
@@ -101,7 +101,7 @@ const CennikPage = () => {
                 </p>
                 <button
                   onClick={scrollToHero}
-                  className="h-14 px-8 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-sky-500 text-primary-foreground hover:from-primary/90 hover:to-sky-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+                  className="h-14 px-8 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-amber-500 text-primary-foreground hover:from-primary/90 hover:to-amber-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
                 >
                   Rozpocznij bezpłatny okres próbny
                 </button>

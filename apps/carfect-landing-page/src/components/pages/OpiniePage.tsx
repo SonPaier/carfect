@@ -231,7 +231,7 @@ const OpiniePage = () => {
               </p>
               <a
                 href="/#hero"
-                className="inline-flex h-14 px-8 items-center justify-center text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-sky-500 text-primary-foreground hover:from-primary/90 hover:to-sky-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+                className="inline-flex h-14 px-8 items-center justify-center text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-amber-500 text-primary-foreground hover:from-primary/90 hover:to-amber-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
               >
                 Wypróbuj Carfect za darmo
               </a>

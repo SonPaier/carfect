@@ -3,20 +3,19 @@
 import { Mail, Phone, Globe } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
+import CarfectLogo from "./CarfectLogo";
 
 const Footer = () => {
   const { t } = useTranslation();
   const footer = t("footer");
 
   return (
-    <footer id="contact" className="bg-foreground text-background py-12 md:py-16">
+    <footer id="contact" className="bg-black text-background py-12 md:py-16">
       <div className="container px-4">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-bold text-gradient-water mb-4">
-              Carfect.pl
-            </h3>
+            <CarfectLogo className="h-5 w-auto mb-4 text-white" />
             <p className="text-background/70 text-sm leading-relaxed max-w-xs">
               CRM i system rezerwacji dla myjni samochodowych i studiów detailingu.
             </p>

@@ -8,9 +8,9 @@ const TrialCTA = () => {
   return (
     <section className="py-16 md:py-24 bg-background">
       <div className="container px-4">
-        <div className="max-w-3xl mx-auto text-center bg-gradient-to-br from-primary/5 via-sky-500/5 to-primary/10 rounded-3xl p-8 md:p-12 border border-primary/10">
+        <div className="max-w-3xl mx-auto text-center bg-gradient-to-br from-primary/5 via-amber-500/5 to-primary/10 rounded-3xl p-8 md:p-12 border border-primary/10">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-            Wypróbuj bezpłatnie przez 30 dni.
+            Wypróbuj bezpłatnie przez 14 dni.
             <br />
             <span className="text-primary">Bez karty i zobowiązań!</span>
           </h2>

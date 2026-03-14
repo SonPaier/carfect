@@ -11,7 +11,7 @@ const SmsPrzypomnienia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-sky-900 text-white py-32 md:py-48">
+        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-32 md:py-48">
           <div className="container mx-auto px-4">
             <h1 id="automatyczne-sms-przypomnienia-dla-myjni-i-detailingu" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Automatyczne SMS Przypomnienia dla Myjni i Detailingu
@@ -312,7 +312,7 @@ const SmsPrzypomnienia = () => {
         </article>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-20 bg-gradient-to-br from-primary via-primary/90 to-sky-900 text-white">
+        <section className="py-16 md:py-20 bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 id="zacznij-wysylac-przypomnienia-juz-dzis" className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6">
               Zacznij wysyłać przypomnienia już dziś
