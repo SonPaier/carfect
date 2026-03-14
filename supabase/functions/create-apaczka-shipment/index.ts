@@ -78,7 +78,7 @@ serve(async (req) => {
 
     // 4. Fetch customer
     const { data: customer, error: custErr } = await supabase
-      .from("customers")
+      .from("sales_customers")
       .select("*")
       .eq("id", order.customer_id)
       .single();

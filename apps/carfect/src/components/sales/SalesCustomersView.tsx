@@ -89,10 +89,9 @@ const SalesCustomersView = () => {
     if (!instanceId) return;
     setLoading(true);
     const { data, error } = await (supabase
-      .from('customers')
+      .from('sales_customers')
       .select('id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city')
       .eq('instance_id', instanceId)
-      .eq('source', 'sales')
       .order('name') as any);
     if (error) {
       console.error(error);
@@ -179,7 +178,7 @@ const SalesCustomersView = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('customers').delete().eq('id', id);
+    const { error } = await supabase.from('sales_customers').delete().eq('id', id);
     if (error) {
       toast.error('Błąd usuwania klienta');
     } else {

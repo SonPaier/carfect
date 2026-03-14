@@ -403,6 +403,92 @@ export type Database = {
           },
         ]
       }
+      sales_customers: {
+        Row: {
+          id: string
+          instance_id: string
+          name: string
+          contact_person: string | null
+          phone: string
+          email: string | null
+          company: string | null
+          nip: string | null
+          default_currency: string | null
+          is_net_payer: boolean
+          discount_percent: number | null
+          sales_notes: string | null
+          shipping_addressee: string | null
+          shipping_country_code: string | null
+          shipping_street: string | null
+          shipping_street_line2: string | null
+          shipping_postal_code: string | null
+          shipping_city: string | null
+          billing_street: string | null
+          billing_postal_code: string | null
+          billing_city: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          instance_id: string
+          name: string
+          contact_person?: string | null
+          phone: string
+          email?: string | null
+          company?: string | null
+          nip?: string | null
+          default_currency?: string | null
+          is_net_payer?: boolean
+          discount_percent?: number | null
+          sales_notes?: string | null
+          shipping_addressee?: string | null
+          shipping_country_code?: string | null
+          shipping_street?: string | null
+          shipping_street_line2?: string | null
+          shipping_postal_code?: string | null
+          shipping_city?: string | null
+          billing_street?: string | null
+          billing_postal_code?: string | null
+          billing_city?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          instance_id?: string
+          name?: string
+          contact_person?: string | null
+          phone?: string
+          email?: string | null
+          company?: string | null
+          nip?: string | null
+          default_currency?: string | null
+          is_net_payer?: boolean
+          discount_percent?: number | null
+          sales_notes?: string | null
+          shipping_addressee?: string | null
+          shipping_country_code?: string | null
+          shipping_street?: string | null
+          shipping_street_line2?: string | null
+          shipping_postal_code?: string | null
+          shipping_city?: string | null
+          billing_street?: string | null
+          billing_postal_code?: string | null
+          billing_city?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customers_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_breaks: {
         Row: {
           break_date: string
@@ -2934,7 +3020,7 @@ export type Database = {
             foreignKeyName: "sales_orders_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "sales_customers"
             referencedColumns: ["id"]
           },
           {

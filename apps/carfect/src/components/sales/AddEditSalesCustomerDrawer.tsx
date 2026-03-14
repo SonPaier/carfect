@@ -202,7 +202,6 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
     try {
       const payload: Record<string, any> = {
         instance_id: instanceId,
-        source: 'sales',
         name: form.name.trim(),
         contact_person: form.contactPerson.trim() || null,
         phone: form.phone.trim(),
@@ -226,14 +225,14 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
 
       if (customer?.id) {
         const { error } = await (supabase
-          .from('customers')
+          .from('sales_customers')
           .update(payload)
           .eq('id', customer.id) as any);
         if (error) throw error;
         toast.success('Klient zaktualizowany');
       } else {
         const { error } = await (supabase
-          .from('customers')
+          .from('sales_customers')
           .insert(payload as any) as any);
         if (error) throw error;
         toast.success('Klient dodany');
