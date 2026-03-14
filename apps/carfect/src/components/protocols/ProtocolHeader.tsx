@@ -1,4 +1,4 @@
-import { X, Phone, Mail } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface Instance {
   id: string;
@@ -46,21 +46,7 @@ export const ProtocolHeader = ({ instance, protocolNumber, onClose }: ProtocolHe
 
           {/* Right side: Contact info (desktop) + Close button */}
           <div className="flex items-center gap-4">
-            {/* Contact info - desktop only */}
-            <div className="hidden sm:flex flex-col items-end text-sm text-muted-foreground">
-              {instance?.phone && (
-                <div className="flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5" />
-                  <span>{instance.phone}</span>
-                </div>
-              )}
-              {instance?.email && (
-                <div className="flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span>{instance.email}</span>
-                </div>
-              )}
-            </div>
+            {/* Contact info hidden on public view for privacy */}
 
             {/* Close button */}
             {onClose && (

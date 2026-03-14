@@ -845,25 +845,27 @@ export const useOffer = (instanceId: string) => {
         }
       }
 
-      // Save customer to customers table (source: 'oferty')
+      // Save customer to customers table (unified — no source filter)
       try {
         if (offer.customerData.name || offer.customerData.company) {
-          const fullAddress = offer.customerData.companyAddress 
+          const fullAddress = offer.customerData.companyAddress
             ? `${offer.customerData.companyAddress}${offer.customerData.companyPostalCode ? ', ' + offer.customerData.companyPostalCode : ''}${offer.customerData.companyCity ? ' ' + offer.customerData.companyCity : ''}`
             : null;
 
-          // Try to find existing customer by phone within this instance and source
+          // Try to find existing customer by phone within this instance (any source)
           let existingCustomerId: string | null = null;
-          
-          if (offer.customerData.phone) {
+          const normalizedPhone = offer.customerData.phone?.trim()
+            ? normalizePhone(offer.customerData.phone)
+            : null;
+
+          if (normalizedPhone) {
             const { data: existingByPhone } = await supabase
               .from('customers')
               .select('id')
               .eq('instance_id', instanceId)
-              .eq('source', 'oferty')
-              .eq('phone', offer.customerData.phone)
+              .eq('phone', normalizedPhone)
               .maybeSingle();
-            
+
             if (existingByPhone) {
               existingCustomerId = existingByPhone.id;
             }
@@ -875,23 +877,22 @@ export const useOffer = (instanceId: string) => {
               .from('customers')
               .select('id')
               .eq('instance_id', instanceId)
-              .eq('source', 'oferty')
               .eq('email', offer.customerData.email)
               .maybeSingle();
-            
+
             if (existingByEmail) {
               existingCustomerId = existingByEmail.id;
             }
           }
 
           if (existingCustomerId) {
-            // Update existing customer
+            // Update existing customer (enrich with offer data)
             await supabase
               .from('customers')
               .update({
                 name: offer.customerData.name || offer.customerData.company || 'Nieznany',
                 email: offer.customerData.email || null,
-                phone: offer.customerData.phone?.trim() ? normalizePhone(offer.customerData.phone) : null,
+                phone: normalizedPhone,
                 company: offer.customerData.company || null,
                 nip: offer.customerData.nip || null,
                 address: fullAddress,
@@ -901,7 +902,7 @@ export const useOffer = (instanceId: string) => {
                 updated_at: new Date().toISOString(),
               } as any)
               .eq('id', existingCustomerId);
-            console.log('Updated offer customer:', existingCustomerId);
+            console.log('Updated customer from offer:', existingCustomerId);
           } else {
             // Insert new customer
             const { data: newCustomer, error: customerError } = await supabase
@@ -909,7 +910,7 @@ export const useOffer = (instanceId: string) => {
               .insert({
                 instance_id: instanceId,
                 name: offer.customerData.name || offer.customerData.company || 'Nieznany',
-                phone: offer.customerData.phone?.trim() ? normalizePhone(offer.customerData.phone) : null,
+                phone: normalizedPhone,
                 email: offer.customerData.email || null,
                 company: offer.customerData.company || null,
                 nip: offer.customerData.nip || null,
@@ -917,21 +918,40 @@ export const useOffer = (instanceId: string) => {
                 billing_street: offer.customerData.companyAddress || null,
                 billing_postal_code: offer.customerData.companyPostalCode || null,
                 billing_city: offer.customerData.companyCity || null,
-                source: 'oferty',
               } as any)
               .select('id')
               .maybeSingle();
-            
+
             if (customerError) {
               console.error('Error saving offer customer:', customerError);
             } else {
-              console.log('Created new offer customer:', newCustomer?.id);
+              console.log('Created new customer from offer:', newCustomer?.id);
             }
           }
         }
       } catch (customerSaveError) {
         // Don't fail the whole offer save if customer save fails
         console.error('Error saving customer from offer:', customerSaveError);
+      }
+
+      // Save vehicle from offer to customer_vehicles (if brandModel and phone exist)
+      try {
+        const vehicleName = offer.vehicleData.brandModel?.trim();
+        const customerPhone = offer.customerData.phone?.trim()
+          ? normalizePhone(offer.customerData.phone)
+          : null;
+
+        if (vehicleName && customerPhone) {
+          await supabase.rpc('upsert_customer_vehicle', {
+            _instance_id: instanceId,
+            _phone: customerPhone,
+            _model: vehicleName,
+            _plate: offer.vehicleData.plate?.trim() || undefined,
+          });
+          console.log('Saved vehicle from offer:', vehicleName);
+        }
+      } catch (vehicleSaveError) {
+        console.error('Error saving vehicle from offer:', vehicleSaveError);
       }
 
       if (!silent) {

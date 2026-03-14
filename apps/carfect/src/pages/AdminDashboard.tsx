@@ -872,6 +872,8 @@ const AdminDashboard = () => {
 
   const fetchTrainingsRef = useRef(fetchTrainings);
   const fetchReservationsRef = useRef(fetchReservations);
+  const lastRealtimeFetchRef = useRef(0);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     fetchTrainingsRef.current = fetchTrainings;
@@ -1264,8 +1266,18 @@ const AdminDashboard = () => {
           setRealtimeConnected(true);
           retryCount = 0;
           // Sync after reconnect to recover any missed events
-          fetchReservationsRef.current();
-          fetchTrainingsRef.current();
+          // Throttle: skip if we fetched less than 5s ago (prevents rapid reconnect loops)
+          const now = Date.now();
+          if (now - lastRealtimeFetchRef.current > 5000 && !isFetchingRef.current) {
+            lastRealtimeFetchRef.current = now;
+            isFetchingRef.current = true;
+            Promise.all([
+              fetchReservationsRef.current(),
+              fetchTrainingsRef.current(),
+            ]).finally(() => {
+              isFetchingRef.current = false;
+            });
+          }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           setRealtimeConnected(false);
 
@@ -1278,16 +1290,12 @@ const AdminDashboard = () => {
 
             retryTimeoutId = setTimeout(() => {
               if (isCleanedUp) return;
-              fetchReservationsRef.current();
-              fetchTrainingsRef.current();
               setupRealtimeChannel();
             }, delay);
           } else {
             console.error('Max realtime retries reached, falling back to periodic fetch');
             retryTimeoutId = setTimeout(() => {
               if (isCleanedUp) return;
-              fetchReservationsRef.current();
-              fetchTrainingsRef.current();
               retryCount = 0;
               setupRealtimeChannel();
             }, 30000);
@@ -1483,9 +1491,8 @@ const AdminDashboard = () => {
           instance_id: instanceId,
           name: reservation.customer_name,
           phone: reservation.customer_phone,
-          source: 'myjnia'
         }, {
-          onConflict: 'instance_id,source,phone',
+          onConflict: 'instance_id,phone',
           ignoreDuplicates: false
         });
 
@@ -2214,9 +2221,8 @@ const AdminDashboard = () => {
       instance_id: instanceId,
       name: reservation.customer_name,
       phone: reservation.customer_phone,
-      source: 'myjnia'
     }, {
-      onConflict: 'instance_id,source,phone',
+      onConflict: 'instance_id,phone',
       ignoreDuplicates: false
     });
 
@@ -2647,14 +2653,14 @@ const AdminDashboard = () => {
 
             {/* View Content */}
             {currentView === 'calendar' && <div className="flex-1 min-h-[600px] h-full relative flex">
-                <div className="flex-1 min-w-0 transition-all duration-300 ease-in-out">
+                <div className="flex-1 min-w-0 transition-[min-width] duration-300 ease-in-out">
                   <AdminCalendar stations={stations} reservations={reservations} breaks={breaks} closedDays={closedDays} workingHours={workingHours} onReservationClick={handleReservationClick} onAddReservation={handleAddReservation} onAddBreak={handleAddBreak} onDeleteBreak={handleDeleteBreak} onToggleClosedDay={handleToggleClosedDay} onReservationMove={handleReservationMove} onConfirmReservation={handleConfirmReservation} onYardVehicleDrop={handleYardVehicleDrop} onDateChange={handleCalendarDateChange} instanceId={instanceId || undefined} yardVehicleCount={yardVehicleCount} selectedReservationId={selectedReservation?.id || editingReservation?.id} slotPreview={slotPreview} isLoadingMore={isLoadingMoreReservations} employees={cachedEmployees} stationEmployeesMap={stationEmployeesMap} showEmployeesOnStations={instanceSettings?.assign_employees_to_stations ?? false} showEmployeesOnReservations={instanceSettings?.assign_employees_to_reservations ?? false} trainings={trainings} onTrainingClick={handleTrainingClick} trainingsEnabled={trainingsEnabled} forceCompact={!isMobile && (addReservationOpen || addReservationV2Open)} />
                 </div>
                 {/* Inline reservation drawer on desktop — animated slide */}
                 {!isMobile && instanceId && (
                   <div
                     className={cn(
-                      "shrink-0 border-l border-border h-full overflow-hidden transition-all duration-300 ease-in-out",
+                      "shrink-0 border-l border-border h-full overflow-hidden transition-[width,opacity] duration-300 ease-in-out will-change-[width,opacity]",
                       (addReservationOpen || addReservationV2Open) ? "w-[27rem] opacity-100" : "w-0 opacity-0 border-l-0"
                     )}
                   >

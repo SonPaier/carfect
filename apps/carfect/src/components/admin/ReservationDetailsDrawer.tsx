@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { User, Phone, Car, Clock, Loader2, Trash2, Pencil, MessageSquare, PhoneCall, Check, CheckCircle2, ChevronDown, ChevronUp, RotateCcw, X, Receipt, History, FileText, ExternalLink, MoreVertical, Camera, Plus, Users, UserX } from 'lucide-react';
@@ -225,6 +225,8 @@ const ReservationDetailsDrawer = ({
   } | null>(null);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const location = useLocation();
+  const adminBasePath = location.pathname.startsWith('/admin') ? '/admin' : '';
   
   // Employee assignment feature
   const { data: instanceSettings } = useInstanceSettings(reservation?.instance_id ?? null);
@@ -312,12 +314,32 @@ const ReservationDetailsDrawer = ({
     return null;
   };
 
+  // Check if protocol exists for this reservation
+  const [existingProtocolId, setExistingProtocolId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!reservation?.id) {
+      setExistingProtocolId(null);
+      return;
+    }
+    const checkProtocol = async () => {
+      const { data } = await supabase
+        .from('vehicle_protocols')
+        .select('id')
+        .eq('reservation_id', reservation.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setExistingProtocolId(data?.id ?? null);
+    };
+    checkProtocol();
+  }, [reservation?.id]);
+
   // Navigate to protocol form with reservation data
   const handleAddProtocol = async () => {
     if (!reservation) return;
-    
+
     const email = await findCustomerEmail(reservation.customer_phone, reservation.instance_id);
-    
+
     const params = new URLSearchParams({
       action: 'new',
       reservationId: reservation.id,
@@ -325,12 +347,23 @@ const ReservationDetailsDrawer = ({
       customerPhone: reservation.customer_phone || '',
       vehiclePlate: reservation.vehicle_plate || '',
     });
-    
+
     if (email) {
       params.set('email', email);
     }
-    
-    navigate(`/admin/protocols?${params.toString()}`);
+
+    navigate(`${adminBasePath}/protocols?${params.toString()}`);
+    onClose();
+  };
+
+  // Navigate to edit existing protocol
+  const handleEditProtocol = () => {
+    if (!existingProtocolId) return;
+    const params = new URLSearchParams({
+      action: 'edit',
+      protocolId: existingProtocolId,
+    });
+    navigate(`${adminBasePath}/protocols?${params.toString()}`);
     onClose();
   };
 
@@ -1220,16 +1253,17 @@ const ReservationDetailsDrawer = ({
                         Dodaj zdjęcia
                       </DropdownMenuItem>
                       
-                      {/* Protocol option only for confirmed/in_progress */}
-                      {(reservation.status === 'confirmed' || reservation.status === 'in_progress') && (
-                        <DropdownMenuItem onClick={() => {
-                          setActionsMenuOpen(false);
+                      <DropdownMenuItem onClick={() => {
+                        setActionsMenuOpen(false);
+                        if (existingProtocolId) {
+                          handleEditProtocol();
+                        } else {
                           handleAddProtocol();
-                        }}>
-                          <FileText className="w-4 h-4 mr-2" />
-                          Dodaj protokół
-                        </DropdownMenuItem>
-                      )}
+                        }
+                      }}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        {existingProtocolId ? 'Edytuj protokół' : 'Dodaj protokół'}
+                      </DropdownMenuItem>
                       
                       <DropdownMenuItem onClick={() => {
                         setActionsMenuOpen(false);

@@ -6,6 +6,7 @@ import { Button } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Badge } from '@shared/ui';
+import { cn } from '@/lib/utils';
 import { ClipboardCheck, Search, Loader2, Calendar, User, Car, MoreVertical, Pencil, Link2, Trash2, Mail, FileText, ChevronLeft, ChevronRight, ArrowLeft, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -66,10 +67,12 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
   const [currentPage, setCurrentPage] = useState(1);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
-  // Handle URL params for opening create form from reservation
+  // Handle URL params for opening create/edit form from reservation
   useEffect(() => {
     if (searchParams.get('action') === 'new') {
       setShowCreateForm(true);
+    } else if (searchParams.get('action') === 'edit' && searchParams.get('protocolId')) {
+      setEditingProtocolId(searchParams.get('protocolId'));
     }
   }, [searchParams]);
 
@@ -327,32 +330,44 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                         </span>
                       </div>
                       
-                      {/* Line 4: Offer number + Protocol type (mobile) */}
+                      {/* Line 4: Offer number + Protocol type + Status (mobile) */}
                       <div className="flex items-center gap-2 text-sm text-muted-foreground sm:hidden">
                         <FileText className="h-4 w-4 flex-shrink-0" />
                         {protocol.offer_number && (
                           <span className="truncate">#{protocol.offer_number}</span>
                         )}
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className="text-xs"
                         >
                           {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
                         </Badge>
+                        <Badge
+                          variant={protocol.status === 'sent' ? 'default' : 'outline'}
+                          className={cn("text-xs", protocol.status === 'sent' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'text-muted-foreground')}
+                        >
+                          {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
+                        </Badge>
                       </div>
-                      
-                      {/* Offer badge + Protocol type - desktop only */}
+
+                      {/* Offer badge + Protocol type + Status - desktop only */}
                       <div className="hidden sm:flex items-center gap-2 mt-1">
                         {protocol.offer_number && (
                           <Badge variant="secondary" className="text-xs">
                             #{protocol.offer_number}
                           </Badge>
                         )}
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className="text-xs"
                         >
                           {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
+                        </Badge>
+                        <Badge
+                          variant={protocol.status === 'sent' ? 'default' : 'outline'}
+                          className={cn("text-xs", protocol.status === 'sent' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'text-muted-foreground')}
+                        >
+                          {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
                         </Badge>
                       </div>
                     </div>
@@ -467,6 +482,7 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
             vehicleInfo={[protocolToEmail?.vehicle_model, protocolToEmail?.registration_number].filter(Boolean).join(' ')}
             protocolType={protocolToEmail?.protocol_type || 'reception'}
             instanceId={instanceId}
+            onSent={fetchProtocols}
           />
 
           <ProtocolSettingsDialog
