@@ -113,7 +113,7 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
       </div>
 
       <Tabs defaultValue="tasks" className="w-full">
-        <TabsList>
+        <TabsList variant="underline">
           <TabsTrigger value="tasks">{t('followupPage.tabs.tasks')}</TabsTrigger>
           <TabsTrigger value="services">{t('followupPage.tabs.services')}</TabsTrigger>
         </TabsList>

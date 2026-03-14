@@ -80,6 +80,7 @@ const CustomerEditDrawer = ({
   const [editVehicles, setEditVehicles] = useState<VehicleChip[]>([]);
   const [editSmsConsent, setEditSmsConsent] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [phoneExistsWarning, setPhoneExistsWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -97,6 +98,7 @@ const CustomerEditDrawer = ({
         setEditVehicles([]);
         setVisits([]);
         setActiveTab('info');
+        setPhoneExistsWarning(null);
       } else if (customer && instanceId) {
         fetchVisitHistory();
         fetchCustomerVehicles();
@@ -136,6 +138,41 @@ const CustomerEditDrawer = ({
       );
     }
   };
+
+  // Check if phone already exists when adding new customer (debounced)
+  useEffect(() => {
+    if (!instanceId || !isAddMode) {
+      setPhoneExistsWarning(null);
+      return;
+    }
+    const phone = editPhone.trim();
+    if (!phone) {
+      setPhoneExistsWarning(null);
+      return;
+    }
+    const normalized = normalizePhone(phone);
+    if (normalized.replace(/\D/g, '').length < 9) {
+      setPhoneExistsWarning(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('customers')
+        .select('name, phone')
+        .eq('instance_id', instanceId)
+        .eq('phone', normalized)
+        .maybeSingle();
+
+      if (data) {
+        setPhoneExistsWarning(`Klient "${data.name}" z tym numerem już istnieje`);
+      } else {
+        setPhoneExistsWarning(null);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [editPhone, instanceId, isAddMode]);
 
   const fetchVisitHistory = async () => {
     if (!customer || !instanceId) return;
@@ -220,6 +257,20 @@ const CustomerEditDrawer = ({
     setLoading(false);
   };
 
+  const handleDeleteVehicle = async (vehicle: VehicleChip, index: number) => {
+    // Remove from local state immediately
+    setEditVehicles((prev) => prev.filter((_, i) => i !== index));
+    // Delete from DB if it has an ID
+    if (vehicle.id) {
+      try {
+        await supabase.from('customer_vehicles').delete().eq('id', vehicle.id);
+      } catch (err) {
+        console.error('Error deleting vehicle:', err);
+        toast.error('Błąd usuwania pojazdu');
+      }
+    }
+  };
+
   const handleCall = () => {
     if (customer) {
       window.location.href = `tel:${customer.phone}`;
@@ -291,7 +342,6 @@ const CustomerEditDrawer = ({
               nip: editNip.trim() || null,
               discount_percent: editDiscountPercent ? parseInt(editDiscountPercent, 10) : null,
               sms_consent: editSmsConsent,
-              source: 'myjnia',
             })
             .select('id')
             .single();
@@ -488,6 +538,9 @@ const CustomerEditDrawer = ({
                     onChange={(e) => setEditPhone(e.target.value)}
                     placeholder={t('common.phone')}
                   />
+                  {phoneExistsWarning && (
+                    <p className="text-sm text-amber-600 mt-1">{phoneExistsWarning}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">{t('common.email')}</label>
@@ -606,9 +659,16 @@ const CustomerEditDrawer = ({
                         {editVehicles.map((vehicle, idx) => (
                           <div
                             key={vehicle.id || `v-${idx}`}
-                            className="px-3 py-1.5 bg-slate-700/90 text-white rounded-full text-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/90 text-white rounded-full text-sm"
                           >
-                            {vehicle.model}
+                            <span>{vehicle.model}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteVehicle(vehicle, idx)}
+                              className="p-0.5 hover:bg-white/20 rounded-full transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         ))}
                       </div>

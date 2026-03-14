@@ -10,24 +10,13 @@ interface AdminTabsListProps {
 
 /**
  * Unified tabs list component for admin panel views.
- * Uses white background with light gray for active tab.
+ * Uses underline variant for clean, modern look.
  */
-export const AdminTabsList = ({ children, className, columns = 2 }: AdminTabsListProps) => {
-  const gridColsClass = {
-    2: "grid-cols-2",
-    3: "grid-cols-3",
-    4: "grid-cols-4",
-    5: "grid-cols-5",
-  }[columns];
-
+export const AdminTabsList = ({ children, className }: AdminTabsListProps) => {
   return (
-    <TabsList 
-      className={cn(
-        "bg-white border border-border/50",
-        `grid ${gridColsClass}`,
-        "w-full",
-        className
-      )}
+    <TabsList
+      variant="underline"
+      className={cn("w-full", className)}
     >
       {children}
     </TabsList>
@@ -42,14 +31,9 @@ interface AdminTabsTriggerProps {
 
 export const AdminTabsTrigger = ({ value, children, className }: AdminTabsTriggerProps) => {
   return (
-    <TabsTrigger 
+    <TabsTrigger
       value={value}
-      className={cn(
-        "data-[state=active]:bg-hover data-[state=active]:text-foreground",
-        "hover:bg-hover hover:text-foreground",
-        "gap-1.5",
-        className
-      )}
+      className={cn("gap-1.5", className)}
     >
       {children}
     </TabsTrigger>

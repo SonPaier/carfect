@@ -220,7 +220,6 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
         billing_street: form.billingStreet.trim() || null,
         billing_postal_code: form.billingPostalCode.trim() || null,
         billing_city: form.billingCity.trim() || null,
-        source: 'sales',
       };
 
       if (customer?.id) {
@@ -250,9 +249,9 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
 
   const renderViewMode = () => (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-      <TabsList className="bg-background border border-border/50 grid grid-cols-2 w-full">
-        <TabsTrigger value="orders" className="data-[state=active]:bg-primary/5 data-[state=active]:text-foreground hover:bg-primary/5 hover:text-foreground">Zamówienia</TabsTrigger>
-        <TabsTrigger value="data" className="data-[state=active]:bg-primary/5 data-[state=active]:text-foreground hover:bg-primary/5 hover:text-foreground">Dane</TabsTrigger>
+      <TabsList variant="underline" className="w-full">
+        <TabsTrigger value="orders">Zamówienia</TabsTrigger>
+        <TabsTrigger value="data">Dane</TabsTrigger>
       </TabsList>
 
       <TabsContent value="data" className="flex-1 overflow-y-auto space-y-4 pr-1">

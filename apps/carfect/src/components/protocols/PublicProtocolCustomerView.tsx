@@ -155,12 +155,7 @@ export const PublicProtocolCustomerView = ({
               <p className="text-base font-medium">{protocol.customer_name}</p>
             </div>
             
-            {protocol.phone && (
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Telefon</Label>
-                <p className="text-base">{protocol.phone}</p>
-              </div>
-            )}
+            {/* Phone hidden on public view for privacy */}
             
             {protocol.nip && (
               <div className="space-y-1">
@@ -303,15 +298,14 @@ export const PublicProtocolCustomerView = ({
           <div className="pt-6 border-t text-center text-sm text-muted-foreground">
             <p className="font-medium">{instance.name}</p>
             {instance.address && <p>{instance.address}</p>}
-            {instance.phone && <p>Tel: {instance.phone}</p>}
-            {instance.email && <p>Email: {instance.email}</p>}
+            {/* Phone & email hidden on public view for privacy */}
           </div>
 
           {/* App footer */}
           <div className="text-center text-xs text-muted-foreground pt-4">
             Protokół sporządzono przy użyciu{' '}
-            <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity">
-              <img src="/carfect-logo.svg" alt="Carfect" className="h-3 inline opacity-60" />
+            <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 transition-opacity">
+              carfect.pl
             </a>
           </div>
         </div>

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@shared/ui';
 import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import { Textarea } from '@shared/ui';
-import { CalendarIcon, Loader2, PenLine, Mail, Settings, ArrowLeft, Camera, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Loader2, PenLine, Mail, Settings, ArrowLeft, Camera, AlertTriangle, Car } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -134,6 +134,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   // Signature
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+
+  // Release (vehicle pickup)
+  const [releaseSignature, setReleaseSignature] = useState<string | null>(null);
+  const [releaseSignatureDialogOpen, setReleaseSignatureDialogOpen] = useState(false);
+  const [releaseNotes, setReleaseNotes] = useState('Oświadczam, że odbieram pojazd bez zastrzeżeń');
+  const [showReleaseSection, setShowReleaseSection] = useState(false);
+  const releaseSectionRef = useRef<HTMLDivElement>(null);
 
   // Email dialog
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -316,6 +323,17 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setProtocolPhotoUrls(loadedPhotos);
           if (loadedPhotos.length > 0) {
             setShowPhotosSection(true);
+          }
+
+          // Load release fields
+          const releaseSignatureData = (protocolData as any).release_signature || null;
+          const releaseNotesData = (protocolData as any).release_notes || null;
+          if (releaseSignatureData) {
+            setReleaseSignature(releaseSignatureData);
+            setShowReleaseSection(true);
+          }
+          if (releaseNotesData) {
+            setReleaseNotes(releaseNotesData);
           }
 
           // Fetch damage points
@@ -539,7 +557,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
       // Filter out unsaved damage points (those with isNew flag)
       const savedDamagePoints = damagePoints.filter(p => !p.isNew);
       
-      const protocolPayload = {
+      const protocolPayload: Record<string, any> = {
         instance_id: instanceId,
         offer_id: offerId,
         offer_number: offerNumber || null,
@@ -560,6 +578,8 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         notes: notes || null,
         photo_urls: protocolPhotoUrls,
         reservation_id: reservationId || null,
+        release_signature: releaseSignature,
+        release_notes: showReleaseSection ? releaseNotes || null : null,
       };
 
       let savedProtocolId = protocolId;
@@ -991,34 +1011,97 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
               </Button>
             )}
           </div>
+
+          {/* Release section */}
+          {showReleaseSection && (
+            <div ref={releaseSectionRef} className="border-t-2 border-primary/30 pt-8 mt-8 space-y-4">
+              <h2 className="text-2xl font-bold text-center">Wydanie pojazdu</h2>
+
+              <div className="space-y-2">
+                <Label>Uwagi odbioru</Label>
+                <Textarea
+                  value={releaseNotes}
+                  onChange={(e) => setReleaseNotes(e.target.value)}
+                  rows={3}
+                  className="border-foreground/60"
+                  placeholder="Oświadczam, że odbieram pojazd bez zastrzeżeń"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Podpis przy odbiorze</Label>
+                {releaseSignature ? (
+                  <div
+                    className="h-24 border rounded-lg bg-white flex items-center justify-center cursor-pointer hover:bg-hover transition-colors"
+                    onClick={() => setReleaseSignatureDialogOpen(true)}
+                  >
+                    <img
+                      src={releaseSignature}
+                      alt="Podpis odbioru"
+                      className="max-h-20 max-w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-24 border-2 border-dashed"
+                    onClick={() => setReleaseSignatureDialogOpen(true)}
+                  >
+                    <PenLine className="h-5 w-5 mr-2" />
+                    Kliknij, aby złożyć podpis odbioru
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
       {/* Fixed footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between items-center z-50">
-        <Button variant="outline" onClick={handleNavigateBack} className="bg-white">
-          Anuluj
-        </Button>
-        <div className="flex gap-2">
-          {onOpenSettings && (
-            <Button variant="outline" size="icon" onClick={onOpenSettings} className="bg-white">
-              <Settings className="h-4 w-4" />
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t z-50">
+        <div className="w-full max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+          <Button variant="outline" onClick={handleNavigateBack} className="bg-white">
+            Anuluj
+          </Button>
+          <div className="flex gap-2">
+            {/* Release button - only in edit mode when section not yet shown */}
+            {isEditMode && !showReleaseSection && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowReleaseSection(true);
+                  setTimeout(() => {
+                    releaseSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+                className="bg-white"
+              >
+                <Car className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Wydanie pojazdu</span>
+              </Button>
+            )}
+            {onOpenSettings && (
+              <Button variant="outline" size="icon" onClick={onOpenSettings} className="bg-white">
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleSaveAndSendEmail}
+              disabled={saving || savingAndSending}
+              className="bg-white"
+            >
+              {savingAndSending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Mail className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Zapisz i wyślij</span>
             </Button>
-          )}
-          <Button 
-            variant="outline" 
-            onClick={handleSaveAndSendEmail} 
-            disabled={saving || savingAndSending}
-            className="bg-white"
-          >
-            {savingAndSending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            <Mail className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Zapisz i wyślij</span>
-          </Button>
-          <Button onClick={() => handleSave(false)} disabled={saving || savingAndSending}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Zapisz
-          </Button>
+            <Button onClick={() => handleSave(false)} disabled={saving || savingAndSending}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Zapisz
+            </Button>
+          </div>
         </div>
       </footer>
 
@@ -1038,6 +1121,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         onOpenChange={setSignatureDialogOpen}
         onSave={setCustomerSignature}
         initialSignature={customerSignature}
+      />
+
+      <SignatureDialog
+        open={releaseSignatureDialogOpen}
+        onOpenChange={setReleaseSignatureDialogOpen}
+        onSave={setReleaseSignature}
+        initialSignature={releaseSignature}
       />
 
       <SendProtocolEmailDialog

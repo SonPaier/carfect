@@ -1,8 +1,8 @@
 import { useState, DragEvent, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { format, addDays, subDays, isSameDay, startOfWeek, addWeeks, subWeeks, isBefore, startOfDay, eachDayOfInterval, parseISO } from 'date-fns';
+import { format, addDays, subDays, isSameDay, startOfWeek, addWeeks, subWeeks, addMonths, subMonths, isBefore, startOfDay, eachDayOfInterval, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, User, Car, Clock, Plus, Eye, EyeOff, Calendar as CalendarIcon, CalendarDays, Phone, Columns2, Coffee, X, Settings2, Check, Ban, CalendarOff, ParkingSquare, MessageSquare, FileText, RefreshCw, Loader2, ClipboardCheck, Maximize2, Minimize2, ChevronsLeftRight, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, Car, Clock, Plus, Eye, EyeOff, Calendar as CalendarIcon, CalendarDays, CalendarRange, Phone, Columns2, Coffee, X, Settings2, Check, Ban, CalendarOff, ParkingSquare, MessageSquare, FileText, RefreshCw, Loader2, ClipboardCheck, Maximize2, Minimize2, ChevronsLeftRight, GraduationCap } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@shared/ui';
@@ -17,7 +17,8 @@ import { Checkbox } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
-type ViewMode = 'day' | 'two-days' | 'week';
+import { MonthCalendarView, WeekTileView } from './calendar';
+type ViewMode = 'day' | 'two-days' | 'week' | 'month';
 interface Station {
   id: string;
   name: string;
@@ -230,7 +231,7 @@ const AdminCalendar = ({
   onConfirmReservation,
   onYardVehicleDrop,
   onDateChange,
-  allowedViews = ['day', 'two-days', 'week'],
+  allowedViews = ['day', 'two-days', 'week', 'month'],
   readOnly = false,
   showStationFilter = true,
   showWeekView = true,
@@ -643,7 +644,9 @@ const AdminCalendar = ({
 
   // Navigation handlers
   const handlePrev = () => {
-    if (viewMode === 'week') {
+    if (viewMode === 'month') {
+      setCurrentDate(subMonths(currentDate, 1));
+    } else if (viewMode === 'week') {
       setCurrentDate(subWeeks(currentDate, 1));
     } else {
       // For day and two-days view, skip closed days
@@ -653,7 +656,9 @@ const AdminCalendar = ({
     }
   };
   const handleNext = () => {
-    if (viewMode === 'week') {
+    if (viewMode === 'month') {
+      setCurrentDate(addMonths(currentDate, 1));
+    } else if (viewMode === 'week') {
       setCurrentDate(addWeeks(currentDate, 1));
     } else {
       // For day and two-days view, skip closed days
@@ -1282,8 +1287,13 @@ const AdminCalendar = ({
                 <span className="hidden sm:inline">Ładowanie...</span>
               </div>
           }
-            {/* Date picker button - hidden on mobile, shown on desktop */}
-            {!isMobile && <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            {/* Date picker button */}
+            {isMobile ? (
+              <Button variant="outline" size="sm" className="ml-1" onClick={() => setDatePickerOpen(true)}>
+                <CalendarIcon className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="ml-1 gap-1">
                     <CalendarIcon className="w-4 h-4" />
@@ -1299,7 +1309,8 @@ const AdminCalendar = ({
                 }
               }} initialFocus className="pointer-events-auto" locale={pl} />
                 </PopoverContent>
-              </Popover>}
+              </Popover>
+            )}
             
           </div>
           
@@ -1330,7 +1341,8 @@ const AdminCalendar = ({
               </DropdownMenu> :
 
         <h2 className={cn("text-lg font-semibold", isToday && "text-primary", currentDateClosed && viewMode === 'day' && "text-red-500", hallMode && "flex-1 text-center")}>
-                {viewMode === 'week' ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}` :
+                {viewMode === 'month' ? format(currentDate, 'LLLL yyyy', { locale: pl }) :
+          viewMode === 'week' ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}` :
           viewMode === 'two-days' ? `${format(currentDate, 'd MMM', { locale: pl })} - ${format(addDays(currentDate, 1), 'd MMM', { locale: pl })}` :
           format(currentDate, 'EEEE, d MMMM', { locale: pl })}
               </h2>)
@@ -1338,17 +1350,7 @@ const AdminCalendar = ({
         }
           
           <div className="flex items-center gap-2">
-            {/* Station selector for week view */}
-            {!isMobile && viewMode === 'week' && stations.length > 0 && <Select value={weekViewStationId || stations[0]?.id || ''} onValueChange={(value) => setWeekViewStationId(value)}>
-                <SelectTrigger className="h-9 w-[140px] text-sm">
-                  <SelectValue placeholder={t('stations.title')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {stations.map((station) => <SelectItem key={station.id} value={station.id}>
-                      {station.name}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>}
+            {/* Station selector removed - week tile view shows all stations via color */}
             
             {/* View mode toggle - icons only */}
             {!isMobile && <div className="flex border border-border rounded-lg overflow-hidden">
@@ -1360,6 +1362,9 @@ const AdminCalendar = ({
                   </Button>}
                 {allowedViews.includes('week') && showWeekView && <Button variant={viewMode === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('week')} className="rounded-none border-0 px-2.5" title="Tydzień">
                     <CalendarDays className="w-4 h-4" />
+                  </Button>}
+                {allowedViews.includes('month') && <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')} className="rounded-none border-0 px-2.5" title="Miesiąc">
+                    <CalendarRange className="w-4 h-4" />
                   </Button>}
               </div>}
             
@@ -1506,24 +1511,33 @@ const AdminCalendar = ({
               </Sheet>
             </> :
 
-      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger asChild>
-                <button className={cn("text-lg font-semibold cursor-pointer hover:opacity-80 transition-opacity text-center w-full", isToday && "text-primary", currentDateClosed && viewMode === 'day' && "text-red-500")}>
-                  {viewMode === 'week' ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}` :
+      <>
+              <button
+                onClick={() => setDatePickerOpen(true)}
+                className={cn("text-lg font-semibold cursor-pointer hover:opacity-80 transition-opacity text-center w-full", isToday && "text-primary", currentDateClosed && viewMode === 'day' && "text-red-500")}>
+                {viewMode === 'week' ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}` :
             viewMode === 'two-days' ? `${format(currentDate, 'd MMM', { locale: pl })} - ${format(addDays(currentDate, 1), 'd MMM', { locale: pl })}` :
             format(currentDate, 'EEEE, d MMMM', { locale: pl })}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <Calendar mode="single" selected={currentDate} onSelect={(date) => {
-            if (date) {
-              setCurrentDate(date);
-              setViewMode('day');
-              setDatePickerOpen(false);
-            }
-          }} initialFocus className="pointer-events-auto" locale={pl} />
-              </PopoverContent>
-            </Popover>)
+              </button>
+              <Sheet open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>
+                  <div className="flex flex-col items-center gap-4">
+                    <Calendar
+                      mode="single"
+                      selected={currentDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setCurrentDate(date);
+                          setViewMode('day');
+                          setDatePickerOpen(false);
+                        }
+                      }}
+                      className="pointer-events-auto"
+                      locale={pl} />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </>)
 
       }
       </div>
@@ -2280,280 +2294,45 @@ const AdminCalendar = ({
           </div>
         </>}
 
-      {/* WEEK VIEW */}
-      {viewMode === 'week' && <>
-          {/* Week Day Headers */}
-          <div className="flex border-b border-border bg-muted/20">
-            {/* Time column header */}
-            <div className="w-16 md:w-20 shrink-0 p-2 flex items-center justify-center border-r border-border">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-            </div>
-            
-            {/* Day headers */}
-            {weekDays.map((day, idx) => {
-          const dayStr = format(day, 'yyyy-MM-dd');
-          const isDayToday = isSameDay(day, new Date());
-          const isDayClosed = isDateClosed(dayStr);
-          const selectedStationId = weekViewStationId || stations[0]?.id;
-          const dayReservations = selectedStationId ? getReservationsForStationAndDate(selectedStationId, dayStr) : [];
-          return <div key={dayStr} className={cn("flex-1 p-2 md:p-3 text-center font-medium text-xs md:text-sm min-w-[80px] cursor-pointer hover:bg-hover-strong transition-colors", idx < 6 && "border-r border-border", isDayToday && "bg-primary/10", isDayClosed && "bg-red-500/10")} onClick={() => {
-            setCurrentDate(day);
-            setViewMode('day');
-          }}>
-                  <div className={cn("text-foreground", isDayToday && "text-primary font-bold", isDayClosed && "text-red-500")}>
-                    {format(day, 'EEEE', {
-                locale: pl
-              })}
-                  </div>
-                  <div className={cn("text-lg font-bold", isDayToday && "text-primary", isDayClosed && "text-red-500")}>
-                    {format(day, 'd')}
-                  </div>
-                  <div className={cn("text-xs", isDayClosed ? "text-red-500" : "text-muted-foreground")}>
-                    {isDayClosed ? "zamknięte" : `${dayReservations.length} rez.`}
-                  </div>
-                </div>;
-        })}
-          </div>
+      {/* WEEK VIEW (Tile-based) */}
+      {viewMode === 'week' && <WeekTileView
+        reservations={reservations}
+        stations={stations}
+        currentDate={currentDate}
+        closedDays={closedDays}
+        onDayClick={(date) => {
+          setCurrentDate(date);
+          setViewMode('day');
+        }}
+        onReservationClick={(r) => onReservationClick?.(r)}
+        onAddClick={onAddReservation && !readOnly ? (date) => {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          setCurrentDate(date);
+          setViewMode('day');
+          onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+        } : undefined}
+        onReservationMove={onReservationMove ? (id, stationId, date) => onReservationMove(id, stationId, date) : undefined}
+      />}
 
-          {/* Calendar Grid - Week View with single station */}
-          <div className="flex-1 overflow-auto">
-            <div className="flex relative" style={{
-          minHeight: (DISPLAY_END_TIME - DISPLAY_START_TIME) * HOUR_HEIGHT
-        }}>
-              {/* Time column */}
-              <div className="w-16 md:w-20 shrink-0 border-r border-border bg-muted/10">
-                {HOURS.map((hour, hourIndex) => {
-              // Calculate which slots to show for this hour
-              const isFirstHour = hourIndex === 0;
-              const isLastHour = hourIndex === HOURS.length - 1;
-              const slotsToSkip = isFirstHour ? START_SLOT_OFFSET : 0;
-              const endSlotOffset = isLastHour ? Math.round((DISPLAY_END_TIME - hour) * SLOTS_PER_HOUR) : SLOTS_PER_HOUR;
-              const slotsToRender = Math.max(0, endSlotOffset - slotsToSkip);
-              if (slotsToRender <= 0) return null;
-              return <div key={hour} className="relative" style={{
-                height: slotsToRender * SLOT_HEIGHT
-              }}>
-                    {slotsToSkip === 0 && <span className="absolute -top-2 right-1 md:right-2 text-[10px] md:text-xs text-foreground bg-background px-1 z-10">
-                        {`${hour.toString().padStart(2, '0')}:00`}
-                      </span>}
-                    {slotsToSkip > 0 && <span className="absolute -top-2 right-1 md:right-2 text-[10px] md:text-xs text-foreground bg-background px-1 z-10">
-                        {`${hour.toString().padStart(2, '0')}:${(slotsToSkip * SLOT_MINUTES).toString().padStart(2, '0')}`}
-                      </span>}
-                    <div className="absolute left-0 right-0 top-0 h-full">
-                      {Array.from({
-                    length: slotsToRender
-                  }, (_, i) => {
-                    const actualSlotIndex = i + slotsToSkip;
-                    return <div key={i} className={cn("border-b", actualSlotIndex === SLOTS_PER_HOUR - 1 ? "border-border" : "border-border/40")} style={{
-                      height: SLOT_HEIGHT
-                    }} />;
-                  })}
-                    </div>
-                  </div>;
-            })}
-              </div>
-
-              {/* Day columns for selected station */}
-              {weekDays.map((day, idx) => {
-            const dayStr = format(day, 'yyyy-MM-dd');
-            const isDayToday = isSameDay(day, new Date());
-            const isDayClosed = isDateClosed(dayStr);
-            const selectedStationId = weekViewStationId || stations[0]?.id;
-            const dayReservations = selectedStationId ? getReservationsForStationAndDate(selectedStationId, dayStr) : [];
-            const dayBreaks = selectedStationId ? getBreaksForStationAndDate(selectedStationId, dayStr) : [];
-            const dayHours = getHoursForDate(day);
-            const totalVisibleHeight = (dayHours.displayEndTime - dayHours.displayStartTime) * HOUR_HEIGHT;
-
-            // Calculate past hatch height (relative to displayStartTime)
-            // Only hatch past days - today should NOT be hatched at all
-            const today = startOfDay(new Date());
-            const dayDate = startOfDay(day);
-            const isPastDay = isBefore(dayDate, today);
-            let pastHatchHeight = 0;
-            if (isPastDay) {
-              pastHatchHeight = totalVisibleHeight;
-            }
-            // Today is NOT hatched - we want to allow adding reservations to any time slot
-
-            return <div key={dayStr} className={cn("flex-1 relative min-w-[80px]", idx < 6 && "border-r border-border", isDayToday && "bg-primary/5", isDayClosed && "bg-red-500/5")} onDragOver={(e) => selectedStationId && handleDragOver(e, selectedStationId, dayStr)} onDragLeave={handleDragLeave} onDrop={(e) => selectedStationId && handleDrop(e, selectedStationId, dayStr)}>
-                    {/* Hatched area for PAST time slots */}
-                    {pastHatchHeight > 0 && !isDayClosed && <div className="absolute left-0 right-0 top-0 hatched-pattern pointer-events-none z-10" style={{
-                height: pastHatchHeight
-              }} />}
-                    
-                    {/* Hatched area BEFORE working hours - from global start to day's working start */}
-                    {!isDayClosed && dayHours.workingStartTime > DISPLAY_START_TIME && <div className="absolute left-0 right-0 hatched-pattern pointer-events-none z-5" style={{
-                top: 0,
-                height: (dayHours.workingStartTime - DISPLAY_START_TIME) * HOUR_HEIGHT
-              }} />}
-                    
-                    {/* Hatched area AFTER working hours - extend to match the global display end time */}
-                    {!isDayClosed && DISPLAY_END_TIME > dayHours.workingEndTime && <div className="absolute left-0 right-0 hatched-pattern pointer-events-none z-5" style={{
-                top: (dayHours.workingEndTime - DISPLAY_START_TIME) * HOUR_HEIGHT,
-                height: (DISPLAY_END_TIME - dayHours.workingEndTime) * HOUR_HEIGHT
-              }} />}
-                    
-                    {/* Closed day overlay */}
-                    {isDayClosed && <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-                        <div className="bg-red-500/10 absolute inset-0" />
-                        <div className="relative bg-red-500/80 text-white px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1">
-                          <CalendarOff className="w-3 h-3" />
-                          <span>Zamknięte</span>
-                        </div>
-                      </div>}
-
-                    {/* Hour grid slots */}
-                    {HOURS.map((hour, hourIndex) => {
-                const isFirstHour = hourIndex === 0;
-                const isLastHour = hourIndex === HOURS.length - 1;
-                const slotsToSkip = isFirstHour ? START_SLOT_OFFSET : 0;
-                const endSlotOffset = isLastHour ? Math.round((DISPLAY_END_TIME - hour) * SLOTS_PER_HOUR) : SLOTS_PER_HOUR;
-                const slotsToRender = Math.max(0, endSlotOffset - slotsToSkip);
-                if (slotsToRender <= 0) return null;
-                return <div key={hour} style={{
-                  height: slotsToRender * SLOT_HEIGHT
-                }}>
-                        {Array.from({
-                    length: slotsToRender
-                  }, (_, i) => {
-                    const slotIndex = i + slotsToSkip;
-                    const slotMinutes = slotIndex * SLOT_MINUTES;
-                    const slotTimeDecimal = hour + slotMinutes / 60;
-                    const isDropTarget = selectedStationId && dragOverStation === selectedStationId && dragOverDate === dayStr && dragOverSlot?.hour === hour && dragOverSlot?.slotIndex === slotIndex;
-
-                    // Check if this slot is outside working hours (in hatched area)
-                    const isOutsideWorkingHours = slotTimeDecimal < dayHours.workingStartTime || slotTimeDecimal >= dayHours.workingEndTime;
-
-                    // Disable only for past days (not today) OR outside working hours OR day is closed
-                    // Today's earlier hours should remain clickable!
-                    const isDisabled = isPastDay || isOutsideWorkingHours || isDayClosed;
-                    return <div key={slotIndex} data-testid="calendar-slot" data-time={`${hour.toString().padStart(2, '0')}:${(slotIndex * SLOT_MINUTES).toString().padStart(2, '0')}`} data-station={selectedStationId} data-date={dayStr} data-disabled={isDisabled ? "true" : undefined} className={cn("border-b group transition-colors relative", slotIndex % 2 === 0 && "border-border/50", slotIndex % 2 !== 0 && "border-border/20", isDropTarget && !isDisabled && "bg-primary/30 border-primary", !isDropTarget && !isDisabled && "hover:bg-primary/5 hover:z-50 cursor-pointer", isDisabled && "cursor-not-allowed")} style={{
-                      height: SLOT_HEIGHT
-                    }} onClick={() => !isDisabled && selectedStationId && handleSlotClick(selectedStationId, hour, slotIndex, dayStr)} onContextMenu={(e) => !isDisabled && selectedStationId && handleSlotContextMenu(e, selectedStationId, hour, slotIndex, dayStr)} onTouchStart={() => !isDisabled && selectedStationId && handleTouchStart(selectedStationId, hour, slotIndex, dayStr)} onTouchEnd={handleTouchEnd} onTouchMove={handleTouchMove} onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isDisabled && selectedStationId) handleSlotDragOver(e, selectedStationId, hour, slotIndex, dayStr);
-                    }} onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isDisabled && selectedStationId) handleDrop(e, selectedStationId, dayStr, hour, slotIndex);
-                    }}>
-                              {!hallMode && !isDisabled && <div className="h-full w-full flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Plus className="w-3 h-3 text-primary" />
-                                  <span className="text-xs font-medium text-primary">{`${hour.toString().padStart(2, '0')}:${(slotIndex * SLOT_MINUTES).toString().padStart(2, '0')}`}</span>
-                                </div>}
-                            </div>;
-                  })}
-                      </div>;
-              })}
-
-                    {/* Drag preview ghost */}
-                    {selectedStationId && draggedReservation && dragOverStation === selectedStationId && dragOverDate === dayStr && dragPreviewStyle && <div className="absolute left-0.5 right-0.5 rounded-lg border-2 border-dashed border-primary bg-primary/20 pointer-events-none z-10 flex items-center justify-center" style={{
-                top: dragPreviewStyle.top,
-                height: dragPreviewStyle.height
-              }}>
-                        <span className="text-[9px] font-semibold text-primary bg-background/80 px-1 py-0.5 rounded">
-                          {dragPreviewStyle.time}
-                        </span>
-                      </div>}
-
-                    {/* Slot Preview Highlight */}
-                    {slotPreview &&
-              slotPreview.date === dayStr &&
-              slotPreview.stationId === selectedStationId &&
-              <div
-                className="absolute left-0.5 right-0.5 rounded-lg border-2 border-dashed border-fuchsia-400 pointer-events-none z-40 animate-pulse"
-                style={{
-                  ...getReservationStyle(slotPreview.startTime, slotPreview.endTime, dayHours.displayStartTime),
-                  background: 'repeating-linear-gradient(45deg, rgba(236,72,153,0.15), rgba(236,72,153,0.15) 4px, transparent 4px, transparent 8px)'
-                }}>
-
-                        <div className="px-2 py-1 text-xs font-medium text-fuchsia-600">
-                          {slotPreview.startTime.slice(0, 5)} - {slotPreview.endTime.slice(0, 5)}
-                        </div>
-                      </div>
-              }
-
-                    {/* Reservations */}
-                    {dayReservations.map((reservation) => {
-                const {
-                  displayStart,
-                  displayEnd
-                } = getDisplayTimesForDate(reservation, dayStr);
-                const style = getReservationStyle(displayStart, displayEnd, dayHours.displayStartTime);
-                const isDragging = draggedReservation?.id === reservation.id;
-                const isMultiDay = reservation.end_date && reservation.end_date !== reservation.reservation_date;
-                const selectedStation = stations.find((s) => s.id === selectedStationId);
-                return <div key={reservation.id} draggable={!hallMode && !readOnly && !isMobile} onDragStart={(e) => handleDragStart(e, reservation)} onDragEnd={handleDragEnd} className={cn("absolute left-0.5 right-0.5 rounded-lg border-l-4 px-1 md:px-2 py-0.5 md:py-1", !hallMode && !readOnly && !isMobile && "cursor-grab active:cursor-grabbing", (hallMode || isMobile) && "cursor-pointer", "transition-all duration-150 hover:shadow-lg hover:z-20", "overflow-hidden select-none", getStatusColor(reservation.status, selectedStation?.type), isDragging && "opacity-50 scale-95", !isDragging && draggedReservation && "pointer-events-none")} style={{ ...style, zIndex: getTimeBasedZIndex(displayStart) }} onClick={(e) => {
-                  e.stopPropagation();
-                  onReservationClick?.(reservation);
-                }}>
-                          {/* Drag handle */}
-                          <div className={cn("text-black", !hallMode && !readOnly && "pl-2")}>
-                            <div className="flex items-center justify-between gap-0.5">
-                              {hallMode ? <div className="text-[10px] md:text-[11px] font-bold truncate pb-0.5">
-                                  {isMultiDay ? `${displayStart.slice(0, 5)} - ${displayEnd.slice(0, 5)}` : `${reservation.start_time.slice(0, 5)} - ${reservation.end_time.slice(0, 5)}`}
-                                </div> : <div className="flex items-center gap-0.5 text-[9px] md:text-[10px] font-semibold truncate">
-                                  <User className="w-2.5 h-2.5 shrink-0" />
-                                  {reservation.customer_name}
-                                </div>}
-                              {!hallMode && reservation.customer_phone && <a href={`tel:${reservation.customer_phone}`} onClick={(e) => e.stopPropagation()} className="shrink-0 p-0.5 rounded hover:bg-white/20 transition-colors" title={reservation.customer_phone}>
-                                  <Phone className="w-3 h-3" />
-                                </a>}
-                            </div>
-                            {reservation.vehicle_plate && <div className="flex items-center gap-0.5 text-[8px] md:text-[9px] truncate">
-                                <Car className="w-2 h-2 shrink-0" />
-                                <span className="truncate">{reservation.vehicle_plate}</span>
-                                {!hallMode && <span className="shrink-0 ml-0.5 flex items-center gap-0.5">
-                                    {isMultiDay ? `${displayStart.slice(0, 5)}` : reservation.start_time.slice(0, 5)}
-                                    {reservation.status === 'change_requested' && <RefreshCw className="w-2.5 h-2.5 text-red-600" />}
-                                  </span>}
-                              </div>}
-                            {reservation.service && <div className="text-[8px] md:text-[9px] truncate">
-                                {reservation.service.shortcut || reservation.service.name}
-                              </div>}
-                          </div>
-                        </div>;
-              })}
-
-                    {/* Breaks */}
-                    {dayBreaks.map((breakItem) => {
-                const style = getReservationStyle(breakItem.start_time, breakItem.end_time, dayHours.displayStartTime);
-                return <div key={breakItem.id} className="absolute left-0.5 right-0.5 rounded-lg border-l-4 px-1 md:px-2 py-0.5 bg-slate-500/80 border-slate-600 text-white overflow-hidden group" style={style}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-[9px] md:text-[10px] font-semibold truncate">
-                              <Coffee className="w-2.5 h-2.5 shrink-0" />
-                              {t('calendar.break')}
-                            </div>
-                            {!readOnly && <button onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteBreak?.(breakItem.id);
-                    }} className="shrink-0 p-0.5 rounded hover:bg-white/20 transition-colors opacity-0 group-hover:opacity-100" title={t('calendar.deleteBreak')}>
-                                <X className="w-2.5 h-2.5" />
-                              </button>}
-                          </div>
-                          <div className="text-[8px] md:text-[9px] truncate opacity-80">
-                            {breakItem.start_time.slice(0, 5)} - {breakItem.end_time.slice(0, 5)}
-                          </div>
-                        </div>;
-              })}
-                  </div>;
-          })}
-
-              {/* Current time indicator */}
-              {weekDays.some((d) => isSameDay(d, new Date())) && showCurrentTime && <div className="absolute left-0 right-0 z-40 pointer-events-none" style={{
-            top: currentTimeTop
-          }}>
-                  <div className="flex items-center">
-                    <div className="w-16 md:w-20 flex justify-end pr-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                    </div>
-                    <div className="flex-1 h-0.5 bg-red-500" />
-                  </div>
-                </div>}
-            </div>
-          </div>
-        </>}
+      {/* MONTH VIEW */}
+      {viewMode === 'month' && <MonthCalendarView
+        reservations={reservations}
+        stations={stations}
+        currentDate={currentDate}
+        closedDays={closedDays}
+        onDayClick={(date) => {
+          setCurrentDate(date);
+          setViewMode('day');
+        }}
+        onReservationClick={(r) => onReservationClick?.(r)}
+        onAddClick={onAddReservation && !readOnly ? (date) => {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          setCurrentDate(date);
+          setViewMode('day');
+          onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+        } : undefined}
+        onReservationMove={onReservationMove ? (id, stationId, date) => onReservationMove(id, stationId, date) : undefined}
+      />}
 
       {/* Color Legend */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t border-border/50 mt-4">

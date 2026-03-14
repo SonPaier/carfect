@@ -217,7 +217,7 @@ const InstanceSettingsDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="company" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList variant="underline" className="w-full">
             <TabsTrigger value="company">{t('instanceSettings.companyTab')}</TabsTrigger>
             <TabsTrigger value="branding">{t('instanceSettings.brandingTab')}</TabsTrigger>
             <TabsTrigger value="contact">{t('instanceSettings.contactTab')}</TabsTrigger>

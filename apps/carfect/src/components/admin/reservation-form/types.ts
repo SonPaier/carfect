@@ -61,6 +61,14 @@ export interface WorkingHours {
   close: string;
 }
 
+export interface ReservationSlot {
+  id: string;
+  dateRange: DateRange | undefined;
+  startTime: string;
+  endTime: string;
+  stationId: string | null;
+}
+
 export interface EditingReservation {
   id: string;
   customer_name: string;

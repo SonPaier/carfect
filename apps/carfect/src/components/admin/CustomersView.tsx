@@ -1,16 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Phone, MessageSquare, ChevronLeft, ChevronRight, User, Building2, Plus, Trash2 } from 'lucide-react';
+import { Search, Phone, MessageSquare, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { normalizeSearchQuery } from '@shared/utils';
 import { formatPhoneDisplay } from '@shared/utils';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
-import { Tabs, TabsContent } from '@shared/ui';
-import { AdminTabsList, AdminTabsTrigger } from './AdminTabsList';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@shared/ui';
-import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
+// useCombinedFeatures no longer needed — unified customer list
 import CustomerEditDrawer from './CustomerEditDrawer';
 import SendSmsDialog from './SendSmsDialog';
 import { toast } from 'sonner';
@@ -23,7 +21,6 @@ interface Customer {
   notes: string | null;
   created_at: string | null;
   phone_verified: boolean | null;
-  source: string;
   company: string | null;
   nip: string | null;
   address: string | null;
@@ -47,7 +44,6 @@ const ITEMS_PER_PAGE = 10;
 const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const { hasFeature } = useCombinedFeatures(instanceId);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [vehicles, setVehicles] = useState<CustomerVehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,12 +53,9 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [smsCustomer, setSmsCustomer] = useState<Customer | null>(null);
-  const [activeTab, setActiveTab] = useState<'myjnia' | 'oferty'>('myjnia');
   const [isAddMode, setIsAddMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
-
-  const hasOffers = hasFeature('offers');
 
   const fetchCustomers = async () => {
     if (!instanceId) return;
@@ -100,14 +93,9 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     return vehicles.filter(v => v.phone === phone || v.phone === normalized || v.phone === `+${normalized}`);
   };
 
-  // Filter by source (tab)
-  const customersBySource = useMemo(() => {
-    return customers.filter(c => c.source === activeTab);
-  }, [customers, activeTab]);
-
   // Filtered and sorted customers
   const filteredCustomers = useMemo(() => {
-    let result = [...customersBySource];
+    let result = [...customers];
 
     // Filter by search query (including vehicle search)
     if (searchQuery.trim()) {
@@ -146,7 +134,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       return 0;
     });
     return result;
-  }, [customersBySource, searchQuery, sortField, sortDirection, vehicles]);
+  }, [customers, searchQuery, sortField, sortDirection, vehicles]);
 
   // Pagination
   const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
@@ -155,10 +143,10 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     return filteredCustomers.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredCustomers, currentPage]);
 
-  // Reset page when search or tab changes
+  // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeTab]);
+  }, [searchQuery]);
 
   const handleCall = (phone: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -211,9 +199,6 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       setCustomerToDelete(null);
     }
   };
-
-  const myjniaCount = customers.filter(c => c.source === 'myjnia').length;
-  const ofertyCount = customers.filter(c => c.source === 'oferty').length;
 
   if (loading) {
     return (
@@ -343,56 +328,6 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     </>
   );
 
-  // If offers feature is not enabled, don't show tabs
-  if (!hasOffers) {
-    return (
-      <div className="space-y-4 max-w-3xl mx-auto pb-28">
-        {/* Header with title and add button */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">{t('customers.title')}</h1>
-          <Button onClick={handleAddCustomer}>
-            {t('common.add')}
-          </Button>
-        </div>
-        
-        {/* Sticky header on mobile */}
-        <div className="sm:static sticky top-0 z-20 bg-background pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {/* Search bar - full width */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t('customers.searchPlaceholder')}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {renderCustomerList()}
-
-        {/* Customer Edit Drawer */}
-        <CustomerEditDrawer
-          customer={selectedCustomer}
-          instanceId={instanceId}
-          open={!!selectedCustomer || isAddMode}
-          onClose={handleCloseDrawer}
-          onCustomerUpdated={fetchCustomers}
-          isAddMode={isAddMode}
-        />
-
-        {/* Send SMS Dialog (web only) */}
-        <SendSmsDialog
-          phone={smsCustomer?.phone || ''}
-          customerName={smsCustomer?.name || ''}
-          instanceId={instanceId}
-          open={!!smsCustomer}
-          onClose={() => setSmsCustomer(null)}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 max-w-3xl mx-auto pb-28">
       {/* Header with title and add button */}
@@ -402,9 +337,9 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
           {t('common.add')}
         </Button>
       </div>
-      
+
       {/* Sticky header on mobile */}
-      <div className="sm:static sticky top-0 z-20 bg-background pb-4 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="sm:static sticky top-0 z-20 bg-background pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Search bar - full width */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -415,42 +350,9 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
             className="pl-10"
           />
         </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'myjnia' | 'oferty')}>
-          <AdminTabsList className="max-w-md">
-            <AdminTabsTrigger value="myjnia">
-              <User className="w-4 h-4" />
-              {t('customers.tabs.carWash')}
-              {myjniaCount > 0 && (
-                <span className="ml-1 text-xs bg-primary/10 px-2 py-0.5 rounded-full">
-                  {myjniaCount}
-                </span>
-              )}
-            </AdminTabsTrigger>
-            <AdminTabsTrigger value="oferty">
-              <Building2 className="w-4 h-4" />
-              {t('customers.tabs.offers')}
-              {ofertyCount > 0 && (
-                <span className="ml-1 text-xs bg-primary/10 px-2 py-0.5 rounded-full">
-                  {ofertyCount}
-                </span>
-              )}
-            </AdminTabsTrigger>
-          </AdminTabsList>
-        </Tabs>
       </div>
 
-      {/* Content */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'myjnia' | 'oferty')}>
-        <TabsContent value="myjnia" className="space-y-4 mt-0">
-          {renderCustomerList()}
-        </TabsContent>
-
-        <TabsContent value="oferty" className="space-y-4 mt-0">
-          {renderCustomerList()}
-        </TabsContent>
-      </Tabs>
+      {renderCustomerList()}
 
       {/* Customer Edit Drawer */}
       <CustomerEditDrawer

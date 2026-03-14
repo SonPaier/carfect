@@ -389,12 +389,12 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 bg-muted/50">
-          <TabsTrigger value="products" className="gap-2 data-[state=active]:bg-background">
+        <TabsList variant="underline" className="mb-6">
+          <TabsTrigger value="products" className="gap-2">
             <Package className="h-4 w-4" />
             {t('products.tabs.products')} ({filteredProducts.length})
           </TabsTrigger>
-          <TabsTrigger value="price-lists" className="gap-2 data-[state=active]:bg-background">
+          <TabsTrigger value="price-lists" className="gap-2">
             <FileText className="h-4 w-4" />
             {t('products.tabs.priceLists')} ({priceLists.length})
           </TabsTrigger>

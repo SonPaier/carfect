@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { PhotoAnnotationDialog } from './PhotoAnnotationDialog';
@@ -14,6 +14,15 @@ interface PhotoFullscreenDialogProps {
   initialIndex?: number;
 }
 
+// Distance between two touch points
+const getTouchDistance = (t1: React.Touch, t2: React.Touch) =>
+  Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+const getTouchCenter = (t1: React.Touch, t2: React.Touch) => ({
+  x: (t1.clientX + t2.clientX) / 2,
+  y: (t1.clientY + t2.clientY) / 2,
+});
+
 export const PhotoFullscreenDialog = ({
   open,
   onOpenChange,
@@ -25,6 +34,30 @@ export const PhotoFullscreenDialog = ({
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
+  // Zoom/pan state
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const isZoomed = scale > 1.05;
+
+  // Touch tracking refs
+  const touchRef = useRef<{
+    initialDistance: number;
+    initialScale: number;
+    initialTranslate: { x: number; y: number };
+    initialCenter: { x: number; y: number };
+    lastTap: number;
+    isPanning: boolean;
+    panStart: { x: number; y: number };
+  }>({
+    initialDistance: 0,
+    initialScale: 1,
+    initialTranslate: { x: 0, y: 0 },
+    initialCenter: { x: 0, y: 0 },
+    lastTap: 0,
+    isPanning: false,
+    panStart: { x: 0, y: 0 },
+  });
+
   const photos = allPhotos && allPhotos.length > 0 ? allPhotos : photoUrl ? [photoUrl] : [];
   const hasMultiple = photos.length > 1;
 
@@ -34,6 +67,12 @@ export const PhotoFullscreenDialog = ({
       setCurrentIndex(initialIndex);
     }
   }, [open, initialIndex]);
+
+  // Reset zoom on photo change or dialog close
+  useEffect(() => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  }, [currentIndex, open]);
 
   const currentPhoto = photos[currentIndex] || null;
 
@@ -58,6 +97,86 @@ export const PhotoFullscreenDialog = ({
     return () => window.removeEventListener('keydown', handler);
   }, [open, annotationOpen, hasMultiple, goNext, goPrev]);
 
+  // Touch handlers for pinch-to-zoom and pan
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      touchRef.current.initialDistance = dist;
+      touchRef.current.initialScale = scale;
+      touchRef.current.initialTranslate = { ...translate };
+      touchRef.current.initialCenter = center;
+      touchRef.current.isPanning = false;
+    } else if (e.touches.length === 1 && isZoomed) {
+      touchRef.current.isPanning = true;
+      touchRef.current.panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      touchRef.current.initialTranslate = { ...translate };
+    }
+  }, [scale, translate, isZoomed]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const ratio = dist / touchRef.current.initialDistance;
+      const newScale = Math.min(Math.max(touchRef.current.initialScale * ratio, 1), 5);
+
+      // Adjust translate to keep pinch center stable
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      const dx = center.x - touchRef.current.initialCenter.x;
+      const dy = center.y - touchRef.current.initialCenter.y;
+
+      setScale(newScale);
+      setTranslate({
+        x: touchRef.current.initialTranslate.x + dx,
+        y: touchRef.current.initialTranslate.y + dy,
+      });
+    } else if (e.touches.length === 1 && touchRef.current.isPanning && isZoomed) {
+      const dx = e.touches[0].clientX - touchRef.current.panStart.x;
+      const dy = e.touches[0].clientY - touchRef.current.panStart.y;
+      setTranslate({
+        x: touchRef.current.initialTranslate.x + dx,
+        y: touchRef.current.initialTranslate.y + dy,
+      });
+    }
+  }, [isZoomed]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      touchRef.current.isPanning = false;
+
+      // Snap back to 1 if close enough
+      if (scale < 1.1) {
+        setScale(1);
+        setTranslate({ x: 0, y: 0 });
+      }
+    }
+  }, [scale]);
+
+  // Double-tap to toggle zoom
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    const now = Date.now();
+    const timeSinceLastTap = now - touchRef.current.lastTap;
+    touchRef.current.lastTap = now;
+
+    if (timeSinceLastTap < 300) {
+      // Double-tap detected
+      if (isZoomed) {
+        setScale(1);
+        setTranslate({ x: 0, y: 0 });
+      } else {
+        setScale(2.5);
+        // Zoom toward tap position
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        const tapX = e.clientX - rect.left - rect.width / 2;
+        const tapY = e.clientY - rect.top - rect.height / 2;
+        setTranslate({ x: -tapX * 1.5, y: -tapY * 1.5 });
+      }
+    }
+  }, [isZoomed]);
+
   if (!currentPhoto) return null;
 
   const handleAnnotateSave = (newUrl: string) => {
@@ -74,12 +193,12 @@ export const PhotoFullscreenDialog = ({
       }}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[9998] bg-black/95" onClick={() => {
-            if (!annotationOpen) onOpenChange(false);
+            if (!annotationOpen && !isZoomed) onOpenChange(false);
           }} />
           <DialogPrimitive.Content
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 outline-none"
             onClick={() => {
-              if (!annotationOpen) onOpenChange(false);
+              if (!annotationOpen && !isZoomed) onOpenChange(false);
             }}
           >
             {/* Top buttons */}
@@ -113,7 +232,7 @@ export const PhotoFullscreenDialog = ({
             )}
 
             {/* Left arrow */}
-            {hasMultiple && !annotationOpen && (
+            {hasMultiple && !annotationOpen && !isZoomed && (
               <button
                 type="button"
                 onClick={goPrev}
@@ -125,7 +244,7 @@ export const PhotoFullscreenDialog = ({
             )}
 
             {/* Right arrow */}
-            {hasMultiple && !annotationOpen && (
+            {hasMultiple && !annotationOpen && !isZoomed && (
               <button
                 type="button"
                 onClick={goNext}
@@ -143,13 +262,25 @@ export const PhotoFullscreenDialog = ({
               </div>
             )}
 
-            {/* Fullscreen image */}
-            <img
-              src={currentPhoto}
-              alt="Zdjęcie uszkodzenia"
-              className="max-w-full max-h-full object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {/* Fullscreen image with zoom/pan */}
+            <div
+              className="touch-none select-none"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <img
+                src={currentPhoto}
+                alt="Zdjęcie uszkodzenia"
+                className="max-w-full max-h-full object-contain transition-transform duration-75"
+                style={{
+                  transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+                  transformOrigin: 'center center',
+                }}
+                onClick={handleImageClick}
+                draggable={false}
+              />
+            </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>

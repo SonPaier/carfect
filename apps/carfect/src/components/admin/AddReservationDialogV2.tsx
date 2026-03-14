@@ -31,8 +31,10 @@ import {
   VehicleSection,
   YardDateTimeSection,
   ReservationDateTimeSection,
+  ReservationSlotsSection,
   NotesAndPriceSection } from
 './reservation-form';
+import type { ReservationSlot } from './reservation-form';
 
 type CarSize = 'small' | 'medium' | 'large';
 type DialogMode = 'reservation' | 'yard';
@@ -235,10 +237,42 @@ const AddReservationDialogV2 = ({
   // Services dropdown
   const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
 
-  // Manual time selection
-  const [manualStartTime, setManualStartTime] = useState('');
-  const [manualEndTime, setManualEndTime] = useState('');
-  const [manualStationId, setManualStationId] = useState<string | null>(null);
+  // Multi-slot state (replaces individual manualStartTime, manualEndTime, manualStationId)
+  const [slots, setSlots] = useState<ReservationSlot[]>([{
+    id: crypto.randomUUID(),
+    dateRange: undefined,
+    startTime: '',
+    endTime: '',
+    stationId: null,
+  }]);
+
+  // Derived from first slot for backward compatibility with existing logic
+  const manualStartTime = slots[0]?.startTime || '';
+  const manualEndTime = slots[0]?.endTime || '';
+  const manualStationId = slots[0]?.stationId || null;
+
+  // Setters that update slots[0] - used by existing logic (auto end-time, slot preview, etc.)
+  const setManualStartTime = useCallback((time: string) => {
+    setSlots(prev => {
+      const newSlots = [...prev];
+      newSlots[0] = { ...newSlots[0], startTime: time };
+      return newSlots;
+    });
+  }, []);
+  const setManualEndTime = useCallback((time: string) => {
+    setSlots(prev => {
+      const newSlots = [...prev];
+      newSlots[0] = { ...newSlots[0], endTime: time };
+      return newSlots;
+    });
+  }, []);
+  const setManualStationId = useCallback((stationId: string | null) => {
+    setSlots(prev => {
+      const newSlots = [...prev];
+      newSlots[0] = { ...newSlots[0], stationId };
+      return newSlots;
+    });
+  }, []);
 
   // Track the last totalDurationMinutes to detect changes
   const prevTotalDurationRef = useRef<number>(0);
@@ -267,12 +301,19 @@ const AddReservationDialogV2 = ({
   const [pickupDateOpen, setPickupDateOpen] = useState(false);
   const [deadlineTime, setDeadlineTime] = useState('');
 
-  // Reservation mode - DateRange picker (default 1 day)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  // Reservation mode - DateRange derived from first slot
+  const dateRange = slots[0]?.dateRange;
+  const setDateRange = useCallback((range: DateRange | undefined) => {
+    setSlots(prev => {
+      const newSlots = [...prev];
+      newSlots[0] = { ...newSlots[0], dateRange: range };
+      return newSlots;
+    });
+  }, []);
   const [dateRangeOpen, setDateRangeOpen] = useState(false);
   const [offerNumber, setOfferNumber] = useState('');
 
-  // Reservation type: single (1 day) or multi (date range)
+  // Reservation type: kept for backward compat but no longer controls UI
   const [reservationType, setReservationType] = useState<'single' | 'multi'>('single');
 
   // Fetch services and stations on mount
@@ -460,11 +501,20 @@ const AddReservationDialogV2 = ({
           setServiceItems(serviceIds.map((id) => ({ service_id: id, custom_price: null })));
         }
 
-        // Date range - use reservation_date and end_date (handle empty for prefill mode)
+        // Date range + time + station - load into single slot
+        const startTimeStr = editingReservation.start_time?.substring(0, 5) || '';
+        const endTimeStr = editingReservation.end_time?.substring(0, 5) || '';
+
         if (editingReservation.reservation_date) {
           const fromDate = new Date(editingReservation.reservation_date);
           const toDate = editingReservation.end_date ? new Date(editingReservation.end_date) : fromDate;
-          setDateRange({ from: fromDate, to: toDate });
+          setSlots([{
+            id: `edit-${editingReservation.id}`,
+            dateRange: { from: fromDate, to: toDate },
+            startTime: startTimeStr,
+            endTime: endTimeStr,
+            stationId: editingReservation.station_id,
+          }]);
 
           // Auto-detect reservation type based on date range
           if (editingReservation.end_date &&
@@ -475,7 +525,13 @@ const AddReservationDialogV2 = ({
           }
         } else {
           // No date provided (e.g. creating from offer) - leave empty so user must pick
-          setDateRange(undefined);
+          setSlots([{
+            id: `edit-${editingReservation.id}`,
+            dateRange: undefined,
+            startTime: startTimeStr,
+            endTime: endTimeStr,
+            stationId: editingReservation.station_id,
+          }]);
           setReservationType('single');
         }
 
@@ -492,13 +548,6 @@ const AddReservationDialogV2 = ({
         setShowCustomerDropdown(false);
         setCustomerVehicles([]);
         setSelectedVehicleId(null);
-
-        // Set manual time from editing reservation (skip if empty - e.g. prefill from offer)
-        const startTimeStr = editingReservation.start_time?.substring(0, 5) || '';
-        const endTimeStr = editingReservation.end_time?.substring(0, 5) || '';
-        if (startTimeStr) setManualStartTime(startTimeStr);
-        if (endTimeStr) setManualEndTime(endTimeStr);
-        setManualStationId(editingReservation.station_id);
 
         // Calculate and store original duration for automatic end time adjustment
         if (startTimeStr && endTimeStr && startTimeStr.includes(':') && endTimeStr.includes(':')) {
@@ -520,11 +569,8 @@ const AddReservationDialogV2 = ({
       } else if (initialDate && initialTime && initialStationId && !editingReservation) {
         // Slot click
         if (wasOpenRef.current) {
-          // Dialog was already open - only update date/time/station, keep other data
+          // Dialog was already open - only update date/time/station of first slot, keep other data
           const slotDate = new Date(initialDate);
-          setDateRange({ from: slotDate, to: slotDate });
-          setManualStartTime(initialTime);
-          setManualStationId(initialStationId);
           // Recalculate end time based on current services duration
           const currentDuration = selectedServices.reduce((total, serviceId) => {
             const service = services.find((s) => s.id === serviceId);
@@ -534,12 +580,23 @@ const AddReservationDialogV2 = ({
             if (carSize === 'medium' && service.duration_medium) return total + service.duration_medium;
             return total + (service.duration_minutes || 60);
           }, 0);
+          let endTime = '';
           if (currentDuration > 0) {
             const [h, m] = initialTime.split(':').map(Number);
             const endMinutes = h * 60 + m + currentDuration;
-            const newEndTime = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
-            setManualEndTime(newEndTime);
+            endTime = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
           }
+          setSlots(prev => {
+            const newSlots = [...prev];
+            newSlots[0] = {
+              ...newSlots[0],
+              dateRange: { from: slotDate, to: slotDate },
+              startTime: initialTime,
+              endTime: endTime || newSlots[0].endTime,
+              stationId: initialStationId,
+            };
+            return newSlots;
+          });
         } else {
           // First open - full reset with slot values
           setCustomerName('');
@@ -548,7 +605,13 @@ const AddReservationDialogV2 = ({
           setCarSize('medium');
           setSelectedServices([]);
           const slotDate = new Date(initialDate);
-          setDateRange({ from: slotDate, to: slotDate });
+          setSlots([{
+            id: crypto.randomUUID(),
+            dateRange: { from: slotDate, to: slotDate },
+            startTime: initialTime,
+            endTime: '',
+            stationId: initialStationId,
+          }]);
           setReservationType('single');
           setAdminNotes('');
           setFinalPrice('');
@@ -560,9 +623,6 @@ const AddReservationDialogV2 = ({
           setShowCustomerDropdown(false);
           setCustomerVehicles([]);
           setSelectedVehicleId(null);
-          setManualStartTime(initialTime);
-          setManualEndTime('');
-          setManualStationId(initialStationId);
           employeesDirtyRef.current = false;
           employeesSyncedFromBackendForReservationIdRef.current = null;
           setAssignedEmployeeIds([]);
@@ -576,7 +636,13 @@ const AddReservationDialogV2 = ({
         setSelectedServices([]);
         // Default to today with 1-day range
         const today = getNextWorkingDay();
-        setDateRange({ from: today, to: today });
+        setSlots([{
+          id: crypto.randomUUID(),
+          dateRange: { from: today, to: today },
+          startTime: '',
+          endTime: '',
+          stationId: null,
+        }]);
         setReservationType('single');
         setAdminNotes('');
         setFinalPrice('');
@@ -589,9 +655,6 @@ const AddReservationDialogV2 = ({
         setShowCustomerDropdown(false);
         setCustomerVehicles([]);
         setSelectedVehicleId(null);
-        setManualStartTime('');
-        setManualEndTime('');
-        setManualStationId(null);
         employeesDirtyRef.current = false;
         employeesSyncedFromBackendForReservationIdRef.current = null;
         setAssignedEmployeeIds([]);
@@ -772,11 +835,13 @@ const AddReservationDialogV2 = ({
     prevManualStartTimeRef.current = manualStartTime;
   }, [open, isReservationMode, isEditMode, manualStartTime, userModifiedEndTime]);
 
-  // Emit slot preview for calendar highlighting (reservation mode only)
+  // Emit slot preview for calendar highlighting (create mode only — edit already shows the reservation)
   useEffect(() => {
-    if (!open || !isReservationMode || !onSlotPreviewChange) return;
+    if (!open || !isReservationMode || !onSlotPreviewChange || isEditMode) {
+      onSlotPreviewChange?.(null);
+      return;
+    }
 
-    // In edit mode, always show preview based on current manual values
     if (manualStartTime && manualEndTime && manualStationId && dateRange?.from) {
       onSlotPreviewChange({
         date: format(dateRange.from, 'yyyy-MM-dd'),
@@ -1158,14 +1223,20 @@ const AddReservationDialogV2 = ({
     if (selectedServices.length === 0) {
       errors.services = 'Wybierz co najmniej jedną usługę';
     }
-    if (!dateRange?.from) {
-      errors.dateRange = 'Wybierz datę';
-    }
-    if (!manualStartTime || !manualEndTime) {
-      errors.time = 'Wybierz godzinę rozpoczęcia i zakończenia';
-    }
-    if (!manualStationId && (isEditMode || !initialStationId)) {
-      errors.station = 'Wybierz stanowisko';
+    // Validate all slots
+    for (const slot of slots) {
+      if (!slot.dateRange?.from) {
+        errors.dateRange = 'Wybierz datę dla każdego slotu';
+        break;
+      }
+      if (!slot.startTime || !slot.endTime) {
+        errors.time = 'Wybierz godzinę rozpoczęcia i zakończenia dla każdego slotu';
+        break;
+      }
+      if (!slot.stationId && (isEditMode || !initialStationId)) {
+        errors.station = 'Wybierz stanowisko dla każdego slotu';
+        break;
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -1290,16 +1361,11 @@ const AddReservationDialogV2 = ({
 
         toast.success(t('addReservation.reservationUpdated'));
       } else {
-        // Create new reservation
+        // Create new reservation(s) - one per slot
         const { data: { user } } = await supabase.auth.getUser();
 
-        const reservationData = {
+        const baseData = {
           instance_id: instanceId,
-          station_id: manualStationId,
-          reservation_date: format(dateRange!.from!, 'yyyy-MM-dd'),
-          end_date: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null,
-          start_time: manualStartTime,
-          end_time: manualEndTime,
           customer_name: customerName.trim() || phone || 'Klient',
           customer_phone: normalizePhoneForStorage(phone) || '',
           vehicle_plate: carModel || '',
@@ -1310,7 +1376,6 @@ const AddReservationDialogV2 = ({
           service_ids: selectedServices,
           service_items: enrichedServiceItems.length > 0 ? JSON.parse(JSON.stringify(enrichedServiceItems)) : null,
           offer_number: offerNumber || null,
-          confirmation_code: Array.from({ length: 7 }, () => Math.floor(Math.random() * 10)).join(''),
           status: 'confirmed' as const,
           confirmed_at: new Date().toISOString(),
           created_by: user?.id || null,
@@ -1319,22 +1384,35 @@ const AddReservationDialogV2 = ({
           assigned_employee_ids: assignedEmployeeIds.length > 0 ? assignedEmployeeIds : null
         };
 
+        const reservationsToInsert = slots.map(slot => ({
+          ...baseData,
+          station_id: slot.stationId || (initialStationId || null),
+          reservation_date: format(slot.dateRange!.from!, 'yyyy-MM-dd'),
+          end_date: slot.dateRange?.to ? format(slot.dateRange.to, 'yyyy-MM-dd') : null,
+          start_time: slot.startTime,
+          end_time: slot.endTime,
+          confirmation_code: Array.from({ length: 7 }, () => Math.floor(Math.random() * 10)).join(''),
+        }));
+
         const { error: reservationError } = await supabase.
         from('reservations').
-        insert([reservationData]);
+        insert(reservationsToInsert);
 
         if (reservationError) throw reservationError;
 
         // Send push notification for new reservation by admin
+        const firstSlot = slots[0];
         sendPushNotification({
           instanceId,
           title: `📅 Nowa rezerwacja (admin)`,
-          body: `${customerName.trim() || 'Klient'} - ${formatDateForPush(dateRange!.from!)} o ${manualStartTime}`,
-          url: `/admin?reservationCode=${reservationData.confirmation_code}`,
+          body: `${customerName.trim() || 'Klient'} - ${formatDateForPush(firstSlot.dateRange!.from!)} o ${firstSlot.startTime}${slots.length > 1 ? ` (${slots.length} slotów)` : ''}`,
+          url: `/admin?reservationCode=${reservationsToInsert[0].confirmation_code}`,
           tag: `new-reservation-admin-${Date.now()}`
         });
 
-        toast.success(t('addReservation.reservationCreated'));
+        toast.success(slots.length > 1
+          ? `Dodano ${slots.length} rezerwacji`
+          : t('addReservation.reservationCreated'));
 
         // Upsert customer vehicle (silently in background)
         if (carModel && carModel.trim() && carModel.trim() !== 'BRAK' && phone) {
@@ -1694,43 +1772,32 @@ const AddReservationDialogV2 = ({
 
               }
 
-              {/* RESERVATION MODE - Date/Time Section */}
+              {/* RESERVATION MODE - Date/Time/Station Slots Section */}
               {isReservationMode &&
-              <ReservationDateTimeSection
-                instanceId={instanceId}
-                reservationType={reservationType}
-                setReservationType={setReservationType}
-                dateRange={dateRange}
-                setDateRange={setDateRange}
-                dateRangeOpen={dateRangeOpen}
-                setDateRangeOpen={setDateRangeOpen}
-                dateRangeError={validationErrors.dateRange}
-                onClearDateRangeError={() => setValidationErrors((prev) => ({ ...prev, dateRange: undefined }))}
-                manualStartTime={manualStartTime}
-                setManualStartTime={setManualStartTime}
-                manualEndTime={manualEndTime}
-                setManualEndTime={setManualEndTime}
-                setUserModifiedEndTime={setUserModifiedEndTime}
-                manualStationId={manualStationId}
-                setManualStationId={setManualStationId}
-                stations={stations}
-                startTimeOptions={startTimeOptions}
-                endTimeOptions={endTimeOptions}
-                timeError={validationErrors.time || validationErrors.station}
-                offerNumber={offerNumber}
-                setOfferNumber={setOfferNumber}
-                customerName={customerName}
-                setCustomerName={setCustomerName}
-                phone={phone}
-                setPhone={setPhone}
-                carModel={carModel}
-                setCarModel={setCarModel}
-                workingHours={workingHours}
-                isMobile={isMobile}
-                markUserEditing={markUserEditing}
-                dateRangeRef={dateRangeRef}
-                timeRef={timeRef}
-                showStationSelector={isEditMode || !initialStationId} />
+              <div ref={dateRangeRef}>
+                <div ref={timeRef}>
+                  <ReservationSlotsSection
+                    slots={slots}
+                    onSlotsChange={(newSlots) => {
+                      markUserEditing();
+                      setValidationErrors(prev => ({ ...prev, dateRange: undefined, time: undefined, station: undefined }));
+                      setSlots(newSlots);
+                    }}
+                    stations={stations}
+                    workingHours={workingHours}
+                    startTimeOptions={startTimeOptions}
+                    endTimeOptions={endTimeOptions}
+                    errors={{
+                      dateRange: validationErrors.dateRange,
+                      time: validationErrors.time,
+                      station: validationErrors.station,
+                    }}
+                    isMobile={isMobile}
+                    showStationSelector={isEditMode || !initialStationId}
+                    isEditMode={isEditMode}
+                    onUserModifiedEndTime={() => setUserModifiedEndTime(true)} />
+                </div>
+              </div>
 
               }
 
@@ -1778,7 +1845,8 @@ const AddReservationDialogV2 = ({
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isYardMode ?
               isEditMode ? t('addReservation.saveYardChanges') : t('addReservation.addYardVehicle') :
-              isEditMode ? t('addReservation.saveChanges') : t('addReservation.addReservation')
+              isEditMode ? t('addReservation.saveChanges') :
+              slots.length > 1 ? `${t('addReservation.addReservation')} (${slots.length})` : t('addReservation.addReservation')
               }
             </Button>
           </div>

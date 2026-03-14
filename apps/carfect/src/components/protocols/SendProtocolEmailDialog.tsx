@@ -31,6 +31,7 @@ interface SendProtocolEmailDialogProps {
   vehicleInfo?: string;
   protocolType?: ProtocolType;
   instanceId?: string;
+  onSent?: () => void;
 }
 
 const getDefaultMessage = (customerName: string, vehicleInfo: string | undefined, protocolType: ProtocolType, template?: string | null) => {
@@ -59,6 +60,7 @@ export const SendProtocolEmailDialog = ({
   vehicleInfo,
   protocolType = 'reception',
   instanceId,
+  onSent,
 }: SendProtocolEmailDialogProps) => {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -114,6 +116,7 @@ export const SendProtocolEmailDialog = ({
       if (error) throw error;
 
       toast.success('Email został wysłany');
+      onSent?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Error sending email:', error);

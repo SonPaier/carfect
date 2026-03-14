@@ -78,7 +78,6 @@ export const TemplateAssignedCustomers = ({ templateId, instanceId }: TemplateAs
             phone: uc.customer_phone,
             email: null,
             notes: null,
-            source: 'myjnia',
           };
         });
 
