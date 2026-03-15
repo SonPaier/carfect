@@ -1,9 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Users, BadgeDollarSign, Settings, LogOut, Menu, PanelLeftClose, PanelLeft, ChevronUp, X, HardHat, ClipboardCheck, MessageSquare, Receipt, Bell, LayoutDashboard, FolderKanban } from 'lucide-react';
+import {
+  Calendar,
+  Users,
+  BadgeDollarSign,
+  Settings,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeft,
+  ChevronUp,
+  X,
+  HardHat,
+  ClipboardCheck,
+  MessageSquare,
+  Receipt,
+  Bell,
+  LayoutDashboard,
+  FolderKanban,
+} from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useInstanceFeature } from '@/hooks/useInstanceFeatures';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
-import { UpdateBanner } from '@/components/pwa/UpdateBanner';
 import { OfflineBanner } from '@/components/pwa/OfflineBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -19,7 +36,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-type ViewType = 'dashboard' | 'kalendarz' | 'klienci' | 'uslugi' | 'pracownicy' | 'protokoly' | 'rozliczenia' | 'projekty' | 'przypomnienia' | 'powiadomienia-sms' | 'ustawienia' | 'aktywnosci';
+type ViewType =
+  | 'dashboard'
+  | 'kalendarz'
+  | 'klienci'
+  | 'uslugi'
+  | 'pracownicy'
+  | 'protokoly'
+  | 'rozliczenia'
+  | 'projekty'
+  | 'przypomnienia'
+  | 'powiadomienia-sms'
+  | 'ustawienia'
+  | 'aktywnosci';
 
 const navItems: { id: ViewType; label: string; icon: React.ElementType }[] = [
   { id: 'dashboard', label: 'Mój dzień', icon: LayoutDashboard },
@@ -51,7 +80,12 @@ interface DashboardLayoutProps {
   instanceId?: string | null;
 }
 
-const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: DashboardLayoutProps) => {
+const DashboardLayout = ({
+  currentView,
+  onViewChange,
+  children,
+  instanceId,
+}: DashboardLayoutProps) => {
   const { signOut, username, user } = useAuth();
   const { settings: dashboardSettings } = useDashboardSettings(instanceId ?? null);
   const { enabled: activitiesEnabled } = useInstanceFeature(instanceId ?? null, 'activities');
@@ -72,12 +106,14 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
   const { enabled: remindersEnabled } = useInstanceFeature(instanceId ?? null, 'reminders');
 
   const filteredNavItems = navItems
-    .filter(i => activitiesEnabled || i.id !== 'aktywnosci')
-    .filter(i => employeesEnabled || i.id !== 'pracownicy')
-    .filter(i => protocolsEnabled || i.id !== 'protokoly')
-    .filter(i => remindersEnabled || i.id !== 'przypomnienia')
-    .filter(i => projectsEnabled || i.id !== 'projekty');
-  const filteredBottomBarItems = activitiesEnabled ? bottomBarItems : bottomBarItems.filter(i => i.id !== 'aktywnosci');
+    .filter((i) => activitiesEnabled || i.id !== 'aktywnosci')
+    .filter((i) => employeesEnabled || i.id !== 'pracownicy')
+    .filter((i) => protocolsEnabled || i.id !== 'protokoly')
+    .filter((i) => remindersEnabled || i.id !== 'przypomnienia')
+    .filter((i) => projectsEnabled || i.id !== 'projekty');
+  const filteredBottomBarItems = activitiesEnabled
+    ? bottomBarItems
+    : bottomBarItems.filter((i) => i.id !== 'aktywnosci');
 
   useEffect(() => {
     if (!instanceId) return;
@@ -111,30 +147,41 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <UpdateBanner />
       <OfflineBanner />
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-[115] bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-[115] bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 inset-y-0 left-0 z-[120] h-screen bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          sidebarCollapsed ? "lg:w-16" : "w-64"
+          'fixed lg:sticky top-0 inset-y-0 left-0 z-[120] h-screen bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          sidebarCollapsed ? 'lg:w-16' : 'w-64',
         )}
       >
         <div className="flex flex-col h-full overflow-hidden">
           {/* Logo */}
-          <div className={cn("border-b border-border/50 flex items-center", sidebarCollapsed ? "p-3 justify-center" : "px-4 py-4 justify-start gap-3 relative")}>
+          <div
+            className={cn(
+              'border-b border-border/50 flex items-center',
+              sidebarCollapsed ? 'p-3 justify-center' : 'px-4 py-4 justify-start gap-3 relative',
+            )}
+          >
             <button
               onClick={() => handleNavClick('dashboard')}
               className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             >
               {instanceLogo ? (
-                <img src={instanceLogo} alt={instanceName || 'Logo'} className={cn("object-contain", sidebarCollapsed ? "h-8" : "h-8")} />
+                <img
+                  src={instanceLogo}
+                  alt={instanceName || 'Logo'}
+                  className={cn('object-contain', sidebarCollapsed ? 'h-8' : 'h-8')}
+                />
               ) : (
                 <div className="rounded-xl bg-primary flex items-center justify-center w-10 h-10 shrink-0">
                   <span className="text-primary-foreground font-bold text-lg">Hi</span>
@@ -144,20 +191,29 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
                 <h3 className="text-base font-semibold text-foreground truncate">{instanceName}</h3>
               )}
             </button>
-            <Button variant="ghost" size="icon" className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSidebarOpen(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2"
+              onClick={() => setSidebarOpen(false)}
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Navigation */}
-          <nav className={cn("flex-1 space-y-2", sidebarCollapsed ? "p-2" : "p-4")}>
+          <nav className={cn('flex-1 space-y-2', sidebarCollapsed ? 'p-2' : 'p-4')}>
             {filteredNavItems.map(({ id, label, icon: Icon }) => {
               const displayLabel = id === 'dashboard' ? dashboardLabel : label;
               return (
                 <Button
                   key={id}
                   variant={currentView === id ? 'secondary' : 'ghost'}
-                  className={cn("w-full gap-3", currentView === id ? "hover:bg-secondary" : "hover:bg-primary/5", sidebarCollapsed ? "justify-center px-2" : "justify-start")}
+                  className={cn(
+                    'w-full gap-3',
+                    currentView === id ? 'hover:bg-secondary' : 'hover:bg-primary/5',
+                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                  )}
                   onClick={() => handleNavClick(id)}
                   title={displayLabel}
                 >
@@ -169,15 +225,15 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
           </nav>
 
           {/* Collapse toggle & User menu */}
-          <div className={cn(sidebarCollapsed ? "p-2 space-y-2" : "p-4 space-y-3")}>
+          <div className={cn(sidebarCollapsed ? 'p-2 space-y-2' : 'p-4 space-y-3')}>
             <Button
               variant="ghost"
               className={cn(
-                "w-full text-muted-foreground hidden lg:flex gap-3",
-                sidebarCollapsed ? "justify-center px-2" : "justify-start"
+                'w-full text-muted-foreground hidden lg:flex gap-3',
+                sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
               )}
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              title={sidebarCollapsed ? "Rozwiń menu" : "Zwiń menu"}
+              title={sidebarCollapsed ? 'Rozwiń menu' : 'Zwiń menu'}
             >
               {sidebarCollapsed ? (
                 <PanelLeft className="w-4 h-4 shrink-0" />
@@ -189,7 +245,9 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
               )}
             </Button>
 
-            {!sidebarCollapsed && <Separator className="my-3 -mx-4 w-[calc(100%+2rem)] bg-border/30" />}
+            {!sidebarCollapsed && (
+              <Separator className="my-3 -mx-4 w-[calc(100%+2rem)] bg-border/30" />
+            )}
             {!sidebarCollapsed && currentVersion && (
               <p className="text-[10px] text-muted-foreground text-center">v{currentVersion}</p>
             )}
@@ -206,7 +264,10 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between text-muted-foreground px-3 h-auto py-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between text-muted-foreground px-3 h-auto py-2"
+                  >
                     <span className="text-sm truncate">{displayName}</span>
                     <ChevronUp className="w-4 h-4 shrink-0 ml-2" />
                   </Button>
@@ -225,7 +286,7 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-[100]">
-        <main className={cn("flex-1 overflow-auto p-4 lg:p-6", isMobile && "pb-20")}>
+        <main className={cn('flex-1 overflow-auto p-4 lg:p-6', isMobile && 'pb-20')}>
           {children}
         </main>
       </div>
@@ -240,8 +301,10 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
                 key={id}
                 onClick={() => handleNavClick(id)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 flex-1 h-full cursor-pointer transition-colors relative",
-                  currentView === id ? "text-primary font-semibold" : "text-foreground hover:text-foreground"
+                  'flex flex-col items-center justify-center gap-0.5 flex-1 h-full cursor-pointer transition-colors relative',
+                  currentView === id
+                    ? 'text-primary font-semibold'
+                    : 'text-foreground hover:text-foreground',
                 )}
               >
                 <Icon className="w-5 h-5" />
@@ -269,4 +332,3 @@ const DashboardLayout = ({ currentView, onViewChange, children, instanceId }: Da
 
 export default DashboardLayout;
 export type { ViewType };
-

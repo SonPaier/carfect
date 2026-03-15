@@ -194,8 +194,7 @@ const AdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { view } = useParams<{ view?: string }>();
   const { user, roles, username: authUsername, signOut } = useAuth();
-  const { updateAvailable, isUpdating, applyUpdate, checkForUpdate, currentVersion } =
-    useAppUpdate();
+  const { currentVersion } = useAppUpdate();
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Hall users always have collapsed sidebar
@@ -210,11 +209,6 @@ const AdminDashboard = () => {
   // Derive currentView from URL param
   const currentView: ViewType =
     view && validViews.includes(view as ViewType) ? (view as ViewType) : 'calendar';
-
-  // Check for updates when view changes
-  useEffect(() => {
-    checkForUpdate();
-  }, [currentView, checkForUpdate]);
 
   // Support both route bases:
   // - dev/staging: /admin/:view
@@ -2838,29 +2832,8 @@ const AdminDashboard = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* PWA Update Banner */}
-      {updateAvailable && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-primary text-primary-foreground p-3 flex items-center justify-between shadow-lg">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Dostępna nowa wersja aplikacji</span>
-            {currentVersion && <span className="text-xs opacity-80">Wersja {currentVersion}</span>}
-          </div>
-          <Button
-            size="sm"
-            className="bg-white text-black hover:bg-white/90"
-            onClick={applyUpdate}
-            disabled={isUpdating}
-          >
-            {isUpdating ? 'Aktualizuję...' : 'Aktualizuj'}
-          </Button>
-        </div>
-      )}
-
       <div
-        className={cn(
-          'min-h-screen h-screen bg-background flex overflow-hidden',
-          updateAvailable && 'pt-14',
-        )}
+        className="min-h-screen h-screen bg-background flex overflow-hidden"
         style={
           {
             '--sidebar-w': protocolEditMode

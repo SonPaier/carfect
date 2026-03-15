@@ -8,17 +8,27 @@ import './i18n/config';
 // Initialize Sentry error tracking — loaded async to not block first render
 import('./lib/sentry').then(({ initSentry }) => initSentry());
 
-// Register service worker - auto-update silently on next page load
+// Register service worker with auto-update — new versions activate immediately
 registerSW({
-  onNeedRefresh() {
-    // New version available - will apply on next refresh/reload
-    console.log('[PWA] New version available, will update on next reload');
+  onRegisteredSW(swUrl, registration) {
+    console.log('[PWA] SW registered:', swUrl);
+    if (registration) {
+      // Check for SW updates every 15 minutes, but only when tab is visible
+      const intervalMs = 15 * 60 * 1000;
+      let intervalId = setInterval(() => registration.update(), intervalMs);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          clearInterval(intervalId);
+        } else {
+          registration.update();
+          intervalId = setInterval(() => registration.update(), intervalMs);
+        }
+      });
+    }
   },
   onOfflineReady() {
     console.log('[PWA] App ready for offline use');
-  },
-  onRegisteredSW(swUrl) {
-    console.log('[PWA] SW registered:', swUrl);
   },
 });
 
