@@ -2,26 +2,14 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Textarea } from '@shared/ui';
-import { Card, CardContent } from '@shared/ui';
-import { Separator } from '@shared/ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@shared/ui';
+import { Card } from '@shared/ui';
 import { getLowestPrice } from '@/lib/offerUtils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
-import {
-  User,
-  Building2,
-  Car,
-  FileText,
-  Calculator,
-  ChevronDown,
-  Plus,
-  Trash2,
-} from 'lucide-react';
-import { Checkbox } from '@shared/ui';
+import { FileText, Plus } from 'lucide-react';
 import { ScopeProductSelectionDrawer } from './services/ScopeProductSelectionDrawer';
 import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
+import { ProductItemRow } from './summary/ProductItemRow';
+import { CustomerVehicleSummary } from './summary/CustomerVehicleSummary';
+import { ConditionsSection } from './summary/ConditionsSection';
 import {
   CustomerData,
   VehicleData,
@@ -30,7 +18,6 @@ import {
   OfferOption,
   DefaultSelectedState,
 } from '@/hooks/useOffer';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ScopeData {
@@ -95,14 +82,6 @@ interface SummaryStepV2Props {
   calculateTotalGross: () => number;
   onShowPreview?: () => void;
 }
-
-const paintTypeLabels: Record<string, string> = {
-  matte: 'Mat',
-  dark: 'Ciemny',
-  other: 'Inny',
-};
-
-const getPaintTypeLabel = (type: string) => paintTypeLabels[type] || type;
 
 export const SummaryStepV2 = ({
   instanceId,
@@ -615,6 +594,26 @@ export const SummaryStepV2 = ({
     );
   };
 
+  // Price editing helpers for ProductItemRow
+  const handleEditPrice = (
+    scopeId: string,
+    productId: string,
+    value: string,
+    isSuggested: boolean,
+  ) => {
+    setEditingPrice({ scopeId, productId, value, isSuggested });
+  };
+
+  const handleCommitPrice = (
+    scopeId: string,
+    productId: string,
+    value: string,
+    isSuggested: boolean,
+  ) => {
+    updateProductPrice(scopeId, productId, parseFloat(value) || 0, isSuggested);
+    setEditingPrice(null);
+  };
+
   // Calculate textarea rows based on content
   const getTextareaRows = (value: string | undefined | null, minRows: number = 3): number => {
     if (!value) return minRows;
@@ -860,71 +859,7 @@ export const SummaryStepV2 = ({
   return (
     <div className="space-y-6">
       {/* Customer & Vehicle Summary */}
-      <Card>
-        <CardContent className="pt-4 pb-4 space-y-3">
-          {/* Customer Section */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 font-semibold">
-              <User className="w-4 h-4 text-primary" />
-              Klient
-            </div>
-            <div className="text-sm space-y-0.5 pl-6">
-              <p className="font-medium">{offer.customerData.name || '—'}</p>
-              <p className="text-muted-foreground">{offer.customerData.email || '—'}</p>
-              {offer.customerData.phone && (
-                <p className="text-muted-foreground">{offer.customerData.phone}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Company Section */}
-          {offer.customerData.company && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 font-semibold">
-                <Building2 className="w-4 h-4 text-primary" />
-                Firma
-              </div>
-              <div className="text-sm space-y-0.5 pl-6">
-                <p className="font-medium">{offer.customerData.company}</p>
-                {offer.customerData.nip && (
-                  <p className="text-muted-foreground">NIP: {offer.customerData.nip}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Vehicle Section */}
-          {offer.vehicleData.brandModel && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 font-semibold">
-                <Car className="w-4 h-4 text-primary" />
-                Pojazd
-              </div>
-              <div className="text-sm space-y-0.5 pl-6">
-                <p className="font-medium">{offer.vehicleData.brandModel}</p>
-                {(offer.vehicleData.paintColor || offer.vehicleData.paintType) && (
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {offer.vehicleData.paintColor && (
-                      <span className="px-4 py-1 bg-slate-600 text-white rounded-full text-sm font-medium">
-                        {offer.vehicleData.paintColor}
-                      </span>
-                    )}
-                    {offer.vehicleData.paintType && (
-                      <span className="px-4 py-1 bg-slate-600 text-white rounded-full text-sm font-medium">
-                        {offer.vehicleData.paintType === 'gloss'
-                          ? 'Połysk'
-                          : offer.vehicleData.paintType === 'matte'
-                            ? 'Mat'
-                            : getPaintTypeLabel(offer.vehicleData.paintType)}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <CustomerVehicleSummary customerData={offer.customerData} vehicleData={offer.vehicleData} />
 
       {/* Services */}
       {services
@@ -939,91 +874,21 @@ export const SummaryStepV2 = ({
               </div>
             </div>
 
-            {/* Selected Products - no checkbox */}
+            {/* Selected Products */}
             <div className="space-y-2">
               {service.selectedProducts.map((product) => (
-                <div
+                <ProductItemRow
                   key={product.id}
-                  className="flex items-center justify-between py-2 px-3 bg-muted/15 rounded-lg"
-                >
-                  <div className="flex-1">
-                    {product.variantName && (
-                      <p className="text-xs text-muted-foreground font-medium uppercase">
-                        {product.variantName}
-                      </p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => openProductEdit(product.productId)}
-                      className="font-medium text-sm text-left hover:text-primary hover:underline transition-colors"
-                    >
-                      {product.productShortName || product.productName}
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {editingPrice?.scopeId === service.scopeId &&
-                    editingPrice?.productId === product.id &&
-                    !editingPrice?.isSuggested ? (
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          value={editingPrice.value}
-                          onChange={(e) =>
-                            setEditingPrice({ ...editingPrice, value: e.target.value })
-                          }
-                          className="w-24 h-8 text-right"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              updateProductPrice(
-                                service.scopeId,
-                                product.id,
-                                parseFloat(editingPrice.value) || 0,
-                                false,
-                              );
-                              setEditingPrice(null);
-                            }
-                            if (e.key === 'Escape') setEditingPrice(null);
-                          }}
-                          onBlur={() => {
-                            updateProductPrice(
-                              service.scopeId,
-                              product.id,
-                              parseFloat(editingPrice.value) || 0,
-                              false,
-                            );
-                            setEditingPrice(null);
-                          }}
-                        />
-                        <span className="text-xs text-muted-foreground">zł</span>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditingPrice({
-                            scopeId: service.scopeId,
-                            productId: product.id,
-                            value: String(product.price),
-                            isSuggested: false,
-                          })
-                        }
-                        className="font-semibold hover:bg-hover rounded px-2 py-1 transition-colors"
-                        title="Kliknij aby edytować"
-                      >
-                        {formatPrice(product.price)}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeProduct(service.scopeId, product.id)}
-                      className="p-1 text-destructive hover:text-destructive/80 transition-colors"
-                      title="Usuń usługę"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                  scopeId={service.scopeId}
+                  product={product}
+                  editingPrice={editingPrice}
+                  formatPrice={formatPrice}
+                  onEditPrice={handleEditPrice}
+                  onCommitPrice={handleCommitPrice}
+                  onCancelEditPrice={() => setEditingPrice(null)}
+                  onRemove={removeProduct}
+                  onEditProduct={openProductEdit}
+                />
               ))}
             </div>
 
@@ -1037,7 +902,7 @@ export const SummaryStepV2 = ({
                   onClick={() => setProductDrawerOpen(service.scopeId)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Dodaj usługę
+                  {t('summary.addService')}
                 </Button>
               </div>
             )}
@@ -1107,103 +972,33 @@ export const SummaryStepV2 = ({
         .filter((s) => s.isExtrasScope)
         .map((service) => (
           <div key={service.scopeId} className="space-y-4">
-            {/* Selected Extras - "Dodatki wybrane przez klienta" */}
+            {/* Selected Extras */}
             <Card className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  <h3 className="font-bold text-lg">Dodatki wybrane przez klienta</h3>
+                  <h3 className="font-bold text-lg">{t('summary.selectedExtras')}</h3>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-lg">{formatPrice(service.totalPrice)}</p>
-                  <p className="text-xs text-muted-foreground">netto</p>
+                  <p className="text-xs text-muted-foreground">{t('summary.net')}</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 {service.selectedProducts.map((product) => (
-                  <div
+                  <ProductItemRow
                     key={product.id}
-                    className="flex items-center justify-between py-2 px-3 bg-muted/15 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      {product.variantName && (
-                        <p className="text-xs text-muted-foreground font-medium uppercase">
-                          {product.variantName}
-                        </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => openProductEdit(product.productId)}
-                        className="font-medium text-sm text-left hover:text-primary hover:underline transition-colors"
-                      >
-                        {product.productShortName || product.productName}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {editingPrice?.scopeId === service.scopeId &&
-                      editingPrice?.productId === product.id &&
-                      !editingPrice?.isSuggested ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            value={editingPrice.value}
-                            onChange={(e) =>
-                              setEditingPrice({ ...editingPrice, value: e.target.value })
-                            }
-                            className="w-24 h-8 text-right"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                updateProductPrice(
-                                  service.scopeId,
-                                  product.id,
-                                  parseFloat(editingPrice.value) || 0,
-                                  false,
-                                );
-                                setEditingPrice(null);
-                              }
-                              if (e.key === 'Escape') setEditingPrice(null);
-                            }}
-                            onBlur={() => {
-                              updateProductPrice(
-                                service.scopeId,
-                                product.id,
-                                parseFloat(editingPrice.value) || 0,
-                                false,
-                              );
-                              setEditingPrice(null);
-                            }}
-                          />
-                          <span className="text-xs text-muted-foreground">zł</span>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditingPrice({
-                              scopeId: service.scopeId,
-                              productId: product.id,
-                              value: String(product.price),
-                              isSuggested: false,
-                            })
-                          }
-                          className="font-semibold hover:bg-hover rounded px-2 py-1 transition-colors"
-                          title="Kliknij aby edytować"
-                        >
-                          {formatPrice(product.price)}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeProduct(service.scopeId, product.id)}
-                        className="p-1 text-destructive hover:text-destructive/80 transition-colors"
-                        title="Usuń usługę"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                    scopeId={service.scopeId}
+                    product={product}
+                    editingPrice={editingPrice}
+                    formatPrice={formatPrice}
+                    onEditPrice={handleEditPrice}
+                    onCommitPrice={handleCommitPrice}
+                    onCancelEditPrice={() => setEditingPrice(null)}
+                    onRemove={removeProduct}
+                    onEditProduct={openProductEdit}
+                  />
                 ))}
               </div>
 
@@ -1216,7 +1011,7 @@ export const SummaryStepV2 = ({
                     onClick={() => setProductDrawerOpen(service.scopeId)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Dodaj usługę
+                    {t('summary.addService')}
                   </Button>
                 </div>
               )}
@@ -1279,99 +1074,30 @@ export const SummaryStepV2 = ({
               />
             </Card>
 
-            {/* Suggested Extras - "Dodatki sugerowane dla zapytania" */}
+            {/* Suggested Extras */}
             <Card className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-5 h-5 text-muted-foreground" />
                 <h3 className="font-bold text-lg text-muted-foreground">
-                  Dodatki sugerowane dla zapytania
+                  {t('summary.suggestedExtras')}
                 </h3>
               </div>
 
               <div className="space-y-2">
                 {service.suggestedProducts.map((product) => (
-                  <div
+                  <ProductItemRow
                     key={product.id}
-                    className="flex items-center justify-between py-2 px-3 bg-muted/15 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      {product.variantName && (
-                        <p className="text-xs text-muted-foreground font-medium uppercase">
-                          {product.variantName}
-                        </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => openProductEdit(product.productId)}
-                        className="font-medium text-sm text-left hover:text-primary hover:underline transition-colors"
-                      >
-                        {product.productShortName || product.productName}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {editingPrice?.scopeId === service.scopeId &&
-                      editingPrice?.productId === product.id &&
-                      editingPrice?.isSuggested ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            value={editingPrice.value}
-                            onChange={(e) =>
-                              setEditingPrice({ ...editingPrice, value: e.target.value })
-                            }
-                            className="w-24 h-8 text-right"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                updateProductPrice(
-                                  service.scopeId,
-                                  product.id,
-                                  parseFloat(editingPrice.value) || 0,
-                                  true,
-                                );
-                                setEditingPrice(null);
-                              }
-                              if (e.key === 'Escape') setEditingPrice(null);
-                            }}
-                            onBlur={() => {
-                              updateProductPrice(
-                                service.scopeId,
-                                product.id,
-                                parseFloat(editingPrice.value) || 0,
-                                true,
-                              );
-                              setEditingPrice(null);
-                            }}
-                          />
-                          <span className="text-xs text-muted-foreground">zł</span>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditingPrice({
-                              scopeId: service.scopeId,
-                              productId: product.id,
-                              value: String(product.price),
-                              isSuggested: true,
-                            })
-                          }
-                          className="font-semibold hover:bg-hover rounded px-2 py-1 transition-colors"
-                          title="Kliknij aby edytować"
-                        >
-                          {formatPrice(product.price)}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeSuggestedProduct(service.scopeId, product.id)}
-                        className="p-1 text-destructive hover:text-destructive/80 transition-colors"
-                        title="Usuń produkt"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                    scopeId={service.scopeId}
+                    product={product}
+                    isSuggested
+                    editingPrice={editingPrice}
+                    formatPrice={formatPrice}
+                    onEditPrice={handleEditPrice}
+                    onCommitPrice={handleCommitPrice}
+                    onCancelEditPrice={() => setEditingPrice(null)}
+                    onRemove={removeSuggestedProduct}
+                    onEditProduct={openProductEdit}
+                  />
                 ))}
               </div>
 
@@ -1384,7 +1110,7 @@ export const SummaryStepV2 = ({
                     onClick={() => setSuggestedDrawerOpen(service.scopeId)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Dodaj rekomendowaną usługę
+                    {t('summary.addRecommended')}
                   </Button>
                 </div>
               )}
@@ -1450,91 +1176,13 @@ export const SummaryStepV2 = ({
       {/* Totals - hidden, pricing shown only in preview */}
 
       {/* Additional Conditions */}
-      <Collapsible open={conditionsOpen} onOpenChange={setConditionsOpen}>
-        <Card>
-          <CollapsibleTrigger className="w-full p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-semibold">
-                <FileText className="w-4 h-4 text-primary" />
-                Dodatkowe warunki
-              </div>
-              <ChevronDown
-                className={cn(
-                  'w-4 h-4 text-muted-foreground transition-transform',
-                  conditionsOpen && 'rotate-180',
-                )}
-              />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="pt-0 space-y-4">
-              {/* Valid until */}
-              <div className="space-y-2">
-                <Label htmlFor="validUntil">Oferta ważna do</Label>
-                <Input
-                  id="validUntil"
-                  type="date"
-                  value={offer.validUntil || ''}
-                  onChange={(e) => onUpdateOffer({ validUntil: e.target.value })}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Warranty */}
-              <div className="space-y-2">
-                <Label htmlFor="warranty">Gwarancja</Label>
-                <Textarea
-                  id="warranty"
-                  value={offer.warranty || ''}
-                  onChange={(e) => onUpdateOffer({ warranty: e.target.value })}
-                  placeholder="Warunki gwarancji..."
-                  rows={getTextareaRows(offer.warranty)}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Payment terms */}
-              <div className="space-y-2">
-                <Label htmlFor="paymentTerms">Warunki płatności</Label>
-                <Textarea
-                  id="paymentTerms"
-                  value={offer.paymentTerms || ''}
-                  onChange={(e) => onUpdateOffer({ paymentTerms: e.target.value })}
-                  placeholder="Np. 50% zaliczki, reszta przy odbiorze..."
-                  rows={getTextareaRows(offer.paymentTerms)}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Service Info */}
-              <div className="space-y-2">
-                <Label htmlFor="serviceInfo">Informacje o serwisie</Label>
-                <Textarea
-                  id="serviceInfo"
-                  value={offer.serviceInfo || ''}
-                  onChange={(e) => onUpdateOffer({ serviceInfo: e.target.value })}
-                  placeholder="Czas realizacji, sposób przygotowania..."
-                  rows={getTextareaRows(offer.serviceInfo)}
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">Uwagi</Label>
-                <Textarea
-                  id="notes"
-                  value={offer.notes || ''}
-                  onChange={(e) => onUpdateOffer({ notes: e.target.value })}
-                  placeholder="Dodatkowe uwagi do oferty..."
-                  rows={getTextareaRows(offer.notes)}
-                  className="bg-white"
-                />
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+      <ConditionsSection
+        offer={offer}
+        open={conditionsOpen}
+        onOpenChange={setConditionsOpen}
+        onUpdateOffer={onUpdateOffer}
+        getTextareaRows={getTextareaRows}
+      />
 
       {/* Product Edit Dialog */}
       <ServiceFormDialog

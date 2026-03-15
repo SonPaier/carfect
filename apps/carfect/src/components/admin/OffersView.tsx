@@ -2,164 +2,49 @@ import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import {
-  Plus,
   FileText,
-  Eye,
-  Send,
-  Trash2,
-  Copy,
-  MoreVertical,
   Loader2,
   Filter,
   Search,
   Settings,
-  CopyPlus,
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
-  ClipboardCopy,
-  RefreshCw,
-  CheckCircle,
-  CheckCheck,
-  Bell,
-  Receipt,
   Layers,
-  Banknote,
-  Phone,
-  CalendarPlus,
 } from 'lucide-react';
-import { normalizeSearchQuery, formatViewedDate } from '@shared/utils';
+import { normalizeSearchQuery } from '@shared/utils';
 import { getPublicOfferUrl } from '@/lib/offerUtils';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@shared/ui';
-import { Badge } from '@shared/ui';
-import { Input } from '@shared/ui';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@shared/ui';
+import { Button, Input, ConfirmDialog } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@shared/ui';
+import { Textarea } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { OfferGenerator } from '@/components/offers/OfferGenerator';
 import { OfferSettingsDialog } from '@/components/offers/settings/OfferSettingsDialog';
 import { SendOfferEmailDialog } from './SendOfferEmailDialog';
-import { ConfirmDialog } from '@shared/ui';
 import { MarkOfferCompletedDialog } from '@/components/offers/MarkOfferCompletedDialog';
 import { OfferRemindersDialog } from '@/components/offers/OfferRemindersDialog';
 import { OfferSelectionDialog } from '@/components/offers/OfferSelectionDialog';
-
 import { OfferServicesListView } from '@/components/offers/services/OfferServicesListView';
 import { OfferServiceEditView } from '@/components/offers/services/OfferServiceEditView';
 import { AdminOfferApprovalDialog } from '@/components/offers/AdminOfferApprovalDialog';
-import { OfferFollowUpStatus } from './OfferFollowUpStatus';
 import { OfferPreviewDialogByToken } from './OfferPreviewDialogByToken';
 import { OfferViewsDialog } from '@/components/offers/OfferViewsDialog';
+import { OfferListCard } from './OfferListCard';
 import { useOfferScopes } from '@/hooks/useOfferScopes';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@shared/ui';
-import { Textarea } from '@shared/ui';
 import AddReservationDialogV2 from './AddReservationDialogV2';
 
+import type {
+  OfferWithOptions,
+  InstanceData,
+  SelectedState,
+  FollowUpPhoneStatus,
+} from './offerTypes';
+
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
-
-interface SelectedState {
-  selectedVariants?: Record<string, string>;
-  selectedUpsells?: Record<string, boolean>;
-  selectedOptionalItems?: Record<string, boolean>;
-  selectedScopeId?: string | null;
-  selectedItemInOption?: Record<string, string>;
-}
-
-type FollowUpPhoneStatus = 'called_discussed' | 'call_later' | 'called_no_answer' | null;
-
-interface Offer {
-  id: string;
-  offer_number: string;
-  customer_data: {
-    name?: string;
-    email?: string;
-    company?: string;
-    phone?: string;
-  };
-  vehicle_data?: {
-    brandModel?: string;
-    brand?: string;
-    model?: string;
-    plate?: string;
-  };
-  status: string;
-  source?: string;
-  total_net: number;
-  total_gross: number;
-  admin_approved_net?: number | null;
-  admin_approved_gross?: number | null;
-  created_at: string;
-  valid_until?: string;
-  public_token: string;
-  approved_at?: string | null;
-  viewed_at?: string | null;
-  selected_state?: SelectedState | null;
-  follow_up_phone_status?: FollowUpPhoneStatus;
-  internal_notes?: string | null;
-}
-
-interface OfferWithOptions extends Offer {
-  offer_options?: {
-    id: string;
-    name?: string;
-    scope_id?: string | null;
-    is_upsell?: boolean;
-    subtotal_net?: number;
-    offer_option_items?: {
-      id: string;
-      custom_name?: string;
-      unit_price?: number;
-      quantity?: number;
-      discount_percent?: number;
-      product_id?: string | null;
-    }[];
-  }[];
-  offer_scopes?: {
-    id: string;
-    name: string;
-  }[];
-  selectedOptionName?: string;
-  vat_rate?: number;
-}
-
-const statusColors: Record<string, string> = {
-  draft: 'bg-slate-200 text-slate-600',
-  sent: 'bg-blue-500/20 text-blue-600',
-  viewed: 'bg-amber-500/20 text-amber-600',
-  accepted: 'bg-green-500/20 text-green-600',
-  rejected: 'bg-red-500/20 text-red-600',
-  expired: 'bg-gray-500/20 text-gray-500',
-  completed: 'bg-emerald-600/20 text-emerald-700',
-};
-
-const STATUS_OPTIONS = ['draft', 'sent', 'viewed', 'accepted', 'rejected', 'completed'] as const;
-
-interface InstanceData {
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  contact_person?: string;
-  slug?: string;
-  offer_email_template?: string;
-}
 
 interface OffersViewProps {
   instanceId: string | null;
@@ -425,7 +310,7 @@ export default function OffersView({
       if (error) throw error;
 
       await fetchOffers();
-      toast.success(changeStatus ? t('offers.statusChanged') : 'Kwota została zmieniona');
+      toast.success(changeStatus ? t('offers.statusChanged') : t('offers.amountChanged'));
     } catch (error) {
       console.error('Error approving offer:', error);
       toast.error(t('offers.errors.statusChangeError'));
@@ -455,7 +340,7 @@ export default function OffersView({
       );
     } catch (error) {
       console.error('Error updating follow-up status:', error);
-      toast.error('Błąd aktualizacji statusu');
+      toast.error(t('offers.statusUpdateError'));
     }
   };
 
@@ -487,10 +372,10 @@ export default function OffersView({
         ),
       );
       setNoteDrawer({ open: false, offerId: '', notes: '' });
-      toast.success('Notatka zapisana');
+      toast.success(t('offers.noteSaved'));
     } catch (error) {
       console.error('Error saving note:', error);
-      toast.error('Błąd zapisu notatki');
+      toast.error(t('offers.noteError'));
     }
   };
 
@@ -538,13 +423,6 @@ export default function OffersView({
       service_ids: serviceIds.length > 0 ? serviceIds : undefined,
       service_items: serviceItems.length > 0 ? serviceItems : undefined,
     };
-  };
-
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: 'PLN',
-    }).format(value);
   };
 
   // Search and filter — use offersWithMappedScopes so scope pills are always reactive
@@ -701,7 +579,7 @@ export default function OffersView({
               className="sm:w-auto sm:px-4 w-10 h-10 bg-white"
             >
               <Layers className="w-4 h-4" />
-              <span className="hidden sm:inline ml-2">Twoje Szablony</span>
+              <span className="hidden sm:inline ml-2">{t('offers.templates')}</span>
             </Button>
             <Button
               variant="outline"
@@ -765,575 +643,28 @@ export default function OffersView({
           <>
             <div className="space-y-3 pb-24 lg:pb-0">
               {paginatedOffers.map((offer) => (
-                <div
+                <OfferListCard
                   key={offer.id}
-                  className="glass-card p-4 hover:border-primary/30 transition-colors cursor-pointer relative"
-                  onClick={() => {
-                    setEditingOfferId(offer.id);
+                  offer={offer}
+                  onEdit={(id) => {
+                    setEditingOfferId(id);
                     setShowGenerator(true);
                   }}
-                >
-                  {/* MOBILE LAYOUT */}
-                  <div className="md:hidden">
-                    {/* Ellipsis menu — absolute top right */}
-                    <div className="absolute top-3 right-3">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {offer.customer_data?.phone && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.location.href = `tel:${offer.customer_data.phone}`;
-                              }}
-                            >
-                              <Phone className="w-4 h-4 mr-2" />
-                              Zadzwoń
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewDialog({ open: true, token: offer.public_token });
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            {t('offers.preview')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyLink(offer.public_token);
-                            }}
-                          >
-                            <Copy className="w-4 h-4 mr-2" />
-                            {t('offers.copyLink')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReserveFromOffer(offer);
-                            }}
-                          >
-                            <CalendarPlus className="w-4 h-4 mr-2" />
-                            Rezerwuj
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenSendEmailDialog(offer);
-                            }}
-                          >
-                            <Send className="w-4 h-4 mr-2" />
-                            {t('offers.send')}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
-                              <RefreshCw className="w-4 h-4 mr-2" />
-                              {t('offers.changeStatus')}
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              {STATUS_OPTIONS.filter((s) => s !== 'completed').map((status) => (
-                                <DropdownMenuItem
-                                  key={status}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (status === 'accepted') {
-                                      setApprovalDialog({ open: true, offer, mode: 'approve' });
-                                    } else {
-                                      handleChangeStatus(offer.id, status);
-                                    }
-                                  }}
-                                  disabled={offer.status === status}
-                                >
-                                  <Badge className={cn('text-xs mr-2', statusColors[status])}>
-                                    {t(
-                                      `offers.status${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                                    )}
-                                  </Badge>
-                                </DropdownMenuItem>
-                              ))}
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (offer.status === 'accepted' || offer.approved_at) {
-                                    setCompleteOfferDialog({ open: true, offer });
-                                  } else {
-                                    handleChangeStatus(offer.id, 'completed');
-                                  }
-                                }}
-                                disabled={offer.status === 'completed'}
-                              >
-                                <Badge className={cn('text-xs mr-2', statusColors['completed'])}>
-                                  {t('offers.statusCompleted')}
-                                </Badge>
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          {(offer.status === 'accepted' || offer.approved_at) &&
-                            offer.status !== 'completed' && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCompleteOfferDialog({ open: true, offer });
-                                  }}
-                                  className="text-emerald-600 focus:text-emerald-600"
-                                >
-                                  <CheckCheck className="w-4 h-4 mr-2" />
-                                  {t('offers.markAsCompleted')}
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          {offer.status === 'completed' && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRemindersDialog({ open: true, offer });
-                                }}
-                              >
-                                <Bell className="w-4 h-4 mr-2" />
-                                {t('offers.reminders')}
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          {(offer.status === 'accepted' || offer.status === 'completed') && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setApprovalDialog({ open: true, offer, mode: 'edit' });
-                              }}
-                            >
-                              <Banknote className="w-4 h-4 mr-2" />
-                              Zmień kwotę
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteOfferDialog({ open: true, offer });
-                            }}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            {t('offers.delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {/* Line 1: Customer name + vehicle */}
-                    <div className="flex items-baseline gap-1 font-semibold text-base leading-tight pr-10">
-                      <span className="truncate">
-                        {offer.customer_data?.name ||
-                          offer.customer_data?.company ||
-                          t('offers.noCustomer')}
-                      </span>
-                      {offer.vehicle_data?.brandModel && (
-                        <>
-                          <span className="text-muted-foreground font-normal">·</span>
-                          <span className="text-muted-foreground font-normal truncate">
-                            {offer.vehicle_data.brandModel}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Line 2: Status badge */}
-                    <div className="mt-2">
-                      {offer.status === 'viewed' && offer.viewed_at ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewsDialog({
-                              open: true,
-                              offerId: offer.id,
-                              viewedAt: offer.viewed_at ?? null,
-                            });
-                          }}
-                          className="inline-flex"
-                        >
-                          <Badge
-                            className={cn(
-                              'text-xs cursor-pointer hover:opacity-80',
-                              statusColors[offer.status],
-                            )}
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            Obejrzana {formatViewedDate(offer.viewed_at)}
-                          </Badge>
-                        </button>
-                      ) : (
-                        <Badge className={cn('text-xs', statusColors[offer.status])}>
-                          {t(
-                            `offers.status${offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}`,
-                            offer.status,
-                          )}
-                        </Badge>
-                      )}
-                      {(offer.admin_approved_gross || offer.approved_at) && (
-                        <span className="text-sm font-medium ml-2">
-                          {formatPrice(offer.admin_approved_gross ?? offer.total_gross)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Line 3: Offer number + created date */}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
-                      <span>{offer.offer_number}</span>
-                      <span>·</span>
-                      <span>
-                        Utworzono {format(new Date(offer.created_at), 'dd.MM.yyyy', { locale: pl })}
-                      </span>
-                      {offer.source === 'website' && (
-                        <>
-                          <span>·</span>
-                          <span className="text-blue-600">WWW</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Line 4: Service pills */}
-                    {offer.offer_scopes && offer.offer_scopes.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {offer.offer_scopes.map((scope) => {
-                          const matchingOption = offer.offer_options?.find(
-                            (opt) => opt.scope_id === scope.id && !opt.is_upsell,
-                          );
-                          const scopePrice = matchingOption?.subtotal_net;
-                          return (
-                            <Badge
-                              key={scope.id}
-                              variant="secondary"
-                              className="text-xs bg-muted/20 text-foreground font-normal"
-                            >
-                              {scope.name}
-                              {scopePrice != null && scopePrice > 0
-                                ? `: ${Math.round(scopePrice)} zł`
-                                : ''}
-                            </Badge>
-                          );
-                        })}
-                        {(offer.approved_at ||
-                          offer.status === 'accepted' ||
-                          offer.status === 'completed') &&
-                          offer.selectedOptionName && (
-                            <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
-                              {offer.selectedOptionName}
-                            </Badge>
-                          )}
-                      </div>
-                    )}
-
-                    {/* Line 5: Follow-up phone status */}
-                    {offer.customer_data?.phone && (
-                      <div className="mt-3">
-                        <OfferFollowUpStatus
-                          offerId={offer.id}
-                          currentStatus={offer.follow_up_phone_status ?? null}
-                          onStatusChange={handleFollowUpStatusChange}
-                          hasInternalNote={!!offer.internal_notes}
-                          onNoteClick={() => handleOpenNoteDrawer(offer)}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* DESKTOP LAYOUT (unchanged) */}
-                  <div className="hidden md:block">
-                    <div className="flex items-start justify-between gap-3 w-full">
-                      <div className="min-w-0 flex-1">
-                        {/* Line 1: Customer name + vehicle */}
-                        <div className="flex items-baseline gap-1 font-semibold text-base leading-tight">
-                          <span className="truncate">
-                            {offer.customer_data?.name ||
-                              offer.customer_data?.company ||
-                              t('offers.noCustomer')}
-                          </span>
-                          {offer.vehicle_data?.brandModel && (
-                            <>
-                              <span className="text-muted-foreground font-normal">·</span>
-                              <span className="text-muted-foreground font-normal truncate">
-                                {offer.vehicle_data.brandModel}
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Line 2: Offer number + created date */}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
-                          <span>{offer.offer_number}</span>
-                          <span>·</span>
-                          <span>
-                            Utworzono{' '}
-                            {format(new Date(offer.created_at), 'dd.MM.yyyy', { locale: pl })}
-                          </span>
-                          {offer.source === 'website' && (
-                            <>
-                              <span>·</span>
-                              <span className="text-blue-600">WWW</span>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Line 3: Service pills */}
-                        {offer.offer_scopes && offer.offer_scopes.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-3">
-                            {offer.offer_scopes.map((scope) => {
-                              const matchingOption = offer.offer_options?.find(
-                                (opt) => opt.scope_id === scope.id && !opt.is_upsell,
-                              );
-                              const scopePrice = matchingOption?.subtotal_net;
-                              return (
-                                <Badge
-                                  key={scope.id}
-                                  variant="secondary"
-                                  className="text-xs bg-muted/20 text-foreground font-normal"
-                                >
-                                  {scope.name}
-                                  {scopePrice != null && scopePrice > 0
-                                    ? `: ${Math.round(scopePrice)} zł`
-                                    : ''}
-                                </Badge>
-                              );
-                            })}
-                            {(offer.approved_at ||
-                              offer.status === 'accepted' ||
-                              offer.status === 'completed') &&
-                              offer.selectedOptionName && (
-                                <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
-                                  {offer.selectedOptionName}
-                                </Badge>
-                              )}
-                          </div>
-                        )}
-
-                        {/* Follow-up phone status */}
-                        {offer.customer_data?.phone && (
-                          <div className="mt-3">
-                            <OfferFollowUpStatus
-                              offerId={offer.id}
-                              currentStatus={offer.follow_up_phone_status ?? null}
-                              onStatusChange={handleFollowUpStatusChange}
-                              hasInternalNote={!!offer.internal_notes}
-                              onNoteClick={() => handleOpenNoteDrawer(offer)}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right: status + menu */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {offer.status === 'viewed' && offer.viewed_at ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setViewsDialog({
-                                open: true,
-                                offerId: offer.id,
-                                viewedAt: offer.viewed_at ?? null,
-                              });
-                            }}
-                            className="inline-flex"
-                          >
-                            <Badge
-                              className={cn(
-                                'text-xs cursor-pointer hover:opacity-80',
-                                statusColors[offer.status],
-                              )}
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              Obejrzana {formatViewedDate(offer.viewed_at)}
-                            </Badge>
-                          </button>
-                        ) : (
-                          <Badge className={cn('text-xs', statusColors[offer.status])}>
-                            {t(
-                              `offers.status${offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}`,
-                              offer.status,
-                            )}
-                          </Badge>
-                        )}
-                        {(offer.admin_approved_gross || offer.approved_at) && (
-                          <span className="text-sm font-medium ml-1">
-                            {formatPrice(offer.admin_approved_gross ?? offer.total_gross)}
-                          </span>
-                        )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 -mr-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {offer.customer_data?.phone && (
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.location.href = `tel:${offer.customer_data.phone}`;
-                                }}
-                              >
-                                <Phone className="w-4 h-4 mr-2" />
-                                Zadzwoń
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewDialog({ open: true, token: offer.public_token });
-                              }}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              {t('offers.preview')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCopyLink(offer.public_token);
-                              }}
-                            >
-                              <Copy className="w-4 h-4 mr-2" />
-                              {t('offers.copyLink')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleReserveFromOffer(offer);
-                              }}
-                            >
-                              <CalendarPlus className="w-4 h-4 mr-2" />
-                              Rezerwuj
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenSendEmailDialog(offer);
-                              }}
-                            >
-                              <Send className="w-4 h-4 mr-2" />
-                              {t('offers.send')}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuSub>
-                              <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                {t('offers.changeStatus')}
-                              </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent>
-                                {STATUS_OPTIONS.filter((s) => s !== 'completed').map((status) => (
-                                  <DropdownMenuItem
-                                    key={status}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (status === 'accepted') {
-                                        setApprovalDialog({ open: true, offer, mode: 'approve' });
-                                      } else {
-                                        handleChangeStatus(offer.id, status);
-                                      }
-                                    }}
-                                    disabled={offer.status === status}
-                                  >
-                                    <Badge className={cn('text-xs mr-2', statusColors[status])}>
-                                      {t(
-                                        `offers.status${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                                      )}
-                                    </Badge>
-                                  </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (offer.status === 'accepted' || offer.approved_at) {
-                                      setCompleteOfferDialog({ open: true, offer });
-                                    } else {
-                                      handleChangeStatus(offer.id, 'completed');
-                                    }
-                                  }}
-                                  disabled={offer.status === 'completed'}
-                                >
-                                  <Badge className={cn('text-xs mr-2', statusColors['completed'])}>
-                                    {t('offers.statusCompleted')}
-                                  </Badge>
-                                </DropdownMenuItem>
-                              </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                            {(offer.status === 'accepted' || offer.approved_at) &&
-                              offer.status !== 'completed' && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setCompleteOfferDialog({ open: true, offer });
-                                    }}
-                                    className="text-emerald-600 focus:text-emerald-600"
-                                  >
-                                    <CheckCheck className="w-4 h-4 mr-2" />
-                                    {t('offers.markAsCompleted')}
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            {offer.status === 'completed' && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRemindersDialog({ open: true, offer });
-                                  }}
-                                >
-                                  <Bell className="w-4 h-4 mr-2" />
-                                  {t('offers.reminders')}
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {(offer.status === 'accepted' || offer.status === 'completed') && (
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setApprovalDialog({ open: true, offer, mode: 'edit' });
-                                }}
-                              >
-                                <Banknote className="w-4 h-4 mr-2" />
-                                Zmień kwotę
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteOfferDialog({ open: true, offer });
-                              }}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              {t('offers.delete')}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  onPreview={(token) => setPreviewDialog({ open: true, token })}
+                  onCopyLink={handleCopyLink}
+                  onSendEmail={handleOpenSendEmailDialog}
+                  onChangeStatus={handleChangeStatus}
+                  onOpenApproval={(o, mode) => setApprovalDialog({ open: true, offer: o, mode })}
+                  onComplete={(o) => setCompleteOfferDialog({ open: true, offer: o })}
+                  onReminders={(o) => setRemindersDialog({ open: true, offer: o })}
+                  onDelete={(o) => setDeleteOfferDialog({ open: true, offer: o })}
+                  onReserve={handleReserveFromOffer}
+                  onFollowUpChange={handleFollowUpStatusChange}
+                  onNoteClick={handleOpenNoteDrawer}
+                  onViewHistory={(id, viewedAt) =>
+                    setViewsDialog({ open: true, offerId: id, viewedAt })
+                  }
+                />
               ))}
             </div>
 
@@ -1501,16 +832,14 @@ export default function OffersView({
       >
         <SheetContent side="right" className="flex flex-col sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Notatka wewnętrzna</SheetTitle>
-            <SheetDescription className="sr-only">
-              Dodaj notatkę wewnętrzną do oferty
-            </SheetDescription>
+            <SheetTitle>{t('offers.internalNote')}</SheetTitle>
+            <SheetDescription className="sr-only">{t('offers.internalNoteDesc')}</SheetDescription>
           </SheetHeader>
           <div className="flex-1 py-4">
             <Textarea
               value={noteDrawer.notes}
               onChange={(e) => setNoteDrawer((prev) => ({ ...prev, notes: e.target.value }))}
-              placeholder="Wpisz notatkę..."
+              placeholder={t('offers.notePlaceholder')}
               className="h-full min-h-[200px] resize-none"
             />
           </div>
@@ -1520,10 +849,10 @@ export default function OffersView({
               className="flex-1"
               onClick={() => setNoteDrawer({ open: false, offerId: '', notes: '' })}
             >
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button className="flex-1" onClick={handleSaveNote}>
-              Zapisz
+              {t('common.save')}
             </Button>
           </div>
         </SheetContent>
@@ -1537,7 +866,7 @@ export default function OffersView({
           instanceId={instanceId}
           onSuccess={() => {
             setReservationFromOffer({ open: false, offer: null });
-            toast.success('Rezerwacja utworzona z oferty');
+            toast.success(t('offers.reservationCreated'));
           }}
           workingHours={workingHours}
           editingReservation={{
