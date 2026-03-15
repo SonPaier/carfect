@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeSearchQuery } from '@shared/utils';
-import { Button } from '@shared/ui';
+import { Button, EmptyState } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Badge } from '@shared/ui';
@@ -269,24 +269,13 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : filteredProtocols.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ClipboardCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg mb-2">
-              {searchQuery ? 'Brak wyników' : 'Brak protokołów'}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery 
-                ? 'Spróbuj zmienić kryteria wyszukiwania'
-                : 'Utwórz pierwszy protokół przyjęcia pojazdu'}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setShowCreateForm(true)}>
-                Dodaj protokół
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={ClipboardCheck}
+          title={searchQuery ? 'Brak wyników' : 'Brak protokołów'}
+          description={searchQuery
+            ? 'Spróbuj zmienić kryteria wyszukiwania'
+            : 'Utwórz pierwszy protokół przyjęcia pojazdu'}
+        />
       ) : (
         <>
           {/* Results count */}

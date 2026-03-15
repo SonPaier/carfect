@@ -151,9 +151,16 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     [products]
   );
 
+  const discountableNet = useMemo(
+    () => products
+      .filter(p => !p.excludeFromDiscount)
+      .reduce((sum, p) => sum + p.priceNet * p.quantity, 0),
+    [products]
+  );
+
   const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
   const discountAmount = applyDiscount && customerDiscount > 0
-    ? subtotalNet * (customerDiscount / 100)
+    ? discountableNet * (customerDiscount / 100)
     : 0;
 
   const totalNet = Math.max(0, subtotalNet - discountAmount);

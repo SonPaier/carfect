@@ -18,6 +18,7 @@ export interface SalesProductOption {
   priceNet: number;
   priceUnit: string;
   hasVariants?: boolean;
+  excludeFromDiscount?: boolean;
   variants?: SalesProductVariantOption[];
 }
 
@@ -27,7 +28,6 @@ export interface SalesProductVariantOption {
   variantName: string;
   fullName: string;
   shortName: string;
-  priceNet: number;
   priceUnit: string;
 }
 
@@ -40,6 +40,7 @@ export interface SelectedProductItem {
   variantName?: string;
   priceNet: number;
   priceUnit: string;
+  excludeFromDiscount?: boolean;
 }
 
 interface SalesProductSelectionDrawerProps {
@@ -90,7 +91,7 @@ const SalesProductSelectionDrawer = ({
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, full_name, short_name, price_net, price_unit, has_variants')
+      .select('id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
@@ -101,6 +102,7 @@ const SalesProductSelectionDrawer = ({
       priceNet: Number(p.price_net),
       priceUnit: p.price_unit || 'szt.',
       hasVariants: p.has_variants || false,
+      excludeFromDiscount: p.exclude_from_discount || false,
       variants: [],
     }));
 
@@ -109,7 +111,7 @@ const SalesProductSelectionDrawer = ({
     if (variantProductIds.length > 0) {
       const { data: variants } = await (supabase
         .from('sales_product_variants')
-        .select('id, product_id, name, price_net, sort_order')
+        .select('id, product_id, name, sort_order')
         .in('product_id', variantProductIds)
         .order('sort_order') as any);
 
@@ -124,7 +126,6 @@ const SalesProductSelectionDrawer = ({
           variantName: v.name,
           fullName: parent.fullName,
           shortName: parent.shortName,
-          priceNet: Number(v.price_net),
           priceUnit: parent.priceUnit,
         });
         variantsByProduct.set(v.product_id, list);
@@ -171,7 +172,7 @@ const SalesProductSelectionDrawer = ({
         const variantId = key.slice(8);
         for (const product of products) {
           const variant = product.variants?.find(v => v.id === variantId);
-          if (variant) { total += variant.priceNet; break; }
+          if (variant) { total += product.priceNet; break; }
         }
       } else {
         const product = products.find(p => p.id === key);
@@ -197,8 +198,9 @@ const SalesProductSelectionDrawer = ({
               fullName: product.fullName,
               shortName: product.shortName,
               variantName: variant.variantName,
-              priceNet: variant.priceNet,
-              priceUnit: variant.priceUnit,
+              priceNet: product.priceNet,
+              priceUnit: product.priceUnit,
+              excludeFromDiscount: product.excludeFromDiscount,
             });
             break;
           }
@@ -213,6 +215,7 @@ const SalesProductSelectionDrawer = ({
             shortName: product.shortName,
             priceNet: product.priceNet,
             priceUnit: product.priceUnit,
+            excludeFromDiscount: product.excludeFromDiscount,
           });
         }
       }
@@ -317,10 +320,6 @@ const SalesProductSelectionDrawer = ({
                           >
                             <div className="flex-1 text-left min-w-0">
                               <p className="font-medium text-foreground text-sm">{variant.variantName}</p>
-                            </div>
-                            <div className="text-right mr-4 shrink-0">
-                              <p className="font-semibold text-foreground text-sm">{formatCurrency(variant.priceNet)}</p>
-                              <p className="text-xs text-muted-foreground">netto/{formatPriceUnit(variant.priceUnit)}</p>
                             </div>
                             <div className={cn(
                               "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",

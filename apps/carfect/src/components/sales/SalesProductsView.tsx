@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Plus, MoreHorizontal, Settings2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Settings2, ArrowUp, ArrowDown, Package } from 'lucide-react';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
-import { Input } from '@shared/ui';
+import { Input, EmptyState } from '@shared/ui';
 import { Button } from '@shared/ui';
 import {
   Table,
@@ -33,9 +33,7 @@ export interface SalesProduct {
   categoryId?: string | null;
   categoryName?: string | null;
   hasVariants?: boolean;
-  variantCount?: number;
-  variantPriceMin?: number;
-  variantPriceMax?: number;
+  excludeFromDiscount?: boolean;
 }
 
 const formatCurrency = (value: number) =>
@@ -65,7 +63,7 @@ const SalesProductsView = () => {
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, short_name, full_name, description, price_net, price_unit, category_id, has_variants')
+      .select('id, short_name, full_name, description, price_net, price_unit, category_id, has_variants, exclude_from_discount')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
@@ -77,42 +75,18 @@ const SalesProductsView = () => {
       .eq('category_type', 'sales');
     const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
 
-    // Fetch variant info for products with variants
-    const variantProductIds = (data || []).filter((p: any) => p.has_variants).map((p: any) => p.id);
-    const variantMap = new Map<string, { count: number; minPrice: number; maxPrice: number }>();
-
-    if (variantProductIds.length > 0) {
-      const { data: variants } = await (supabase
-        .from('sales_product_variants')
-        .select('product_id, price_net')
-        .in('product_id', variantProductIds) as any);
-
-      (variants || []).forEach((v: any) => {
-        const entry = variantMap.get(v.product_id) || { count: 0, minPrice: Infinity, maxPrice: -Infinity };
-        entry.count++;
-        entry.minPrice = Math.min(entry.minPrice, Number(v.price_net));
-        entry.maxPrice = Math.max(entry.maxPrice, Number(v.price_net));
-        variantMap.set(v.product_id, entry);
-      });
-    }
-
-    setProducts((data || []).map((p: any) => {
-      const vInfo = variantMap.get(p.id);
-      return {
-        id: p.id,
-        shortName: p.short_name,
-        fullName: p.full_name,
-        description: p.description || undefined,
-        priceNet: Number(p.price_net),
-        priceUnit: p.price_unit,
-        categoryId: p.category_id || null,
-        categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
-        hasVariants: p.has_variants || false,
-        variantCount: vInfo?.count || 0,
-        variantPriceMin: vInfo?.minPrice,
-        variantPriceMax: vInfo?.maxPrice,
-      };
-    }));
+    setProducts((data || []).map((p: any) => ({
+      id: p.id,
+      shortName: p.short_name,
+      fullName: p.full_name,
+      description: p.description || undefined,
+      priceNet: Number(p.price_net),
+      priceUnit: p.price_unit,
+      categoryId: p.category_id || null,
+      categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
+      hasVariants: p.has_variants || false,
+      excludeFromDiscount: p.exclude_from_discount || false,
+    })));
     setLoading(false);
   }, [instanceId]);
 
@@ -231,8 +205,16 @@ const SalesProductsView = () => {
           <TableBody>
             {sortedProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  {loading ? 'Ładowanie...' : 'Brak produktów spełniających kryteria'}
+                <TableCell colSpan={5}>
+                  {loading ? (
+                    <div className="text-center text-muted-foreground py-8">Ładowanie...</div>
+                  ) : (
+                    <EmptyState
+                      icon={Package}
+                      title="Brak produktów"
+                      description="Dodaj pierwszy produkt do katalogu"
+                    />
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
@@ -242,19 +224,7 @@ const SalesProductsView = () => {
                   <TableCell className="text-sm">{product.fullName}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{product.categoryName || '—'}</TableCell>
                   <TableCell className="text-right text-sm tabular-nums">
-                    {product.hasVariants && product.variantCount && product.variantCount > 0 ? (
-                      <span className="text-muted-foreground">
-                        {product.variantPriceMin === product.variantPriceMax
-                          ? formatCurrency(product.variantPriceMin!)
-                          : `${formatCurrency(product.variantPriceMin!)} – ${formatCurrency(product.variantPriceMax!)}`
-                        }
-                        <span className="text-xs ml-1">({product.variantCount} war.)</span>
-                      </span>
-                    ) : product.hasVariants ? (
-                      <span className="text-muted-foreground text-xs">Brak wariantów</span>
-                    ) : (
-                      formatCurrency(product.priceNet)
-                    )}
+                    {formatCurrency(product.priceNet)}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
