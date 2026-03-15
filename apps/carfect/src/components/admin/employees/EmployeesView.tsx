@@ -1,15 +1,58 @@
 import { useState, useMemo } from 'react';
 import { useEmployees, Employee } from '@/hooks/useEmployees';
-import { useTimeEntriesForMonth, useTimeEntriesForDateRange, calculateMonthlySummary, formatMinutesToTime, TimeEntry } from '@/hooks/useTimeEntries';
-import { useEmployeeDaysOff, DAY_OFF_TYPE_LABELS, DayOffType, EmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
+import {
+  useTimeEntriesForMonth,
+  useTimeEntriesForDateRange,
+  calculateMonthlySummary,
+  formatMinutesToTime,
+  TimeEntry,
+} from '@/hooks/useTimeEntries';
+import {
+  useEmployeeDaysOff,
+  DAY_OFF_TYPE_LABELS,
+  DayOffType,
+  EmployeeDayOff,
+} from '@/hooks/useEmployeeDaysOff';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useAuth } from '@/hooks/useAuth';
 import { Button, EmptyState } from '@shared/ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/ui';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@shared/ui';
-import { Plus, ChevronLeft, ChevronRight, Loader2, User, Pencil, CalendarOff, Settings2 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, getISOWeek, addWeeks, subWeeks, isWithinInterval, eachDayOfInterval, isSameMonth, isSameWeek, getDay } from 'date-fns';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableFooter,
+} from '@shared/ui';
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  User,
+  Pencil,
+  CalendarOff,
+  Settings2,
+} from 'lucide-react';
+import {
+  format,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  getISOWeek,
+  addWeeks,
+  subWeeks,
+  isWithinInterval,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameWeek,
+  getDay,
+} from 'date-fns';
 import { pl } from 'date-fns/locale';
 import AddEditEmployeeDialog from './AddEditEmployeeDialog';
 import WorkerTimeDialog from './WorkerTimeDialog';
@@ -44,7 +87,7 @@ const WEEKDAY_SHORT: Record<number, string> = {
 const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const { hasRole } = useAuth();
   const isAdmin = hasRole('admin') || hasRole('super_admin');
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -58,26 +101,32 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  
+
   // Month boundaries
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  
+
   // Week boundaries (Monday to Sunday)
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const weekNumber = getISOWeek(currentDate);
-  
+
   // Date range for queries based on mode
-  const dateFrom = isWeeklyMode ? format(weekStart, 'yyyy-MM-dd') : format(monthStart, 'yyyy-MM-dd');
+  const dateFrom = isWeeklyMode
+    ? format(weekStart, 'yyyy-MM-dd')
+    : format(monthStart, 'yyyy-MM-dd');
   const dateTo = isWeeklyMode ? format(weekEnd, 'yyyy-MM-dd') : format(monthEnd, 'yyyy-MM-dd');
-  
+
   // Period boundaries for days off calculation
   const periodStart = isWeeklyMode ? weekStart : monthStart;
   const periodEnd = isWeeklyMode ? weekEnd : monthEnd;
 
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees(instanceId);
-  const { data: timeEntries = [], isLoading: loadingEntries } = useTimeEntriesForDateRange(instanceId, dateFrom, dateTo);
+  const { data: timeEntries = [], isLoading: loadingEntries } = useTimeEntriesForDateRange(
+    instanceId,
+    dateFrom,
+    dateTo,
+  );
   const { data: daysOff = [], isLoading: loadingDaysOff } = useEmployeeDaysOff(instanceId, null);
   const { data: workingHours } = useWorkingHours(instanceId);
 
@@ -90,7 +139,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     const dayKey = WEEKDAY_TO_KEY[dayOfWeek];
     const dayHours = workingHours[dayKey];
     if (!dayHours || !dayHours.open) return null;
-    
+
     const [hours, minutes] = dayHours.open.split(':').map(Number);
     // Create opening date in local time
     const openingDate = new Date(dateStr + 'T00:00:00');
@@ -102,9 +151,9 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const calculatePreOpeningMinutes = (entries: TimeEntry[], dateStr: string): number => {
     const openingTime = getOpeningTime(dateStr);
     if (!openingTime) return 0;
-    
+
     let preOpeningMinutes = 0;
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       if (!entry.start_time) return;
       const startTime = new Date(entry.start_time);
       if (startTime < openingTime) {
@@ -120,10 +169,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   // Calculate pre-opening time per employee for the period
   const preOpeningByEmployee = useMemo(() => {
     const result = new Map<string, number>();
-    
+
     // Group entries by employee and date
     const entriesByEmployeeDate = new Map<string, Map<string, TimeEntry[]>>();
-    timeEntries.forEach(entry => {
+    timeEntries.forEach((entry) => {
       if (!entriesByEmployeeDate.has(entry.employee_id)) {
         entriesByEmployeeDate.set(entry.employee_id, new Map());
       }
@@ -133,7 +182,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       }
       dateMap.get(entry.entry_date)!.push(entry);
     });
-    
+
     entriesByEmployeeDate.forEach((dateMap, employeeId) => {
       let totalPreOpening = 0;
       dateMap.forEach((entries, dateStr) => {
@@ -141,12 +190,12 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       });
       result.set(employeeId, totalPreOpening);
     });
-    
+
     return result;
   }, [timeEntries, workingHours]);
 
   // Filter only active (not soft-deleted) employees
-  const activeEmployees = employees.filter(e => e.active && !(e as any).deleted_at);
+  const activeEmployees = employees.filter((e) => e.active && !(e as any).deleted_at);
 
   // Calculate period totals (works for both weekly and monthly)
   const periodSummary = useMemo(() => calculateMonthlySummary(timeEntries), [timeEntries]);
@@ -163,9 +212,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         // If mode is opening_to_stop and we have pre-opening time, use real time
         // Edge case: if preOpeningMinutes is 0 in opening_to_stop mode, it might be because
         // there were no opening hours defined - in that case, use total time
-        const displayMinutes = timeCalculationMode === 'opening_to_stop'
-          ? Math.max(0, summary.total_minutes - preOpeningMinutes)
-          : summary.total_minutes;
+        const displayMinutes =
+          timeCalculationMode === 'opening_to_stop'
+            ? Math.max(0, summary.total_minutes - preOpeningMinutes)
+            : summary.total_minutes;
         return sum + (displayMinutes / 60) * employee.hourly_rate;
       }
       return sum;
@@ -174,7 +224,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
   // Get days off for this period
   const getDaysOffForEmployee = (employeeId: string) => {
-    return daysOff.filter(d => {
+    return daysOff.filter((d) => {
       if (d.employee_id !== employeeId) return false;
       const from = parseISO(d.date_from);
       const to = parseISO(d.date_to);
@@ -187,10 +237,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   // Format days off for display on the card
   const formatDaysOffForPeriod = (employeeDaysOff: EmployeeDayOff[]) => {
     const result: { type: DayOffType; label: string; dates: string }[] = [];
-    
+
     // Group by type
     const byType = new Map<DayOffType, EmployeeDayOff[]>();
-    employeeDaysOff.forEach(d => {
+    employeeDaysOff.forEach((d) => {
       const type = d.day_off_type as DayOffType;
       if (!byType.has(type)) byType.set(type, []);
       byType.get(type)!.push(d);
@@ -198,15 +248,15 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
     byType.forEach((items, type) => {
       const allDates: { date: Date; dayOfWeek: number }[] = [];
-      
-      items.forEach(item => {
+
+      items.forEach((item) => {
         const from = parseISO(item.date_from);
         const to = parseISO(item.date_to);
-        
+
         // Get all days in the range that fall within the current period
         const daysInRange = eachDayOfInterval({ start: from, end: to });
-        daysInRange.forEach(day => {
-          const isInPeriod = isWeeklyMode 
+        daysInRange.forEach((day) => {
+          const isInPeriod = isWeeklyMode
             ? isSameWeek(day, currentDate, { weekStartsOn: 1 })
             : isSameMonth(day, currentDate);
           if (isInPeriod) {
@@ -227,8 +277,8 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
       allDates.forEach((item, idx) => {
         const prevItem = allDates[idx - 1];
-        const isConsecutive = prevItem && 
-          (item.date.getTime() - prevItem.date.getTime()) === 24 * 60 * 60 * 1000;
+        const isConsecutive =
+          prevItem && item.date.getTime() - prevItem.date.getTime() === 24 * 60 * 60 * 1000;
 
         if (isConsecutive && rangeStart) {
           rangeEnd = item.date;
@@ -261,7 +311,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       result.push({
         type,
         label,
-        dates: formattedParts.join(', ')
+        dates: formattedParts.join(', '),
       });
     });
 
@@ -270,16 +320,16 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
   // Format days off as array of objects with from/to dates for display
   type DayOffLine = { from: string; to: string | null };
-  
+
   const formatDaysOffForPeriodLines = (employeeDaysOff: EmployeeDayOff[]): DayOffLine[] => {
     const allDates: Date[] = [];
-    
-    employeeDaysOff.forEach(item => {
+
+    employeeDaysOff.forEach((item) => {
       const from = parseISO(item.date_from);
       const to = parseISO(item.date_to);
       const daysInRange = eachDayOfInterval({ start: from, end: to });
-      daysInRange.forEach(day => {
-        const isInPeriod = isWeeklyMode 
+      daysInRange.forEach((day) => {
+        const isInPeriod = isWeeklyMode
           ? isSameWeek(day, currentDate, { weekStartsOn: 1 })
           : isSameMonth(day, currentDate);
         if (isInPeriod) {
@@ -292,8 +342,8 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
     // Sort and deduplicate
     allDates.sort((a, b) => a.getTime() - b.getTime());
-    const uniqueDates = allDates.filter((d, i, arr) => 
-      i === 0 || d.getTime() !== arr[i-1].getTime()
+    const uniqueDates = allDates.filter(
+      (d, i, arr) => i === 0 || d.getTime() !== arr[i - 1].getTime(),
     );
 
     // Group consecutive dates into ranges - each range is separate line
@@ -310,8 +360,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
     uniqueDates.forEach((date, idx) => {
       const prevDate = uniqueDates[idx - 1];
-      const isConsecutive = prevDate && 
-        (date.getTime() - prevDate.getTime()) === 24 * 60 * 60 * 1000;
+      const isConsecutive = prevDate && date.getTime() - prevDate.getTime() === 24 * 60 * 60 * 1000;
 
       if (isConsecutive && rangeStart) {
         rangeEnd = date;
@@ -319,7 +368,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         if (rangeStart) {
           lines.push({
             from: formatDateWithDay(rangeStart),
-            to: rangeEnd ? formatDateWithDay(rangeEnd) : null
+            to: rangeEnd ? formatDateWithDay(rangeEnd) : null,
           });
         }
         rangeStart = date;
@@ -331,7 +380,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     if (rangeStart) {
       lines.push({
         from: formatDateWithDay(rangeStart),
-        to: rangeEnd ? formatDateWithDay(rangeEnd) : null
+        to: rangeEnd ? formatDateWithDay(rangeEnd) : null,
       });
     }
 
@@ -400,29 +449,25 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         <h1 className="text-2xl font-bold">Pracownicy i czas pracy</h1>
         {isAdmin && (
           <div className="flex gap-2">
-            <Button 
-              onClick={() => setSettingsDrawerOpen(true)} 
-              variant="outline" 
+            <Button
+              onClick={() => setSettingsDrawerOpen(true)}
+              variant="outline"
               size="icon"
               className="bg-white h-10 w-10"
               title="Ustawienia czasu pracy"
             >
               <Settings2 className="w-5 h-5" />
             </Button>
-            <Button 
-              onClick={() => setDayOffDialogOpen(true)} 
-              variant="outline" 
+            <Button
+              onClick={() => setDayOffDialogOpen(true)}
+              variant="outline"
               size="icon"
               className="bg-white h-10 w-10"
               title="Dodaj nieobecność"
             >
               <CalendarOff className="w-5 h-5" />
             </Button>
-            <Button 
-              onClick={handleAddEmployee} 
-              className="h-10"
-              title="Dodaj pracownika"
-            >
+            <Button onClick={handleAddEmployee} className="h-10" title="Dodaj pracownika">
               <Plus className="w-5 h-5" />
               Dodaj pracownika
             </Button>
@@ -437,10 +482,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="font-medium min-w-[200px] text-center text-lg">
-            {isWeeklyMode 
-              ? formatWeekDisplay()
-              : format(currentDate, 'LLLL yyyy', { locale: pl })
-            }
+            {isWeeklyMode ? formatWeekDisplay() : format(currentDate, 'LLLL yyyy', { locale: pl })}
           </span>
           <Button variant="outline" size="icon" onClick={handleNextPeriod} className="bg-white">
             <ChevronRight className="w-4 h-4" />
@@ -459,12 +501,12 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         <>
           {/* Table layout */}
           <div className="overflow-hidden rounded-lg max-w-full">
-            <Table className="bg-white w-full" style={{ tableLayout: 'fixed' }}>
+            <Table className="bg-white w-full table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead style={{ width: '47%' }}>Imię</TableHead>
-                  <TableHead className="text-center" style={{ width: '23%' }}>Przepracowano</TableHead>
-                  <TableHead className="text-right" style={{ width: '30%' }}>Wypłata</TableHead>
+                  <TableHead className="w-[47%]">Imię</TableHead>
+                  <TableHead className="text-center w-[23%]">Przepracowano</TableHead>
+                  <TableHead className="text-right w-[30%]">Wypłata</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -472,32 +514,36 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                   const summary = periodSummary.get(employee.id);
                   const totalMinutes = summary?.total_minutes || 0;
                   const preOpeningMinutes = preOpeningByEmployee.get(employee.id) || 0;
-                  
+
                   // Calculate display minutes based on time calculation mode
-                  const displayMinutes = timeCalculationMode === 'opening_to_stop'
-                    ? Math.max(0, totalMinutes - preOpeningMinutes)
-                    : totalMinutes;
-                  
+                  const displayMinutes =
+                    timeCalculationMode === 'opening_to_stop'
+                      ? Math.max(0, totalMinutes - preOpeningMinutes)
+                      : totalMinutes;
+
                   const displayHours = formatMinutesToTime(displayMinutes);
-                  
+
                   // Earnings based on display time
-                  const earnings = employee.hourly_rate 
+                  const earnings = employee.hourly_rate
                     ? ((displayMinutes / 60) * employee.hourly_rate).toFixed(2)
                     : null;
-                  
+
                   const hours = Math.floor(displayMinutes / 60);
                   const mins = displayMinutes % 60;
-                  
+
                   return (
-                    <TableRow 
-                      key={employee.id} 
+                    <TableRow
+                      key={employee.id}
                       className="cursor-pointer hover:bg-hover-strong"
                       onClick={() => handleTileClick(employee)}
                     >
-                      <TableCell className="py-3" style={{ width: '47%' }}>
+                      <TableCell className="py-3 w-[47%]">
                         <div className="flex items-center gap-2 min-w-0">
                           <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarImage src={employee.photo_url || undefined} alt={employee.name} />
+                            <AvatarImage
+                              src={employee.photo_url || undefined}
+                              alt={employee.name}
+                            />
                             <AvatarFallback className="bg-primary/10 text-primary text-sm">
                               {employee.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -505,13 +551,13 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                           <span className="font-medium truncate">{employee.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center py-3" style={{ width: '23%' }}>
+                      <TableCell className="text-center py-3 w-[23%]">
                         <div className="text-sm leading-tight">
                           {hours > 0 && <div>{hours}h</div>}
                           <div>{mins}min</div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right py-3 whitespace-nowrap font-medium" style={{ width: '30%' }}>
+                      <TableCell className="text-right py-3 whitespace-nowrap font-medium w-[30%]">
                         {earnings ? `${earnings} zł` : '-'}
                       </TableCell>
                     </TableRow>
@@ -521,11 +567,19 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               {isAdmin && totalEarnings > 0 && (
                 <TableFooter className="bg-white">
                   <TableRow>
-                    <TableCell colSpan={2} className="py-3 text-right text-xs text-muted-foreground">
-                      Suma wypłat {isWeeklyMode ? 'tydzień' : format(currentDate, 'LLLL', { locale: pl })}:
+                    <TableCell
+                      colSpan={2}
+                      className="py-3 text-right text-xs text-muted-foreground"
+                    >
+                      Suma wypłat{' '}
+                      {isWeeklyMode ? 'tydzień' : format(currentDate, 'LLLL', { locale: pl })}:
                     </TableCell>
-                    <TableCell className="text-right py-3 font-bold whitespace-nowrap" style={{ width: '30%' }}>
-                      {totalEarnings.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł
+                    <TableCell className="text-right py-3 font-bold whitespace-nowrap w-[30%]">
+                      {totalEarnings.toLocaleString('pl-PL', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{' '}
+                      zł
                     </TableCell>
                   </TableRow>
                 </TableFooter>
@@ -537,11 +591,11 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
           {(() => {
             // Collect all employees with days off in this period
             const employeesWithDaysOff = activeEmployees
-              .map(emp => ({
+              .map((emp) => ({
                 employee: emp,
                 daysOffLines: formatDaysOffForPeriodLines(getDaysOffForEmployee(emp.id)),
               }))
-              .filter(item => item.daysOffLines.length > 0);
+              .filter((item) => item.daysOffLines.length > 0);
 
             if (employeesWithDaysOff.length === 0) return null;
 
@@ -550,7 +604,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                 <h3 className="font-medium text-muted-foreground">Nieobecności</h3>
                 <div className="space-y-2">
                   {employeesWithDaysOff.map(({ employee, daysOffLines }) => (
-                    <div key={employee.id} className="flex items-start gap-3 p-3 border rounded-lg bg-card">
+                    <div
+                      key={employee.id}
+                      className="flex items-start gap-3 p-3 border rounded-lg bg-card"
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={employee.photo_url || undefined} alt={employee.name} />
                         <AvatarFallback className="bg-primary/10 text-primary text-sm">

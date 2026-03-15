@@ -1,8 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  Building2, Clock, Grid2X2, Settings2, Users, MessageSquare, Loader2, Save, Upload, Trash2, Image as ImageIcon,
-  ChevronDown, Warehouse, GraduationCap
+import {
+  Building2,
+  Clock,
+  Grid2X2,
+  Settings2,
+  Users,
+  MessageSquare,
+  Loader2,
+  Save,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  ChevronDown,
+  Warehouse,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -31,9 +43,22 @@ interface SettingsViewProps {
   onWorkingHoursUpdate?: () => void;
 }
 
-type SettingsTab = 'company' | 'stations' | 'hours' | 'halls' | 'trainings' | 'app' | 'sms' | 'users';
+type SettingsTab =
+  | 'company'
+  | 'stations'
+  | 'hours'
+  | 'halls'
+  | 'trainings'
+  | 'app'
+  | 'sms'
+  | 'users';
 
-const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHoursUpdate }: SettingsViewProps) => {
+const SettingsView = ({
+  instanceId,
+  instanceData,
+  onInstanceUpdate,
+  onWorkingHoursUpdate,
+}: SettingsViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -41,12 +66,12 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
   const { hasFeature } = useCombinedFeatures(instanceId);
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   // Company form state
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [companyForm, setCompanyForm] = useState({
     name: '',
     short_name: '',
@@ -63,7 +88,9 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
     website: '',
     contact_person: '',
   });
-  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([{ name: '', number: '' }]);
+  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([
+    { name: '', number: '' },
+  ]);
 
   // Populate form when instanceData changes
   useEffect(() => {
@@ -87,7 +114,9 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
       const accounts = instanceData.bank_accounts;
       if (Array.isArray(accounts) && accounts.length > 0) {
         const normalized = (accounts as any[]).map((a: any) =>
-          typeof a === 'string' ? { name: '', number: a } : { name: a.name || '', number: a.number || '' }
+          typeof a === 'string'
+            ? { name: '', number: a }
+            : { name: a.name || '', number: a.number || '' },
         );
         setBankAccounts(normalized);
       } else {
@@ -100,18 +129,27 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
     { key: 'company', label: t('settings.tabs.company'), icon: <Building2 className="w-4 h-4" /> },
     { key: 'stations', label: t('settings.tabs.stations'), icon: <Grid2X2 className="w-4 h-4" /> },
     { key: 'hours', label: t('settings.tabs.hours'), icon: <Clock className="w-4 h-4" /> },
-    { key: 'halls', label: t('navigation.halls'), icon: <Warehouse className="w-4 h-4" />, visible: hasFeature('hall_view') },
-    { key: 'trainings', label: 'Szkolenia', icon: <GraduationCap className="w-4 h-4" />, visible: hasFeature('trainings') },
+    {
+      key: 'halls',
+      label: t('navigation.halls'),
+      icon: <Warehouse className="w-4 h-4" />,
+      visible: hasFeature('hall_view'),
+    },
+    {
+      key: 'trainings',
+      label: 'Szkolenia',
+      icon: <GraduationCap className="w-4 h-4" />,
+      visible: hasFeature('trainings'),
+    },
     { key: 'app', label: t('settings.tabs.app'), icon: <Settings2 className="w-4 h-4" /> },
     { key: 'sms', label: t('settings.tabs.sms'), icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'users', label: t('settings.tabs.users'), icon: <Users className="w-4 h-4" /> },
-    
   ];
-  
-  const tabs = allTabs.filter(tab => tab.visible !== false);
+
+  const tabs = allTabs.filter((tab) => tab.visible !== false);
 
   const handleInputChange = (field: string, value: string) => {
-    setCompanyForm(prev => ({ ...prev, [field]: value }));
+    setCompanyForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,23 +184,23 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('instance-logos')
-        .getPublicUrl(fileName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('instance-logos').getPublicUrl(fileName);
 
-      setCompanyForm(prev => ({ ...prev, logo_url: publicUrl }));
-      
+      setCompanyForm((prev) => ({ ...prev, logo_url: publicUrl }));
+
       // Auto-save logo_url to database immediately
       const { error: updateError } = await supabase
         .from('instances')
         .update({ logo_url: publicUrl })
         .eq('id', instanceId);
-      
+
       if (updateError) throw updateError;
-      
+
       // Invalidate instance data cache so sidebar picks it up
       queryClient.invalidateQueries({ queryKey: ['instance_data', instanceId] });
-      
+
       toast.success(t('instanceSettings.logoUploaded'));
     } catch (error) {
       console.error('Error uploading logo:', error);
@@ -180,12 +218,12 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
       if (urlParts[1]) {
         await supabase.storage.from('instance-logos').remove([urlParts[1]]);
       }
-      setCompanyForm(prev => ({ ...prev, logo_url: '' }));
-      
+      setCompanyForm((prev) => ({ ...prev, logo_url: '' }));
+
       // Auto-save removal to database
       await supabase.from('instances').update({ logo_url: null }).eq('id', instanceId);
       queryClient.invalidateQueries({ queryKey: ['instance_data', instanceId] });
-      
+
       toast.success(t('instanceSettings.logoRemoved'));
     } catch (error) {
       console.error('Error removing logo:', error);
@@ -215,7 +253,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
           google_maps_url: companyForm.google_maps_url || null,
           website: companyForm.website || null,
           contact_person: companyForm.contact_person || null,
-          bank_accounts: bankAccounts.filter(a => a.number.trim() !== ''),
+          bank_accounts: bankAccounts.filter((a) => a.number.trim() !== ''),
         })
         .eq('id', instanceId);
 
@@ -231,7 +269,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
     }
   };
 
-  const currentTab = tabs.find(t => t.key === activeTab);
+  const currentTab = tabs.find((t) => t.key === activeTab);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -242,16 +280,16 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
             <div className="space-y-3">
               <Label>{t('instanceSettings.logo')}</Label>
               <div className="flex items-center gap-4">
-                <div 
+                <div
                   className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/50 overflow-hidden cursor-pointer hover:border-primary transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {uploadingLogo ? (
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                   ) : companyForm.logo_url ? (
-                    <img 
-                      src={companyForm.logo_url} 
-                      alt="Logo" 
+                    <img
+                      src={companyForm.logo_url}
+                      alt="Logo"
                       className="w-full h-full object-contain"
                     />
                   ) : (
@@ -259,20 +297,22 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingLogo}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {companyForm.logo_url ? t('instanceSettings.changeLogo') : t('instanceSettings.uploadLogo')}
+                    {companyForm.logo_url
+                      ? t('instanceSettings.changeLogo')
+                      : t('instanceSettings.uploadLogo')}
                   </Button>
                   {companyForm.logo_url && (
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
+                    <Button
+                      type="button"
+                      variant="ghost"
                       size="sm"
                       onClick={handleRemoveLogo}
                       className="text-destructive"
@@ -318,7 +358,9 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
 
             {/* Invoice Company Name */}
             <div className="space-y-2">
-              <Label htmlFor="invoice_company_name">{t('instanceSettings.invoiceCompanyName')}</Label>
+              <Label htmlFor="invoice_company_name">
+                {t('instanceSettings.invoiceCompanyName')}
+              </Label>
               <Input
                 id="invoice_company_name"
                 value={companyForm.invoice_company_name}
@@ -479,7 +521,11 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
 
             {/* Save Button */}
             <Button onClick={handleSaveCompany} disabled={loading} className="w-full">
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
               {t('common.save')}
             </Button>
           </div>
@@ -501,7 +547,12 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
         return <ReservationConfirmSettings instanceId={instanceId} />;
 
       case 'sms':
-        return <SmsMessageSettings instanceId={instanceId} instanceName={instanceData?.short_name || instanceData?.name} />;
+        return (
+          <SmsMessageSettings
+            instanceId={instanceId}
+            instanceName={instanceData?.short_name || instanceData?.name}
+          />
+        );
 
       case 'users':
         return instanceId ? <InstanceUsersTab instanceId={instanceId} /> : null;
@@ -517,18 +568,14 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
       {isMobile ? (
         <Collapsible open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} className="w-full">
           <CollapsibleTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full justify-between bg-white border-border/50"
-            >
+            <Button variant="outline" className="w-full justify-between bg-white border-border/50">
               <span className="flex items-center gap-2">
                 {currentTab?.icon}
                 {currentTab?.label}
               </span>
-              <ChevronDown className={cn(
-                "w-4 h-4 transition-transform",
-                mobileMenuOpen && "rotate-180"
-              )} />
+              <ChevronDown
+                className={cn('w-4 h-4 transition-transform', mobileMenuOpen && 'rotate-180')}
+              />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2">
@@ -541,10 +588,10 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
                     setMobileMenuOpen(false);
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0",
-                    activeTab === tab.key 
-                       ? "bg-hover text-foreground font-medium" 
-                       : "text-muted-foreground hover:bg-hover hover:text-foreground"
+                    'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
+                    activeTab === tab.key
+                      ? 'bg-hover text-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                   )}
                 >
                   {tab.icon}
@@ -562,10 +609,10 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0",
-                  activeTab === tab.key 
-                     ? "bg-hover text-foreground font-medium" 
-                     : "text-muted-foreground hover:bg-hover hover:text-foreground"
+                  'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
+                  activeTab === tab.key
+                    ? 'bg-hover text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                 )}
               >
                 {tab.icon}
@@ -584,7 +631,7 @@ const SettingsView = ({ instanceId, instanceData, onInstanceUpdate, onWorkingHou
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="glass-card p-6 pb-24 md:pb-6 bg-secondary-foreground">
+        <div className="bg-white border border-border p-6 pb-24 md:pb-6 bg-secondary-foreground">
           {renderTabContent()}
         </div>
       </div>

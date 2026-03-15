@@ -6,9 +6,17 @@ import { Textarea } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Plus, Trash2, Package, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { OfferOption, OfferItem } from '@/hooks/useOffer';
+import { getLowestPrice, formatPrice } from '@/lib/offerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@shared/ui';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@shared/ui';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@shared/ui';
 import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import { ConfirmDialog } from '@shared/ui';
 interface Product {
@@ -24,17 +32,6 @@ interface Product {
   category: string | null;
 }
 
-// Get the lowest available price for display (price_from -> min(S/M/L) -> default_price)
-const getLowestPrice = (p: Product): number => {
-  if (p.price_from != null) return p.price_from;
-  
-  const sizes = [p.price_small, p.price_medium, p.price_large].filter(
-    (v): v is number => v != null
-  );
-  if (sizes.length > 0) return Math.min(...sizes);
-  
-  return p.default_price ?? 0;
-};
 interface Scope {
   id: string;
   name: string;
@@ -66,11 +63,9 @@ export const OptionsStep = ({
   onAddItem,
   onUpdateItem,
   onRemoveItem,
-  calculateOptionTotal
+  calculateOptionTotal,
 }: OptionsStepProps) => {
-  const {
-    t
-  } = useTranslation();
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
@@ -96,7 +91,7 @@ export const OptionsStep = ({
         .eq('instance_id', instanceId)
         .order('sort_order');
       if (!error && data) {
-        setProducts(data as any);
+        setProducts(data as unknown as Product[]);
       } else {
         console.error('Error fetching products:', error);
       }
@@ -111,10 +106,11 @@ export const OptionsStep = ({
         setScopes([]);
         return;
       }
-      const {
-        data,
-        error
-      } = await supabase.from('offer_scopes').select('id, name, description').in('id', selectedScopeIds).order('sort_order');
+      const { data, error } = await supabase
+        .from('offer_scopes')
+        .select('id, name, description')
+        .in('id', selectedScopeIds)
+        .order('sort_order');
       if (!error && data) {
         setScopes(data);
       }
@@ -131,22 +127,22 @@ export const OptionsStep = ({
 
     // Group by scope
     for (const scope of scopes) {
-      const scopeOptions = options.filter(o => o.scopeId === scope.id && !o.isUpsell);
-      const upsellOptions = options.filter(o => o.scopeId === scope.id && o.isUpsell);
+      const scopeOptions = options.filter((o) => o.scopeId === scope.id && !o.isUpsell);
+      const upsellOptions = options.filter((o) => o.scopeId === scope.id && o.isUpsell);
       if (scopeOptions.length > 0 || upsellOptions.length > 0) {
         groups.push({
           scope,
-          options: [...scopeOptions, ...upsellOptions]
+          options: [...scopeOptions, ...upsellOptions],
         });
       }
     }
 
     // Options without scope (manual additions)
-    const ungroupedOptions = options.filter(o => !o.scopeId);
+    const ungroupedOptions = options.filter((o) => !o.scopeId);
     if (ungroupedOptions.length > 0) {
       groups.push({
         scope: null,
-        options: ungroupedOptions
+        options: ungroupedOptions,
       });
     }
     return groups;
@@ -161,7 +157,7 @@ export const OptionsStep = ({
       unit: 'szt',
       discountPercent: 0,
       isOptional: false,
-      isCustom: true
+      isCustom: true,
     });
   };
   const handleProductSelect = (optionId: string, itemId: string, product: Product) => {
@@ -170,29 +166,29 @@ export const OptionsStep = ({
       customName: product.name,
       unitPrice: getLowestPrice(product),
       unit: product.unit,
-      isCustom: false
+      isCustom: false,
     });
-    setJustSelected(prev => ({
+    setJustSelected((prev) => ({
       ...prev,
-      [itemId]: true
+      [itemId]: true,
     }));
-    setAutocompleteOpen(prev => ({
+    setAutocompleteOpen((prev) => ({
       ...prev,
-      [itemId]: false
+      [itemId]: false,
     }));
-    setSearchTerms(prev => ({
+    setSearchTerms((prev) => ({
       ...prev,
-      [itemId]: ''
+      [itemId]: '',
     }));
     setTimeout(() => {
-      setJustSelected(prev => ({
+      setJustSelected((prev) => ({
         ...prev,
-        [itemId]: false
+        [itemId]: false,
       }));
     }, 300);
   };
   const toggleOption = (optionId: string) => {
-    setExpandedOptions(prev => {
+    setExpandedOptions((prev) => {
       const next = new Set(prev);
       if (next.has(optionId)) {
         next.delete(optionId);
@@ -202,14 +198,7 @@ export const OptionsStep = ({
       return next;
     });
   };
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: 'PLN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(Math.round(value));
-  };
+  const formatPriceRounded = (value: number) => formatPrice(value, true);
 
   // Check if option is a variant (single-select) vs upsell (multi-select with accordion)
   const isVariantOption = (option: OfferOption) => !option.isUpsell;
@@ -220,128 +209,149 @@ export const OptionsStep = ({
     return (
       <div key={option.id} className="pb-4 last:pb-0">
         {/* Variant Title */}
-        <div className="font-semibold text-base mb-3">
-          {option.name.replace(/^.*? - /, '')}
-        </div>
-        
+        <div className="font-semibold text-base mb-3">{option.name.replace(/^.*? - /, '')}</div>
+
         {/* Product input + price - stacked on mobile */}
         {item && (
           <div className="grid grid-cols-12 gap-3 items-center">
             {/* Name with Autocomplete - full width on mobile */}
             <div className="col-span-12 md:col-span-9">
-              <Popover 
-                open={autocompleteOpen[item.id]} 
-                onOpenChange={open => {
+              <Popover
+                open={autocompleteOpen[item.id]}
+                onOpenChange={(open) => {
                   if (!open || !justSelected[item.id]) {
-                    setAutocompleteOpen(prev => ({ ...prev, [item.id]: open }));
+                    setAutocompleteOpen((prev) => ({ ...prev, [item.id]: open }));
                   }
                 }}
               >
                 <PopoverTrigger asChild>
                   <div className="relative">
-                    <Input 
-                      value={item.customName || ''} 
-                      onChange={e => {
-                        onUpdateItem(option.id, item.id, { customName: e.target.value, isCustom: true });
+                    <Input
+                      value={item.customName || ''}
+                      onChange={(e) => {
+                        onUpdateItem(option.id, item.id, {
+                          customName: e.target.value,
+                          isCustom: true,
+                        });
                         if (e.target.value.length > 0 && !justSelected[item.id]) {
-                          setAutocompleteOpen(prev => ({ ...prev, [item.id]: true }));
+                          setAutocompleteOpen((prev) => ({ ...prev, [item.id]: true }));
                         }
-                      }} 
+                      }}
                       onFocus={() => {
                         if (products.length > 0 && !justSelected[item.id]) {
-                          setAutocompleteOpen(prev => ({ ...prev, [item.id]: true }));
+                          setAutocompleteOpen((prev) => ({ ...prev, [item.id]: true }));
                         }
-                      }} 
-                      className="bg-white pr-8" 
+                      }}
+                      className="bg-white pr-8"
                     />
                     <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="p-0 w-[400px] bg-white" align="start" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()}>
+                <PopoverContent
+                  className="p-0 w-[400px] bg-white"
+                  align="start"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
                   <Command shouldFilter={false}>
-                    <CommandInput 
-                      placeholder="Szukaj w bibliotece..." 
-                      value={searchTerms[item.id] || ''} 
-                      onValueChange={value => setSearchTerms(prev => ({ ...prev, [item.id]: value }))} 
-                      className="text-left" 
+                    <CommandInput
+                      placeholder="Szukaj w bibliotece..."
+                      value={searchTerms[item.id] || ''}
+                      onValueChange={(value) =>
+                        setSearchTerms((prev) => ({ ...prev, [item.id]: value }))
+                      }
+                      className="text-left"
                     />
                     <CommandList>
                       <CommandEmpty>Brak usług</CommandEmpty>
                       <CommandGroup>
                         {products
-                          .filter(p => {
+                          .filter((p) => {
                             const searchTerm = searchTerms[item.id] || '';
                             if (!searchTerm) return true;
                             return p.name.toLowerCase().includes(searchTerm.toLowerCase());
                           })
                           .slice(0, 10)
-                          .map(product => (
-                            <CommandItem 
-                              key={product.id} 
-                              value={product.id} 
-                              onSelect={() => handleProductSelect(option.id, item.id, product)} 
+                          .map((product) => (
+                            <CommandItem
+                              key={product.id}
+                              value={product.id}
+                              onSelect={() => handleProductSelect(option.id, item.id, product)}
                               className="flex justify-between cursor-pointer"
                             >
                               <span className="flex-1">{product.name}</span>
-                              <span className="font-bold text-sm ml-4">{formatPrice(getLowestPrice(product))}</span>
+                              <span className="font-bold text-sm ml-4">
+                                {formatPriceRounded(getLowestPrice(product))}
+                              </span>
                             </CommandItem>
-                          ))
-                        }
+                          ))}
                       </CommandGroup>
                     </CommandList>
                   </Command>
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             {/* Price - second row on mobile */}
             <div className="col-span-8 md:col-span-2">
-              <Input 
-                type="number" 
-                value={item.quantity * item.unitPrice || ''} 
-                onChange={e => onUpdateItem(option.id, item.id, {
-                  unitPrice: e.target.value === '' ? 0 : parseFloat(e.target.value) / (item.quantity || 1),
-                  quantity: 1
-                })} 
-                min={0} 
-                step={1} 
-                className="bg-white text-left" 
+              <Input
+                type="number"
+                value={item.quantity * item.unitPrice || ''}
+                onChange={(e) =>
+                  onUpdateItem(option.id, item.id, {
+                    unitPrice:
+                      e.target.value === '' ? 0 : parseFloat(e.target.value) / (item.quantity || 1),
+                    quantity: 1,
+                  })
+                }
+                min={0}
+                step={1}
+                className="bg-white text-left"
                 placeholder="Cena netto"
               />
             </div>
-            
+
             {/* Empty space for alignment on mobile */}
             <div className="col-span-4 md:col-span-1" />
           </div>
         )}
-        
+
         {!item && (
-          <div className="text-center py-4 text-muted-foreground text-sm">
-            Brak pozycji.
-          </div>
+          <div className="text-center py-4 text-muted-foreground text-sm">Brak pozycji.</div>
         )}
       </div>
     );
   };
 
   // Render upsell/additional option section - with accordion
-  const renderOptionSection = (option: OfferOption) => <div key={option.id} className="pb-4 last:pb-0">
-      <Collapsible open={expandedOptions.has(option.id)} onOpenChange={() => toggleOption(option.id)}>
+  const renderOptionSection = (option: OfferOption) => (
+    <div key={option.id} className="pb-4 last:pb-0">
+      <Collapsible
+        open={expandedOptions.has(option.id)}
+        onOpenChange={() => toggleOption(option.id)}
+      >
         {/* Option Header */}
         <div className="flex items-center justify-between py-3 pb-0">
           <div className="flex-1 min-w-0">
-            <span className="font-semibold text-base">
-              {option.name.replace(/^.*? - /, '')}
-            </span>
+            <span className="font-semibold text-base">{option.name.replace(/^.*? - /, '')}</span>
           </div>
 
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => setOptionToDelete(option)} className="text-destructive hover:text-destructive h-8 w-8 p-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOptionToDelete(option)}
+              className="text-destructive hover:text-destructive h-8 w-8 p-0"
+            >
               <Trash2 className="w-4 h-4" />
             </Button>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                {expandedOptions.has(option.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {expandedOptions.has(option.id) ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
               </Button>
             </CollapsibleTrigger>
           </div>
@@ -352,190 +362,324 @@ export const OptionsStep = ({
             {/* Items List - flat design */}
             <div className="space-y-3">
               {/* Table Header */}
-              {showUnitPrices ? <div className="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground px-1">
+              {showUnitPrices ? (
+                <div className="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground px-1">
                   <div className="col-span-5 text-left">Nazwa</div>
                   <div className="col-span-2 text-left">Cena netto</div>
                   <div className="col-span-4"></div>
                   <div className="col-span-1"></div>
-                </div> : <div className="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground px-1">
+                </div>
+              ) : (
+                <div className="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground px-1">
                   <div className="col-span-9 text-left">Nazwa</div>
                   <div className="col-span-2 text-left">Cena netto</div>
                   <div className="col-span-1"></div>
-                </div>}
-              
-              {option.items.map(item => <div key={item.id} className="grid grid-cols-12 gap-3 items-start md:items-center">
-                  {showUnitPrices ? <>
+                </div>
+              )}
+
+              {option.items.map((item) => (
+                <div key={item.id} className="grid grid-cols-12 gap-3 items-start md:items-center">
+                  {showUnitPrices ? (
+                    <>
                       {/* Name with Autocomplete - full width on mobile */}
                       <div className="col-span-12 md:col-span-5">
-                        <Popover open={autocompleteOpen[item.id]} onOpenChange={open => {
-                    if (!open || !justSelected[item.id]) {
-                      setAutocompleteOpen(prev => ({
-                        ...prev,
-                        [item.id]: open
-                      }));
-                    }
-                  }}>
+                        <Popover
+                          open={autocompleteOpen[item.id]}
+                          onOpenChange={(open) => {
+                            if (!open || !justSelected[item.id]) {
+                              setAutocompleteOpen((prev) => ({
+                                ...prev,
+                                [item.id]: open,
+                              }));
+                            }
+                          }}
+                        >
                           <PopoverTrigger asChild>
                             <div className="relative">
-                              <Input value={item.customName || ''} onChange={e => {
-                          onUpdateItem(option.id, item.id, {
-                            customName: e.target.value,
-                            isCustom: true
-                          });
-                          if (e.target.value.length > 0 && !justSelected[item.id]) {
-                            setAutocompleteOpen(prev => ({
-                              ...prev,
-                              [item.id]: true
-                            }));
-                          }
-                        }} onFocus={() => {
-                          if (products.length > 0 && !justSelected[item.id]) {
-                            setAutocompleteOpen(prev => ({
-                              ...prev,
-                              [item.id]: true
-                            }));
-                          }
-                        }} className="bg-white pr-8" />
+                              <Input
+                                value={item.customName || ''}
+                                onChange={(e) => {
+                                  onUpdateItem(option.id, item.id, {
+                                    customName: e.target.value,
+                                    isCustom: true,
+                                  });
+                                  if (e.target.value.length > 0 && !justSelected[item.id]) {
+                                    setAutocompleteOpen((prev) => ({
+                                      ...prev,
+                                      [item.id]: true,
+                                    }));
+                                  }
+                                }}
+                                onFocus={() => {
+                                  if (products.length > 0 && !justSelected[item.id]) {
+                                    setAutocompleteOpen((prev) => ({
+                                      ...prev,
+                                      [item.id]: true,
+                                    }));
+                                  }
+                                }}
+                                className="bg-white pr-8"
+                              />
                               <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                             </div>
                           </PopoverTrigger>
-                          <PopoverContent className="p-0 w-[400px] bg-white" align="start" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()}>
+                          <PopoverContent
+                            className="p-0 w-[400px] bg-white"
+                            align="start"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onCloseAutoFocus={(e) => e.preventDefault()}
+                          >
                             <Command shouldFilter={false}>
-                            <CommandInput placeholder="Szukaj w bibliotece..." value={searchTerms[item.id] || ''} onValueChange={value => setSearchTerms(prev => ({
-                          ...prev,
-                          [item.id]: value
-                        }))} className="text-left" />
+                              <CommandInput
+                                placeholder="Szukaj w bibliotece..."
+                                value={searchTerms[item.id] || ''}
+                                onValueChange={(value) =>
+                                  setSearchTerms((prev) => ({
+                                    ...prev,
+                                    [item.id]: value,
+                                  }))
+                                }
+                                className="text-left"
+                              />
                               <CommandList>
                                 <CommandEmpty>Brak usług</CommandEmpty>
                                 <CommandGroup>
-                                  {products.filter(p => {
-                              const searchTerm = searchTerms[item.id] || '';
-                              if (!searchTerm) return true;
-                              return p.name.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).slice(0, 10).map(product => <CommandItem key={product.id} value={product.id} onSelect={() => handleProductSelect(option.id, item.id, product)} className="flex justify-between cursor-pointer">
+                                  {products
+                                    .filter((p) => {
+                                      const searchTerm = searchTerms[item.id] || '';
+                                      if (!searchTerm) return true;
+                                      return p.name
+                                        .toLowerCase()
+                                        .includes(searchTerm.toLowerCase());
+                                    })
+                                    .slice(0, 10)
+                                    .map((product) => (
+                                      <CommandItem
+                                        key={product.id}
+                                        value={product.id}
+                                        onSelect={() =>
+                                          handleProductSelect(option.id, item.id, product)
+                                        }
+                                        className="flex justify-between cursor-pointer"
+                                      >
                                         <span className="flex-1">{product.name}</span>
                                         <span className="font-bold text-sm ml-4">
-                                          {formatPrice(getLowestPrice(product))}
+                                          {formatPriceRounded(getLowestPrice(product))}
                                         </span>
-                                      </CommandItem>)}
+                                      </CommandItem>
+                                    ))}
                                 </CommandGroup>
                               </CommandList>
                             </Command>
                           </PopoverContent>
                         </Popover>
                       </div>
-                      
+
                       {/* Price - stacked on mobile */}
                       <div className="col-span-6 md:col-span-1">
-                        <Input type="number" value={item.unitPrice || ''} onChange={e => onUpdateItem(option.id, item.id, {
-                    unitPrice: e.target.value === '' ? 0 : parseFloat(e.target.value)
-                  })} min={0} step={1} className="bg-white text-left" placeholder="Cena" />
+                        <Input
+                          type="number"
+                          value={item.unitPrice || ''}
+                          onChange={(e) =>
+                            onUpdateItem(option.id, item.id, {
+                              unitPrice: e.target.value === '' ? 0 : parseFloat(e.target.value),
+                            })
+                          }
+                          min={0}
+                          step={1}
+                          className="bg-white text-left"
+                          placeholder="Cena"
+                        />
                       </div>
-                      
+
                       {/* Quantity and unit fields - stacked on mobile */}
                       <div className="col-span-6 md:col-span-5 flex gap-2">
-                        <Input type="number" value={item.quantity || ''} onChange={e => onUpdateItem(option.id, item.id, {
-                    quantity: e.target.value === '' ? 0 : parseFloat(e.target.value)
-                  })} min={0} step={0.01} className="bg-white text-left" placeholder="Ilość" />
-                        <Input value={item.unit} onChange={e => onUpdateItem(option.id, item.id, {
-                    unit: e.target.value
-                  })} className="bg-white text-left w-16" placeholder="J.m." />
+                        <Input
+                          type="number"
+                          value={item.quantity || ''}
+                          onChange={(e) =>
+                            onUpdateItem(option.id, item.id, {
+                              quantity: e.target.value === '' ? 0 : parseFloat(e.target.value),
+                            })
+                          }
+                          min={0}
+                          step={0.01}
+                          className="bg-white text-left"
+                          placeholder="Ilość"
+                        />
+                        <Input
+                          value={item.unit}
+                          onChange={(e) =>
+                            onUpdateItem(option.id, item.id, {
+                              unit: e.target.value,
+                            })
+                          }
+                          className="bg-white text-left w-16"
+                          placeholder="J.m."
+                        />
                       </div>
-                      
+
                       {/* Delete - only if more than one item - on mobile in its own row */}
                       <div className="col-span-12 md:col-span-1 flex justify-end md:justify-end">
                         {option.items.length > 1 && (
-                          <Button variant="ghost" size="sm" onClick={() => onRemoveItem(option.id, item.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveItem(option.id, item.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
-                    </> : <>
+                    </>
+                  ) : (
+                    <>
                       {/* Name with Autocomplete - full width on mobile */}
                       <div className="col-span-12 md:col-span-9">
-                        <Popover open={autocompleteOpen[item.id]} onOpenChange={open => {
-                    if (!open || !justSelected[item.id]) {
-                      setAutocompleteOpen(prev => ({
-                        ...prev,
-                        [item.id]: open
-                      }));
-                    }
-                  }}>
+                        <Popover
+                          open={autocompleteOpen[item.id]}
+                          onOpenChange={(open) => {
+                            if (!open || !justSelected[item.id]) {
+                              setAutocompleteOpen((prev) => ({
+                                ...prev,
+                                [item.id]: open,
+                              }));
+                            }
+                          }}
+                        >
                           <PopoverTrigger asChild>
                             <div className="relative">
-                              <Input value={item.customName || ''} onChange={e => {
-                          onUpdateItem(option.id, item.id, {
-                            customName: e.target.value,
-                            isCustom: true
-                          });
-                          if (e.target.value.length > 0 && !justSelected[item.id]) {
-                            setAutocompleteOpen(prev => ({
-                              ...prev,
-                              [item.id]: true
-                            }));
-                          }
-                        }} onFocus={() => {
-                          if (products.length > 0 && !justSelected[item.id]) {
-                            setAutocompleteOpen(prev => ({
-                              ...prev,
-                              [item.id]: true
-                            }));
-                          }
-                        }} className="bg-white pr-8" />
+                              <Input
+                                value={item.customName || ''}
+                                onChange={(e) => {
+                                  onUpdateItem(option.id, item.id, {
+                                    customName: e.target.value,
+                                    isCustom: true,
+                                  });
+                                  if (e.target.value.length > 0 && !justSelected[item.id]) {
+                                    setAutocompleteOpen((prev) => ({
+                                      ...prev,
+                                      [item.id]: true,
+                                    }));
+                                  }
+                                }}
+                                onFocus={() => {
+                                  if (products.length > 0 && !justSelected[item.id]) {
+                                    setAutocompleteOpen((prev) => ({
+                                      ...prev,
+                                      [item.id]: true,
+                                    }));
+                                  }
+                                }}
+                                className="bg-white pr-8"
+                              />
                               <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                             </div>
                           </PopoverTrigger>
-                          <PopoverContent className="p-0 w-[400px] bg-white" align="start" onOpenAutoFocus={e => e.preventDefault()} onCloseAutoFocus={e => e.preventDefault()}>
+                          <PopoverContent
+                            className="p-0 w-[400px] bg-white"
+                            align="start"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onCloseAutoFocus={(e) => e.preventDefault()}
+                          >
                             <Command shouldFilter={false}>
-                              <CommandInput placeholder="Szukaj w bibliotece..." value={searchTerms[item.id] || ''} onValueChange={value => setSearchTerms(prev => ({
-                          ...prev,
-                          [item.id]: value
-                        }))} />
+                              <CommandInput
+                                placeholder="Szukaj w bibliotece..."
+                                value={searchTerms[item.id] || ''}
+                                onValueChange={(value) =>
+                                  setSearchTerms((prev) => ({
+                                    ...prev,
+                                    [item.id]: value,
+                                  }))
+                                }
+                              />
                               <CommandList>
                                 <CommandEmpty>Brak usług</CommandEmpty>
                                 <CommandGroup>
-                                  {products.filter(p => {
-                              const searchTerm = searchTerms[item.id] || '';
-                              if (!searchTerm) return true;
-                              return p.name.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).slice(0, 10).map(product => <CommandItem key={product.id} value={product.id} onSelect={() => handleProductSelect(option.id, item.id, product)} className="flex justify-between cursor-pointer">
+                                  {products
+                                    .filter((p) => {
+                                      const searchTerm = searchTerms[item.id] || '';
+                                      if (!searchTerm) return true;
+                                      return p.name
+                                        .toLowerCase()
+                                        .includes(searchTerm.toLowerCase());
+                                    })
+                                    .slice(0, 10)
+                                    .map((product) => (
+                                      <CommandItem
+                                        key={product.id}
+                                        value={product.id}
+                                        onSelect={() =>
+                                          handleProductSelect(option.id, item.id, product)
+                                        }
+                                        className="flex justify-between cursor-pointer"
+                                      >
                                         <span className="flex-1">{product.name}</span>
                                         <span className="font-bold text-sm ml-4">
-                                          {formatPrice(getLowestPrice(product))}
+                                          {formatPriceRounded(getLowestPrice(product))}
                                         </span>
-                                      </CommandItem>)}
+                                      </CommandItem>
+                                    ))}
                                 </CommandGroup>
                               </CommandList>
                             </Command>
                           </PopoverContent>
                         </Popover>
                       </div>
-                      
+
                       {/* Price (total = quantity * unitPrice) - stacked on mobile */}
                       <div className="col-span-8 md:col-span-2">
-                        <Input type="number" value={item.quantity * item.unitPrice || ''} onChange={e => onUpdateItem(option.id, item.id, {
-                    unitPrice: e.target.value === '' ? 0 : parseFloat(e.target.value) / (item.quantity || 1),
-                    quantity: 1
-                  })} min={0} step={1} className="bg-white text-left" placeholder="Cena netto" />
+                        <Input
+                          type="number"
+                          value={item.quantity * item.unitPrice || ''}
+                          onChange={(e) =>
+                            onUpdateItem(option.id, item.id, {
+                              unitPrice:
+                                e.target.value === ''
+                                  ? 0
+                                  : parseFloat(e.target.value) / (item.quantity || 1),
+                              quantity: 1,
+                            })
+                          }
+                          min={0}
+                          step={1}
+                          className="bg-white text-left"
+                          placeholder="Cena netto"
+                        />
                       </div>
-                      
+
                       {/* Delete - only if more than one item */}
                       <div className="col-span-4 md:col-span-1 flex justify-end">
                         {option.items.length > 1 && (
-                          <Button variant="ghost" size="sm" onClick={() => onRemoveItem(option.id, item.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveItem(option.id, item.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
-                    </>}
-                </div>)}
+                    </>
+                  )}
+                </div>
+              ))}
 
-              {option.items.length === 0 && <div className="text-center py-4 text-muted-foreground text-sm">
+              {option.items.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
                   Brak pozycji. Dodaj pierwszą pozycję poniżej.
-                </div>}
+                </div>
+              )}
 
               {/* Add Item Button */}
-              <Button variant="outline" size="sm" onClick={() => handleAddItem(option.id)} className="gap-1 mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleAddItem(option.id)}
+                className="gap-1 mt-2"
+              >
                 <Plus className="w-3 h-3" />
                 Dodaj pozycję
               </Button>
@@ -543,14 +687,16 @@ export const OptionsStep = ({
           </div>
         </CollapsibleContent>
       </Collapsible>
-    </div>;
-  return <>
+    </div>
+  );
+  return (
+    <>
       {/* Info about product descriptions */}
       <p className="text-sm text-muted-foreground mb-4">
         Opisy usług są pobierane z zakładki{' '}
-        <a 
-          href="/admin/products" 
-          target="_blank" 
+        <a
+          href="/admin/products"
+          target="_blank"
           rel="noopener noreferrer"
           className="text-primary hover:underline font-medium"
         >
@@ -560,41 +706,60 @@ export const OptionsStep = ({
       </p>
 
       {/* Grouped Options by Scope - each as separate floating container */}
-      {groupedOptions.map(group => <div key={group.scope?.id || 'ungrouped'} className="bg-white rounded-lg shadow-sm border p-5 mb-4">
+      {groupedOptions.map((group) => (
+        <div
+          key={group.scope?.id || 'ungrouped'}
+          className="bg-white rounded-lg shadow-sm border p-5 mb-4"
+        >
           {/* Scope Header */}
-          {group.scope && <div className="flex items-center gap-3 mb-4">
+          {group.scope && (
+            <div className="flex items-center gap-3 mb-4">
               <Package className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-xl">{group.scope.name}</h3>
-            </div>}
-          
-          {group.scope === null && groupedOptions.length > 1 && <div className="flex items-center gap-3 mb-4">
+            </div>
+          )}
+
+          {group.scope === null && groupedOptions.length > 1 && (
+            <div className="flex items-center gap-3 mb-4">
               <Package className="w-5 h-5 text-muted-foreground" />
               <h3 className="font-bold text-xl text-muted-foreground">Pozostałe opcje</h3>
-            </div>}
+            </div>
+          )}
 
           {/* Options in this group - variants inline, upsells with accordion */}
           <div className="space-y-0">
-            {group.options.map(option => 
-              isVariantOption(option) 
-                ? renderVariantSection(option) 
-                : renderOptionSection(option)
+            {group.options.map((option) =>
+              isVariantOption(option) ? renderVariantSection(option) : renderOptionSection(option),
             )}
           </div>
-        </div>)}
+        </div>
+      ))}
 
       {/* Empty state */}
-      {options.length === 0 && <div className="text-center py-12 text-muted-foreground">
+      {options.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg mb-2">Brak opcji</p>
           <p className="text-sm">Wybierz zakresy w poprzednim kroku lub dodaj opcję ręcznie</p>
-        </div>}
+        </div>
+      )}
 
       {/* Delete option confirmation */}
-      <ConfirmDialog open={!!optionToDelete} onOpenChange={open => !open && setOptionToDelete(null)} title="Usuń opcję" description={`Czy na pewno chcesz usunąć opcję "${optionToDelete?.name.replace(/^.*? - /, '')}"? Ta operacja jest nieodwracalna.`} confirmLabel="Usuń" cancelLabel="Anuluj" variant="destructive" onConfirm={() => {
-      if (optionToDelete) {
-        onRemoveOption(optionToDelete.id);
-        setOptionToDelete(null);
-      }
-    }} />
-    </>;
+      <ConfirmDialog
+        open={!!optionToDelete}
+        onOpenChange={(open) => !open && setOptionToDelete(null)}
+        title="Usuń opcję"
+        description={`Czy na pewno chcesz usunąć opcję "${optionToDelete?.name.replace(/^.*? - /, '')}"? Ta operacja jest nieodwracalna.`}
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+        variant="destructive"
+        onConfirm={() => {
+          if (optionToDelete) {
+            onRemoveOption(optionToDelete.id);
+            setOptionToDelete(null);
+          }
+        }}
+      />
+    </>
+  );
 };

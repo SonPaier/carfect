@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import '@/i18n/config';
 import { beforeEach } from 'vitest';
 import { setViewport } from './utils/viewport';
 

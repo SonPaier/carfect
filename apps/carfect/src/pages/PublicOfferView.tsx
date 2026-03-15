@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useOfferViewTracking } from '@/hooks/useOfferViewTracking';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
@@ -7,8 +6,10 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { PublicOfferCustomerView, PublicOfferData } from '@/components/offers/PublicOfferCustomerView';
+import {
+  PublicOfferCustomerView,
+  PublicOfferData,
+} from '@/components/offers/PublicOfferCustomerView';
 
 const PublicOfferView = () => {
   const { t } = useTranslation();
@@ -20,7 +21,6 @@ const PublicOfferView = () => {
   const [offer, setOffer] = useState<PublicOfferData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [savingState, setSavingState] = useState(false);
   const shouldPrint = searchParams.get('print') === 'true';
 
   // Auto-print when ?print=true is in the URL
@@ -33,13 +33,6 @@ const PublicOfferView = () => {
     }
   }, [shouldPrint, loading, offer]);
 
-  // Track offer view duration
-  useOfferViewTracking(
-    offer?.id,
-    offer?.instance_id,
-    isAdminPreview
-  );
-
   useEffect(() => {
     const fetchOffer = async () => {
       if (!token) {
@@ -51,10 +44,15 @@ const PublicOfferView = () => {
       try {
         const { data, error } = await supabase
           .from('offers')
-          .select(`
-            *,
+          .select(
+            `
+            id, instance_id, offer_number, public_token, status, customer_data,
+            vehicle_data, total_net, total_gross, vat_rate, notes, payment_terms,
+            warranty, service_info, valid_until, hide_unit_prices, created_at,
+            approved_at, viewed_at, selected_state, has_unified_services,
             offer_options (
-              *,
+              id, name, description, is_selected, subtotal_net, sort_order,
+              scope_id, is_upsell,
               scope:offer_scopes (
                 id,
                 name,
@@ -63,7 +61,8 @@ const PublicOfferView = () => {
                 photo_urls
               ),
               offer_option_items (
-                *
+                id, custom_name, custom_description, quantity, unit_price,
+                unit, discount_percent, is_optional, is_custom, product_id, sort_order
               )
             ),
             instances (
@@ -94,7 +93,8 @@ const PublicOfferView = () => {
               offer_trust_description,
               offer_trust_tiles
             )
-          `)
+          `,
+          )
           .eq('public_token', token)
           .single();
 
@@ -106,22 +106,29 @@ const PublicOfferView = () => {
 
         // Fetch product descriptions separately (same approach as OfferPreviewDialog)
         // This ensures descriptions are loaded even when FK relation doesn't work
-        const productIds = [...new Set(
-          (data.offer_options || []).flatMap((opt: { offer_option_items?: { product_id?: string }[] }) => 
-            (opt.offer_option_items || []).map(item => item.product_id).filter(Boolean)
-          )
-        )] as string[];
-        
-        let productDetails: Record<string, { description?: string; photo_urls?: string[] | null }> = {};
+        const productIds = [
+          ...new Set(
+            (data.offer_options || []).flatMap(
+              (opt: { offer_option_items?: { product_id?: string }[] }) =>
+                (opt.offer_option_items || []).map((item) => item.product_id).filter(Boolean),
+            ),
+          ),
+        ] as string[];
+
+        let productDetails: Record<string, { description?: string; photo_urls?: string[] | null }> =
+          {};
         if (productIds.length > 0) {
           const { data: productsData } = await supabase
             .from('unified_services')
             .select('id, description, photo_urls')
             .in('id', productIds);
-          
+
           if (productsData) {
-            productsData.forEach(p => {
-              productDetails[p.id] = { description: p.description ?? undefined, photo_urls: p.photo_urls };
+            productsData.forEach((p) => {
+              productDetails[p.id] = {
+                description: p.description ?? undefined,
+                photo_urls: p.photo_urls,
+              };
             });
           }
         }
@@ -129,36 +136,44 @@ const PublicOfferView = () => {
         // Enrich offer_option_items with unified_services data
         const enrichedData = {
           ...data,
-          offer_options: (data.offer_options || []).map((opt: { offer_option_items?: { product_id?: string }[] }) => ({
-            ...opt,
-            offer_option_items: (opt.offer_option_items || []).map((item: { product_id?: string }) => ({
-              ...item,
-              unified_services: item.product_id && productDetails[item.product_id]
-                ? productDetails[item.product_id]
-                : null,
-            })),
-          })),
+          offer_options: (data.offer_options || []).map(
+            (opt: { offer_option_items?: { product_id?: string }[] }) => ({
+              ...opt,
+              offer_option_items: (opt.offer_option_items || []).map(
+                (item: { product_id?: string }) => ({
+                  ...item,
+                  unified_services:
+                    item.product_id && productDetails[item.product_id]
+                      ? productDetails[item.product_id]
+                      : null,
+                }),
+              ),
+            }),
+          ),
         };
 
         const fetchedOffer = enrichedData as unknown as PublicOfferData;
         setOffer(fetchedOffer);
 
-        // Mark as viewed if not already (skip for admin previews and print mode)
-        if (data.status === 'sent' && !isAdminPreview && !shouldPrint) {
-          await supabase
-            .from('offers')
-            .update({ status: 'viewed', viewed_at: new Date().toISOString() })
-            .eq('id', data.id);
+        // Mark as viewed if not already (skip for authenticated admins and print mode)
+        const isUserAdmin =
+          user && (hasRole('super_admin') || hasInstanceRole('admin', data.instance_id));
+        if (data.status === 'sent' && !isUserAdmin && !shouldPrint) {
+          await supabase.rpc('mark_offer_viewed', { p_token: token });
         }
       } catch (err) {
         console.error('Error fetching offer:', err);
         // Report unexpected backend errors to Sentry
         const { captureBackendError } = await import('@/lib/sentry');
-        captureBackendError('fetchPublicOffer', {
-          code: (err as { code?: string })?.code,
-          message: (err as Error)?.message,
-          details: err
-        }, { token });
+        captureBackendError(
+          'fetchPublicOffer',
+          {
+            code: (err as { code?: string })?.code,
+            message: (err as Error)?.message,
+            details: err,
+          },
+          { token },
+        );
         setError(t('publicOffer.loadError'));
       } finally {
         setLoading(false);
@@ -169,26 +184,8 @@ const PublicOfferView = () => {
   }, [token, t, isAdminPreview]);
 
   // Check if user is admin for this offer's instance
-  const isAdmin = user && offer && (
-    hasRole('super_admin') || hasInstanceRole('admin', offer.instance_id)
-  );
-
-  const handleSaveState = async () => {
-    if (!offer || !isAdmin) return;
-    setSavingState(true);
-    try {
-      // Note: The component manages its own local state for selections.
-      // This admin save functionality might need the selections passed up.
-      // For now, keeping it as a placeholder - admin save button is shown but
-      // the actual save would need state lifted from PublicOfferCustomerView.
-      toast.success(t('publicOffer.selectionSaved'));
-    } catch (err) {
-      console.error('Error saving state:', err);
-      toast.error(t('publicOffer.saveError'));
-    } finally {
-      setSavingState(false);
-    }
-  };
+  const isAdmin =
+    user && offer && (hasRole('super_admin') || hasInstanceRole('admin', offer.instance_id));
 
   if (loading) {
     return (
@@ -217,23 +214,21 @@ const PublicOfferView = () => {
   return (
     <>
       <Helmet>
-        <title>Oferta {offer.offer_number} – {instance?.name || 'Firma'}</title>
+        <title>
+          Oferta {offer.offer_number} – {instance?.name || 'Firma'}
+        </title>
         <meta
           name="description"
           content={`Oferta ${offer.offer_number} od ${instance?.name || 'firmy'}: usługi, pozycje i podsumowanie kosztów.`}
         />
-        {typeof window !== 'undefined' && (
-          <link rel="canonical" href={window.location.href} />
-        )}
+        {typeof window !== 'undefined' && <link rel="canonical" href={window.location.href} />}
       </Helmet>
-      
+
       <PublicOfferCustomerView
         offer={offer}
         mode="public"
         embedded={false}
         isAdmin={isAdmin ?? false}
-        onSaveState={handleSaveState}
-        savingState={savingState}
         onClose={isAdmin ? () => navigate(-1) : undefined}
       />
     </>

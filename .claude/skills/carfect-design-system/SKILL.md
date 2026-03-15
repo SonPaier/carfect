@@ -84,13 +84,22 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
-const buttonVariants = cva('base-classes', {
+const buttonVariants = cva('base-classes rounded-[1px]', {
   variants: {
-    variant: { default: '...', destructive: '...', outline: '...' },
-    size: { default: '...', sm: '...', lg: '...', icon: '...' },
+    variant: {
+      default: '...',
+      destructive: '...',
+      outline: '...',
+      secondary: '...',
+      ghost: '...',
+      link: '...',
+    },
+    size: { default: 'h-11', sm: 'h-9', lg: 'h-14', xl: 'h-16', icon: 'h-11 w-11' },
   },
   defaultVariants: { variant: 'default', size: 'default' },
 });
+// All buttons use rounded-[1px] — no per-size radius overrides.
+// Removed variants: hero, glass, success.
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, ...props }, ref) => (
@@ -227,7 +236,6 @@ All colors use HSL format: `hsl(var(--name))`. Defined in each app's `index.css`
 | `--primary`     | Brand gold/amber    | 45 100% 32.4% |
 | `--secondary`   | Blue-gray           | 215 19% 34%   |
 | `--destructive` | Error red           | 0 72% 50%     |
-| `--success`     | Confirmation teal   | 160 84% 40%   |
 | `--warning`     | Caution orange      | 40 100% 50%   |
 | `--muted`       | Subdued backgrounds | 210 11% 96%   |
 
@@ -276,11 +284,8 @@ These rules apply across all apps:
 
 ### Custom utility classes (Carfect-specific, in index.css @layer)
 
-- `.glass-card` — semi-transparent card with backdrop blur
-- `.glass-button` — interactive glass effect
 - `.gradient-text` — gradient text via background-clip
-- `.glow-primary` — golden glow shadow
-- `.hero-gradient` — hero section gradient
+- `.card-elevated` — elevated card shadow
 
 ### Shared animations (from libs/ui/tailwind.config.ts)
 
@@ -307,6 +312,67 @@ return isMobile ? <Drawer>...</Drawer> : <Dialog>...</Dialog>;
 - On mobile (<768px), ConfirmDialog renders as bottom Drawer instead of Dialog (useIsMobile hook).
 
 When building a new modal: use `Drawer` unless it's a simple confirmation.
+
+### Close Button Pattern
+
+All drawers, overlays, and full-screen dialogs use a consistent custom close button:
+
+```tsx
+<button
+  type="button"
+  onClick={onClose}
+  className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+>
+  <X className="w-5 h-5" />
+</button>
+```
+
+Position: `absolute top-3 right-3 z-50`
+
+- **shadcn Sheet/Drawer**: pass `hideCloseButton` to `SheetContent`, render custom button
+- **shadcn Dialog**: add `[&>button]:hidden` to `DialogContent`, wrap custom button in `<div>` to avoid the selector hiding it
+
+Used in: ReservationDetailsDrawer, CustomerEditDrawer, AddTrainingDrawer, OfferPreviewDialog.
+
+### Admin Module Content Width
+
+All views within an admin module (e.g. offers) use the same `max-w-3xl mx-auto w-full` content width for consistency. This applies to:
+
+- List views (offer list, template list)
+- Form/editor views (offer generator steps, template editor)
+- Sticky footer button containers
+
+```tsx
+// Content wrapper
+<div className="max-w-3xl mx-auto w-full space-y-6 pb-6">{/* page content */}</div>
+```
+
+### Fixed Footer Pattern
+
+Editor views (offer generator, template editor) use a fixed footer with action buttons:
+
+```tsx
+// Content wrapper — pb-24 reserves space for fixed footer
+<div className="pb-24">
+  <div className="max-w-3xl mx-auto w-full space-y-6">{/* form fields */}</div>
+
+  {/* Fixed footer — always at bottom of viewport */}
+  <div className="fixed bottom-0 left-0 right-0 bg-background border-t py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40">
+    <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
+      <Button variant="outline">Wróć</Button>
+      <Button>Zapisz</Button>
+    </div>
+  </div>
+</div>
+```
+
+Key rules:
+
+- Use `fixed bottom-0 left-0 right-0` — always pinned to viewport bottom
+- Content needs `pb-24` to prevent footer from covering last items
+- Footer buttons align with content via `max-w-3xl mx-auto px-4`
+- `z-40` — below dialogs (`z-50`) but above content
+- Mobile bottom nav is hidden during editing via `onEditModeChange` callback
 
 ### Selection Patterns
 
@@ -462,10 +528,10 @@ Use the `EmptyState` component from `@shared/ui` for all views where a list/tabl
 import { EmptyState } from '@shared/ui';
 
 <EmptyState
-  icon={Users}           // lucide-react icon, thematic per view
-  title="Brak klientów"  // main message
-  description="Dodaj pierwszego klienta, aby rozpocząć"  // CTA text (no button)
-/>
+  icon={Users} // lucide-react icon, thematic per view
+  title="Brak klientów" // main message
+  description="Dodaj pierwszego klienta, aby rozpocząć" // CTA text (no button)
+/>;
 ```
 
 ### Styling
@@ -478,16 +544,16 @@ import { EmptyState } from '@shared/ui';
 
 ### Icon mapping per view
 
-| View                  | Icon            | Title (empty)         | Description                                    |
-| --------------------- | --------------- | --------------------- | ---------------------------------------------- |
-| Klienci (Studio)      | `Users`         | Brak klientów         | Dodaj pierwszego klienta, aby rozpocząć        |
-| Oferty (Studio)       | `FileText`      | Brak ofert            | Utwórz pierwszą ofertę dla klienta             |
-| Pracownicy (Studio)   | `User`          | Brak pracowników      | Dodaj pierwszego pracownika, aby rozpocząć     |
-| Protokoły (Studio)    | `ClipboardCheck`| Brak protokołów       | Utwórz pierwszy protokół przyjęcia pojazdu     |
-| Klienci (Sales)       | `Users`         | Brak klientów         | Dodaj pierwszego klienta, aby rozpocząć sprzedaż |
-| Zamówienia (Sales)    | `ShoppingCart`  | Brak zamówień         | Utwórz pierwsze zamówienie dla klienta         |
-| Produkty (Sales)      | `Package`       | Brak produktów        | Dodaj pierwszy produkt do katalogu             |
-| Rolki (Sales)         | `Disc`          | Brak rolek na stanie  | Dodaj pierwszą rolkę do ewidencji              |
+| View                | Icon             | Title (empty)        | Description                                      |
+| ------------------- | ---------------- | -------------------- | ------------------------------------------------ |
+| Klienci (Studio)    | `Users`          | Brak klientów        | Dodaj pierwszego klienta, aby rozpocząć          |
+| Oferty (Studio)     | `FileText`       | Brak ofert           | Utwórz pierwszą ofertę dla klienta               |
+| Pracownicy (Studio) | `User`           | Brak pracowników     | Dodaj pierwszego pracownika, aby rozpocząć       |
+| Protokoły (Studio)  | `ClipboardCheck` | Brak protokołów      | Utwórz pierwszy protokół przyjęcia pojazdu       |
+| Klienci (Sales)     | `Users`          | Brak klientów        | Dodaj pierwszego klienta, aby rozpocząć sprzedaż |
+| Zamówienia (Sales)  | `ShoppingCart`   | Brak zamówień        | Utwórz pierwsze zamówienie dla klienta           |
+| Produkty (Sales)    | `Package`        | Brak produktów       | Dodaj pierwszy produkt do katalogu               |
+| Rolki (Sales)       | `Disc`           | Brak rolek na stanie | Dodaj pierwszą rolkę do ewidencji                |
 
 ### Usage in tables
 
@@ -496,7 +562,11 @@ When used inside a Table, wrap in `TableRow` + `TableCell` with appropriate `col
 ```tsx
 <TableRow>
   <TableCell colSpan={5}>
-    <EmptyState icon={Package} title="Brak produktów" description="Dodaj pierwszy produkt do katalogu" />
+    <EmptyState
+      icon={Package}
+      title="Brak produktów"
+      description="Dodaj pierwszy produkt do katalogu"
+    />
   </TableCell>
 </TableRow>
 ```
@@ -517,9 +587,7 @@ The Sales panel content area uses a CSS variable for max-width:
 ```tsx
 /* SalesDashboard.tsx */
 <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-  <div className="max-w-[var(--sales-content-max-width)] mx-auto">
-    {renderContent()}
-  </div>
+  <div className="max-w-[var(--sales-content-max-width)] mx-auto">{renderContent()}</div>
 </main>
 ```
 

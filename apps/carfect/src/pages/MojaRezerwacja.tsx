@@ -77,7 +77,8 @@ const MojaRezerwacja = () => {
       try {
         const { data, error: fetchError } = await supabase
           .from('reservations')
-          .select(`
+          .select(
+            `
             id,
             confirmation_code,
             reservation_date,
@@ -94,7 +95,8 @@ const MojaRezerwacja = () => {
             instance_id,
             service:services(name, duration_minutes),
             instance:instances(name, phone, address, logo_url, customer_edit_cutoff_hours, slug)
-          `)
+          `,
+          )
           .eq('confirmation_code', code)
           .maybeSingle();
 
@@ -108,26 +110,31 @@ const MojaRezerwacja = () => {
             service: data.service as unknown as Reservation['service'],
             instance: data.instance as unknown as Reservation['instance'],
           });
-          
+
           // Log 'viewed' event for analytics (fire and forget)
-          supabase.from('reservation_events').insert({
-            reservation_id: data.id,
-            event_type: 'viewed',
-            instance_id: data.instance_id
-          }).then(({ error: logError }) => {
-            if (logError) console.warn('Failed to log view event:', logError);
-          });
-          
+          supabase
+            .from('reservation_events')
+            .insert({
+              reservation_id: data.id,
+              event_type: 'viewed',
+              instance_id: data.instance_id,
+            })
+            .then(({ error: logError }) => {
+              if (logError) console.warn('Failed to log view event:', logError);
+            });
+
           // Check for pending change request linked to this reservation (take the newest)
           const { data: changeRequest, error: changeRequestError } = await supabase
             .from('reservations')
-            .select(`
+            .select(
+              `
               id,
               reservation_date,
               start_time,
               confirmation_code,
               service:services(name)
-            `)
+            `,
+            )
             .eq('original_reservation_id', data.id)
             .eq('status', 'change_requested')
             .order('created_at', { ascending: false })
@@ -140,7 +147,7 @@ const MojaRezerwacja = () => {
           if (changeRequest) {
             setPendingChangeRequest({
               ...changeRequest,
-              service: changeRequest.service as unknown as { name: string }
+              service: changeRequest.service as unknown as { name: string },
             });
           }
         }
@@ -161,8 +168,10 @@ const MojaRezerwacja = () => {
     setCancelling(true);
     try {
       // Use SECURITY DEFINER function to cancel reservation
-      const { data: success, error: cancelError } = await supabase
-        .rpc('cancel_reservation_by_code', { _confirmation_code: reservation.confirmation_code });
+      const { data: success, error: cancelError } = await supabase.rpc(
+        'cancel_reservation_by_code',
+        { _confirmation_code: reservation.confirmation_code },
+      );
 
       if (cancelError) throw cancelError;
       if (!success) throw new Error('Failed to cancel reservation');
@@ -174,21 +183,24 @@ const MojaRezerwacja = () => {
             instanceId: reservation.instance_id,
             title: `❌ Anulowana: ${reservation.customer_name}`,
             body: `${reservation.service.name} - ${format(parseISO(reservation.reservation_date), 'd MMM', { locale: pl })} ${reservation.start_time.slice(0, 5)}`,
-            url: `/admin?reservationCode=${reservation.confirmation_code}`
-          }
+            url: `/admin?reservationCode=${reservation.confirmation_code}`,
+          },
         });
       } catch (pushError) {
         console.error('Push notification error:', pushError);
       }
 
       // Log 'cancelled' event for analytics (fire and forget)
-      supabase.from('reservation_events').insert({
-        reservation_id: reservation.id,
-        event_type: 'cancelled',
-        instance_id: reservation.instance_id
-      }).then(({ error: logError }) => {
-        if (logError) console.warn('Failed to log cancel event:', logError);
-      });
+      supabase
+        .from('reservation_events')
+        .insert({
+          reservation_id: reservation.id,
+          event_type: 'cancelled',
+          instance_id: reservation.instance_id,
+        })
+        .then(({ error: logError }) => {
+          if (logError) console.warn('Failed to log cancel event:', logError);
+        });
 
       setReservation({ ...reservation, status: 'cancelled' });
       setCancelDialogOpen(false);
@@ -197,14 +209,18 @@ const MojaRezerwacja = () => {
       console.error('Error cancelling reservation:', err);
       // Report unexpected backend errors to Sentry
       const { captureBackendError } = await import('@/lib/sentry');
-      captureBackendError('handleCancelReservation', {
-        code: (err as { code?: string })?.code,
-        message: (err as Error)?.message,
-        details: err
-      }, {
-        confirmation_code: reservation.confirmation_code,
-        instance_id: reservation.instance_id
-      });
+      captureBackendError(
+        'handleCancelReservation',
+        {
+          code: (err as { code?: string })?.code,
+          message: (err as Error)?.message,
+          details: err,
+        },
+        {
+          confirmation_code: reservation.confirmation_code,
+          instance_id: reservation.instance_id,
+        },
+      );
       toast({ title: t('common.error'), description: t('errors.generic'), variant: 'destructive' });
     } finally {
       setCancelling(false);
@@ -213,16 +229,16 @@ const MojaRezerwacja = () => {
 
   const navigateToEdit = () => {
     if (!reservation) return;
-    
+
     const hostname = window.location.hostname;
     const isDevOrStaging = hostname === 'localhost' || hostname === '127.0.0.1';
-    
+
     // In dev/staging mode, navigate to /rezerwacje
     // In production with subdomains, the slug is already in the subdomain
     const basePath = isDevOrStaging ? '/rezerwacje' : '/';
-    
-    navigate(basePath, { 
-      state: { 
+
+    navigate(basePath, {
+      state: {
         editMode: true,
         existingReservation: {
           id: reservation.id,
@@ -236,9 +252,9 @@ const MojaRezerwacja = () => {
           vehicle_plate: reservation.vehicle_plate,
           car_size: reservation.car_size,
           customer_notes: reservation.customer_notes,
-          instance_id: reservation.instance_id
-        }
-      }
+          instance_id: reservation.instance_id,
+        },
+      },
     });
   };
 
@@ -281,9 +297,7 @@ const MojaRezerwacja = () => {
           <p className="text-sm text-muted-foreground mb-6 text-center">
             Sprawdź kod w SMS-ie i spróbuj ponownie
           </p>
-          <Button onClick={() => window.location.href = '/'}>
-            Zarezerwuj wizytę
-          </Button>
+          <Button onClick={() => (window.location.href = '/')}>Zarezerwuj wizytę</Button>
         </div>
       </>
     );
@@ -295,8 +309,14 @@ const MojaRezerwacja = () => {
   const hoursBeforeVisit = differenceInHours(visitDateTime, new Date());
   const cutoffHours = reservation.instance.customer_edit_cutoff_hours ?? 1;
   const isPast = visitDateTime < new Date();
-  const canEdit = ['confirmed', 'pending'].includes(reservation.status) && hoursBeforeVisit >= cutoffHours && !pendingChangeRequest;
-  const canCancel = ['confirmed', 'pending'].includes(reservation.status) && hoursBeforeVisit >= cutoffHours && !pendingChangeRequest;
+  const canEdit =
+    ['confirmed', 'pending'].includes(reservation.status) &&
+    hoursBeforeVisit >= cutoffHours &&
+    !pendingChangeRequest;
+  const canCancel =
+    ['confirmed', 'pending'].includes(reservation.status) &&
+    hoursBeforeVisit >= cutoffHours &&
+    !pendingChangeRequest;
 
   return (
     <>
@@ -310,7 +330,11 @@ const MojaRezerwacja = () => {
         <header className="border-b border-border bg-card">
           <div className="container py-4 flex items-center justify-center gap-3">
             {reservation.instance.logo_url ? (
-              <img src={reservation.instance.logo_url} alt={reservation.instance.name} className="h-12 w-auto" />
+              <img
+                src={reservation.instance.logo_url}
+                alt={reservation.instance.name}
+                className="h-12 w-auto"
+              />
             ) : (
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Car className="w-6 h-6 text-primary" />
@@ -322,14 +346,16 @@ const MojaRezerwacja = () => {
 
         <main className="container py-6 max-w-md mx-auto flex-1 pb-40">
           {/* Status badge */}
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium mb-4 ${statusInfo.color}`}>
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium mb-4 ${statusInfo.color}`}
+          >
             <StatusIcon className="w-4 h-4" />
             {statusInfo.label}
           </div>
 
           {/* Pending change request info */}
           {pendingChangeRequest && (
-            <div className="glass-card p-4 mb-4 bg-orange-50 border-orange-200">
+            <div className="bg-white border border-border p-4 mb-4 bg-orange-50 border-orange-200">
               <div className="flex items-center gap-2 text-orange-700 font-medium mb-2">
                 <Clock className="w-4 h-4" />
                 {t('myReservation.pendingChangeRequest')}
@@ -338,7 +364,10 @@ const MojaRezerwacja = () => {
                 <div className="flex justify-between">
                   <span>{t('myReservation.proposedNewDate')}</span>
                   <span className="font-medium">
-                    {format(parseISO(pendingChangeRequest.reservation_date), 'd MMMM', { locale: pl })} o {pendingChangeRequest.start_time.slice(0, 5)}
+                    {format(parseISO(pendingChangeRequest.reservation_date), 'd MMMM', {
+                      locale: pl,
+                    })}{' '}
+                    o {pendingChangeRequest.start_time.slice(0, 5)}
                   </span>
                 </div>
                 {pendingChangeRequest.service?.name && (
@@ -353,9 +382,9 @@ const MojaRezerwacja = () => {
 
           {/* Reservation details */}
           <div className="space-y-4">
-            <div className="glass-card p-4 space-y-3">
+            <div className="bg-white border border-border p-4 space-y-3">
               <h2 className="font-semibold text-foreground">Szczegóły rezerwacji</h2>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Usługa</span>
@@ -378,19 +407,23 @@ const MojaRezerwacja = () => {
                 {reservation.service.duration_minutes && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Czas trwania</span>
-                    <span className="font-medium text-foreground">{reservation.service.duration_minutes} min</span>
+                    <span className="font-medium text-foreground">
+                      {reservation.service.duration_minutes} min
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Kod rezerwacji</span>
-                  <span className="font-mono font-bold text-primary">{reservation.confirmation_code}</span>
+                  <span className="font-mono font-bold text-primary">
+                    {reservation.confirmation_code}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="glass-card p-4 space-y-3">
+            <div className="bg-white border border-border p-4 space-y-3">
               <h2 className="font-semibold text-foreground">Twoje dane</h2>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Imię</span>
@@ -408,7 +441,11 @@ const MojaRezerwacja = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Rozmiar</span>
                     <span className="font-medium text-foreground">
-                      {reservation.car_size === 'small' ? 'Mały' : reservation.car_size === 'medium' ? 'Średni' : 'Duży'}
+                      {reservation.car_size === 'small'
+                        ? 'Mały'
+                        : reservation.car_size === 'medium'
+                          ? 'Średni'
+                          : 'Duży'}
                     </span>
                   </div>
                 )}
@@ -425,14 +462,16 @@ const MojaRezerwacja = () => {
             {reservation.instance.phone && (
               <a
                 href={`tel:${reservation.instance.phone}`}
-                className="glass-card p-4 flex items-center gap-3 hover:border-primary/50 transition-all"
+                className="bg-white border border-border p-4 flex items-center gap-3 hover:border-primary/50 transition-all"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Phone className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Masz pytania?</p>
-                  <p className="text-xs text-muted-foreground">Zadzwoń: {reservation.instance.phone}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Zadzwoń: {reservation.instance.phone}
+                  </p>
                 </div>
               </a>
             )}
@@ -446,7 +485,10 @@ const MojaRezerwacja = () => {
               {canCancel && (
                 <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="flex-1 h-12 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-12 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                    >
                       Anuluj
                     </Button>
                   </AlertDialogTrigger>
@@ -455,13 +497,15 @@ const MojaRezerwacja = () => {
                       <AlertDialogTitle>{t('myReservation.cancelDialog.title')}</AlertDialogTitle>
                       <AlertDialogDescription>
                         {t('myReservation.cancelDialog.description', {
-                          date: format(parseISO(reservation.reservation_date), 'd MMMM', { locale: pl }),
-                          time: reservation.start_time.slice(0, 5)
+                          date: format(parseISO(reservation.reservation_date), 'd MMMM', {
+                            locale: pl,
+                          }),
+                          time: reservation.start_time.slice(0, 5),
                         })}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="flex flex-col gap-3 mt-4">
-                      <Button 
+                      <Button
                         variant="default"
                         onClick={() => {
                           setCancelDialogOpen(false);
@@ -471,8 +515,8 @@ const MojaRezerwacja = () => {
                       >
                         {t('myReservation.cancelDialog.findAnotherTime')}
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleCancel}
                         disabled={cancelling}
                         className="w-full text-red-600 border-red-200 hover:bg-red-50"
@@ -487,9 +531,9 @@ const MojaRezerwacja = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-              
+
               {canEdit && (
-                <Button 
+                <Button
                   className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={navigateToEdit}
                 >
@@ -504,7 +548,15 @@ const MojaRezerwacja = () => {
         <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background">
           <div className="container py-3">
             <p className="text-sm text-muted-foreground text-center">
-              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Carfect.pl</a> - System rezerwacji online
+              <a
+                href="https://carfect.pl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                Carfect.pl
+              </a>{' '}
+              - System rezerwacji online
             </p>
           </div>
         </footer>

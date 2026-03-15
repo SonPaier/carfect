@@ -141,7 +141,7 @@ const renderServiceFormDialog = (options: RenderOptions = {}) => {
       <MemoryRouter>
         <ServiceFormDialog {...defaultProps} />
       </MemoryRouter>
-    </I18nextProvider>
+    </I18nextProvider>,
   );
 
   return { ...result, user };
@@ -154,10 +154,10 @@ describe('ServiceFormDialog', () => {
     resetSupabaseMocks();
     mockIsMobileValue = false;
     vi.clearAllMocks();
-    
+
     // Mock reminder templates fetch
     mockSupabaseQuery('reminder_templates', { data: [], error: null });
-    
+
     // Mock unified_services insert/update
     mockSupabaseQuery('unified_services', { data: { id: 'new-id' }, error: null }, 'insert');
     mockSupabaseQuery('unified_services', { data: { id: 'updated-id' }, error: null }, 'update');
@@ -200,7 +200,7 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       const categoryTrigger = screen.getByRole('combobox');
       await user.click(categoryTrigger);
-      expect(screen.getByText(/Bez kategorii/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Bez kategorii/i).length).toBeGreaterThan(0);
     });
 
     it('SVC-U-006: Wyświetla radio buttons netto/brutto', () => {
@@ -249,9 +249,9 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-012: Kliknięcie "Zapisz" bez nazwy pokazuje error "Nazwa usługi jest wymagana"', async () => {
       const { user } = renderServiceFormDialog();
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Nazwa usługi jest wymagana/i)).toBeInTheDocument();
       });
@@ -262,10 +262,10 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0]; // First textbox is the name field
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, '   ');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Nazwa usługi jest wymagana/i)).toBeInTheDocument();
       });
@@ -274,9 +274,9 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-013: Kliknięcie "Zapisz" bez nazwy pokazuje inline error (nie toast)', async () => {
       const { user } = renderServiceFormDialog();
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Nazwa usługi jest wymagana/i)).toBeInTheDocument();
       });
@@ -285,9 +285,9 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-014: Po błędzie walidacji - pole nazwy ma czerwoną ramkę (border-destructive)', async () => {
       const { user } = renderServiceFormDialog();
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         const nameInputs = screen.getAllByRole('textbox');
         const nameInput = nameInputs[0];
@@ -300,15 +300,15 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(nameInput.className).toContain('border-destructive');
       });
-      
+
       await user.type(nameInput, 'Nowa usługa');
-      
+
       await waitFor(() => {
         expect(nameInput.className).not.toContain('border-destructive');
       });
@@ -319,11 +319,11 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       // Type only spaces and try to save
       await user.type(nameInput, '   ');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Nazwa usługi jest wymagana/i)).toBeInTheDocument();
       });
@@ -332,15 +332,18 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-016: Focus wraca do pola nazwy po błędzie walidacji', async () => {
       const { user } = renderServiceFormDialog();
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
-      await waitFor(() => {
-        const nameInputs = screen.getAllByRole('textbox');
-        const nameInput = nameInputs[0];
-        // Focus should be on name input after validation error
-        expect(document.activeElement).toBe(nameInput);
-      }, { timeout: 500 });
+
+      await waitFor(
+        () => {
+          const nameInputs = screen.getAllByRole('textbox');
+          const nameInput = nameInputs[0];
+          // Focus should be on name input after validation error
+          expect(document.activeElement).toBe(nameInput);
+        },
+        { timeout: 500 },
+      );
     });
 
     it('SVC-U-018: Puste pole ceny jest akceptowane (cena opcjonalna)', async () => {
@@ -348,10 +351,10 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, 'Usługa bez ceny');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
@@ -368,10 +371,10 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, 'MYCIE PODSTAWOWE'); // case-insensitive match
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Nazwa jest już używana/i)).toBeInTheDocument();
       });
@@ -382,10 +385,10 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, 'Mycie podstawowe');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(nameInput.className).toContain('border-destructive');
       });
@@ -396,10 +399,10 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, '  Mycie podstawowe  '); // with extra spaces
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Nazwa jest już używana/i)).toBeInTheDocument();
       });
@@ -411,15 +414,15 @@ describe('ServiceFormDialog', () => {
         id: 'existing-1',
         name: 'Mycie podstawowe',
       };
-      
+
       const { user } = renderServiceFormDialog({
         service: serviceToEdit,
         existingServices: mockExistingServices,
       });
-      
+
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
@@ -431,11 +434,11 @@ describe('ServiceFormDialog', () => {
       const nameInput = nameInputs[0];
       const shortNameInput = nameInputs[1];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, 'Unikalna usługa');
       await user.type(shortNameInput, 'pol'); // will be uppercased to POL
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Skrót jest już używany/i)).toBeInTheDocument();
       });
@@ -447,11 +450,11 @@ describe('ServiceFormDialog', () => {
       const nameInput = nameInputs[0];
       const shortNameInput = nameInputs[1];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, 'Unikalna usługa');
       await user.type(shortNameInput, 'mypod');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(shortNameInput.className).toContain('border-destructive');
       });
@@ -462,11 +465,11 @@ describe('ServiceFormDialog', () => {
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInput, 'Unikalna usługa'); // existing-3 has null short_name
       // Don't type any short_name (leave empty)
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
@@ -479,15 +482,15 @@ describe('ServiceFormDialog', () => {
         name: 'Polerowanie',
         short_name: 'POL',
       };
-      
+
       const { user } = renderServiceFormDialog({
         service: serviceToEdit,
         existingServices: mockExistingServices,
       });
-      
+
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
@@ -503,9 +506,9 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
-      
+
       await user.type(nameInput, 'Nowa usługa testowa');
-      
+
       expect(nameInput).toHaveValue('Nowa usługa testowa');
     });
 
@@ -513,9 +516,9 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const shortNameInput = nameInputs[1];
-      
+
       await user.type(shortNameInput, 'abc');
-      
+
       expect(shortNameInput).toHaveValue('ABC');
     });
 
@@ -523,9 +526,9 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const shortNameInput = nameInputs[1];
-      
+
       await user.type(shortNameInput, 'ABCDEFGHIJKLM');
-      
+
       expect(shortNameInput).toHaveValue('ABCDEFGHIJ'); // Max 10 chars
     });
 
@@ -533,12 +536,12 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       const grossRadio = screen.getByLabelText(/Cena brutto/i);
       const netRadio = screen.getByLabelText(/Cena netto/i);
-      
+
       // Default is net
       expect(netRadio).toBeChecked();
-      
+
       await user.click(grossRadio);
-      
+
       expect(grossRadio).toBeChecked();
       expect(netRadio).not.toBeChecked();
     });
@@ -546,9 +549,9 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-024: Kliknięcie "Cena zależna od wielkości" pokazuje pola S/M/L', async () => {
       const { user } = renderServiceFormDialog();
       const sizeLink = screen.getByText(/Cena zależna od wielkości/i);
-      
+
       await user.click(sizeLink);
-      
+
       expect(screen.getByText(/Mały \(S\)/i)).toBeInTheDocument();
       expect(screen.getByText(/Średni \(M\)/i)).toBeInTheDocument();
       expect(screen.getByText(/Duży \(L\)/i)).toBeInTheDocument();
@@ -556,26 +559,26 @@ describe('ServiceFormDialog', () => {
 
     it('SVC-U-025: Kliknięcie "Użyj jednej ceny" ukrywa pola S/M/L', async () => {
       const { user } = renderServiceFormDialog();
-      
+
       // First show size prices
       const sizeLink = screen.getByText(/Cena zależna od wielkości/i);
       await user.click(sizeLink);
-      
+
       expect(screen.getByText(/Mały \(S\)/i)).toBeInTheDocument();
-      
+
       // Then hide them
       const singlePriceLink = screen.getByText(/Użyj jednej ceny/i);
       await user.click(singlePriceLink);
-      
+
       expect(screen.queryByText(/Mały \(S\)/i)).not.toBeInTheDocument();
     });
 
     it('SVC-U-026: Wpisanie ceny aktualizuje wartość', async () => {
       const { user } = renderServiceFormDialog();
       const priceInput = screen.getByRole('spinbutton');
-      
+
       await user.type(priceInput, '199.99');
-      
+
       expect(priceInput).toHaveValue(199.99);
     });
 
@@ -595,7 +598,7 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       // Find textarea by tag
       const textarea = document.querySelector('textarea');
-      
+
       if (textarea) {
         await user.type(textarea, 'To jest opis usługi');
         expect(textarea).toHaveValue('To jest opis usługi');
@@ -696,10 +699,10 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog({ onSaved });
       const nameInputs = screen.getAllByRole('textbox');
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInputs[0], 'Nowa usługa');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(onSaved).toHaveBeenCalled();
       });
@@ -710,10 +713,10 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog({ onOpenChange });
       const nameInputs = screen.getAllByRole('textbox');
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInputs[0], 'Nowa usługa');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(onOpenChange).toHaveBeenCalledWith(false);
       });
@@ -725,10 +728,10 @@ describe('ServiceFormDialog', () => {
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInputs[0], 'Nowa usługa');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
@@ -737,37 +740,45 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-085: Po sukcesie UPDATE pokazuje toast "Usługa zaktualizowana"', async () => {
       const { user } = renderServiceFormDialog({ service: mockServiceBasic });
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
     });
 
     it('SVC-U-086: Po błędzie INSERT pokazuje toast error', async () => {
-      mockSupabaseQuery('unified_services', { data: null, error: { message: 'DB error' } }, 'insert');
-      
+      mockSupabaseQuery(
+        'unified_services',
+        { data: null, error: { message: 'DB error' } },
+        'insert',
+      );
+
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.type(nameInputs[0], 'Nowa usługa');
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalled();
       });
     });
 
     it('SVC-U-086b: Po błędzie UPDATE pokazuje toast error', async () => {
-      mockSupabaseQuery('unified_services', { data: null, error: { message: 'DB error' } }, 'update');
-      
+      mockSupabaseQuery(
+        'unified_services',
+        { data: null, error: { message: 'DB error' } },
+        'update',
+      );
+
       const { user } = renderServiceFormDialog({ service: mockServiceBasic });
       const saveButton = screen.getByRole('button', { name: /Zapisz/i });
-      
+
       await user.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalled();
       });
@@ -783,20 +794,20 @@ describe('ServiceFormDialog', () => {
       const onOpenChange = vi.fn();
       const { user } = renderServiceFormDialog({ onOpenChange });
       const cancelButton = screen.getByRole('button', { name: /Anuluj/i });
-      
+
       await user.click(cancelButton);
-      
+
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
     it('SVC-U-092: Kliknięcie X zamyka dialog', async () => {
       const onOpenChange = vi.fn();
       const { user } = renderServiceFormDialog({ onOpenChange });
-      
+
       // Find close button (X button in dialog header) - Radix uses specific aria attributes
       const closeButtons = screen.getAllByRole('button');
-      const closeButton = closeButtons.find(btn => btn.querySelector('.lucide-x'));
-      
+      const closeButton = closeButtons.find((btn) => btn.querySelector('.lucide-x'));
+
       if (closeButton) {
         await user.click(closeButton);
         expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -821,7 +832,7 @@ describe('ServiceFormDialog', () => {
     it('SVC-U-101: Przycisk AI jest disabled bez nazwy (nie można kliknąć)', async () => {
       renderServiceFormDialog();
       const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
-      
+
       // Button is disabled, so clicking shouldn't trigger anything
       expect(aiButton).toBeDisabled();
     });
@@ -831,18 +842,18 @@ describe('ServiceFormDialog', () => {
         data: { description: 'Wygenerowany opis usługi' },
         error: null,
       });
-      
+
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
-      
+
       await user.type(nameInput, 'Usługa do opisu');
-      
+
       const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
       expect(aiButton).not.toBeDisabled();
-      
+
       await user.click(aiButton!);
-      
+
       await waitFor(() => {
         const textarea = document.querySelector('textarea');
         expect(textarea).toHaveValue('Wygenerowany opis usługi');
@@ -854,16 +865,16 @@ describe('ServiceFormDialog', () => {
         data: {},
         error: null,
       });
-      
+
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
-      
+
       await user.type(nameInput, 'Usługa do opisu');
-      
+
       const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
       await user.click(aiButton!);
-      
+
       await waitFor(() => {
         const textarea = document.querySelector('textarea');
         expect(textarea).toHaveValue('');
@@ -875,16 +886,16 @@ describe('ServiceFormDialog', () => {
         data: null,
         error: { message: 'AI error' },
       });
-      
+
       const { user } = renderServiceFormDialog();
       const nameInputs = screen.getAllByRole('textbox');
       const nameInput = nameInputs[0];
-      
+
       await user.type(nameInput, 'Usługa do opisu');
-      
+
       const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
       await user.click(aiButton!);
-      
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalled();
       });

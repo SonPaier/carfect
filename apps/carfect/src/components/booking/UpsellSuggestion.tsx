@@ -79,12 +79,12 @@ export default function UpsellSuggestion({
 
     // Find next block on this station after our service ends
     const stationBlocks = availabilityBlocks
-      .filter(b => b.station_id === selectedStationId && b.block_date === dateStr)
-      .map(b => {
+      .filter((b) => b.station_id === selectedStationId && b.block_date === dateStr)
+      .map((b) => {
         const [h, m] = b.start_time.split(':').map(Number);
         return { start: h * 60 + m, block: b };
       })
-      .filter(b => b.start > serviceEndMinutes)
+      .filter((b) => b.start > serviceEndMinutes)
       .sort((a, b) => a.start - b.start);
 
     if (stationBlocks.length === 0) {
@@ -100,7 +100,7 @@ export default function UpsellSuggestion({
     }
 
     // Find services that fit exactly in the 15-minute slot
-    const shortServices = services.filter(s => {
+    const shortServices = services.filter((s) => {
       if (s.id === selectedService.id) return false;
       if (selectedAddons.includes(s.id)) return false;
       const duration = s.duration_minutes || 60;
@@ -123,7 +123,15 @@ export default function UpsellSuggestion({
       gapMinutes,
       extraMinutes: bestService.duration_minutes || 15,
     };
-  }, [selectedService, selectedTime, selectedDate, selectedStationId, services, availabilityBlocks, selectedAddons]);
+  }, [
+    selectedService,
+    selectedTime,
+    selectedDate,
+    selectedStationId,
+    services,
+    availabilityBlocks,
+    selectedAddons,
+  ]);
 
   // Get price for service based on car size
   const getServicePrice = (service: Service): number => {
@@ -143,7 +151,7 @@ export default function UpsellSuggestion({
   const price = getServicePrice(service);
 
   return (
-    <div className="relative glass-card p-4 mb-4 border-primary/30 bg-primary/5 animate-fade-in">
+    <div className="relative bg-white border border-border p-4 mb-4 border-primary/30 bg-primary/5 animate-fade-in">
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
@@ -156,13 +164,14 @@ export default function UpsellSuggestion({
         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-sm mb-1">
             A co powiesz o dodatkowych {extraMinutes} minutach?
           </h4>
           <p className="text-xs text-muted-foreground mb-3">
-            Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na <span className="font-medium text-foreground">{service.name}</span>?
+            Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na{' '}
+            <span className="font-medium text-foreground">{service.name}</span>?
           </p>
 
           <div className="flex items-center justify-between">

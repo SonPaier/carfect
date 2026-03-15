@@ -51,7 +51,9 @@ export const CustomersList = ({
 
   const getVehiclesForCustomer = (phone: string) => {
     const normalized = phone.replace(/^\+/, '');
-    return vehicles.filter(v => v.phone === phone || v.phone === normalized || v.phone === `+${normalized}`);
+    return vehicles.filter(
+      (v) => v.phone === phone || v.phone === normalized || v.phone === `+${normalized}`,
+    );
   };
 
   const handleCall = (phone: string, e: React.MouseEvent) => {
@@ -81,16 +83,16 @@ export const CustomersList = ({
 
   if (customers.length === 0) {
     return (
-      <div className="glass-card p-8 text-center text-muted-foreground">
+      <div className="bg-white border border-border p-8 text-center text-muted-foreground">
         {emptyMessage || t('common.noResults')}
       </div>
     );
   }
 
   return (
-    <div className="glass-card overflow-hidden">
+    <div className="bg-white border border-border overflow-hidden">
       <div className="divide-y divide-border/50">
-        {customers.map(customer => {
+        {customers.map((customer) => {
           const customerVehicles = getVehiclesForCustomer(customer.phone);
           return (
             <div
@@ -100,9 +102,7 @@ export const CustomersList = ({
             >
               <div className="min-w-0 flex-1 space-y-0.5">
                 {/* Line 1: Name */}
-                <div className="font-medium text-foreground">
-                  {customer.name}
-                </div>
+                <div className="font-medium text-foreground">{customer.name}</div>
                 {/* Line 2: Phone */}
                 <div className="text-sm text-muted-foreground">
                   {formatPhoneDisplay(customer.phone)}
@@ -131,8 +131,8 @@ export const CustomersList = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                     className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-                    onClick={e => handleSms(customer, e)}
+                    className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+                    onClick={(e) => handleSms(customer, e)}
                   >
                     <MessageSquare className="w-4 h-4" />
                   </Button>
@@ -140,7 +140,7 @@ export const CustomersList = ({
                     variant="ghost"
                     size="icon"
                     className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-                    onClick={e => handleCall(customer.phone, e)}
+                    onClick={(e) => handleCall(customer.phone, e)}
                   >
                     <Phone className="w-4 h-4" />
                   </Button>
@@ -149,7 +149,7 @@ export const CustomersList = ({
                       variant="ghost"
                       size="icon"
                       className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-hover"
-                      onClick={e => handleDelete(customer, e)}
+                      onClick={(e) => handleDelete(customer, e)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

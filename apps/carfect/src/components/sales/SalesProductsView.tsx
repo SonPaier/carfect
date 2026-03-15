@@ -3,14 +3,7 @@ import { Search, Plus, MoreHorizontal, Settings2, ArrowUp, ArrowDown, Package } 
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Input, EmptyState } from '@shared/ui';
 import { Button } from '@shared/ui';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +39,7 @@ type SortDirection = 'asc' | 'desc';
 
 const SalesProductsView = () => {
   const { roles } = useAuth();
-  const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
+  const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<SalesProduct[]>([]);
@@ -63,7 +56,9 @@ const SalesProductsView = () => {
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, short_name, full_name, description, price_net, price_unit, category_id, has_variants, exclude_from_discount')
+      .select(
+        'id, short_name, full_name, description, price_net, price_unit, category_id, has_variants, exclude_from_discount',
+      )
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
@@ -75,22 +70,26 @@ const SalesProductsView = () => {
       .eq('category_type', 'sales');
     const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
 
-    setProducts((data || []).map((p: any) => ({
-      id: p.id,
-      shortName: p.short_name,
-      fullName: p.full_name,
-      description: p.description || undefined,
-      priceNet: Number(p.price_net),
-      priceUnit: p.price_unit,
-      categoryId: p.category_id || null,
-      categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
-      hasVariants: p.has_variants || false,
-      excludeFromDiscount: p.exclude_from_discount || false,
-    })));
+    setProducts(
+      (data || []).map((p: any) => ({
+        id: p.id,
+        shortName: p.short_name,
+        fullName: p.full_name,
+        description: p.description || undefined,
+        priceNet: Number(p.price_net),
+        priceUnit: p.price_unit,
+        categoryId: p.category_id || null,
+        categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
+        hasVariants: p.has_variants || false,
+        excludeFromDiscount: p.exclude_from_discount || false,
+      })),
+    );
     setLoading(false);
   }, [instanceId]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -105,9 +104,7 @@ const SalesProductsView = () => {
     if (!searchQuery.trim()) return products;
     const q = searchQuery.toLowerCase();
     return products.filter(
-      (p) =>
-        p.shortName.toLowerCase().includes(q) ||
-        p.fullName.toLowerCase().includes(q)
+      (p) => p.shortName.toLowerCase().includes(q) || p.fullName.toLowerCase().includes(q),
     );
   }, [products, searchQuery]);
 
@@ -144,21 +141,35 @@ const SalesProductsView = () => {
 
   const handleDelete = async (id: string) => {
     const { error } = await (supabase.from('sales_products').delete().eq('id', id) as any);
-    if (error) { toast.error('Błąd usuwania'); return; }
+    if (error) {
+      toast.error('Błąd usuwania');
+      return;
+    }
     toast.success('Produkt usunięty');
     fetchProducts();
   };
 
-  const SortableHead = ({ column, children, className }: { column: SortColumn; children: React.ReactNode; className?: string }) => (
+  const SortableHead = ({
+    column,
+    children,
+    className,
+  }: {
+    column: SortColumn;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <TableHead className={className}>
       <button
         className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
         onClick={() => handleSort(column)}
       >
         {children}
-        {sortColumn === column && (
-          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
-        )}
+        {sortColumn === column &&
+          (sortDirection === 'asc' ? (
+            <ArrowUp className="w-3.5 h-3.5" />
+          ) : (
+            <ArrowDown className="w-3.5 h-3.5" />
+          ))}
       </button>
     </TableHead>
   );
@@ -184,7 +195,13 @@ const SalesProductsView = () => {
             <Settings2 className="w-4 h-4" />
             Kategorie
           </Button>
-          <Button size="sm" onClick={() => { setEditProduct(null); setDrawerOpen(true); }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditProduct(null);
+              setDrawerOpen(true);
+            }}
+          >
             <Plus className="w-4 h-4" />
             Dodaj produkt
           </Button>
@@ -198,7 +215,9 @@ const SalesProductsView = () => {
               <SortableHead column="shortName">Nazwa</SortableHead>
               <SortableHead column="fullName">Nazwa pełna</SortableHead>
               <SortableHead column="categoryName">Kategoria</SortableHead>
-              <SortableHead column="priceNet" className="text-right w-[120px]">Cena netto</SortableHead>
+              <SortableHead column="priceNet" className="text-right w-[120px]">
+                Cena netto
+              </SortableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -222,7 +241,9 @@ const SalesProductsView = () => {
                 <TableRow key={product.id} className="hover:bg-hover-strong">
                   <TableCell className="font-medium">{product.shortName}</TableCell>
                   <TableCell className="text-sm">{product.fullName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{product.categoryName || '—'}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {product.categoryName || '—'}
+                  </TableCell>
                   <TableCell className="text-right text-sm tabular-nums">
                     {formatCurrency(product.priceNet)}
                   </TableCell>
@@ -234,7 +255,12 @@ const SalesProductsView = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { setEditProduct(product); setDrawerOpen(true); }}>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditProduct(product);
+                            setDrawerOpen(true);
+                          }}
+                        >
                           Edytuj
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -259,16 +285,32 @@ const SalesProductsView = () => {
             Strona {currentPage} z {totalPages} ({sortedProducts.length} produktów)
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
               <ChevronLeftIcon className="w-4 h-4" />
               Poprzednia
             </Button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button key={page} variant={page === currentPage ? 'default' : 'outline'} size="sm" className="w-9" onClick={() => setCurrentPage(page)}>
+              <Button
+                key={page}
+                variant={page === currentPage ? 'default' : 'outline'}
+                size="sm"
+                className="w-9"
+                onClick={() => setCurrentPage(page)}
+              >
                 {page}
               </Button>
             ))}
-            <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
               Następna
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
@@ -289,10 +331,13 @@ const SalesProductsView = () => {
             onOpenChange={setCategoryDialogOpen}
             instanceId={instanceId}
             categoryType="sales"
-            serviceCounts={products.reduce((acc, p) => {
-              if (p.categoryId) acc[p.categoryId] = (acc[p.categoryId] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>)}
+            serviceCounts={products.reduce(
+              (acc, p) => {
+                if (p.categoryId) acc[p.categoryId] = (acc[p.categoryId] || 0) + 1;
+                return acc;
+              },
+              {} as Record<string, number>,
+            )}
             onCategoriesChanged={fetchProducts}
           />
         </>

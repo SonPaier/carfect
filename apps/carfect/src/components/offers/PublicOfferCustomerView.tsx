@@ -1,53 +1,31 @@
-import { useState, useEffect } from 'react';
 import { parseMarkdownLists } from '@shared/utils';
+import { formatPrice } from '@/lib/offerUtils';
 import { TruncatedDescription } from './TruncatedDescription';
 import { ScopePhotoCarousel } from './ScopePhotoCarousel';
 import { useTranslation } from 'react-i18next';
-import { 
-  FileText, 
-  Check, 
-  User, 
-  Building2, 
-  Car, 
+import {
+  FileText,
+  User,
+  Building2,
+  Car,
   Calendar,
   Clock,
-  Loader2,
-  Sparkles,
   Shield,
-  Award,
-  Star,
-  Heart,
-  Pencil,
-  Facebook,
-  Instagram,
-  X,
-  Save,
   Phone,
-  MapPin,
   Mail,
   Globe,
-  ExternalLink,
-  Copy,
+  MapPin,
   CreditCard,
-  CheckCircle,
-  Zap,
-  Trophy,
-  ThumbsUp,
-  Eye,
-  Printer
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@shared/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
-import { Badge } from '@shared/ui';
-import { Separator } from '@shared/ui';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@shared/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
-import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DEFAULT_BRANDING, OfferBranding, getContrastTextColor } from '@shared/utils';
+import { TrustTilesSection } from './public/TrustTilesSection';
+import { ExpertContactCard } from './public/ExpertContactCard';
+import { BankTransferCard } from './public/BankTransferCard';
+import { SocialMediaCard } from './public/SocialMediaCard';
 
 interface OfferScopeRef {
   id: string;
@@ -63,19 +41,20 @@ interface OfferOptionItem {
   custom_description?: string;
   quantity: number;
   unit_price: number;
-  unit: string;
   discount_percent: number;
-  is_optional: boolean;
+  sort_order?: number;
+  is_optional?: boolean;
+  product_id?: string;
   unified_services?: {
     description?: string;
     photo_urls?: string[] | null;
-  } | null;
+  };
 }
 
 interface OfferOption {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   is_selected: boolean;
   subtotal_net: number;
   sort_order?: number;
@@ -89,10 +68,10 @@ interface SelectedState {
   selectedVariants: Record<string, string>;
   selectedUpsells: Record<string, boolean>;
   selectedOptionalItems: Record<string, boolean>;
-  selectedScopeId?: string | null; // Deprecated: kept for backward compatibility
-  selectedScopeIds?: Record<string, boolean>; // New: multi-select scopes
+  selectedScopeId?: string | null;
+  selectedScopeIds?: Record<string, boolean>;
   selectedItemInOption?: Record<string, string>;
-  isDefault?: boolean; // Marker indicating this is admin's pre-selection (not customer's choice)
+  isDefault?: boolean;
 }
 
 interface TrustTile {
@@ -132,9 +111,11 @@ interface Instance {
 
 export interface PublicOfferData {
   id: string;
-  offer_number: string;
   instance_id: string;
-  customer_data: {
+  offer_number: string;
+  public_token: string;
+  has_unified_services?: boolean;
+  customer_data?: {
     name?: string;
     email?: string;
     phone?: string;
@@ -172,20 +153,12 @@ interface PublicOfferCustomerViewProps {
   mode: 'public' | 'overlayPreview';
   embedded?: boolean;
   isAdmin?: boolean;
-  onSaveState?: () => Promise<void>;
-  savingState?: boolean;
   onClose?: () => void;
 }
 
 // Helper to render description with truncation - supports HTML or plain text with line breaks
 const renderDescription = (text: string, textColor?: string) => {
-  return (
-    <TruncatedDescription 
-      text={text} 
-      maxLines={3}
-      textColor={textColor}
-    />
-  );
+  return <TruncatedDescription text={text} maxLines={3} textColor={textColor} />;
 };
 
 export const PublicOfferCustomerView = ({
@@ -193,345 +166,51 @@ export const PublicOfferCustomerView = ({
   mode,
   embedded = false,
   isAdmin = false,
-  onSaveState,
-  savingState = false,
   onClose,
 }: PublicOfferCustomerViewProps) => {
   const { t } = useTranslation();
-  const [responding, setResponding] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  
-  // Track selected variant per scope (key: scope_id, value: option_id)
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
-  // Track selected optional items (key: item_id, value: boolean)
-  const [selectedOptionalItems, setSelectedOptionalItems] = useState<Record<string, boolean>>({});
-  // Track which non-extras scopes are selected (multi-select allowed)
-  const [selectedScopeIds, setSelectedScopeIds] = useState<Record<string, boolean>>({});
-  // Track which item is selected within multi-item options (key: option_id, value: item_id)
-  const [selectedItemInOption, setSelectedItemInOption] = useState<Record<string, string>>({});
-  // Track which items were preselected by admin (never changes after initial load)
-  const [adminPreselectedItems, setAdminPreselectedItems] = useState<Record<string, boolean>>({});
-  // Confirmation dialog state
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Initialize state from offer.selected_state or defaults
-  useEffect(() => {
-    const savedState = offer.selected_state;
-    
-    // Identify non-extras options and their items
-    const nonExtrasOptions = offer.offer_options.filter(opt => !opt.scope?.is_extras_scope);
-    const hasSingleNonExtrasOption = nonExtrasOptions.length === 1;
-    
-    if (savedState) {
-      // Check if this is a customer's confirmed choice (not just admin's default)
-      const isCustomerChoice = !savedState.isDefault;
-      
-      const restoredVariants = savedState.selectedVariants || {};
-      const restoredUpsells = savedState.selectedUpsells || {};
-      const restoredOptionalItems = savedState.selectedOptionalItems || {};
-      const restoredItemInOption = savedState.selectedItemInOption || {};
-
-      // Backward compatibility: old offers stored upsells as whole-option selection.
-      // ONLY apply this if there are NO selectedOptionalItems saved (truly old format)
-      const mergedOptionalItems: Record<string, boolean> = { ...restoredOptionalItems };
-      const hasAnyOptionalItems = Object.keys(restoredOptionalItems).length > 0;
-      
-      if (!hasAnyOptionalItems) {
-        // Only migrate from old format if no new format data exists
-        offer.offer_options.forEach((opt) => {
-          if (opt.is_upsell && restoredUpsells[opt.id]) {
-            opt.offer_option_items?.forEach((item) => {
-              mergedOptionalItems[item.id] = true;
-            });
-          }
-        });
-      }
-
-      // Backward compatibility: initialize selectedItemInOption for multi-item options if not saved
-      const mergedItemInOption: Record<string, string> = { ...restoredItemInOption };
-      offer.offer_options.forEach((opt) => {
-        if (!opt.is_upsell && !opt.scope?.is_extras_scope) {
-          const nonOptionalItems = opt.offer_option_items?.filter(i => !i.is_optional) || [];
-          // Auto-select first item if:
-          // 1. No saved state at all OR
-          // 2. It's admin's default AND there's only one option with one non-optional item (single product offer)
-          const shouldAutoSelect = !savedState.isDefault || 
-            (hasSingleNonExtrasOption && nonOptionalItems.length === 1);
-          
-          if (!mergedItemInOption[opt.id] && nonOptionalItems.length >= 1 && shouldAutoSelect) {
-            mergedItemInOption[opt.id] = nonOptionalItems[0].id;
-          }
-        }
-      });
-
-      setSelectedVariants(restoredVariants);
-      setSelectedOptionalItems(mergedOptionalItems);
-      // Backward compatibility: convert old single selectedScopeId to new multi-select
-      if (savedState.selectedScopeIds) {
-        setSelectedScopeIds(savedState.selectedScopeIds);
-      } else if (savedState.selectedScopeId) {
-        setSelectedScopeIds({ [savedState.selectedScopeId]: true });
-      } else {
-        setSelectedScopeIds({});
-      }
-      setSelectedItemInOption(mergedItemInOption);
-      // Store admin's original preselection (from saved state, not migrated)
-      setAdminPreselectedItems(savedState.selectedOptionalItems || {});
-    } else {
-      // No saved state - don't select anything by default
-      // User must explicitly choose their main service
-      setSelectedVariants({});
-      setSelectedScopeIds({});
-      setSelectedItemInOption({});
-      setSelectedOptionalItems({});
-      setAdminPreselectedItems({});
-    }
-  }, [offer]);
-
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: 'PLN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Math.round(value));
-  };
+  const formatPriceRounded = (value: number) => formatPrice(value, true);
 
   // For line items: show "Gratis!" for zero/null prices
   const formatItemPrice = (value: number, prefix: string = '') => {
     if (value === 0 || value === null || value === undefined) {
-      return 'Gratis!';
+      return t('publicOffer.gratis');
     }
-    return `${prefix}${formatPrice(value)}`;
+    return `${prefix}${formatPriceRounded(value)}`;
   };
 
   // VAT annotation shown below each item price
-  const vatAnnotation = `netto + VAT`;
-
-  // Calculate dynamic total based on selected items
-  const calculateDynamicTotal = () => {
-    let totalNet = 0;
-    
-    // Identify extras scope options
-    const extrasScopeOptionIds = new Set<string>();
-    offer.offer_options.forEach(opt => {
-      if (opt.scope?.is_extras_scope) {
-        extrasScopeOptionIds.add(opt.id);
-      }
-    });
-    
-    // For non-extras scopes: count selected items from ALL selected scopes (multi-select)
-    offer.offer_options.forEach(option => {
-      if (extrasScopeOptionIds.has(option.id)) return; // Skip extras, handled separately
-      
-      // Check if this option's scope is selected
-      if (!option.scope_id || !selectedScopeIds[option.scope_id]) return;
-      
-      const selectedItemId = selectedItemInOption[option.id];
-      if (selectedItemId) {
-        const item = option.offer_option_items.find(i => i.id === selectedItemId);
-        if (item) {
-          const itemTotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-          totalNet += itemTotal;
-        }
-      }
-    });
-    
-    // Add selected items from extras scope (multiple allowed)
-    offer.offer_options.forEach(option => {
-      if (extrasScopeOptionIds.has(option.id)) {
-        option.offer_option_items.forEach(item => {
-          if (item.id && selectedOptionalItems[item.id]) {
-            const itemTotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-            totalNet += itemTotal;
-          }
-        });
-      }
-    });
-    
-    const totalGross = totalNet * (1 + offer.vat_rate / 100);
-    return { net: totalNet, gross: totalGross };
-  };
-
-  // Check if any product is selected (for confirm button)
-  const hasSelectedProduct = Object.keys(selectedItemInOption).length > 0;
-
-  const dynamicTotals = calculateDynamicTotal();
-
-  // Generate list of selected items for confirmation dialog
-  const getSelectedItemsList = () => {
-    const items: { name: string; price: number }[] = [];
-    
-    // Identify extras scope options
-    const extrasScopeOptionIds = new Set<string>();
-    offer.offer_options.forEach(opt => {
-      if (opt.scope?.is_extras_scope) {
-        extrasScopeOptionIds.add(opt.id);
-      }
-    });
-    
-    // For non-extras scopes: add selected items from ALL selected scopes
-    offer.offer_options.forEach(option => {
-      if (extrasScopeOptionIds.has(option.id)) return;
-      if (!option.scope_id || !selectedScopeIds[option.scope_id]) return;
-      
-      const selectedItemId = selectedItemInOption[option.id];
-      if (selectedItemId) {
-        const item = option.offer_option_items.find(i => i.id === selectedItemId);
-        if (item) {
-          const itemTotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-          items.push({ name: item.custom_name || 'Usługa', price: itemTotal });
-        }
-      }
-    });
-    
-    // Add selected items from extras scope
-    offer.offer_options.forEach(option => {
-      if (extrasScopeOptionIds.has(option.id)) {
-        option.offer_option_items.forEach(item => {
-          if (item.id && selectedOptionalItems[item.id]) {
-            const itemTotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-            items.push({ name: item.custom_name || 'Dodatek', price: itemTotal });
-          }
-        });
-      }
-    });
-    
-    return items;
-  };
-
-  // Handle toggling a scope selection (multi-select) and selecting an item within it
-  const handleToggleScope = (scopeId: string, optionId: string, itemId: string) => {
-    const isCurrentlySelected = selectedScopeIds[scopeId];
-    const currentItemInOption = selectedItemInOption[optionId];
-    
-    // If clicking the same item that's already selected, deselect the scope
-    if (isCurrentlySelected && currentItemInOption === itemId) {
-      // Deselect scope
-      setSelectedScopeIds(prev => {
-        const next = { ...prev };
-        delete next[scopeId];
-        return next;
-      });
-      // Clear selected item for this option
-      setSelectedItemInOption(prev => {
-        const next = { ...prev };
-        delete next[optionId];
-        return next;
-      });
-    } else {
-      // Select or switch item within scope
-      setSelectedScopeIds(prev => ({ ...prev, [scopeId]: true }));
-      setSelectedVariants(prev => ({ ...prev, [scopeId]: optionId }));
-      setSelectedItemInOption(prev => ({ ...prev, [optionId]: itemId }));
-    }
-  };
-
-
-  const handleToggleOptionalItem = (itemId: string) => {
-    setSelectedOptionalItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
-  };
-
-  const handleSelectItemInOption = (optionId: string, itemId: string) => {
-    // Find which option this item belongs to
-    const option = offer.offer_options.find(opt => opt.id === optionId);
-    if (!option) {
-      setSelectedItemInOption(prev => ({ ...prev, [optionId]: itemId }));
-      return;
-    }
-
-    // For non-extras scopes, use the toggle behavior
-    if (option.scope_id && !option.scope?.is_extras_scope) {
-      handleToggleScope(option.scope_id, optionId, itemId);
-    } else {
-      // For extras or unknown, just update the item
-      setSelectedItemInOption(prev => ({ ...prev, [optionId]: itemId }));
-    }
-  };
-
-  // Confirm selection - only for public mode
-  const handleConfirmSelection = async () => {
-    if (mode === 'overlayPreview') return;
-    
-    setResponding(true);
-    try {
-      const derivedUpsells: Record<string, boolean> = {};
-      offer.offer_options.forEach((opt) => {
-        if (opt.is_upsell) {
-          const anySelected = opt.offer_option_items?.some((i) => !!selectedOptionalItems[i.id]);
-          if (anySelected) derivedUpsells[opt.id] = true;
-        }
-      });
-
-      const stateToSave: SelectedState = {
-        selectedVariants,
-        selectedUpsells: derivedUpsells,
-        selectedOptionalItems,
-        selectedScopeIds,
-        selectedItemInOption,
-      };
-      
-      const { error } = await supabase
-        .from('offers')
-        .update({ 
-          status: 'accepted', 
-          responded_at: new Date().toISOString(),
-          approved_at: new Date().toISOString(),
-          selected_state: JSON.parse(JSON.stringify(stateToSave)),
-          total_net: dynamicTotals.net,
-          total_gross: dynamicTotals.gross,
-        })
-        .eq('id', offer.id);
-
-      if (error) throw error;
-      
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          instance_id: offer.instance_id,
-          type: 'offer_approved',
-          title: t('publicOffer.notificationAcceptedTitle', { number: offer.offer_number }),
-          description: t('publicOffer.notificationAcceptedDesc', { name: offer.customer_data?.name || t('customers.customer'), price: formatPrice(dynamicTotals.gross) }),
-          entity_type: 'offer',
-          entity_id: offer.id,
-        });
-      
-      setIsEditMode(false);
-      toast.success(t('publicOffer.offerApproved'));
-      // Reload page to show updated state
-      window.location.reload();
-    } catch (err) {
-      toast.error(t('publicOffer.approvalError'));
-    } finally {
-      setResponding(false);
-    }
-  };
+  const vatAnnotation = t('publicOffer.netPlusVat');
 
   const instance = offer.instances;
-  const isExpired = offer.valid_until && new Date(offer.valid_until) < new Date();
-  const canRespond = mode === 'public' && ['draft', 'sent', 'viewed'].includes(offer.status) && !isExpired && !offer.approved_at;
-  const isAccepted = offer.status === 'accepted' || !!offer.approved_at;
-  // In overlay mode, always allow interactions. In public mode, disabled when accepted and not editing
-  const interactionsDisabled = mode === 'public' && isAccepted && !isEditMode;
-  
-  // Read-only mode: hide all interactive elements (buttons, selection UI)
-  const readonlyMode = true; // Temporarily make all offers read-only
 
   // Branding colors
   const brandingEnabled = instance?.offer_branding_enabled ?? false;
   const branding: OfferBranding = {
     offer_branding_enabled: brandingEnabled,
-    offer_bg_color: brandingEnabled ? (instance?.offer_bg_color ?? DEFAULT_BRANDING.offer_bg_color) : DEFAULT_BRANDING.offer_bg_color,
-    offer_header_bg_color: brandingEnabled ? (instance?.offer_header_bg_color ?? DEFAULT_BRANDING.offer_header_bg_color) : DEFAULT_BRANDING.offer_header_bg_color,
-    offer_header_text_color: brandingEnabled ? (instance?.offer_header_text_color ?? DEFAULT_BRANDING.offer_header_text_color) : DEFAULT_BRANDING.offer_header_text_color,
-    offer_section_bg_color: brandingEnabled ? (instance?.offer_section_bg_color ?? DEFAULT_BRANDING.offer_section_bg_color) : DEFAULT_BRANDING.offer_section_bg_color,
-    offer_section_text_color: brandingEnabled ? (instance?.offer_section_text_color ?? DEFAULT_BRANDING.offer_section_text_color) : DEFAULT_BRANDING.offer_section_text_color,
-    offer_primary_color: brandingEnabled ? (instance?.offer_primary_color ?? DEFAULT_BRANDING.offer_primary_color) : DEFAULT_BRANDING.offer_primary_color,
-    offer_scope_header_text_color: brandingEnabled ? (instance?.offer_scope_header_text_color ?? DEFAULT_BRANDING.offer_scope_header_text_color) : DEFAULT_BRANDING.offer_scope_header_text_color,
+    offer_bg_color: brandingEnabled
+      ? (instance?.offer_bg_color ?? DEFAULT_BRANDING.offer_bg_color)
+      : DEFAULT_BRANDING.offer_bg_color,
+    offer_header_bg_color: brandingEnabled
+      ? (instance?.offer_header_bg_color ?? DEFAULT_BRANDING.offer_header_bg_color)
+      : DEFAULT_BRANDING.offer_header_bg_color,
+    offer_header_text_color: brandingEnabled
+      ? (instance?.offer_header_text_color ?? DEFAULT_BRANDING.offer_header_text_color)
+      : DEFAULT_BRANDING.offer_header_text_color,
+    offer_section_bg_color: brandingEnabled
+      ? (instance?.offer_section_bg_color ?? DEFAULT_BRANDING.offer_section_bg_color)
+      : DEFAULT_BRANDING.offer_section_bg_color,
+    offer_section_text_color: brandingEnabled
+      ? (instance?.offer_section_text_color ?? DEFAULT_BRANDING.offer_section_text_color)
+      : DEFAULT_BRANDING.offer_section_text_color,
+    offer_primary_color: brandingEnabled
+      ? (instance?.offer_primary_color ?? DEFAULT_BRANDING.offer_primary_color)
+      : DEFAULT_BRANDING.offer_primary_color,
+    offer_scope_header_text_color: brandingEnabled
+      ? (instance?.offer_scope_header_text_color ?? DEFAULT_BRANDING.offer_scope_header_text_color)
+      : DEFAULT_BRANDING.offer_scope_header_text_color,
   };
-  
-  const primaryButtonTextColor = getContrastTextColor(branding.offer_primary_color);
 
   const selectedOptions = offer.offer_options
     .filter((opt) => opt.is_selected)
@@ -540,17 +219,15 @@ export const PublicOfferCustomerView = ({
   const scopeSections = Object.values(
     selectedOptions.reduce(
       (acc, opt) => {
-        const inferredNameFromTitle = opt.name.includes(' - ')
-          ? opt.name.split(' - ')[0]
-          : null;
+        const inferredNameFromTitle = opt.name.includes(' - ') ? opt.name.split(' - ')[0] : null;
         const key = opt.scope_id ?? inferredNameFromTitle ?? '__ungrouped__';
 
         const inferredScopeName = opt.scope_id
-          ? opt.scope?.name ?? inferredNameFromTitle ?? 'Usługa'
-          : inferredNameFromTitle ?? 'Pozostałe';
-        
+          ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
+          : (inferredNameFromTitle ?? t('publicOffer.otherFallback'));
+
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
-        
+
         // Get scope description and photos
         const scopeDescription = opt.scope?.description ?? opt.description ?? null;
         const scopePhotoUrls = opt.scope?.photo_urls ?? [];
@@ -571,22 +248,28 @@ export const PublicOfferCustomerView = ({
       },
       {} as Record<
         string,
-        { key: string; scopeName: string; scopeDescription: string | null; scopePhotoUrls: string[]; sortKey: number; isExtrasScope: boolean; options: OfferOption[] }
-      >
-    )
+        {
+          key: string;
+          scopeName: string;
+          scopeDescription: string | null;
+          scopePhotoUrls: string[];
+          sortKey: number;
+          isExtrasScope: boolean;
+          options: OfferOption[];
+        }
+      >,
+    ),
   ).sort((a, b) => a.sortKey - b.sortKey);
 
   return (
-    <div 
-      className={cn(embedded ? "min-h-full" : "min-h-screen", "w-full overflow-x-hidden")}
+    <div
+      className={cn(embedded ? 'min-h-full' : 'min-h-screen', 'w-full overflow-x-hidden')}
       style={{ backgroundColor: branding.offer_bg_color }}
     >
       {/* Header */}
-      <header 
-        style={{ backgroundColor: branding.offer_header_bg_color }}
-      >
+      <header style={{ backgroundColor: branding.offer_header_bg_color }}>
         <div className="max-w-4xl w-full mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {instance?.logo_url ? (
                 <img
@@ -595,7 +278,7 @@ export const PublicOfferCustomerView = ({
                   className="h-12 object-contain"
                 />
               ) : (
-                <div 
+                <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center"
                   style={{ backgroundColor: `${branding.offer_primary_color}20` }}
                 >
@@ -603,7 +286,7 @@ export const PublicOfferCustomerView = ({
                 </div>
               )}
               <div>
-                <h1 
+                <h1
                   className="font-bold text-lg"
                   style={{ color: branding.offer_header_text_color }}
                 >
@@ -611,93 +294,57 @@ export const PublicOfferCustomerView = ({
                   {instance?.name}
                 </h1>
                 <div className="flex items-center gap-2">
-                  <p 
+                  <p
                     className="text-sm opacity-70"
                     style={{ color: branding.offer_header_text_color }}
                   >
                     Oferta nr {offer.offer_number}
                   </p>
-                  {/* TODO: Print feature - to be refined in future
-                  {mode === 'public' && (
-                  <button
-                    onClick={() => window.print()}
-                    className="p-1 rounded hover:bg-black/10 transition-colors opacity-70 hover:opacity-100"
-                    title="Drukuj"
-                    style={{ color: branding.offer_header_text_color }}
-                  >
-                    <Printer className="w-4 h-4" />
-                  </button>
-                  )}
-                  */}
                 </div>
               </div>
             </div>
             {/* Company contact info - right side */}
-            <div className="hidden md:flex flex-col items-end gap-0.5 text-xs" style={{ color: branding.offer_header_text_color }}>
+            <div
+              className="hidden md:flex flex-col items-end gap-0.5 text-xs"
+              style={{ color: branding.offer_header_text_color }}
+            >
               {instance?.phone && (
-                <a href={`tel:${instance.phone}`} className="hover:underline opacity-80">{instance.phone}</a>
+                <a href={`tel:${instance.phone}`} className="hover:underline opacity-80">
+                  {instance.phone}
+                </a>
               )}
               {instance?.email && (
-                <a href={`mailto:${instance.email}`} className="hover:underline opacity-80">{instance.email}</a>
+                <a href={`mailto:${instance.email}`} className="hover:underline opacity-80">
+                  {instance.email}
+                </a>
               )}
-              {instance?.address && (
-                <span className="opacity-80">{instance.address}</span>
-              )}
-              {instance?.website && (
-                <a href={instance.website} target="_blank" rel="noopener noreferrer" className="hover:underline opacity-80">{instance.website}</a>
+              {instance?.address && <span className="opacity-80">{instance.address}</span>}
+              {instance?.website && /^https?:\/\//i.test(instance.website) && (
+                <a
+                  href={instance.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline opacity-80"
+                >
+                  {instance.website}
+                </a>
               )}
             </div>
-            {/* Admin controls in public mode */}
-            {mode === 'public' && isAdmin && (
-              <div className="flex items-center gap-2">
-                {onSaveState && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={onSaveState}
-                    disabled={savingState}
-                    className="gap-1"
-                    style={{ 
-                      backgroundColor: branding.offer_primary_color,
-                      color: primaryButtonTextColor,
-                    }}
-                  >
-                    {savingState ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    {t('publicOffer.save')}
-                  </Button>
-                )}
-                {onClose && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="h-9 w-9 rounded-full hover:bg-black/10"
-                  >
-                    <X className="h-5 w-5" style={{ color: branding.offer_header_text_color }} />
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl w-full mx-auto px-4 py-8 space-y-6">
-
         {/* Customer Data Card */}
-        <Card 
+        <Card
           className="border"
-          style={{ 
+          style={{
             backgroundColor: branding.offer_section_bg_color,
             borderColor: '#e0e0e0',
           }}
         >
           <CardHeader className="pb-3">
-            <CardTitle 
+            <CardTitle
               className="flex items-center gap-2 text-base"
               style={{ color: branding.offer_section_text_color }}
             >
@@ -710,7 +357,7 @@ export const PublicOfferCustomerView = ({
               {offer.customer_data?.name}
             </p>
             {offer.customer_data?.phone && (
-              <a 
+              <a
                 href={`tel:${offer.customer_data.phone}`}
                 className="flex items-center gap-2 hover:underline"
                 style={{ color: branding.offer_primary_color }}
@@ -720,7 +367,7 @@ export const PublicOfferCustomerView = ({
               </a>
             )}
             {offer.customer_data?.company && (
-              <p 
+              <p
                 className="flex items-center gap-1 opacity-70"
                 style={{ color: branding.offer_section_text_color }}
               >
@@ -734,7 +381,7 @@ export const PublicOfferCustomerView = ({
               </p>
             )}
             {offer.customer_data?.email && (
-              <a 
+              <a
                 href={`mailto:${offer.customer_data.email}`}
                 className="flex items-center gap-2 opacity-70 hover:underline"
                 style={{ color: branding.offer_section_text_color }}
@@ -746,15 +393,19 @@ export const PublicOfferCustomerView = ({
             {/* Vehicle info integrated with customer */}
             {(offer.vehicle_data?.brand || offer.vehicle_data?.brandModel) && (
               <div className="pt-2 mt-2 border-t" style={{ borderColor: '#e0e0e0' }}>
-                <p 
+                <p
                   className="flex items-center gap-1 font-medium"
                   style={{ color: branding.offer_section_text_color }}
                 >
                   <Car className="w-3 h-3" />
-                  {offer.vehicle_data.brandModel || `${offer.vehicle_data.brand || ''} ${offer.vehicle_data.model || ''}`.trim()}
+                  {offer.vehicle_data.brandModel ||
+                    `${offer.vehicle_data.brand || ''} ${offer.vehicle_data.model || ''}`.trim()}
                 </p>
                 {offer.vehicle_data.plate && (
-                  <p className="opacity-70 ml-4" style={{ color: branding.offer_section_text_color }}>
+                  <p
+                    className="opacity-70 ml-4"
+                    style={{ color: branding.offer_section_text_color }}
+                  >
                     {offer.vehicle_data.plate}
                   </p>
                 )}
@@ -763,90 +414,14 @@ export const PublicOfferCustomerView = ({
           </CardContent>
         </Card>
 
-        {/* Why Trust Us Section - configurable from database */}
+        {/* Why Trust Us Section */}
         {instance.offer_trust_tiles && instance.offer_trust_tiles.length > 0 && (
-          <Card 
-            className="border"
-            style={{ 
-              backgroundColor: branding.offer_section_bg_color,
-              borderColor: '#e0e0e0',
-            }}
-          >
-            <CardContent className="pt-6">
-              {instance.offer_trust_header_title && (
-                <div className="text-center mb-6">
-                  <h2 
-                    className="text-xl font-bold mb-2"
-                    style={{ color: branding.offer_section_text_color }}
-                  >
-                    {instance.offer_trust_header_title}
-                  </h2>
-                </div>
-              )}
-
-              {instance.offer_trust_description && (
-                <p 
-                  className="text-sm mb-6 opacity-80 text-center max-w-3xl mx-auto"
-                  style={{ color: branding.offer_section_text_color }}
-                >
-                  {instance.offer_trust_description}
-                </p>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {instance.offer_trust_tiles.map((tile, idx) => {
-                  // Map icon string to component
-                  const iconMap: Record<string, typeof Star> = {
-                    star: Star,
-                    shield: Shield,
-                    sparkles: Sparkles,
-                    award: Award,
-                    heart: Heart,
-                    car: Car,
-                    clock: Clock,
-                    check: CheckCircle,
-                    zap: Zap,
-                    trophy: Trophy,
-                    thumbsup: ThumbsUp,
-                    eye: Eye,
-                  };
-                  const IconComponent = iconMap[tile.icon] || Star;
-                  
-                  return (
-                    <div 
-                      key={idx}
-                      className="rounded p-4 border shadow-sm"
-                      style={{ 
-                        backgroundColor: branding.offer_section_bg_color,
-                        borderColor: '#e0e0e0',
-                      }}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div 
-                          className="w-10 h-10 rounded flex items-center justify-center"
-                          style={{ backgroundColor: `${branding.offer_primary_color}1a` }}
-                        >
-                          <IconComponent className="w-5 h-5" style={{ color: branding.offer_primary_color }} />
-                        </div>
-                        <h3 
-                          className="font-semibold text-[17px] md:text-sm"
-                          style={{ color: branding.offer_section_text_color }}
-                        >
-                          {tile.title}
-                        </h3>
-                      </div>
-                      <p 
-                        className="text-[15px] md:text-xs opacity-70"
-                        style={{ color: branding.offer_section_text_color }}
-                      >
-                        {tile.description}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <TrustTilesSection
+            tiles={instance.offer_trust_tiles}
+            title={instance.offer_trust_header_title}
+            description={instance.offer_trust_description}
+            branding={branding}
+          />
         )}
 
         {/* Service Sections */}
@@ -858,526 +433,360 @@ export const PublicOfferCustomerView = ({
           </Card>
         ) : (
           <div className="space-y-8">
-            {/* Calculate if there's only one non-extras scope */}
-            {(() => {
-              const nonExtrasSections = scopeSections.filter(s => !s.isExtrasScope);
-              const hasSingleNonExtrasScope = nonExtrasSections.length === 1;
-              
-              return scopeSections.map((section) => {
-                // For extras scope, flatten all items from all options as individually selectable
-                if (section.isExtrasScope) {
-                  const allItems = section.options.flatMap(option => 
-                    (option.offer_option_items || []).map(item => ({
+            {scopeSections.map((section) => {
+              // Extras scope — flat list of additional items
+              if (section.isExtrasScope) {
+                const allItems = section.options
+                  .flatMap((option) =>
+                    (option.offer_option_items || []).map((item) => ({
                       ...item,
                       optionId: option.id,
-                      optionDescription: option.description
-                    }))
-                  ).filter(item => item.id); // Filter out items without id
+                      optionDescription: option.description,
+                    })),
+                  )
+                  .filter((item) => item.id);
 
-                  if (allItems.length === 0) return null;
+                if (allItems.length === 0) return null;
 
-                  // Split items into preselected (by admin) and suggested
-                  const preselectedItems = allItems.filter(item => adminPreselectedItems[item.id]);
-                  const suggestedItems = allItems.filter(item => !adminPreselectedItems[item.id]);
-
-                  // Helper to render a single extras item card
-                  const renderExtrasItem = (item: typeof allItems[0]) => {
-                    const isItemSelected = selectedOptionalItems[item.id];
-                    const itemTotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-                    
-                    return (
-                      <div 
-                        key={item.id}
-                        className="rounded-lg border p-4 transition-all"
-                        style={{
-                          backgroundColor: branding.offer_section_bg_color,
-                          borderColor: isItemSelected ? branding.offer_primary_color : '#e0e0e0',
-                        }}
+                return (
+                  <section key={section.key} className="space-y-3">
+                    <div>
+                      <h2
+                        className="text-base font-semibold"
+                        style={{ color: branding.offer_scope_header_text_color }}
                       >
-                          {/* Desktop: Name + price/button on one line, description below */}
+                        {section.scopeName}
+                      </h2>
+                      {section.scopeDescription && (
+                        <div
+                          className="text-sm mt-1 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0"
+                          style={{ color: branding.offer_scope_header_text_color }}
+                          dangerouslySetInnerHTML={{
+                            __html: parseMarkdownLists(section.scopeDescription),
+                          }}
+                        />
+                      )}
+                    </div>
+                    {allItems.map((item) => {
+                      const itemTotal =
+                        item.quantity * item.unit_price * (1 - item.discount_percent / 100);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-lg border p-4"
+                          style={{
+                            backgroundColor: branding.offer_section_bg_color,
+                            borderColor: '#e0e0e0',
+                          }}
+                        >
+                          {/* Desktop: Name + price on one line, description below */}
                           <div className="hidden md:block">
                             <div className="flex items-center justify-between">
-                              <p 
+                              <p
                                 className="font-medium"
                                 style={{ color: branding.offer_section_text_color }}
                               >
                                 {item.custom_name}
                               </p>
-                              <div className="flex items-center gap-3">
-                                {!offer.hide_unit_prices && (
-                                  <div className="text-right">
-                                    <span 
-                                      className="font-medium"
-                                      style={{ color: branding.offer_section_text_color }}
-                                    >
-                                      {formatItemPrice(itemTotal, '+')}
-                                    </span>
-                                    <div className="text-[12px] text-muted-foreground">{vatAnnotation}</div>
-                                  </div>
-                                )}
-                                {!readonlyMode && (
-                                  <Button
-                                    variant={isItemSelected ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleToggleOptionalItem(item.id)}
-                                    disabled={interactionsDisabled}
-                                    className="shrink-0"
-                                    style={isItemSelected ? { 
-                                      backgroundColor: branding.offer_primary_color, 
-                                      color: primaryButtonTextColor 
-                                    } : {}}
+                              {!offer.hide_unit_prices && (
+                                <div className="text-right">
+                                  <span
+                                    className="font-medium"
+                                    style={{ color: branding.offer_section_text_color }}
                                   >
-                                    {isItemSelected ? (
-                                      <>
-                                        <Check className="w-4 h-4 mr-1" />
-                                        Dodane
-                                      </>
-                                    ) : (
-                                      'Dodaj'
-                                    )}
-                                  </Button>
-                                )}
-                              </div>
+                                    {formatItemPrice(itemTotal, '+')}
+                                  </span>
+                                  <div className="text-[12px] text-muted-foreground">
+                                    {vatAnnotation}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             {(item.custom_description || item.unified_services?.description) && (
                               <div className="mt-1">
-                                {renderDescription(item.custom_description || item.unified_services?.description || '')}
+                                {renderDescription(
+                                  item.custom_description ||
+                                    item.unified_services?.description ||
+                                    '',
+                                )}
                               </div>
                             )}
                           </div>
 
-                          {/* Mobile: Name, description, then price/button */}
+                          {/* Mobile: Name, description, then price */}
                           <div className="md:hidden space-y-2">
-                            <p 
+                            <p
                               className="font-medium"
                               style={{ color: branding.offer_section_text_color }}
                             >
                               {item.custom_name}
                             </p>
-                            {(item.custom_description || item.unified_services?.description) && 
-                              renderDescription(item.custom_description || item.unified_services?.description || '')
-                            }
-                            <div className="flex items-center justify-end gap-3">
-                              {!offer.hide_unit_prices && (
-                                  <div className="text-right">
-                                    <span 
-                                      className="font-medium"
-                                      style={{ color: branding.offer_section_text_color }}
-                                    >
-                                      {formatItemPrice(itemTotal, '+')}
-                                    </span>
-                                    <div className="text-[12px] text-muted-foreground">{vatAnnotation}</div>
+                            {(item.custom_description || item.unified_services?.description) &&
+                              renderDescription(
+                                item.custom_description || item.unified_services?.description || '',
+                              )}
+                            {!offer.hide_unit_prices && (
+                              <div className="flex items-center justify-end">
+                                <div className="text-right">
+                                  <span
+                                    className="font-medium"
+                                    style={{ color: branding.offer_section_text_color }}
+                                  >
+                                    {formatItemPrice(itemTotal, '+')}
+                                  </span>
+                                  <div className="text-[12px] text-muted-foreground">
+                                    {vatAnnotation}
                                   </div>
-                              )}
-                              {!readonlyMode && (
-                                <Button
-                                  variant={isItemSelected ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => handleToggleOptionalItem(item.id)}
-                                  disabled={interactionsDisabled}
-                                  className="shrink-0"
-                                  style={isItemSelected ? { 
-                                    backgroundColor: branding.offer_primary_color, 
-                                    color: primaryButtonTextColor 
-                                  } : {}}
-                                >
-                                  {isItemSelected ? (
-                                    <>
-                                      <Check className="w-4 h-4 mr-1" />
-                                      Dodane
-                                    </>
-                                  ) : (
-                                    'Dodaj'
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                      </div>
-                    );
-                  };
-
-                  return (
-                    <div key={section.key} className="space-y-6">
-                      {/* Preselected extras - "Twoje dodatki" */}
-                      {preselectedItems.length > 0 && (
-                        <section className="space-y-3">
-                          <div>
-                            <h2 
-                              className="text-base font-semibold"
-                              style={{ color: branding.offer_scope_header_text_color }}
-                            >
-                              Twoje dodatki
-                            </h2>
-                            {section.scopeDescription && (
-                              <div 
-                                className="text-sm mt-1 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0"
-                                style={{ color: branding.offer_scope_header_text_color }}
-                                dangerouslySetInnerHTML={{ __html: parseMarkdownLists(section.scopeDescription) }}
-                              />
+                                </div>
+                              </div>
                             )}
                           </div>
-                          {preselectedItems.map(renderExtrasItem)}
-                        </section>
-                      )}
-
-                      {/* Suggested extras - "Sugerowane dodatki" */}
-                      {suggestedItems.length > 0 && (
-                        <section className="space-y-3">
-                          <div>
-                            <h2 
-                              className="text-base font-semibold"
-                              style={{ color: branding.offer_scope_header_text_color }}
-                            >
-                              Sugerowane dodatki do Twojego zapytania
-                            </h2>
-                          </div>
-                          {suggestedItems.map(renderExtrasItem)}
-                        </section>
-                      )}
-                    </div>
-                  );
-                }
-
-                // Regular scope (non-extras) - single product selection (radio behavior)
-                // Flatten all items from all options in this scope - ONLY non-optional items
-                // Optional items (is_optional: true) are "suggested extras" and should NOT appear in regular service sections
-                const allItems = section.options.flatMap(opt => 
-                  (opt.offer_option_items || []).filter(item => item.id && !item.is_optional)
-                );
-                if (allItems.length === 0) return null;
-                
-                const option = section.options[0]; // Use first option for selection tracking
-                if (!option) return null;
-                
-                const selectedItemId = selectedItemInOption[option.id];
-                const isScopeSelected = selectedScopeIds[section.key];
-                
-                // Get scope description from section (already resolved from scope or option)
-                const scopeDescription = section.scopeDescription;
-                
-                return (
-                  <section key={section.key} className="space-y-3">
-                    <div>
-                      <h2 
-                        className="font-semibold flex items-center gap-2"
-                        style={{ color: branding.offer_scope_header_text_color, fontSize: '22px' }}
-                      >
-                        <FileText className="w-5 h-5" style={{ color: branding.offer_primary_color }} />
-                        {section.scopeName}
-                      </h2>
-                      
-                      {/* Description + Photos layout */}
-                      {(scopeDescription || section.scopePhotoUrls.length > 0) && (
-                        <div className={cn(
-                          "mt-2",
-                          section.scopePhotoUrls.length > 0 && scopeDescription
-                            ? "flex flex-col md:flex-row md:gap-6"
-                            : ""
-                        )}>
-                          {scopeDescription && (
-                            <div className={cn(
-                              "mt-1",
-                              section.scopePhotoUrls.length > 0 ? "md:flex-1 md:order-1" : ""
-                            )}>
-                              {renderDescription(scopeDescription, branding.offer_scope_header_text_color)}
-                            </div>
-                          )}
-                          {section.scopePhotoUrls.length > 0 && (
-                            <div className={cn(
-                              "mt-3 md:mt-0",
-                              scopeDescription ? "md:flex-1 md:order-2" : "w-full"
-                            )}>
-                              <ScopePhotoCarousel photos={section.scopePhotoUrls} />
-                            </div>
-                          )}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Products - single or multiple items with toggle selection */}
-                    <div className="space-y-3">
-                        {allItems.map((item) => {
-                          const isItemSelected = selectedItemId === item.id && isScopeSelected;
-                          const itemTotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-                          
-                          // Parse variant name from custom_name if present
-                          const nameParts = (item.custom_name || '').split('\n');
-                          const variantLabel = nameParts.length > 1 ? nameParts[0] : null;
-                          const productName = nameParts.length > 1 ? nameParts.slice(1).join('\n') : item.custom_name;
-                          const description = item.custom_description || item.unified_services?.description;
-                          
-                          return (
-                            <div
-                              key={item.id}
-                              className={cn(
-                                "rounded-lg border p-4 transition-all",
-                                !readonlyMode && "cursor-pointer",
-                                !readonlyMode && !isItemSelected && "opacity-70 hover:opacity-100"
-                              )}
-                              style={{
-                                borderColor: isItemSelected ? branding.offer_primary_color : '#e0e0e0',
-                                backgroundColor: branding.offer_section_bg_color,
-                              }}
-                              onClick={() => {
-                                if (!interactionsDisabled && !readonlyMode) {
-                                  handleToggleScope(section.key, option.id, item.id);
-                                }
-                              }}
-                            >
-                              {variantLabel && (
-                                <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: branding.offer_primary_color }}>
-                                  {variantLabel}
-                                </p>
-                              )}
-                              
-                              {/* Layout: description left, photos right on desktop */}
-                              {(() => {
-                                const servicePhotos = item.unified_services?.photo_urls || [];
-                                const hasPhotos = servicePhotos.length > 0;
-                                
-                                return (
-                                  <>
-                                    {/* Name + price row */}
-                                    <div className="flex items-start justify-between gap-3">
-                                      <span className="font-medium text-base flex-1" style={{ color: branding.offer_section_text_color }}>
-                                        {productName}
-                                      </span>
-                                      <div className="flex items-center gap-3 shrink-0">
-                                        {!offer.hide_unit_prices && (
-                                          <div className="text-right">
-                                            <span className="font-bold text-lg" style={{ color: branding.offer_section_text_color }}>
-                                              {formatItemPrice(itemTotal)}
-                                            </span>
-                                            <div className="text-[12px] text-muted-foreground">{vatAnnotation}</div>
-                                          </div>
-                                        )}
-                                        {!readonlyMode && (
-                                          <Button
-                                            variant={isItemSelected ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (!interactionsDisabled) {
-                                                handleToggleScope(section.key, option.id, item.id);
-                                              }
-                                            }}
-                                            disabled={interactionsDisabled}
-                                            className="shrink-0"
-                                            style={isItemSelected ? { backgroundColor: branding.offer_primary_color, color: primaryButtonTextColor } : {}}
-                                          >
-                                            {isItemSelected ? (<><Check className="w-4 h-4 mr-1" />Dodana</>) : 'Dodaj'}
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Description + Photos */}
-                                    {(description || hasPhotos) && (
-                                      <div className={cn(
-                                        "mt-2",
-                                        hasPhotos && description
-                                          ? "flex flex-col md:flex-row md:gap-4"
-                                          : ""
-                                      )}>
-                                        {description && (
-                                          <div className={cn(hasPhotos ? "md:flex-1" : "")}>
-                                            {renderDescription(description)}
-                                          </div>
-                                        )}
-                                        {hasPhotos && (
-                                          <div className={cn(
-                                            "mt-3 md:mt-0",
-                                            description ? "md:flex-1" : "w-full"
-                                          )}>
-                                            <ScopePhotoCarousel photos={servicePhotos} />
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          );
-                        })}
-                    </div>
+                      );
+                    })}
                   </section>
                 );
-              });
-            })()}
+              }
+
+              // Regular scope — service items
+              const allItems = section.options.flatMap((opt) =>
+                (opt.offer_option_items || []).filter((item) => item.id && !item.is_optional),
+              );
+              if (allItems.length === 0) return null;
+
+              const scopeDescription = section.scopeDescription;
+
+              return (
+                <section key={section.key} className="space-y-3">
+                  <div>
+                    <h2
+                      className="font-semibold flex items-center gap-2"
+                      style={{ color: branding.offer_scope_header_text_color, fontSize: '22px' }}
+                    >
+                      <FileText
+                        className="w-5 h-5"
+                        style={{ color: branding.offer_primary_color }}
+                      />
+                      {section.scopeName}
+                    </h2>
+
+                    {/* Description + Photos layout */}
+                    {(scopeDescription || section.scopePhotoUrls.length > 0) && (
+                      <div
+                        className={cn(
+                          'mt-2',
+                          section.scopePhotoUrls.length > 0 && scopeDescription
+                            ? 'flex flex-col md:flex-row md:gap-6'
+                            : '',
+                        )}
+                      >
+                        {scopeDescription && (
+                          <div
+                            className={cn(
+                              'mt-1',
+                              section.scopePhotoUrls.length > 0 ? 'md:flex-1 md:order-1' : '',
+                            )}
+                          >
+                            {renderDescription(
+                              scopeDescription,
+                              branding.offer_scope_header_text_color,
+                            )}
+                          </div>
+                        )}
+                        {section.scopePhotoUrls.length > 0 && (
+                          <div
+                            className={cn(
+                              'mt-3 md:mt-0',
+                              scopeDescription ? 'md:flex-1 md:order-2' : 'w-full',
+                            )}
+                          >
+                            <ScopePhotoCarousel photos={section.scopePhotoUrls} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Products — static list */}
+                  <div className="space-y-3">
+                    {allItems.map((item) => {
+                      const itemTotal =
+                        item.quantity * item.unit_price * (1 - item.discount_percent / 100);
+
+                      // Parse variant name from custom_name if present
+                      const nameParts = (item.custom_name || '').split('\n');
+                      const variantLabel = nameParts.length > 1 ? nameParts[0] : null;
+                      const productName =
+                        nameParts.length > 1 ? nameParts.slice(1).join('\n') : item.custom_name;
+                      const description =
+                        item.custom_description || item.unified_services?.description;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="rounded-lg border p-4"
+                          style={{
+                            borderColor: '#e0e0e0',
+                            backgroundColor: branding.offer_section_bg_color,
+                          }}
+                        >
+                          {variantLabel && (
+                            <p
+                              className="text-xs font-semibold uppercase tracking-wide mb-1"
+                              style={{ color: branding.offer_primary_color }}
+                            >
+                              {variantLabel}
+                            </p>
+                          )}
+
+                          {(() => {
+                            const servicePhotos = item.unified_services?.photo_urls || [];
+                            const hasPhotos = servicePhotos.length > 0;
+
+                            return (
+                              <>
+                                {/* Name + price row */}
+                                <div className="flex items-start justify-between gap-3">
+                                  <span
+                                    className="font-medium text-base flex-1"
+                                    style={{ color: branding.offer_section_text_color }}
+                                  >
+                                    {productName}
+                                  </span>
+                                  {!offer.hide_unit_prices && (
+                                    <div className="text-right shrink-0">
+                                      <span
+                                        className="font-bold text-lg"
+                                        style={{ color: branding.offer_section_text_color }}
+                                      >
+                                        {formatItemPrice(itemTotal)}
+                                      </span>
+                                      <div className="text-[12px] text-muted-foreground">
+                                        {vatAnnotation}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Description + Photos */}
+                                {(description || hasPhotos) && (
+                                  <div
+                                    className={cn(
+                                      'mt-2',
+                                      hasPhotos && description
+                                        ? 'flex flex-col md:flex-row md:gap-4'
+                                        : '',
+                                    )}
+                                  >
+                                    {description && (
+                                      <div className={cn(hasPhotos ? 'md:flex-1' : '')}>
+                                        {renderDescription(description)}
+                                      </div>
+                                    )}
+                                    {hasPhotos && (
+                                      <div
+                                        className={cn(
+                                          'mt-3 md:mt-0',
+                                          description ? 'md:flex-1' : 'w-full',
+                                        )}
+                                      >
+                                        <ScopePhotoCarousel photos={servicePhotos} />
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
 
-        {/* Sticky Totals Card - temporarily hidden for readonly mode */}
-        {/* 
-        <Card 
-          className="border sticky bottom-4 shadow-lg z-10"
-          style={{ 
-            backgroundColor: branding.offer_section_bg_color,
-            borderColor: '#e0e0e0',
-          }}
-        >
-          <CardContent className="py-3 md:py-4">
-            <div className="flex items-center justify-between gap-2 text-xs md:hidden mb-1" style={{ color: branding.offer_section_text_color }}>
-              <span>{t('publicOffer.netTotal')}: <span className="font-medium">{formatPrice(dynamicTotals.net)}</span></span>
-              <span>VAT ({offer.vat_rate}%): <span className="font-medium">{formatPrice(dynamicTotals.gross - dynamicTotals.net)}</span></span>
-            </div>
-            <div className="hidden md:block space-y-1">
-              <div className="flex justify-between text-xs" style={{ color: branding.offer_section_text_color }}>
-                <span>{t('publicOffer.netTotal')}</span>
-                <span className="font-medium">{formatPrice(dynamicTotals.net)}</span>
-              </div>
-              <div className="flex justify-between text-xs" style={{ color: branding.offer_section_text_color }}>
-                <span>VAT ({offer.vat_rate}%)</span>
-                <span className="font-medium">{formatPrice(dynamicTotals.gross - dynamicTotals.net)}</span>
-              </div>
-            </div>
-            <Separator className="my-1.5 md:my-2" />
-            <div className="flex justify-between text-xl md:text-base font-bold">
-              <span style={{ color: branding.offer_section_text_color }}>
-                {t('publicOffer.grossTotal')}
-              </span>
-              <span style={{ color: branding.offer_primary_color }}>{formatPrice(dynamicTotals.gross)}</span>
-            </div>
-          </CardContent>
-        </Card>
-        */}
+        {/* Expert Contact */}
+        <ExpertContactCard instance={instance} branding={branding} />
 
-        {/* Expert Contact - below totals */}
-        {(instance?.phone || instance?.contact_person) && (
-          <Card 
+        {/* Notes & Terms */}
+        {(offer.payment_terms ||
+          offer.warranty ||
+          offer.service_info ||
+          offer.notes ||
+          offer.valid_until) && (
+          <Card
             className="border"
-            style={{ 
-              backgroundColor: branding.offer_section_bg_color,
-              borderColor: '#e0e0e0',
-            }}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle 
-                className="flex items-center gap-2 text-base"
-                style={{ color: branding.offer_section_text_color }}
-              >
-                <Phone className="w-4 h-4" />
-                {t('publicOffer.expertNumber')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              {instance?.contact_person && (
-                <p className="font-medium" style={{ color: branding.offer_section_text_color }}>
-                  {instance.contact_person}
-                </p>
-              )}
-              {instance?.phone && (
-                <a 
-                  href={`tel:${instance.phone}`}
-                  className="flex items-center gap-2 hover:underline font-medium"
-                  style={{ color: branding.offer_primary_color }}
-                >
-                  <Phone className="w-3 h-3" />
-                  {instance.phone}
-                </a>
-              )}
-              {instance?.address && (
-                <p 
-                  className="flex items-center gap-2 opacity-70"
-                  style={{ color: branding.offer_section_text_color }}
-                >
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  {instance.address}
-                </p>
-              )}
-              {instance?.email && (
-                <a 
-                  href={`mailto:${instance.email}`}
-                  className="flex items-center gap-2 opacity-70 hover:underline"
-                  style={{ color: branding.offer_section_text_color }}
-                >
-                  <Mail className="w-3 h-3" />
-                  {instance.email}
-                </a>
-              )}
-              {instance?.website && (
-                <a 
-                  href={instance.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 opacity-70 hover:underline"
-                  style={{ color: branding.offer_section_text_color }}
-                >
-                  <Globe className="w-3 h-3" />
-                  {instance.website}
-                </a>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notes & Terms - 4 sections */}
-        {(offer.payment_terms || offer.warranty || offer.service_info || offer.notes || offer.valid_until) && (
-          <Card 
-            className="border"
-            style={{ 
+            style={{
               backgroundColor: branding.offer_section_bg_color,
               borderColor: '#e0e0e0',
             }}
           >
             <CardContent className="pt-6 space-y-4 text-sm">
               {offer.valid_until && (
-                <div className="flex items-center gap-2" style={{ color: branding.offer_section_text_color }}>
+                <div
+                  className="flex items-center gap-2"
+                  style={{ color: branding.offer_section_text_color }}
+                >
                   <Calendar className="w-4 h-4 opacity-70 shrink-0" />
                   <span>
-                    {t('publicOffer.offerValidUntil')}: <strong>{format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: pl })}</strong>
+                    {t('publicOffer.offerValidUntil')}:{' '}
+                    <strong>
+                      {format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: pl })}
+                    </strong>
                   </span>
                 </div>
               )}
-              
+
               {offer.payment_terms && (
                 <div style={{ color: branding.offer_section_text_color }}>
                   <div className="flex items-center gap-2 font-medium mb-1">
                     <CreditCard className="w-4 h-4 opacity-70" />
                     Warunki płatności
                   </div>
-                  <div 
+                  <div
                     className="pl-6 opacity-80 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[15px] md:text-sm"
                     dangerouslySetInnerHTML={{ __html: parseMarkdownLists(offer.payment_terms) }}
                   />
                 </div>
               )}
-              
+
               {offer.warranty && (
                 <div style={{ color: branding.offer_section_text_color }}>
                   <div className="flex items-center gap-2 font-medium mb-1">
                     <Shield className="w-4 h-4 opacity-70" />
                     Warunki gwarancji
                   </div>
-                  <div 
+                  <div
                     className="pl-6 opacity-80 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[15px] md:text-sm"
                     dangerouslySetInnerHTML={{ __html: parseMarkdownLists(offer.warranty) }}
                   />
                 </div>
               )}
-              
+
               {offer.service_info && (
                 <div style={{ color: branding.offer_section_text_color }}>
                   <div className="flex items-center gap-2 font-medium mb-1">
                     <FileText className="w-4 h-4 opacity-70" />
                     Oferta obejmuje
                   </div>
-                  <div 
+                  <div
                     className="pl-6 opacity-80 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[15px] md:text-sm"
                     dangerouslySetInnerHTML={{ __html: parseMarkdownLists(offer.service_info) }}
                   />
                 </div>
               )}
-              
+
               {offer.notes && (
                 <div style={{ color: branding.offer_section_text_color }}>
                   <div className="flex items-center gap-2 font-medium mb-1">
                     <Clock className="w-4 h-4 opacity-70" />
                     Inne informacje
                   </div>
-                  <div 
+                  <div
                     className="pl-6 opacity-80 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[15px] md:text-sm"
                     dangerouslySetInnerHTML={{ __html: parseMarkdownLists(offer.notes) }}
                   />
@@ -1387,285 +796,22 @@ export const PublicOfferCustomerView = ({
           </Card>
         )}
 
-        {/* Actions - only in public mode */}
-        {mode === 'public' && !readonlyMode && (
-          <>
-            {canRespond && (
-              <Card 
-                className="border"
-                style={{ 
-                  backgroundColor: branding.offer_section_bg_color,
-                  borderColor: '#e0e0e0',
-                }}
-              >
-                <CardContent className="pt-6">
-                  <div className="flex justify-center">
-                    <Button 
-                      className="gap-2" 
-                      size="lg"
-                      onClick={() => setShowConfirmDialog(true)}
-                      disabled={responding || !hasSelectedProduct}
-                      style={{ 
-                        backgroundColor: branding.offer_primary_color, 
-                        color: primaryButtonTextColor 
-                      }}
-                    >
-                      {responding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-5 h-5" />}
-                      {t('publicOffer.confirmSelection')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {isAccepted && (
-              <Card className="border-green-300 bg-white">
-                <CardContent className="py-6">
-                  <div className="text-center mb-4">
-                    <Check className="w-12 h-12 mx-auto text-green-600 mb-3" />
-                    <h3 className="text-lg font-semibold text-black">{t('publicOffer.offerAccepted')}</h3>
-                    <p className="text-black/70">
-                      {isEditMode 
-                        ? 'Możesz teraz zmienić swoje wybory i zatwierdzić ponownie.' 
-                        : (
-                          <>
-                            Dziękujemy! Skontaktujemy się z Tobą wkrótce
-                            {instance?.phone && (
-                              <>
-                                {' '}lub zadzwoń do nas:{' '}
-                                <a 
-                                  href={`tel:${instance.phone}`} 
-                                  className="font-medium hover:underline"
-                                  style={{ color: branding.offer_primary_color }}
-                                >
-                                  {instance.phone}
-                                </a>
-                              </>
-                            )}
-                          </>
-                        )}
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    {isEditMode ? (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsEditMode(false)}
-                          disabled={responding}
-                          className="gap-2"
-                        >
-                          <X className="w-4 h-4" />
-                          {t('publicOffer.cancelEdit')}
-                        </Button>
-                        <Button 
-                          onClick={() => setShowConfirmDialog(true)}
-                          disabled={responding || !hasSelectedProduct}
-                          className="gap-2"
-                        >
-                          {responding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                          {t('publicOffer.saveChanges')}
-                        </Button>
-                      </>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsEditMode(true)}
-                        className="gap-2"
-                      >
-                        <Pencil className="w-4 h-4" />
-                        {t('publicOffer.editSelection')}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {offer.status === 'rejected' && (
-              <Card className="border-red-500/50 bg-red-500/10">
-                <CardContent className="py-6 text-center">
-                  <X className="w-12 h-12 mx-auto text-red-600 mb-3" />
-                  <h3 className="text-lg font-semibold text-red-700">Oferta odrzucona</h3>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-
         {/* Bank Transfer Details */}
-        {(instance?.offer_bank_account_number || instance?.offer_bank_company_name) && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                Dane do płatności
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-2">
-              {/* Company name */}
-              <div className="flex items-center justify-between">
-                <p className="text-sm">
-                  Nazwa firmy:{' '}
-                  <span className="font-medium">{instance.offer_bank_company_name || instance.name}</span>
-                </p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(instance.offer_bank_company_name || instance.name || '');
-                        toast.success('Skopiowano');
-                      }}
-                       className="p-1 hover:bg-hover rounded transition-colors"
-                    >
-                      <Copy className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Kopiuj</TooltipContent>
-                </Tooltip>
-              </div>
-              
-              {/* Account number */}
-              {instance.offer_bank_account_number && (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm">
-                    Numer konta:{' '}
-                    {instance.offer_bank_name && (
-                      <span className="text-muted-foreground">{instance.offer_bank_name} </span>
-                    )}
-                    <span className="font-mono">{instance.offer_bank_account_number}</span>
-                  </p>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(instance.offer_bank_account_number || '');
-                          toast.success('Skopiowano');
-                        }}
-                         className="p-1 hover:bg-hover rounded transition-colors"
-                      >
-                        <Copy className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Kopiuj</TooltipContent>
-                  </Tooltip>
-                </div>
-              )}
-              
-              {/* Address */}
-              {instance.address && (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm">
-                    Adres:{' '}
-                    <span className="font-medium">{instance.address}</span>
-                  </p>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(instance.address || '');
-                          toast.success('Skopiowano');
-                        }}
-                         className="p-1 hover:bg-hover rounded transition-colors"
-                      >
-                        <Copy className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Kopiuj</TooltipContent>
-                  </Tooltip>
-                </div>
-              )}
-              
-              {/* Transfer title */}
-              {(() => {
-                const vehicleModel = offer.vehicle_data?.brandModel || offer.vehicle_data?.model || offer.vehicle_data?.brand || '';
-                const transferTitle = `Usługa ${vehicleModel}, oferta ${offer.offer_number}`.trim();
-                return (
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">
-                      Tytuł przelewu:{' '}
-                      <span className="font-medium">{transferTitle}</span>
-                    </p>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(transferTitle);
-                            toast.success('Skopiowano');
-                          }}
-                          className="p-1 hover:bg-hover rounded transition-colors"
-                        >
-                          <Copy className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Kopiuj</TooltipContent>
-                    </Tooltip>
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        )}
+        <BankTransferCard
+          instance={instance}
+          vehicleModel={
+            offer.vehicle_data?.brandModel || offer.vehicle_data?.model || offer.vehicle_data?.brand
+          }
+          offerNumber={offer.offer_number}
+        />
 
-        {/* Social media links + Google Reviews */}
-        {(instance?.social_facebook || instance?.social_instagram || instance?.offer_portfolio_url || instance?.offer_google_reviews_url) && (
-          <Card>
-            <CardContent className="py-6">
-              <div className="text-center">
-                <p className="text-muted-foreground mb-4">
-                  Zobacz nasze realizacje i obserwuj nas w social media
-                </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-3">
-                  {instance?.social_facebook && (
-                    <a 
-                      href={instance.social_facebook} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#1877F2]/90 transition-colors"
-                    >
-                      <Facebook className="w-5 h-5" />
-                      <span>Facebook</span>
-                    </a>
-                  )}
-                  {instance?.social_instagram && (
-                    <a 
-                      href={instance.social_instagram} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      <Instagram className="w-5 h-5" />
-                      <span>Instagram</span>
-                    </a>
-                  )}
-                  {instance?.offer_google_reviews_url && (
-                    <a 
-                      href={instance.offer_google_reviews_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <Star className="w-5 h-5 text-yellow-500" />
-                      <span>Opinie Google</span>
-                    </a>
-                  )}
-                  {instance?.offer_portfolio_url && (
-                    <a 
-                      href={instance.offer_portfolio_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                      <span>Realizacje</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Social media links */}
+        <SocialMediaCard
+          facebook={instance?.social_facebook}
+          instagram={instance?.social_instagram}
+          googleReviewsUrl={instance?.offer_google_reviews_url}
+          portfolioUrl={instance?.offer_portfolio_url}
+        />
 
         {/* Footer */}
         <footer className="text-center text-sm text-muted-foreground pt-8 pb-4">
@@ -1673,12 +819,18 @@ export const PublicOfferCustomerView = ({
           {instance?.address && <p>{instance.address}</p>}
           {instance?.phone && (
             <p>
-              Tel: <a href={`tel:${instance.phone}`} className="hover:underline">{instance.phone}</a>
+              Tel:{' '}
+              <a href={`tel:${instance.phone}`} className="hover:underline">
+                {instance.phone}
+              </a>
             </p>
           )}
           {instance?.email && (
             <p>
-              Email: <a href={`mailto:${instance.email}`} className="hover:underline">{instance.email}</a>
+              Email:{' '}
+              <a href={`mailto:${instance.email}`} className="hover:underline">
+                {instance.email}
+              </a>
             </p>
           )}
         </footer>
@@ -1690,76 +842,6 @@ export const PublicOfferCustomerView = ({
           </p>
         </div>
       </main>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-black text-center">Podsumowanie wyboru</DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-4">
-            {/* Receipt-style list */}
-            <div className="space-y-2 border-b border-black/10 pb-4">
-              {getSelectedItemsList().map((item, idx) => (
-                <div key={idx} className="flex justify-between items-start gap-4">
-                  <span className="text-black text-sm flex-1">
-                    {idx + 1}. {item.name}
-                  </span>
-                  <div className="text-right">
-                    <span className="text-black font-medium text-sm whitespace-nowrap">
-                      {formatItemPrice(item.price)}
-                    </span>
-                    <div className="text-[12px] text-muted-foreground">{vatAnnotation}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Total */}
-            <div className="flex justify-between items-center pt-4 border-t border-black">
-              <span className="text-black font-semibold">Razem netto</span>
-              <span className="text-black font-bold text-lg">{formatPrice(dynamicTotals.net)}</span>
-            </div>
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-black font-semibold">Razem brutto</span>
-              <span className="text-black font-bold text-xl">{formatPrice(dynamicTotals.gross)}</span>
-            </div>
-          </div>
-          
-          {/* Disclaimer */}
-          <p className="text-center text-sm text-black/60 mb-4">
-            Zatwierdzenie oferty jest niewiążące
-          </p>
-          
-          {/* Action buttons */}
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowConfirmDialog(false)}
-              className="flex-1"
-              disabled={responding}
-            >
-              Wróć do edycji
-            </Button>
-            <Button 
-              onClick={() => {
-                setShowConfirmDialog(false);
-                handleConfirmSelection();
-              }}
-              disabled={responding}
-              className="flex-1 gap-2"
-              style={{ 
-                backgroundColor: branding.offer_primary_color, 
-                color: primaryButtonTextColor 
-              }}
-            >
-              {responding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Zatwierdzam
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

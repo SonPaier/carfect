@@ -49,14 +49,9 @@ interface SortableScopeCardProps {
 }
 
 function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: scope.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: scope.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -65,11 +60,7 @@ function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) 
   };
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className="transition-all duration-200 hover:shadow-md"
-    >
+    <Card ref={setNodeRef} style={style} className="transition-all duration-200 hover:shadow-md">
       <CardContent className="p-5">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
@@ -93,9 +84,9 @@ function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) 
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1 gap-2"
               onClick={() => onEdit(scope.id)}
             >
@@ -104,9 +95,9 @@ function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) 
             </Button>
             {/* Cannot delete extras scope */}
             {!scope.is_extras_scope && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
                 onClick={() => onDelete(scope)}
               >
@@ -120,7 +111,12 @@ function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) 
   );
 }
 
-export function OfferServicesListView({ instanceId, onBack, onEdit, onCreate }: OfferServicesListViewProps) {
+export function OfferServicesListView({
+  instanceId,
+  onBack,
+  onEdit,
+  onCreate,
+}: OfferServicesListViewProps) {
   const { t } = useTranslation();
   const [scopes, setScopes] = useState<OfferScope[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +131,7 @@ export function OfferServicesListView({ instanceId, onBack, onEdit, onCreate }: 
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   useEffect(() => {
@@ -228,7 +224,7 @@ export function OfferServicesListView({ instanceId, onBack, onEdit, onCreate }: 
       <Helmet>
         <title>Twoje Szablony - {t('common.adminPanel')}</title>
       </Helmet>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <Button variant="ghost" onClick={onBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -245,14 +241,13 @@ export function OfferServicesListView({ instanceId, onBack, onEdit, onCreate }: 
             </Button>
           </div>
           <p className="text-muted-foreground text-sm">
-            Szablon może zawierać różne usługi oraz posiada indywidualne warunki gwarancji, płatności, serwisu lub inne uwagi widoczne dla Klienta.
+            Szablon może zawierać różne usługi oraz posiada indywidualne warunki gwarancji,
+            płatności, serwisu lub inne uwagi widoczne dla Klienta.
           </p>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Ładowanie szablonów...
-          </div>
+          <div className="text-center py-8 text-muted-foreground">Ładowanie szablonów...</div>
         ) : scopes.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">
@@ -269,7 +264,7 @@ export function OfferServicesListView({ instanceId, onBack, onEdit, onCreate }: 
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={scopes.map(s => s.id)} strategy={rectSortingStrategy}>
+            <SortableContext items={scopes.map((s) => s.id)} strategy={rectSortingStrategy}>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pb-24">
                 {scopes.map((scope) => (
                   <SortableScopeCard

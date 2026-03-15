@@ -525,7 +525,7 @@
     "totalNet": "Netto",
     "totalGross": "Brutto",
     "vatRate": "VAT",
-    "sendOffer": "Wyślij ofertę",
+    "sendOffer": "Wyślij",
     "downloadPdf": "Pobierz PDF",
     "preview": "Podgląd",
     "customerData": "Dane klienta",
@@ -634,10 +634,45 @@
       "failed": "Nieudane"
     },
     "selectedOption": "Wybrano",
-    "viewHistory": "Historia oglądania",
-    "viewCount": "Wyświetlenia",
-    "totalTime": "Łączny czas",
-    "noViewData": "Brak danych o oglądaniu"
+    "call": "Zadzwoń",
+    "reserve": "Rezerwuj",
+    "changeAmount": "Zmień kwotę",
+    "viewedAt": "Obejrzana {{date}}",
+    "createdOn": "Utworzono {{date}}",
+    "templates": "Twoje Szablony",
+    "amountChanged": "Kwota została zmieniona",
+    "statusUpdateError": "Błąd aktualizacji statusu",
+    "internalNote": "Notatka wewnętrzna",
+    "internalNoteDesc": "Dodaj notatkę wewnętrzną do oferty",
+    "notePlaceholder": "Wpisz notatkę...",
+    "noteSaved": "Notatka zapisana",
+    "noteError": "Błąd zapisu notatki",
+    "reservationCreated": "Rezerwacja utworzona z oferty"
+  },
+  "summary": {
+    "customer": "Klient",
+    "company": "Firma",
+    "vehicle": "Pojazd",
+    "paintGloss": "Połysk",
+    "paintMatte": "Mat",
+    "clickToEdit": "Kliknij aby edytować",
+    "removeService": "Usuń usługę",
+    "removeProduct": "Usuń produkt",
+    "addService": "Dodaj usługę",
+    "selectedExtras": "Dodatki wybrane przez klienta",
+    "suggestedExtras": "Dodatki sugerowane dla zapytania",
+    "addRecommended": "Dodaj rekomendowaną usługę",
+    "additionalConditions": "Dodatkowe warunki",
+    "validUntil": "Oferta ważna do",
+    "warranty": "Gwarancja",
+    "warrantyPlaceholder": "Warunki gwarancji...",
+    "paymentTerms": "Warunki płatności",
+    "paymentTermsPlaceholder": "Np. 50% zaliczki, reszta przy odbiorze...",
+    "serviceInfo": "Informacje o serwisie",
+    "serviceInfoPlaceholder": "Czas realizacji, sposób przygotowania...",
+    "notes": "Uwagi",
+    "notesPlaceholder": "Dodatkowe uwagi do oferty...",
+    "net": "netto"
   },
   "sendEmailDialog": {
     "title": "Wyślij ofertę",
@@ -1499,7 +1534,51 @@
     "editSelection": "Edytuj wybór",
     "saveChanges": "Zapisz zmiany",
     "cancelEdit": "Anuluj edycję",
-    "contactUs": "Skontaktuj się z nami"
+    "contactUs": "Skontaktuj się z nami",
+    "gratis": "Gratis!",
+    "netPlusVat": "netto + VAT",
+    "serviceFallback": "Usługa",
+    "extraFallback": "Dodatek",
+    "otherFallback": "Pozostałe",
+    "bank": {
+      "copied": "Skopiowano",
+      "copy": "Kopiuj",
+      "paymentDetails": "Dane do płatności",
+      "companyName": "Nazwa firmy",
+      "accountNumber": "Numer konta",
+      "address": "Adres",
+      "transferTitle": "Tytuł przelewu",
+      "transferTitleValue": "Usługa {{vehicle}}, oferta {{offerNumber}}"
+    },
+    "social": {
+      "cta": "Zobacz nasze realizacje i obserwuj nas w social media",
+      "googleReviews": "Opinie Google",
+      "portfolio": "Realizacje"
+    }
+  },
+  "followUpStatus": {
+    "calledDiscussed": "Dzwoniłem, omówione",
+    "callLater": "Zadzwonić kiedy indziej",
+    "calledNoAnswer": "Dzwoniłem, nieodebrane",
+    "contactStatus": "Status kontaktu",
+    "note": "Notatka",
+    "removeStatus": "Usuń status",
+    "internalNote": "Notatka wewnętrzna"
+  },
+  "sendEmail": {
+    "connectionError": "Błąd połączenia z serwerem",
+    "sendFailed": "Nie udało się wysłać wiadomości",
+    "noCustomerEmail": "Brak adresu email klienta",
+    "smtpNotConfigured": "Wysyłka email nie jest skonfigurowana",
+    "invalidAddress": "Nieprawidłowy adres email - sprawdź czy nie ma literówki",
+    "domainNotExists": "Nieprawidłowy adres email - domena nie istnieje lub zawiera błąd",
+    "mailboxNotFound": "Adres email nie istnieje - sprawdź poprawność",
+    "connectionTimeout": "Błąd połączenia z serwerem email - spróbuj ponownie",
+    "rejected": "Wiadomość została odrzucona przez serwer odbiorcy",
+    "authError": "Błąd autoryzacji serwera email",
+    "genericError": "Błąd wysyłki email - sprawdź poprawność adresu",
+    "offerNotFound": "Nie znaleziono oferty",
+    "loadError": "Błąd podczas ładowania oferty"
   },
   "followupPage": {
     "title": "Follow-up",
@@ -1735,7 +1814,7 @@
       "confirm": "Rozumiem, nadaj uprawnienia"
     }
   },
-"offerSettings": {
+  "offerSettings": {
     "title": "Ustawienia ofert",
     "general": "Ogólne",
     "services": "Usługi",
@@ -2115,7 +2194,7 @@
     "types": {
       "group_basic": "Grupowe podstawowe",
       "individual": "Indywidualne",
-    "master": "MASTER z instruktorem"
+      "master": "MASTER z instruktorem"
     }
   },
   "password": {

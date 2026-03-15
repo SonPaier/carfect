@@ -28,23 +28,23 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.phone || !formData.vehiclePlate) {
       toast.error('Wypełnij wszystkie pola');
       return;
     }
 
     setIsSubmitting(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     // Generate 3-digit confirmation code
     const code = Math.floor(100 + Math.random() * 900).toString();
     setConfirmationCode(code);
     setShowConfirmation(true);
     setIsSubmitting(false);
-    
+
     toast.success('Rezerwacja wysłana! Sprawdź SMS z kodem.');
   };
 
@@ -54,7 +54,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
         <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-10 h-10 text-success" />
         </div>
-        
+
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-foreground">Rezerwacja wysłana!</h2>
           <p className="text-muted-foreground">
@@ -62,14 +62,14 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
           </p>
         </div>
 
-        <div className="glass-card p-6 max-w-sm mx-auto space-y-4">
+        <div className="bg-white border border-border p-6 max-w-sm mx-auto space-y-4">
           <div className="text-sm text-muted-foreground">Twój kod potwierdzenia:</div>
           <div className="text-4xl font-bold tracking-[0.5em] text-primary pl-2">
             {confirmationCode}
           </div>
         </div>
 
-        <div className="glass-card p-4 max-w-sm mx-auto text-left space-y-3">
+        <div className="bg-white border border-border p-4 max-w-sm mx-auto text-left space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Usługa:</span>
             <span className="font-medium">{service.name}</span>
@@ -88,7 +88,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
           </div>
         </div>
 
-        <Button variant="hero" size="lg" onClick={onComplete} className="mt-4">
+        <Button variant="default" size="lg" onClick={onComplete} className="mt-4">
           Zamknij
         </Button>
       </div>
@@ -104,13 +104,15 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
       </Button>
 
       {/* Summary */}
-      <div className="glass-card p-4 space-y-3">
+      <div className="bg-white border border-border p-4 space-y-3">
         <h3 className="font-semibold text-foreground">Podsumowanie rezerwacji</h3>
         <div className="grid grid-cols-2 gap-2 text-sm">
           <span className="text-muted-foreground">Usługa:</span>
           <span className="font-medium text-right">{service.name}</span>
           <span className="text-muted-foreground">Data:</span>
-          <span className="font-medium text-right">{format(date, 'd MMMM yyyy', { locale: pl })}</span>
+          <span className="font-medium text-right">
+            {format(date, 'd MMMM yyyy', { locale: pl })}
+          </span>
           <span className="text-muted-foreground">Godzina:</span>
           <span className="font-medium text-right">{slot.time}</span>
           <span className="text-muted-foreground">Cena:</span>
@@ -158,16 +160,18 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
             id="plate"
             placeholder="GD 12345"
             value={formData.vehiclePlate}
-            onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })}
+            onChange={(e) =>
+              setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })
+            }
             className="h-12 uppercase"
           />
         </div>
 
         <div className="pt-4">
-          <Button 
-            type="submit" 
-            variant="hero" 
-            size="xl" 
+          <Button
+            type="submit"
+            variant="default"
+            size="xl"
             className="w-full"
             disabled={isSubmitting}
           >
