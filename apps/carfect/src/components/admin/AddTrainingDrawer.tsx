@@ -6,23 +6,11 @@ import { pl } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { GraduationCap, Users, X } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ReservationDateTimeSection } from './reservation-form/ReservationDateTimeSection';
@@ -115,22 +103,25 @@ export function AddTrainingDrawer({
   const dateRangeRef = useRef<HTMLDivElement>(null!);
   const timeRef = useRef<HTMLDivElement>(null!);
 
-  const workingHours = workingHoursData as Record<string, { open: string; close: string } | null> | null;
+  const workingHours = workingHoursData as Record<
+    string,
+    { open: string; close: string } | null
+  > | null;
 
-  // Fetch training types
+  // Fetch training types (refetch when drawer opens to pick up newly added types)
   useEffect(() => {
-    if (!instanceId) return;
+    if (!instanceId || !open) return;
     const fetch = async () => {
-      const { data } = await supabase
+      const { data } = (await supabase
         .from('training_types')
         .select('*')
         .eq('instance_id', instanceId)
         .eq('active', true)
-        .order('sort_order') as any;
+        .order('sort_order')) as any;
       if (data) setTrainingTypes(data);
     };
     fetch();
-  }, [instanceId]);
+  }, [instanceId, open]);
 
   // Dynamic time range based on working hours (30 min step for trainings)
   const timeOptions = useMemo(() => {
@@ -138,7 +129,7 @@ export function AddTrainingDrawer({
     return generateTimeSlots(min, max, 30);
   }, [workingHours, dateRange?.from]);
 
-  const getSelectedType = () => trainingTypes.find(t => t.id === selectedTypeId);
+  const getSelectedType = () => trainingTypes.find((t) => t.id === selectedTypeId);
 
   // Reset form when opening
   useEffect(() => {
@@ -156,7 +147,7 @@ export function AddTrainingDrawer({
       setReservationType(
         editingTraining.start_date === (editingTraining.end_date || editingTraining.start_date)
           ? 'single'
-          : 'multi'
+          : 'multi',
       );
       setManualStartTime(editingTraining.start_time.substring(0, 5));
       setManualEndTime(editingTraining.end_time.substring(0, 5));
@@ -189,7 +180,15 @@ export function AddTrainingDrawer({
       // Always set end time from working hours if available
       if (workingHours) {
         const refDate = initialDate ? new Date(initialDate + 'T00:00:00') : new Date();
-        const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][refDate.getDay()];
+        const dayName = [
+          'sunday',
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+        ][refDate.getDay()];
         const dayHours = workingHours[dayName];
         if (dayHours) {
           if (!initialTime) {
@@ -199,12 +198,20 @@ export function AddTrainingDrawer({
         }
       }
     }
-  }, [open, editingTraining, initialDate, initialTime, initialStationId, workingHours, trainingTypes]);
+  }, [
+    open,
+    editingTraining,
+    initialDate,
+    initialTime,
+    initialStationId,
+    workingHours,
+    trainingTypes,
+  ]);
 
   // When training type changes, auto-set dates
   const handleTypeChange = (typeId: string) => {
     setSelectedTypeId(typeId);
-    const type = trainingTypes.find(t => t.id === typeId);
+    const type = trainingTypes.find((t) => t.id === typeId);
     if (!type) return;
 
     const days = type.duration_days;
@@ -224,7 +231,15 @@ export function AddTrainingDrawer({
 
     // Set working hours for the day
     if (workingHours && dateRange?.from) {
-      const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dateRange.from.getDay()];
+      const dayName = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ][dateRange.from.getDay()];
       const dayHours = workingHours[dayName];
       if (dayHours) {
         setManualStartTime(dayHours.open.substring(0, 5));
@@ -236,7 +251,7 @@ export function AddTrainingDrawer({
   const handleSave = async () => {
     const selectedType = getSelectedType();
     const title = selectedType ? `Szkolenie ${selectedType.name}` : 'Szkolenie';
-    
+
     if (!dateRange?.from || !manualStartTime || !manualEndTime) {
       toast.error('Uzupełnij wymagane pola');
       return;
@@ -271,9 +286,7 @@ export function AddTrainingDrawer({
         if (error) throw error;
         toast.success(t('trainings.trainingUpdated'));
       } else {
-        const { error } = await supabase
-          .from('trainings')
-          .insert(payload as any);
+        const { error } = await supabase.from('trainings').insert(payload as any);
         if (error) throw error;
         toast.success(t('trainings.trainingSaved'));
       }
@@ -347,11 +360,15 @@ export function AddTrainingDrawer({
                 >
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="open" id="status-open" />
-                    <Label htmlFor="status-open" className="cursor-pointer font-normal">{t('trainings.statusOpen')}</Label>
+                    <Label htmlFor="status-open" className="cursor-pointer font-normal">
+                      {t('trainings.statusOpen')}
+                    </Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="sold_out" id="status-sold-out" />
-                    <Label htmlFor="status-sold-out" className="cursor-pointer font-normal">{t('trainings.statusSoldOut')}</Label>
+                    <Label htmlFor="status-sold-out" className="cursor-pointer font-normal">
+                      {t('trainings.statusSoldOut')}
+                    </Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -412,7 +429,7 @@ export function AddTrainingDrawer({
                 <AssignedEmployeesChips
                   employeeIds={selectedEmployeeIds}
                   employees={employees}
-                  onRemove={(id) => setSelectedEmployeeIds(prev => prev.filter(e => e !== id))}
+                  onRemove={(id) => setSelectedEmployeeIds((prev) => prev.filter((e) => e !== id))}
                   onAdd={() => setEmployeeDrawerOpen(true)}
                 />
               </div>
@@ -425,7 +442,11 @@ export function AddTrainingDrawer({
               disabled={saving || !dateRange?.from || !manualStartTime || !manualEndTime}
               className="w-full"
             >
-              {saving ? '...' : isEditMode ? t('trainings.saveTraining') : t('trainings.addTraining')}
+              {saving
+                ? '...'
+                : isEditMode
+                  ? t('trainings.saveTraining')
+                  : t('trainings.addTraining')}
             </Button>
           </SheetFooter>
         </SheetContent>
