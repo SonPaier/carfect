@@ -18,6 +18,8 @@ interface PackagesSectionProps {
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
   onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
+  onToggleDiscount?: (productKey: string) => void;
+  customerDiscount?: number;
   onAddPackage: () => void;
 }
 
@@ -35,6 +37,8 @@ export const PackagesSection = ({
   onUpdateVehicle,
   onUpdateRollAssignment,
   onSetRollAssignments,
+  onToggleDiscount,
+  customerDiscount,
   onAddPackage,
 }: PackagesSectionProps) => {
   return (
@@ -60,6 +64,8 @@ export const PackagesSection = ({
               instanceId={instanceId}
               onUpdateRollAssignment={onUpdateRollAssignment ? (productKey, rollId, usageM2, widthMm) => onUpdateRollAssignment(productKey, rollId, usageM2, widthMm) : undefined}
               onSetRollAssignments={onSetRollAssignments}
+              onToggleDiscount={onToggleDiscount}
+              customerDiscount={customerDiscount}
             />
           ))}
         </div>

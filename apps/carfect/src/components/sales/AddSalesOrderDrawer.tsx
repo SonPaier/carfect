@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Info } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -86,7 +86,6 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
   const orderPackages = useOrderPackages({ products, setProducts });
 
   // Local state
-  const [applyDiscount, setApplyDiscount] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [sendEmail, setSendEmail] = useState(false);
@@ -159,7 +158,7 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
   );
 
   const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
-  const discountAmount = applyDiscount && customerDiscount > 0
+  const discountAmount = customerDiscount > 0
     ? discountableNet * (customerDiscount / 100)
     : 0;
 
@@ -190,7 +189,6 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
     setProducts([]);
     orderPackages.setPackages([createDefaultPackage()]);
     orderPackages.setActivePackageId(null);
-    setApplyDiscount(true);
     setPaymentMethod('cod');
     setBankAccountNumber(bankAccounts.length > 0 ? bankAccounts[0].number : '');
     setSendEmail(false);
@@ -452,6 +450,13 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
               onAddNewCustomer={handleAddNewCustomer}
             />
 
+            {customerSearch.selectedCustomer && customerDiscount > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sky-50 border border-sky-200 text-sky-700">
+                <Info className="w-4 h-4 shrink-0" />
+                <span className="text-sm">Zastosowano rabat: {customerDiscount}%</span>
+              </div>
+            )}
+
             <PackagesSection
               packages={orderPackages.packages}
               products={products}
@@ -466,6 +471,8 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
               onUpdateVehicle={orderPackages.updateVehicle}
               onUpdateRollAssignment={orderPackages.updateRollAssignment}
               onSetRollAssignments={orderPackages.setRollAssignments}
+              onToggleDiscount={orderPackages.toggleExcludeFromDiscount}
+              customerDiscount={customerDiscount}
               onAddPackage={orderPackages.addPackage}
             />
 
@@ -484,9 +491,6 @@ const AddSalesOrderDrawer = ({ open, onOpenChange, orders, initialCustomer, edit
                 customerDiscount={customerDiscount}
                 totalNet={totalNet}
                 totalGross={totalGross}
-                applyDiscount={applyDiscount}
-                setApplyDiscount={setApplyDiscount}
-                showDiscount={!!customerSearch.selectedCustomer && customerDiscount > 0}
               />
             )}
 

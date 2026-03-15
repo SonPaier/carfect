@@ -178,6 +178,16 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
+  const toggleExcludeFromDiscount = (key: string) => {
+    setProducts(prev =>
+      prev.map(p =>
+        getItemKey(p) === key
+          ? { ...p, excludeFromDiscount: !p.excludeFromDiscount }
+          : p
+      )
+    );
+  };
+
   const addPackage = () => {
     setPackages(prev => [...prev, createDefaultPackage()]);
   };
@@ -253,6 +263,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updateVehicle,
     updateRollAssignment,
     setRollAssignments,
+    toggleExcludeFromDiscount,
     addPackage,
     removePackage,
     updatePackageShippingMethod,

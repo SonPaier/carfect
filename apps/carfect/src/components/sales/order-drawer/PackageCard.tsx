@@ -33,6 +33,8 @@ interface PackageCardProps {
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
   onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
+  onToggleDiscount?: (productKey: string) => void;
+  customerDiscount?: number;
 }
 
 const PackageCard = ({
@@ -50,6 +52,8 @@ const PackageCard = ({
   onUpdateVehicle,
   onUpdateRollAssignment,
   onSetRollAssignments,
+  onToggleDiscount,
+  customerDiscount,
 }: PackageCardProps) => {
   return (
     <div className="bg-card border border-border rounded-md p-3 space-y-3">
@@ -80,11 +84,18 @@ const PackageCard = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
-                          {p.excludeFromDiscount && (
+                          {p.excludeFromDiscount && customerDiscount != null && customerDiscount > 0 && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 text-muted-foreground">BRAK RABATU</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.'}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.'}</span>
+                          {customerDiscount != null && customerDiscount > 0 && (
+                            <button type="button" className="text-xs text-primary hover:underline" onClick={(e) => { e.stopPropagation(); onToggleDiscount?.(itemKey); }}>
+                              {p.excludeFromDiscount ? 'Włącz rabat' : 'Wyłącz rabat'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <button type="button" onClick={() => onRemoveProduct(itemKey)} className="text-muted-foreground hover:text-destructive shrink-0">
                         <X className="w-3.5 h-3.5" />
