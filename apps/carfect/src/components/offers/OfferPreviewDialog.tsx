@@ -2,12 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Send, Loader2, X, Printer } from 'lucide-react';
 import { Button } from '@shared/ui';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { ScrollArea } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { OfferState, OfferOption } from '@/hooks/useOffer';
@@ -86,14 +81,14 @@ export const OfferPreviewDialog = ({
 
   useEffect(() => {
     if (open) {
-      console.log('[OfferPreviewDialog] Opening with instanceId:', instanceId, 'offer.options:', offer.options.length);
       const fetchData = async () => {
         setLoading(true);
-        
+
         // Fetch instance data
         const { data: instanceData, error: instanceError } = await supabase
           .from('instances')
-          .select(`
+          .select(
+            `
             name,
             logo_url,
             phone,
@@ -119,12 +114,11 @@ export const OfferPreviewDialog = ({
             offer_trust_header_title,
             offer_trust_description,
             offer_trust_tiles
-          `)
+          `,
+          )
           .eq('id', instanceId)
           .single();
 
-        console.log('[OfferPreviewDialog] Instance fetch result:', !!instanceData, instanceError);
-        
         if (instanceData) {
           // Parse offer_trust_tiles from JSONB
           const parsedInstance: Instance = {
@@ -135,17 +129,19 @@ export const OfferPreviewDialog = ({
         }
 
         // Get unique scope IDs from offer options
-        const scopeIds = [...new Set(offer.options.map(opt => opt.scopeId).filter(Boolean))] as string[];
-        
+        const scopeIds = [
+          ...new Set(offer.options.map((opt) => opt.scopeId).filter(Boolean)),
+        ] as string[];
+
         if (scopeIds.length > 0) {
           const { data: scopesData } = await supabase
             .from('offer_scopes')
             .select('id, name, description, is_extras_scope, photo_urls')
             .in('id', scopeIds);
-          
+
           if (scopesData) {
             const scopeMap: Record<string, ScopeData> = {};
-            scopesData.forEach(s => {
+            scopesData.forEach((s) => {
               scopeMap[s.id] = s;
             });
             setScopes(scopeMap);
@@ -153,22 +149,22 @@ export const OfferPreviewDialog = ({
         }
 
         // Fetch product descriptions from unified_services
-        const productIds = [...new Set(
-          offer.options.flatMap(opt => 
-            opt.items.map(item => item.productId).filter(Boolean)
-          )
-        )] as string[];
-        
+        const productIds = [
+          ...new Set(
+            offer.options.flatMap((opt) => opt.items.map((item) => item.productId).filter(Boolean)),
+          ),
+        ] as string[];
+
         if (productIds.length > 0) {
           const { data: productsData } = await supabase
             .from('unified_services')
             .select('id, description, photo_urls')
             .in('id', productIds);
-          
+
           if (productsData) {
             const descMap: Record<string, string> = {};
             const photoMap: Record<string, string[]> = {};
-            productsData.forEach(p => {
+            productsData.forEach((p) => {
               if (p.description) {
                 descMap[p.id] = p.description;
               }
@@ -199,12 +195,9 @@ export const OfferPreviewDialog = ({
   // Map OfferState to PublicOfferData format - only compute when instance is loaded
   const mappedOffer: PublicOfferData | null = useMemo(() => {
     if (!instance) {
-      console.log('[OfferPreviewDialog] mappedOffer: no instance yet');
       return null;
     }
-    
-    console.log('[OfferPreviewDialog] Building mappedOffer with', offer.options.length, 'options');
-    
+
     return {
       id: offer.id || '',
       offer_number: 'PODGLĄD',
@@ -233,14 +226,16 @@ export const OfferPreviewDialog = ({
       hide_unit_prices: offer.hideUnitPrices,
       created_at: new Date().toISOString(),
       approved_at: null,
-      selected_state: offer.defaultSelectedState ? {
-        selectedScopeId: offer.defaultSelectedState.selectedScopeId,
-        selectedVariants: offer.defaultSelectedState.selectedVariants || {},
-        selectedUpsells: {},
-        selectedOptionalItems: offer.defaultSelectedState.selectedOptionalItems || {},
-        selectedItemInOption: offer.defaultSelectedState.selectedItemInOption || {},
-        isDefault: true,
-      } : null,
+      selected_state: offer.defaultSelectedState
+        ? {
+            selectedScopeId: offer.defaultSelectedState.selectedScopeId,
+            selectedVariants: offer.defaultSelectedState.selectedVariants || {},
+            selectedUpsells: {},
+            selectedOptionalItems: offer.defaultSelectedState.selectedOptionalItems || {},
+            selectedItemInOption: offer.defaultSelectedState.selectedItemInOption || {},
+            isDefault: true,
+          }
+        : null,
       offer_options: offer.options.map((opt: OfferOption) => ({
         id: opt.id,
         name: opt.name,
@@ -253,14 +248,17 @@ export const OfferPreviewDialog = ({
         sort_order: opt.sortOrder,
         scope_id: opt.scopeId,
         is_upsell: opt.isUpsell,
-        scope: opt.scopeId && scopes[opt.scopeId] ? {
-          id: scopes[opt.scopeId].id,
-          name: scopes[opt.scopeId].name,
-          description: scopes[opt.scopeId].description,
-          is_extras_scope: scopes[opt.scopeId].is_extras_scope,
-          photo_urls: scopes[opt.scopeId].photo_urls,
-        } : null,
-        offer_option_items: opt.items.map(item => ({
+        scope:
+          opt.scopeId && scopes[opt.scopeId]
+            ? {
+                id: scopes[opt.scopeId].id,
+                name: scopes[opt.scopeId].name,
+                description: scopes[opt.scopeId].description,
+                is_extras_scope: scopes[opt.scopeId].is_extras_scope,
+                photo_urls: scopes[opt.scopeId].photo_urls,
+              }
+            : null,
+        offer_option_items: opt.items.map((item) => ({
           id: item.id,
           custom_name: item.customName || '',
           custom_description: item.customDescription,
@@ -269,32 +267,39 @@ export const OfferPreviewDialog = ({
           unit: item.unit,
           discount_percent: item.discountPercent,
           is_optional: item.isOptional,
-          unified_services: item.productId && (productDescriptions[item.productId] || productPhotoUrls[item.productId])
-            ? { description: productDescriptions[item.productId], photo_urls: productPhotoUrls[item.productId] || null } 
-            : null,
+          unified_services:
+            item.productId &&
+            (productDescriptions[item.productId] || productPhotoUrls[item.productId])
+              ? {
+                  description: productDescriptions[item.productId],
+                  photo_urls: productPhotoUrls[item.productId] || null,
+                }
+              : null,
         })),
       })),
       instances: instance,
     };
-  }, [instance, offer, scopes, productDescriptions, productPhotoUrls, instanceId, calculateTotalNet, calculateTotalGross]);
+  }, [
+    instance,
+    offer,
+    scopes,
+    productDescriptions,
+    productPhotoUrls,
+    instanceId,
+    calculateTotalNet,
+    calculateTotalGross,
+  ]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent 
+      <DialogContent
         className="w-full h-full sm:w-[90vw] sm:h-[90vh] max-w-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         {/* Header */}
         <DialogHeader className="px-4 py-3 border-b flex-shrink-0 flex flex-row items-center justify-between">
-          <DialogTitle className="text-lg font-semibold">
-            {t('offers.previewTitle')}
-          </DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8"
-          >
+          <DialogTitle className="text-lg font-semibold">{t('offers.previewTitle')}</DialogTitle>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
@@ -306,11 +311,7 @@ export const OfferPreviewDialog = ({
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : mappedOffer ? (
-            <PublicOfferCustomerView
-              offer={mappedOffer}
-              mode="overlayPreview"
-              embedded={true}
-            />
+            <PublicOfferCustomerView offer={mappedOffer} mode="overlayPreview" embedded={true} />
           ) : (
             <div className="flex items-center justify-center h-full min-h-[400px]">
               <p className="text-muted-foreground">{t('common.error')}</p>
@@ -320,11 +321,7 @@ export const OfferPreviewDialog = ({
 
         {/* Footer */}
         <div className="px-4 py-3 border-t flex-shrink-0 flex items-center justify-between bg-background">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={onClose} className="gap-2">
             <ChevronLeft className="w-4 h-4" />
             {t('offers.backToEdit')}
           </Button>
@@ -339,11 +336,7 @@ export const OfferPreviewDialog = ({
               Drukuj
             </Button>
             */}
-            <Button
-              onClick={handleSend}
-              disabled={sending}
-              className="gap-2"
-            >
+            <Button onClick={handleSend} disabled={sending} className="gap-2">
               {sending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (

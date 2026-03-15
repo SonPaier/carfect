@@ -71,7 +71,8 @@ const mapProductToServiceData = (product: Product | null | undefined): ServiceDa
     duration_large: product.duration_large ?? null,
     category_id: product.category_id ?? null,
     service_type: (product.service_type as 'both' | 'reservation' | 'offer') ?? 'both',
-    visibility: (product.visibility as 'everywhere' | 'only_reservations' | 'only_offers') ?? 'everywhere',
+    visibility:
+      (product.visibility as 'everywhere' | 'only_reservations' | 'only_offers') ?? 'everywhere',
     reminder_template_id: product.reminder_template_id ?? null,
   };
 };
@@ -80,12 +81,12 @@ const mapProductToServiceData = (product: Product | null | undefined): ServiceDa
 const getLowestPrice = (p: Product): number => {
   // Priority: price_from, then lowest of S/M/L, then default_price
   if (p.price_from != null) return p.price_from;
-  
+
   const sizes = [p.price_small, p.price_medium, p.price_large].filter(
-    (v): v is number => v != null
+    (v): v is number => v != null,
   );
   if (sizes.length > 0) return Math.min(...sizes);
-  
+
   return p.default_price ?? 0;
 };
 
@@ -130,14 +131,9 @@ function SortableProductItem({
   updateVariantName: (productId: string, variantName: string) => void;
   onEditProduct: (productId: string) => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: scopeProduct.product_id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: scopeProduct.product_id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -146,11 +142,7 @@ function SortableProductItem({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="p-3 bg-white border rounded-lg space-y-3"
-    >
+    <div ref={setNodeRef} style={style} className="p-3 bg-white border rounded-lg space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-1">
           <button
@@ -174,7 +166,9 @@ function SortableProductItem({
               </button>
             </div>
             {scopeProduct.product?.short_name && (
-              <p className="text-xs text-muted-foreground">Skrót: {scopeProduct.product.short_name}</p>
+              <p className="text-xs text-muted-foreground">
+                Skrót: {scopeProduct.product.short_name}
+              </p>
             )}
           </div>
         </div>
@@ -186,8 +180,8 @@ function SortableProductItem({
             type="button"
             onClick={() => toggleDefault(scopeProduct.product_id)}
             className={`p-1 transition-colors ${
-              scopeProduct.is_default 
-                ? 'text-yellow-500' 
+              scopeProduct.is_default
+                ? 'text-yellow-500'
                 : 'text-muted-foreground hover:text-yellow-500'
             }`}
             title={scopeProduct.is_default ? 'Domyślny' : 'Ustaw jako domyślny'}
@@ -219,7 +213,7 @@ function SortableProductItem({
 export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServiceEditViewProps) {
   const { t } = useTranslation();
   const isEditMode = !!scopeId;
-  
+
   const [shortName, setShortName] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -244,7 +238,9 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
       const [productsRes, categoriesRes] = await Promise.all([
         supabase
           .from('unified_services')
-          .select('id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id, service_type, visibility')
+          .select(
+            'id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id, service_type, visibility',
+          )
           .eq('instance_id', instanceId)
           .eq('service_type', 'both')
           .eq('active', true)
@@ -259,8 +255,8 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
       if (!productsRes.error && productsRes.data) {
         // Filter out services with visibility='only_reservations' - they shouldn't appear in offer drawers
-        const filtered = productsRes.data.filter(p => {
-          const vis = (p as any).visibility || 'everywhere';
+        const filtered = productsRes.data.filter((p) => {
+          const vis = (p as { visibility?: string }).visibility || 'everywhere';
           return vis !== 'only_reservations';
         });
         setAvailableProducts(filtered as Product[]);
@@ -301,25 +297,25 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // Load instance defaults for new service
   useEffect(() => {
     if (scopeId) return; // Only for create mode
-    
+
     const fetchInstanceDefaults = async () => {
       const { data } = await supabase
         .from('instances')
         .select('offer_default_payment_terms')
         .eq('id', instanceId)
         .single();
-      
+
       if (data) {
         setDefaultPaymentTerms(data.offer_default_payment_terms || '');
       }
     };
-    
+
     fetchInstanceDefaults();
   }, [instanceId, scopeId]);
 
@@ -329,11 +325,13 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
     const fetchScopeData = async () => {
       setIsLoading(true);
-      
+
       // Fetch scope
       const { data: scope } = await supabase
         .from('offer_scopes')
-        .select('short_name, name, description, is_extras_scope, default_warranty, default_payment_terms, default_notes, default_service_info, photo_urls')
+        .select(
+          'short_name, name, description, is_extras_scope, default_warranty, default_payment_terms, default_notes, default_service_info, photo_urls',
+        )
         .eq('id', scopeId)
         .single();
 
@@ -346,32 +344,36 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         setDefaultPaymentTerms(scope.default_payment_terms || '');
         setDefaultNotes(scope.default_notes || '');
         setDefaultServiceInfo(scope.default_service_info || '');
-        setPhotoUrls((scope as any).photo_urls || []);
+        setPhotoUrls(((scope as Record<string, unknown>).photo_urls as string[]) || []);
       }
 
       // Fetch scope products with product details
       const { data: products } = await supabase
         .from('offer_scope_products')
-        .select(`
+        .select(
+          `
           id,
           product_id,
           variant_name,
           is_default,
           sort_order,
           product:unified_services!product_id(id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id)
-        `)
+        `,
+        )
         .eq('scope_id', scopeId)
         .order('sort_order');
 
       if (products) {
-        setScopeProducts(products.map(p => ({
-          id: p.id,
-          product_id: p.product_id,
-          variant_name: p.variant_name || '',
-          is_default: p.is_default,
-          sort_order: p.sort_order,
-          product: (p as any).product as Product | undefined
-        })));
+        setScopeProducts(
+          products.map((p) => ({
+            id: p.id,
+            product_id: p.product_id,
+            variant_name: p.variant_name || '',
+            is_default: p.is_default,
+            sort_order: p.sort_order,
+            product: (p as Record<string, unknown>).product as Product | undefined,
+          })),
+        );
       }
 
       setIsLoading(false);
@@ -412,21 +414,19 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         sort_order: 0,
         // Use the full product record (with price_from + S/M/L) from drawer prefetch
         // so price display stays consistent after save/reload.
-        product:
-          availableProducts.find((ap) => ap.id === p.productId) ??
-          {
-            id: p.productId,
-            name: p.productName,
-            short_name: p.productShortName,
-            default_price: null,
-            // If we don't have full record, at least keep the computed lowest price
-            // for immediate UI feedback.
-            price_from: p.price,
-            price_small: null,
-            price_medium: null,
-            price_large: null,
-            category_id: null,
-          },
+        product: availableProducts.find((ap) => ap.id === p.productId) ?? {
+          id: p.productId,
+          name: p.productName,
+          short_name: p.productShortName,
+          default_price: null,
+          // If we don't have full record, at least keep the computed lowest price
+          // for immediate UI feedback.
+          price_from: p.price,
+          price_small: null,
+          price_medium: null,
+          price_large: null,
+          category_id: null,
+        },
       }));
 
     const next = [...kept, ...added].map((sp, index) => ({
@@ -438,25 +438,21 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
   };
 
   const removeProduct = (productId: string) => {
-    setScopeProducts(prev => prev.filter(sp => sp.product_id !== productId));
+    setScopeProducts((prev) => prev.filter((sp) => sp.product_id !== productId));
   };
 
   const updateVariantName = (productId: string, variantName: string) => {
-    setScopeProducts(prev => 
-      prev.map(sp => 
-        sp.product_id === productId 
-          ? { ...sp, variant_name: variantName }
-          : sp
-      )
+    setScopeProducts((prev) =>
+      prev.map((sp) => (sp.product_id === productId ? { ...sp, variant_name: variantName } : sp)),
     );
   };
 
   const toggleDefault = (productId: string) => {
-    setScopeProducts(prev => 
-      prev.map(sp => ({
+    setScopeProducts((prev) =>
+      prev.map((sp) => ({
         ...sp,
-        is_default: sp.product_id === productId ? !sp.is_default : sp.is_default
-      }))
+        is_default: sp.product_id === productId ? !sp.is_default : sp.is_default,
+      })),
     );
   };
 
@@ -489,10 +485,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
       if (isEditMode && scopeId) {
         // Update existing scope
-        const { error } = await supabase
-          .from('offer_scopes')
-          .update(scopeData)
-          .eq('id', scopeId);
+        const { error } = await supabase.from('offer_scopes').update(scopeData).eq('id', scopeId);
 
         if (error) throw error;
       } else {
@@ -503,7 +496,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
             ...scopeData,
             instance_id: instanceId,
             active: true,
-            has_unified_services: true // New templates always use unified services
+            has_unified_services: true, // New templates always use unified services
           })
           .select('id')
           .single();
@@ -515,10 +508,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
       // Handle scope products
       if (currentScopeId) {
         // Delete existing products for this scope
-        await supabase
-          .from('offer_scope_products')
-          .delete()
-          .eq('scope_id', currentScopeId);
+        await supabase.from('offer_scope_products').delete().eq('scope_id', currentScopeId);
 
         // Insert new products with correct sort_order
         if (scopeProducts.length > 0) {
@@ -528,12 +518,10 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
             variant_name: sp.variant_name || null,
             is_default: sp.is_default,
             sort_order: index,
-            instance_id: instanceId
+            instance_id: instanceId,
           }));
 
-          const { error } = await supabase
-            .from('offer_scope_products')
-            .insert(productsToInsert);
+          const { error } = await supabase.from('offer_scope_products').insert(productsToInsert);
 
           if (error) throw error;
         }
@@ -560,7 +548,9 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
   return (
     <>
       <Helmet>
-        <title>{isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'} - {t('common.adminPanel')}</title>
+        <title>
+          {isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'} - {t('common.adminPanel')}
+        </title>
       </Helmet>
       <div className="max-w-4xl mx-auto pb-24">
         <div className="mb-6">
@@ -629,7 +619,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
           {/* Wybierz usługi dla szablonu */}
           <div className="space-y-3">
             <Button
-              variant="outline" 
+              variant="outline"
               onClick={() => setIsProductDrawerOpen(true)}
               className="gap-2"
             >
@@ -641,7 +631,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
                 </Badge>
               )}
             </Button>
-            
+
             {/* Lista wybranych usług z drag & drop */}
             {scopeProducts.length > 0 && (
               <div className="space-y-2 mt-3">
@@ -658,11 +648,11 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext
-                    items={scopeProducts.map(sp => sp.product_id)}
+                    items={scopeProducts.map((sp) => sp.product_id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-2">
-                      {scopeProducts.map(scopeProduct => (
+                      {scopeProducts.map((scopeProduct) => (
                         <SortableProductItem
                           key={scopeProduct.product_id}
                           scopeProduct={scopeProduct}
@@ -683,7 +673,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
           {/* Domyślne wartości dla oferty */}
           <div className="space-y-4 pt-4 border-t">
             <h3 className="font-medium text-lg">Domyślne wartości dla oferty</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="defaultWarranty">Gwarancja</Label>
               <Textarea
@@ -735,11 +725,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
           {/* Przycisk zapisz */}
           <div className="pt-4">
-            <Button 
-              onClick={handleSave} 
-              disabled={isSaving}
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
               {isSaving ? 'Zapisywanie...' : 'Zapisz szablon'}
             </Button>
           </div>
@@ -761,28 +747,30 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         onOpenChange={(open) => !open && setEditingProductId(null)}
         instanceId={instanceId}
         categories={Object.entries(categoryMap).map(([id, name]) => ({ id, name }))}
-        service={mapProductToServiceData(scopeProducts.find(sp => sp.product_id === editingProductId)?.product)}
+        service={mapProductToServiceData(
+          scopeProducts.find((sp) => sp.product_id === editingProductId)?.product,
+        )}
         onSaved={async () => {
           // Refresh the product data after edit
           if (editingProductId) {
             const { data } = await supabase
               .from('unified_services')
-              .select('id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id, description, prices_are_net, duration_minutes, duration_small, duration_medium, duration_large, service_type, visibility, reminder_template_id')
+              .select(
+                'id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id, description, prices_are_net, duration_minutes, duration_small, duration_medium, duration_large, service_type, visibility, reminder_template_id',
+              )
               .eq('id', editingProductId)
               .single();
-            
+
             if (data) {
-              setScopeProducts(prev => 
-                prev.map(sp => 
-                  sp.product_id === editingProductId 
-                    ? { ...sp, product: data as Product }
-                    : sp
-                )
+              setScopeProducts((prev) =>
+                prev.map((sp) =>
+                  sp.product_id === editingProductId ? { ...sp, product: data as Product } : sp,
+                ),
               );
 
               // Also refresh the drawer list so prices/names stay in sync
               setAvailableProducts((prev) =>
-                prev.map((p) => (p.id === editingProductId ? (data as Product) : p))
+                prev.map((p) => (p.id === editingProductId ? (data as Product) : p)),
               );
             }
           }

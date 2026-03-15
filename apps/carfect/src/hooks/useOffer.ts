@@ -5,6 +5,42 @@ import { toast } from 'sonner';
 import { normalizePhone } from '@shared/utils';
 import type { Json } from '@/integrations/supabase/types';
 
+/**
+ * Extended offer row type — includes columns that exist in DB
+ * but are missing from auto-generated Supabase types.
+ * TODO: regenerate types with `supabase gen types` to remove this.
+ */
+interface OfferRowExtended {
+  paint_color?: string;
+  paint_finish?: string;
+  widget_selected_extras?: string[];
+  widget_duration_selections?: Record<string, number | null>;
+  source?: string;
+  budget_suggestion?: number;
+  inquiry_notes?: string;
+  warranty?: string;
+  service_info?: string;
+  internal_notes?: string;
+}
+
+/** Product joined via offer_scope_products → unified_services */
+interface ScopeProductWithJoin {
+  id: string;
+  scope_id: string;
+  is_default: boolean;
+  sort_order: number | null;
+  product?: {
+    id: string;
+    name: string;
+    default_price: number | null;
+    price_from: number | null;
+    price_small: number | null;
+    price_medium: number | null;
+    price_large: number | null;
+  };
+  visibility?: string;
+}
+
 export interface CustomerData {
   name: string;
   email: string;
@@ -76,7 +112,7 @@ export interface OfferState {
   defaultSelectedState?: DefaultSelectedState;
   internalNotes?: string;
   // Widget selections for auto-preselection in Step 3
-  widgetSelectedExtras?: string[];          // uuid[] from widget
+  widgetSelectedExtras?: string[]; // uuid[] from widget
   widgetDurationSelections?: Record<string, number | null>; // templateId → months
 }
 
@@ -121,28 +157,30 @@ export const useOffer = (instanceId: string) => {
     notes: '',
     defaultSelectedState: undefined,
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Build options for given scopes (no state mutation)
-  const buildOptionsFromScopes = useCallback(async (scopeIds: string[]): Promise<OfferOption[]> => {
-    if (scopeIds.length === 0) return [];
+  const buildOptionsFromScopes = useCallback(
+    async (scopeIds: string[]): Promise<OfferOption[]> => {
+      if (scopeIds.length === 0) return [];
 
-    // Fetch selected scopes
-    const { data: scopes, error: scopesError } = await supabase
-      .from('offer_scopes')
-      .select('*')
-      .in('id', scopeIds)
-      .eq('active', true)
-      .order('sort_order');
+      // Fetch selected scopes
+      const { data: scopes, error: scopesError } = await supabase
+        .from('offer_scopes')
+        .select('*')
+        .in('id', scopeIds)
+        .eq('active', true)
+        .order('sort_order');
 
-    if (scopesError) throw scopesError;
+      if (scopesError) throw scopesError;
 
-    // Fetch scope products (new simplified structure)
-    const { data: scopeProducts, error: productsError } = await supabase
-      .from('offer_scope_products')
-      .select(`
+      // Fetch scope products (new simplified structure)
+      const { data: scopeProducts, error: productsError } = await supabase
+        .from('offer_scope_products')
+        .select(
+          `
           id,
           scope_id,
           product_id,
@@ -150,102 +188,110 @@ export const useOffer = (instanceId: string) => {
           is_default,
           sort_order,
           product:unified_services!product_id(id, name, default_price, price_from, price_small, price_medium, price_large, unit, description)
-        `)
-      .in('scope_id', scopeIds)
-      .order('sort_order');
+        `,
+        )
+        .in('scope_id', scopeIds)
+        .order('sort_order');
 
-    if (productsError) throw productsError;
+      if (productsError) throw productsError;
 
-    // Generate one option per scope containing all its DEFAULT products
-    // (matches SummaryStepV2.buildDefaultSelected() expectations)
-    const newOptions: OfferOption[] = [];
-    let sortOrder = 0;
+      // Generate one option per scope containing all its DEFAULT products
+      // (matches SummaryStepV2.buildDefaultSelected() expectations)
+      const newOptions: OfferOption[] = [];
+      let sortOrder = 0;
 
-    // Sort scopes: extras last
-    const sortedScopes = [...(scopes || [])].sort((a, b) => {
-      if (a.is_extras_scope && !b.is_extras_scope) return 1;
-      if (!a.is_extras_scope && b.is_extras_scope) return -1;
-      return (a.sort_order || 0) - (b.sort_order || 0);
-    });
+      // Sort scopes: extras last
+      const sortedScopes = [...(scopes || [])].sort((a, b) => {
+        if (a.is_extras_scope && !b.is_extras_scope) return 1;
+        if (!a.is_extras_scope && b.is_extras_scope) return -1;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
 
-    for (const scope of sortedScopes) {
-      const products = (scopeProducts || [])
-        .filter(p => p.scope_id === scope.id && p.is_default)
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      for (const scope of sortedScopes) {
+        const products = (scopeProducts || [])
+          .filter((p) => p.scope_id === scope.id && p.is_default)
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-      const items: OfferItem[] = products.map(p => {
-        const product = (p as any).product as {
-          id: string;
-          name: string;
-          default_price: number | null;
-          price_from: number | null;
-          price_small: number | null;
-          price_medium: number | null;
-          price_large: number | null;
-          unit: string | null;
-          description: string | null;
-        } | null;
+        const items: OfferItem[] = products.map((p) => {
+          const product = (p as ScopeProductWithJoin).product as {
+            id: string;
+            name: string;
+            default_price: number | null;
+            price_from: number | null;
+            price_small: number | null;
+            price_medium: number | null;
+            price_large: number | null;
+            unit: string | null;
+            description: string | null;
+          } | null;
 
-        // Helper: get lowest available price (price_from -> min(S/M/L) -> default_price)
-        const getLowestPrice = (): number => {
-          if (!product) return 0;
-          if (product.price_from != null) return product.price_from;
-          const sizes = [product.price_small, product.price_medium, product.price_large].filter(
-            (v: number | null): v is number => v != null
-          );
-          if (sizes.length > 0) return Math.min(...sizes);
-          return product.default_price ?? 0;
-        };
+          // Helper: get lowest available price (price_from -> min(S/M/L) -> default_price)
+          const getLowestPrice = (): number => {
+            if (!product) return 0;
+            if (product.price_from != null) return product.price_from;
+            const sizes = [product.price_small, product.price_medium, product.price_large].filter(
+              (v: number | null): v is number => v != null,
+            );
+            if (sizes.length > 0) return Math.min(...sizes);
+            return product.default_price ?? 0;
+          };
 
-        return {
+          return {
+            id: crypto.randomUUID(),
+            productId: p.product_id || undefined,
+            customName: p.variant_name
+              ? `${p.variant_name}\n${product?.name || ''}`
+              : product?.name || '',
+            customDescription: '',
+            quantity: 1,
+            unitPrice: getLowestPrice(),
+            unit: product?.unit || 'szt',
+            discountPercent: 0,
+            isOptional: false,
+            isCustom: !p.product_id,
+          };
+        });
+
+        newOptions.push({
           id: crypto.randomUUID(),
-          productId: p.product_id || undefined,
-          customName: p.variant_name ? `${p.variant_name}\n${product?.name || ''}` : (product?.name || ''),
-          customDescription: '',
-          quantity: 1,
-          unitPrice: getLowestPrice(),
-          unit: product?.unit || 'szt',
-          discountPercent: 0,
-          isOptional: false,
-          isCustom: !p.product_id,
-        };
-      });
+          name: scope.name,
+          description: scope.description || '',
+          items,
+          isSelected: true,
+          sortOrder,
+          scopeId: scope.id,
+          variantId: undefined,
+          isUpsell: scope.is_extras_scope || false,
+        });
+        sortOrder++;
+      }
 
-      newOptions.push({
-        id: crypto.randomUUID(),
-        name: scope.name,
-        description: scope.description || '',
-        items,
-        isSelected: true,
-        sortOrder,
-        scopeId: scope.id,
-        variantId: undefined,
-        isUpsell: scope.is_extras_scope || false,
-      });
-      sortOrder++;
-    }
-
-    return newOptions;
-  }, [instanceId]);
+      return newOptions;
+    },
+    [instanceId],
+  );
 
   // Generate options from selected scopes (state mutation)
-  const generateOptionsFromScopes = useCallback(async (scopeIds: string[]) => {
-    if (scopeIds.length === 0) {
-      setOffer(prev => ({ ...prev, options: [] }));
-      return;
-    }
+  const generateOptionsFromScopes = useCallback(
+    async (scopeIds: string[]) => {
+      if (scopeIds.length === 0) {
+        setOffer((prev) => ({ ...prev, options: [] }));
+        return;
+      }
 
-    try {
-      const newOptions = await buildOptionsFromScopes(scopeIds);
-      setOffer(prev => ({ ...prev, options: newOptions }));
-    } catch (error) {
-      console.error('Error generating options from scopes:', error);
-    }
-  }, [buildOptionsFromScopes]);
+      try {
+        const newOptions = await buildOptionsFromScopes(scopeIds);
+        setOffer((prev) => ({ ...prev, options: newOptions }));
+      } catch (error) {
+        console.error('Error generating options from scopes:', error);
+      }
+    },
+    [buildOptionsFromScopes],
+  );
 
   // Customer data handlers
   const updateCustomerData = useCallback((data: Partial<CustomerData>) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
       customerData: { ...prev.customerData, ...data },
     }));
@@ -253,160 +299,165 @@ export const useOffer = (instanceId: string) => {
 
   // Vehicle data handlers
   const updateVehicleData = useCallback((data: Partial<VehicleData>) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
       vehicleData: { ...prev.vehicleData, ...data },
     }));
   }, []);
 
   // Scope handlers
-  const updateSelectedScopes = useCallback((scopeIds: string[]) => {
-    type ScopeUpdateAction =
-      | { type: 'none' }
-      | { type: 'replace' }
-      | { type: 'append'; newScopeIds: string[] };
+  const updateSelectedScopes = useCallback(
+    (scopeIds: string[]) => {
+      type ScopeUpdateAction =
+        | { type: 'none' }
+        | { type: 'replace' }
+        | { type: 'append'; newScopeIds: string[] };
 
-    // TS note: we compute the action inside setOffer(prev => ...) and read it afterwards.
-    // Using a mutable holder avoids incorrect TS narrowing while keeping the functional update.
-    const holder: { action: ScopeUpdateAction } = { action: { type: 'none' } };
+      // TS note: we compute the action inside setOffer(prev => ...) and read it afterwards.
+      // Using a mutable holder avoids incorrect TS narrowing while keeping the functional update.
+      const holder: { action: ScopeUpdateAction } = { action: { type: 'none' } };
 
-    setOffer(prev => {
-      // Only update if actually changed to prevent loops
-      if (JSON.stringify(prev.selectedScopeIds) === JSON.stringify(scopeIds)) {
-        return prev;
-      }
+      setOffer((prev) => {
+        // Only update if actually changed to prevent loops
+        if (JSON.stringify(prev.selectedScopeIds) === JSON.stringify(scopeIds)) {
+          return prev;
+        }
 
-      // NEW OFFER: replace options from templates
-      if (!prev.id) {
-        holder.action = { type: 'replace' };
+        // NEW OFFER: replace options from templates
+        if (!prev.id) {
+          holder.action = { type: 'replace' };
+          return {
+            ...prev,
+            selectedScopeIds: scopeIds,
+          };
+        }
+
+        // PERSISTED OFFER: preserve existing options/items/prices.
+        // - Keep extras (Dodatki) regardless of step-2 selection
+        // - Remove options for deselected NON-extras scopes
+        // - Append options only for newly added scopes
+        const nextOptions = prev.options.filter((opt) => {
+          if (!opt.scopeId) return true;
+          if (opt.isUpsell) return true;
+          return scopeIds.includes(opt.scopeId);
+        });
+
+        const existingRegularScopeIds = new Set(
+          nextOptions
+            .filter((opt) => opt.scopeId && !opt.isUpsell)
+            .map((opt) => opt.scopeId as string),
+        );
+
+        const newScopeIds = scopeIds.filter((id) => !existingRegularScopeIds.has(id));
+        if (newScopeIds.length > 0) {
+          holder.action = { type: 'append', newScopeIds };
+        }
+
         return {
           ...prev,
           selectedScopeIds: scopeIds,
+          options: nextOptions,
         };
-      }
-
-      // PERSISTED OFFER: preserve existing options/items/prices.
-      // - Keep extras (Dodatki) regardless of step-2 selection
-      // - Remove options for deselected NON-extras scopes
-      // - Append options only for newly added scopes
-      const nextOptions = prev.options.filter(opt => {
-        if (!opt.scopeId) return true;
-        if (opt.isUpsell) return true;
-        return scopeIds.includes(opt.scopeId);
       });
 
-      const existingRegularScopeIds = new Set(
-        nextOptions
-          .filter(opt => opt.scopeId && !opt.isUpsell)
-          .map(opt => opt.scopeId as string)
-      );
+      const action = holder.action;
 
-      const newScopeIds = scopeIds.filter(id => !existingRegularScopeIds.has(id));
-      if (newScopeIds.length > 0) {
-        holder.action = { type: 'append', newScopeIds };
+      if (action.type === 'replace') {
+        void generateOptionsFromScopes(scopeIds);
+        return;
       }
 
-      return {
-        ...prev,
-        selectedScopeIds: scopeIds,
-        options: nextOptions,
-      };
-    });
+      if (action.type === 'append') {
+        void (async () => {
+          const builtOptions = await buildOptionsFromScopes(action.newScopeIds);
 
-    const action = holder.action;
+          setOffer((prev) => {
+            const desiredScopeIds = new Set(prev.selectedScopeIds);
+            const existingScopeIds = new Set(
+              prev.options.filter((o) => o.scopeId).map((o) => o.scopeId as string),
+            );
 
-    if (action.type === 'replace') {
-      void generateOptionsFromScopes(scopeIds);
-      return;
-    }
+            const safeToAdd = builtOptions.filter((o) => {
+              if (!o.scopeId) return true;
+              if (!desiredScopeIds.has(o.scopeId)) return false; // selection changed while awaiting
+              return !existingScopeIds.has(o.scopeId);
+            });
 
-    if (action.type === 'append') {
-      void (async () => {
-        const builtOptions = await buildOptionsFromScopes(action.newScopeIds);
+            if (safeToAdd.length === 0) return prev;
 
-        setOffer(prev => {
-          const desiredScopeIds = new Set(prev.selectedScopeIds);
-          const existingScopeIds = new Set(
-            prev.options
-              .filter(o => o.scopeId)
-              .map(o => o.scopeId as string)
-          );
+            const merged = [...prev.options, ...safeToAdd].map((opt, idx) => ({
+              ...opt,
+              sortOrder: idx,
+            }));
 
-          const safeToAdd = builtOptions.filter(o => {
-            if (!o.scopeId) return true;
-            if (!desiredScopeIds.has(o.scopeId)) return false; // selection changed while awaiting
-            return !existingScopeIds.has(o.scopeId);
+            return {
+              ...prev,
+              options: merged,
+            };
           });
-
-          if (safeToAdd.length === 0) return prev;
-
-          const merged = [...prev.options, ...safeToAdd].map((opt, idx) => ({
-            ...opt,
-            sortOrder: idx,
-          }));
-
-          return {
-            ...prev,
-            options: merged,
-          };
+        })().catch((err) => {
+          console.error('[updateSelectedScopes] Failed to append scopes:', err);
         });
-      })().catch(err => {
-        console.error('[updateSelectedScopes] Failed to append scopes:', err);
-      });
-    }
-  }, [buildOptionsFromScopes, generateOptionsFromScopes]);
+      }
+    },
+    [buildOptionsFromScopes, generateOptionsFromScopes],
+  );
 
   // Option handlers
-  const addOption = useCallback((option: Omit<OfferOption, 'id' | 'sortOrder'>) => {
-    const newOption: OfferOption = {
-      ...option,
-      id: crypto.randomUUID(),
-      sortOrder: offer.options.length,
-    };
-    setOffer(prev => ({
-      ...prev,
-      options: [...prev.options, newOption],
-    }));
-    return newOption.id;
-  }, [offer.options.length]);
+  const addOption = useCallback(
+    (option: Omit<OfferOption, 'id' | 'sortOrder'>) => {
+      const newOption: OfferOption = {
+        ...option,
+        id: crypto.randomUUID(),
+        sortOrder: offer.options.length,
+      };
+      setOffer((prev) => ({
+        ...prev,
+        options: [...prev.options, newOption],
+      }));
+      return newOption.id;
+    },
+    [offer.options.length],
+  );
 
   const updateOption = useCallback((optionId: string, data: Partial<OfferOption>) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
-      options: prev.options.map(opt => 
-        opt.id === optionId ? { ...opt, ...data } : opt
-      ),
+      options: prev.options.map((opt) => (opt.id === optionId ? { ...opt, ...data } : opt)),
     }));
   }, []);
 
   const removeOption = useCallback((optionId: string) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
       options: prev.options
-        .filter(opt => opt.id !== optionId)
+        .filter((opt) => opt.id !== optionId)
         .map((opt, idx) => ({ ...opt, sortOrder: idx })),
     }));
   }, []);
 
-  const duplicateOption = useCallback((optionId: string) => {
-    const option = offer.options.find(o => o.id === optionId);
-    if (!option) return;
-    
-    const newOption: OfferOption = {
-      ...option,
-      id: crypto.randomUUID(),
-      name: `${option.name} (kopia)`,
-      sortOrder: offer.options.length,
-      items: option.items.map(item => ({
-        ...item,
+  const duplicateOption = useCallback(
+    (optionId: string) => {
+      const option = offer.options.find((o) => o.id === optionId);
+      if (!option) return;
+
+      const newOption: OfferOption = {
+        ...option,
         id: crypto.randomUUID(),
-      })),
-    };
-    setOffer(prev => ({
-      ...prev,
-      options: [...prev.options, newOption],
-    }));
-  }, [offer.options]);
+        name: `${option.name} (kopia)`,
+        sortOrder: offer.options.length,
+        items: option.items.map((item) => ({
+          ...item,
+          id: crypto.randomUUID(),
+        })),
+      };
+      setOffer((prev) => ({
+        ...prev,
+        options: [...prev.options, newOption],
+      }));
+    },
+    [offer.options],
+  );
 
   // Item handlers
   const addItemToOption = useCallback((optionId: string, item: Omit<OfferItem, 'id'>) => {
@@ -414,40 +465,39 @@ export const useOffer = (instanceId: string) => {
       ...item,
       id: crypto.randomUUID(),
     };
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
-      options: prev.options.map(opt => 
-        opt.id === optionId 
-          ? { ...opt, items: [...opt.items, newItem] }
-          : opt
+      options: prev.options.map((opt) =>
+        opt.id === optionId ? { ...opt, items: [...opt.items, newItem] } : opt,
       ),
     }));
     return newItem.id;
   }, []);
 
-  const updateItemInOption = useCallback((optionId: string, itemId: string, data: Partial<OfferItem>) => {
-    setOffer(prev => ({
-      ...prev,
-      options: prev.options.map(opt => 
-        opt.id === optionId 
-          ? { 
-              ...opt, 
-              items: opt.items.map(item => 
-                item.id === itemId ? { ...item, ...data } : item
-              ) 
-            }
-          : opt
-      ),
-    }));
-  }, []);
+  const updateItemInOption = useCallback(
+    (optionId: string, itemId: string, data: Partial<OfferItem>) => {
+      setOffer((prev) => ({
+        ...prev,
+        options: prev.options.map((opt) =>
+          opt.id === optionId
+            ? {
+                ...opt,
+                items: opt.items.map((item) => (item.id === itemId ? { ...item, ...data } : item)),
+              }
+            : opt,
+        ),
+      }));
+    },
+    [],
+  );
 
   const removeItemFromOption = useCallback((optionId: string, itemId: string) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
-      options: prev.options.map(opt => 
-        opt.id === optionId 
-          ? { ...opt, items: opt.items.filter(item => item.id !== itemId) }
-          : opt
+      options: prev.options.map((opt) =>
+        opt.id === optionId
+          ? { ...opt, items: opt.items.filter((item) => item.id !== itemId) }
+          : opt,
       ),
     }));
   }, []);
@@ -458,7 +508,7 @@ export const useOffer = (instanceId: string) => {
       ...item,
       id: crypto.randomUUID(),
     };
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
       additions: [...prev.additions, newItem],
     }));
@@ -466,24 +516,22 @@ export const useOffer = (instanceId: string) => {
   }, []);
 
   const updateAddition = useCallback((itemId: string, data: Partial<OfferItem>) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
-      additions: prev.additions.map(item => 
-        item.id === itemId ? { ...item, ...data } : item
-      ),
+      additions: prev.additions.map((item) => (item.id === itemId ? { ...item, ...data } : item)),
     }));
   }, []);
 
   const removeAddition = useCallback((itemId: string) => {
-    setOffer(prev => ({
+    setOffer((prev) => ({
       ...prev,
-      additions: prev.additions.filter(item => item.id !== itemId),
+      additions: prev.additions.filter((item) => item.id !== itemId),
     }));
   }, []);
 
   // General update
   const updateOffer = useCallback((data: Partial<OfferState>) => {
-    setOffer(prev => ({ ...prev, ...data }));
+    setOffer((prev) => ({ ...prev, ...data }));
   }, []);
 
   // Calculations
@@ -505,7 +553,7 @@ export const useOffer = (instanceId: string) => {
 
   const calculateTotalNet = useCallback(() => {
     const optionsTotal = offer.options
-      .filter(opt => opt.isSelected)
+      .filter((opt) => opt.isSelected)
       .reduce((sum, opt) => sum + calculateOptionTotal(opt), 0);
     return optionsTotal + calculateAdditionsTotal();
   }, [offer.options, calculateOptionTotal, calculateAdditionsTotal]);
@@ -517,289 +565,285 @@ export const useOffer = (instanceId: string) => {
 
   // Save offer to database
   // silent: if true, don't show success toast (used for auto-save)
-  const saveOffer = useCallback(async (silent = false) => {
-    setSaving(true);
-    try {
-      // ===================== LOG A: BEFORE SAVE =====================
-      const allOptionIds = offer.options.map(o => o.id);
-      const allItemIds = offer.options.flatMap(o => o.items.map(i => i.id));
-      const selectedVariantIds = Object.values(offer.defaultSelectedState?.selectedVariants || {});
-      const selectedOptionalItemIds = Object.keys(offer.defaultSelectedState?.selectedOptionalItems || {});
-      const selectedItemInOptionIds = Object.values(offer.defaultSelectedState?.selectedItemInOption || {});
-      
-      const missingVariants = selectedVariantIds.filter(id => !allOptionIds.includes(id));
-      const missingOptionalItems = selectedOptionalItemIds.filter(id => !allItemIds.includes(id));
-      const missingItemInOption = selectedItemInOptionIds.filter(id => !allItemIds.includes(id));
-      
-      console.group('📝 [SAVE] Offer Selection State BEFORE save');
-      console.log('offer.id:', offer.id);
-      console.log('defaultSelectedState:', JSON.stringify(offer.defaultSelectedState, null, 2));
-      console.log('options (id, scopeId, isUpsell):', offer.options.map(o => ({ id: o.id, scopeId: o.scopeId, isUpsell: o.isUpsell })));
-      console.log('all item IDs:', allItemIds);
-      console.log('🔍 Consistency check:');
-      console.log('  - Missing variant IDs in options:', missingVariants.length > 0 ? missingVariants : '✅ all found');
-      console.log('  - Missing optional item IDs:', missingOptionalItems.length > 0 ? missingOptionalItems : '✅ all found');
-      console.log('  - Missing itemInOption IDs:', missingItemInOption.length > 0 ? missingItemInOption : '✅ all found');
-      console.groupEnd();
-      // ===================== END LOG A =====================
+  const saveOffer = useCallback(
+    async (silent = false) => {
+      setSaving(true);
+      try {
+        // Generate offer number if new
+        let offerNumber = '';
+        if (!offer.id) {
+          const { data: numberData, error: numberError } = await supabase.rpc(
+            'generate_offer_number',
+            { _instance_id: instanceId },
+          );
 
-      // Generate offer number if new
-      let offerNumber = '';
-      if (!offer.id) {
-        const { data: numberData, error: numberError } = await supabase
-          .rpc('generate_offer_number', { _instance_id: instanceId });
-        
-        if (numberError) throw numberError;
-        offerNumber = numberData;
-      }
+          if (numberError) throw numberError;
+          offerNumber = numberData;
+        }
 
-      const totalNet = calculateTotalNet();
-      const totalGross = calculateTotalGross();
+        const totalNet = calculateTotalNet();
+        const totalGross = calculateTotalGross();
 
-      // Build selected_state from defaultSelectedState if present (for admin pre-selection)
-      const selectedStateToSave = offer.defaultSelectedState ? {
-        selectedScopeId: offer.defaultSelectedState.selectedScopeId,
-        selectedVariants: offer.defaultSelectedState.selectedVariants,
-        selectedOptionalItems: offer.defaultSelectedState.selectedOptionalItems,
-        selectedItemInOption: offer.defaultSelectedState.selectedItemInOption,
-        selectedUpsells: {}, // Legacy field, derive from selectedOptionalItems
-        isDefault: true, // Marker that this is admin's pre-selection, not customer's choice
-      } : null;
+        // Build selected_state from defaultSelectedState if present (for admin pre-selection)
+        const selectedStateToSave = offer.defaultSelectedState
+          ? {
+              selectedScopeId: offer.defaultSelectedState.selectedScopeId,
+              selectedVariants: offer.defaultSelectedState.selectedVariants,
+              selectedOptionalItems: offer.defaultSelectedState.selectedOptionalItems,
+              selectedItemInOption: offer.defaultSelectedState.selectedItemInOption,
+              selectedUpsells: {}, // Legacy field, derive from selectedOptionalItems
+              isDefault: true, // Marker that this is admin's pre-selection, not customer's choice
+            }
+          : null;
 
-      // Save main offer - cast to Json for Supabase
-      const offerData: {
-        instance_id: string;
-        customer_data: Json;
-        vehicle_data: Json;
-        notes?: string;
-        payment_terms?: string;
-        warranty?: string;
-        service_info?: string;
-        internal_notes?: string | null;
-        valid_until?: string;
-        vat_rate: number;
-        total_net: number;
-        total_gross: number;
-        status: string;
-        hide_unit_prices: boolean;
-        offer_number?: string;
-        selected_state?: Json;
-        has_unified_services?: boolean;
-      } = {
-        instance_id: instanceId,
-        customer_data: offer.customerData as unknown as Json,
-        vehicle_data: offer.vehicleData as unknown as Json,
-        notes: offer.notes,
-        payment_terms: offer.paymentTerms,
-        warranty: offer.warranty,
-        service_info: offer.serviceInfo,
-        internal_notes: offer.internalNotes || null,
-        valid_until: offer.validUntil,
-        vat_rate: offer.vatRate,
-        total_net: totalNet,
-        total_gross: totalGross,
-        status: offer.status,
-        hide_unit_prices: offer.hideUnitPrices,
-        ...(offerNumber && { offer_number: offerNumber }),
-        ...(selectedStateToSave && { selected_state: selectedStateToSave as unknown as Json }),
-        // New offers use unified services (service_type='both')
-        ...(!offer.id && { has_unified_services: true }),
-      };
+        // Save main offer - cast to Json for Supabase
+        const offerData: {
+          instance_id: string;
+          customer_data: Json;
+          vehicle_data: Json;
+          notes?: string;
+          payment_terms?: string;
+          warranty?: string;
+          service_info?: string;
+          internal_notes?: string | null;
+          valid_until?: string;
+          vat_rate: number;
+          total_net: number;
+          total_gross: number;
+          status: string;
+          hide_unit_prices: boolean;
+          offer_number?: string;
+          selected_state?: Json;
+          has_unified_services?: boolean;
+        } = {
+          instance_id: instanceId,
+          customer_data: offer.customerData as unknown as Json,
+          vehicle_data: offer.vehicleData as unknown as Json,
+          notes: offer.notes,
+          payment_terms: offer.paymentTerms,
+          warranty: offer.warranty,
+          service_info: offer.serviceInfo,
+          internal_notes: offer.internalNotes || null,
+          valid_until: offer.validUntil,
+          vat_rate: offer.vatRate,
+          total_net: totalNet,
+          total_gross: totalGross,
+          status: offer.status,
+          hide_unit_prices: offer.hideUnitPrices,
+          ...(offerNumber && { offer_number: offerNumber }),
+          ...(selectedStateToSave && { selected_state: selectedStateToSave as unknown as Json }),
+          // New offers use unified services (service_type='both')
+          ...(!offer.id && { has_unified_services: true }),
+        };
 
-      let offerId = offer.id;
+        let offerId = offer.id;
 
-      if (offer.id) {
-        // Update existing
-        const { error } = await supabase
-          .from('offers')
-          .update(offerData)
-          .eq('id', offer.id);
-        
-        if (error) throw error;
-      } else {
-        // Insert new - offer_number is required
-        const insertData = { ...offerData, offer_number: offerNumber };
-        const { data, error } = await supabase
-          .from('offers')
-          .insert(insertData)
-          .select('id')
-          .single();
-        
-        if (error) throw error;
-        offerId = data.id;
-        setOffer(prev => ({ ...prev, id: offerId }));
-      }
+        if (offer.id) {
+          // Update existing
+          const { error } = await supabase.from('offers').update(offerData).eq('id', offer.id);
 
-      // Delete existing options and items (will re-insert)
-      // Use offerId (not offer.id) to handle both new and existing offers consistently
-      const { error: deleteError } = await supabase
-        .from('offer_options')
-        .delete()
-        .eq('offer_id', offerId);
-      
-      if (deleteError) {
-        console.error('Error deleting old options:', deleteError);
-        // Continue anyway - the insert might still work if there were no options
-      }
+          if (error) throw error;
+        } else {
+          // Insert new - offer_number is required
+          const insertData = { ...offerData, offer_number: offerNumber };
+          const { data, error } = await supabase
+            .from('offers')
+            .insert(insertData)
+            .select('id')
+            .single();
 
-      // ===================== AUTO-REPAIR: Detect and fix stale IDs from duplication =====================
-      // Check if any option IDs already exist in the database for a DIFFERENT offer
-      const optionIdsToCheck = offer.options.map(o => o.id);
-      const itemIdsToCheck = offer.options.flatMap(o => o.items.map(i => i.id));
-      
-      let optionIdMap: Record<string, string> = {};
-      let itemIdMap: Record<string, string> = {};
-      let needsIdRegeneration = false;
-      
-      if (optionIdsToCheck.length > 0) {
-        const { data: existingOptions } = await supabase
+          if (error) throw error;
+          offerId = data.id;
+          setOffer((prev) => ({ ...prev, id: offerId }));
+        }
+
+        // Delete existing options and items (will re-insert)
+        // Use offerId (not offer.id) to handle both new and existing offers consistently
+        const { error: deleteError } = await supabase
           .from('offer_options')
-          .select('id, offer_id')
-          .in('id', optionIdsToCheck);
-        
-        // If any option ID exists for a DIFFERENT offer, we need to regenerate
-        const conflictingOptions = (existingOptions || []).filter(o => o.offer_id !== offerId);
-        if (conflictingOptions.length > 0) {
-          needsIdRegeneration = true;
-          console.warn('[AUTO-REPAIR] Detected conflicting option IDs from another offer:', conflictingOptions.map(o => o.id));
-        }
-      }
-      
-      // Prepare options and items with potentially regenerated IDs
-      let processedOptions = offer.options;
-      let processedAdditions = offer.additions;
-      let processedDefaultSelectedState = offer.defaultSelectedState;
-      
-      if (needsIdRegeneration) {
-        console.log('[AUTO-REPAIR] Regenerating all option and item IDs to prevent conflicts...');
-        
-        // Generate new IDs for all options and items
-        processedOptions = offer.options.map(option => {
-          const newOptionId = crypto.randomUUID();
-          optionIdMap[option.id] = newOptionId;
-          
-          return {
-            ...option,
-            id: newOptionId,
-            items: option.items.map(item => {
-              const newItemId = crypto.randomUUID();
-              itemIdMap[item.id] = newItemId;
-              return { ...item, id: newItemId };
-            }),
-          };
-        });
-        
-        // Regenerate additions IDs
-        processedAdditions = offer.additions.map(item => {
-          const newItemId = crypto.randomUUID();
-          itemIdMap[item.id] = newItemId;
-          return { ...item, id: newItemId };
-        });
-        
-        // Update defaultSelectedState with new IDs
-        if (offer.defaultSelectedState) {
-          const { selectedVariants, selectedOptionalItems, selectedItemInOption } = offer.defaultSelectedState;
-          
-          const newSelectedVariants: Record<string, string> = {};
-          for (const [scopeId, oldOptionId] of Object.entries(selectedVariants || {})) {
-            newSelectedVariants[scopeId] = optionIdMap[oldOptionId] || oldOptionId;
-          }
-          
-          const newSelectedOptionalItems: Record<string, boolean> = {};
-          for (const [oldItemId, value] of Object.entries(selectedOptionalItems || {})) {
-            const newItemId = itemIdMap[oldItemId] || oldItemId;
-            newSelectedOptionalItems[newItemId] = value;
-          }
-          
-          const newSelectedItemInOption: Record<string, string> = {};
-          for (const [oldOptionId, oldItemId] of Object.entries(selectedItemInOption || {})) {
-            const newOptionId = optionIdMap[oldOptionId] || oldOptionId;
-            const newItemId = itemIdMap[oldItemId] || oldItemId;
-            newSelectedItemInOption[newOptionId] = newItemId;
-          }
-          
-          processedDefaultSelectedState = {
-            ...offer.defaultSelectedState,
-            selectedVariants: newSelectedVariants,
-            selectedOptionalItems: newSelectedOptionalItems,
-            selectedItemInOption: newSelectedItemInOption,
-          };
-        }
-        
-        // Update local state with regenerated IDs
-        setOffer(prev => ({
-          ...prev,
-          options: processedOptions,
-          additions: processedAdditions,
-          defaultSelectedState: processedDefaultSelectedState,
-        }));
-        
-        console.log('[AUTO-REPAIR] Regenerated', Object.keys(optionIdMap).length, 'option IDs and', Object.keys(itemIdMap).length, 'item IDs');
-      }
-      // ===================== END AUTO-REPAIR =====================
+          .delete()
+          .eq('offer_id', offerId);
 
-      // Prepare all options for bulk insert
-      const allOptionsData = processedOptions.map((option, idx) => ({
-        id: option.id,
-        offer_id: offerId,
-        name: option.name,
-        description: option.description,
-        is_selected: option.isSelected,
-        sort_order: option.sortOrder,
-        subtotal_net: calculateOptionTotal(option),
-        scope_id: option.scopeId || null,
-        variant_id: option.variantId || null,
-        is_upsell: option.isUpsell || false,
-      }));
+        if (deleteError) {
+          console.error('Error deleting old options:', deleteError);
+          // Continue anyway - the insert might still work if there were no options
+        }
 
-      // Add additions as a special option if present (generate new ID for additions)
-      const additionsId = processedAdditions.length > 0 ? crypto.randomUUID() : null;
-      if (processedAdditions.length > 0 && additionsId) {
-        allOptionsData.push({
-          id: additionsId,
+        // ===================== AUTO-REPAIR: Detect and fix stale IDs from duplication =====================
+        // Check if any option IDs already exist in the database for a DIFFERENT offer
+        const optionIdsToCheck = offer.options.map((o) => o.id);
+        const itemIdsToCheck = offer.options.flatMap((o) => o.items.map((i) => i.id));
+
+        let optionIdMap: Record<string, string> = {};
+        let itemIdMap: Record<string, string> = {};
+        let needsIdRegeneration = false;
+
+        if (optionIdsToCheck.length > 0) {
+          const { data: existingOptions } = await supabase
+            .from('offer_options')
+            .select('id, offer_id')
+            .in('id', optionIdsToCheck);
+
+          // If any option ID exists for a DIFFERENT offer, we need to regenerate
+          const conflictingOptions = (existingOptions || []).filter((o) => o.offer_id !== offerId);
+          if (conflictingOptions.length > 0) {
+            needsIdRegeneration = true;
+          }
+        }
+
+        // Prepare options and items with potentially regenerated IDs
+        let processedOptions = offer.options;
+        let processedAdditions = offer.additions;
+        let processedDefaultSelectedState = offer.defaultSelectedState;
+
+        if (needsIdRegeneration) {
+          // Generate new IDs for all options and items
+          processedOptions = offer.options.map((option) => {
+            const newOptionId = crypto.randomUUID();
+            optionIdMap[option.id] = newOptionId;
+
+            return {
+              ...option,
+              id: newOptionId,
+              items: option.items.map((item) => {
+                const newItemId = crypto.randomUUID();
+                itemIdMap[item.id] = newItemId;
+                return { ...item, id: newItemId };
+              }),
+            };
+          });
+
+          // Regenerate additions IDs
+          processedAdditions = offer.additions.map((item) => {
+            const newItemId = crypto.randomUUID();
+            itemIdMap[item.id] = newItemId;
+            return { ...item, id: newItemId };
+          });
+
+          // Update defaultSelectedState with new IDs
+          if (offer.defaultSelectedState) {
+            const { selectedVariants, selectedOptionalItems, selectedItemInOption } =
+              offer.defaultSelectedState;
+
+            const newSelectedVariants: Record<string, string> = {};
+            for (const [scopeId, oldOptionId] of Object.entries(selectedVariants || {})) {
+              newSelectedVariants[scopeId] = optionIdMap[oldOptionId] || oldOptionId;
+            }
+
+            const newSelectedOptionalItems: Record<string, boolean> = {};
+            for (const [oldItemId, value] of Object.entries(selectedOptionalItems || {})) {
+              const newItemId = itemIdMap[oldItemId] || oldItemId;
+              newSelectedOptionalItems[newItemId] = value;
+            }
+
+            const newSelectedItemInOption: Record<string, string> = {};
+            for (const [oldOptionId, oldItemId] of Object.entries(selectedItemInOption || {})) {
+              const newOptionId = optionIdMap[oldOptionId] || oldOptionId;
+              const newItemId = itemIdMap[oldItemId] || oldItemId;
+              newSelectedItemInOption[newOptionId] = newItemId;
+            }
+
+            processedDefaultSelectedState = {
+              ...offer.defaultSelectedState,
+              selectedVariants: newSelectedVariants,
+              selectedOptionalItems: newSelectedOptionalItems,
+              selectedItemInOption: newSelectedItemInOption,
+            };
+          }
+
+          // Update local state with regenerated IDs
+          setOffer((prev) => ({
+            ...prev,
+            options: processedOptions,
+            additions: processedAdditions,
+            defaultSelectedState: processedDefaultSelectedState,
+          }));
+        }
+        // ===================== END AUTO-REPAIR =====================
+
+        // Prepare all options for bulk insert
+        const allOptionsData = processedOptions.map((option, idx) => ({
+          id: option.id,
           offer_id: offerId,
-          name: 'Dodatki',
-          description: '',
-          is_selected: true,
-          sort_order: processedOptions.length,
-          subtotal_net: calculateAdditionsTotal(),
-          scope_id: null,
-          variant_id: null,
-          is_upsell: false,
-        });
-      }
+          name: option.name,
+          description: option.description,
+          is_selected: option.isSelected,
+          sort_order: option.sortOrder,
+          subtotal_net: calculateOptionTotal(option),
+          scope_id: option.scopeId || null,
+          variant_id: option.variantId || null,
+          is_upsell: option.isUpsell || false,
+        }));
 
-      // Bulk insert all options at once
-      if (allOptionsData.length > 0) {
-        const { error: optionsError } = await supabase
-          .from('offer_options')
-          .insert(allOptionsData);
+        // Add additions as a special option if present (generate new ID for additions)
+        const additionsId = processedAdditions.length > 0 ? crypto.randomUUID() : null;
+        if (processedAdditions.length > 0 && additionsId) {
+          allOptionsData.push({
+            id: additionsId,
+            offer_id: offerId,
+            name: 'Dodatki',
+            description: '',
+            is_selected: true,
+            sort_order: processedOptions.length,
+            subtotal_net: calculateAdditionsTotal(),
+            scope_id: null,
+            variant_id: null,
+            is_upsell: false,
+          });
+        }
 
-        if (optionsError) throw optionsError;
+        // Bulk insert all options at once
+        if (allOptionsData.length > 0) {
+          const { error: optionsError } = await supabase
+            .from('offer_options')
+            .insert(allOptionsData);
 
-        // FIX: Insert items WITH their existing IDs to prevent selected_state mismatch
-        const allItemsData: Array<{
-          id: string;
-          option_id: string;
-          product_id: string | null;
-          custom_name: string | undefined;
-          custom_description: string | undefined;
-          quantity: number;
-          unit_price: number;
-          unit: string;
-          discount_percent: number;
-          is_optional: boolean;
-          is_custom: boolean;
-          sort_order: number;
-        }> = [];
+          if (optionsError) throw optionsError;
 
-        // Add items from regular options - use processedOptions with potentially regenerated IDs
-        processedOptions.forEach((option) => {
-          if (option.items.length > 0) {
-            option.items.forEach((item, itemIdx) => {
+          // FIX: Insert items WITH their existing IDs to prevent selected_state mismatch
+          const allItemsData: Array<{
+            id: string;
+            option_id: string;
+            product_id: string | null;
+            custom_name: string | undefined;
+            custom_description: string | undefined;
+            quantity: number;
+            unit_price: number;
+            unit: string;
+            discount_percent: number;
+            is_optional: boolean;
+            is_custom: boolean;
+            sort_order: number;
+          }> = [];
+
+          // Add items from regular options - use processedOptions with potentially regenerated IDs
+          processedOptions.forEach((option) => {
+            if (option.items.length > 0) {
+              option.items.forEach((item, itemIdx) => {
+                allItemsData.push({
+                  id: item.id,
+                  option_id: option.id,
+                  product_id: item.productId || null,
+                  custom_name: item.customName,
+                  custom_description: item.customDescription,
+                  quantity: item.quantity,
+                  unit_price: item.unitPrice,
+                  unit: item.unit,
+                  discount_percent: item.discountPercent,
+                  is_optional: item.isOptional,
+                  is_custom: item.isCustom,
+                  sort_order: itemIdx,
+                });
+              });
+            }
+          });
+
+          // Add items from additions (if present)
+          if (processedAdditions.length > 0 && additionsId) {
+            processedAdditions.forEach((item, idx) => {
               allItemsData.push({
                 id: item.id,
-                option_id: option.id,
+                option_id: additionsId,
                 product_id: item.productId || null,
                 custom_name: item.customName,
                 custom_description: item.customDescription,
@@ -809,163 +853,150 @@ export const useOffer = (instanceId: string) => {
                 discount_percent: item.discountPercent,
                 is_optional: item.isOptional,
                 is_custom: item.isCustom,
-                sort_order: itemIdx,
+                sort_order: idx,
               });
             });
           }
-        });
 
-        // Add items from additions (if present)
-        if (processedAdditions.length > 0 && additionsId) {
-          processedAdditions.forEach((item, idx) => {
-            allItemsData.push({
-              id: item.id,
-              option_id: additionsId,
-              product_id: item.productId || null,
-              custom_name: item.customName,
-              custom_description: item.customDescription,
-              quantity: item.quantity,
-              unit_price: item.unitPrice,
-              unit: item.unit,
-              discount_percent: item.discountPercent,
-              is_optional: item.isOptional,
-              is_custom: item.isCustom,
-              sort_order: idx,
-            });
-          });
+          // Bulk insert all items at once
+          if (allItemsData.length > 0) {
+            const { error: itemsError } = await supabase
+              .from('offer_option_items')
+              .insert(allItemsData);
+
+            if (itemsError) throw itemsError;
+          }
         }
 
-        // Bulk insert all items at once
-        if (allItemsData.length > 0) {
-          const { error: itemsError } = await supabase
-            .from('offer_option_items')
-            .insert(allItemsData);
+        // Save customer to customers table (unified — no source filter)
+        try {
+          if (offer.customerData.name || offer.customerData.company) {
+            const fullAddress = offer.customerData.companyAddress
+              ? `${offer.customerData.companyAddress}${offer.customerData.companyPostalCode ? ', ' + offer.customerData.companyPostalCode : ''}${offer.customerData.companyCity ? ' ' + offer.customerData.companyCity : ''}`
+              : null;
 
-          if (itemsError) throw itemsError;
+            // Try to find existing customer by phone within this instance (any source)
+            let existingCustomerId: string | null = null;
+            const normalizedPhone = offer.customerData.phone?.trim()
+              ? normalizePhone(offer.customerData.phone)
+              : null;
+
+            if (normalizedPhone) {
+              const { data: existingByPhone } = await supabase
+                .from('customers')
+                .select('id')
+                .eq('instance_id', instanceId)
+                .eq('phone', normalizedPhone)
+                .maybeSingle();
+
+              if (existingByPhone) {
+                existingCustomerId = existingByPhone.id;
+              }
+            }
+
+            // If not found by phone, try by email
+            if (!existingCustomerId && offer.customerData.email) {
+              const { data: existingByEmail } = await supabase
+                .from('customers')
+                .select('id')
+                .eq('instance_id', instanceId)
+                .eq('email', offer.customerData.email)
+                .maybeSingle();
+
+              if (existingByEmail) {
+                existingCustomerId = existingByEmail.id;
+              }
+            }
+
+            if (existingCustomerId) {
+              // Update existing customer (enrich with offer data)
+              await supabase
+                .from('customers')
+                .update({
+                  name: offer.customerData.name || offer.customerData.company || 'Nieznany',
+                  email: offer.customerData.email || null,
+                  phone: normalizedPhone,
+                  company: offer.customerData.company || null,
+                  nip: offer.customerData.nip || null,
+                  address: fullAddress,
+                  billing_street: offer.customerData.companyAddress || null,
+                  billing_postal_code: offer.customerData.companyPostalCode || null,
+                  billing_city: offer.customerData.companyCity || null,
+                  updated_at: new Date().toISOString(),
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing columns missing from generated types
+                } as any)
+                .eq('id', existingCustomerId);
+            } else {
+              // Insert new customer
+              const { data: newCustomer, error: customerError } = await supabase
+                .from('customers')
+                .insert({
+                  instance_id: instanceId,
+                  name: offer.customerData.name || offer.customerData.company || 'Nieznany',
+                  phone: normalizedPhone,
+                  email: offer.customerData.email || null,
+                  company: offer.customerData.company || null,
+                  nip: offer.customerData.nip || null,
+                  address: fullAddress,
+                  billing_street: offer.customerData.companyAddress || null,
+                  billing_postal_code: offer.customerData.companyPostalCode || null,
+                  billing_city: offer.customerData.companyCity || null,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing columns missing from generated types
+                } as any)
+                .select('id')
+                .maybeSingle();
+
+              if (customerError) {
+                console.error('Error saving offer customer:', customerError);
+              } else {
+              }
+            }
+          }
+        } catch (customerSaveError) {
+          // Don't fail the whole offer save if customer save fails
+          console.error('Error saving customer from offer:', customerSaveError);
         }
-      }
 
-      // Save customer to customers table (unified — no source filter)
-      try {
-        if (offer.customerData.name || offer.customerData.company) {
-          const fullAddress = offer.customerData.companyAddress
-            ? `${offer.customerData.companyAddress}${offer.customerData.companyPostalCode ? ', ' + offer.customerData.companyPostalCode : ''}${offer.customerData.companyCity ? ' ' + offer.customerData.companyCity : ''}`
-            : null;
-
-          // Try to find existing customer by phone within this instance (any source)
-          let existingCustomerId: string | null = null;
-          const normalizedPhone = offer.customerData.phone?.trim()
+        // Save vehicle from offer to customer_vehicles (if brandModel and phone exist)
+        try {
+          const vehicleName = offer.vehicleData.brandModel?.trim();
+          const customerPhone = offer.customerData.phone?.trim()
             ? normalizePhone(offer.customerData.phone)
             : null;
 
-          if (normalizedPhone) {
-            const { data: existingByPhone } = await supabase
-              .from('customers')
-              .select('id')
-              .eq('instance_id', instanceId)
-              .eq('phone', normalizedPhone)
-              .maybeSingle();
-
-            if (existingByPhone) {
-              existingCustomerId = existingByPhone.id;
-            }
+          if (vehicleName && customerPhone) {
+            await supabase.rpc('upsert_customer_vehicle', {
+              _instance_id: instanceId,
+              _phone: customerPhone,
+              _model: vehicleName,
+              _plate: offer.vehicleData.plate?.trim() || undefined,
+            });
           }
-
-          // If not found by phone, try by email
-          if (!existingCustomerId && offer.customerData.email) {
-            const { data: existingByEmail } = await supabase
-              .from('customers')
-              .select('id')
-              .eq('instance_id', instanceId)
-              .eq('email', offer.customerData.email)
-              .maybeSingle();
-
-            if (existingByEmail) {
-              existingCustomerId = existingByEmail.id;
-            }
-          }
-
-          if (existingCustomerId) {
-            // Update existing customer (enrich with offer data)
-            await supabase
-              .from('customers')
-              .update({
-                name: offer.customerData.name || offer.customerData.company || 'Nieznany',
-                email: offer.customerData.email || null,
-                phone: normalizedPhone,
-                company: offer.customerData.company || null,
-                nip: offer.customerData.nip || null,
-                address: fullAddress,
-                billing_street: offer.customerData.companyAddress || null,
-                billing_postal_code: offer.customerData.companyPostalCode || null,
-                billing_city: offer.customerData.companyCity || null,
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq('id', existingCustomerId);
-            console.log('Updated customer from offer:', existingCustomerId);
-          } else {
-            // Insert new customer
-            const { data: newCustomer, error: customerError } = await supabase
-              .from('customers')
-              .insert({
-                instance_id: instanceId,
-                name: offer.customerData.name || offer.customerData.company || 'Nieznany',
-                phone: normalizedPhone,
-                email: offer.customerData.email || null,
-                company: offer.customerData.company || null,
-                nip: offer.customerData.nip || null,
-                address: fullAddress,
-                billing_street: offer.customerData.companyAddress || null,
-                billing_postal_code: offer.customerData.companyPostalCode || null,
-                billing_city: offer.customerData.companyCity || null,
-              } as any)
-              .select('id')
-              .maybeSingle();
-
-            if (customerError) {
-              console.error('Error saving offer customer:', customerError);
-            } else {
-              console.log('Created new customer from offer:', newCustomer?.id);
-            }
-          }
+        } catch (vehicleSaveError) {
+          console.error('Error saving vehicle from offer:', vehicleSaveError);
         }
-      } catch (customerSaveError) {
-        // Don't fail the whole offer save if customer save fails
-        console.error('Error saving customer from offer:', customerSaveError);
-      }
 
-      // Save vehicle from offer to customer_vehicles (if brandModel and phone exist)
-      try {
-        const vehicleName = offer.vehicleData.brandModel?.trim();
-        const customerPhone = offer.customerData.phone?.trim()
-          ? normalizePhone(offer.customerData.phone)
-          : null;
-
-        if (vehicleName && customerPhone) {
-          await supabase.rpc('upsert_customer_vehicle', {
-            _instance_id: instanceId,
-            _phone: customerPhone,
-            _model: vehicleName,
-            _plate: offer.vehicleData.plate?.trim() || undefined,
-          });
-          console.log('Saved vehicle from offer:', vehicleName);
+        if (!silent) {
+          toast.success('Oferta została zapisana');
         }
-      } catch (vehicleSaveError) {
-        console.error('Error saving vehicle from offer:', vehicleSaveError);
+        return offerId;
+      } catch (error) {
+        console.error('Error saving offer:', error);
+        toast.error('Błąd podczas zapisywania oferty');
+        throw error;
+      } finally {
+        setSaving(false);
       }
-
-      if (!silent) {
-        toast.success('Oferta została zapisana');
-      }
-      return offerId;
-    } catch (error) {
-      console.error('Error saving offer:', error);
-      toast.error('Błąd podczas zapisywania oferty');
-      throw error;
-    } finally {
-      setSaving(false);
-    }
-  }, [offer, instanceId, calculateTotalNet, calculateTotalGross, calculateOptionTotal, calculateAdditionsTotal]);
+    },
+    [
+      offer,
+      instanceId,
+      calculateTotalNet,
+      calculateTotalGross,
+      calculateOptionTotal,
+      calculateAdditionsTotal,
+    ],
+  );
 
   // Load offer from database
   // isDuplicate: if true, regenerates all option/item IDs to prevent primary key conflicts
@@ -974,26 +1005,33 @@ export const useOffer = (instanceId: string) => {
     try {
       const { data: offerData, error: offerError } = await supabase
         .from('offers')
-        .select(`
+        .select(
+          `
           *,
           offer_options (
             *,
             offer_option_items (*)
           )
-        `)
+        `,
+        )
         .eq('id', offerId)
         .single();
 
       if (offerError) throw offerError;
 
-      const allOptions = (offerData.offer_options || [])
-        .sort((a: any, b: any) => a.sort_order - b.sort_order);
-      
+      const allOptions = (offerData.offer_options || []).sort(
+        (a: any, b: any) => a.sort_order - b.sort_order,
+      );
+
       // Separate additions from regular options
       // "Additions" option has name 'Dodatki' but NO scope_id - these are manually added items
       // Options with scope_id (even if named 'Dodatki') are service-based and should be loaded as regular options
-      const additionsOption = allOptions.find((opt: any) => opt.name === 'Dodatki' && !opt.scope_id);
-      const regularOptions = allOptions.filter((opt: any) => !(opt.name === 'Dodatki' && !opt.scope_id));
+      const additionsOption = allOptions.find(
+        (opt: any) => opt.name === 'Dodatki' && !opt.scope_id,
+      );
+      const regularOptions = allOptions.filter(
+        (opt: any) => !(opt.name === 'Dodatki' && !opt.scope_id),
+      );
 
       // Build ID mappings for duplication
       const optionIdMap: Record<string, string> = {};
@@ -1002,11 +1040,11 @@ export const useOffer = (instanceId: string) => {
       let options: OfferOption[] = regularOptions.map((opt: any) => {
         const originalOptionId = opt.id;
         const newOptionId = isDuplicate ? crypto.randomUUID() : originalOptionId;
-        
+
         if (isDuplicate) {
           optionIdMap[originalOptionId] = newOptionId;
         }
-        
+
         return {
           id: newOptionId,
           name: opt.name,
@@ -1021,11 +1059,11 @@ export const useOffer = (instanceId: string) => {
             .map((item: any) => {
               const originalItemId = item.id;
               const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
-              
+
               if (isDuplicate) {
                 itemIdMap[originalItemId] = newItemId;
               }
-              
+
               return {
                 id: newItemId,
                 productId: item.product_id,
@@ -1043,23 +1081,21 @@ export const useOffer = (instanceId: string) => {
       });
 
       // Extract unique scope IDs from options
-      const scopeIdsFromOptions = [...new Set(
-        options
-          .filter(opt => opt.scopeId)
-          .map(opt => opt.scopeId as string)
-      )];
+      const scopeIdsFromOptions = [
+        ...new Set(options.filter((opt) => opt.scopeId).map((opt) => opt.scopeId as string)),
+      ];
 
-      let additions: OfferItem[] = additionsOption 
+      let additions: OfferItem[] = additionsOption
         ? (additionsOption.offer_option_items || [])
             .sort((a: any, b: any) => a.sort_order - b.sort_order)
             .map((item: any) => {
               const originalItemId = item.id;
               const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
-              
+
               if (isDuplicate) {
                 itemIdMap[originalItemId] = newItemId;
               }
-              
+
               return {
                 id: newItemId,
                 productId: item.product_id,
@@ -1077,50 +1113,56 @@ export const useOffer = (instanceId: string) => {
 
       // Handle legacy vehicle data format
       // Merge separate paint_color/paint_finish columns with vehicle_data JSONB
-      const vehicleDataRaw = offerData.vehicle_data as any || defaultVehicleData;
+      const ext = offerData as typeof offerData & OfferRowExtended;
+      const vehicleDataRaw = (offerData.vehicle_data || defaultVehicleData) as Record<
+        string,
+        string
+      >;
       const vehicleData: VehicleData = {
-        brandModel: vehicleDataRaw.brandModel || 
-          [vehicleDataRaw.brand, vehicleDataRaw.model].filter(Boolean).join(' ') || '',
+        brandModel:
+          vehicleDataRaw.brandModel ||
+          [vehicleDataRaw.brand, vehicleDataRaw.model].filter(Boolean).join(' ') ||
+          '',
         plate: vehicleDataRaw.plate || '',
-        paintColor: vehicleDataRaw.paintColor || (offerData as any).paint_color || '',
-        paintType: vehicleDataRaw.paintType || (offerData as any).paint_finish || '',
+        paintColor: vehicleDataRaw.paintColor || ext.paint_color || '',
+        paintType: vehicleDataRaw.paintType || ext.paint_finish || '',
       };
 
       // Load widget selections for offer hydration in Step 3
-      const widgetSelectedExtras = (offerData as any).widget_selected_extras || [];
-      const widgetDurationSelections = (offerData as any).widget_duration_selections || {};
+      const widgetSelectedExtras = ext.widget_selected_extras || [];
+      const widgetDurationSelections = ext.widget_duration_selections || {};
 
       // Auto-generate inquiry content for website leads
       let generatedInquiryContent: string | undefined;
-      const offerSource = (offerData as any).source;
-      const customerDataRaw = offerData.customer_data as any || {};
+      const offerSource = ext.source;
+      const customerDataRaw = (offerData.customer_data || {}) as Record<string, string>;
       const existingInquiryContent = customerDataRaw.inquiryContent || '';
-      
+
       if (offerSource === 'website' && !existingInquiryContent) {
         // Get all scope IDs from the offer (both from duration selections and from options)
         const durationScopeIds = Object.keys(widgetDurationSelections);
         const optionScopeIds = regularOptions
-          .filter((opt: any) => opt.scope_id)
-          .map((opt: any) => opt.scope_id);
+          .filter((opt: { scope_id?: string }) => opt.scope_id)
+          .map((opt: { scope_id?: string }) => opt.scope_id as string);
         const allScopeIds = [...new Set([...durationScopeIds, ...optionScopeIds])];
-        
+
         let scopeNamesMap: Record<string, string> = {};
-        
+
         if (allScopeIds.length > 0) {
           const { data: scopesData } = await supabase
             .from('offer_scopes')
             .select('id, name, short_name, is_extras_scope')
             .in('id', allScopeIds);
-          
+
           if (scopesData) {
             scopesData
-              .filter(s => !s.is_extras_scope) // Exclude extras scope from template list
-              .forEach(s => {
+              .filter((s) => !s.is_extras_scope) // Exclude extras scope from template list
+              .forEach((s) => {
                 scopeNamesMap[s.id] = s.short_name || s.name;
               });
           }
         }
-        
+
         // Fetch service names for widget_selected_extras
         let extrasNames: string[] = [];
         if (widgetSelectedExtras.length > 0) {
@@ -1128,12 +1170,12 @@ export const useOffer = (instanceId: string) => {
             .from('unified_services')
             .select('id, name, short_name')
             .in('id', widgetSelectedExtras);
-          
+
           if (extrasData) {
-            extrasNames = extrasData.map(e => e.short_name || e.name);
+            extrasNames = extrasData.map((e) => e.short_name || e.name);
           }
         }
-        
+
         // Helper to format duration in Polish
         const formatDuration = (months: number): string => {
           const years = months / 12;
@@ -1141,17 +1183,17 @@ export const useOffer = (instanceId: string) => {
           if (years <= 4) return `${years} lata`;
           return `${years} lat`;
         };
-        
+
         // Build inquiry content
         const parts: string[] = [];
         const customerName = customerDataRaw.name || 'Klient';
         parts.push(`Klient ${customerName} chce:`);
-        
+
         // Add selected templates - use scopeNamesMap keys to get all templates
         for (const scopeId of Object.keys(scopeNamesMap)) {
           const scopeName = scopeNamesMap[scopeId];
           const months = widgetDurationSelections[scopeId];
-          
+
           if (months !== undefined && months !== null && typeof months === 'number') {
             parts.push(`• ${scopeName} (${formatDuration(months)})`);
           } else if (scopeId in widgetDurationSelections && months === null) {
@@ -1161,58 +1203,64 @@ export const useOffer = (instanceId: string) => {
             parts.push(`• ${scopeName}`);
           }
         }
-        
+
         // Add selected extras
         if (extrasNames.length > 0) {
           parts.push('');
           parts.push('Dodatki:');
-          extrasNames.forEach(name => {
+          extrasNames.forEach((name) => {
             parts.push(`• ${name}`);
           });
         }
-        
+
         // Add budget if provided
-        const budgetSuggestion = (offerData as any).budget_suggestion;
+        const budgetSuggestion = ext.budget_suggestion;
         if (budgetSuggestion) {
           parts.push('');
           parts.push(`Budżet: ${budgetSuggestion.toLocaleString('pl-PL')} zł`);
         }
-        
+
         // Add customer notes if provided
-        const inquiryNotes = (offerData as any).inquiry_notes;
+        const inquiryNotes = ext.inquiry_notes;
         if (inquiryNotes) {
           parts.push('');
           parts.push(`Notatki klienta: ${inquiryNotes}`);
         }
-        
+
         generatedInquiryContent = parts.join('\n');
       }
 
       // Parse defaultSelectedState from selected_state if it has isDefault marker
-      const loadedOptionIds = options.map((o: any) => o.id);
-      const loadedItemIds = options.flatMap((o: any) => o.items.map((i: any) => i.id));
-      
-      const rawSelectedState = offerData.selected_state as any;
+      const loadedOptionIds = options.map((o: OfferOption) => o.id);
+      const loadedItemIds = options.flatMap((o: OfferOption) =>
+        o.items.map((i: OfferItem) => i.id),
+      );
+
+      const rawSelectedState = offerData.selected_state as unknown as
+        | (DefaultSelectedState & { isDefault?: boolean })
+        | null;
       let defaultSelectedState: DefaultSelectedState | undefined;
-      
+
       if (rawSelectedState?.isDefault) {
         if (isDuplicate) {
           // Remap IDs in selected state for duplication
-          const { selectedVariants, selectedOptionalItems, selectedItemInOption } = rawSelectedState;
-          
+          const { selectedVariants, selectedOptionalItems, selectedItemInOption } =
+            rawSelectedState;
+
           // Map selectedVariants values (optionIds) to new IDs
           const newSelectedVariants: Record<string, string> = {};
           for (const [scopeId, oldOptionId] of Object.entries(selectedVariants || {})) {
-            newSelectedVariants[scopeId] = optionIdMap[oldOptionId as string] || (oldOptionId as string);
+            newSelectedVariants[scopeId] =
+              optionIdMap[oldOptionId as string] || (oldOptionId as string);
           }
-          
+
           // Map selectedOptionalItems keys (itemIds) to new IDs
           const newSelectedOptionalItems: Record<string, boolean> = {};
           for (const [oldItemId, value] of Object.entries(selectedOptionalItems || {})) {
             const newItemId = itemIdMap[oldItemId] || oldItemId;
             newSelectedOptionalItems[newItemId] = value as boolean;
           }
-          
+
           // Map selectedItemInOption keys (optionIds) and values (itemIds) to new IDs
           const newSelectedItemInOption: Record<string, string> = {};
           for (const [oldOptionId, oldItemId] of Object.entries(selectedItemInOption || {})) {
@@ -1220,18 +1268,13 @@ export const useOffer = (instanceId: string) => {
             const newItemIdVal = itemIdMap[oldItemId as string] || (oldItemId as string);
             newSelectedItemInOption[newOptionId] = newItemIdVal;
           }
-          
+
           defaultSelectedState = {
             selectedScopeId: rawSelectedState.selectedScopeId ?? null,
             selectedVariants: newSelectedVariants,
             selectedOptionalItems: newSelectedOptionalItems,
             selectedItemInOption: newSelectedItemInOption,
           };
-          
-          console.log('[Duplicate] Regenerated IDs:', {
-            optionIdMapCount: Object.keys(optionIdMap).length,
-            itemIdMapCount: Object.keys(itemIdMap).length,
-          });
         } else {
           defaultSelectedState = {
             selectedScopeId: rawSelectedState.selectedScopeId ?? null,
@@ -1240,28 +1283,8 @@ export const useOffer = (instanceId: string) => {
             selectedItemInOption: rawSelectedState.selectedItemInOption || {},
           };
         }
-        
+
         // Consistency check (only log for non-duplicates to avoid noise)
-        if (!isDuplicate) {
-          const selectedVariantIds = Object.values(defaultSelectedState.selectedVariants);
-          const selectedOptionalItemIds = Object.keys(defaultSelectedState.selectedOptionalItems);
-          const selectedItemInOptionIds = Object.values(defaultSelectedState.selectedItemInOption);
-          
-          const missingVariants = selectedVariantIds.filter(id => !loadedOptionIds.includes(id));
-          const missingOptionalItems = selectedOptionalItemIds.filter(id => !loadedItemIds.includes(id));
-          const missingItemInOption = selectedItemInOptionIds.filter(id => !loadedItemIds.includes(id));
-          
-          console.group('📥 [LOAD] Offer Selection State AFTER load (entering step 3)');
-          console.log('offer.id:', offerData.id);
-          console.log('selected_state from DB:', JSON.stringify(rawSelectedState, null, 2));
-          console.log('loaded option IDs:', loadedOptionIds);
-          console.log('loaded item IDs:', loadedItemIds);
-          console.log('🔍 Consistency check:');
-          console.log('  - Missing variant IDs in loaded options:', missingVariants.length > 0 ? missingVariants : '✅ all found');
-          console.log('  - Missing optional item IDs in loaded items:', missingOptionalItems.length > 0 ? missingOptionalItems : '✅ all found');
-          console.log('  - Missing itemInOption IDs in loaded items:', missingItemInOption.length > 0 ? missingItemInOption : '✅ all found');
-          console.groupEnd();
-        }
       }
 
       // Merge generated inquiry content into customer data if available
@@ -1280,13 +1303,13 @@ export const useOffer = (instanceId: string) => {
         additions,
         notes: offerData.notes,
         paymentTerms: offerData.payment_terms,
-        warranty: (offerData as any).warranty || '',
-        serviceInfo: (offerData as any).service_info || '',
-        internalNotes: (offerData as any).internal_notes || '',
+        warranty: ext.warranty || '',
+        serviceInfo: ext.service_info || '',
+        internalNotes: ext.internal_notes || '',
         validUntil: offerData.valid_until,
         vatRate: Number(offerData.vat_rate),
         hideUnitPrices: offerData.hide_unit_prices || false,
-        status: isDuplicate ? 'draft' : offerData.status as OfferState['status'], // Reset status for duplicates
+        status: isDuplicate ? 'draft' : (offerData.status as OfferState['status']), // Reset status for duplicates
         defaultSelectedState,
         widgetSelectedExtras,
         widgetDurationSelections,
