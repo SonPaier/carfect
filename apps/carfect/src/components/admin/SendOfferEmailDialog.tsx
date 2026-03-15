@@ -114,7 +114,7 @@ export function SendOfferEmailDialog({
 
       // Then check for network/invoke error
       if (error) {
-        throw new Error(error.message || 'Błąd połączenia z serwerem');
+        throw new Error(error.message || t('sendEmail.connectionError'));
       }
 
       toast.success(t('offers.emailSent'));
@@ -126,37 +126,37 @@ export function SendOfferEmailDialog({
       // Parse error message for human-readable display
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      let userMessage = 'Nie udało się wysłać wiadomości';
+      let userMessage = t('sendEmail.sendFailed');
 
       if (errorMessage.includes('No customer email')) {
-        userMessage = 'Brak adresu email klienta';
+        userMessage = t('sendEmail.noCustomerEmail');
       } else if (errorMessage.includes('SMTP not configured')) {
-        userMessage = 'Wysyłka email nie jest skonfigurowana';
+        userMessage = t('sendEmail.smtpNotConfigured');
       } else if (
         errorMessage.includes('Invalid address') ||
         (errorMessage.includes('invalid') && errorMessage.includes('address'))
       ) {
-        userMessage = 'Nieprawidłowy adres email - sprawdź czy nie ma literówki';
+        userMessage = t('sendEmail.invalidAddress');
       } else if (
         errorMessage.includes('mailbox unavailable') ||
         errorMessage.includes('invalid DNS') ||
         errorMessage.includes('550')
       ) {
-        userMessage = 'Nieprawidłowy adres email - domena nie istnieje lub zawiera błąd';
+        userMessage = t('sendEmail.domainNotExists');
       } else if (
         errorMessage.includes('Mailbox not found') ||
         errorMessage.includes('does not exist') ||
         errorMessage.includes('User unknown')
       ) {
-        userMessage = 'Adres email nie istnieje - sprawdź poprawność';
+        userMessage = t('sendEmail.mailboxNotFound');
       } else if (errorMessage.includes('connection') || errorMessage.includes('timeout')) {
-        userMessage = 'Błąd połączenia z serwerem email - spróbuj ponownie';
+        userMessage = t('sendEmail.connectionTimeout');
       } else if (errorMessage.includes('rejected') || errorMessage.includes('spam')) {
-        userMessage = 'Wiadomość została odrzucona przez serwer odbiorcy';
+        userMessage = t('sendEmail.rejected');
       } else if (errorMessage.includes('authentication') || errorMessage.includes('auth')) {
-        userMessage = 'Błąd autoryzacji serwera email';
+        userMessage = t('sendEmail.authError');
       } else if (errorMessage.includes('non-2xx') || errorMessage.includes('Edge Function')) {
-        userMessage = 'Błąd wysyłki email - sprawdź poprawność adresu';
+        userMessage = t('sendEmail.genericError');
       }
 
       toast.error(userMessage);
