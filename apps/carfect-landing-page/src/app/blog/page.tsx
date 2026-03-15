@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
-import Header from '@/components/landing/Header';
-import Footer from '@/components/landing/Footer';
+import HeaderClient from '@/components/landing/HeaderClient';
+import FooterServer from '@/components/landing/FooterServer';
+import { client } from '@/lib/sanity/client';
+import { siteSettingsQuery } from '@/lib/sanity/queries';
+import type { SiteSettings } from '@/types/sanity';
 import BlogHero from '@/components/blog/BlogHero';
 import BlogGrid from '@/components/blog/BlogGrid';
-import { getAllPosts, getFeaturedPost } from '@/lib/blog';
+import { getAllPosts, getFeaturedPosts } from '@/lib/blog';
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Blog – Porady dla Właścicieli Myjni i Studiów Detailingu',
@@ -26,27 +31,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPage() {
-  const featuredPost = getFeaturedPost();
-  const allPosts = getAllPosts();
-  const regularPosts = allPosts.filter(post => !post.featured);
+export default async function BlogPage() {
+  const [featuredPosts, allPosts, settings] = await Promise.all([
+    getFeaturedPosts(),
+    getAllPosts(),
+    client.fetch<SiteSettings | null>(siteSettingsQuery, {}, { next: { tags: ['settings'] } }),
+  ]);
+  const featuredPost = featuredPosts[0] || allPosts[0] || null;
+  const regularPosts = allPosts.filter(
+    (post) => post.slug.current !== featuredPost?.slug.current
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+      <HeaderClient settings={settings || undefined} />
       <main className="flex-1 pt-24">
         <Breadcrumbs items={[
           { name: 'Strona główna', href: '/' },
           { name: 'Blog', href: '/blog' },
         ]} />
 
-        {/* Hero Post */}
         {featuredPost && <BlogHero post={featuredPost} />}
 
-        {/* Grid of Posts */}
         <BlogGrid posts={regularPosts} />
       </main>
-      <Footer />
+      <FooterServer settings={settings || undefined} />
     </div>
   );
 }
