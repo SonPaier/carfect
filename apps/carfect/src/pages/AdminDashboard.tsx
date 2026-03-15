@@ -3536,6 +3536,11 @@ const AdminDashboard = () => {
             setSelectedTraining(null);
             setTrainings((prev) => prev.filter((t) => t.id !== selectedTraining.id));
           }}
+          onStatusChanged={(trainingId, newStatus) => {
+            setTrainings((prev) =>
+              prev.map((t) => (t.id === trainingId ? { ...t, status: newStatus } : t)),
+            );
+          }}
         />
       )}
 

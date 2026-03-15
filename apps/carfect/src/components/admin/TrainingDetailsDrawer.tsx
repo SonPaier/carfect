@@ -24,6 +24,7 @@ interface TrainingDetailsDrawerProps {
   instanceId: string;
   onEdit: (training: Training) => void;
   onDeleted: () => void;
+  onStatusChanged?: (trainingId: string, newStatus: string) => void;
   readOnly?: boolean;
 }
 
@@ -34,6 +35,7 @@ export function TrainingDetailsDrawer({
   instanceId,
   onEdit,
   onDeleted,
+  onStatusChanged,
   readOnly = false,
 }: TrainingDetailsDrawerProps) {
   const { t } = useTranslation();
@@ -79,6 +81,7 @@ export function TrainingDetailsDrawer({
         .update({ status: newStatus } as any)
         .eq('id', training.id);
       if (error) throw error;
+      onStatusChanged?.(training.id, newStatus);
       toast.success(
         newStatus === 'sold_out' ? t('trainings.statusSoldOut') : t('trainings.statusOpen'),
       );
