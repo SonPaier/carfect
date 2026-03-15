@@ -29,13 +29,15 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
         // Get all events with reminder date = today that don't have a pending task yet
         const { data: events, error: eventsError } = await supabase
           .from('followup_events')
-          .select(`
+          .select(
+            `
             id,
             customer_name,
             customer_phone,
             next_reminder_date,
             followup_services (name)
-          `)
+          `,
+          )
           .eq('instance_id', instanceId)
           .eq('status', 'active')
           .eq('next_reminder_date', today);
@@ -47,7 +49,7 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
         }
 
         // Check which events already have pending tasks for today
-        const eventIds = events.map(e => e.id);
+        const eventIds = events.map((e) => e.id);
         const { data: existingTasks } = await supabase
           .from('followup_tasks')
           .select('event_id')
@@ -55,12 +57,12 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
           .eq('status', 'pending')
           .eq('due_date', today);
 
-        const existingEventIds = new Set((existingTasks || []).map(t => t.event_id));
+        const existingEventIds = new Set((existingTasks || []).map((t) => t.event_id));
 
         // Create tasks for events that don't have one
         const newTasks = events
-          .filter(e => !existingEventIds.has(e.id))
-          .map(e => ({
+          .filter((e) => !existingEventIds.has(e.id))
+          .map((e) => ({
             instance_id: instanceId,
             event_id: e.id,
             customer_name: e.customer_name,
@@ -71,10 +73,8 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
           }));
 
         if (newTasks.length > 0) {
-          const { error: insertError } = await supabase
-            .from('followup_tasks')
-            .insert(newTasks);
-          
+          const { error: insertError } = await supabase.from('followup_tasks').insert(newTasks);
+
           if (insertError) {
             console.error('Error creating tasks:', insertError);
           }
@@ -99,9 +99,7 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
 
   if (!instanceId) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        {t('followupPage.noAccess')}
-      </div>
+      <div className="text-center py-8 text-muted-foreground">{t('followupPage.noAccess')}</div>
     );
   }
 
@@ -113,15 +111,15 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
       </div>
 
       <Tabs defaultValue="tasks" className="w-full">
-        <TabsList variant="underline">
+        <TabsList>
           <TabsTrigger value="tasks">{t('followupPage.tabs.tasks')}</TabsTrigger>
           <TabsTrigger value="services">{t('followupPage.tabs.services')}</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="tasks" className="mt-4">
           <FollowUpTasks instanceId={instanceId} />
         </TabsContent>
-        
+
         <TabsContent value="services" className="mt-4">
           <FollowUpServices instanceId={instanceId} />
         </TabsContent>

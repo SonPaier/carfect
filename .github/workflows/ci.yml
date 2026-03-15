@@ -52,6 +52,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter carfect build
 
+  image-size:
+    name: Image Size Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for images larger than 300KB
+        run: |
+          LARGE_FILES=$(find . -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.svg" -o -iname "*.bmp" \) -not -path "./node_modules/*" -not -path "./.git/*" -size +300k)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "❌ Images larger than 300KB found:"
+            echo "$LARGE_FILES" | while read f; do echo "  $f ($(du -k "$f" | cut -f1)KB)"; done
+            echo ""
+            echo "Compress images or use Supabase Storage/CDN for large assets."
+            exit 1
+          fi
+          echo "✅ All images under 300KB"
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest

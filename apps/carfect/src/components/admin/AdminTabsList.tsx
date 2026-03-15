@@ -1,6 +1,6 @@
-import * as React from "react";
-import { TabsList, TabsTrigger } from "@shared/ui";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { TabsList, TabsTrigger } from '@shared/ui';
+import { cn } from '@/lib/utils';
 
 interface AdminTabsListProps {
   children: React.ReactNode;
@@ -13,14 +13,7 @@ interface AdminTabsListProps {
  * Uses underline variant for clean, modern look.
  */
 export const AdminTabsList = ({ children, className }: AdminTabsListProps) => {
-  return (
-    <TabsList
-      variant="underline"
-      className={cn("w-full", className)}
-    >
-      {children}
-    </TabsList>
-  );
+  return <TabsList className={cn('w-full', className)}>{children}</TabsList>;
 };
 
 interface AdminTabsTriggerProps {
@@ -31,10 +24,7 @@ interface AdminTabsTriggerProps {
 
 export const AdminTabsTrigger = ({ value, children, className }: AdminTabsTriggerProps) => {
   return (
-    <TabsTrigger
-      value={value}
-      className={cn("gap-1.5", className)}
-    >
+    <TabsTrigger value={value} className={cn('gap-1.5', className)}>
       {children}
     </TabsTrigger>
   );
