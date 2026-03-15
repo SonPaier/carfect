@@ -214,10 +214,7 @@ describe('ServiceFormDialog', () => {
       expect(screen.getByRole('spinbutton')).toBeInTheDocument();
     });
 
-    it('SVC-U-008: Wyświetla pole opisu z przyciskiem AI', () => {
-      renderServiceFormDialog();
-      expect(screen.getByText(/Stwórz opis z AI/i)).toBeInTheDocument();
-    });
+    // SVC-U-008: AI description button temporarily disabled
 
     it('SVC-U-009: Mobile - Renderuje jako Drawer zamiast Dialog', () => {
       mockIsMobileValue = true;
@@ -818,87 +815,5 @@ describe('ServiceFormDialog', () => {
     });
   });
 
-  // ==========================================
-  // Grupa 8: Generowanie opisu AI (SVC-U-100 do 104)
-  // ==========================================
-
-  describe('Grupa 8: Generowanie opisu AI', () => {
-    it('SVC-U-100: Przycisk AI jest disabled gdy pole nazwy puste', () => {
-      renderServiceFormDialog();
-      const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
-      expect(aiButton).toBeDisabled();
-    });
-
-    it('SVC-U-101: Przycisk AI jest disabled bez nazwy (nie można kliknąć)', async () => {
-      renderServiceFormDialog();
-      const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
-
-      // Button is disabled, so clicking shouldn't trigger anything
-      expect(aiButton).toBeDisabled();
-    });
-
-    it('SVC-U-103: Po sukcesie wstawia wygenerowany opis', async () => {
-      mockSupabase.functions.invoke.mockResolvedValue({
-        data: { description: 'Wygenerowany opis usługi' },
-        error: null,
-      });
-
-      const { user } = renderServiceFormDialog();
-      const nameInputs = screen.getAllByRole('textbox');
-      const nameInput = nameInputs[0];
-
-      await user.type(nameInput, 'Usługa do opisu');
-
-      const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
-      expect(aiButton).not.toBeDisabled();
-
-      await user.click(aiButton!);
-
-      await waitFor(() => {
-        const textarea = document.querySelector('textarea');
-        expect(textarea).toHaveValue('Wygenerowany opis usługi');
-      });
-    });
-
-    it('SVC-U-103b: API zwraca dane bez description → nic się nie dzieje', async () => {
-      mockSupabase.functions.invoke.mockResolvedValue({
-        data: {},
-        error: null,
-      });
-
-      const { user } = renderServiceFormDialog();
-      const nameInputs = screen.getAllByRole('textbox');
-      const nameInput = nameInputs[0];
-
-      await user.type(nameInput, 'Usługa do opisu');
-
-      const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
-      await user.click(aiButton!);
-
-      await waitFor(() => {
-        const textarea = document.querySelector('textarea');
-        expect(textarea).toHaveValue('');
-      });
-    });
-
-    it('SVC-U-104: Po błędzie generowania pokazuje toast error', async () => {
-      mockSupabase.functions.invoke.mockResolvedValue({
-        data: null,
-        error: { message: 'AI error' },
-      });
-
-      const { user } = renderServiceFormDialog();
-      const nameInputs = screen.getAllByRole('textbox');
-      const nameInput = nameInputs[0];
-
-      await user.type(nameInput, 'Usługa do opisu');
-
-      const aiButton = screen.getByText(/Stwórz opis z AI/i).closest('button');
-      await user.click(aiButton!);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalled();
-      });
-    });
-  });
+  // Grupa 8: AI description tests temporarily disabled (button hidden)
 });

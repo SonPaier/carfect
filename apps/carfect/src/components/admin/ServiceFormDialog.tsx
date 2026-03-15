@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Loader2, Sparkles, ChevronDown, Info, Trash2, Plus } from 'lucide-react';
+import { Loader2, ChevronDown, Info, Trash2, Plus } from 'lucide-react';
 import { Checkbox } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -640,21 +640,7 @@ const ServiceFormContent = ({
               <Label className="text-sm">{t('priceList.form.descriptionShort', 'Opis')}</Label>
               <FieldInfo tooltip="Opis wyświetlany klientom podczas rezerwacji" />
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerateDescription}
-              disabled={generatingDescription || !formData.name.trim()}
-              className="h-7 text-sm gap-1.5 text-primary font-semibold hover:text-primary/80"
-            >
-              {generatingDescription ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-              {t('priceList.form.generateDescription')}
-            </Button>
+            {/* AI description generation temporarily disabled */}
           </div>
           <Textarea
             ref={textareaRef}
