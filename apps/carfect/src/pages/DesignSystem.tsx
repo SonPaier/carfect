@@ -10,20 +10,8 @@ import { Checkbox } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { Label as UILabel } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import {
   Dialog,
   DialogContent,
@@ -37,14 +25,7 @@ import DatePicker from '@/components/booking/DatePicker';
 import { EmptyState } from '@shared/ui';
 import { PageLoader } from '@shared/ui';
 import { PhotoUploader } from '@/components/ui/photo-uploader';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   Pagination,
   PaginationContent,
@@ -55,12 +36,7 @@ import {
   PaginationEllipsis,
 } from '@shared/ui';
 import { ConfirmDialog } from '@shared/ui';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@shared/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,11 +46,7 @@ import {
   DropdownMenuTrigger,
 } from '@shared/ui';
 import { Skeleton } from '@shared/ui';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@shared/ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@shared/ui';
 import { Info, MoreVertical, Pencil, Trash2, Copy, ChevronDown } from 'lucide-react';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -88,7 +60,17 @@ const Label = ({ children }: { children: React.ReactNode }) => (
   <span className="text-xs text-muted-foreground font-mono">{children}</span>
 );
 
-const buttonVariants = ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link', 'hero', 'glass', 'success'] as const;
+const buttonVariants = [
+  'default',
+  'destructive',
+  'outline',
+  'secondary',
+  'ghost',
+  'link',
+  'hero',
+  'glass',
+  'success',
+] as const;
 const buttonSizes = ['default', 'sm', 'lg', 'xl'] as const;
 const badgeVariants = ['default', 'secondary', 'destructive', 'outline'] as const;
 
@@ -184,7 +166,12 @@ const ComponentsTab = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmDestructiveOpen, setConfirmDestructiveOpen] = useState(false);
   const [demoPhotos, setDemoPhotos] = useState<string[]>([]);
-  const [chips, setChips] = useState(['Mycie zewnętrzne', 'Polerowanie', 'Detailing wnętrza', 'Woskowanie']);
+  const [chips, setChips] = useState([
+    'Mycie zewnętrzne',
+    'Polerowanie',
+    'Detailing wnętrza',
+    'Woskowanie',
+  ]);
   const [paginationPage, setPaginationPage] = useState(2);
   const [collapsibleOpen, setCollapsibleOpen] = useState(false);
 
@@ -195,9 +182,7 @@ const ComponentsTab = () => {
         <div className="flex flex-wrap gap-3 items-center">
           {buttonVariants.map((variant) => (
             <div key={variant} className="flex flex-col items-center gap-1.5">
-              <Button variant={variant}>
-                {variant}
-              </Button>
+              <Button variant={variant}>{variant}</Button>
               <Label>{variant}</Label>
             </div>
           ))}
@@ -209,9 +194,7 @@ const ComponentsTab = () => {
         <div className="flex flex-wrap gap-3 items-end">
           {buttonSizes.map((size) => (
             <div key={size} className="flex flex-col items-center gap-1.5">
-              <Button size={size}>
-                {size}
-              </Button>
+              <Button size={size}>{size}</Button>
               <Label>size="{size}"</Label>
             </div>
           ))}
@@ -232,9 +215,7 @@ const ComponentsTab = () => {
             <div className="flex flex-wrap gap-3 items-center">
               {badgeVariants.map((variant) => (
                 <div key={variant} className="flex flex-col items-center gap-1.5">
-                  <Badge variant={variant}>
-                    {variant}
-                  </Badge>
+                  <Badge variant={variant}>{variant}</Badge>
                   <Label>{variant}</Label>
                 </div>
               ))}
@@ -261,7 +242,13 @@ const ComponentsTab = () => {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>variant="default" size="default"</Label>
-            <ToggleGroup type="single" value={toggleValue} onValueChange={(v) => { if (v) setToggleValue(v); }}>
+            <ToggleGroup
+              type="single"
+              value={toggleValue}
+              onValueChange={(v) => {
+                if (v) setToggleValue(v);
+              }}
+            >
               <ToggleGroupItem value="a">Opcja A</ToggleGroupItem>
               <ToggleGroupItem value="b">Opcja B</ToggleGroupItem>
               <ToggleGroupItem value="c">Opcja C</ToggleGroupItem>
@@ -270,7 +257,15 @@ const ComponentsTab = () => {
 
           <div className="space-y-1.5">
             <Label>variant="outline" size="sm"</Label>
-            <ToggleGroup type="single" variant="outline" size="sm" value={toggleValue2} onValueChange={(v) => { if (v) setToggleValue2(v); }}>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={toggleValue2}
+              onValueChange={(v) => {
+                if (v) setToggleValue2(v);
+              }}
+            >
               <ToggleGroupItem value="a">Wysyłka</ToggleGroupItem>
               <ToggleGroupItem value="b">Odbiór</ToggleGroupItem>
               <ToggleGroupItem value="c">Uber</ToggleGroupItem>
@@ -328,11 +323,7 @@ const ComponentsTab = () => {
           <div className="space-y-3">
             <Label>Switch</Label>
             <div className="flex items-center gap-2">
-              <Switch
-                id="ds-switch"
-                checked={switchChecked}
-                onCheckedChange={setSwitchChecked}
-              />
+              <Switch id="ds-switch" checked={switchChecked} onCheckedChange={setSwitchChecked} />
               <UILabel htmlFor="ds-switch" className="text-sm font-normal cursor-pointer">
                 Włącz / wyłącz
               </UILabel>
@@ -359,23 +350,35 @@ const ComponentsTab = () => {
                 <TabsTrigger value="tab2">Klienci</TabsTrigger>
                 <TabsTrigger value="tab3">Produkty</TabsTrigger>
               </TabsList>
-              <TabsContent value="tab1"><p className="text-sm text-muted-foreground p-2">Treść zamówień</p></TabsContent>
-              <TabsContent value="tab2"><p className="text-sm text-muted-foreground p-2">Treść klientów</p></TabsContent>
-              <TabsContent value="tab3"><p className="text-sm text-muted-foreground p-2">Treść produktów</p></TabsContent>
+              <TabsContent value="tab1">
+                <p className="text-sm text-muted-foreground p-2">Treść zamówień</p>
+              </TabsContent>
+              <TabsContent value="tab2">
+                <p className="text-sm text-muted-foreground p-2">Treść klientów</p>
+              </TabsContent>
+              <TabsContent value="tab3">
+                <p className="text-sm text-muted-foreground p-2">Treść produktów</p>
+              </TabsContent>
             </Tabs>
           </div>
 
           <div className="space-y-1.5">
             <Label>variant="underline"</Label>
             <Tabs defaultValue="tab1">
-              <TabsList variant="underline">
+              <TabsList>
                 <TabsTrigger value="tab1">Zamówienia</TabsTrigger>
                 <TabsTrigger value="tab2">Klienci</TabsTrigger>
                 <TabsTrigger value="tab3">Produkty</TabsTrigger>
               </TabsList>
-              <TabsContent value="tab1"><p className="text-sm text-muted-foreground p-2">Treść zamówień</p></TabsContent>
-              <TabsContent value="tab2"><p className="text-sm text-muted-foreground p-2">Treść klientów</p></TabsContent>
-              <TabsContent value="tab3"><p className="text-sm text-muted-foreground p-2">Treść produktów</p></TabsContent>
+              <TabsContent value="tab1">
+                <p className="text-sm text-muted-foreground p-2">Treść zamówień</p>
+              </TabsContent>
+              <TabsContent value="tab2">
+                <p className="text-sm text-muted-foreground p-2">Treść klientów</p>
+              </TabsContent>
+              <TabsContent value="tab3">
+                <p className="text-sm text-muted-foreground p-2">Treść produktów</p>
+              </TabsContent>
             </Tabs>
           </div>
         </div>
@@ -397,19 +400,29 @@ const ComponentsTab = () => {
               <TableRow className="cursor-pointer">
                 <TableCell className="font-medium">ZAM-001</TableCell>
                 <TableCell>Jan Kowalski</TableCell>
-                <TableCell><Badge size="lg">Nowe</Badge></TableCell>
+                <TableCell>
+                  <Badge size="lg">Nowe</Badge>
+                </TableCell>
                 <TableCell className="text-right">1 250,00 zł</TableCell>
               </TableRow>
               <TableRow className="cursor-pointer">
                 <TableCell className="font-medium">ZAM-002</TableCell>
                 <TableCell>Anna Nowak</TableCell>
-                <TableCell><Badge variant="secondary" size="lg">W realizacji</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="secondary" size="lg">
+                    W realizacji
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-right">890,50 zł</TableCell>
               </TableRow>
               <TableRow className="cursor-pointer">
                 <TableCell className="font-medium">ZAM-003</TableCell>
                 <TableCell>Piotr Wiśniewski</TableCell>
-                <TableCell><Badge variant="destructive" size="lg">Anulowane</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="destructive" size="lg">
+                    Anulowane
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-right">2 100,00 zł</TableCell>
               </TableRow>
             </TableBody>
@@ -423,14 +436,23 @@ const ComponentsTab = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPaginationPage(Math.max(1, paginationPage - 1)); }} />
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPaginationPage(Math.max(1, paginationPage - 1));
+                  }}
+                />
               </PaginationItem>
               {[1, 2, 3].map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
                     href="#"
                     isActive={page === paginationPage}
-                    onClick={(e) => { e.preventDefault(); setPaginationPage(page); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPaginationPage(page);
+                    }}
                   >
                     {page}
                   </PaginationLink>
@@ -440,7 +462,13 @@ const ComponentsTab = () => {
                 <PaginationEllipsis />
               </PaginationItem>
               <PaginationItem>
-                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPaginationPage(Math.min(3, paginationPage + 1)); }} />
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPaginationPage(Math.min(3, paginationPage + 1));
+                  }}
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
@@ -450,7 +478,8 @@ const ComponentsTab = () => {
       {/* Removable Pills / Chips */}
       <Section title="Removable Pills (Chips)">
         <p className="text-sm text-muted-foreground">
-          Pills z X — używane do wybranych usług, pracowników, filtrów. Wzorzec: AssignedEmployeesChips.
+          Pills z X — używane do wybranych usług, pracowników, filtrów. Wzorzec:
+          AssignedEmployeesChips.
         </p>
         <div className="flex flex-wrap gap-1.5 items-center">
           {chips.map((chip) => (
@@ -472,7 +501,9 @@ const ComponentsTab = () => {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => setChips(['Mycie zewnętrzne', 'Polerowanie', 'Detailing wnętrza', 'Woskowanie'])}
+              onClick={() =>
+                setChips(['Mycie zewnętrzne', 'Polerowanie', 'Detailing wnętrza', 'Woskowanie'])
+              }
             >
               Reset
             </Button>
@@ -512,7 +543,9 @@ const ComponentsTab = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm">Najedź na mnie</Button>
+                <Button variant="outline" size="sm">
+                  Najedź na mnie
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 <p>Tooltip od dołu</p>
@@ -626,7 +659,9 @@ const ComponentsTab = () => {
                 className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium hover:bg-hover transition-colors rounded-md"
               >
                 Ustawienia zaawansowane
-                <ChevronDown className={`w-4 h-4 transition-transform ${collapsibleOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${collapsibleOpen ? 'rotate-180' : ''}`}
+                />
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -693,10 +728,7 @@ const ComponentsTab = () => {
             />
           </div>
           <div className="border rounded-md">
-            <EmptyState
-              icon={ShoppingCart}
-              title="Koszyk pusty"
-            />
+            <EmptyState icon={ShoppingCart} title="Koszyk pusty" />
           </div>
         </div>
       </Section>
@@ -719,19 +751,45 @@ const ComponentsTab = () => {
           <Button variant="outline" size="sm" onClick={() => toast.success('Zamówienie zapisane')}>
             Success
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast.success('Zamówienie usunięte', { action: { label: 'Cofnij', onClick: () => toast.success('Przywrócono zamówienie') } })}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              toast.success('Zamówienie usunięte', {
+                action: { label: 'Cofnij', onClick: () => toast.success('Przywrócono zamówienie') },
+              })
+            }
+          >
             Success + Cofnij
           </Button>
           <Button variant="outline" size="sm" onClick={() => toast.error('Błąd przy zapisie')}>
             Error
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast.info('Nowe zamówienie do weryfikacji')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toast.info('Nowe zamówienie do weryfikacji')}
+          >
             Info
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast('Powiadomienie', { action: { label: 'Cofnij', onClick: () => {} } })}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              toast('Powiadomienie', { action: { label: 'Cofnij', onClick: () => {} } })
+            }
+          >
             Default + akcja
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast('Usunięto element', { action: { label: 'Przywróć', onClick: () => toast.success('Przywrócono') } })}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              toast('Usunięto element', {
+                action: { label: 'Przywróć', onClick: () => toast.success('Przywrócono') },
+              })
+            }
+          >
             Cofnij akcję
           </Button>
         </div>
@@ -756,7 +814,8 @@ const ComponentsTab = () => {
       {/* Drawer Layout */}
       <Section title="Drawer Layout">
         <p className="text-sm text-muted-foreground">
-          Szablon: Sheet + SheetContent (right, --drawer-width) + fixed Header/Footer + scrollable content.
+          Szablon: Sheet + SheetContent (right, --drawer-width) + fixed Header/Footer + scrollable
+          content.
         </p>
         <Button onClick={() => setDrawerOpen(true)}>Otwórz Drawer</Button>
       </Section>
@@ -767,15 +826,20 @@ const ComponentsTab = () => {
           ConfirmDialog — gotowy komponent potwierdzenia. Na mobile automatycznie Drawer.
         </p>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setConfirmOpen(true)}>Default</Button>
-          <Button variant="destructive" onClick={() => setConfirmDestructiveOpen(true)}>Destructive</Button>
+          <Button variant="outline" onClick={() => setConfirmOpen(true)}>
+            Default
+          </Button>
+          <Button variant="destructive" onClick={() => setConfirmDestructiveOpen(true)}>
+            Destructive
+          </Button>
         </div>
       </Section>
 
       {/* Dialog with content */}
       <Section title="Dialog (z contentem)">
         <p className="text-sm text-muted-foreground">
-          Dialog z fixed header, scrollable content, fixed footer. Wzorzec: ServiceFormDialog, ProductDetailsDialog.
+          Dialog z fixed header, scrollable content, fixed footer. Wzorzec: ServiceFormDialog,
+          ProductDetailsDialog.
         </p>
         <Button onClick={() => setContentDialogOpen(true)}>Otwórz Dialog</Button>
       </Section>
@@ -913,10 +977,20 @@ const ComponentsTab = () => {
             </div>
           </div>
           <div className="shrink-0 flex gap-3 p-6 pt-4 border-t">
-            <Button variant="outline" className="flex-1" onClick={() => setContentDialogOpen(false)}>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setContentDialogOpen(false)}
+            >
               Anuluj
             </Button>
-            <Button className="flex-1" onClick={() => { setContentDialogOpen(false); toast.success('Zapisano'); }}>
+            <Button
+              className="flex-1"
+              onClick={() => {
+                setContentDialogOpen(false);
+                toast.success('Zapisano');
+              }}
+            >
               Zapisz
             </Button>
           </div>
@@ -979,7 +1053,10 @@ const FontsTab = () => (
       <div className="space-y-4">
         <div className="space-y-1">
           <Label>text-base (body)</Label>
-          <p className="text-base">Standardowy tekst akapitu używany w większości miejsc aplikacji. Prawidłowa typografia ułatwia czytanie i poprawia UX.</p>
+          <p className="text-base">
+            Standardowy tekst akapitu używany w większości miejsc aplikacji. Prawidłowa typografia
+            ułatwia czytanie i poprawia UX.
+          </p>
         </div>
         <div className="space-y-1">
           <Label>text-sm (small)</Label>
@@ -991,7 +1068,9 @@ const FontsTab = () => (
         </div>
         <div className="space-y-1">
           <Label>text-sm text-muted-foreground (helper)</Label>
-          <p className="text-sm text-muted-foreground">Tekst pomocniczy, podpowiedzi, opisy pól formularza.</p>
+          <p className="text-sm text-muted-foreground">
+            Tekst pomocniczy, podpowiedzi, opisy pól formularza.
+          </p>
         </div>
       </div>
     </Section>
@@ -1024,7 +1103,17 @@ const VariablesTab = () => (
 
     <Section title="Border Radius">
       <div className="flex flex-wrap gap-4">
-        {(['rounded-none', 'rounded-sm', 'rounded', 'rounded-md', 'rounded-lg', 'rounded-xl', 'rounded-full'] as const).map((r) => (
+        {(
+          [
+            'rounded-none',
+            'rounded-sm',
+            'rounded',
+            'rounded-md',
+            'rounded-lg',
+            'rounded-xl',
+            'rounded-full',
+          ] as const
+        ).map((r) => (
           <div key={r} className="flex flex-col items-center gap-1.5">
             <div className={`w-16 h-16 bg-primary ${r}`} />
             <Label>{r}</Label>
@@ -1035,7 +1124,18 @@ const VariablesTab = () => (
 
     <Section title="Shadows">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-        {(['shadow-2xs', 'shadow-xs', 'shadow-sm', 'shadow', 'shadow-md', 'shadow-lg', 'shadow-xl', 'shadow-2xl'] as const).map((s) => (
+        {(
+          [
+            'shadow-2xs',
+            'shadow-xs',
+            'shadow-sm',
+            'shadow',
+            'shadow-md',
+            'shadow-lg',
+            'shadow-xl',
+            'shadow-2xl',
+          ] as const
+        ).map((s) => (
           <div key={s} className="flex flex-col items-center gap-2">
             <div className={`w-full h-20 bg-card rounded-lg ${s}`} />
             <Label>{s}</Label>
@@ -1071,7 +1171,7 @@ const DesignSystem = () => {
         </div>
 
         <Tabs defaultValue="components">
-          <TabsList variant="underline">
+          <TabsList>
             <TabsTrigger value="components">Components</TabsTrigger>
             <TabsTrigger value="fonts">Fonts</TabsTrigger>
             <TabsTrigger value="variables">Variables</TabsTrigger>

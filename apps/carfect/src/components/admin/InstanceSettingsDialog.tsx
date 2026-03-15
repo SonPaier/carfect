@@ -1,13 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui';
-import { 
-  Building2, Palette, Upload, Loader2, Save, Trash2, Image as ImageIcon, Users
+import {
+  Building2,
+  Palette,
+  Upload,
+  Loader2,
+  Save,
+  Trash2,
+  Image as ImageIcon,
+  Users,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -41,17 +46,17 @@ interface InstanceSettingsDialogProps {
   onUpdate: (instance: Instance) => void;
 }
 
-const InstanceSettingsDialog = ({ 
-  open, 
-  onOpenChange, 
-  instance, 
-  onUpdate 
+const InstanceSettingsDialog = ({
+  open,
+  onOpenChange,
+  instance,
+  onUpdate,
 }: InstanceSettingsDialogProps) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -93,7 +98,7 @@ const InstanceSettingsDialog = ({
   }, [instance]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,11 +137,11 @@ const InstanceSettingsDialog = ({
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('instance-logos')
-        .getPublicUrl(fileName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('instance-logos').getPublicUrl(fileName);
 
-      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+      setFormData((prev) => ({ ...prev, logo_url: publicUrl }));
       toast.success(t('instanceSettings.logoUploaded'));
     } catch (error) {
       console.error('Error uploading logo:', error);
@@ -154,7 +159,7 @@ const InstanceSettingsDialog = ({
       if (urlParts[1]) {
         await supabase.storage.from('instance-logos').remove([urlParts[1]]);
       }
-      setFormData(prev => ({ ...prev, logo_url: '' }));
+      setFormData((prev) => ({ ...prev, logo_url: '' }));
       toast.success(t('instanceSettings.logoRemoved'));
     } catch (error) {
       console.error('Error removing logo:', error);
@@ -205,7 +210,10 @@ const InstanceSettingsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onFocusOutside={(e) => e.preventDefault()}>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onFocusOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5" />
@@ -217,7 +225,7 @@ const InstanceSettingsDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="company" className="w-full">
-          <TabsList variant="underline" className="w-full">
+          <TabsList className="w-full">
             <TabsTrigger value="company">{t('instanceSettings.companyTab')}</TabsTrigger>
             <TabsTrigger value="branding">{t('instanceSettings.brandingTab')}</TabsTrigger>
             <TabsTrigger value="contact">{t('instanceSettings.contactTab')}</TabsTrigger>
@@ -244,7 +252,12 @@ const InstanceSettingsDialog = ({
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                onChange={(e) =>
+                  handleInputChange(
+                    'slug',
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+                  )
+                }
                 placeholder="np. auto-spa-gdansk"
               />
               <p className="text-xs text-muted-foreground">
@@ -253,7 +266,9 @@ const InstanceSettingsDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="invoice_company_name">{t('instanceSettings.invoiceCompanyName')}</Label>
+              <Label htmlFor="invoice_company_name">
+                {t('instanceSettings.invoiceCompanyName')}
+              </Label>
               <Input
                 id="invoice_company_name"
                 value={formData.invoice_company_name}
@@ -290,16 +305,16 @@ const InstanceSettingsDialog = ({
             <div className="space-y-3">
               <Label>{t('instanceSettings.logo')}</Label>
               <div className="flex items-center gap-4">
-                <div 
+                <div
                   className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/50 overflow-hidden cursor-pointer hover:border-primary transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {uploadingLogo ? (
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                   ) : formData.logo_url ? (
-                    <img 
-                      src={formData.logo_url} 
-                      alt="Logo" 
+                    <img
+                      src={formData.logo_url}
+                      alt="Logo"
                       className="w-full h-full object-contain"
                     />
                   ) : (
@@ -307,20 +322,22 @@ const InstanceSettingsDialog = ({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingLogo}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {formData.logo_url ? t('instanceSettings.changeLogo') : t('instanceSettings.uploadLogo')}
+                    {formData.logo_url
+                      ? t('instanceSettings.changeLogo')
+                      : t('instanceSettings.uploadLogo')}
                   </Button>
                   {formData.logo_url && (
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
+                    <Button
+                      type="button"
+                      variant="ghost"
                       size="sm"
                       onClick={handleRemoveLogo}
                       className="text-destructive"
@@ -329,9 +346,7 @@ const InstanceSettingsDialog = ({
                       {t('instanceSettings.removeLogo')}
                     </Button>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    {t('instanceSettings.logoInfo')}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('instanceSettings.logoInfo')}</p>
                 </div>
               </div>
               <input
@@ -404,21 +419,30 @@ const InstanceSettingsDialog = ({
             </div>
 
             {/* Preview */}
-            <div 
+            <div
               className="p-4 rounded-xl border border-border"
               style={{ backgroundColor: formData.background_color }}
             >
-              <p className="text-sm mb-3" style={{ color: formData.background_color === '#ffffff' || formData.background_color.toLowerCase() === '#fff' ? '#666' : '#fff' }}>
+              <p
+                className="text-sm mb-3"
+                style={{
+                  color:
+                    formData.background_color === '#ffffff' ||
+                    formData.background_color.toLowerCase() === '#fff'
+                      ? '#666'
+                      : '#fff',
+                }}
+              >
                 {t('instanceSettings.colorPreview')}
               </p>
               <div className="flex gap-3">
-                <div 
+                <div
                   className="h-10 flex-1 rounded-lg flex items-center justify-center text-white font-medium text-sm"
                   style={{ backgroundColor: formData.primary_color }}
                 >
                   {t('instanceSettings.primaryButton')}
                 </div>
-                <div 
+                <div
                   className="h-10 flex-1 rounded-lg flex items-center justify-center text-white font-medium text-sm"
                   style={{ backgroundColor: formData.secondary_color }}
                 >

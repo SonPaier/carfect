@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { X, Pencil } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-} from '@shared/ui';
+import { Sheet, SheetContent } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -120,7 +117,14 @@ const emptyForm = {
   billingCity: '',
 };
 
-const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, onSaved, initialEditMode = false }: Props) => {
+const AddEditSalesCustomerDrawer = ({
+  open,
+  onOpenChange,
+  customer,
+  instanceId,
+  onSaved,
+  initialEditMode = false,
+}: Props) => {
   const isMobile = useIsMobile();
   const isEdit = !!customer;
   const [editMode, setEditMode] = useState(false);
@@ -135,7 +139,9 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
     setOrdersLoading(true);
     const { data } = await (supabase
       .from('sales_orders')
-      .select('id, order_number, created_at, total_net, currency, status, delivery_type, payment_method')
+      .select(
+        'id, order_number, created_at, total_net, currency, status, delivery_type, payment_method',
+      )
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false }) as any);
     setOrders((data as any[]) || []);
@@ -231,9 +237,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
         if (error) throw error;
         toast.success('Klient zaktualizowany');
       } else {
-        const { error } = await (supabase
-          .from('sales_customers')
-          .insert(payload as any) as any);
+        const { error } = await (supabase.from('sales_customers').insert(payload as any) as any);
         if (error) throw error;
         toast.success('Klient dodany');
       }
@@ -250,7 +254,7 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
 
   const renderViewMode = () => (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-      <TabsList variant="underline" className="w-full">
+      <TabsList className="w-full">
         <TabsTrigger value="orders">Zamówienia</TabsTrigger>
         <TabsTrigger value="data">Dane</TabsTrigger>
       </TabsList>
@@ -261,10 +265,11 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
           <ViewField label="Osoba kontaktowa" value={form.contactPerson} />
           <ViewField label="Telefon" value={form.phone} isPhone />
           <ViewField label="Email" value={form.email} isEmail />
-          <ViewField label="Waluta" value={CURRENCIES.find(c => c.value === form.currency)?.label || form.currency} />
-          {form.discountEnabled && (
-            <ViewField label="Rabat" value={`${form.discountPercent}%`} />
-          )}
+          <ViewField
+            label="Waluta"
+            value={CURRENCIES.find((c) => c.value === form.currency)?.label || form.currency}
+          />
+          {form.discountEnabled && <ViewField label="Rabat" value={`${form.discountPercent}%`} />}
           <ViewField label="Płatnik" value={form.isNetPayer ? 'netto' : 'brutto'} />
           <ViewField label="Notatki" value={form.notes} />
         </div>
@@ -273,10 +278,29 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
           <>
             <Separator />
             <div className="space-y-3 text-sm">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Adres wysyłki</h4>
-              {form.shippingAddressee && <ViewField label="Adresat" value={form.shippingAddressee} />}
-              <ViewField label="Kraj" value={COUNTRIES.find(c => c.code === form.shippingCountry)?.name || form.shippingCountry} />
-              <ViewField label="Adres" value={[form.shippingStreet, form.shippingStreetLine2, `${form.shippingPostalCode} ${form.shippingCity}`].filter(Boolean).join(', ')} />
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Adres wysyłki
+              </h4>
+              {form.shippingAddressee && (
+                <ViewField label="Adresat" value={form.shippingAddressee} />
+              )}
+              <ViewField
+                label="Kraj"
+                value={
+                  COUNTRIES.find((c) => c.code === form.shippingCountry)?.name ||
+                  form.shippingCountry
+                }
+              />
+              <ViewField
+                label="Adres"
+                value={[
+                  form.shippingStreet,
+                  form.shippingStreetLine2,
+                  `${form.shippingPostalCode} ${form.shippingCity}`,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+              />
             </div>
           </>
         )}
@@ -312,22 +336,35 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${o.status === 'wysłany' ? 'bg-emerald-600 text-white' : 'border border-amber-500 text-amber-600'}`}>
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${o.status === 'wysłany' ? 'bg-emerald-600 text-white' : 'border border-amber-500 text-amber-600'}`}
+                    >
                       {o.status === 'nowy' ? 'Nowy' : o.status === 'wysłany' ? 'Wysłany' : o.status}
                     </span>
                     {o.delivery_type && (
                       <Badge>
-                        {o.delivery_type === 'shipping' ? 'Wysyłka' : o.delivery_type === 'pickup' ? 'Odbiór osobisty' : o.delivery_type === 'uber' ? 'Uber' : o.delivery_type}
+                        {o.delivery_type === 'shipping'
+                          ? 'Wysyłka'
+                          : o.delivery_type === 'pickup'
+                            ? 'Odbiór osobisty'
+                            : o.delivery_type === 'uber'
+                              ? 'Uber'
+                              : o.delivery_type}
                       </Badge>
                     )}
                     {o.payment_method && (
                       <Badge>
-                        {o.payment_method === 'cod' ? 'Za pobraniem' : o.payment_method === 'transfer' ? 'Przelew' : o.payment_method}
+                        {o.payment_method === 'cod'
+                          ? 'Za pobraniem'
+                          : o.payment_method === 'transfer'
+                            ? 'Przelew'
+                            : o.payment_method}
                       </Badge>
                     )}
                   </div>
                   <span>
-                    {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })} {o.currency === 'EUR' ? '€' : 'zł'}
+                    {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}{' '}
+                    {o.currency === 'EUR' ? '€' : 'zł'}
                   </span>
                 </div>
               </div>
@@ -343,29 +380,51 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
       <div className="space-y-3">
         <div>
           <Label htmlFor="name">Nazwa *</Label>
-          <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input
+            id="name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
         </div>
         <div>
           <Label htmlFor="contact-person">Osoba kontaktowa</Label>
-          <Input id="contact-person" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+          <Input
+            id="contact-person"
+            value={form.contactPerson}
+            onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
+          />
         </div>
         <div>
           <Label htmlFor="phone">Telefon *</Label>
-          <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <Input
+            id="phone"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
         </div>
         <div>
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <Input
+            id="email"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
         </div>
         <div>
           <Label htmlFor="currency">Waluta</Label>
-          <Select value={form.currency} onValueChange={(value) => setForm({ ...form, currency: value })}>
+          <Select
+            value={form.currency}
+            onValueChange={(value) => setForm({ ...form, currency: value })}
+          >
             <SelectTrigger id="currency">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -420,37 +479,68 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
       <Separator />
 
       <div className="space-y-3">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Adres wysyłki</h4>
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Adres wysyłki
+        </h4>
         <div>
           <Label htmlFor="ship-addressee">Adresat</Label>
-          <Input id="ship-addressee" value={form.shippingAddressee} onChange={(e) => setForm({ ...form, shippingAddressee: e.target.value })} />
+          <Input
+            id="ship-addressee"
+            value={form.shippingAddressee}
+            onChange={(e) => setForm({ ...form, shippingAddressee: e.target.value })}
+          />
         </div>
         <div>
           <Label htmlFor="ship-country">Kraj</Label>
-          <Select value={form.shippingCountry} onValueChange={(value) => setForm({ ...form, shippingCountry: value })}>
+          <Select
+            value={form.shippingCountry}
+            onValueChange={(value) => setForm({ ...form, shippingCountry: value })}
+          >
             <SelectTrigger id="ship-country">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {COUNTRIES.map((c) => (
-                <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                <SelectItem key={c.code} value={c.code}>
+                  {c.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div>
           <Label htmlFor="ship-street">Adres</Label>
-          <Input id="ship-street" placeholder="Linia 1" value={form.shippingStreet} onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })} />
-          <Input id="ship-street-line2" className="mt-1" placeholder="Linia 2 (opcjonalne)" value={form.shippingStreetLine2} onChange={(e) => setForm({ ...form, shippingStreetLine2: e.target.value })} />
+          <Input
+            id="ship-street"
+            placeholder="Linia 1"
+            value={form.shippingStreet}
+            onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })}
+          />
+          <Input
+            id="ship-street-line2"
+            className="mt-1"
+            placeholder="Linia 2 (opcjonalne)"
+            value={form.shippingStreetLine2}
+            onChange={(e) => setForm({ ...form, shippingStreetLine2: e.target.value })}
+          />
         </div>
         <div className="grid grid-cols-[120px_1fr] gap-2">
           <div>
             <Label htmlFor="ship-postal">Kod pocztowy</Label>
-            <Input id="ship-postal" placeholder="00-000" value={form.shippingPostalCode} onChange={(e) => setForm({ ...form, shippingPostalCode: e.target.value })} />
+            <Input
+              id="ship-postal"
+              placeholder="00-000"
+              value={form.shippingPostalCode}
+              onChange={(e) => setForm({ ...form, shippingPostalCode: e.target.value })}
+            />
           </div>
           <div>
             <Label htmlFor="ship-city">Miasto</Label>
-            <Input id="ship-city" value={form.shippingCity} onChange={(e) => setForm({ ...form, shippingCity: e.target.value })} />
+            <Input
+              id="ship-city"
+              value={form.shippingCity}
+              onChange={(e) => setForm({ ...form, shippingCity: e.target.value })}
+            />
           </div>
         </div>
       </div>
@@ -534,15 +624,32 @@ const AddEditSalesCustomerDrawer = ({ open, onOpenChange, customer, instanceId, 
   );
 };
 
-const ViewField = ({ label, value, isPhone, isEmail }: { label: string; value?: string | null; isPhone?: boolean; isEmail?: boolean }) => {
+const ViewField = ({
+  label,
+  value,
+  isPhone,
+  isEmail,
+}: {
+  label: string;
+  value?: string | null;
+  isPhone?: boolean;
+  isEmail?: boolean;
+}) => {
   if (!value) return null;
   return (
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
       {isPhone ? (
-        <a href={`tel:${value.replace(/\s/g, '')}`} className="text-primary hover:underline font-medium">{value}</a>
+        <a
+          href={`tel:${value.replace(/\s/g, '')}`}
+          className="text-primary hover:underline font-medium"
+        >
+          {value}
+        </a>
       ) : isEmail ? (
-        <a href={`mailto:${value}`} className="text-primary hover:underline font-medium">{value}</a>
+        <a href={`mailto:${value}`} className="text-primary hover:underline font-medium">
+          {value}
+        </a>
       ) : (
         <p className="font-medium">{value}</p>
       )}

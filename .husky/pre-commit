@@ -1,1 +1,19 @@
 npx lint-staged
+
+# Check for large images (>300KB) in staged files
+LARGE_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -iE '\.(png|jpg|jpeg|gif|webp|svg|ico|bmp)$' | while read file; do
+  if [ -f "$file" ]; then
+    size=$(wc -c < "$file" | tr -d ' ')
+    if [ "$size" -gt 307200 ]; then
+      echo "  $file ($(( size / 1024 ))KB)"
+    fi
+  fi
+done)
+
+if [ -n "$LARGE_FILES" ]; then
+  echo "❌ Images larger than 300KB detected:"
+  echo "$LARGE_FILES"
+  echo ""
+  echo "Compress images before committing, or use Supabase Storage/CDN for large assets."
+  exit 1
+fi
