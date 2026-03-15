@@ -26,5 +26,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# NX cache
+.nx/
+
 # Supabase CLI temp files
 supabase/.temp/
