@@ -1,10 +1,33 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
+// Auto-generate version.json at build time from git SHA + timestamp
+function autoVersionPlugin(): Plugin {
+  return {
+    name: 'auto-version',
+    buildStart() {
+      let gitSha = 'unknown';
+      try {
+        gitSha = execSync('git rev-parse --short HEAD').toString().trim();
+      } catch {
+        gitSha = process.env.COMMIT_SHA?.slice(0, 7) ?? 'unknown';
+      }
+      const buildTime = new Date().toISOString();
+      const version = `${gitSha}-${buildTime.slice(0, 10)}`;
+      fs.writeFileSync(
+        path.resolve(__dirname, 'public/version.json'),
+        JSON.stringify({ version, buildTime }, null, 2) + '\n',
+      );
+      console.log(`[version] Generated version.json: ${version}`);
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   envDir: path.resolve(__dirname, '../..'),
   server: {
@@ -13,12 +36,13 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mode === 'production' && autoVersionPlugin(),
 
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
         name: 'Carfect - System Rezerwacji',
