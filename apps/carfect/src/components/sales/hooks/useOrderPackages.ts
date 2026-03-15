@@ -38,6 +38,7 @@ export interface OrderProduct {
   priceUnit: string;
   quantity: number;
   vehicle: string;
+  excludeFromDiscount?: boolean;
   /** @deprecated Use rollAssignments instead */
   rollId?: string;
   /** @deprecated Use rollAssignments instead */
@@ -70,89 +71,101 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   // Clean orphaned product keys from packages when products change
   useEffect(() => {
     const currentKeys = new Set(products.map(getItemKey));
-    setPackages(prev => {
-      const cleaned = prev.map(pkg => ({
+    setPackages((prev) => {
+      const cleaned = prev.map((pkg) => ({
         ...pkg,
-        productKeys: pkg.productKeys.filter(k => currentKeys.has(k)),
+        productKeys: pkg.productKeys.filter((k) => currentKeys.has(k)),
       }));
       if (JSON.stringify(cleaned) !== JSON.stringify(prev)) return cleaned;
       return prev;
     });
   }, [products]);
 
-  const handleProductsConfirm = useCallback((selected: Array<{
-    productId: string;
-    variantId?: string;
-    variantName?: string;
-    shortName?: string;
-    fullName: string;
-    priceNet: number;
-    priceUnit?: string;
-  }>) => {
-    if (!activePackageId) return;
+  const handleProductsConfirm = useCallback(
+    (
+      selected: Array<{
+        productId: string;
+        variantId?: string;
+        variantName?: string;
+        shortName?: string;
+        fullName: string;
+        priceNet: number;
+        priceUnit?: string;
+        excludeFromDiscount?: boolean;
+      }>,
+    ) => {
+      if (!activePackageId) return;
 
-    // Each selected product becomes a new instance with a unique key
-    const newProducts: OrderProduct[] = selected.map(s => {
-      const displayName = s.variantName
-        ? `${s.shortName || s.fullName} - ${s.variantName}`
-        : s.shortName || s.fullName;
-      return {
-        instanceKey: crypto.randomUUID(),
-        productId: s.productId,
-        variantId: s.variantId,
-        name: displayName,
-        priceNet: s.priceNet,
-        priceUnit: s.priceUnit || 'szt.',
-        quantity: 1,
-        vehicle: '',
-      };
-    });
+      // Each selected product becomes a new instance with a unique key
+      const newProducts: OrderProduct[] = selected.map((s) => {
+        const displayName = s.variantName
+          ? `${s.shortName || s.fullName} - ${s.variantName}`
+          : s.shortName || s.fullName;
+        return {
+          instanceKey: crypto.randomUUID(),
+          productId: s.productId,
+          variantId: s.variantId,
+          name: displayName,
+          priceNet: s.priceNet,
+          priceUnit: s.priceUnit || 'szt.',
+          quantity: 1,
+          vehicle: '',
+          excludeFromDiscount: s.excludeFromDiscount,
+        };
+      });
 
-    const newKeys = newProducts.map(p => p.instanceKey);
+      const newKeys = newProducts.map((p) => p.instanceKey);
 
-    setProducts(prev => [...prev, ...newProducts]);
+      setProducts((prev) => [...prev, ...newProducts]);
 
-    setPackages(prev => prev.map(pkg => {
-      if (pkg.id === activePackageId) {
-        return { ...pkg, productKeys: [...pkg.productKeys, ...newKeys] };
-      }
-      return pkg;
-    }));
+      setPackages((prev) =>
+        prev.map((pkg) => {
+          if (pkg.id === activePackageId) {
+            return { ...pkg, productKeys: [...pkg.productKeys, ...newKeys] };
+          }
+          return pkg;
+        }),
+      );
 
-    setActivePackageId(null);
-  }, [activePackageId, setProducts]);
+      setActivePackageId(null);
+    },
+    [activePackageId, setProducts],
+  );
 
   const removeProductFromPackage = (packageId: string, productKey: string) => {
     const inOtherPackage = packages.some(
-      pkg => pkg.id !== packageId && pkg.productKeys.includes(productKey)
+      (pkg) => pkg.id !== packageId && pkg.productKeys.includes(productKey),
     );
 
-    setPackages(prev => prev.map(pkg => {
-      if (pkg.id !== packageId) return pkg;
-      return { ...pkg, productKeys: pkg.productKeys.filter(k => k !== productKey) };
-    }));
+    setPackages((prev) =>
+      prev.map((pkg) => {
+        if (pkg.id !== packageId) return pkg;
+        return { ...pkg, productKeys: pkg.productKeys.filter((k) => k !== productKey) };
+      }),
+    );
 
     if (!inOtherPackage) {
-      setProducts(prev => prev.filter(p => getItemKey(p) !== productKey));
+      setProducts((prev) => prev.filter((p) => getItemKey(p) !== productKey));
     }
   };
 
   const updateQuantity = (key: string, quantity: number) => {
     if (quantity < 1) return;
-    setProducts(prev =>
-      prev.map(p => (getItemKey(p) === key ? { ...p, quantity } : p))
-    );
+    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, quantity } : p)));
   };
 
   const updateVehicle = (key: string, vehicle: string) => {
-    setProducts(prev =>
-      prev.map(p => (getItemKey(p) === key ? { ...p, vehicle } : p))
-    );
+    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, vehicle } : p)));
   };
 
-  const updateRollAssignment = (key: string, rollId: string | null, rollUsageM2: number, rollWidthMm?: number) => {
-    setProducts(prev =>
-      prev.map(p =>
+  const updateRollAssignment = (
+    key: string,
+    rollId: string | null,
+    rollUsageM2: number,
+    rollWidthMm?: number,
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) =>
         getItemKey(p) === key
           ? {
               ...p,
@@ -160,46 +173,50 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
               rollUsageM2: rollId ? rollUsageM2 : undefined,
               rollWidthMm: rollId ? rollWidthMm : undefined,
             }
-          : p
-      )
+          : p,
+      ),
     );
   };
 
   const setRollAssignments = (key: string, assignments: RollAssignment[]) => {
-    setProducts(prev =>
-      prev.map(p =>
-        getItemKey(p) === key
-          ? { ...p, rollAssignments: assignments }
-          : p
-      )
+    setProducts((prev) =>
+      prev.map((p) => (getItemKey(p) === key ? { ...p, rollAssignments: assignments } : p)),
+    );
+  };
+
+  const toggleExcludeFromDiscount = (key: string) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        getItemKey(p) === key ? { ...p, excludeFromDiscount: !p.excludeFromDiscount } : p,
+      ),
     );
   };
 
   const addPackage = () => {
-    setPackages(prev => [...prev, createDefaultPackage()]);
+    setPackages((prev) => [...prev, createDefaultPackage()]);
   };
 
   const removePackage = (packageId: string) => {
-    const pkg = packages.find(p => p.id === packageId);
+    const pkg = packages.find((p) => p.id === packageId);
     if (!pkg) return;
 
     const keysInOtherPackages = new Set<string>();
-    packages.forEach(p => {
+    packages.forEach((p) => {
       if (p.id !== packageId) {
-        p.productKeys.forEach(k => keysInOtherPackages.add(k));
+        p.productKeys.forEach((k) => keysInOtherPackages.add(k));
       }
     });
-    const orphanedKeys = new Set(pkg.productKeys.filter(k => !keysInOtherPackages.has(k)));
+    const orphanedKeys = new Set(pkg.productKeys.filter((k) => !keysInOtherPackages.has(k)));
 
-    setPackages(prev => prev.filter(p => p.id !== packageId));
+    setPackages((prev) => prev.filter((p) => p.id !== packageId));
     if (orphanedKeys.size > 0) {
-      setProducts(prev => prev.filter(p => !orphanedKeys.has(getItemKey(p))));
+      setProducts((prev) => prev.filter((p) => !orphanedKeys.has(getItemKey(p))));
     }
   };
 
   const updatePackageShippingMethod = (packageId: string, method: DeliveryType) => {
-    setPackages(prev =>
-      prev.map(pkg => {
+    setPackages((prev) =>
+      prev.map((pkg) => {
         if (pkg.id !== packageId) return pkg;
         if (method === 'shipping') {
           return {
@@ -210,30 +227,31 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
           };
         }
         return { ...pkg, shippingMethod: method, packagingType: undefined, dimensions: undefined };
-      })
+      }),
     );
   };
 
   const updatePackagePackagingType = (packageId: string, type: PackagingType) => {
-    setPackages(prev =>
-      prev.map(pkg => {
+    setPackages((prev) =>
+      prev.map((pkg) => {
         if (pkg.id !== packageId) return pkg;
-        const dimensions = type === 'karton'
-          ? { length: 0, width: 0, height: 0 }
-          : type === 'tuba'
-            ? { length: 0, diameter: 0 }
-            : undefined;
+        const dimensions =
+          type === 'karton'
+            ? { length: 0, width: 0, height: 0 }
+            : type === 'tuba'
+              ? { length: 0, diameter: 0 }
+              : undefined;
         return { ...pkg, packagingType: type, dimensions };
-      })
+      }),
     );
   };
 
   const updatePackageDimension = (packageId: string, field: string, value: number) => {
-    setPackages(prev =>
-      prev.map(pkg => {
+    setPackages((prev) =>
+      prev.map((pkg) => {
         if (pkg.id !== packageId || !pkg.dimensions) return pkg;
         return { ...pkg, dimensions: { ...pkg.dimensions, [field]: value } };
-      })
+      }),
     );
   };
 
@@ -250,6 +268,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updateVehicle,
     updateRollAssignment,
     setRollAssignments,
+    toggleExcludeFromDiscount,
     addPackage,
     removePackage,
     updatePackageShippingMethod,

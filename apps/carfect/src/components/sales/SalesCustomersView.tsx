@@ -1,12 +1,25 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Search, Plus, MoreHorizontal, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, ChevronDown, ChevronRight, ArrowUp, ArrowDown, ShoppingCart } from 'lucide-react';
-import { Input } from '@shared/ui';
+import {
+  Search,
+  Plus,
+  MoreHorizontal,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  ChevronDown,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  ShoppingCart,
+  Users,
+} from 'lucide-react';
+import { Input, EmptyState } from '@shared/ui';
 import { Button } from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
-  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-} from '@shared/ui';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,7 +58,7 @@ const ITEMS_PER_PAGE = 10;
 
 const SalesCustomersView = () => {
   const { roles } = useAuth();
-  const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
+  const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -62,7 +75,11 @@ const SalesCustomersView = () => {
 
   // Order drawer state
   const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
-  const [orderCustomer, setOrderCustomer] = useState<{ id: string; name: string; discountPercent?: number } | null>(null);
+  const [orderCustomer, setOrderCustomer] = useState<{
+    id: string;
+    name: string;
+    discountPercent?: number;
+  } | null>(null);
 
   // Last order dates per customer
   const [lastOrderDates, setLastOrderDates] = useState<Record<string, string>>({});
@@ -90,7 +107,9 @@ const SalesCustomersView = () => {
     setLoading(true);
     const { data, error } = await (supabase
       .from('sales_customers')
-      .select('id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city')
+      .select(
+        'id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city',
+      )
       .eq('instance_id', instanceId)
       .order('name') as any);
     if (error) {
@@ -109,7 +128,7 @@ const SalesCustomersView = () => {
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
       setSortDir('asc');
@@ -127,7 +146,7 @@ const SalesCustomersView = () => {
           (c.email && c.email.toLowerCase().includes(q)) ||
           c.phone.includes(q) ||
           (c.shipping_city && c.shipping_city.toLowerCase().includes(q)) ||
-          (c.company && c.company.toLowerCase().includes(q))
+          (c.company && c.company.toLowerCase().includes(q)),
       );
     }
     // Sort
@@ -187,16 +206,27 @@ const SalesCustomersView = () => {
     }
   };
 
-  const SortableHead = ({ field, children, className }: { field: SortField; children: React.ReactNode; className?: string }) => (
+  const SortableHead = ({
+    field,
+    children,
+    className,
+  }: {
+    field: SortField;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <TableHead className={className}>
       <button
         className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
         onClick={() => toggleSort(field)}
       >
         {children}
-        {sortField === field && (
-          sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
-        )}
+        {sortField === field &&
+          (sortDir === 'asc' ? (
+            <ArrowUp className="w-3.5 h-3.5" />
+          ) : (
+            <ArrowDown className="w-3.5 h-3.5" />
+          ))}
       </button>
     </TableHead>
   );
@@ -214,7 +244,10 @@ const SalesCustomersView = () => {
             placeholder="Szukaj klienta..."
             className="pl-9"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
         <Button size="sm" className="gap-2" onClick={() => openDrawer(null)}>
@@ -239,14 +272,18 @@ const SalesCustomersView = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Ładowanie...
                 </TableCell>
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Brak wyników
+                <TableCell colSpan={7}>
+                  <EmptyState
+                    icon={Users}
+                    title="Brak klientów"
+                    description="Dodaj pierwszego klienta, aby rozpocząć sprzedaż"
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -254,9 +291,18 @@ const SalesCustomersView = () => {
                 const isExpanded = expandedRows.has(c.id);
                 return (
                   <React.Fragment key={c.id}>
-                    <TableRow className="hover:bg-hover-strong cursor-pointer" onClick={() => openDrawer(c)}>
+                    <TableRow
+                      className="hover:bg-hover-strong cursor-pointer"
+                      onClick={() => openDrawer(c)}
+                    >
                       <TableCell className="font-medium max-w-[220px]">
-                        <div className="flex items-center gap-1.5" onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}>
+                        <div
+                          className="flex items-center gap-1.5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(c.id);
+                          }}
+                        >
                           {isExpanded ? (
                             <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                           ) : (
@@ -276,13 +322,21 @@ const SalesCustomersView = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <a href={`tel:${c.phone.replace(/\s/g, '')}`} className="text-primary hover:underline text-sm whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <a
+                          href={`tel:${c.phone.replace(/\s/g, '')}`}
+                          className="text-primary hover:underline text-sm whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {c.phone}
                         </a>
                       </TableCell>
                       <TableCell>
                         {c.email ? (
-                          <a href={`mailto:${c.email}`} className="text-primary hover:underline text-sm truncate block max-w-[200px]" onClick={(e) => e.stopPropagation()}>
+                          <a
+                            href={`mailto:${c.email}`}
+                            className="text-primary hover:underline text-sm truncate block max-w-[200px]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {c.email}
                           </a>
                         ) : (
@@ -304,14 +358,24 @@ const SalesCustomersView = () => {
                               <ShoppingCart className="w-4 h-4 mr-2" />
                               Nowe zamówienie
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openDrawer(c, true)}>Edytuj</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(c.id)}>Usuń</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openDrawer(c, true)}>
+                              Edytuj
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDelete(c.id)}
+                            >
+                              Usuń
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
                     {isExpanded && (
-                      <TableRow className="hover:bg-transparent" onClick={(e) => e.stopPropagation()}>
+                      <TableRow
+                        className="hover:bg-transparent"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <TableCell colSpan={7} className="p-0">
                           <div className="bg-muted/30 px-8 py-4 grid grid-cols-3 gap-6 text-sm border-t">
                             <div>
@@ -319,34 +383,46 @@ const SalesCustomersView = () => {
                               <p>{c.nip || '—'}</p>
                               {c.contact_person && (
                                 <>
-                                  <p className="text-muted-foreground text-xs font-medium mb-1 mt-3">Osoba kontaktowa</p>
+                                  <p className="text-muted-foreground text-xs font-medium mb-1 mt-3">
+                                    Osoba kontaktowa
+                                  </p>
                                   <p>{c.contact_person}</p>
                                 </>
                               )}
                               {(c.discount_percent ?? 0) > 0 && (
                                 <>
-                                  <p className="text-muted-foreground text-xs font-medium mb-1 mt-3">Rabat</p>
+                                  <p className="text-muted-foreground text-xs font-medium mb-1 mt-3">
+                                    Rabat
+                                  </p>
                                   <p>{c.discount_percent}%</p>
                                 </>
                               )}
                             </div>
                             <div>
-                              <p className="text-muted-foreground text-xs font-medium mb-1">Adres faktury</p>
+                              <p className="text-muted-foreground text-xs font-medium mb-1">
+                                Adres faktury
+                              </p>
                               {c.billing_street ? (
                                 <>
                                   <p>{c.billing_street}</p>
-                                  <p>{c.billing_postal_code} {c.billing_city}</p>
+                                  <p>
+                                    {c.billing_postal_code} {c.billing_city}
+                                  </p>
                                 </>
                               ) : (
                                 <p className="text-muted-foreground">—</p>
                               )}
                             </div>
                             <div>
-                              <p className="text-muted-foreground text-xs font-medium mb-1">Adres wysyłki</p>
+                              <p className="text-muted-foreground text-xs font-medium mb-1">
+                                Adres wysyłki
+                              </p>
                               {c.shipping_street ? (
                                 <>
                                   <p>{c.shipping_street}</p>
-                                  <p>{c.shipping_postal_code} {c.shipping_city}</p>
+                                  <p>
+                                    {c.shipping_postal_code} {c.shipping_city}
+                                  </p>
                                 </>
                               ) : (
                                 <p className="text-muted-foreground">—</p>
@@ -370,16 +446,32 @@ const SalesCustomersView = () => {
             Strona {page} z {totalPages} ({filtered.length} klientów)
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
               <ChevronLeftIcon className="w-4 h-4" />
               Poprzednia
             </Button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Button key={p} variant={p === page ? 'default' : 'outline'} size="sm" className="w-9" onClick={() => setPage(p)}>
+              <Button
+                key={p}
+                variant={p === page ? 'default' : 'outline'}
+                size="sm"
+                className="w-9"
+                onClick={() => setPage(p)}
+              >
                 {p}
               </Button>
             ))}
-            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Następna
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
@@ -403,7 +495,10 @@ const SalesCustomersView = () => {
         onOpenChange={setOrderDrawerOpen}
         orders={[]}
         initialCustomer={orderCustomer}
-        onOrderCreated={() => { fetchCustomers(); fetchLastOrderDates(); }}
+        onOrderCreated={() => {
+          fetchCustomers();
+          fetchLastOrderDates();
+        }}
       />
     </div>
   );

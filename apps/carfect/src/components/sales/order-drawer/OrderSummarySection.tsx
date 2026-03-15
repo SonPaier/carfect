@@ -1,5 +1,4 @@
 import { Label } from '@shared/ui';
-import { Switch } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { formatCurrency } from '../constants';
 
@@ -9,9 +8,6 @@ interface OrderSummarySectionProps {
   customerDiscount: number;
   totalNet: number;
   totalGross: number;
-  applyDiscount: boolean;
-  setApplyDiscount: (v: boolean) => void;
-  showDiscount: boolean;
 }
 
 export const OrderSummarySection = ({
@@ -20,31 +16,12 @@ export const OrderSummarySection = ({
   customerDiscount,
   totalNet,
   totalGross,
-  applyDiscount,
-  setApplyDiscount,
-  showDiscount,
 }: OrderSummarySectionProps) => {
   return (
     <>
       <Separator />
       <div className="space-y-3">
         <Label>Podsumowanie</Label>
-
-        {showDiscount && (
-          <div className="flex items-center justify-between bg-muted/20 border border-border rounded-md px-3 py-2">
-            <span className="text-sm">Rabat: {customerDiscount}%</span>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="apply-discount" className="text-xs text-muted-foreground font-normal">
-                Zastosuj
-              </Label>
-              <Switch
-                id="apply-discount"
-                checked={applyDiscount}
-                onCheckedChange={setApplyDiscount}
-              />
-            </div>
-          </div>
-        )}
 
         <div className="bg-card border border-border rounded-md p-3 space-y-1.5 text-sm">
           <div className="flex justify-between">

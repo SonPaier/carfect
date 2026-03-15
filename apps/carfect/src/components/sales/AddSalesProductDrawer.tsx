@@ -1,24 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, Plus } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +14,6 @@ import { supabase } from '@/integrations/supabase/client';
 interface SalesProductVariant {
   id?: string;
   name: string;
-  priceNet: number;
   sortOrder: number;
 }
 
@@ -39,6 +26,7 @@ interface SalesProductData {
   priceUnit: string;
   categoryId?: string | null;
   hasVariants?: boolean;
+  excludeFromDiscount?: boolean;
   variants?: SalesProductVariant[];
 }
 
@@ -50,7 +38,13 @@ interface AddSalesProductDrawerProps {
   product?: SalesProductData | null;
 }
 
-const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, product }: AddSalesProductDrawerProps) => {
+const AddSalesProductDrawer = ({
+  open,
+  onOpenChange,
+  instanceId,
+  onSaved,
+  product,
+}: AddSalesProductDrawerProps) => {
   const isEdit = !!product;
   const [fullName, setFullName] = useState('');
   const [shortName, setShortName] = useState('');
@@ -60,6 +54,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [excludeFromDiscount, setExcludeFromDiscount] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
   const [variants, setVariants] = useState<SalesProductVariant[]>([]);
 
@@ -81,6 +76,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
     setPriceNet('');
     setPriceUnit('piece');
     setCategoryId('');
+    setExcludeFromDiscount(false);
     setHasVariants(false);
     setVariants([]);
   };
@@ -94,21 +90,24 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       setPriceNet(product.priceNet ? String(product.priceNet) : '');
       setPriceUnit((product.priceUnit as 'piece' | 'meter') || 'piece');
       setCategoryId(product.categoryId || '');
+      setExcludeFromDiscount(product.excludeFromDiscount || false);
       setHasVariants(product.hasVariants || false);
       if (product.hasVariants && product.id) {
-        (supabase
-          .from('sales_product_variants')
-          .select('id, name, price_net, sort_order')
-          .eq('product_id', product.id)
-          .order('sort_order') as any)
-          .then(({ data }: any) => {
-            setVariants((data || []).map((v: any) => ({
+        (
+          supabase
+            .from('sales_product_variants')
+            .select('id, name, sort_order')
+            .eq('product_id', product.id)
+            .order('sort_order') as any
+        ).then(({ data }: any) => {
+          setVariants(
+            (data || []).map((v: any) => ({
               id: v.id,
               name: v.name,
-              priceNet: Number(v.price_net),
               sortOrder: v.sort_order,
-            })));
-          });
+            })),
+          );
+        });
       } else {
         setVariants([]);
       }
@@ -122,15 +121,15 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   };
 
   const addVariant = () => {
-    setVariants(prev => [...prev, { name: '', priceNet: 0, sortOrder: prev.length }]);
+    setVariants((prev) => [...prev, { name: '', sortOrder: prev.length }]);
   };
 
   const removeVariant = (index: number) => {
-    setVariants(prev => prev.filter((_, i) => i !== index));
+    setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateVariant = (index: number, field: 'name' | 'priceNet', value: string | number) => {
-    setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  const updateVariantName = (index: number, value: string) => {
+    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, name: value } : v)));
   };
 
   const handleSubmit = async () => {
@@ -142,7 +141,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       toast.error('Dodaj przynajmniej jeden wariant');
       return;
     }
-    if (hasVariants && variants.some(v => !v.name.trim())) {
+    if (hasVariants && variants.some((v) => !v.name.trim())) {
       toast.error('Uzupełnij nazwy wariantów');
       return;
     }
@@ -152,9 +151,10 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
         full_name: fullName.trim(),
         short_name: shortName.trim(),
         description: description.trim() || null,
-        price_net: hasVariants ? 0 : (parseFloat(priceNet) || 0),
+        price_net: parseFloat(priceNet) || 0,
         price_unit: priceUnit,
         category_id: categoryId || null,
+        exclude_from_discount: excludeFromDiscount,
         has_variants: hasVariants,
       };
 
@@ -178,16 +178,12 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       }
 
       // Handle variants
-      await (supabase
-        .from('sales_product_variants')
-        .delete()
-        .eq('product_id', productId) as any);
+      await (supabase.from('sales_product_variants').delete().eq('product_id', productId) as any);
 
       if (hasVariants && variants.length > 0) {
         const variantPayload = variants.map((v, idx) => ({
           product_id: productId,
           name: v.name.trim(),
-          price_net: v.priceNet || 0,
           sort_order: idx,
         }));
         const { error: vError } = await (supabase
@@ -286,6 +282,19 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="product-price">Cena netto</Label>
+              <Input
+                id="product-price"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="0.00"
+                value={priceNet}
+                onChange={(e) => setPriceNet(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Cena za</Label>
               <RadioGroup
                 value={priceUnit}
@@ -309,6 +318,17 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
 
             <div className="flex items-center gap-2">
               <Checkbox
+                id="exclude-from-discount"
+                checked={excludeFromDiscount}
+                onCheckedChange={(v) => setExcludeFromDiscount(v === true)}
+              />
+              <Label htmlFor="exclude-from-discount" className="text-sm font-normal cursor-pointer">
+                Wykluczaj ten produkt z rabatów
+              </Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
                 id="has-variants"
                 checked={hasVariants}
                 onCheckedChange={(v) => setHasVariants(v === true)}
@@ -318,28 +338,20 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
               </Label>
             </div>
 
-            {hasVariants ? (
+            {hasVariants && (
               <div className="space-y-3">
                 <Label>Warianty</Label>
                 {variants.map((variant, index) => (
-                  <div key={index} className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20">
-                    <div className="flex-1 space-y-1">
-                      <Input
-                        placeholder="Nazwa wariantu"
-                        value={variant.name}
-                        onChange={(e) => updateVariant(index, 'name', e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="Cena netto"
-                        value={variant.priceNet || ''}
-                        onChange={(e) => updateVariant(index, 'priceNet', parseFloat(e.target.value) || 0)}
-                        className="h-8 text-sm"
-                      />
-                    </div>
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20"
+                  >
+                    <Input
+                      placeholder="Nazwa wariantu"
+                      value={variant.name}
+                      onChange={(e) => updateVariantName(index, e.target.value)}
+                      className="h-8 text-sm flex-1"
+                    />
                     <button
                       type="button"
                       onClick={() => removeVariant(index)}
@@ -360,19 +372,6 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
                   Dodaj wariant
                 </Button>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="product-price">Cena netto</Label>
-                <Input
-                  id="product-price"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="0.00"
-                  value={priceNet}
-                  onChange={(e) => setPriceNet(e.target.value)}
-                />
-              </div>
             )}
           </div>
         </div>
@@ -383,7 +382,16 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
               Anuluj
             </Button>
             <Button className="flex-1" onClick={handleSubmit} disabled={saving}>
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Zapisuję...</> : isEdit ? 'Zapisz zmiany' : 'Dodaj produkt'}
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Zapisuję...
+                </>
+              ) : isEdit ? (
+                'Zapisz zmiany'
+              ) : (
+                'Dodaj produkt'
+              )}
             </Button>
           </div>
         </SheetFooter>

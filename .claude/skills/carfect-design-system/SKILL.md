@@ -518,6 +518,86 @@ import { Pagination } from '@shared/ui';
 <Pagination currentPage={page} totalPages={Math.ceil(total / pageSize)} onPageChange={setPage} />;
 ```
 
+## Empty States
+
+Use the `EmptyState` component from `@shared/ui` for all views where a list/table can be empty. Consistent pattern across Studio and Sales panels.
+
+### Component API
+
+```tsx
+import { EmptyState } from '@shared/ui';
+
+<EmptyState
+  icon={Users} // lucide-react icon, thematic per view
+  title="Brak klientów" // main message
+  description="Dodaj pierwszego klienta, aby rozpocząć" // CTA text (no button)
+/>;
+```
+
+### Styling
+
+- Icon rendered inside a **gold circle**: `bg-primary/10` background, `text-primary` icon color
+- Circle: `w-14 h-14 rounded-full`, icon: `w-7 h-7`
+- Title: `text-lg font-semibold text-foreground`
+- Description: `text-sm text-muted-foreground`, max-width `max-w-sm`
+- Vertical padding: `py-12`
+
+### Icon mapping per view
+
+| View                | Icon             | Title (empty)        | Description                                      |
+| ------------------- | ---------------- | -------------------- | ------------------------------------------------ |
+| Klienci (Studio)    | `Users`          | Brak klientów        | Dodaj pierwszego klienta, aby rozpocząć          |
+| Oferty (Studio)     | `FileText`       | Brak ofert           | Utwórz pierwszą ofertę dla klienta               |
+| Pracownicy (Studio) | `User`           | Brak pracowników     | Dodaj pierwszego pracownika, aby rozpocząć       |
+| Protokoły (Studio)  | `ClipboardCheck` | Brak protokołów      | Utwórz pierwszy protokół przyjęcia pojazdu       |
+| Klienci (Sales)     | `Users`          | Brak klientów        | Dodaj pierwszego klienta, aby rozpocząć sprzedaż |
+| Zamówienia (Sales)  | `ShoppingCart`   | Brak zamówień        | Utwórz pierwsze zamówienie dla klienta           |
+| Produkty (Sales)    | `Package`        | Brak produktów       | Dodaj pierwszy produkt do katalogu               |
+| Rolki (Sales)       | `Disc`           | Brak rolek na stanie | Dodaj pierwszą rolkę do ewidencji                |
+
+### Usage in tables
+
+When used inside a Table, wrap in `TableRow` + `TableCell` with appropriate `colSpan`:
+
+```tsx
+<TableRow>
+  <TableCell colSpan={5}>
+    <EmptyState
+      icon={Package}
+      title="Brak produktów"
+      description="Dodaj pierwszy produkt do katalogu"
+    />
+  </TableCell>
+</TableRow>
+```
+
+Keep the loading state (`Ładowanie...`) as a separate plain text block — don't use EmptyState for loading.
+
+## Content Container Width
+
+### Sales Panel
+
+The Sales panel content area uses a CSS variable for max-width:
+
+```css
+/* apps/carfect/src/index.css */
+--sales-content-max-width: 960px;
+```
+
+```tsx
+/* SalesDashboard.tsx */
+<main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+  <div className="max-w-[var(--sales-content-max-width)] mx-auto">{renderContent()}</div>
+</main>
+```
+
+- **Sales content max-width:** `960px`, centered with `mx-auto`
+- Defined via CSS variable `--sales-content-max-width` so it can be adjusted per-app
+
+### Admin/Studio Panel
+
+The Admin (Studio) panel uses a flexible full-width layout — no fixed max-width on the main content area. Content stretches to fill available space next to the sidebar. Specific sub-views may apply their own max-width constraints (e.g., `max-w-3xl` for settings forms).
+
 ## Loading States
 
 ### StarLoader — full-screen loader (in @shared/ui)

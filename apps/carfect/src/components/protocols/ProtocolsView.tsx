@@ -2,12 +2,29 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeSearchQuery } from '@shared/utils';
-import { Button } from '@shared/ui';
+import { Button, EmptyState } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { ClipboardCheck, Search, Loader2, Calendar, User, Car, MoreVertical, Pencil, Link2, Trash2, Mail, FileText, ChevronLeft, ChevronRight, ArrowLeft, Settings } from 'lucide-react';
+import {
+  ClipboardCheck,
+  Search,
+  Loader2,
+  Calendar,
+  User,
+  Car,
+  MoreVertical,
+  Pencil,
+  Link2,
+  Trash2,
+  Mail,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Settings,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CreateProtocolForm } from './CreateProtocolForm';
@@ -52,7 +69,12 @@ interface ProtocolsViewProps {
 
 const ITEMS_PER_PAGE = 20;
 
-export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditModeChange }: ProtocolsViewProps) => {
+export const ProtocolsView = ({
+  instanceId,
+  kioskMode = false,
+  onBack,
+  onEditModeChange,
+}: ProtocolsViewProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,11 +115,7 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
   }, [showCreateForm, editingProtocolId, onEditModeChange]);
 
   const fetchInstanceSlug = async () => {
-    const { data } = await supabase
-      .from('instances')
-      .select('slug')
-      .eq('id', instanceId)
-      .single();
+    const { data } = await supabase.from('instances').select('slug').eq('id', instanceId).single();
     if (data) setInstanceSlug(data.slug);
   };
 
@@ -105,7 +123,9 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
     try {
       const { data, error } = await supabase
         .from('vehicle_protocols')
-        .select('id, offer_number, customer_name, customer_email, vehicle_model, registration_number, protocol_date, protocol_type, status, created_at, public_token')
+        .select(
+          'id, offer_number, customer_name, customer_email, vehicle_model, registration_number, protocol_date, protocol_type, status, created_at, public_token',
+        )
         .eq('instance_id', instanceId)
         .order('created_at', { ascending: false });
 
@@ -119,20 +139,22 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
   };
 
   const filteredProtocols = useMemo(() => {
-    return protocols.filter(p => {
+    return protocols.filter((p) => {
       const query = searchQuery.toLowerCase();
       const normalizedQuery = normalizeSearchQuery(query);
       return (
         p.customer_name.toLowerCase().includes(query) ||
-        (p.offer_number && normalizeSearchQuery(p.offer_number).toLowerCase().includes(normalizedQuery)) ||
+        (p.offer_number &&
+          normalizeSearchQuery(p.offer_number).toLowerCase().includes(normalizedQuery)) ||
         p.vehicle_model?.toLowerCase().includes(query) ||
-        (p.registration_number && normalizeSearchQuery(p.registration_number).toLowerCase().includes(normalizedQuery))
+        (p.registration_number &&
+          normalizeSearchQuery(p.registration_number).toLowerCase().includes(normalizedQuery))
       );
     });
   }, [protocols, searchQuery]);
 
   const totalPages = Math.ceil(filteredProtocols.length / ITEMS_PER_PAGE);
-  
+
   const paginatedProtocols = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredProtocols.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -145,32 +167,32 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
 
   const getPageNumbers = () => {
     const pages: (number | 'ellipsis')[] = [];
-    
+
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
       pages.push(1);
-      
+
       if (currentPage > 3) {
         pages.push('ellipsis');
       }
-      
+
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
-      
+
       if (currentPage < totalPages - 2) {
         pages.push('ellipsis');
       }
-      
+
       pages.push(totalPages);
     }
-    
+
     return pages;
   };
 
@@ -183,23 +205,20 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
 
   const handleDeleteProtocol = async () => {
     if (!protocolToDelete) return;
-    
+
     try {
       // First delete related damage points
-      await supabase
-        .from('protocol_damage_points')
-        .delete()
-        .eq('protocol_id', protocolToDelete.id);
-      
+      await supabase.from('protocol_damage_points').delete().eq('protocol_id', protocolToDelete.id);
+
       // Then delete the protocol
       const { error } = await supabase
         .from('vehicle_protocols')
         .delete()
         .eq('id', protocolToDelete.id);
-      
+
       if (error) throw error;
-      
-      setProtocols(prev => prev.filter(p => p.id !== protocolToDelete.id));
+
+      setProtocols((prev) => prev.filter((p) => p.id !== protocolToDelete.id));
       toast.success('Protokół został usunięty');
     } catch (error) {
       console.error('Error deleting protocol:', error);
@@ -226,9 +245,9 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
     );
   }
 
-  const wrapperClassName = kioskMode 
-    ? "min-h-screen bg-background p-4 pb-24" 
-    : "space-y-4 max-w-3xl mx-auto";
+  const wrapperClassName = kioskMode
+    ? 'min-h-screen bg-background p-4 pb-24'
+    : 'space-y-4 max-w-3xl mx-auto';
 
   return (
     <div className={wrapperClassName}>
@@ -239,18 +258,14 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
             <span className="hidden sm:inline">Wróć</span>
           </Button>
         )}
-        <h1 className="text-2xl font-bold flex-1">
-          Protokoły
-        </h1>
+        <h1 className="text-2xl font-bold flex-1">Protokoły</h1>
         <div className="flex items-center gap-2">
           {!kioskMode && (
             <Button variant="outline" size="icon" onClick={() => setSettingsDialogOpen(true)}>
               <Settings className="h-4 w-4" />
             </Button>
           )}
-          <Button onClick={() => setShowCreateForm(true)}>
-            Dodaj protokół
-          </Button>
+          <Button onClick={() => setShowCreateForm(true)}>Dodaj protokół</Button>
         </div>
       </div>
 
@@ -269,40 +284,30 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : filteredProtocols.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ClipboardCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg mb-2">
-              {searchQuery ? 'Brak wyników' : 'Brak protokołów'}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery 
-                ? 'Spróbuj zmienić kryteria wyszukiwania'
-                : 'Utwórz pierwszy protokół przyjęcia pojazdu'}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setShowCreateForm(true)}>
-                Dodaj protokół
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={ClipboardCheck}
+          title={searchQuery ? 'Brak wyników' : 'Brak protokołów'}
+          description={
+            searchQuery
+              ? 'Spróbuj zmienić kryteria wyszukiwania'
+              : 'Utwórz pierwszy protokół przyjęcia pojazdu'
+          }
+        />
       ) : (
         <>
           {/* Results count */}
           <p className="text-sm text-muted-foreground py-3">
-            Wyświetlanie {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredProtocols.length)} z {filteredProtocols.length}
+            Wyświetlanie {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredProtocols.length)} z{' '}
+            {filteredProtocols.length}
           </p>
 
           <div className="grid gap-3">
             {paginatedProtocols.map((protocol) => (
-              <Card 
-                key={protocol.id} 
-                className="hover:shadow-md transition-shadow"
-              >
+              <Card key={protocol.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 sm:gap-4">
-                    <div 
+                    <div
                       className="flex-1 min-w-0 space-y-1 cursor-pointer"
                       onClick={() => setEditingProtocolId(protocol.id)}
                     >
@@ -311,17 +316,19 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                         <User className="h-4 w-4 text-muted-foreground flex-shrink-0 hidden sm:block" />
                         <span className="font-medium truncate">{protocol.customer_name}</span>
                       </div>
-                      
+
                       {/* Line 2: Car */}
                       {(protocol.vehicle_model || protocol.registration_number) && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Car className="h-4 w-4 flex-shrink-0" />
                           <span className="truncate">
-                            {[protocol.vehicle_model, protocol.registration_number].filter(Boolean).join(' • ')}
+                            {[protocol.vehicle_model, protocol.registration_number]
+                              .filter(Boolean)
+                              .join(' • ')}
                           </span>
                         </div>
                       )}
-                      
+
                       {/* Line 3: Date */}
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -329,22 +336,24 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                           {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
                         </span>
                       </div>
-                      
+
                       {/* Line 4: Offer number + Protocol type + Status (mobile) */}
                       <div className="flex items-center gap-2 text-sm text-muted-foreground sm:hidden">
                         <FileText className="h-4 w-4 flex-shrink-0" />
                         {protocol.offer_number && (
                           <span className="truncate">#{protocol.offer_number}</span>
                         )}
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                        >
+                        <Badge variant="outline" className="text-xs">
                           {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
                         </Badge>
                         <Badge
                           variant={protocol.status === 'sent' ? 'default' : 'outline'}
-                          className={cn("text-xs", protocol.status === 'sent' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'text-muted-foreground')}
+                          className={cn(
+                            'text-xs',
+                            protocol.status === 'sent'
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                              : 'text-muted-foreground',
+                          )}
                         >
                           {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
                         </Badge>
@@ -357,15 +366,17 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                             #{protocol.offer_number}
                           </Badge>
                         )}
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                        >
+                        <Badge variant="outline" className="text-xs">
                           {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
                         </Badge>
                         <Badge
                           variant={protocol.status === 'sent' ? 'default' : 'outline'}
-                          className={cn("text-xs", protocol.status === 'sent' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'text-muted-foreground')}
+                          className={cn(
+                            'text-xs',
+                            protocol.status === 'sent'
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                              : 'text-muted-foreground',
+                          )}
                         >
                           {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
                         </Badge>
@@ -379,21 +390,21 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-white">
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => setEditingProtocolId(protocol.id)}
                             className="cursor-pointer"
                           >
                             <Pencil className="h-4 w-4 mr-2" />
                             Edytuj
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleCopyLink(protocol)}
                             className="cursor-pointer"
                           >
                             <Link2 className="h-4 w-4 mr-2" />
                             Kopiuj link
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => {
                               setProtocolToEmail(protocol);
                               setEmailDialogOpen(true);
@@ -403,7 +414,7 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                             <Mail className="h-4 w-4 mr-2" />
                             Wyślij emailem
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => {
                               setProtocolToDelete(protocol);
                               setDeleteDialogOpen(true);
@@ -429,12 +440,14 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                 <PaginationItem>
                   <PaginationLink
                     onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    className={
+                      currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                    }
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </PaginationLink>
                 </PaginationItem>
-                
+
                 {getPageNumbers().map((page, index) => (
                   <PaginationItem key={index}>
                     {page === 'ellipsis' ? (
@@ -450,11 +463,15 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
                     )}
                   </PaginationItem>
                 ))}
-                
+
                 <PaginationItem>
                   <PaginationLink
                     onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    className={
+                      currentPage === totalPages
+                        ? 'pointer-events-none opacity-50'
+                        : 'cursor-pointer'
+                    }
                   >
                     <ChevronRight className="h-4 w-4" />
                   </PaginationLink>
@@ -462,7 +479,7 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
               </PaginationContent>
             </Pagination>
           )}
-          
+
           <ConfirmDialog
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
@@ -479,7 +496,9 @@ export const ProtocolsView = ({ instanceId, kioskMode = false, onBack, onEditMod
             protocolId={protocolToEmail?.id || ''}
             customerName={protocolToEmail?.customer_name || ''}
             customerEmail={protocolToEmail?.customer_email || undefined}
-            vehicleInfo={[protocolToEmail?.vehicle_model, protocolToEmail?.registration_number].filter(Boolean).join(' ')}
+            vehicleInfo={[protocolToEmail?.vehicle_model, protocolToEmail?.registration_number]
+              .filter(Boolean)
+              .join(' ')}
             protocolType={protocolToEmail?.protocol_type || 'reception'}
             instanceId={instanceId}
             onSent={fetchProtocols}

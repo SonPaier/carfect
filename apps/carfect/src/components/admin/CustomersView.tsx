@@ -1,6 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Phone, MessageSquare, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import {
+  Search,
+  Phone,
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Users,
+} from 'lucide-react';
 import { normalizeSearchQuery } from '@shared/utils';
 import { formatPhoneDisplay } from '@shared/utils';
 import { Input } from '@shared/ui';
@@ -16,7 +24,7 @@ import {
   AlertDialogTitle,
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
-import { useIsMobile } from '@shared/ui';
+import { useIsMobile, EmptyState } from '@shared/ui';
 // useCombinedFeatures no longer needed — unified customer list
 import CustomerEditDrawer from './CustomerEditDrawer';
 import SendSmsDialog from './SendSmsDialog';
@@ -218,9 +226,11 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       {/* Customers list */}
       <div className="bg-white border border-border overflow-hidden">
         {paginatedCustomers.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            {searchQuery ? t('common.noResults') : t('customers.noCustomers')}
-          </div>
+          <EmptyState
+            icon={Users}
+            title={searchQuery ? t('common.noResults') : t('customers.noCustomers')}
+            description={searchQuery ? undefined : 'Dodaj pierwszego klienta, aby rozpocząć'}
+          />
         ) : (
           <div className="divide-y divide-border/50">
             {paginatedCustomers.map((customer) => {

@@ -15,10 +15,21 @@ import {
 import { normalizeSearchQuery } from '@shared/utils';
 import { getPublicOfferUrl } from '@/lib/offerUtils';
 import { useTranslation } from 'react-i18next';
-import { Button, Input, ConfirmDialog } from '@shared/ui';
+import { Button, Input, ConfirmDialog, EmptyState, Badge } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@shared/ui';
 import { Textarea } from '@shared/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { OfferGenerator } from '@/components/offers/OfferGenerator';
 import { OfferSettingsDialog } from '@/components/offers/settings/OfferSettingsDialog';
@@ -628,16 +639,17 @@ export default function OffersView({
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : filteredOffers.length === 0 ? (
-          <div className="bg-white border border-border p-8 text-center">
-            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              {searchQuery
+          <EmptyState
+            icon={FileText}
+            title={
+              searchQuery
                 ? t('offers.noResultsFor', { query: searchQuery })
                 : statusFilter === 'all'
                   ? t('offers.noOffers')
-                  : t('offers.noOffersForStatus')}
-            </p>
-          </div>
+                  : t('offers.noOffersForStatus')
+            }
+            description={!searchQuery ? 'Utwórz pierwszą ofertę dla klienta' : undefined}
+          />
         ) : (
           <>
             <div className="space-y-3 pb-24 lg:pb-0">

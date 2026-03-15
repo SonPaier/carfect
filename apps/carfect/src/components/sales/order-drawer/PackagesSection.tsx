@@ -1,7 +1,14 @@
 import { Plus } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
-import { type OrderPackage, type OrderProduct, type DeliveryType, type PackagingType, type RollAssignment, getItemKey } from '../hooks/useOrderPackages';
+import {
+  type OrderPackage,
+  type OrderProduct,
+  type DeliveryType,
+  type PackagingType,
+  type RollAssignment,
+  getItemKey,
+} from '../hooks/useOrderPackages';
 import PackageCard from './PackageCard';
 
 interface PackagesSectionProps {
@@ -16,8 +23,15 @@ interface PackagesSectionProps {
   onRemoveProduct: (packageId: string, productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
-  onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
+  onUpdateRollAssignment?: (
+    productKey: string,
+    rollId: string | null,
+    usageM2: number,
+    widthMm?: number,
+  ) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
+  onToggleDiscount?: (productKey: string) => void;
+  customerDiscount?: number;
   onAddPackage: () => void;
 }
 
@@ -35,6 +49,8 @@ export const PackagesSection = ({
   onUpdateVehicle,
   onUpdateRollAssignment,
   onSetRollAssignments,
+  onToggleDiscount,
+  customerDiscount,
   onAddPackage,
 }: PackagesSectionProps) => {
   return (
@@ -48,7 +64,7 @@ export const PackagesSection = ({
               key={pkg.id}
               pkg={pkg}
               index={index}
-              packageProducts={products.filter(p => pkg.productKeys.includes(getItemKey(p)))}
+              packageProducts={products.filter((p) => pkg.productKeys.includes(getItemKey(p)))}
               onRemove={() => onRemovePackage(pkg.id)}
               onShippingMethodChange={(method) => onShippingMethodChange(pkg.id, method)}
               onPackagingTypeChange={(type) => onPackagingTypeChange(pkg.id, type)}
@@ -58,8 +74,15 @@ export const PackagesSection = ({
               onUpdateQuantity={(productKey, qty) => onUpdateQuantity(productKey, qty)}
               onUpdateVehicle={(productKey, vehicle) => onUpdateVehicle(productKey, vehicle)}
               instanceId={instanceId}
-              onUpdateRollAssignment={onUpdateRollAssignment ? (productKey, rollId, usageM2, widthMm) => onUpdateRollAssignment(productKey, rollId, usageM2, widthMm) : undefined}
+              onUpdateRollAssignment={
+                onUpdateRollAssignment
+                  ? (productKey, rollId, usageM2, widthMm) =>
+                      onUpdateRollAssignment(productKey, rollId, usageM2, widthMm)
+                  : undefined
+              }
               onSetRollAssignments={onSetRollAssignments}
+              onToggleDiscount={onToggleDiscount}
+              customerDiscount={customerDiscount}
             />
           ))}
         </div>
