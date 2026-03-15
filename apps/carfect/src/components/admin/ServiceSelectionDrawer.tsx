@@ -5,12 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 
 type CarSize = 'small' | 'medium' | 'large';
 
@@ -65,7 +60,7 @@ interface ServiceSelectionDrawerProps {
   onConfirm: (serviceIds: string[], totalDuration: number, services: ServiceWithCategory[]) => void;
   /** Optional station type to filter services */
   stationType?: 'washing' | 'ppf' | 'detailing' | 'universal';
-  /** 
+  /**
    * Context where the drawer is used:
    * - 'reservation': Show services with service_type='reservation' or 'both' (legacy behavior when hasUnifiedServices=false)
    * - 'offer': Show services with service_type='offer' or 'both'
@@ -114,18 +109,20 @@ const ServiceSelectionDrawer = ({
   useEffect(() => {
     const fetchData = async () => {
       if (!open || !instanceId) return;
-      
+
       setLoading(true);
-      
+
       // Build query for services based on hasUnifiedServices
       // hasUnifiedServices=true → only 'both' services (unified model)
       // hasUnifiedServices=false → only services matching exact context (legacy)
       let servicesQuery = supabase
         .from('unified_services')
-        .select('id, name, short_name, category_id, duration_minutes, duration_small, duration_medium, duration_large, price_from, price_small, price_medium, price_large, sort_order, station_type, service_type, visibility')
+        .select(
+          'id, name, short_name, category_id, duration_minutes, duration_small, duration_medium, duration_large, price_from, price_small, price_medium, price_large, sort_order, station_type, service_type, visibility',
+        )
         .eq('instance_id', instanceId)
         .eq('active', true);
-      
+
       if (hasUnifiedServices) {
         // Unified model: show only 'both' services
         servicesQuery = servicesQuery.eq('service_type', 'both');
@@ -133,14 +130,14 @@ const ServiceSelectionDrawer = ({
         // Legacy: show only services matching exact context (no 'both')
         servicesQuery = servicesQuery.eq('service_type', context);
       }
-      
+
       // Fetch categories - match the same logic as services
       let categoriesQuery = supabase
         .from('unified_categories')
         .select('id, name, sort_order, prices_are_net')
         .eq('instance_id', instanceId)
         .eq('active', true);
-      
+
       if (hasUnifiedServices) {
         // Unified model: show only 'both' categories
         categoriesQuery = categoriesQuery.eq('category_type', 'both');
@@ -148,7 +145,7 @@ const ServiceSelectionDrawer = ({
         // Legacy: show only categories matching exact context
         categoriesQuery = categoriesQuery.eq('category_type', context);
       }
-      
+
       const [servicesRes, categoriesRes] = await Promise.all([
         servicesQuery.order('sort_order'),
         categoriesQuery.order('sort_order'),
@@ -157,38 +154,40 @@ const ServiceSelectionDrawer = ({
       if (servicesRes.data && categoriesRes.data) {
         // Create a map of category prices_are_net
         const categoryNetMap = new Map<string, boolean>();
-        categoriesRes.data.forEach(cat => {
+        categoriesRes.data.forEach((cat) => {
           categoryNetMap.set(cat.id, cat.prices_are_net || false);
         });
 
         // Filter by visibility for reservation context:
         // Hide services with visibility='only_offers' from reservation drawers
-        const visibilityFiltered = servicesRes.data.filter(s => {
+        const visibilityFiltered = servicesRes.data.filter((s) => {
           const vis = (s as any).visibility || 'everywhere';
           return vis !== 'only_offers';
         });
 
         // Enrich services with category_prices_are_net
-        const enrichedServices = visibilityFiltered.map(s => ({
+        const enrichedServices = visibilityFiltered.map((s) => ({
           ...s,
-          category_prices_are_net: s.category_id ? categoryNetMap.get(s.category_id) || false : false,
+          category_prices_are_net: s.category_id
+            ? categoryNetMap.get(s.category_id) || false
+            : false,
         }));
 
         setServices(enrichedServices);
         setCategories(categoriesRes.data);
       } else {
         // Also apply visibility filter in fallback path
-        const visFiltered = servicesRes.data?.filter(s => {
+        const visFiltered = servicesRes.data?.filter((s) => {
           const vis = (s as any).visibility || 'everywhere';
           return vis !== 'only_offers';
         });
         if (visFiltered) setServices(visFiltered);
         if (categoriesRes.data) setCategories(categoriesRes.data);
       }
-      
+
       setLoading(false);
     };
-    
+
     fetchData();
   }, [open, instanceId, stationType, hasUnifiedServices, context]);
 
@@ -201,29 +200,32 @@ const ServiceSelectionDrawer = ({
     const tokens = searchQuery.toUpperCase().split(/\s+/).filter(Boolean);
     const matched: { service: Service; token: string }[] = [];
 
-    tokens.forEach(token => {
+    tokens.forEach((token) => {
       // First try exact short_name match
-      let found = services.find(s => 
-        s.short_name?.toUpperCase() === token && 
-        !selectedIds.includes(s.id) &&
-        !matched.some(m => m.service.id === s.id)
+      let found = services.find(
+        (s) =>
+          s.short_name?.toUpperCase() === token &&
+          !selectedIds.includes(s.id) &&
+          !matched.some((m) => m.service.id === s.id),
       );
-      
+
       // Fallback to partial short_name match
       if (!found) {
-        found = services.find(s => 
-          s.short_name?.toUpperCase().startsWith(token) && 
-          !selectedIds.includes(s.id) &&
-          !matched.some(m => m.service.id === s.id)
+        found = services.find(
+          (s) =>
+            s.short_name?.toUpperCase().startsWith(token) &&
+            !selectedIds.includes(s.id) &&
+            !matched.some((m) => m.service.id === s.id),
         );
       }
-      
+
       // Fallback to name match
       if (!found) {
-        found = services.find(s => 
-          s.name.toUpperCase().includes(token) && 
-          !selectedIds.includes(s.id) &&
-          !matched.some(m => m.service.id === s.id)
+        found = services.find(
+          (s) =>
+            s.name.toUpperCase().includes(token) &&
+            !selectedIds.includes(s.id) &&
+            !matched.some((m) => m.service.id === s.id),
         );
       }
 
@@ -238,30 +240,30 @@ const ServiceSelectionDrawer = ({
   // Get selected services with details
   const selectedServices = useMemo(() => {
     return selectedIds
-      .map(id => services.find(s => s.id === id))
+      .map((id) => services.find((s) => s.id === id))
       .filter((s): s is Service => s !== undefined);
   }, [selectedIds, services]);
 
   // Group services by category - filter based on search
   const groupedServices = useMemo(() => {
     const groups: { category: ServiceCategory; services: Service[] }[] = [];
-    
+
     // All categories with their services
-    categories.forEach(category => {
-      let categoryServices = services.filter(s => s.category_id === category.id);
-      
+    categories.forEach((category) => {
+      let categoryServices = services.filter((s) => s.category_id === category.id);
+
       // Filter by search if there's a query
       if (searchQuery.trim()) {
         const query = searchQuery.toUpperCase();
-        categoryServices = categoryServices.filter(s => 
-          s.short_name?.toUpperCase().includes(query) ||
-          s.name.toUpperCase().includes(query)
+        categoryServices = categoryServices.filter(
+          (s) =>
+            s.short_name?.toUpperCase().includes(query) || s.name.toUpperCase().includes(query),
         );
       }
-      
+
       groups.push({ category, services: categoryServices });
     });
-    
+
     return groups;
   }, [services, categories, searchQuery]);
 
@@ -279,7 +281,7 @@ const ServiceSelectionDrawer = ({
   // Get price for service based on car size (always returns brutto, rounded to 5)
   const getPrice = (service: Service): number | null => {
     let price: number | null = null;
-    
+
     if (carSize === 'small' && service.price_small !== null) {
       price = service.price_small;
     } else if (carSize === 'medium' && service.price_medium !== null) {
@@ -289,14 +291,14 @@ const ServiceSelectionDrawer = ({
     } else {
       price = service.price_from;
     }
-    
+
     if (price === null) return null;
-    
+
     // If category prices are net, convert to brutto
     if (service.category_prices_are_net) {
       price = netToBrutto(price);
     }
-    
+
     return price;
   };
 
@@ -328,21 +330,19 @@ const ServiceSelectionDrawer = ({
 
   // Toggle service selection
   const toggleService = (serviceId: string) => {
-    setSelectedIds(prev => 
-      prev.includes(serviceId) 
-        ? prev.filter(id => id !== serviceId)
-        : [...prev, serviceId]
+    setSelectedIds((prev) =>
+      prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId],
     );
   };
 
   // Add service from matching chips
   const addFromMatch = (service: Service, token: string) => {
-    setSelectedIds(prev => [...prev, service.id]);
+    setSelectedIds((prev) => [...prev, service.id]);
     // Remove the matched token from search query
     const newQuery = searchQuery
       .toUpperCase()
       .split(/\s+/)
-      .filter(t => t !== token)
+      .filter((t) => t !== token)
       .join(' ');
     setSearchQuery(newQuery);
     searchInputRef.current?.focus();
@@ -350,13 +350,13 @@ const ServiceSelectionDrawer = ({
 
   // Remove selected service
   const removeService = (serviceId: string) => {
-    setSelectedIds(prev => prev.filter(id => id !== serviceId));
+    setSelectedIds((prev) => prev.filter((id) => id !== serviceId));
   };
 
   // Calculate total duration
   const totalDuration = useMemo(() => {
     return selectedIds.reduce((total, id) => {
-      const service = services.find(s => s.id === id);
+      const service = services.find((s) => s.id === id);
       return total + (service ? getDuration(service) : 0);
     }, 0);
   }, [selectedIds, services, carSize]);
@@ -365,9 +365,9 @@ const ServiceSelectionDrawer = ({
   const totalPrice = useMemo(() => {
     let total = 0;
     let hasVariablePrice = false;
-    
-    selectedIds.forEach(id => {
-      const service = services.find(s => s.id === id);
+
+    selectedIds.forEach((id) => {
+      const service = services.find((s) => s.id === id);
       if (service) {
         const price = getPrice(service);
         if (price !== null) {
@@ -377,7 +377,7 @@ const ServiceSelectionDrawer = ({
         }
       }
     });
-    
+
     return { total, hasVariablePrice };
   }, [selectedIds, services, carSize]);
 
@@ -385,9 +385,9 @@ const ServiceSelectionDrawer = ({
   const handleConfirm = () => {
     // Build services with category info
     const selectedWithCategory: ServiceWithCategory[] = selectedIds
-      .map(id => services.find(s => s.id === id))
+      .map((id) => services.find((s) => s.id === id))
       .filter((s): s is Service => s !== undefined)
-      .map(s => ({
+      .map((s) => ({
         id: s.id,
         name: s.name,
         short_name: s.short_name,
@@ -402,7 +402,7 @@ const ServiceSelectionDrawer = ({
         price_large: s.price_large,
         category_prices_are_net: s.category_prices_are_net,
       }));
-    
+
     onConfirm(selectedIds, totalDuration, selectedWithCategory);
     onClose();
   };
@@ -418,15 +418,15 @@ const ServiceSelectionDrawer = ({
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <SheetContent 
-        side="right" 
+      <SheetContent
+        side="right"
         hideOverlay
         hideCloseButton
         className="w-full sm:max-w-lg p-0 flex flex-col shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)]"
         onFocusOutside={(e) => e.preventDefault()}
       >
         {/* Header - clicking closes drawer */}
-        <SheetHeader 
+        <SheetHeader
           className="border-b px-4 py-3 cursor-pointer hover:bg-hover-strong transition-colors shrink-0"
           onClick={onClose}
         >
@@ -467,7 +467,9 @@ const ServiceSelectionDrawer = ({
           {/* Matching Services Chips */}
           {matchingServices.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs text-muted-foreground font-medium">{t('serviceDrawer.matchingServices')}</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                {t('serviceDrawer.matchingServices')}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {matchingServices.map(({ service, token }) => (
                   <button
@@ -495,7 +497,7 @@ const ServiceSelectionDrawer = ({
                 {t('serviceDrawer.selectedServices')} ({selectedServices.length})
               </p>
               <div className="flex flex-wrap gap-2">
-                {selectedServices.map(service => (
+                {selectedServices.map((service) => (
                   <button
                     key={service.id}
                     type="button"
@@ -521,12 +523,12 @@ const ServiceSelectionDrawer = ({
             <div className="pb-4">
               {groupedServices.map(({ category, services: categoryServices }) => {
                 const visibleServices = categoryServices;
-                
+
                 // Hide category if no visible services
                 if (visibleServices.length === 0) {
                   return null;
                 }
-                
+
                 return (
                   <div key={category.id} data-testid={`category-${category.id}`}>
                     {/* Category header - centered, white bg, black text */}
@@ -535,13 +537,13 @@ const ServiceSelectionDrawer = ({
                         {category.name}
                       </p>
                     </div>
-                    
+
                     {/* Services list - flat */}
                     {visibleServices.map((service) => {
                       const isSelected = selectedIds.includes(service.id);
                       const price = getPrice(service);
                       const duration = getDuration(service);
-                      
+
                       return (
                         <button
                           key={service.id}
@@ -550,8 +552,8 @@ const ServiceSelectionDrawer = ({
                           data-service-id={service.id}
                           onClick={() => toggleService(service.id)}
                           className={cn(
-                            "w-full flex items-center px-4 py-3 border-b border-border/50 transition-colors",
-                            isSelected ? "bg-primary/5" : "hover:bg-hover"
+                            'w-full flex items-center px-4 py-3 border-b border-border/50 transition-colors',
+                            isSelected ? 'bg-primary/5' : 'hover:bg-hover',
                           )}
                         >
                           {/* Service info */}
@@ -559,26 +561,32 @@ const ServiceSelectionDrawer = ({
                             {service.short_name ? (
                               <>
                                 <p className="font-bold text-primary">{service.short_name}</p>
-                                <p className="text-muted-foreground" style={{ fontSize: '11px', lineHeight: '1.3' }}>{service.name}</p>
+                                <p className="text-muted-foreground text-[11px] leading-tight">
+                                  {service.name}
+                                </p>
                               </>
                             ) : (
                               <p className="font-medium text-foreground">{service.name}</p>
                             )}
                           </div>
-                          
+
                           {/* Price & Duration */}
                           <div className="text-right mr-4">
                             <p className="font-semibold text-foreground">{formatPrice(price)}</p>
-                            <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDuration(duration)}
+                            </p>
                           </div>
-                          
+
                           {/* Checkmark */}
-                          <div className={cn(
-                            "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                            isSelected 
-                              ? "bg-primary border-primary" 
-                              : "border-muted-foreground/40"
-                          )}>
+                          <div
+                            className={cn(
+                              'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                              isSelected
+                                ? 'bg-primary border-primary'
+                                : 'border-muted-foreground/40',
+                            )}
+                          >
                             {isSelected && <Check className="w-4 h-4 text-primary-foreground" />}
                           </div>
                         </button>
@@ -613,7 +621,7 @@ const ServiceSelectionDrawer = ({
               </div>
             )}
           </div>
-          <Button 
+          <Button
             onClick={handleConfirm}
             disabled={selectedIds.length === 0}
             className="w-full"

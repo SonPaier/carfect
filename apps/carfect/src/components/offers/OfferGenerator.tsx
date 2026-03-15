@@ -4,19 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@shared/ui';
 import { Card } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Save, 
-  Send, 
-  User, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Save,
+  Send,
+  User,
   Layers,
-  Package, 
+  Package,
   FileCheck,
   Loader2,
   Download,
   Eye,
-  Printer
+  Printer,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOffer } from '@/hooks/useOffer';
@@ -94,7 +94,7 @@ export const OfferGenerator = ({
     // { id: 3, label: t('offers.steps.optionsProducts'), icon: Package }, // Hidden temporarily
     { id: 3, label: t('offers.steps.summary'), icon: FileCheck }, // Summary is now step 3
   ];
-  
+
   const {
     offer,
     loading,
@@ -126,10 +126,12 @@ export const OfferGenerator = ({
     const fetchInstanceSettings = async () => {
       const { data } = await supabase
         .from('instances')
-        .select('show_unit_prices_in_offer, name, email, phone, address, website, contact_person, slug, offer_email_template')
+        .select(
+          'show_unit_prices_in_offer, name, email, phone, address, website, contact_person, slug, offer_email_template',
+        )
         .eq('id', instanceId)
         .single();
-      
+
       if (data) {
         setInstanceShowUnitPrices(data.show_unit_prices_in_offer === true);
         setInstanceData({
@@ -164,8 +166,9 @@ export const OfferGenerator = ({
   useEffect(() => {
     if (!offerId && !duplicateFromId) {
       // Check if any data has been entered
-      const hasData = Boolean(offer.customerData.name) || 
-        Boolean(offer.customerData.email) || 
+      const hasData =
+        Boolean(offer.customerData.name) ||
+        Boolean(offer.customerData.email) ||
         Boolean(offer.vehicleData.brandModel) ||
         offer.selectedScopeIds.length > 0 ||
         offer.options.length > 0;
@@ -227,7 +230,7 @@ export const OfferGenerator = ({
     // Validate step 1 before proceeding
     if (currentStep === 1) {
       const errors: ValidationErrors = {};
-      
+
       if (!offer.customerData.name?.trim()) {
         errors.name = 'Imię i nazwisko jest wymagane';
       }
@@ -237,31 +240,32 @@ export const OfferGenerator = ({
       if (!offer.vehicleData.brandModel?.trim()) {
         errors.brandModel = 'Marka i model jest wymagany';
       }
-      
+
       if (Object.keys(errors).length > 0) {
         setValidationErrors(errors);
         // Scroll to first error field
         customerStepRef.current?.scrollToFirstError(errors);
         return;
       }
-      
+
       setValidationErrors({});
     }
-    
-    if (currentStep < 3) { // Max step is now 3 (Summary)
+
+    if (currentStep < 3) {
+      // Max step is now 3 (Summary)
       // Optimistic navigation - change step immediately
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
       // Fire-and-forget auto-save in background (silent - no toast)
-      saveOffer(true).catch(error => console.error('Auto-save failed:', error));
+      saveOffer(true).catch((error) => console.error('Auto-save failed:', error));
     }
   };
 
   const handlePrev = () => {
     if (currentStep > 1) {
       // Optimistic navigation - change step immediately
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
       // Fire-and-forget auto-save in background (silent - no toast)
-      saveOffer(true).catch(error => console.error('Auto-save failed:', error));
+      saveOffer(true).catch((error) => console.error('Auto-save failed:', error));
     }
   };
 
@@ -288,7 +292,7 @@ export const OfferGenerator = ({
           .select('id, offer_number, public_token, customer_data')
           .eq('id', savedId)
           .single();
-        
+
         if (savedOffer) {
           const customerData = savedOffer.customer_data as { name?: string; email?: string } | null;
           if (!customerData?.email) {
@@ -322,7 +326,7 @@ export const OfferGenerator = ({
           .select('id, offer_number, public_token, customer_data')
           .eq('id', savedId)
           .single();
-        
+
         if (savedOffer) {
           const customerData = savedOffer.customer_data as { name?: string; email?: string } | null;
           if (!customerData?.email) {
@@ -367,20 +371,19 @@ export const OfferGenerator = ({
     }
   };
 
-
   const handleDownloadPdf = async () => {
     if (!offer.id) {
       toast.error(t('offers.saveFirst'));
       return;
     }
-    
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-offer-pdf', {
         body: { offerId: offer.id },
       });
-      
+
       if (error) throw error;
-      
+
       // Open in new window for print-to-PDF
       const printWindow = window.open('', '_blank');
       if (printWindow) {
@@ -408,7 +411,11 @@ export const OfferGenerator = ({
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(offer.customerData.name && offer.customerData.email && offer.vehicleData.brandModel);
+        return !!(
+          offer.customerData.name &&
+          offer.customerData.email &&
+          offer.vehicleData.brandModel
+        );
       case 2:
         return offer.selectedScopeIds.length > 0;
       case 3: // Summary (was step 4)
@@ -431,78 +438,84 @@ export const OfferGenerator = ({
   return (
     <div className="flex flex-col min-h-[calc(100vh-8rem)] pb-24 lg:pb-6">
       <div className="flex-1 space-y-6 pb-6">
-      {/* Steps Header */}
-      <div className="flex items-center justify-center gap-2">
-        {steps.map((step, index) => {
-          const Icon = step.icon;
-          const isActive = currentStep === step.id;
-          const isCompleted = currentStep > step.id;
-          
-          return (
-            <div key={step.id} className="flex items-center">
-              {index > 0 && (
-                <div className={cn(
-                  "w-8 md:w-16 h-0.5 mx-2",
-                  isCompleted ? "bg-primary" : "bg-border"
-                )} />
-              )}
-              <button
-                onClick={() => setCurrentStep(step.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                  isActive && "bg-primary text-primary-foreground",
-                  isCompleted && !isActive && "bg-primary/10 text-primary hover:bg-primary hover:text-white",
-                  !isActive && !isCompleted && "text-muted-foreground hover:bg-primary hover:text-white"
+        {/* Steps Header */}
+        <div className="flex items-center justify-center gap-2">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
+
+            return (
+              <div key={step.id} className="flex items-center">
+                {index > 0 && (
+                  <div
+                    className={cn(
+                      'w-8 md:w-16 h-0.5 mx-2',
+                      isCompleted ? 'bg-primary' : 'bg-border',
+                    )}
+                  />
                 )}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden md:inline text-sm font-medium">{step.label}</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                <button
+                  onClick={() => setCurrentStep(step.id)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
+                    isActive && 'bg-primary text-primary-foreground',
+                    isCompleted &&
+                      !isActive &&
+                      'bg-primary/10 text-primary hover:bg-primary hover:text-white',
+                    !isActive &&
+                      !isCompleted &&
+                      'text-muted-foreground hover:bg-primary hover:text-white',
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden md:inline text-sm font-medium">{step.label}</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Step Content */}
-      {currentStep === 1 && (
-        <Card className="p-6">
-          <CustomerDataStep
-            ref={customerStepRef}
-            customerData={offer.customerData}
-            vehicleData={offer.vehicleData}
-            onCustomerChange={(data) => {
-              updateCustomerData(data);
-              if (data.name !== undefined && validationErrors.name) {
-                setValidationErrors(prev => ({ ...prev, name: undefined }));
-              }
-              if (data.email !== undefined && validationErrors.email) {
-                setValidationErrors(prev => ({ ...prev, email: undefined }));
-              }
-            }}
-            onVehicleChange={(data) => {
-              updateVehicleData(data);
-              if (data.brandModel !== undefined && validationErrors.brandModel) {
-                setValidationErrors(prev => ({ ...prev, brandModel: undefined }));
-              }
-            }}
-            validationErrors={validationErrors}
-            internalNotes={offer.internalNotes}
-            onInternalNotesChange={(value) => updateOffer({ internalNotes: value })}
-          />
-        </Card>
-      )}
+        {/* Step Content */}
+        {currentStep === 1 && (
+          <Card className="p-6">
+            <CustomerDataStep
+              ref={customerStepRef}
+              customerData={offer.customerData}
+              vehicleData={offer.vehicleData}
+              onCustomerChange={(data) => {
+                updateCustomerData(data);
+                if (data.name !== undefined && validationErrors.name) {
+                  setValidationErrors((prev) => ({ ...prev, name: undefined }));
+                }
+                if (data.email !== undefined && validationErrors.email) {
+                  setValidationErrors((prev) => ({ ...prev, email: undefined }));
+                }
+              }}
+              onVehicleChange={(data) => {
+                updateVehicleData(data);
+                if (data.brandModel !== undefined && validationErrors.brandModel) {
+                  setValidationErrors((prev) => ({ ...prev, brandModel: undefined }));
+                }
+              }}
+              validationErrors={validationErrors}
+              internalNotes={offer.internalNotes}
+              onInternalNotesChange={(value) => updateOffer({ internalNotes: value })}
+            />
+          </Card>
+        )}
 
-      {currentStep === 2 && (
-        <Card className="p-6">
-          <ScopesStep
-            instanceId={instanceId}
-            selectedScopeIds={offer.selectedScopeIds}
-            onScopesChange={updateSelectedScopes}
-          />
-        </Card>
-      )}
-      
-      {/* Step 3 (Options) is temporarily hidden - code preserved for future use
+        {currentStep === 2 && (
+          <Card className="p-6">
+            <ScopesStep
+              instanceId={instanceId}
+              selectedScopeIds={offer.selectedScopeIds}
+              onScopesChange={updateSelectedScopes}
+            />
+          </Card>
+        )}
+
+        {/* Step 3 (Options) is temporarily hidden - code preserved for future use
       {currentStep === 3 && (
         <OptionsStep
           instanceId={instanceId}
@@ -520,67 +533,67 @@ export const OfferGenerator = ({
         />
       )}
       */}
-      
-      {currentStep === 3 && (
-        <SummaryStepV2
-          instanceId={instanceId}
-          offer={offer}
-          showUnitPrices={instanceShowUnitPrices}
-          isEditing={!!offerId}
-          onUpdateOffer={updateOffer}
-          calculateTotalNet={calculateTotalNet}
-          calculateTotalGross={calculateTotalGross}
-          onShowPreview={handleShowPreview}
-        />
-      )}
+
+        {currentStep === 3 && (
+          <SummaryStepV2
+            instanceId={instanceId}
+            offer={offer}
+            showUnitPrices={instanceShowUnitPrices}
+            isEditing={!!offerId}
+            onUpdateOffer={updateOffer}
+            calculateTotalNet={calculateTotalNet}
+            calculateTotalGross={calculateTotalGross}
+            onShowPreview={handleShowPreview}
+          />
+        )}
       </div>
 
       {/* Navigation - Fixed Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t py-4 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ zIndex: 1000, marginBottom: 0 }}>
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t py-4 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-[1000] mb-0">
         <div className="flex items-center justify-between">
-        <div>
-          {currentStep > 1 ? (
+          <div>
+            {currentStep > 1 ? (
+              <Button
+                variant="outline"
+                onClick={handlePrev}
+                className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                <span className="hidden sm:inline">{t('common.back')}</span>
+              </Button>
+            ) : onClose ? (
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="h-12 w-12 sm:w-auto sm:px-4 bg-white"
+              >
+                <span className="hidden sm:inline">{t('common.cancel')}</span>
+                <ChevronLeft className="w-5 h-5 sm:hidden" />
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={handlePrev}
+              onClick={handleSave}
               className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
             >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">{t('common.back')}</span>
+              <Save className="w-5 h-5" />
+              <span className="hidden sm:inline">{t('common.save')}</span>
             </Button>
-          ) : onClose ? (
+
+            {/* Preview button - always visible */}
             <Button
               variant="outline"
-              onClick={handleClose}
-              className="h-12 w-12 sm:w-auto sm:px-4 bg-white"
+              onClick={handleShowPreview}
+              className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
             >
-              <span className="hidden sm:inline">{t('common.cancel')}</span>
-              <ChevronLeft className="w-5 h-5 sm:hidden" />
+              <Eye className="w-5 h-5" />
+              <span className="hidden sm:inline">{t('offers.preview')}</span>
             </Button>
-          ) : null}
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSave}
-            className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
-          >
-            <Save className="w-5 h-5" />
-            <span className="hidden sm:inline">{t('common.save')}</span>
-          </Button>
-
-          {/* Preview button - always visible */}
-          <Button
-            variant="outline"
-            onClick={handleShowPreview}
-            className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
-          >
-            <Eye className="w-5 h-5" />
-            <span className="hidden sm:inline">{t('offers.preview')}</span>
-          </Button>
-
-          {/* TODO: Print feature - to be refined in future
+            {/* TODO: Print feature - to be refined in future
           <Button
             variant="outline"
             onClick={handlePrint}
@@ -591,30 +604,30 @@ export const OfferGenerator = ({
           </Button>
           */}
 
-          {currentStep < 3 ? (
-            <Button
-              onClick={handleNext}
-              disabled={currentStep === 2 && !canProceed}
-              className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
-            >
-              <span className="hidden sm:inline">{t('common.next')}</span>
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSend}
-              disabled={sending || !canProceed}
-              className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
-            >
-              {sending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-              <span className="hidden sm:inline">{t('offers.sendOffer')}</span>
-            </Button>
-          )}
-        </div>
+            {currentStep < 3 ? (
+              <Button
+                onClick={handleNext}
+                disabled={currentStep === 2 && !canProceed}
+                className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
+              >
+                <span className="hidden sm:inline">{t('common.next')}</span>
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSend}
+                disabled={sending || !canProceed}
+                className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
+              >
+                {sending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+                <span className="hidden sm:inline">{t('offers.sendOffer')}</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -623,14 +636,10 @@ export const OfferGenerator = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('offers.unsavedChangesTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('offers.unsavedChangesDescription')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('offers.unsavedChangesDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelExit}>
-              {t('common.cancel')}
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelExit}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => handleConfirmExit(false)}>
               {t('offers.exitWithoutSaving')}
             </AlertDialogAction>
