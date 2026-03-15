@@ -49,18 +49,14 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
 
   const toggleScope = (scopeId: string) => {
     if (selectedScopeIds.includes(scopeId)) {
-      onScopesChange(selectedScopeIds.filter(id => id !== scopeId));
+      onScopesChange(selectedScopeIds.filter((id) => id !== scopeId));
     } else {
       onScopesChange([...selectedScopeIds, scopeId]);
     }
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Ładowanie szablonów...
-      </div>
-    );
+    return <div className="text-center py-8 text-muted-foreground">Ładowanie szablonów...</div>;
   }
 
   if (scopes.length === 0) {
@@ -85,15 +81,15 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {scopes.map((scope) => {
           const isSelected = selectedScopeIds.includes(scope.id);
-          
+
           return (
             <Card
               key={scope.id}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:shadow-md",
-                isSelected 
-                  ? "ring-2 ring-primary bg-primary/5 border-primary" 
-                  : "hover:border-primary/50"
+                'cursor-pointer transition-all duration-200 hover:shadow-md',
+                isSelected
+                  ? 'ring-2 ring-primary bg-primary/5 border-primary'
+                  : 'hover:border-primary/50',
               )}
               onClick={() => toggleScope(scope.id)}
             >
@@ -110,12 +106,14 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
                       )}
                     </div>
                   </div>
-                  <div className={cn(
-                    "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                    isSelected 
-                      ? "bg-primary border-primary text-primary-foreground" 
-                      : "border-muted-foreground/30"
-                  )}>
+                  <div
+                    className={cn(
+                      'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                      isSelected
+                        ? 'bg-primary border-primary text-primary-foreground'
+                        : 'border-muted-foreground/30',
+                    )}
+                  >
                     {isSelected && <Check className="h-4 w-4" />}
                   </div>
                 </div>
@@ -124,13 +122,6 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
           );
         })}
       </div>
-
-      {selectedScopeIds.length > 0 && (
-        <div className="text-center text-sm text-muted-foreground pt-4">
-          Wybrano: {selectedScopeIds.length} {selectedScopeIds.length === 1 ? 'szablon' : 
-            selectedScopeIds.length < 5 ? 'szablony' : 'szablonów'}
-        </div>
-      )}
     </div>
   );
 }

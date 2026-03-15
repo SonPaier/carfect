@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Package, X, Star, GripVertical, Pencil } from 'lucide-react';
+import { ArrowLeft, Package, X, Star, GripVertical, Pencil, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -10,6 +10,7 @@ import { Badge } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getLowestPrice, formatPrice } from '@/lib/offerUtils';
 import { ScopeProductSelectionDrawer } from './ScopeProductSelectionDrawer';
 import { ProtocolPhotosUploader } from '@/components/protocols/ProtocolPhotosUploader';
 import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
@@ -77,18 +78,7 @@ const mapProductToServiceData = (product: Product | null | undefined): ServiceDa
   };
 };
 
-// Get the lowest available price for display
-const getLowestPrice = (p: Product): number => {
-  // Priority: price_from, then lowest of S/M/L, then default_price
-  if (p.price_from != null) return p.price_from;
-
-  const sizes = [p.price_small, p.price_medium, p.price_large].filter(
-    (v): v is number => v != null,
-  );
-  if (sizes.length > 0) return Math.min(...sizes);
-
-  return p.default_price ?? 0;
-};
+// getLowestPrice imported from @/lib/offerUtils
 
 type DrawerProduct = {
   id: string;
@@ -456,10 +446,6 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
     );
   };
 
-  const formatPrice = (price: number): string => {
-    return `${price.toFixed(0)} zł`;
-  };
-
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Podaj nazwę szablonu');
@@ -508,7 +494,11 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
       // Handle scope products
       if (currentScopeId) {
         // Delete existing products for this scope
-        await supabase.from('offer_scope_products').delete().eq('scope_id', currentScopeId);
+        const { error: deleteError } = await supabase
+          .from('offer_scope_products')
+          .delete()
+          .eq('scope_id', currentScopeId);
+        if (deleteError) throw deleteError;
 
         // Insert new products with correct sort_order
         if (scopeProducts.length > 0) {
@@ -552,181 +542,185 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
           {isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'} - {t('common.adminPanel')}
         </title>
       </Helmet>
-      <div className="max-w-4xl mx-auto pb-24">
-        <div className="mb-6">
-          <Button variant="ghost" onClick={onBack} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Wróć
-          </Button>
+      <div className="pb-24">
+        <div className="max-w-3xl mx-auto w-full space-y-6">
+          <h1 className="text-2xl font-bold">
+            {isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'}
+          </h1>
+
+          <div className="space-y-6">
+            {/* Nazwa skrócona */}
+            <div className="space-y-2">
+              <Label htmlFor="shortName">Nazwa skrócona</Label>
+              <Input
+                id="shortName"
+                value={shortName}
+                onChange={(e) => setShortName(e.target.value)}
+                placeholder="PPF"
+                className="bg-white"
+              />
+            </div>
+
+            {/* Nazwa szablonu widoczna w ofercie */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nazwa szablonu widoczna w ofercie</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="PPF Full Front"
+                className="bg-white"
+              />
+            </div>
+
+            {/* Hidden: Szablon typu dodatki - internal field, not exposed in UI */}
+
+            {/* Opis */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Opis</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Opis usługi..."
+                rows={12}
+                className="bg-white resize-none"
+              />
+            </div>
+
+            {/* Zdjęcia szablonu */}
+            <div className="space-y-2">
+              <Label>Zdjęcia szablonu</Label>
+              <ProtocolPhotosUploader
+                photos={photoUrls}
+                onPhotosChange={setPhotoUrls}
+                maxPhotos={10}
+                bucketName="service-photos"
+                filePrefix="scope"
+              />
+            </div>
+
+            {/* Wybierz usługi dla szablonu */}
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsProductDrawerOpen(true)}
+                className="gap-2"
+              >
+                <Package className="w-4 h-4" />
+                Wybierz usługi do szablonu
+                {scopeProducts.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {scopeProducts.length}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Lista wybranych usług z drag & drop */}
+              {scopeProducts.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                    oznacza, że usługa będzie zawsze dodana w kreatorze dla tego szablonu
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Przeciągnij aby zmienić kolejność usług
+                  </p>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={scopeProducts.map((sp) => sp.product_id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2">
+                        {scopeProducts.map((scopeProduct) => (
+                          <SortableProductItem
+                            key={scopeProduct.product_id}
+                            scopeProduct={scopeProduct}
+                            formatPrice={formatPrice}
+                            toggleDefault={toggleDefault}
+                            removeProduct={removeProduct}
+                            updateVariantName={updateVariantName}
+                            onEditProduct={setEditingProductId}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              )}
+            </div>
+
+            {/* Domyślne wartości dla oferty */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="font-medium text-lg">Domyślne wartości dla oferty</h3>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultWarranty">Gwarancja</Label>
+                <Textarea
+                  id="defaultWarranty"
+                  value={defaultWarranty}
+                  onChange={(e) => setDefaultWarranty(e.target.value)}
+                  placeholder="Np. 5 lat gwarancji na powłokę..."
+                  rows={5}
+                  className="bg-white resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultPaymentTerms">Warunki płatności</Label>
+                <Textarea
+                  id="defaultPaymentTerms"
+                  value={defaultPaymentTerms}
+                  onChange={(e) => setDefaultPaymentTerms(e.target.value)}
+                  placeholder="Np. 50% zaliczki, reszta przy odbiorze..."
+                  rows={5}
+                  className="bg-white resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultServiceInfo">Informacje o serwisie</Label>
+                <Textarea
+                  id="defaultServiceInfo"
+                  value={defaultServiceInfo}
+                  onChange={(e) => setDefaultServiceInfo(e.target.value)}
+                  placeholder="Np. Czas realizacji 3-5 dni roboczych..."
+                  rows={5}
+                  className="bg-white resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultNotes">Inne uwagi</Label>
+                <Textarea
+                  id="defaultNotes"
+                  value={defaultNotes}
+                  onChange={(e) => setDefaultNotes(e.target.value)}
+                  placeholder="Dodatkowe informacje..."
+                  rows={5}
+                  className="bg-white resize-none"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold mb-6">
-          {isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'}
-        </h1>
-
-        <div className="space-y-6">
-          {/* Nazwa skrócona */}
-          <div className="space-y-2">
-            <Label htmlFor="shortName">Nazwa skrócona</Label>
-            <Input
-              id="shortName"
-              value={shortName}
-              onChange={(e) => setShortName(e.target.value)}
-              placeholder="PPF"
-              className="bg-white"
-            />
-          </div>
-
-          {/* Nazwa szablonu widoczna w ofercie */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Nazwa szablonu widoczna w ofercie</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="PPF Full Front"
-              className="bg-white"
-            />
-          </div>
-
-          {/* Hidden: Szablon typu dodatki - internal field, not exposed in UI */}
-
-          {/* Opis */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Opis</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Opis usługi..."
-              rows={12}
-              className="bg-white resize-none"
-            />
-          </div>
-
-          {/* Zdjęcia szablonu */}
-          <div className="space-y-2">
-            <Label>Zdjęcia szablonu</Label>
-            <ProtocolPhotosUploader
-              photos={photoUrls}
-              onPhotosChange={setPhotoUrls}
-              maxPhotos={10}
-              bucketName="service-photos"
-              filePrefix="scope"
-            />
-          </div>
-
-          {/* Wybierz usługi dla szablonu */}
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              onClick={() => setIsProductDrawerOpen(true)}
-              className="gap-2"
-            >
-              <Package className="w-4 h-4" />
-              Wybierz usługi do szablonu
-              {scopeProducts.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {scopeProducts.length}
-                </Badge>
-              )}
+        {/* Fixed Footer */}
+        <div className="fixed bottom-0 left-0 right-0 lg:left-[var(--sidebar-w,0px)] bg-background border-t py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 transition-[left] duration-300">
+          <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
+            <Button variant="outline" onClick={onBack} className="gap-2 h-12 bg-white">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden sm:inline">Wróć</span>
             </Button>
-
-            {/* Lista wybranych usług z drag & drop */}
-            {scopeProducts.length > 0 && (
-              <div className="space-y-2 mt-3">
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                  oznacza, że usługa będzie zawsze dodana w kreatorze dla tego szablonu
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Przeciągnij aby zmienić kolejność usług
-                </p>
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={scopeProducts.map((sp) => sp.product_id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-2">
-                      {scopeProducts.map((scopeProduct) => (
-                        <SortableProductItem
-                          key={scopeProduct.product_id}
-                          scopeProduct={scopeProduct}
-                          formatPrice={formatPrice}
-                          toggleDefault={toggleDefault}
-                          removeProduct={removeProduct}
-                          updateVariantName={updateVariantName}
-                          onEditProduct={setEditingProductId}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            )}
-          </div>
-
-          {/* Domyślne wartości dla oferty */}
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-medium text-lg">Domyślne wartości dla oferty</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultWarranty">Gwarancja</Label>
-              <Textarea
-                id="defaultWarranty"
-                value={defaultWarranty}
-                onChange={(e) => setDefaultWarranty(e.target.value)}
-                placeholder="Np. 5 lat gwarancji na powłokę..."
-                rows={5}
-                className="bg-white resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultPaymentTerms">Warunki płatności</Label>
-              <Textarea
-                id="defaultPaymentTerms"
-                value={defaultPaymentTerms}
-                onChange={(e) => setDefaultPaymentTerms(e.target.value)}
-                placeholder="Np. 50% zaliczki, reszta przy odbiorze..."
-                rows={5}
-                className="bg-white resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultServiceInfo">Informacje o serwisie</Label>
-              <Textarea
-                id="defaultServiceInfo"
-                value={defaultServiceInfo}
-                onChange={(e) => setDefaultServiceInfo(e.target.value)}
-                placeholder="Np. Czas realizacji 3-5 dni roboczych..."
-                rows={5}
-                className="bg-white resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="defaultNotes">Inne uwagi</Label>
-              <Textarea
-                id="defaultNotes"
-                value={defaultNotes}
-                onChange={(e) => setDefaultNotes(e.target.value)}
-                placeholder="Dodatkowe informacje..."
-                rows={5}
-                className="bg-white resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Przycisk zapisz */}
-          <div className="pt-4">
-            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
-              {isSaving ? 'Zapisywanie...' : 'Zapisz szablon'}
+            <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-12">
+              <Save className="w-5 h-5" />
+              <span className="hidden sm:inline">
+                {isSaving ? 'Zapisywanie...' : 'Zapisz szablon'}
+              </span>
             </Button>
           </div>
         </div>

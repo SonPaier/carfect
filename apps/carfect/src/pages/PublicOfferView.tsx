@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useOfferViewTracking } from '@/hooks/useOfferViewTracking';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
@@ -34,9 +33,6 @@ const PublicOfferView = () => {
     }
   }, [shouldPrint, loading, offer]);
 
-  // Track offer view duration
-  useOfferViewTracking(offer?.id, offer?.instance_id, isAdminPreview);
-
   useEffect(() => {
     const fetchOffer = async () => {
       if (!token) {
@@ -50,9 +46,13 @@ const PublicOfferView = () => {
           .from('offers')
           .select(
             `
-            *,
+            id, instance_id, offer_number, public_token, status, customer_data,
+            vehicle_data, total_net, total_gross, vat_rate, notes, payment_terms,
+            warranty, service_info, valid_until, hide_unit_prices, created_at,
+            approved_at, viewed_at, selected_state, has_unified_services,
             offer_options (
-              *,
+              id, name, description, is_selected, subtotal_net, sort_order,
+              scope_id, is_upsell,
               scope:offer_scopes (
                 id,
                 name,
@@ -61,7 +61,8 @@ const PublicOfferView = () => {
                 photo_urls
               ),
               offer_option_items (
-                *
+                id, custom_name, custom_description, quantity, unit_price,
+                unit, discount_percent, is_optional, is_custom, product_id, sort_order
               )
             ),
             instances (
@@ -154,12 +155,11 @@ const PublicOfferView = () => {
         const fetchedOffer = enrichedData as unknown as PublicOfferData;
         setOffer(fetchedOffer);
 
-        // Mark as viewed if not already (skip for admin previews and print mode)
-        if (data.status === 'sent' && !isAdminPreview && !shouldPrint) {
-          await supabase
-            .from('offers')
-            .update({ status: 'viewed', viewed_at: new Date().toISOString() })
-            .eq('id', data.id);
+        // Mark as viewed if not already (skip for authenticated admins and print mode)
+        const isUserAdmin =
+          user && (hasRole('super_admin') || hasInstanceRole('admin', data.instance_id));
+        if (data.status === 'sent' && !isUserAdmin && !shouldPrint) {
+          await supabase.rpc('mark_offer_viewed', { p_token: token });
         }
       } catch (err) {
         console.error('Error fetching offer:', err);

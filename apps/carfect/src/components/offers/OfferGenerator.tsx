@@ -31,7 +31,6 @@ import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -124,13 +123,19 @@ export const OfferGenerator = ({
   // Fetch instance settings for unit prices visibility and email dialog
   useEffect(() => {
     const fetchInstanceSettings = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('instances')
         .select(
           'show_unit_prices_in_offer, name, email, phone, address, website, contact_person, slug, offer_email_template',
         )
         .eq('id', instanceId)
         .single();
+
+      if (error) {
+        console.error('Error fetching instance settings:', error);
+        toast.error(t('common.loadError'));
+        return;
+      }
 
       if (data) {
         setInstanceShowUnitPrices(data.show_unit_prices_in_offer === true);
@@ -236,6 +241,8 @@ export const OfferGenerator = ({
       }
       if (!offer.customerData.email?.trim()) {
         errors.email = 'Email jest wymagany';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(offer.customerData.email.trim())) {
+        errors.email = 'Nieprawidłowy format email';
       }
       if (!offer.vehicleData.brandModel?.trim()) {
         errors.brandModel = 'Marka i model jest wymagany';
@@ -384,22 +391,26 @@ export const OfferGenerator = ({
 
       if (error) throw error;
 
-      // Open in new window for print-to-PDF
-      const printWindow = window.open('', '_blank');
+      // Validate response is HTML before opening (#3)
+      if (data instanceof Blob && data.type && !data.type.includes('text/html')) {
+        throw new Error(`Unexpected response type: ${data.type}`);
+      }
+      // Open in new window for print-to-PDF using a safe blob URL
+      const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      const printWindow = window.open(blobUrl, '_blank');
       if (printWindow) {
-        printWindow.document.write(data);
-        printWindow.document.close();
+        // Revoke after the window has loaded the content
+        printWindow.addEventListener('load', () => URL.revokeObjectURL(blobUrl));
       } else {
         // Fallback - download as HTML
-        const blob = new Blob([data], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url;
+        link.href = blobUrl;
         link.download = `Oferta_${offer.id}.html`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(blobUrl);
         toast.info(t('offers.openFilePrintPdf'));
       }
     } catch (error) {
@@ -436,8 +447,8 @@ export const OfferGenerator = ({
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-8rem)] pb-24 lg:pb-6">
-      <div className="flex-1 space-y-6 pb-6">
+    <div className="pb-24">
+      <div className="max-w-3xl mx-auto w-full space-y-6">
         {/* Steps Header */}
         <div className="flex items-center justify-center gap-2">
           {steps.map((step, index) => {
@@ -548,9 +559,9 @@ export const OfferGenerator = ({
         )}
       </div>
 
-      {/* Navigation - Fixed Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t py-4 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-[1000] mb-0">
-        <div className="flex items-center justify-between">
+      {/* Fixed Footer */}
+      <div className="fixed bottom-0 left-0 right-0 lg:left-[var(--sidebar-w,0px)] bg-background border-t py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 transition-[left] duration-300">
+        <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
           <div>
             {currentStep > 1 ? (
               <Button
@@ -638,24 +649,24 @@ export const OfferGenerator = ({
             <AlertDialogTitle>{t('offers.unsavedChangesTitle')}</AlertDialogTitle>
             <AlertDialogDescription>{t('offers.unsavedChangesDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelExit}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConfirmExit(false)}>
-              {t('offers.exitWithoutSaving')}
-            </AlertDialogAction>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
             <AlertDialogAction onClick={() => handleConfirmExit(true)}>
               {t('offers.saveAndExit')}
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => handleConfirmExit(false)}
+              className="bg-transparent border border-input text-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              {t('offers.exitWithoutSaving')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Preview Dialog */}
-      {/* TODO: Print feature - to be refined in future — onPrint prop removed from OfferPreviewDialog */}
       <OfferPreviewDialog
         open={showPreview}
         onClose={() => setShowPreview(false)}
-        onSendAndClose={handleSendFromPreview}
         offer={offer}
         instanceId={instanceId}
         calculateTotalNet={calculateTotalNet}

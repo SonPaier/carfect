@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   FileText,
   Loader2,
@@ -30,7 +30,6 @@ import { OfferServicesListView } from '@/components/offers/services/OfferService
 import { OfferServiceEditView } from '@/components/offers/services/OfferServiceEditView';
 import { AdminOfferApprovalDialog } from '@/components/offers/AdminOfferApprovalDialog';
 import { OfferPreviewDialogByToken } from './OfferPreviewDialogByToken';
-import { OfferViewsDialog } from '@/components/offers/OfferViewsDialog';
 import { OfferListCard } from './OfferListCard';
 import { useOfferScopes } from '@/hooks/useOfferScopes';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
@@ -49,20 +48,51 @@ const PAGE_SIZE_OPTIONS = [20, 50, 100];
 interface OffersViewProps {
   instanceId: string | null;
   instanceData?: InstanceData | null;
-  onReserveFromOffer?: (offerData: any) => void;
+  onReserveFromOffer?: (offerData: OfferWithOptions) => void;
+  onEditModeChange?: (editing: boolean) => void;
 }
 
 export default function OffersView({
   instanceId,
   instanceData,
   onReserveFromOffer,
+  onEditModeChange,
 }: OffersViewProps) {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
-  const [duplicatingOfferId, setDuplicatingOfferId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Derive editor state from URL search params (survives refresh)
+  const action = searchParams.get('action'); // 'new' | 'edit' | 'duplicate' | 'services' | 'edit-service'
+  const actionId = searchParams.get('id');
+  const showGenerator = action === 'new' || action === 'edit' || action === 'duplicate';
+  const editingOfferId = action === 'edit' || action === 'duplicate' ? actionId : null;
+  const duplicatingOfferId = action === 'duplicate' ? actionId : null;
+
+  // URL-based navigation helpers (preserve page/pageSize params)
+  const navigateTo = (newAction: string, id?: string) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('action', newAction);
+        if (id) next.set('id', id);
+        else next.delete('id');
+        return next;
+      },
+      { replace: true },
+    );
+  };
+  const navigateBack = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        next.delete('id');
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   const [offers, setOffers] = useState<OfferWithOptions[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -115,9 +145,9 @@ export default function OffersView({
     mode: 'approve' | 'edit';
   }>({ open: false, offer: null, mode: 'approve' });
 
-  // Services view state
-  const [showServicesView, setShowServicesView] = useState(false);
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  // Services view state (derived from URL)
+  const showServicesView = action === 'services' || action === 'edit-service';
+  const editingServiceId = action === 'edit-service' ? actionId : null;
 
   // Preview dialog state
   const [previewDialog, setPreviewDialog] = useState<{ open: boolean; token: string | null }>({
@@ -132,18 +162,16 @@ export default function OffersView({
     notes: '',
   });
 
-  // View history dialog state
-  const [viewsDialog, setViewsDialog] = useState<{
-    open: boolean;
-    offerId: string;
-    viewedAt: string | null;
-  }>({ open: false, offerId: '', viewedAt: null });
-
   // Reservation from offer state (only used when no external handler)
   const [reservationFromOffer, setReservationFromOffer] = useState<{
     open: boolean;
     offer: OfferWithOptions | null;
   }>({ open: false, offer: null });
+
+  // Notify parent when entering/leaving edit mode (hides mobile bottom nav)
+  useEffect(() => {
+    onEditModeChange?.(showGenerator || showServicesView);
+  }, [showGenerator, showServicesView, onEditModeChange]);
 
   // CACHED HOOK - offer scopes with 7-day staleTime
   const { data: cachedScopes = [] } = useOfferScopes(instanceId);
@@ -151,9 +179,9 @@ export default function OffersView({
 
   // Build scopes map from cached data
   const scopesMap = useMemo(() => {
-    const map: Record<string, string> = {};
+    const map: Record<string, { name: string; isExtras: boolean }> = {};
     cachedScopes.forEach((s) => {
-      map[s.id] = s.name;
+      map[s.id] = { name: s.name, isExtras: s.is_extras_scope };
     });
     return map;
   }, [cachedScopes]);
@@ -176,24 +204,16 @@ export default function OffersView({
         offer_scopes: [
           ...new Set(o.offer_options?.map((opt) => opt.scope_id).filter(Boolean) || []),
         ]
-          .map((id) => ({ id, name: scopesMap[id as string] || '' }))
-          .filter((s) => s.name && s.name !== 'Dodatki'),
+          .map((id) => ({ id, name: scopesMap[id as string]?.name || '' }))
+          .filter((s) => s.name && !scopesMap[s.id as string]?.isExtras),
         selectedOptionName,
       };
     });
   }, [offers, scopesMap]);
 
-  // Reset generator state when clicking sidebar link (same route navigation)
-  useEffect(() => {
-    if (showGenerator || showServicesView) {
-      setShowGenerator(false);
-      setShowServicesView(false);
-      setEditingOfferId(null);
-      setDuplicatingOfferId(null);
-      setEditingServiceId(null);
-      fetchOffers();
-    }
-  }, [location.key]);
+  // When sidebar link is clicked while in editor, location.key changes but the
+  // URL arrives WITHOUT ?action — so showGenerator/showServicesView are already false.
+  // No explicit reset needed; URL-derived state handles it automatically.
 
   const fetchOffers = async () => {
     if (!instanceId) return;
@@ -253,9 +273,7 @@ export default function OffersView({
   };
 
   const handleDuplicateOffer = async (offerId: string) => {
-    setDuplicatingOfferId(offerId);
-    setEditingOfferId(offerId);
-    setShowGenerator(true);
+    navigateTo('duplicate', offerId);
   };
 
   const handleCopyLink = (token: string) => {
@@ -493,22 +511,7 @@ export default function OffersView({
             - {t('offers.generator')}
           </title>
         </Helmet>
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-2">
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                await fetchOffers();
-                setShowGenerator(false);
-                setEditingOfferId(null);
-                setDuplicatingOfferId(null);
-              }}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {t('offers.backToList')}
-            </Button>
-          </div>
+        <div className="max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold mb-4">
             {duplicatingOfferId
               ? t('offers.duplicateOffer')
@@ -522,15 +525,11 @@ export default function OffersView({
             duplicateFromId={duplicatingOfferId || undefined}
             onClose={async () => {
               await fetchOffers();
-              setShowGenerator(false);
-              setEditingOfferId(null);
-              setDuplicatingOfferId(null);
+              navigateBack();
             }}
             onSaved={async () => {
               await fetchOffers();
-              setShowGenerator(false);
-              setEditingOfferId(null);
-              setDuplicatingOfferId(null);
+              navigateBack();
             }}
           />
         </div>
@@ -543,9 +542,9 @@ export default function OffersView({
     return (
       <OfferServicesListView
         instanceId={instanceId}
-        onBack={() => setShowServicesView(false)}
-        onEdit={(scopeId) => setEditingServiceId(scopeId)}
-        onCreate={() => setEditingServiceId('new')}
+        onBack={() => navigateBack()}
+        onEdit={(scopeId) => navigateTo('edit-service', scopeId)}
+        onCreate={() => navigateTo('edit-service', 'new')}
       />
     );
   }
@@ -556,7 +555,7 @@ export default function OffersView({
       <OfferServiceEditView
         instanceId={instanceId}
         scopeId={editingServiceId === 'new' ? undefined : editingServiceId}
-        onBack={() => setEditingServiceId(null)}
+        onBack={() => navigateTo('services')}
       />
     );
   }
@@ -575,8 +574,8 @@ export default function OffersView({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setShowServicesView(true)}
-              className="sm:w-auto sm:px-4 w-10 h-10 bg-white"
+              onClick={() => navigateTo('services')}
+              className="sm:w-auto sm:px-4 bg-white"
             >
               <Layers className="w-4 h-4" />
               <span className="hidden sm:inline ml-2">{t('offers.templates')}</span>
@@ -585,12 +584,12 @@ export default function OffersView({
               variant="outline"
               size="icon"
               onClick={() => setShowScopesSettings(true)}
-              className="sm:w-auto sm:px-4 w-10 h-10 bg-white"
+              className="sm:w-auto sm:px-4 bg-white"
             >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline ml-2">{t('offers.settings')}</span>
             </Button>
-            <Button onClick={() => setShowGenerator(true)}>{t('offers.newOffer')}</Button>
+            <Button onClick={() => navigateTo('new')}>{t('offers.newOffer')}</Button>
           </div>
         </div>
 
@@ -629,7 +628,7 @@ export default function OffersView({
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : filteredOffers.length === 0 ? (
-          <div className="glass-card p-8 text-center">
+          <div className="bg-white border border-border p-8 text-center">
             <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
               {searchQuery
@@ -646,10 +645,7 @@ export default function OffersView({
                 <OfferListCard
                   key={offer.id}
                   offer={offer}
-                  onEdit={(id) => {
-                    setEditingOfferId(id);
-                    setShowGenerator(true);
-                  }}
+                  onEdit={(id) => navigateTo('edit', id)}
                   onPreview={(token) => setPreviewDialog({ open: true, token })}
                   onCopyLink={handleCopyLink}
                   onSendEmail={handleOpenSendEmailDialog}
@@ -661,9 +657,6 @@ export default function OffersView({
                   onReserve={handleReserveFromOffer}
                   onFollowUpChange={handleFollowUpStatusChange}
                   onNoteClick={handleOpenNoteDrawer}
-                  onViewHistory={(id, viewedAt) =>
-                    setViewsDialog({ open: true, offerId: id, viewedAt })
-                  }
                 />
               ))}
             </div>
@@ -879,13 +872,6 @@ export default function OffersView({
           }}
         />
       )}
-      {/* Offer Views History Dialog */}
-      <OfferViewsDialog
-        offerId={viewsDialog.offerId}
-        viewedAt={viewsDialog.viewedAt}
-        open={viewsDialog.open}
-        onOpenChange={(open) => setViewsDialog((prev) => ({ ...prev, open }))}
-      />
     </>
   );
 }

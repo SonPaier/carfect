@@ -146,50 +146,51 @@ const ServiceSelectionDrawer = ({
         categoriesQuery = categoriesQuery.eq('category_type', context);
       }
 
-      const [servicesRes, categoriesRes] = await Promise.all([
-        servicesQuery.order('sort_order'),
-        categoriesQuery.order('sort_order'),
-      ]);
+      try {
+        const [servicesRes, categoriesRes] = await Promise.all([
+          servicesQuery.order('sort_order'),
+          categoriesQuery.order('sort_order'),
+        ]);
 
-      if (servicesRes.data && categoriesRes.data) {
-        // Create a map of category prices_are_net
-        const categoryNetMap = new Map<string, boolean>();
-        categoriesRes.data.forEach((cat) => {
-          categoryNetMap.set(cat.id, cat.prices_are_net || false);
-        });
+        if (servicesRes.data && categoriesRes.data) {
+          // Create a map of category prices_are_net
+          const categoryNetMap = new Map<string, boolean>();
+          categoriesRes.data.forEach((cat) => {
+            categoryNetMap.set(cat.id, cat.prices_are_net || false);
+          });
 
-        // Filter by visibility for reservation context:
-        // Hide services with visibility='only_offers' from reservation drawers
-        const visibilityFiltered = servicesRes.data.filter((s) => {
-          const vis = (s as any).visibility || 'everywhere';
-          return vis !== 'only_offers';
-        });
+          // Filter by visibility — only exclude 'only_offers' in reservation context (#4)
+          const visibilityFiltered =
+            context === 'reservation'
+              ? servicesRes.data.filter((s) => {
+                  const vis = (s as { visibility?: string }).visibility || 'everywhere';
+                  return vis !== 'only_offers';
+                })
+              : servicesRes.data;
 
-        // Enrich services with category_prices_are_net
-        const enrichedServices = visibilityFiltered.map((s) => ({
-          ...s,
-          category_prices_are_net: s.category_id
-            ? categoryNetMap.get(s.category_id) || false
-            : false,
-        }));
+          // Enrich services with category_prices_are_net
+          const enrichedServices = visibilityFiltered.map((s) => ({
+            ...s,
+            category_prices_are_net: s.category_id
+              ? categoryNetMap.get(s.category_id) || false
+              : false,
+          }));
 
-        setServices(enrichedServices);
-        setCategories(categoriesRes.data);
-      } else {
-        // Also apply visibility filter in fallback path
-        const visFiltered = servicesRes.data?.filter((s) => {
-          const vis = (s as any).visibility || 'everywhere';
-          return vis !== 'only_offers';
-        });
-        if (visFiltered) setServices(visFiltered);
-        if (categoriesRes.data) setCategories(categoriesRes.data);
+          setServices(enrichedServices);
+          setCategories(categoriesRes.data);
+        } else {
+          if (servicesRes.data) setServices(servicesRes.data);
+          if (categoriesRes.data) setCategories(categoriesRes.data);
+        }
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchData();
-  }, [open, instanceId, stationType, hasUnifiedServices, context]);
+  }, [open, instanceId, hasUnifiedServices, context]);
 
   // Parse search tokens and find matching services
   const { matchingServices, searchTokens } = useMemo(() => {

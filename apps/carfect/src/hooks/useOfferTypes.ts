@@ -1,21 +1,3 @@
-/**
- * Extended offer row type — includes columns that exist in DB
- * but are missing from auto-generated Supabase types.
- * TODO: regenerate types with `supabase gen types` to remove this.
- */
-export interface OfferRowExtended {
-  paint_color?: string;
-  paint_finish?: string;
-  widget_selected_extras?: string[];
-  widget_duration_selections?: Record<string, number | null>;
-  source?: string;
-  budget_suggestion?: number;
-  inquiry_notes?: string;
-  warranty?: string;
-  service_info?: string;
-  internal_notes?: string;
-}
-
 /** Product joined via offer_scope_products → unified_services */
 export interface ScopeProductWithJoin {
   id: string;

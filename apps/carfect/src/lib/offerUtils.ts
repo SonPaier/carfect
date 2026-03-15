@@ -45,3 +45,24 @@ export function getLowestPrice(product: ProductPricing | null | undefined): numb
 
   return product.default_price ?? 0;
 }
+
+/**
+ * Format price in PLN (Polish locale).
+ * @param value — numeric price
+ * @param rounded — if true, no decimal places (for compact display)
+ */
+const plnFormatter = new Intl.NumberFormat('pl-PL', {
+  style: 'currency',
+  currency: 'PLN',
+});
+
+const plnFormatterRounded = new Intl.NumberFormat('pl-PL', {
+  style: 'currency',
+  currency: 'PLN',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+export function formatPrice(value: number, rounded = false): string {
+  return rounded ? plnFormatterRounded.format(Math.round(value)) : plnFormatter.format(value);
+}

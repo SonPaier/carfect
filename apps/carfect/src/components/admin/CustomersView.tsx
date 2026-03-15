@@ -5,7 +5,16 @@ import { normalizeSearchQuery } from '@shared/utils';
 import { formatPhoneDisplay } from '@shared/utils';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@shared/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@shared/ui';
 // useCombinedFeatures no longer needed — unified customer list
@@ -60,18 +69,14 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const fetchCustomers = async () => {
     if (!instanceId) return;
     setLoading(true);
-    
+
     // Fetch customers and vehicles in parallel
     const [customersResult, vehiclesResult] = await Promise.all([
-      supabase
-        .from('customers')
-        .select('*')
-        .eq('instance_id', instanceId)
-        .order('name'),
+      supabase.from('customers').select('*').eq('instance_id', instanceId).order('name'),
       supabase
         .from('customer_vehicles')
         .select('phone, model, plate')
-        .eq('instance_id', instanceId)
+        .eq('instance_id', instanceId),
     ]);
 
     if (!customersResult.error && customersResult.data) {
@@ -90,7 +95,9 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   // Get vehicles for a customer by phone (normalize: strip leading '+')
   const getVehiclesForCustomer = (phone: string) => {
     const normalized = phone.replace(/^\+/, '');
-    return vehicles.filter(v => v.phone === phone || v.phone === normalized || v.phone === `+${normalized}`);
+    return vehicles.filter(
+      (v) => v.phone === phone || v.phone === normalized || v.phone === `+${normalized}`,
+    );
   };
 
   // Filtered and sorted customers
@@ -101,22 +108,23 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const normalizedQuery = normalizeSearchQuery(query);
-      result = result.filter(c => {
+      result = result.filter((c) => {
         // Search in customer fields
-        const matchesCustomer = 
+        const matchesCustomer =
           c.name.toLowerCase().includes(query) ||
           normalizeSearchQuery(c.phone).includes(normalizedQuery) ||
           (c.email && c.email.toLowerCase().includes(query)) ||
           (c.company && c.company.toLowerCase().includes(query)) ||
           (c.nip && normalizeSearchQuery(c.nip).includes(normalizedQuery));
-        
+
         // Search in vehicles
         const customerVehicles = getVehiclesForCustomer(c.phone);
-        const matchesVehicle = customerVehicles.some(v => 
-          v.model.toLowerCase().includes(query) ||
-          (v.plate && v.plate.toLowerCase().includes(query))
+        const matchesVehicle = customerVehicles.some(
+          (v) =>
+            v.model.toLowerCase().includes(query) ||
+            (v.plate && v.plate.toLowerCase().includes(query)),
         );
-        
+
         return matchesCustomer || matchesVehicle;
       });
     }
@@ -180,15 +188,12 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
 
   const handleConfirmDelete = async () => {
     if (!customerToDelete) return;
-    
+
     try {
-      const { error } = await supabase
-        .from('customers')
-        .delete()
-        .eq('id', customerToDelete.id);
-      
+      const { error } = await supabase.from('customers').delete().eq('id', customerToDelete.id);
+
       if (error) throw error;
-      
+
       toast.success(t('customers.deleted'));
       fetchCustomers();
     } catch (error) {
@@ -202,7 +207,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
 
   if (loading) {
     return (
-      <div className="glass-card p-8 text-center text-muted-foreground">
+      <div className="bg-white border border-border p-8 text-center text-muted-foreground">
         {t('common.loading')}
       </div>
     );
@@ -211,14 +216,14 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const renderCustomerList = () => (
     <>
       {/* Customers list */}
-      <div className="glass-card overflow-hidden">
+      <div className="bg-white border border-border overflow-hidden">
         {paginatedCustomers.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             {searchQuery ? t('common.noResults') : t('customers.noCustomers')}
           </div>
         ) : (
           <div className="divide-y divide-border/50">
-            {paginatedCustomers.map(customer => {
+            {paginatedCustomers.map((customer) => {
               const customerVehicles = getVehiclesForCustomer(customer.phone);
               return (
                 <div
@@ -231,9 +236,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
                 >
                   <div className="min-w-0 flex-1 space-y-0.5">
                     {/* Line 1: Name */}
-                    <div className="font-medium text-foreground">
-                      {customer.name}
-                    </div>
+                    <div className="font-medium text-foreground">{customer.name}</div>
                     {/* Line 2: Phone */}
                     <div className="text-sm text-muted-foreground">
                       {formatPhoneDisplay(customer.phone)}
@@ -261,8 +264,8 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
                     <Button
                       variant="ghost"
                       size="icon"
-                       className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-                      onClick={e => handleSms(customer, e)}
+                      className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+                      onClick={(e) => handleSms(customer, e)}
                     >
                       <MessageSquare className="w-4 h-4" />
                     </Button>
@@ -270,7 +273,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
                       variant="ghost"
                       size="icon"
                       className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-                      onClick={e => handleCall(customer.phone, e)}
+                      onClick={(e) => handleCall(customer.phone, e)}
                     >
                       <Phone className="w-4 h-4" />
                     </Button>
@@ -278,7 +281,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
                       variant="ghost"
                       size="icon"
                       className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-hover"
-                      onClick={e => handleDeleteClick(customer, e)}
+                      onClick={(e) => handleDeleteClick(customer, e)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -294,10 +297,10 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {t('common.showingPagination', { 
-              from: (currentPage - 1) * ITEMS_PER_PAGE + 1, 
-              to: Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length), 
-              total: filteredCustomers.length 
+            {t('common.showingPagination', {
+              from: (currentPage - 1) * ITEMS_PER_PAGE + 1,
+              to: Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length),
+              total: filteredCustomers.length,
             })}
           </div>
           <div className="flex items-center gap-1">
@@ -306,7 +309,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
               size="icon"
               className="h-8 w-8"
               disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => prev - 1)}
+              onClick={() => setCurrentPage((prev) => prev - 1)}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -318,7 +321,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
               size="icon"
               className="h-8 w-8"
               disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => prev + 1)}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -333,9 +336,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       {/* Header with title and add button */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">{t('customers.title')}</h1>
-        <Button onClick={handleAddCustomer}>
-          {t('common.add')}
-        </Button>
+        <Button onClick={handleAddCustomer}>{t('common.add')}</Button>
       </div>
 
       {/* Sticky header on mobile */}
@@ -346,7 +347,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
           <Input
             placeholder={t('customers.searchPlaceholder')}
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>

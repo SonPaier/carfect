@@ -93,9 +93,5 @@ export const STATUS_OPTIONS = [
   'completed',
 ] as const;
 
-export function formatPrice(value: number) {
-  return new Intl.NumberFormat('pl-PL', {
-    style: 'currency',
-    currency: 'PLN',
-  }).format(value);
-}
+// Re-export formatPrice from centralized location
+export { formatPrice } from '@/lib/offerUtils';

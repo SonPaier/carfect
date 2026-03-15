@@ -6,7 +6,7 @@ import { Textarea } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Plus, Trash2, Package, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { OfferOption, OfferItem } from '@/hooks/useOffer';
-import { getLowestPrice } from '@/lib/offerUtils';
+import { getLowestPrice, formatPrice } from '@/lib/offerUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@shared/ui';
 import {
@@ -198,14 +198,7 @@ export const OptionsStep = ({
       return next;
     });
   };
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: 'PLN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Math.round(value));
-  };
+  const formatPriceRounded = (value: number) => formatPrice(value, true);
 
   // Check if option is a variant (single-select) vs upsell (multi-select with accordion)
   const isVariantOption = (option: OfferOption) => !option.isUpsell;
@@ -288,7 +281,7 @@ export const OptionsStep = ({
                             >
                               <span className="flex-1">{product.name}</span>
                               <span className="font-bold text-sm ml-4">
-                                {formatPrice(getLowestPrice(product))}
+                                {formatPriceRounded(getLowestPrice(product))}
                               </span>
                             </CommandItem>
                           ))}
@@ -471,7 +464,7 @@ export const OptionsStep = ({
                                       >
                                         <span className="flex-1">{product.name}</span>
                                         <span className="font-bold text-sm ml-4">
-                                          {formatPrice(getLowestPrice(product))}
+                                          {formatPriceRounded(getLowestPrice(product))}
                                         </span>
                                       </CommandItem>
                                     ))}
@@ -624,7 +617,7 @@ export const OptionsStep = ({
                                       >
                                         <span className="flex-1">{product.name}</span>
                                         <span className="font-bold text-sm ml-4">
-                                          {formatPrice(getLowestPrice(product))}
+                                          {formatPriceRounded(getLowestPrice(product))}
                                         </span>
                                       </CommandItem>
                                     ))}

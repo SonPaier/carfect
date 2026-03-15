@@ -9,6 +9,8 @@ interface SocialMediaCardProps {
   portfolioUrl?: string;
 }
 
+const isSafeUrl = (url: string) => /^https?:\/\//i.test(url);
+
 export function SocialMediaCard({
   facebook,
   instagram,
@@ -16,7 +18,15 @@ export function SocialMediaCard({
   portfolioUrl,
 }: SocialMediaCardProps) {
   const { t } = useTranslation();
-  if (!facebook && !instagram && !googleReviewsUrl && !portfolioUrl) return null;
+
+  // Only render URLs with safe protocols
+  const safeFacebook = facebook && isSafeUrl(facebook) ? facebook : undefined;
+  const safeInstagram = instagram && isSafeUrl(instagram) ? instagram : undefined;
+  const safeGoogleReviews =
+    googleReviewsUrl && isSafeUrl(googleReviewsUrl) ? googleReviewsUrl : undefined;
+  const safePortfolio = portfolioUrl && isSafeUrl(portfolioUrl) ? portfolioUrl : undefined;
+
+  if (!safeFacebook && !safeInstagram && !safeGoogleReviews && !safePortfolio) return null;
 
   return (
     <Card>
@@ -24,9 +34,9 @@ export function SocialMediaCard({
         <div className="text-center">
           <p className="text-muted-foreground mb-4">{t('publicOffer.social.cta')}</p>
           <div className="flex flex-col sm:flex-row justify-center gap-3">
-            {facebook && (
+            {safeFacebook && (
               <a
-                href={facebook}
+                href={safeFacebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#1877F2]/90 transition-colors"
@@ -35,9 +45,9 @@ export function SocialMediaCard({
                 <span>Facebook</span>
               </a>
             )}
-            {instagram && (
+            {safeInstagram && (
               <a
-                href={instagram}
+                href={safeInstagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white rounded-lg hover:opacity-90 transition-opacity"
@@ -46,9 +56,9 @@ export function SocialMediaCard({
                 <span>Instagram</span>
               </a>
             )}
-            {googleReviewsUrl && (
+            {safeGoogleReviews && (
               <a
-                href={googleReviewsUrl}
+                href={safeGoogleReviews}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -57,9 +67,9 @@ export function SocialMediaCard({
                 <span>{t('publicOffer.social.googleReviews')}</span>
               </a>
             )}
-            {portfolioUrl && (
+            {safePortfolio && (
               <a
-                href={portfolioUrl}
+                href={safePortfolio}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"

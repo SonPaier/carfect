@@ -26,34 +26,17 @@ interface OfferListCardProps {
   onReserve: (offer: OfferWithOptions) => void;
   onFollowUpChange: (offerId: string, status: FollowUpPhoneStatus) => void;
   onNoteClick: (offer: OfferWithOptions) => void;
-  onViewHistory: (offerId: string, viewedAt: string | null) => void;
 }
 
-function StatusBadge({
-  offer,
-  onViewHistory,
-}: {
-  offer: OfferWithOptions;
-  onViewHistory: (offerId: string, viewedAt: string | null) => void;
-}) {
+function StatusBadge({ offer }: { offer: OfferWithOptions }) {
   const { t } = useTranslation();
 
   if (offer.status === 'viewed' && offer.viewed_at) {
     return (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onViewHistory(offer.id, offer.viewed_at ?? null);
-        }}
-        className="inline-flex"
-      >
-        <Badge
-          className={cn('text-xs cursor-pointer hover:opacity-80', statusColors[offer.status])}
-        >
-          <Eye className="w-3 h-3 mr-1" />
-          {t('offers.viewedAt', { date: formatViewedDate(offer.viewed_at) })}
-        </Badge>
-      </button>
+      <Badge className={cn('text-xs', statusColors[offer.status])}>
+        <Eye className="w-3 h-3 mr-1" />
+        {t('offers.viewedAt', { date: formatViewedDate(offer.viewed_at) })}
+      </Badge>
     );
   }
 
@@ -68,7 +51,7 @@ function StatusBadge({
 }
 
 function ApprovedPrice({ offer }: { offer: OfferWithOptions }) {
-  if (!offer.admin_approved_gross && !offer.approved_at) return null;
+  if (offer.admin_approved_gross == null && !offer.approved_at) return null;
   return (
     <span className="text-sm font-medium ml-2">
       {formatPrice(offer.admin_approved_gross ?? offer.total_gross)}
@@ -148,10 +131,7 @@ function ScopePills({ offer }: { offer: OfferWithOptions }) {
 }
 
 function ActionsDropdown(
-  props: Omit<
-    OfferListCardProps,
-    'onEdit' | 'onFollowUpChange' | 'onNoteClick' | 'onViewHistory'
-  > & {
+  props: Omit<OfferListCardProps, 'onEdit' | 'onFollowUpChange' | 'onNoteClick'> & {
     buttonClassName?: string;
   },
 ) {
@@ -189,7 +169,6 @@ export function OfferListCard({
   onReserve,
   onFollowUpChange,
   onNoteClick,
-  onViewHistory,
 }: OfferListCardProps) {
   const menuProps = {
     offer,
@@ -206,7 +185,7 @@ export function OfferListCard({
 
   return (
     <div
-      className="glass-card p-4 hover:border-primary/30 transition-colors cursor-pointer relative"
+      className="bg-white border border-border p-4 hover:border-primary/30 transition-colors cursor-pointer relative"
       onClick={() => onEdit(offer.id)}
     >
       {/* MOBILE LAYOUT */}
@@ -220,7 +199,7 @@ export function OfferListCard({
         </div>
 
         <div className="mt-2">
-          <StatusBadge offer={offer} onViewHistory={onViewHistory} />
+          <StatusBadge offer={offer} />
           <ApprovedPrice offer={offer} />
         </div>
 
@@ -262,12 +241,8 @@ export function OfferListCard({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <StatusBadge offer={offer} onViewHistory={onViewHistory} />
-            {(offer.admin_approved_gross || offer.approved_at) && (
-              <span className="text-sm font-medium ml-1">
-                {formatPrice(offer.admin_approved_gross ?? offer.total_gross)}
-              </span>
-            )}
+            <StatusBadge offer={offer} />
+            <ApprovedPrice offer={offer} />
             <ActionsDropdown {...menuProps} buttonClassName="-mr-2" />
           </div>
         </div>

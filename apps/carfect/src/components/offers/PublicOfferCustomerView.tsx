@@ -1,4 +1,5 @@
 import { parseMarkdownLists } from '@shared/utils';
+import { formatPrice } from '@/lib/offerUtils';
 import { TruncatedDescription } from './TruncatedDescription';
 import { ScopePhotoCarousel } from './ScopePhotoCarousel';
 import { useTranslation } from 'react-i18next';
@@ -169,21 +170,14 @@ export const PublicOfferCustomerView = ({
 }: PublicOfferCustomerViewProps) => {
   const { t } = useTranslation();
 
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: 'PLN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Math.round(value));
-  };
+  const formatPriceRounded = (value: number) => formatPrice(value, true);
 
   // For line items: show "Gratis!" for zero/null prices
   const formatItemPrice = (value: number, prefix: string = '') => {
     if (value === 0 || value === null || value === undefined) {
       return t('publicOffer.gratis');
     }
-    return `${prefix}${formatPrice(value)}`;
+    return `${prefix}${formatPriceRounded(value)}`;
   };
 
   // VAT annotation shown below each item price
@@ -325,7 +319,7 @@ export const PublicOfferCustomerView = ({
                 </a>
               )}
               {instance?.address && <span className="opacity-80">{instance.address}</span>}
-              {instance?.website && (
+              {instance?.website && /^https?:\/\//i.test(instance.website) && (
                 <a
                   href={instance.website}
                   target="_blank"

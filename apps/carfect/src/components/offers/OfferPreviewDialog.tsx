@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Loader2, X, Printer } from 'lucide-react';
-import { Button } from '@shared/ui';
+import { Loader2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { ScrollArea } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,8 +10,6 @@ import { PublicOfferCustomerView, PublicOfferData } from './PublicOfferCustomerV
 interface OfferPreviewDialogProps {
   open: boolean;
   onClose: () => void;
-  onSendAndClose: () => Promise<void>;
-  onPrint?: () => Promise<void>;
   offer: OfferState;
   instanceId: string;
   calculateTotalNet: () => number;
@@ -64,8 +61,6 @@ interface ScopeData {
 export const OfferPreviewDialog = ({
   open,
   onClose,
-  onSendAndClose,
-  onPrint,
   offer,
   instanceId,
   calculateTotalNet,
@@ -77,7 +72,15 @@ export const OfferPreviewDialog = ({
   const [productDescriptions, setProductDescriptions] = useState<Record<string, string>>({});
   const [productPhotoUrls, setProductPhotoUrls] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
+
+  // Stable key: only refetch when scope/product IDs actually change
+  const optionsKey = useMemo(
+    () =>
+      offer.options
+        .map((o) => `${o.scopeId}:${o.items.map((i) => i.productId).join(',')}`)
+        .join('|'),
+    [offer.options],
+  );
 
   useEffect(() => {
     if (open) {
@@ -181,16 +184,7 @@ export const OfferPreviewDialog = ({
       };
       fetchData();
     }
-  }, [open, instanceId, offer.options]);
-
-  const handleSend = async () => {
-    setSending(true);
-    try {
-      await onSendAndClose();
-    } finally {
-      setSending(false);
-    }
-  };
+  }, [open, instanceId, optionsKey]);
 
   // Map OfferState to PublicOfferData format - only compute when instance is loaded
   const mappedOffer: PublicOfferData | null = useMemo(() => {
@@ -293,16 +287,24 @@ export const OfferPreviewDialog = ({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
-        className="w-full h-full sm:w-[90vw] sm:h-[90vh] max-w-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden"
+        className="w-screen h-screen max-w-none rounded-none border-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
-        {/* Header */}
-        <DialogHeader className="px-4 py-3 border-b flex-shrink-0 flex flex-row items-center justify-between">
-          <DialogTitle className="text-lg font-semibold">{t('offers.previewTitle')}</DialogTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-            <X className="h-4 w-4" />
-          </Button>
+        {/* Hidden title for accessibility */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{t('offers.previewTitle')}</DialogTitle>
         </DialogHeader>
+
+        {/* Floating close button — div wrapper avoids [&>button]:hidden on DialogContent */}
+        <div className="absolute top-3 right-3 z-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Content */}
         <ScrollArea className="flex-1">
@@ -318,34 +320,6 @@ export const OfferPreviewDialog = ({
             </div>
           )}
         </ScrollArea>
-
-        {/* Footer */}
-        <div className="px-4 py-3 border-t flex-shrink-0 flex items-center justify-between bg-background">
-          <Button variant="outline" onClick={onClose} className="gap-2">
-            <ChevronLeft className="w-4 h-4" />
-            {t('offers.backToEdit')}
-          </Button>
-          <div className="flex items-center gap-2">
-            {/* TODO: Print feature - to be refined in future
-            <Button
-              variant="outline"
-              onClick={onPrint}
-              className="gap-2"
-            >
-              <Printer className="w-4 h-4" />
-              Drukuj
-            </Button>
-            */}
-            <Button onClick={handleSend} disabled={sending} className="gap-2">
-              {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {t('offers.sendOffer')}
-            </Button>
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

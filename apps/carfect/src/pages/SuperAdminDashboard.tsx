@@ -1,19 +1,28 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { 
-  Shield, Building2, Users, Settings, LogOut, 
-  Menu, Eye, Power, MoreVertical, Plus, ExternalLink, Loader2, FileText, Car, CreditCard, Trash2
+import {
+  Shield,
+  Building2,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  Eye,
+  Power,
+  MoreVertical,
+  Plus,
+  ExternalLink,
+  Loader2,
+  FileText,
+  Car,
+  CreditCard,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,7 +73,9 @@ const SuperAdminDashboard = () => {
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null);
-  const [activeSection, setActiveSection] = useState<'instances' | 'cars' | 'admins' | 'settings'>('instances');
+  const [activeSection, setActiveSection] = useState<'instances' | 'cars' | 'admins' | 'settings'>(
+    'instances',
+  );
 
   useEffect(() => {
     fetchInstances();
@@ -127,8 +138,8 @@ const SuperAdminDashboard = () => {
 
       if (error) throw error;
 
-      setInstances(prev => 
-        prev.map(i => i.id === instanceId ? { ...i, active: !currentState } : i)
+      setInstances((prev) =>
+        prev.map((i) => (i.id === instanceId ? { ...i, active: !currentState } : i)),
       );
       toast.success(`Instancja ${currentState ? 'wyłączona' : 'włączona'}`);
     } catch (error) {
@@ -137,7 +148,12 @@ const SuperAdminDashboard = () => {
   };
 
   const handleDeleteInstance = async (instance: Instance) => {
-    if (!confirm(`Czy na pewno chcesz usunąć instancję "${instance.name}"? Instancja zostanie ukryta, ale dane pozostaną w bazie.`)) return;
+    if (
+      !confirm(
+        `Czy na pewno chcesz usunąć instancję "${instance.name}"? Instancja zostanie ukryta, ale dane pozostaną w bazie.`,
+      )
+    )
+      return;
     try {
       const { error } = await supabase
         .from('instances')
@@ -146,7 +162,7 @@ const SuperAdminDashboard = () => {
 
       if (error) throw error;
 
-      setInstances(prev => prev.filter(i => i.id !== instance.id));
+      setInstances((prev) => prev.filter((i) => i.id !== instance.id));
       toast.success('Instancja została usunięta');
     } catch (error) {
       toast.error('Błąd podczas usuwania instancji');
@@ -184,9 +200,7 @@ const SuperAdminDashboard = () => {
   };
 
   const handleInstanceUpdate = (updatedInstance: Instance) => {
-    setInstances(prev => 
-      prev.map(i => i.id === updatedInstance.id ? updatedInstance : i)
-    );
+    setInstances((prev) => prev.map((i) => (i.id === updatedInstance.id ? updatedInstance : i)));
   };
 
   if (loading) {
@@ -207,17 +221,19 @@ const SuperAdminDashboard = () => {
       <div className="min-h-screen bg-background flex">
         {/* Sidebar - Mobile Overlay */}
         {sidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
-        <aside className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-purple-500/20 transition-transform duration-300",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        )}>
+        <aside
+          className={cn(
+            'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-purple-500/20 transition-transform duration-300',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          )}
+        >
           <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="p-6 border-b border-purple-500/20">
@@ -234,32 +250,32 @@ const SuperAdminDashboard = () => {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2">
-              <Button 
-                variant={activeSection === 'instances' ? 'secondary' : 'ghost'} 
+              <Button
+                variant={activeSection === 'instances' ? 'secondary' : 'ghost'}
                 className="w-full justify-start gap-3"
                 onClick={() => setActiveSection('instances')}
               >
                 <Building2 className="w-4 h-4" />
                 Instancje
               </Button>
-              <Button 
-                variant={activeSection === 'cars' ? 'secondary' : 'ghost'} 
+              <Button
+                variant={activeSection === 'cars' ? 'secondary' : 'ghost'}
                 className="w-full justify-start gap-3"
                 onClick={() => setActiveSection('cars')}
               >
                 <Car className="w-4 h-4" />
                 Samochody
               </Button>
-              <Button 
-                variant={activeSection === 'admins' ? 'secondary' : 'ghost'} 
+              <Button
+                variant={activeSection === 'admins' ? 'secondary' : 'ghost'}
                 className="w-full justify-start gap-3"
                 onClick={() => setActiveSection('admins')}
               >
                 <Users className="w-4 h-4" />
                 Administratorzy
               </Button>
-              <Button 
-                variant={activeSection === 'settings' ? 'secondary' : 'ghost'} 
+              <Button
+                variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
                 className="w-full justify-start gap-3"
                 onClick={() => setActiveSection('settings')}
               >
@@ -271,12 +287,10 @@ const SuperAdminDashboard = () => {
             {/* User Info & Logout */}
             <div className="p-4 border-t border-purple-500/20 space-y-2">
               {user && (
-                <div className="px-3 py-2 text-sm text-muted-foreground truncate">
-                  {user.email}
-                </div>
+                <div className="px-3 py-2 text-sm text-muted-foreground truncate">{user.email}</div>
               )}
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full justify-start gap-3 text-muted-foreground"
                 onClick={handleLogout}
               >
@@ -290,7 +304,7 @@ const SuperAdminDashboard = () => {
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-w-0">
           {/* Mobile Header */}
-          <header className="lg:hidden sticky top-0 z-30 glass-card border-b border-purple-500/20 p-4">
+          <header className="lg:hidden sticky top-0 z-30 bg-white border border-border border-b border-purple-500/20 p-4">
             <div className="flex items-center justify-between">
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-5 h-5" />
@@ -319,7 +333,7 @@ const SuperAdminDashboard = () => {
                       Zarządzaj wszystkimi instancjami aplikacji
                     </p>
                   </div>
-                  <Button 
+                  <Button
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white gap-2"
                     onClick={handleCreateInstance}
                   >
@@ -330,19 +344,21 @@ const SuperAdminDashboard = () => {
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="glass-card p-4 border-purple-500/20">
+                  <div className="bg-white border border-border p-4 border-purple-500/20">
                     <div className="text-2xl font-bold text-foreground">{instances.length}</div>
                     <div className="text-sm text-muted-foreground">Wszystkie instancje</div>
                   </div>
-                  <div className="glass-card p-4 border-purple-500/20">
-                    <div className="text-2xl font-bold text-success">{instances.filter(i => i.active).length}</div>
+                  <div className="bg-white border border-border p-4 border-purple-500/20">
+                    <div className="text-2xl font-bold text-success">
+                      {instances.filter((i) => i.active).length}
+                    </div>
                     <div className="text-sm text-muted-foreground">Aktywne</div>
                   </div>
-                  <div className="glass-card p-4 border-purple-500/20">
+                  <div className="bg-white border border-border p-4 border-purple-500/20">
                     <div className="text-2xl font-bold text-foreground">-</div>
                     <div className="text-sm text-muted-foreground">Administratorzy</div>
                   </div>
-                  <div className="glass-card p-4 border-purple-500/20">
+                  <div className="bg-white border border-border p-4 border-purple-500/20">
                     <div className="text-2xl font-bold text-primary">-</div>
                     <div className="text-sm text-muted-foreground">Rezerwacji dzisiaj</div>
                   </div>
@@ -356,27 +372,31 @@ const SuperAdminDashboard = () => {
                   <h2 className="text-lg font-semibold text-foreground">Lista instancji</h2>
                   <div className="space-y-3">
                     {instances.map((instance) => (
-                      <div 
+                      <div
                         key={instance.id}
-                        className="glass-card p-4 border-purple-500/10 hover:border-purple-500/30 transition-colors"
+                        className="bg-white border border-border p-4 border-purple-500/10 hover:border-purple-500/30 transition-colors"
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-4 min-w-0">
                             {instance.logo_url ? (
-                              <img 
-                                src={instance.logo_url} 
-                                alt={instance.name} 
+                              <img
+                                src={instance.logo_url}
+                                alt={instance.name}
                                 className="w-10 h-10 rounded-lg object-contain bg-white/10 shrink-0"
                               />
                             ) : (
-                              <div className={cn(
-                                "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                                instance.active ? "bg-success/20" : "bg-muted"
-                              )}>
-                                <Building2 className={cn(
-                                  "w-5 h-5",
-                                  instance.active ? "text-success" : "text-muted-foreground"
-                                )} />
+                              <div
+                                className={cn(
+                                  'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
+                                  instance.active ? 'bg-success/20' : 'bg-muted',
+                                )}
+                              >
+                                <Building2
+                                  className={cn(
+                                    'w-5 h-5',
+                                    instance.active ? 'text-success' : 'text-muted-foreground',
+                                  )}
+                                />
                               </div>
                             )}
                             <div className="min-w-0">
@@ -395,8 +415,8 @@ const SuperAdminDashboard = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               className="gap-2 hidden sm:flex"
                               onClick={() => handleSeeAsClient(instance.id, instance.slug)}
@@ -411,7 +431,9 @@ const SuperAdminDashboard = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleSeeAsClient(instance.id, instance.slug)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleSeeAsClient(instance.id, instance.slug)}
+                                >
                                   <Eye className="w-4 h-4 mr-2" />
                                   Zobacz jako klient
                                 </DropdownMenuItem>
@@ -435,14 +457,14 @@ const SuperAdminDashboard = () => {
                                   <Users className="w-4 h-4 mr-2" />
                                   Zarządzaj użytkownikami
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => handleToggleInstance(instance.id, instance.active)}
-                                  className={instance.active ? "text-destructive" : "text-success"}
+                                  className={instance.active ? 'text-destructive' : 'text-success'}
                                 >
                                   <Power className="w-4 h-4 mr-2" />
                                   {instance.active ? 'Wyłącz instancję' : 'Włącz instancję'}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => handleDeleteInstance(instance)}
                                   className="text-destructive"
                                 >
@@ -459,16 +481,14 @@ const SuperAdminDashboard = () => {
                 </div>
               </>
             ) : (
-              <div className="text-center text-muted-foreground py-12">
-                Sekcja w przygotowaniu
-              </div>
+              <div className="text-center text-muted-foreground py-12">Sekcja w przygotowaniu</div>
             )}
           </div>
         </main>
       </div>
 
       {/* Instance Settings Dialog */}
-      <InstanceSettingsDialog 
+      <InstanceSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         instance={selectedInstance}
@@ -512,11 +532,11 @@ const SuperAdminDashboard = () => {
                 Plan i subskrypcja - {selectedInstance.name}
               </DialogTitle>
             </DialogHeader>
-            <InstancePlanSettings 
-              instanceId={selectedInstance.id} 
+            <InstancePlanSettings
+              instanceId={selectedInstance.id}
               instanceName={selectedInstance.name}
             />
-        </DialogContent>
+          </DialogContent>
         </Dialog>
       )}
 

@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { addMonths, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { normalizePhone } from '@shared/utils';
+import { getLowestPrice } from '@/lib/offerUtils';
 import type { Json } from '@/integrations/supabase/types';
 import { defaultCustomerData, defaultVehicleData } from './useOfferTypes';
 import type {
-  OfferRowExtended,
   ScopeProductWithJoin,
   CustomerData,
   VehicleData,
@@ -44,39 +44,48 @@ export const useOffer = (instanceId: string) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Ref for latest offer state — used in saveOffer to avoid stale closures (#22)
+  const offerRef = useRef(offer);
+  offerRef.current = offer;
+
+  // Mutex to prevent concurrent saves (#1)
+  const saveInProgressRef = useRef(false);
+
   // Build options for given scopes (no state mutation)
   const buildOptionsFromScopes = useCallback(
     async (scopeIds: string[]): Promise<OfferOption[]> => {
       if (scopeIds.length === 0) return [];
 
-      // Fetch selected scopes
-      const { data: scopes, error: scopesError } = await supabase
-        .from('offer_scopes')
-        .select('*')
-        .in('id', scopeIds)
-        .eq('active', true)
-        .order('sort_order');
+      // Fetch scopes and products in parallel (#19)
+      const [scopesResult, productsResult] = await Promise.all([
+        supabase
+          .from('offer_scopes')
+          .select('*')
+          .in('id', scopeIds)
+          .eq('active', true)
+          .order('sort_order'),
+        supabase
+          .from('offer_scope_products')
+          .select(
+            `
+            id,
+            scope_id,
+            product_id,
+            variant_name,
+            is_default,
+            sort_order,
+            product:unified_services!product_id(id, name, default_price, price_from, price_small, price_medium, price_large, unit, description)
+          `,
+          )
+          .in('scope_id', scopeIds)
+          .order('sort_order'),
+      ]);
 
-      if (scopesError) throw scopesError;
+      if (scopesResult.error) throw scopesResult.error;
+      if (productsResult.error) throw productsResult.error;
 
-      // Fetch scope products (new simplified structure)
-      const { data: scopeProducts, error: productsError } = await supabase
-        .from('offer_scope_products')
-        .select(
-          `
-          id,
-          scope_id,
-          product_id,
-          variant_name,
-          is_default,
-          sort_order,
-          product:unified_services!product_id(id, name, default_price, price_from, price_small, price_medium, price_large, unit, description)
-        `,
-        )
-        .in('scope_id', scopeIds)
-        .order('sort_order');
-
-      if (productsError) throw productsError;
+      const scopes = scopesResult.data;
+      const scopeProducts = productsResult.data;
 
       // Generate one option per scope containing all its DEFAULT products
       // (matches SummaryStepV2.buildDefaultSelected() expectations)
@@ -108,17 +117,6 @@ export const useOffer = (instanceId: string) => {
             description: string | null;
           } | null;
 
-          // Helper: get lowest available price (price_from -> min(S/M/L) -> default_price)
-          const getLowestPrice = (): number => {
-            if (!product) return 0;
-            if (product.price_from != null) return product.price_from;
-            const sizes = [product.price_small, product.price_medium, product.price_large].filter(
-              (v: number | null): v is number => v != null,
-            );
-            if (sizes.length > 0) return Math.min(...sizes);
-            return product.default_price ?? 0;
-          };
-
           return {
             id: crypto.randomUUID(),
             productId: p.product_id || undefined,
@@ -127,7 +125,7 @@ export const useOffer = (instanceId: string) => {
               : product?.name || '',
             customDescription: '',
             quantity: 1,
-            unitPrice: getLowestPrice(),
+            unitPrice: getLowestPrice(product),
             unit: product?.unit || 'szt',
             discountPercent: 0,
             isOptional: false,
@@ -287,21 +285,14 @@ export const useOffer = (instanceId: string) => {
   );
 
   // Option handlers
-  const addOption = useCallback(
-    (option: Omit<OfferOption, 'id' | 'sortOrder'>) => {
-      const newOption: OfferOption = {
-        ...option,
-        id: crypto.randomUUID(),
-        sortOrder: offer.options.length,
-      };
-      setOffer((prev) => ({
-        ...prev,
-        options: [...prev.options, newOption],
-      }));
-      return newOption.id;
-    },
-    [offer.options.length],
-  );
+  const addOption = useCallback((option: Omit<OfferOption, 'id' | 'sortOrder'>) => {
+    const id = crypto.randomUUID();
+    setOffer((prev) => ({
+      ...prev,
+      options: [...prev.options, { ...option, id, sortOrder: prev.options.length }],
+    }));
+    return id;
+  }, []);
 
   const updateOption = useCallback((optionId: string, data: Partial<OfferOption>) => {
     setOffer((prev) => ({
@@ -319,28 +310,24 @@ export const useOffer = (instanceId: string) => {
     }));
   }, []);
 
-  const duplicateOption = useCallback(
-    (optionId: string) => {
-      const option = offer.options.find((o) => o.id === optionId);
-      if (!option) return;
+  const duplicateOption = useCallback((optionId: string) => {
+    setOffer((prev) => {
+      const option = prev.options.find((o) => o.id === optionId);
+      if (!option) return prev;
 
       const newOption: OfferOption = {
         ...option,
         id: crypto.randomUUID(),
         name: `${option.name} (kopia)`,
-        sortOrder: offer.options.length,
+        sortOrder: prev.options.length,
         items: option.items.map((item) => ({
           ...item,
           id: crypto.randomUUID(),
         })),
       };
-      setOffer((prev) => ({
-        ...prev,
-        options: [...prev.options, newOption],
-      }));
-    },
-    [offer.options],
-  );
+      return { ...prev, options: [...prev.options, newOption] };
+    });
+  }, []);
 
   // Item handlers
   const addItemToOption = useCallback((optionId: string, item: Omit<OfferItem, 'id'>) => {
@@ -421,7 +408,9 @@ export const useOffer = (instanceId: string) => {
   const calculateOptionTotal = useCallback((option: OfferOption) => {
     return option.items.reduce((sum, item) => {
       if (item.isOptional) return sum;
-      const itemTotal = item.quantity * item.unitPrice * (1 - item.discountPercent / 100);
+      const clampedDiscount = Math.min(Math.max(item.discountPercent, 0), 100);
+      const itemTotal =
+        Math.round(item.quantity * item.unitPrice * (1 - clampedDiscount / 100) * 100) / 100;
       return sum + itemTotal;
     }, 0);
   }, []);
@@ -429,7 +418,9 @@ export const useOffer = (instanceId: string) => {
   const calculateAdditionsTotal = useCallback(() => {
     return offer.additions.reduce((sum, item) => {
       if (item.isOptional) return sum;
-      const itemTotal = item.quantity * item.unitPrice * (1 - item.discountPercent / 100);
+      const clampedDiscount = Math.min(Math.max(item.discountPercent, 0), 100);
+      const itemTotal =
+        Math.round(item.quantity * item.unitPrice * (1 - clampedDiscount / 100) * 100) / 100;
       return sum + itemTotal;
     }, 0);
   }, [offer.additions]);
@@ -450,6 +441,13 @@ export const useOffer = (instanceId: string) => {
   // silent: if true, don't show success toast (used for auto-save)
   const saveOffer = useCallback(
     async (silent = false) => {
+      // Prevent concurrent saves (#1)
+      if (saveInProgressRef.current) return offerRef.current.id;
+      saveInProgressRef.current = true;
+
+      // Read latest offer state from ref (#22)
+      const offer = offerRef.current;
+
       setSaving(true);
       try {
         // Generate offer number if new
@@ -523,7 +521,11 @@ export const useOffer = (instanceId: string) => {
 
         if (offer.id) {
           // Update existing
-          const { error } = await supabase.from('offers').update(offerData).eq('id', offer.id);
+          const { error } = await supabase
+            .from('offers')
+            .update(offerData)
+            .eq('id', offer.id)
+            .eq('instance_id', instanceId);
 
           if (error) throw error;
         } else {
@@ -549,7 +551,7 @@ export const useOffer = (instanceId: string) => {
 
         if (deleteError) {
           console.error('Error deleting old options:', deleteError);
-          // Continue anyway - the insert might still work if there were no options
+          throw deleteError;
         }
 
         // ===================== AUTO-REPAIR: Detect and fix stale IDs from duplication =====================
@@ -792,22 +794,28 @@ export const useOffer = (instanceId: string) => {
             }
 
             if (existingCustomerId) {
-              // Update existing customer (enrich with offer data)
+              // Update existing customer — only overwrite non-empty fields to avoid data loss (#2)
+              const customerUpdate: Record<string, unknown> = {
+                updated_at: new Date().toISOString(),
+              };
+              const name = offer.customerData.name || offer.customerData.company;
+              if (name) customerUpdate.name = name;
+              if (offer.customerData.email) customerUpdate.email = offer.customerData.email;
+              if (normalizedPhone) customerUpdate.phone = normalizedPhone;
+              if (offer.customerData.company) customerUpdate.company = offer.customerData.company;
+              if (offer.customerData.nip) customerUpdate.nip = offer.customerData.nip;
+              if (fullAddress) customerUpdate.address = fullAddress;
+              if (offer.customerData.companyAddress)
+                customerUpdate.billing_street = offer.customerData.companyAddress;
+              if (offer.customerData.companyPostalCode)
+                customerUpdate.billing_postal_code = offer.customerData.companyPostalCode;
+              if (offer.customerData.companyCity)
+                customerUpdate.billing_city = offer.customerData.companyCity;
+
               await supabase
                 .from('customers')
-                .update({
-                  name: offer.customerData.name || offer.customerData.company || 'Nieznany',
-                  email: offer.customerData.email || null,
-                  phone: normalizedPhone,
-                  company: offer.customerData.company || null,
-                  nip: offer.customerData.nip || null,
-                  address: fullAddress,
-                  billing_street: offer.customerData.companyAddress || null,
-                  billing_postal_code: offer.customerData.companyPostalCode || null,
-                  billing_city: offer.customerData.companyCity || null,
-                  updated_at: new Date().toISOString(),
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing columns missing from generated types
-                } as any)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- billing columns missing from generated types
+                .update(customerUpdate as any)
                 .eq('id', existingCustomerId);
             } else {
               // Insert new customer
@@ -869,10 +877,10 @@ export const useOffer = (instanceId: string) => {
         throw error;
       } finally {
         setSaving(false);
+        saveInProgressRef.current = false;
       }
     },
     [
-      offer,
       instanceId,
       calculateTotalNet,
       calculateTotalGross,
@@ -898,6 +906,7 @@ export const useOffer = (instanceId: string) => {
         `,
         )
         .eq('id', offerId)
+        .eq('instance_id', instanceId)
         .single();
 
       if (offerError) throw offerError;
@@ -996,7 +1005,6 @@ export const useOffer = (instanceId: string) => {
 
       // Handle legacy vehicle data format
       // Merge separate paint_color/paint_finish columns with vehicle_data JSONB
-      const ext = offerData as typeof offerData & OfferRowExtended;
       const vehicleDataRaw = (offerData.vehicle_data || defaultVehicleData) as Record<
         string,
         string
@@ -1007,17 +1015,20 @@ export const useOffer = (instanceId: string) => {
           [vehicleDataRaw.brand, vehicleDataRaw.model].filter(Boolean).join(' ') ||
           '',
         plate: vehicleDataRaw.plate || '',
-        paintColor: vehicleDataRaw.paintColor || ext.paint_color || '',
-        paintType: vehicleDataRaw.paintType || ext.paint_finish || '',
+        paintColor: vehicleDataRaw.paintColor || offerData.paint_color || '',
+        paintType: vehicleDataRaw.paintType || offerData.paint_finish || '',
       };
 
       // Load widget selections for offer hydration in Step 3
-      const widgetSelectedExtras = ext.widget_selected_extras || [];
-      const widgetDurationSelections = ext.widget_duration_selections || {};
+      const widgetSelectedExtras = offerData.widget_selected_extras || [];
+      const widgetDurationSelections = (offerData.widget_duration_selections || {}) as Record<
+        string,
+        number | null
+      >;
 
       // Auto-generate inquiry content for website leads
       let generatedInquiryContent: string | undefined;
-      const offerSource = ext.source;
+      const offerSource = offerData.source;
       const customerDataRaw = (offerData.customer_data || {}) as Record<string, string>;
       const existingInquiryContent = customerDataRaw.inquiryContent || '';
 
@@ -1061,6 +1072,17 @@ export const useOffer = (instanceId: string) => {
 
         // Helper to format duration in Polish
         const formatDuration = (months: number): string => {
+          if (months < 12) {
+            if (months === 1) return '1 miesiąc';
+            if (months >= 2 && months <= 4) return `${months} miesiące`;
+            return `${months} miesięcy`;
+          }
+          if (months % 12 !== 0) {
+            const y = Math.floor(months / 12);
+            const m = months % 12;
+            const yearPart = y === 1 ? '1 rok' : y <= 4 ? `${y} lata` : `${y} lat`;
+            return `${yearPart} ${m} mies.`;
+          }
           const years = months / 12;
           if (years === 1) return '1 rok';
           if (years <= 4) return `${years} lata`;
@@ -1097,14 +1119,14 @@ export const useOffer = (instanceId: string) => {
         }
 
         // Add budget if provided
-        const budgetSuggestion = ext.budget_suggestion;
+        const budgetSuggestion = offerData.budget_suggestion;
         if (budgetSuggestion) {
           parts.push('');
           parts.push(`Budżet: ${budgetSuggestion.toLocaleString('pl-PL')} zł`);
         }
 
         // Add customer notes if provided
-        const inquiryNotes = ext.inquiry_notes;
+        const inquiryNotes = offerData.inquiry_notes;
         if (inquiryNotes) {
           parts.push('');
           parts.push(`Notatki klienta: ${inquiryNotes}`);
@@ -1186,9 +1208,9 @@ export const useOffer = (instanceId: string) => {
         additions,
         notes: offerData.notes,
         paymentTerms: offerData.payment_terms,
-        warranty: ext.warranty || '',
-        serviceInfo: ext.service_info || '',
-        internalNotes: ext.internal_notes || '',
+        warranty: offerData.warranty || '',
+        serviceInfo: offerData.service_info || '',
+        internalNotes: offerData.internal_notes || '',
         validUntil: offerData.valid_until,
         vatRate: Number(offerData.vat_rate),
         hideUnitPrices: offerData.hide_unit_prices || false,

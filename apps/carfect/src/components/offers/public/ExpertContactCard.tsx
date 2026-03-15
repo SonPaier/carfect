@@ -71,7 +71,7 @@ export function ExpertContactCard({ instance, branding }: ExpertContactCardProps
             {instance.email}
           </a>
         )}
-        {instance.website && (
+        {instance.website && /^https?:\/\//i.test(instance.website) && (
           <a
             href={instance.website}
             target="_blank"
