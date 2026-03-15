@@ -5,7 +5,7 @@ import { useEmployeeDaysOff, DAY_OFF_TYPE_LABELS, DayOffType, EmployeeDayOff } f
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@shared/ui';
+import { Button, EmptyState } from '@shared/ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/ui';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@shared/ui';
 import { Plus, ChevronLeft, ChevronRight, Loader2, User, Pencil, CalendarOff, Settings2 } from 'lucide-react';
@@ -450,19 +450,11 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
       {/* Empty state */}
       {activeEmployees.length === 0 ? (
-        <div className="py-12 text-center">
-          <User className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">Brak pracowników</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Dodaj pierwszego pracownika, aby rozpocząć rejestrację czasu pracy
-          </p>
-          {isAdmin && (
-            <Button onClick={handleAddEmployee} className="mt-4">
-              <Plus className="w-4 h-4 mr-1" />
-              Dodaj pracownika
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={User}
+          title="Brak pracowników"
+          description="Dodaj pierwszego pracownika, aby rozpocząć"
+        />
       ) : (
         <>
           {/* Table layout */}

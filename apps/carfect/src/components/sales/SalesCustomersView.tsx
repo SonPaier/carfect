@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Search, Plus, MoreHorizontal, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, ChevronDown, ChevronRight, ArrowUp, ArrowDown, ShoppingCart } from 'lucide-react';
-import { Input } from '@shared/ui';
+import { Search, Plus, MoreHorizontal, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, ChevronDown, ChevronRight, ArrowUp, ArrowDown, ShoppingCart, Users } from 'lucide-react';
+import { Input, EmptyState } from '@shared/ui';
 import { Button } from '@shared/ui';
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -245,8 +245,12 @@ const SalesCustomersView = () => {
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Brak wyników
+                <TableCell colSpan={7}>
+                  <EmptyState
+                    icon={Users}
+                    title="Brak klientów"
+                    description="Dodaj pierwszego klienta, aby rozpocząć sprzedaż"
+                  />
                 </TableCell>
               </TableRow>
             ) : (

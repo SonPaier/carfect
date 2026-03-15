@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
-import { Search, Plus, ChevronDown, ChevronRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, MoreHorizontal, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Plus, ChevronDown, ChevronRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, MoreHorizontal, ArrowUp, ArrowDown, ShoppingCart } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { ConfirmDialog } from '@shared/ui';
+import { ConfirmDialog, EmptyState } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type SalesOrder } from '@/data/salesMockData';
@@ -278,6 +278,19 @@ const SalesOrdersView = () => {
       });
     }
 
+    // Fetch exclude_from_discount for products in this order
+    const productIds = [...new Set((items || []).map((i: any) => i.product_id).filter(Boolean))] as string[];
+    const excludeMap: Record<string, boolean> = {};
+    if (productIds.length > 0) {
+      const { data: prodData } = await (supabase
+        .from('sales_products')
+        .select('id, exclude_from_discount')
+        .in('id', productIds) as any);
+      (prodData || []).forEach((p: any) => {
+        excludeMap[p.id] = p.exclude_from_discount || false;
+      });
+    }
+
     const editProducts = (items || []).map((item: any) => {
       const usages = usagesByItemId[item.id] || [];
       return {
@@ -289,6 +302,7 @@ const SalesOrdersView = () => {
         priceUnit: item.price_unit || 'szt.',
         quantity: item.quantity,
         vehicle: item.vehicle || '',
+        excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
         rollAssignments: usages.map((u) => ({
           rollId: u.rollId,
           usageM2: u.usedM2,
@@ -374,8 +388,12 @@ const SalesOrdersView = () => {
           <TableBody>
             {sortedOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  Brak zamówień spełniających kryteria
+                <TableCell colSpan={8}>
+                  <EmptyState
+                    icon={ShoppingCart}
+                    title="Brak zamówień"
+                    description="Utwórz pierwsze zamówienie dla klienta"
+                  />
                 </TableCell>
               </TableRow>
             ) : (

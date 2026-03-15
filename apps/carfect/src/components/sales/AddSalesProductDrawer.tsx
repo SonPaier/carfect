@@ -26,7 +26,6 @@ import { supabase } from '@/integrations/supabase/client';
 interface SalesProductVariant {
   id?: string;
   name: string;
-  priceNet: number;
   sortOrder: number;
 }
 
@@ -39,6 +38,7 @@ interface SalesProductData {
   priceUnit: string;
   categoryId?: string | null;
   hasVariants?: boolean;
+  excludeFromDiscount?: boolean;
   variants?: SalesProductVariant[];
 }
 
@@ -60,6 +60,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [excludeFromDiscount, setExcludeFromDiscount] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
   const [variants, setVariants] = useState<SalesProductVariant[]>([]);
 
@@ -81,6 +82,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
     setPriceNet('');
     setPriceUnit('piece');
     setCategoryId('');
+    setExcludeFromDiscount(false);
     setHasVariants(false);
     setVariants([]);
   };
@@ -94,18 +96,18 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       setPriceNet(product.priceNet ? String(product.priceNet) : '');
       setPriceUnit((product.priceUnit as 'piece' | 'meter') || 'piece');
       setCategoryId(product.categoryId || '');
+      setExcludeFromDiscount(product.excludeFromDiscount || false);
       setHasVariants(product.hasVariants || false);
       if (product.hasVariants && product.id) {
         (supabase
           .from('sales_product_variants')
-          .select('id, name, price_net, sort_order')
+          .select('id, name, sort_order')
           .eq('product_id', product.id)
           .order('sort_order') as any)
           .then(({ data }: any) => {
             setVariants((data || []).map((v: any) => ({
               id: v.id,
               name: v.name,
-              priceNet: Number(v.price_net),
               sortOrder: v.sort_order,
             })));
           });
@@ -122,15 +124,15 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   };
 
   const addVariant = () => {
-    setVariants(prev => [...prev, { name: '', priceNet: 0, sortOrder: prev.length }]);
+    setVariants(prev => [...prev, { name: '', sortOrder: prev.length }]);
   };
 
   const removeVariant = (index: number) => {
     setVariants(prev => prev.filter((_, i) => i !== index));
   };
 
-  const updateVariant = (index: number, field: 'name' | 'priceNet', value: string | number) => {
-    setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  const updateVariantName = (index: number, value: string) => {
+    setVariants(prev => prev.map((v, i) => i === index ? { ...v, name: value } : v));
   };
 
   const handleSubmit = async () => {
@@ -152,9 +154,10 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
         full_name: fullName.trim(),
         short_name: shortName.trim(),
         description: description.trim() || null,
-        price_net: hasVariants ? 0 : (parseFloat(priceNet) || 0),
+        price_net: parseFloat(priceNet) || 0,
         price_unit: priceUnit,
         category_id: categoryId || null,
+        exclude_from_discount: excludeFromDiscount,
         has_variants: hasVariants,
       };
 
@@ -187,7 +190,6 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
         const variantPayload = variants.map((v, idx) => ({
           product_id: productId,
           name: v.name.trim(),
-          price_net: v.priceNet || 0,
           sort_order: idx,
         }));
         const { error: vError } = await (supabase
@@ -286,6 +288,19 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="product-price">Cena netto</Label>
+              <Input
+                id="product-price"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="0.00"
+                value={priceNet}
+                onChange={(e) => setPriceNet(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Cena za</Label>
               <RadioGroup
                 value={priceUnit}
@@ -309,6 +324,17 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
 
             <div className="flex items-center gap-2">
               <Checkbox
+                id="exclude-from-discount"
+                checked={excludeFromDiscount}
+                onCheckedChange={(v) => setExcludeFromDiscount(v === true)}
+              />
+              <Label htmlFor="exclude-from-discount" className="text-sm font-normal cursor-pointer">
+                Wykluczaj ten produkt z rabatów
+              </Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
                 id="has-variants"
                 checked={hasVariants}
                 onCheckedChange={(v) => setHasVariants(v === true)}
@@ -318,28 +344,17 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
               </Label>
             </div>
 
-            {hasVariants ? (
+            {hasVariants && (
               <div className="space-y-3">
                 <Label>Warianty</Label>
                 {variants.map((variant, index) => (
                   <div key={index} className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20">
-                    <div className="flex-1 space-y-1">
-                      <Input
-                        placeholder="Nazwa wariantu"
-                        value={variant.name}
-                        onChange={(e) => updateVariant(index, 'name', e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="Cena netto"
-                        value={variant.priceNet || ''}
-                        onChange={(e) => updateVariant(index, 'priceNet', parseFloat(e.target.value) || 0)}
-                        className="h-8 text-sm"
-                      />
-                    </div>
+                    <Input
+                      placeholder="Nazwa wariantu"
+                      value={variant.name}
+                      onChange={(e) => updateVariantName(index, e.target.value)}
+                      className="h-8 text-sm flex-1"
+                    />
                     <button
                       type="button"
                       onClick={() => removeVariant(index)}
@@ -359,19 +374,6 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
                   <Plus className="w-4 h-4" />
                   Dodaj wariant
                 </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="product-price">Cena netto</Label>
-                <Input
-                  id="product-price"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="0.00"
-                  value={priceNet}
-                  onChange={(e) => setPriceNet(e.target.value)}
-                />
               </div>
             )}
           </div>

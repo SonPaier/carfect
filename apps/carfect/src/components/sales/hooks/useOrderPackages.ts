@@ -38,6 +38,7 @@ export interface OrderProduct {
   priceUnit: string;
   quantity: number;
   vehicle: string;
+  excludeFromDiscount?: boolean;
   /** @deprecated Use rollAssignments instead */
   rollId?: string;
   /** @deprecated Use rollAssignments instead */
@@ -88,6 +89,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     fullName: string;
     priceNet: number;
     priceUnit?: string;
+    excludeFromDiscount?: boolean;
   }>) => {
     if (!activePackageId) return;
 
@@ -105,6 +107,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
         priceUnit: s.priceUnit || 'szt.',
         quantity: 1,
         vehicle: '',
+        excludeFromDiscount: s.excludeFromDiscount,
       };
     });
 

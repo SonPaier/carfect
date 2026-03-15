@@ -1,6 +1,7 @@
 import { X, Plus, Minus } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
+import { Badge } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
@@ -77,7 +78,12 @@ const PackageCard = ({
                   <div key={itemKey} className="bg-amber-50 rounded px-2.5 py-2 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
+                          {p.excludeFromDiscount && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 text-muted-foreground">BRAK RABATU</Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.'}</p>
                       </div>
                       <button type="button" onClick={() => onRemoveProduct(itemKey)} className="text-muted-foreground hover:text-destructive shrink-0">

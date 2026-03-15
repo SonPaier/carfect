@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, ScanLine, MoreHorizontal, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, ScanLine, MoreHorizontal, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Disc } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { Input, Button, Badge } from '@shared/ui';
+import { Input, Button, Badge, EmptyState } from '@shared/ui';
 import {
   Table,
   TableHeader,
@@ -272,12 +272,16 @@ const SalesRollsView = () => {
               </TableRow>
             ) : paginatedRolls.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  {searchQuery
-                    ? 'Brak wyników wyszukiwania'
-                    : activeTab === 'active'
-                    ? 'Brak rolek na stanie'
-                    : 'Brak sprzedanych rolek'}
+                <TableCell colSpan={8}>
+                  <EmptyState
+                    icon={Disc}
+                    title={searchQuery
+                      ? 'Brak wyników wyszukiwania'
+                      : activeTab === 'active'
+                      ? 'Brak rolek na stanie'
+                      : 'Brak sprzedanych rolek'}
+                    description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszą rolkę do ewidencji'}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
