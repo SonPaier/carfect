@@ -1,19 +1,24 @@
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, onlineManager } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { createIDBPersister } from "@/lib/idbPersister";
-import Login from "./pages/Login";
-import MigrationPage from "./pages/MigrationPage";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-import PublicProtocolView from "./pages/PublicProtocolView";
-import ProtectedRoute from "./components/ProtectedRoute";
-import RoleBasedRedirect from "./components/RoleBasedRedirect";
-import EmployeeCalendarPage from "./pages/EmployeeCalendarPage";
-import SmsNotificationTemplateEditPage from "./pages/SmsNotificationTemplateEditPage";
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, onlineManager } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from '@/hooks/useAuth';
+import { createIDBPersister } from '@/lib/idbPersister';
+import { lazy, Suspense } from 'react';
+import ProtectedRoute from './components/ProtectedRoute';
+import RoleBasedRedirect from './components/RoleBasedRedirect';
+
+// All pages lazy loaded for code splitting
+const Login = lazy(() => import('./pages/Login'));
+const MigrationPage = lazy(() => import('./pages/MigrationPage'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const PublicProtocolView = lazy(() => import('./pages/PublicProtocolView'));
+const EmployeeCalendarPage = lazy(() => import('./pages/EmployeeCalendarPage'));
+const SmsNotificationTemplateEditPage = lazy(
+  () => import('./pages/SmsNotificationTemplateEditPage'),
+);
 
 // Mutations fail immediately when offline
 onlineManager.setEventListener((setOnline) => {
@@ -86,130 +91,151 @@ const getSubdomainInfo = () => {
   return { type: 'unknown', subdomain: null };
 };
 
+// Loading fallback for lazy loaded pages
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
+
 // Super Admin Routes
 const SuperAdminRoutes = () => (
-  <Routes>
-    <Route path="/login" element={<Login />} />
-    <Route
-      path="/"
-      element={
-        <ProtectedRoute requiredRole="super_admin">
-          <Dashboard />
-        </ProtectedRoute>
-      }
-    />
-    <Route path="/protocols/:token" element={<PublicProtocolView />} />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute requiredRole="super_admin">
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/protocols/:token" element={<PublicProtocolView />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Suspense>
 );
 
 // Instance Admin Routes
 const InstanceAdminRoutes = ({ subdomain }: { subdomain: string }) => (
-  <Routes>
-    <Route path="/login" element={<Login subdomainSlug={subdomain} />} />
-    <Route path="/dashboard" element={<RoleBasedRedirect />} />
-    <Route
-      path="/employee-calendars/:configId"
-      element={
-        <ProtectedRoute requiredRole="employee">
-          <EmployeeCalendarPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/powiadomienia-sms/:shortId"
-      element={
-        <ProtectedRoute requiredRole="admin">
-          <SmsNotificationTemplateEditPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/:view?"
-      element={
-        <ProtectedRoute requiredRole="admin">
-          <Dashboard />
-        </ProtectedRoute>
-      }
-    />
-    <Route path="/protocols/:token" element={<PublicProtocolView />} />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route path="/login" element={<Login subdomainSlug={subdomain} />} />
+      <Route path="/dashboard" element={<RoleBasedRedirect />} />
+      <Route
+        path="/employee-calendars/:configId"
+        element={
+          <ProtectedRoute requiredRole="employee">
+            <EmployeeCalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/powiadomienia-sms/:shortId"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <SmsNotificationTemplateEditPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/:view?"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/protocols/:token" element={<PublicProtocolView />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Suspense>
 );
 
 // Instance Public Routes (placeholder)
 const InstancePublicRoutes = ({ subdomain }: { subdomain: string }) => (
-  <Routes>
-    <Route path="/" element={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">Strona publiczna: {subdomain}</h1>
-          <p className="text-muted-foreground">Wkrótce dostępna</p>
-        </div>
-      </div>
-    } />
-    <Route path="/protocols/:token" element={<PublicProtocolView />} />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <h1 className="text-2xl font-bold text-foreground">Strona publiczna: {subdomain}</h1>
+              <p className="text-muted-foreground">Wkrótce dostępna</p>
+            </div>
+          </div>
+        }
+      />
+      <Route path="/protocols/:token" element={<PublicProtocolView />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
 );
 
 // Dev Routes - full access
 const DevRoutes = () => (
-  <Routes>
-    {/* Instance-specific login: /pool-prestige/login */}
-    <Route path="/:slug/login" element={<Login />} />
-    {/* Default login without slug */}
-    <Route path="/login" element={<Login subdomainSlug="pool-prestige" />} />
-    {/* Role-based redirect after login */}
-    <Route path="/dashboard" element={<RoleBasedRedirect />} />
-    {/* Super admin */}
-    <Route
-      path="/super-admin"
-      element={
-        <ProtectedRoute requiredRole="super_admin">
-          <Dashboard />
-        </ProtectedRoute>
-      }
-    />
-    {/* SMS notification template edit */}
-    <Route
-      path="/admin/powiadomienia-sms/:shortId"
-      element={
-        <ProtectedRoute requiredRole="admin">
-          <SmsNotificationTemplateEditPage />
-        </ProtectedRoute>
-      }
-    />
-    {/* Migration page - must be before /admin/:view? */}
-    <Route path="/admin/migracja" element={
-      <ProtectedRoute requiredRole="admin">
-        <MigrationPage />
-      </ProtectedRoute>
-    } />
-    {/* Admin dashboard with view param */}
-    <Route
-      path="/admin/:view?"
-      element={
-        <ProtectedRoute requiredRole="admin">
-          <Dashboard />
-        </ProtectedRoute>
-      }
-    />
-    {/* Employee calendar view */}
-    <Route
-      path="/employee-calendars/:configId"
-      element={
-        <ProtectedRoute requiredRole="employee">
-          <EmployeeCalendarPage />
-        </ProtectedRoute>
-      }
-    />
-    {/* Root redirect to admin */}
-    <Route path="/" element={<Navigate to="/admin" replace />} />
-    <Route path="/protocols/:token" element={<PublicProtocolView />} />
-    
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      {/* Instance-specific login: /pool-prestige/login */}
+      <Route path="/:slug/login" element={<Login />} />
+      {/* Default login without slug */}
+      <Route path="/login" element={<Login subdomainSlug="pool-prestige" />} />
+      {/* Role-based redirect after login */}
+      <Route path="/dashboard" element={<RoleBasedRedirect />} />
+      {/* Super admin */}
+      <Route
+        path="/super-admin"
+        element={
+          <ProtectedRoute requiredRole="super_admin">
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      {/* SMS notification template edit */}
+      <Route
+        path="/admin/powiadomienia-sms/:shortId"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <SmsNotificationTemplateEditPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Migration page - must be before /admin/:view? */}
+      <Route
+        path="/admin/migracja"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <MigrationPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Admin dashboard with view param */}
+      <Route
+        path="/admin/:view?"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      {/* Employee calendar view */}
+      <Route
+        path="/employee-calendars/:configId"
+        element={
+          <ProtectedRoute requiredRole="employee">
+            <EmployeeCalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Root redirect to admin */}
+      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/protocols/:token" element={<PublicProtocolView />} />
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
 );
 
 const App = () => {
@@ -234,9 +260,7 @@ const App = () => {
       <AuthProvider>
         <TooltipProvider>
           <Sonner />
-          <BrowserRouter>
-            {renderRoutes()}
-          </BrowserRouter>
+          <BrowserRouter>{renderRoutes()}</BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
     </PersistQueryClientProvider>
