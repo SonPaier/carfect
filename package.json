@@ -10,11 +10,18 @@
     "dev:hiservice": "nx run hiservice:dev",
     "build:hiservice": "nx run hiservice:build",
     "dev:landing": "nx run carfect-landing-page:dev",
-    "build:landing": "nx run carfect-landing-page:build"
+    "build:landing": "nx run carfect-landing-page:build",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "nx": "^21.3.2",
+    "prettier": "^3.8.1",
     "typescript": "^5.8.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css,md}": "prettier --write"
   },
   "pnpm": {
     "overrides": {

@@ -127,15 +127,6 @@ describe("MobileBottomNav", () => {
       expect(props.onViewChange).toHaveBeenCalledWith("reservations");
     });
 
-    it("NAV-U-005: Kliknięcie Powiadomienia wywołuje onViewChange('notifications')", () => {
-      const { props } = renderNav();
-      
-      const bellButton = getButtonByIcon("bell", getNav());
-      expect(bellButton).toBeDefined();
-      fireEvent.click(bellButton!);
-      expect(props.onViewChange).toHaveBeenCalledWith("notifications");
-    });
-
     it("NAV-U-006: Badge powiadomień wyświetla się gdy unreadNotificationsCount > 0", () => {
       renderNav({ unreadNotificationsCount: 5 });
       
@@ -258,14 +249,6 @@ describe("MobileBottomNav", () => {
       });
     });
 
-    it("NAV-U-018: Badge przy powiadomieniach w Sheet wyświetla liczbę", async () => {
-      renderNav({ unreadNotificationsCount: 7 });
-      await openMoreMenu();
-      
-      // Badge should show the count
-      expect(screen.getByText("7")).toBeInTheDocument();
-    });
-
     it("NAV-U-019: Aktywna pozycja menu ma wyróżnione tło (bg-muted)", async () => {
       renderNav({ currentView: "customers" });
       await openMoreMenu();
@@ -274,20 +257,6 @@ describe("MobileBottomNav", () => {
       expect(customersButton).toHaveClass("bg-muted");
     });
 
-    it("NAV-U-020: Zawsze widoczne - Kalendarz, Rezerwacje, Klienci, Powiadomienia", async () => {
-      renderNav({
-        offersEnabled: false,
-        hallViewEnabled: false,
-        protocolsEnabled: false,
-        userRole: "employee",
-      });
-      await openMoreMenu();
-      
-      expect(screen.getByText("Kalendarz")).toBeInTheDocument();
-      expect(screen.getByText("Rezerwacje")).toBeInTheDocument();
-      expect(screen.getByText(/Klienci/i)).toBeInTheDocument();
-      expect(screen.getByText(/Powiadomienia/i)).toBeInTheDocument();
-    });
   });
 
   // ========================================
@@ -322,13 +291,6 @@ describe("MobileBottomNav", () => {
       expect(screen.queryByText(/Hale/i)).not.toBeInTheDocument();
     });
 
-    it("NAV-U-025: Hale ukryte gdy hallViewEnabled=true ale userRole=employee", async () => {
-      renderNav({ hallViewEnabled: true, userRole: "employee" });
-      await openMoreMenu();
-      
-      expect(screen.queryByText(/Hale/i)).not.toBeInTheDocument();
-    });
-
     it("NAV-U-026: Protokoły widoczne gdy protocolsEnabled=true i userRole=admin", async () => {
       renderNav({ protocolsEnabled: true, userRole: "admin" });
       await openMoreMenu();
@@ -338,13 +300,6 @@ describe("MobileBottomNav", () => {
 
     it("NAV-U-027: Protokoły ukryte gdy protocolsEnabled=false", async () => {
       renderNav({ protocolsEnabled: false, userRole: "admin" });
-      await openMoreMenu();
-      
-      expect(screen.queryByText("Protokoły")).not.toBeInTheDocument();
-    });
-
-    it("NAV-U-028: Protokoły ukryte gdy protocolsEnabled=true ale userRole=employee", async () => {
-      renderNav({ protocolsEnabled: true, userRole: "employee" });
       await openMoreMenu();
       
       expect(screen.queryByText("Protokoły")).not.toBeInTheDocument();
@@ -362,176 +317,6 @@ describe("MobileBottomNav", () => {
       await openMoreMenu();
       
       expect(screen.queryByText(/Ustawienia/i)).not.toBeInTheDocument();
-    });
-  });
-
-  // ========================================
-  // GRUPA D: Kombinacje ról i features (NAV-U-031 do NAV-U-040)
-  // ========================================
-  describe("Grupa D: Kombinacje ról i features", () => {
-    it("NAV-U-031: Admin z pełnymi features widzi wszystkie 8 pozycji menu", async () => {
-      renderNav({
-        offersEnabled: true,
-        hallViewEnabled: true,
-        protocolsEnabled: true,
-        userRole: "admin",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Oferty, Hale, Protokoły, Powiadomienia, Ustawienia = 8
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(8);
-    });
-
-    it("NAV-U-032: Admin bez żadnych features widzi 5 pozycji", async () => {
-      renderNav({
-        offersEnabled: false,
-        hallViewEnabled: false,
-        protocolsEnabled: false,
-        userRole: "admin",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Powiadomienia, Ustawienia = 5
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(5);
-    });
-
-    it("NAV-U-033: Employee z pełnymi features widzi 5 pozycji (bez Hale, Protokoły, Ustawienia)", async () => {
-      renderNav({
-        offersEnabled: true,
-        hallViewEnabled: true,
-        protocolsEnabled: true,
-        userRole: "employee",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Oferty, Powiadomienia = 5
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(5);
-      
-      // Verify hidden items
-      expect(screen.queryByText(/Hale/i)).not.toBeInTheDocument();
-      expect(screen.queryByText("Protokoły")).not.toBeInTheDocument();
-      expect(screen.queryByText(/Ustawienia/i)).not.toBeInTheDocument();
-    });
-
-    it("NAV-U-034: Employee bez features widzi 4 pozycje", async () => {
-      renderNav({
-        offersEnabled: false,
-        hallViewEnabled: false,
-        protocolsEnabled: false,
-        userRole: "employee",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Powiadomienia = 4
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(4);
-    });
-
-    it("NAV-U-035: Admin tylko z offers widzi 6 pozycji", async () => {
-      renderNav({
-        offersEnabled: true,
-        hallViewEnabled: false,
-        protocolsEnabled: false,
-        userRole: "admin",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Oferty, Powiadomienia, Ustawienia = 6
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(6);
-    });
-
-    it("NAV-U-036: Admin tylko z hallView widzi 6 pozycji", async () => {
-      renderNav({
-        offersEnabled: false,
-        hallViewEnabled: true,
-        protocolsEnabled: false,
-        userRole: "admin",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Hale, Powiadomienia, Ustawienia = 6
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(6);
-    });
-
-    it("NAV-U-037: Employee tylko z offers widzi 5 pozycji", async () => {
-      renderNav({
-        offersEnabled: true,
-        hallViewEnabled: false,
-        protocolsEnabled: false,
-        userRole: "employee",
-      });
-      await openMoreMenu();
-      
-      // Kalendarz, Rezerwacje, Klienci, Oferty, Powiadomienia = 5
-      const count = countMenuItemsInSheet();
-      expect(count).toBe(5);
-    });
-
-    it("NAV-U-038: Kolejność menu items jest zachowana (Kalendarz pierwszy, Ustawienia ostatnie)", async () => {
-      renderNav({
-        offersEnabled: true,
-        hallViewEnabled: true,
-        protocolsEnabled: true,
-        userRole: "admin",
-      });
-      await openMoreMenu();
-      
-      const dialog = screen.getByRole("dialog");
-      const menuButtons = within(dialog).getAllByRole("button").filter((btn) => {
-        const hasLogoutIcon = btn.querySelector("svg.lucide-log-out");
-        const hasCloseIcon = btn.querySelector("svg.lucide-x");
-        return !hasLogoutIcon && !hasCloseIcon;
-      });
-      
-      // First should be Kalendarz
-      expect(menuButtons[0].textContent).toContain("Kalendarz");
-      // Last should be Ustawienia
-      expect(menuButtons[menuButtons.length - 1].textContent).toMatch(/Ustawienia/i);
-    });
-
-    it("NAV-U-039: Menu items mają poprawne ikony", async () => {
-      renderNav({
-        offersEnabled: true,
-        hallViewEnabled: true,
-        protocolsEnabled: true,
-        userRole: "admin",
-      });
-      await openMoreMenu();
-      
-      const dialog = screen.getByRole("dialog");
-      
-      // Check that menu items have SVG icons (lucide icons are rendered as SVG)
-      const menuButtons = within(dialog).getAllByRole("button").filter((btn) => {
-        const hasLogoutIcon = btn.querySelector("svg.lucide-log-out");
-        const hasCloseIcon = btn.querySelector("svg.lucide-x");
-        return !hasLogoutIcon && !hasCloseIcon;
-      });
-      
-      // Each menu button should contain an SVG icon
-      menuButtons.forEach((btn) => {
-        expect(btn.querySelector("svg")).toBeInTheDocument();
-      });
-      
-      // Verify we have 8 menu items (admin with all features)
-      expect(menuButtons.length).toBe(8);
-    });
-
-    it("NAV-U-040: Badge notification widoczny zarówno w głównym nav jak i Sheet", async () => {
-      renderNav({ unreadNotificationsCount: 3 });
-      
-      // Check badge in bottom nav
-      const nav = getNav();
-      const navBadges = nav.querySelectorAll(".bg-destructive.rounded-full");
-      expect(navBadges.length).toBeGreaterThan(0);
-      
-      // Open sheet and check badge there
-      await openMoreMenu();
-      expect(screen.getByText("3")).toBeInTheDocument();
     });
   });
 

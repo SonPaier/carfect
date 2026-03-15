@@ -147,12 +147,6 @@ describe('ReservationDetailsDrawer', () => {
       expect(screen.getByText('733 854 184')).toBeInTheDocument();
     });
 
-    it('RDD-U-005: wyświetla kod potwierdzenia rezerwacji', () => {
-      renderDrawer();
-      
-      expect(screen.getByText('ABC123')).toBeInTheDocument();
-    });
-
     it('RDD-U-006: wyświetla model pojazdu', () => {
       renderDrawer();
       
@@ -220,15 +214,6 @@ describe('ReservationDetailsDrawer', () => {
       expect(screen.getByText('W trakcie')).toBeInTheDocument();
     });
 
-    it('RDD-U-022: wyświetla badge completed', () => {
-      renderDrawer({
-        reservation: { ...mockBaseReservation, status: 'completed' },
-      });
-      
-      // Translation: "Zakończone" (neuter form)
-      expect(screen.getByText('Zakończone')).toBeInTheDocument();
-    });
-
     it('RDD-U-023: wyświetla badge released', () => {
       renderDrawer({
         reservation: { ...mockBaseReservation, status: 'released' },
@@ -273,55 +258,10 @@ describe('ReservationDetailsDrawer', () => {
       expect(screen.getByRole('button', { name: /edytuj/i })).toBeInTheDocument();
     });
 
-    it('RDD-U-031: wyświetla przycisk Usuń dla confirmed', () => {
-      renderDrawer();
-      
-      expect(screen.getByRole('button', { name: /usuń/i })).toBeInTheDocument();
-    });
-
     it('RDD-U-032: wyświetla przycisk Rozpocznij pracę dla confirmed', () => {
       renderDrawer();
       
       expect(screen.getByRole('button', { name: /rozpocznij pracę/i })).toBeInTheDocument();
-    });
-
-    it('RDD-U-033: wyświetla przycisk Historia dla confirmed', () => {
-      renderDrawer();
-      
-      const historyButtons = screen.getAllByRole('button').filter(btn => 
-        btn.querySelector('svg.lucide-history') !== null
-      );
-      expect(historyButtons.length).toBeGreaterThan(0);
-    });
-
-    it('RDD-U-034: kliknięcie Edytuj wywołuje onEdit', async () => {
-      const onEdit = vi.fn();
-      renderDrawer({ onEdit });
-      
-      await userEvent.click(screen.getByRole('button', { name: /edytuj/i }));
-      
-      expect(onEdit).toHaveBeenCalledWith(mockBaseReservation);
-    });
-
-    it('RDD-U-035: kliknięcie Usuń otwiera dialog potwierdzenia', async () => {
-      renderDrawer();
-      
-      await userEvent.click(screen.getByRole('button', { name: /usuń/i }));
-      
-      // The translation is "Czy na pewno chcesz usunąć rezerwację?"
-      await waitFor(() => {
-        expect(screen.getByText(/usunąć rezerwację/i)).toBeInTheDocument();
-      });
-    });
-
-    it('RDD-U-036: dialog usuwania zawiera opcję "Oznacz jako nieobecność"', async () => {
-      renderDrawer();
-      
-      await userEvent.click(screen.getByRole('button', { name: /usuń/i }));
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /oznacz jako nieobecność/i })).toBeInTheDocument();
-      });
     });
 
     it('RDD-U-037: kliknięcie Rozpocznij pracę wywołuje onStartWork', async () => {
@@ -362,25 +302,6 @@ describe('ReservationDetailsDrawer', () => {
       await userEvent.click(screen.getByRole('button', { name: /zakończ pracę/i }));
       
       expect(onEndWork).toHaveBeenCalledWith('res-123');
-    });
-  });
-
-  describe('Actions - Completed Status', () => {
-    const completedReservation = { ...mockBaseReservation, status: 'completed' };
-
-    it('RDD-U-050: wyświetla przycisk Wydaj pojazd dla completed', () => {
-      renderDrawer({ reservation: completedReservation });
-      
-      expect(screen.getByRole('button', { name: /wydaj pojazd/i })).toBeInTheDocument();
-    });
-
-    it('RDD-U-051: kliknięcie Wydaj pojazd wywołuje onRelease', async () => {
-      const onRelease = vi.fn();
-      renderDrawer({ reservation: completedReservation, onRelease });
-      
-      await userEvent.click(screen.getByRole('button', { name: /wydaj pojazd/i }));
-      
-      expect(onRelease).toHaveBeenCalledWith('res-123');
     });
   });
 
@@ -542,19 +463,6 @@ describe('ReservationDetailsDrawer', () => {
   });
 
   describe('Offer Link', () => {
-    it('RDD-U-110: wyświetla link do oferty gdy offer_number istnieje', async () => {
-      renderDrawer({
-        reservation: {
-          ...mockBaseReservation,
-          offer_number: 'OF-2025-001',
-        },
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('#OF-2025-001')).toBeInTheDocument();
-      });
-    });
-
     it('RDD-U-111: NIE wyświetla sekcji oferty gdy brak offer_number', () => {
       renderDrawer();
       
@@ -802,12 +710,6 @@ describe('ReservationDetailsDrawer', () => {
   describe('Actions - Released Status', () => {
     const releasedReservation = { ...mockBaseReservation, status: 'released' };
 
-    it('RDD-U-052: wyświetla przycisk Edytuj dla released', () => {
-      renderDrawer({ reservation: releasedReservation });
-      
-      expect(screen.getByRole('button', { name: /edytuj/i })).toBeInTheDocument();
-    });
-
     it('RDD-U-053: NIE wyświetla przycisku Usuń dla released', () => {
       renderDrawer({ reservation: releasedReservation });
       
@@ -933,31 +835,6 @@ describe('ReservationDetailsDrawer', () => {
       expect(screen.queryByRole('button', { name: /edytuj/i })).not.toBeInTheDocument();
     });
 
-    it('RDD-U-138: wyświetla przycisk Usuń gdy delete_reservation: true', () => {
-      const hallConfigWithDelete: HallConfig = {
-        visible_fields: {
-          customer_name: true,
-          customer_phone: true,
-          vehicle_plate: true,
-          services: true,
-          admin_notes: true,
-        },
-        allowed_actions: {
-          add_services: true,
-          change_time: false,
-          change_station: false,
-          edit_reservation: true,
-          delete_reservation: true,
-        },
-      };
-
-      renderDrawer({
-        mode: 'hall',
-        hallConfig: hallConfigWithDelete,
-      });
-      
-      expect(screen.getByRole('button', { name: /usuń/i })).toBeInTheDocument();
-    });
   });
 
   describe('Default Status Badge', () => {

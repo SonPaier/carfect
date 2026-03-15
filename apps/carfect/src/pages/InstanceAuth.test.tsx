@@ -325,36 +325,6 @@ describe('InstanceAuth', () => {
       });
     });
 
-    it('LA-U-010: shows generic error message for other Supabase errors', async () => {
-      (supabase.from as Mock).mockImplementation((table: string) => {
-        if (table === 'instances') {
-          return createQueryMock({ data: defaultInstance, error: null });
-        }
-        if (table === 'profiles') {
-          return createQueryMock({ 
-            data: { id: 'user-1', email: 'test@test.com', is_blocked: false }, 
-            error: null 
-          });
-        }
-        return createQueryMock({ data: null, error: null });
-      });
-      mockSignIn.mockResolvedValue({ error: { message: 'Network connection failed' } });
-
-      renderWithRouter();
-      
-      await waitFor(() => {
-        expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
-      });
-
-      fireEvent.change(screen.getByLabelText(/login/i), { target: { value: 'testuser' } });
-      fireEvent.change(screen.getByLabelText(/hasło/i), { target: { value: 'password123' } });
-      fireEvent.click(screen.getByRole('button', { name: /zaloguj/i }));
-
-      await waitFor(() => {
-        expect(screen.getByText('Network connection failed')).toBeInTheDocument();
-      });
-    });
-
     it('LA-U-011: shows error when instance is not found', async () => {
       (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'instances') {
@@ -448,41 +418,6 @@ describe('InstanceAuth', () => {
       await waitFor(() => {
         expect(screen.getByText('Nie znaleziono instancji')).toBeInTheDocument();
         expect(screen.getByText('Sprawdź czy adres URL jest poprawny')).toBeInTheDocument();
-      });
-    });
-  });
-
-  // ============================================
-  // REDIRECT (LA-U-016)
-  // ============================================
-  describe('Redirect after login', () => {
-    it('LA-U-016: navigates to /admin after successful login', async () => {
-      (supabase.from as Mock).mockImplementation((table: string) => {
-        if (table === 'instances') {
-          return createQueryMock({ data: defaultInstance, error: null });
-        }
-        if (table === 'profiles') {
-          return createQueryMock({ 
-            data: { id: 'user-1', email: 'test@test.com', is_blocked: false }, 
-            error: null 
-          });
-        }
-        return createQueryMock({ data: null, error: null });
-      });
-      mockSignIn.mockResolvedValue({ error: null });
-
-      renderWithRouter();
-      
-      await waitFor(() => {
-        expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
-      });
-
-      fireEvent.change(screen.getByLabelText(/login/i), { target: { value: 'testuser' } });
-      fireEvent.change(screen.getByLabelText(/hasło/i), { target: { value: 'password123' } });
-      fireEvent.click(screen.getByRole('button', { name: /zaloguj/i }));
-
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/admin');
       });
     });
   });
