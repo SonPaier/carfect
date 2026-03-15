@@ -3,20 +3,29 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import i18n from '@/i18n/config';
 import ReservationDetailsDrawer, { HallConfig } from './ReservationDetailsDrawer';
 
-// Mock supabase
+// Mock supabase with chainable builder
+const createChainMock = (resolveData: unknown = null) => {
+  const chain: Record<string, unknown> = {};
+  const methods = ['select', 'eq', 'neq', 'gt', 'lt', 'gte', 'lte', 'in', 'order', 'limit', 'range', 'single', 'insert', 'update', 'delete', 'upsert', 'match', 'ilike', 'like', 'is', 'not', 'filter', 'or', 'and', 'contains', 'containedBy', 'textSearch'];
+  methods.forEach(method => {
+    chain[method] = vi.fn(() => chain);
+  });
+  chain.maybeSingle = vi.fn(() => Promise.resolve({ data: resolveData, error: null }));
+  chain.then = vi.fn((resolve: (value: unknown) => void) => Promise.resolve({ data: resolveData, error: null }).then(resolve));
+  return chain;
+};
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          eq: () => ({
-            maybeSingle: () => Promise.resolve({ data: { public_token: 'test-token-123' } }),
-          }),
-        }),
-      }),
+    from: vi.fn((table: string) => {
+      if (table === 'instances') {
+        return createChainMock({ public_token: 'test-token-123' });
+      }
+      return createChainMock(null);
     }),
   },
 }));
@@ -38,10 +47,16 @@ vi.mock('./history/ReservationHistoryDrawer', () => ({
     open ? <div data-testid="history-drawer">History Drawer</div> : null,
 }));
 
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <I18nextProvider i18n={i18n}>
-    <MemoryRouter>{children}</MemoryRouter>
-  </I18nextProvider>
+  <QueryClientProvider client={createTestQueryClient()}>
+    <I18nextProvider i18n={i18n}>
+      <MemoryRouter>{children}</MemoryRouter>
+    </I18nextProvider>
+  </QueryClientProvider>
 );
 
 const mockBaseReservation = {
