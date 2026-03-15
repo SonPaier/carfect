@@ -276,7 +276,7 @@ const SalesProductSelectionDrawer = ({
         </div>
 
         {/* Product List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -292,17 +292,22 @@ const SalesProductSelectionDrawer = ({
                 if (product.hasVariants && product.variants && product.variants.length > 0) {
                   return (
                     <div key={product.id}>
-                      {/* Parent product header (non-selectable) */}
-                      <div className="w-full flex items-center px-4 py-2 border-b border-border/50 bg-muted/30">
+                      {/* Parent product header with price (non-selectable) */}
+                      <div className="w-full flex items-center px-4 py-3 border-b border-border/50 bg-muted/15">
                         <div className="flex-1 text-left min-w-0">
-                          <p className="font-bold text-foreground text-sm">{product.shortName || product.fullName}</p>
-                          {product.shortName && (
-                            <p className="text-muted-foreground text-xs leading-tight truncate">{product.fullName}</p>
+                          {product.shortName ? (
+                            <>
+                              <p className="font-bold text-foreground text-sm">{product.shortName}</p>
+                              <p className="text-muted-foreground text-xs leading-tight truncate">{product.fullName}</p>
+                            </>
+                          ) : (
+                            <p className="font-bold text-foreground text-sm">{product.fullName}</p>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {product.variants.length} {product.variants.length === 1 ? 'wariant' : 'wariantów'}
-                        </span>
+                        <div className="text-right shrink-0">
+                          <p className="font-semibold text-foreground text-sm">{formatCurrency(product.priceNet)}</p>
+                          <p className="text-xs text-muted-foreground">netto/{formatPriceUnit(product.priceUnit)}</p>
+                        </div>
                       </div>
                       {/* Variant rows (selectable) */}
                       {product.variants.map((variant) => {
@@ -336,7 +341,7 @@ const SalesProductSelectionDrawer = ({
                   );
                 }
 
-                // Non-variant product (unchanged logic)
+                // Non-variant product
                 const isSelected = selectedKeys.has(product.id);
                 return (
                   <button
@@ -351,7 +356,7 @@ const SalesProductSelectionDrawer = ({
                     <div className="flex-1 text-left min-w-0">
                       {product.shortName ? (
                         <>
-                          <p className="font-bold text-primary">{product.shortName}</p>
+                          <p className="font-bold text-foreground">{product.shortName}</p>
                           <p className="text-muted-foreground text-xs leading-tight truncate">{product.fullName}</p>
                         </>
                       ) : (

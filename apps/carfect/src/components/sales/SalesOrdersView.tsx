@@ -294,7 +294,7 @@ const SalesOrdersView = () => {
     const editProducts = (items || []).map((item: any) => {
       const usages = usagesByItemId[item.id] || [];
       return {
-        instanceKey: crypto.randomUUID(),
+        instanceKey: item.id, // Use DB id so it can be mapped to package productKeys
         productId: item.product_id || item.name,
         variantId: item.variant_id || undefined,
         name: item.name,
@@ -311,6 +311,23 @@ const SalesOrdersView = () => {
       };
     });
 
+    // Rebuild package productKeys: the stored packages have old instanceKeys
+    // that don't match the new ones. Map them 1:1 by position (sort_order).
+    const rawPackages: any[] = orderData?.packages || [];
+    let editPackages = rawPackages;
+    if (rawPackages.length > 0 && editProducts.length > 0) {
+      const allOldKeys: string[] = [];
+      rawPackages.forEach((pkg: any) => allOldKeys.push(...(pkg.productKeys || [])));
+      const oldToNew: Record<string, string> = {};
+      allOldKeys.forEach((oldKey: string, idx: number) => {
+        if (editProducts[idx]) oldToNew[oldKey] = editProducts[idx].instanceKey;
+      });
+      editPackages = rawPackages.map((pkg: any) => ({
+        ...pkg,
+        productKeys: (pkg.productKeys || []).map((k: string) => oldToNew[k] || k),
+      }));
+    }
+
     setEditOrder({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -318,7 +335,7 @@ const SalesOrdersView = () => {
       customerName: orderData?.customer_name || order.customerName,
       customerDiscount,
       products: editProducts,
-      packages: orderData?.packages || [],
+      packages: editPackages,
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
       paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer',
       bankAccountNumber: orderData?.bank_account_number || '',
@@ -375,11 +392,11 @@ const SalesOrdersView = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead column="orderNumber" className="w-[120px]">Nr zamówienia</SortableHead>
+              <SortableHead column="orderNumber" className="w-[120px]">Nr</SortableHead>
               <SortableHead column="customerName" className="w-[200px]">Klient</SortableHead>
               <SortableHead column="createdAt" className="w-[100px]">Utworzono</SortableHead>
               <SortableHead column="shippedAt" className="w-[100px]">Wysłano</SortableHead>
-              <TableHead className="w-[180px]">Nr listu przewozowego</TableHead>
+              <TableHead className="w-[180px]">List przewozowy</TableHead>
               <SortableHead column="totalNet" className="text-right w-[120px]">Kwota netto</SortableHead>
               <SortableHead column="status" className="w-[100px]">Status</SortableHead>
               <TableHead className="w-[50px]"></TableHead>
@@ -463,16 +480,14 @@ const SalesOrdersView = () => {
                               </Badge>
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="min-w-0">
                             <DropdownMenuItem onClick={() => changeStatus(order.id, 'nowy')}>
-                              <Badge variant="outline" className="border-amber-500 text-amber-600 mr-2">
+                              <Badge variant="outline" className="border-amber-500 text-amber-600">
                                 Nowy
                               </Badge>
-                              Oznacz jako Nowy
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => changeStatus(order.id, 'wysłany')}>
-                              <Badge className="bg-emerald-600 text-white mr-2">Wysłany</Badge>
-                              Oznacz jako Wysłany
+                              <Badge className="bg-emerald-600 text-white">Wysłany</Badge>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
