@@ -5,7 +5,7 @@ description: 'Multi-agent development pipeline for feature implementation. Use w
 
 # Multi-Agent Development Pipeline
 
-Orchestrate feature development through 10 sequential steps. Each step uses specialized skills and agents. No step can be skipped.
+Orchestrate feature development through 10 sequential steps using specialized subagents. Each step dispatches a dedicated agent via the `Agent` tool. No step can be skipped.
 
 ## When to Use
 
@@ -22,245 +22,146 @@ Orchestrate feature development through 10 sequential steps. Each step uses spec
 ## Pipeline Overview
 
 ```
-1. Brainstorm      → spec.md
-2. System Design   → design conventions confirmed
-3. Plan            → plan.md
-4. Implement       → working code on branch
-5. Test            → test suite (spec-based)
-6. Simplify        → lean, readable code
-7. Find Bugs + Security → issues found & fixed
-8. Final Review    → spec compliance verified
-9. Merge           → PR or merged branch
-10. Retrospective  → lessons → MEMORY.md
+1. Brainstorm      → spec.md              Agent: brainstormer
+2. System Design   → design decisions     Agent: system-designer
+3. Plan            → plan.md              Agent: planner
+4. Implement       → working code         Agent: implementer (per task)
+5. Test            → test suite           Agent: tester
+6. Simplify        → lean code            Agent: simplifier
+7. Bugs + Security → issues fixed         Agents: bug-finder + security-auditor (parallel)
+8. Review          → approved             Agent: reviewer
+9. Merge           → PR or merged         Agent: merger
+10. Retrospective  → MEMORY.md updated    Agent: retrospective
 ```
 
-## Step 1: Brainstorm
+## How to Orchestrate
 
-**Skill:** `brainstorming`
+You (the main agent) are the orchestrator. For each step:
 
-Turn the user's idea into a written specification through collaborative dialogue.
+1. Dispatch the subagent via `Agent` tool with `subagent_type` matching the agent name
+2. Pass relevant context in the prompt (spec content, task text, file paths)
+3. Read the subagent's result
+4. Check the gate condition
+5. If gate passes → proceed to next step
+6. If gate fails → re-dispatch or send back to earlier step
 
-- Ask questions one at a time (prefer multiple choice)
-- Propose 2-3 approaches with trade-offs
-- Present design in sections, get approval per section
-- Output: `spec.md` saved and committed
+### Dispatch Examples
 
-**Gate:** No planning or coding until spec is approved by user.
+```
+# Step 1
+Agent(subagent_type="brainstormer", prompt="User wants to build: [idea]. Start brainstorming.")
 
-## Step 2: System Design Check
+# Step 2
+Agent(subagent_type="system-designer", prompt="Spec approved. Read spec.md and verify design decisions.")
 
-**Skill:** `carfect-design-system`
+# Step 3
+Agent(subagent_type="planner", prompt="Spec + design decisions approved. Read spec.md and create plan.md.")
 
-Before planning implementation, verify design decisions against project conventions:
+# Step 4 (per task from plan.md)
+Agent(subagent_type="implementer", prompt="Execute task 1: [full task text from plan.md]")
+Agent(subagent_type="implementer", prompt="Execute task 2: [full task text from plan.md]")
 
-- Component placement: `@shared/ui` vs `apps/carfect/src/components/ui/`
-- Shared lib usage: `@shared/utils`, existing hooks
-- UI patterns: shadcn/ui components, Tailwind v3, form patterns (RHF + Zod)
-- Layout patterns: close buttons, fixed footers, admin content width
-- Data patterns: Supabase queries, TanStack Query, optimistic updates
+# Step 5
+Agent(subagent_type="tester", prompt="Implementation complete. Read spec.md and write tests for all requirements.")
 
-**Gate:** Design decisions documented in plan. Don't discover conventions during implementation.
+# Step 6
+Agent(subagent_type="simplifier", prompt="Tests passing. Review all changed files for simplification.")
 
-## Step 3: Plan
+# Step 7 (parallel)
+Agent(subagent_type="bug-finder", prompt="Review all changes for bugs.")
+Agent(subagent_type="security-auditor", prompt="Review all changes for security vulnerabilities.")
 
-**Skill:** `writing-plans`
+# Step 8
+Agent(subagent_type="reviewer", prompt="All fixes applied. Final review against spec.md.")
 
-Break the approved spec into a task list with exact file paths, code snippets, and verification commands.
+# Step 9
+Agent(subagent_type="merger", prompt="Review approved. Run final tests and present merge options.")
 
-- Map file structure before defining tasks
-- Each task: 2-5 minutes of work, atomic
-- Include file ownership per task (no overlap between tasks)
-- Save to `plan.md` and commit
+# Step 10
+Agent(subagent_type="retrospective", prompt="Feature merged. Run retrospective with user.")
+```
 
-**Gate:** No implementation until plan is approved by user.
+## Step Details
 
-## Step 4: Implement
+### Step 1: Brainstorm → `brainstormer`
 
-**Skill:** `subagent-driven-development`
+Turn idea into `spec.md`. One question at a time. Multiple choice preferred.
+**Gate:** User approves spec.
 
-Execute the plan using fresh subagents per task. Sequential execution (not parallel).
+### Step 2: System Design → `system-designer`
 
-**Task order:** Backend/data tasks first, then frontend tasks. This ensures:
+Verify design decisions against project conventions (component placement, shared libs, UI patterns).
+**Gate:** Design decisions appended to spec, user confirms.
 
-- DB migrations exist before queries reference them
-- Types/hooks exist before components import them
-- API endpoints exist before UI calls them
+### Step 3: Plan → `planner`
 
-**Per task:**
+Break spec into atomic tasks with exact file paths, code snippets, verification commands.
+**Gate:** User approves plan.md.
 
-1. Dispatch implementer subagent with full task text + context
-2. Implementer builds the code and commits
-3. Dispatch spec reviewer — does code match plan?
-4. Dispatch quality reviewer — is code clean?
-5. If either reviewer finds issues → implementer fixes → re-review
-6. Mark task complete, move to next
+### Step 4: Implement → `implementer` (one per task)
 
-**Implementer rules:**
-
-- Follow existing codebase patterns
-- Use `carfect-design-system` conventions
-- Run `pnpm --filter carfect test -- --run` after each task
-- Commit after each task passes
-
+Execute tasks sequentially. Backend first, then frontend.
+Each task: implement → verify → commit.
 **Gate:** All tasks complete, all tests passing.
 
-## Step 5: Test
-
-Write tests AFTER implementation. Not TDD.
-
-**Critical rule: Tests are written from spec.md, NOT from the code.**
-
-The test agent:
-
-1. Reads `spec.md` to understand expected behavior
-2. Writes tests that verify spec requirements
-3. Runs tests
-4. If a test FAILS: **the implementation is wrong, not the test**
-5. Reports failures back to implementation agent for fixing
-6. NEVER modifies a failing test to make it pass
+### Step 5: Test → `tester`
 
 <HARD-RULE>
-Test agent writes tests based on what the code SHOULD do (from spec).
-If test fails, implementation agent fixes the CODE.
-Test agent NEVER changes test assertions to match buggy behavior.
-This is the single most important rule in this pipeline.
+Tests are written from spec.md, NOT from implementation code.
+If a test fails, the IMPLEMENTATION is wrong — not the test.
+Tester NEVER modifies failing test assertions to match buggy code.
+Failures are reported back to implementer for fixing.
 </HARD-RULE>
 
-**Test coverage:**
+**Gate:** All tests passing.
 
-- Unit tests for UI components (rendering, interactions, states)
-- Unit tests for logic (utils, hooks, calculations)
-- Edge cases (empty inputs, null values, boundary conditions)
-- Regression tests for any bugs found during development
+### Step 6: Simplify → `simplifier`
 
-**Testing stack:** Vitest + @testing-library/react, `vi.mock('@supabase/supabase-js')`, `userEvent.setup()` before each test.
+Remove dead code, DRY up duplicates, improve naming/readability. Never add features.
+**Gate:** All tests still passing.
 
-**Gate:** All tests passing. `pnpm --filter carfect test -- --run` exits 0.
+### Step 7: Bugs + Security → `bug-finder` + `security-auditor` (parallel)
 
-## Step 6: Simplify & Refactor
+Dispatch both agents simultaneously. Bug finder hunts logic errors, security auditor checks OWASP.
+**Gate:** Zero Critical/High issues.
 
-**Skill:** `simplify`
+### Step 8: Review → `reviewer`
 
-Three parallel review agents:
+Spec compliance + code quality. APPROVED or CHANGES REQUESTED with routing.
+**Gate:** APPROVED status.
 
-1. **Code Reuse** — find existing utilities that replace new code, flag duplicates
-2. **Code Quality** — redundant state, parameter sprawl, copy-paste, leaky abstractions, naming, function length, readability
-3. **Efficiency** — unnecessary work, missed concurrency, hot-path bloat, memory leaks
+### Step 9: Merge → `merger`
 
-Fix all found issues. Run tests after each fix.
+Final test run, build verification, present merge options, cleanup.
+**Gate:** Tests + build pass with evidence.
 
-**Gate:** All tests still passing after simplification.
+### Step 10: Retrospective → `retrospective`
 
-## Step 7: Find Bugs + Security
-
-**Skills:** `find-bugs` + `security-review` (run as parallel agents)
-
-**Bug finder (find-bugs):**
-
-- Full diff review against base branch
-- Attack surface mapping (inputs, queries, auth checks, external calls)
-- OWASP checklist per file
-- Edge cases, race conditions, business logic errors
-
-**Security review (security-review):**
-
-- Injection (SQL, command, XSS)
-- Auth/AuthZ on all protected operations
-- IDOR checks
-- Secrets in code
-- Information disclosure in errors/logs
-
-**Severity handling:**
-
-- Critical/High: fix before proceeding
-- Medium/Low: fix or document as tech debt
-
-**Gate:** Zero Critical/High issues. All fixes verified with tests.
-
-## Step 8: Final Review
-
-**Skill:** `requesting-code-review`
-
-Two-stage review:
-
-**Stage 1 — Spec compliance:**
-
-- Every requirement in spec.md has implementation
-- No features added beyond spec (YAGNI)
-- API surface matches spec
-
-**Stage 2 — Code quality:**
-
-- Consistent with codebase patterns
-- Error messages are useful
-- No unresolved TODOs
-- Test coverage adequate
-
-**If blockers found:** send back to relevant step (implement, simplify, or security).
-
-**Gate:** APPROVED status from reviewer.
-
-## Step 9: Merge
-
-**Skill:** `finishing-a-development-branch`
-
-1. Run full test suite one final time
-2. Verify build passes
-3. Present options: merge locally / create PR / keep branch / discard
-4. Execute chosen option
-5. Clean up worktree if applicable
-
-**Verification (from verification-before-completion):**
-
-- Run test command, see output, THEN claim it passes
-- Run build, see exit 0, THEN claim it builds
-- No "should work" — only evidence
-
-## Step 10: Retrospective
-
-After merge, ask the user:
-
-> "Co poszlo dobrze, co zle? Czego sie nauczylem z tej sesji?"
-
-Then:
-
-1. Identify new patterns, gotchas, preferences discovered during this feature
-2. Update `/Users/tomasznastaly/.claude/projects/-Users-tomasznastaly-Documents-programming-carfect/memory/MEMORY.md` with:
-   - New architectural decisions
-   - Codebase gotchas discovered
-   - User preferences learned
-   - Testing patterns that worked/failed
-3. Commit the memory update
-
-**Examples of what to capture:**
-
-- "Supabase `.or()` requires escaping special chars with backslash"
-- "User prefers sequential implementation, not parallel FE+BE"
-- "Invoice module uses shared lib, not app-specific components"
-- "User wants tests after implementation, never TDD"
+Ask user what went well/badly. Update MEMORY.md with lessons learned.
 
 ## Feedback Loops
 
 **Local loop (Steps 7-8 → Step 4):**
-Bug finder, security, or reviewer finds implementation issue → send back to implementer. Spec doesn't change, only code.
+Bug/security/review issue → re-dispatch `implementer` with fix instructions. Spec unchanged.
 
 **Full loop (Step 8 → Step 1):**
-Reviewer finds spec was wrong or incomplete → back to brainstorming. Rare but critical.
+Spec itself is wrong → re-dispatch `brainstormer`. Rare but critical.
 
-## Quick Reference
+## Agent Reference
 
-| Step | Agent         | Skill                          | Input             | Output           |
-| ---- | ------------- | ------------------------------ | ----------------- | ---------------- |
-| 1    | Brainstorm    | brainstorming                  | User's idea       | spec.md          |
-| 2    | Design        | carfect-design-system          | spec.md           | Design decisions |
-| 3    | Plan          | writing-plans                  | spec.md           | plan.md          |
-| 4    | Implement     | subagent-driven-development    | plan.md           | Working code     |
-| 5    | Test          | (custom rules above)           | spec.md + code    | Test suite       |
-| 6    | Simplify      | simplify                       | Tested code       | Lean code        |
-| 7    | Bugs+Security | find-bugs + security-review    | Clean code        | Secure code      |
-| 8    | Review        | requesting-code-review         | Secure code       | Approved         |
-| 9    | Merge         | finishing-a-development-branch | Approved code     | Merged           |
-| 10   | Retro         | (memory update)                | Session learnings | MEMORY.md        |
+| Step | Agent            | Subagent Type      | Input          | Output           |
+| ---- | ---------------- | ------------------ | -------------- | ---------------- |
+| 1    | Brainstormer     | `brainstormer`     | User's idea    | spec.md          |
+| 2    | System Designer  | `system-designer`  | spec.md        | Design decisions |
+| 3    | Planner          | `planner`          | spec.md        | plan.md          |
+| 4    | Implementer      | `implementer`      | task from plan | Working code     |
+| 5    | Tester           | `tester`           | spec.md + code | Test suite       |
+| 6    | Simplifier       | `simplifier`       | Tested code    | Lean code        |
+| 7a   | Bug Finder       | `bug-finder`       | Clean code     | Bug fixes        |
+| 7b   | Security Auditor | `security-auditor` | Clean code     | Secure code      |
+| 8    | Reviewer         | `reviewer`         | Secure code    | Approved         |
+| 9    | Merger           | `merger`           | Approved code  | Merged           |
+| 10   | Retrospective    | `retrospective`    | Session        | MEMORY.md        |
 
 ## Red Flags
 
