@@ -1,4 +1,4 @@
-import { X, Plus, Minus } from 'lucide-react';
+import { X, Plus, Minus, Loader2 } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
@@ -17,6 +17,7 @@ import {
 } from '../hooks/useOrderPackages';
 import { formatCurrency } from '../constants';
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
+import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
 interface PackageCardProps {
   pkg: OrderPackage;
@@ -40,6 +41,8 @@ interface PackageCardProps {
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
   onToggleDiscount?: (productKey: string) => void;
   customerDiscount?: number;
+  customerPostalCode?: string;
+  customerCity?: string;
 }
 
 const PackageCard = ({
@@ -59,7 +62,11 @@ const PackageCard = ({
   onSetRollAssignments,
   onToggleDiscount,
   customerDiscount,
+  customerPostalCode,
+  customerCity,
 }: PackageCardProps) => {
+  const valuation = useApaczkaValuation(instanceId, pkg, customerPostalCode, customerCity);
+
   return (
     <div className="bg-card border border-border rounded-md p-3 space-y-3">
       {/* Header */}
@@ -316,6 +323,20 @@ const PackageCard = ({
                       className="h-8 text-sm"
                     />
                   </div>
+                </div>
+              )}
+
+              {valuation.loading && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Wycena przesyłki...
+                </div>
+              )}
+              {valuation.price != null && !valuation.loading && (
+                <div className="flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded bg-sky-50 border border-sky-200">
+                  <span className="text-xs text-sky-700">
+                    Szacunkowy koszt wysyłki: <strong>{valuation.price.toFixed(2)} zł</strong>
+                  </span>
                 </div>
               )}
             </div>

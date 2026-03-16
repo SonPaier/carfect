@@ -12,6 +12,8 @@ import {
   ArrowUp,
   ArrowDown,
   ShoppingCart,
+  Truck,
+  FileText,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@shared/ui';
@@ -23,8 +25,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@shared/ui';
 import { ConfirmDialog, EmptyState } from '@shared/ui';
+import { CreateInvoiceDrawer } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type SalesOrder } from '@/data/salesMockData';
@@ -87,6 +91,10 @@ const SalesOrdersView = () => {
   }>({ open: false, orderId: '', orderNumber: '' });
   const [sortColumn, setSortColumn] = useState<SortColumn>('orderNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [invoiceDrawerState, setInvoiceDrawerState] = useState<{
+    open: boolean;
+    order: SalesOrder | null;
+  }>({ open: false, order: null });
 
   const fetchOrders = useCallback(async () => {
     if (!instanceId) return;
@@ -394,6 +402,34 @@ const SalesOrdersView = () => {
     setDrawerOpen(true);
   };
 
+  const handleCreateShipment = async (orderId: string) => {
+    try {
+      toast.info('Tworzę przesyłkę w Apaczka...');
+      const { data, error } = await supabase.functions.invoke('create-apaczka-shipment', {
+        body: { orderId },
+      });
+      if (error) {
+        let errDetail = '';
+        try {
+          const errBody = await (error as any).context?.json?.();
+          errDetail = errBody?.error || errBody?.message || '';
+        } catch {
+          /* ignore */
+        }
+        toast.error('Błąd tworzenia przesyłki' + (errDetail ? ': ' + errDetail : ''));
+        return;
+      }
+      if (data?.error) {
+        toast.error('Błąd: ' + data.error);
+        return;
+      }
+      toast.success(`Przesyłka utworzona. Nr listu: ${data.waybill_number}`);
+      fetchOrders();
+    } catch {
+      toast.error('Nie udało się utworzyć przesyłki');
+    }
+  };
+
   const SortableHead = ({
     column,
     children,
@@ -587,6 +623,26 @@ const SalesOrdersView = () => {
                             <DropdownMenuItem onClick={() => handleEditOrder(order)}>
                               Edytuj
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInvoiceDrawerState({ open: true, order });
+                              }}
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Wyślij FV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateShipment(order.id);
+                              }}
+                            >
+                              <Truck className="w-4 h-4 mr-2" />
+                              Utwórz przesyłkę
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
                               onClick={() =>
@@ -699,6 +755,23 @@ const SalesOrdersView = () => {
         variant="destructive"
         onConfirm={() => handleDeleteOrder(deleteConfirm.orderId)}
       />
+      {invoiceDrawerState.order && (
+        <CreateInvoiceDrawer
+          open={invoiceDrawerState.open}
+          onClose={() => setInvoiceDrawerState({ open: false, order: null })}
+          instanceId={instanceId!}
+          customerId={(invoiceDrawerState.order as any).customerId}
+          customerName={invoiceDrawerState.order.customerName}
+          positions={invoiceDrawerState.order.products.map((p) => ({
+            name: p.name,
+            quantity: p.quantity,
+            unit_price_gross: p.priceNet * 1.23,
+            vat_rate: 23,
+          }))}
+          onSuccess={fetchOrders}
+          supabaseClient={supabase}
+        />
+      )}
     </div>
   );
 };

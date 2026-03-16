@@ -101,6 +101,10 @@ const AddSalesOrderDrawer = ({
   const [comment, setComment] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [customerAddress, setCustomerAddress] = useState<{ postalCode: string; city: string }>({
+    postalCode: '',
+    city: '',
+  });
 
   // Add customer drawer state
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
@@ -150,6 +154,27 @@ const AddSalesOrderDrawer = ({
       setBankAccountNumber(bankAccounts[0].number);
     }
   }, [bankAccounts]);
+
+  // Fetch customer address for Apaczka valuation
+  useEffect(() => {
+    if (!customerSearch.selectedCustomer?.id) {
+      setCustomerAddress({ postalCode: '', city: '' });
+      return;
+    }
+    supabase
+      .from('sales_customers')
+      .select('shipping_postal_code, shipping_city')
+      .eq('id', customerSearch.selectedCustomer.id)
+      .single()
+      .then(({ data }: any) => {
+        if (data) {
+          setCustomerAddress({
+            postalCode: data.shipping_postal_code || '',
+            city: data.shipping_city || '',
+          });
+        }
+      });
+  }, [customerSearch.selectedCustomer?.id]);
 
   const nextOrderNumber = useMemo(() => getNextOrderNumber(orders), [orders]);
 
@@ -420,41 +445,6 @@ const AddSalesOrderDrawer = ({
             toast.error('Zamówienie zapisane, ale nie udało się wysłać emaila');
           }
         }
-
-        const hasShippingPackages = orderPackages.packages.some(
-          (p) => p.shippingMethod === 'shipping',
-        );
-        if (hasShippingPackages && order?.id) {
-          try {
-            const { data: shipmentRes, error: shipmentErr } = await supabase.functions.invoke(
-              'create-apaczka-shipment',
-              {
-                body: { orderId: order.id },
-              },
-            );
-            if (shipmentRes?.error) {
-              toast.error(
-                'Zamówienie zapisane, ale nie udało się utworzyć przesyłki: ' + shipmentRes.error,
-              );
-            } else if (shipmentErr) {
-              let errDetail = '';
-              try {
-                const errBody = await (shipmentErr as any).context?.json?.();
-                errDetail = errBody?.error || errBody?.message || '';
-              } catch {
-                /* ignore parse errors */
-              }
-              toast.error(
-                'Zamówienie zapisane, ale nie udało się utworzyć przesyłki' +
-                  (errDetail ? ': ' + errDetail : ''),
-              );
-            } else {
-              toast.success(`Przesyłka utworzona. Nr listu: ${shipmentRes.waybill_number}`);
-            }
-          } catch {
-            toast.error('Zamówienie zapisane, ale nie udało się utworzyć przesyłki');
-          }
-        }
       }
 
       resetForm();
@@ -534,6 +524,8 @@ const AddSalesOrderDrawer = ({
                 onToggleDiscount={orderPackages.toggleExcludeFromDiscount}
                 customerDiscount={customerDiscount}
                 onAddPackage={orderPackages.addPackage}
+                customerPostalCode={customerAddress.postalCode}
+                customerCity={customerAddress.city}
               />
 
               <PaymentSection
