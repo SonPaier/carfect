@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ShoppingCart,
+  Users,
+  Package,
+  Cylinder,
   Settings2,
   LogOut,
   Menu,
@@ -13,6 +16,9 @@ import {
 } from 'lucide-react';
 import { useInstanceData } from '@/hooks/useInstanceData';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
+import SalesProductsView from '@/components/sales/SalesProductsView';
+import SalesCustomersView from '@/components/sales/SalesCustomersView';
+import SalesRollsView from '@/components/sales/SalesRollsView';
 import SalesCrmSettingsView from '@/components/sales/SalesCrmSettingsView';
 import { Button } from '@shared/ui';
 import { Separator } from '@shared/ui';
@@ -26,9 +32,9 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
-type SalesViewType = 'orders' | 'settings';
+type SalesViewType = 'orders' | 'customers' | 'products' | 'rolls' | 'settings';
 
-const validViews: SalesViewType[] = ['orders', 'settings'];
+const validViews: SalesViewType[] = ['orders', 'customers', 'products', 'rolls', 'settings'];
 
 const SalesDashboard = () => {
   const navigate = useNavigate();
@@ -80,6 +86,9 @@ const SalesDashboard = () => {
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
     { key: 'orders', label: 'Zamówienia', icon: ShoppingCart },
+    { key: 'customers', label: 'Klienci', icon: Users },
+    { key: 'products', label: 'Produkty', icon: Package },
+    { key: 'rolls', label: 'Rolki', icon: Cylinder },
     { key: 'settings', label: 'Ustawienia', icon: Settings2 },
   ];
 
@@ -87,6 +96,12 @@ const SalesDashboard = () => {
     switch (currentView) {
       case 'orders':
         return <SalesOrdersView />;
+      case 'customers':
+        return <SalesCustomersView />;
+      case 'products':
+        return <SalesProductsView />;
+      case 'rolls':
+        return <SalesRollsView />;
       case 'settings':
         return <SalesCrmSettingsView instanceId={instanceId} instanceData={instanceData} />;
     }
