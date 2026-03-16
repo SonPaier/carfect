@@ -12,7 +12,7 @@ export type PaymentStatus =
   | 'sms_blik_sent'
   | 'sms_bank_sent';
 
-export type DocumentKind = 'vat' | 'proforma' | 'receipt';
+export type DocumentKind = 'vat' | 'proforma';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'sent' | 'paid' | 'overdue';
 
@@ -28,6 +28,8 @@ export interface IfirmaConfig {
 
 export type ProviderConfig = FakturowniaConfig | IfirmaConfig;
 
+export type PaymentType = 'transfer' | 'cod' | 'card' | 'cash';
+
 export interface InvoicingSettings {
   instance_id: string;
   provider: InvoicingProvider | null;
@@ -36,6 +38,9 @@ export interface InvoicingSettings {
   default_payment_days: number;
   default_document_kind: DocumentKind;
   default_currency: string;
+  default_payment_type: PaymentType;
+  default_place: string;
+  default_seller_person: string;
   auto_send_email: boolean;
   active: boolean;
   created_at: string;
@@ -64,14 +69,18 @@ export interface Invoice {
   issue_date: string | null;
   sell_date: string | null;
   payment_to: string | null;
+  payment_type: PaymentType | null;
   buyer_name: string | null;
   buyer_tax_no: string | null;
   buyer_email: string | null;
+  buyer_country: string | null;
   positions: InvoicePosition[];
   total_gross: number | null;
   currency: string;
   pdf_url: string | null;
   oid: string | null;
+  place: string | null;
+  seller_person: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -86,10 +95,16 @@ export const VAT_RATES = [
 export const DOCUMENT_KINDS: { value: DocumentKind; label: string }[] = [
   { value: 'vat', label: 'Faktura VAT' },
   { value: 'proforma', label: 'Proforma' },
-  { value: 'receipt', label: 'Paragon' },
 ];
 
 export const CURRENCIES = ['PLN', 'EUR', 'USD'];
+
+export const PAYMENT_TYPES: { value: PaymentType; label: string }[] = [
+  { value: 'transfer', label: 'Przelew' },
+  { value: 'cod', label: 'Za pobraniem' },
+  { value: 'card', label: 'Karta' },
+  { value: 'cash', label: 'Gotówka' },
+];
 
 export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string }> = {
   not_invoiced: { label: 'Do rozliczenia', color: 'bg-gray-900 text-white' },

@@ -27,9 +27,13 @@ async function fakturowniaCreateInvoice(
       buyer_city: invoiceData.buyer_city || '',
       buyer_street: invoiceData.buyer_street || '',
       buyer_post_code: invoiceData.buyer_post_code || '',
+      buyer_country: invoiceData.buyer_country || '',
       currency: invoiceData.currency || 'PLN',
+      payment_type: invoiceData.payment_type || 'transfer',
       oid: invoiceData.oid || null,
       oid_unique: invoiceData.oid ? 'yes' : undefined,
+      ...(invoiceData.place ? { place: invoiceData.place } : {}),
+      ...(invoiceData.seller_person ? { seller_person: invoiceData.seller_person } : {}),
       positions: invoiceData.positions.map((p: any) => ({
         name: p.name,
         tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),
@@ -56,7 +60,7 @@ async function fakturowniaCreateInvoice(
     external_invoice_id: String(data.id),
     external_client_id: data.client_id ? String(data.client_id) : null,
     invoice_number: data.number || null,
-    pdf_url: `https://${config.domain}.fakturownia.pl/invoices/${data.id}.pdf?api_token=${config.api_token}`,
+    pdf_url: null, // PDF served via get_pdf_url action to avoid storing API token
   };
 }
 
@@ -134,14 +138,17 @@ async function ifirmaCreateInvoice(
     DataWystawienia: invoiceData.issue_date,
     DataSprzedazy: invoiceData.sell_date,
     FormatDatySprzedazy: 'DZN',
-    SposobZaplaty: 'PRZ',
+    SposobZaplaty: (() => {
+      const map: Record<string, string> = { transfer: 'PRZ', cod: 'POB', card: 'KAR', cash: 'GTK' };
+      return map[invoiceData.payment_type] || 'PRZ';
+    })(),
     Pozycje: positions,
     Kontrahent: kontrahent,
   };
 
   if (invoiceData.payment_to) body.TerminPlatnosci = invoiceData.payment_to;
-  if (invoiceData.issue_place) body.MiejsceWystawienia = invoiceData.issue_place;
-  if (invoiceData.issuer_signature) body.PodpisWystawcy = invoiceData.issuer_signature;
+  if (invoiceData.place) body.MiejsceWystawienia = invoiceData.place;
+  if (invoiceData.seller_person) body.PodpisWystawcy = invoiceData.seller_person;
 
   const bodyStr = JSON.stringify(body);
   console.log('iFirma request body:', bodyStr);
@@ -320,9 +327,13 @@ Deno.serve(async (req) => {
           issue_date: invoiceData.issue_date,
           sell_date: invoiceData.sell_date,
           payment_to: invoiceData.payment_to,
+          payment_type: invoiceData.payment_type || 'transfer',
           buyer_name: invoiceData.buyer_name,
           buyer_tax_no: invoiceData.buyer_tax_no,
           buyer_email: invoiceData.buyer_email,
+          buyer_country: invoiceData.buyer_country || null,
+          place: invoiceData.place || null,
+          seller_person: invoiceData.seller_person || null,
           positions: invoiceData.positions,
           total_gross: invoiceData.positions.reduce(
             (sum: number, p: any) => sum + p.unit_price_gross * p.quantity,
@@ -391,12 +402,23 @@ Deno.serve(async (req) => {
 
       if (!inv) throw new Error('Invoice not found');
 
-      let pdfUrl = inv.pdf_url;
-      if (!pdfUrl && provider === 'fakturownia' && inv.external_invoice_id) {
-        pdfUrl = `https://${config.domain}.fakturownia.pl/invoices/${inv.external_invoice_id}.pdf?api_token=${config.api_token}`;
+      // For Fakturownia, proxy the PDF to avoid exposing API token
+      if (provider === 'fakturownia' && inv.external_invoice_id) {
+        const pdfUrl = `https://${config.domain}.fakturownia.pl/invoices/${inv.external_invoice_id}.pdf?api_token=${config.api_token}`;
+        const pdfRes = await fetch(pdfUrl);
+        if (!pdfRes.ok) throw new Error(`Fakturownia PDF error ${pdfRes.status}`);
+        const pdfData = await pdfRes.arrayBuffer();
+        return new Response(pdfData, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="faktura-${inv.invoice_number || inv.external_invoice_id}.pdf"`,
+          },
+        });
       }
 
-      return new Response(JSON.stringify({ pdf_url: pdfUrl }), {
+      // Fallback: return stored pdf_url if any
+      return new Response(JSON.stringify({ pdf_url: inv.pdf_url || null }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

@@ -11,8 +11,10 @@ import { toast } from 'sonner';
 import {
   DOCUMENT_KINDS,
   VAT_RATES,
+  PAYMENT_TYPES,
   type InvoicePosition,
   type DocumentKind,
+  type PaymentType,
 } from './invoicing.types';
 
 type PriceMode = 'netto' | 'brutto';
@@ -38,6 +40,10 @@ interface InvoiceFormProps {
   onBuyerPostCodeChange: (v: string) => void;
   buyerCity: string;
   onBuyerCityChange: (v: string) => void;
+  buyerCountry: string;
+  onBuyerCountryChange: (v: string) => void;
+  paymentType: PaymentType;
+  onPaymentTypeChange: (v: PaymentType) => void;
   positions: InvoicePosition[];
   onAddPosition: () => void;
   onRemovePosition: (idx: number) => void;
@@ -74,6 +80,10 @@ export function InvoiceForm({
   onBuyerPostCodeChange,
   buyerCity,
   onBuyerCityChange,
+  buyerCountry,
+  onBuyerCountryChange,
+  paymentType,
+  onPaymentTypeChange,
   positions,
   onAddPosition,
   onRemovePosition,
@@ -149,7 +159,7 @@ export function InvoiceForm({
         </Select>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Data wystawienia</Label>
           <Input
@@ -168,6 +178,9 @@ export function InvoiceForm({
             className="bg-white h-9 text-sm"
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Termin (dni)</Label>
           <Input
@@ -177,6 +190,21 @@ export function InvoiceForm({
             onChange={(e) => onPaymentDaysChange(Number(e.target.value))}
             className="bg-white h-9 text-sm"
           />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Metoda platnosci</Label>
+          <Select value={paymentType} onValueChange={(v) => onPaymentTypeChange(v as PaymentType)}>
+            <SelectTrigger className="bg-white h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAYMENT_TYPES.map((pt) => (
+                <SelectItem key={pt.value} value={pt.value}>
+                  {pt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -230,7 +258,7 @@ export function InvoiceForm({
             placeholder="Ulica"
             className="bg-white h-9"
           />
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <Input
               value={buyerPostCode}
               onChange={(e) => onBuyerPostCodeChange(e.target.value)}
@@ -242,6 +270,12 @@ export function InvoiceForm({
               onChange={(e) => onBuyerCityChange(e.target.value)}
               placeholder="Miasto"
               className="bg-white h-9 col-span-2"
+            />
+            <Input
+              value={buyerCountry}
+              onChange={(e) => onBuyerCountryChange(e.target.value)}
+              placeholder="Kraj"
+              className="bg-white h-9"
             />
           </div>
         </div>

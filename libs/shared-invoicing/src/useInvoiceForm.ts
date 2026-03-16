@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { useInvoicingSettings } from './useInvoicingSettings';
-import type { InvoicePosition, DocumentKind } from './invoicing.types';
+import type { InvoicePosition, DocumentKind, PaymentType } from './invoicing.types';
 
 export type PriceMode = 'netto' | 'brutto';
 
 export interface UseInvoiceFormOptions {
   instanceId: string;
   calendarItemId?: string;
+  salesOrderId?: string;
   customerId?: string | null;
   customerName?: string | null;
   customerEmail?: string | null;
@@ -17,12 +18,15 @@ export interface UseInvoiceFormOptions {
   onSuccess?: () => void;
   onClose?: () => void;
   supabaseClient: any; // SupabaseClient
+  /** Table to query/update customer data. Defaults to 'customers'. */
+  customerTable?: string;
 }
 
 export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const {
     instanceId,
     calendarItemId,
+    salesOrderId,
     customerId,
     customerName,
     customerEmail,
@@ -31,6 +35,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     onSuccess,
     onClose,
     supabaseClient,
+    customerTable = 'customers',
   } = options;
 
   const { settings } = useInvoicingSettings(instanceId, supabaseClient);
@@ -47,6 +52,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const [buyerStreet, setBuyerStreet] = useState('');
   const [buyerPostCode, setBuyerPostCode] = useState('');
   const [buyerCity, setBuyerCity] = useState('');
+  const [buyerCountry, setBuyerCountry] = useState('PL');
+  const [paymentType, setPaymentType] = useState<PaymentType>('transfer');
   const [positions, setPositions] = useState<InvoicePosition[]>([
     { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23 },
   ]);
@@ -57,6 +64,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     if (settings) {
       setKind((settings.default_document_kind as DocumentKind) || 'vat');
       setPaymentDays(settings.default_payment_days || 14);
+      setPaymentType((settings.default_payment_type as PaymentType) || 'transfer');
     }
     setBuyerName(customerName || '');
     setBuyerEmail(customerEmail || '');
@@ -64,6 +72,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerStreet('');
     setBuyerPostCode('');
     setBuyerCity('');
+    setBuyerCountry('PL');
     setAutoSendEmail(settings?.auto_send_email ?? false);
     if (initialPositions?.length) {
       setPositions(initialPositions);
@@ -72,18 +81,19 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setSellDate(format(new Date(), 'yyyy-MM-dd'));
   }, [open]);
 
-  // Fetch customer NIP if not provided
+  // Fetch customer billing data if not provided
   useEffect(() => {
-    if (!open || !customerId || customerNip) return;
+    if (!open || !customerId) return;
     supabaseClient
-      .from('customers')
+      .from(customerTable)
       .select('nip, email, company, billing_city, billing_postal_code, billing_street')
       .eq('id', customerId)
       .single()
       .then(({ data }: any) => {
         if (data) {
-          if (data.nip && !buyerTaxNo) setBuyerTaxNo(data.nip);
+          if (data.nip) setBuyerTaxNo(data.nip);
           if (data.email && !buyerEmail) setBuyerEmail(data.email);
+          if (data.company && !buyerName) setBuyerName(data.company);
           if (data.billing_street) setBuyerStreet(data.billing_street);
           if (data.billing_postal_code) setBuyerPostCode(data.billing_postal_code);
           if (data.billing_city) setBuyerCity(data.billing_city);
@@ -154,6 +164,12 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     let brutto = 0;
     for (const p of positions) {
       const lineTotal = p.unit_price_gross * p.quantity;
+      // vat_rate -1 means "zwolniony" (exempt) — netto equals brutto
+      if (p.vat_rate === -1) {
+        netto += lineTotal;
+        brutto += lineTotal;
+        continue;
+      }
       const rate = p.vat_rate / 100;
       if (priceMode === 'netto') {
         netto += lineTotal;
@@ -212,6 +228,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
           action: 'create_invoice',
           instanceId,
           calendarItemId,
+          salesOrderId,
           customerId,
           autoSendEmail,
           invoiceData: {
@@ -219,12 +236,16 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
             issue_date: issueDate,
             sell_date: sellDate,
             payment_to: paymentTo,
+            payment_type: paymentType,
             buyer_name: buyerName,
             buyer_tax_no: buyerTaxNo,
             buyer_email: buyerEmail,
             buyer_street: buyerStreet,
             buyer_post_code: buyerPostCode,
             buyer_city: buyerCity,
+            buyer_country: buyerCountry || 'PL',
+            place: settings?.default_place || undefined,
+            seller_person: settings?.default_seller_person || undefined,
             currency: 'PLN',
             positions: grossPositions,
             oid: calendarItemId,
@@ -252,7 +273,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         if (buyerStreet) updateData.billing_street = buyerStreet;
         if (buyerPostCode) updateData.billing_postal_code = buyerPostCode;
         if (buyerCity) updateData.billing_city = buyerCity;
-        await supabaseClient.from('customers').update(updateData).eq('id', customerId);
+        await supabaseClient.from(customerTable).update(updateData).eq('id', customerId);
       }
 
       toast.success(
@@ -295,6 +316,10 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerPostCode,
     buyerCity,
     setBuyerCity,
+    buyerCountry,
+    setBuyerCountry,
+    paymentType,
+    setPaymentType,
     positions,
     paymentTo,
     totalNetto,

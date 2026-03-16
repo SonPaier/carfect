@@ -45,11 +45,32 @@ CREATE TABLE IF NOT EXISTS invoices (
 ALTER TABLE invoicing_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 
--- Allow authenticated users with proper instance access
-CREATE POLICY "invoicing_settings_select" ON invoicing_settings FOR SELECT USING (true);
-CREATE POLICY "invoicing_settings_all" ON invoicing_settings FOR ALL USING (true);
-CREATE POLICY "invoices_select" ON invoices FOR SELECT USING (true);
-CREATE POLICY "invoices_all" ON invoices FOR ALL USING (true);
+-- RLS: restrict to instance members
+CREATE POLICY "invoicing_settings_admin" ON invoicing_settings FOR ALL USING (
+  public.has_role(auth.uid(), 'super_admin'::public.app_role)
+  OR public.has_instance_role(auth.uid(), 'admin'::public.app_role, instance_id)
+);
+
+CREATE POLICY "invoicing_settings_sales_select" ON invoicing_settings FOR SELECT USING (
+  public.has_instance_role(auth.uid(), 'sales'::public.app_role, instance_id)
+);
+
+CREATE POLICY "invoices_admin" ON invoices FOR ALL USING (
+  public.has_role(auth.uid(), 'super_admin'::public.app_role)
+  OR public.has_instance_role(auth.uid(), 'admin'::public.app_role, instance_id)
+);
+
+CREATE POLICY "invoices_sales_select" ON invoices FOR SELECT USING (
+  public.has_instance_role(auth.uid(), 'sales'::public.app_role, instance_id)
+);
+
+CREATE POLICY "invoices_sales_insert" ON invoices FOR INSERT WITH CHECK (
+  public.has_instance_role(auth.uid(), 'sales'::public.app_role, instance_id)
+);
+
+CREATE POLICY "invoices_sales_update" ON invoices FOR UPDATE USING (
+  public.has_instance_role(auth.uid(), 'sales'::public.app_role, instance_id)
+);
 
 -- Triggers for updated_at
 CREATE TRIGGER update_invoicing_settings_updated_at

@@ -29,10 +29,27 @@ serve(async (req) => {
   }
 
   try {
+    // Verify caller is authenticated
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return jsonResponse({ error: 'Unauthorized' }, 401);
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    // Validate token
+    const anonClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { error: authError } = await anonClient.auth.getUser();
+    if (authError) {
+      return jsonResponse({ error: 'Unauthorized' }, 401);
+    }
 
     const { instanceId, packages, customerAddress } = (await req.json()) as {
       instanceId?: string;

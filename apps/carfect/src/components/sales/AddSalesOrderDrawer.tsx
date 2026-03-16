@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useInstanceData } from '@/hooks/useInstanceData';
-import { type SalesOrder } from '@/data/salesMockData';
 import { getNextOrderNumber } from './SalesOrdersView';
 import AddEditSalesCustomerDrawer from './AddEditSalesCustomerDrawer';
 import SalesProductSelectionDrawer from './SalesProductSelectionDrawer';
@@ -60,7 +59,6 @@ export interface EditOrderData {
 interface AddSalesOrderDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orders: SalesOrder[];
   initialCustomer?: { id: string; name: string; discountPercent?: number } | null;
   editOrder?: EditOrderData | null;
   onOrderCreated?: () => void;
@@ -69,7 +67,6 @@ interface AddSalesOrderDrawerProps {
 const AddSalesOrderDrawer = ({
   open,
   onOpenChange,
-  orders,
   initialCustomer,
   editOrder,
   onOrderCreated,
@@ -176,12 +173,25 @@ const AddSalesOrderDrawer = ({
       });
   }, [customerSearch.selectedCustomer?.id]);
 
-  const nextOrderNumber = useMemo(() => getNextOrderNumber(orders), [orders]);
+  const [nextOrderNumber, setNextOrderNumber] = useState('');
+  useEffect(() => {
+    if (open && !isEdit && instanceId) {
+      getNextOrderNumber(instanceId).then(setNextOrderNumber);
+    }
+  }, [open, isEdit, instanceId]);
 
   /* ── Totals ── */
 
+  /** Effective quantity: total m² from roll assignments, or plain quantity */
+  const getEffectiveQty = (p: OrderProduct) =>
+    p.rollAssignments?.length
+      ? p.rollAssignments.reduce((sum, ra) => sum + ra.usageM2, 0)
+      : p.quantity;
+
+  const getProductTotal = (p: OrderProduct) => p.priceNet * getEffectiveQty(p);
+
   const subtotalNet = useMemo(
-    () => products.reduce((sum, p) => sum + p.priceNet * p.quantity, 0),
+    () => products.reduce((sum, p) => sum + getProductTotal(p), 0),
     [products],
   );
 
@@ -189,7 +199,7 @@ const AddSalesOrderDrawer = ({
     () =>
       products
         .filter((p) => !p.excludeFromDiscount)
-        .reduce((sum, p) => sum + p.priceNet * p.quantity, 0),
+        .reduce((sum, p) => sum + getProductTotal(p), 0),
     [products],
   );
 
@@ -245,6 +255,7 @@ const AddSalesOrderDrawer = ({
     }
 
     // Validate roll availability before saving (multi-roll assignments)
+    // Aggregate usage per roll across ALL products to catch same-roll-multiple-products
     const allAssignments = products.flatMap((p) =>
       (p.rollAssignments || [])
         .filter((a) => a.rollId && a.usageM2 > 0)
@@ -253,13 +264,30 @@ const AddSalesOrderDrawer = ({
     if (allAssignments.length > 0) {
       setSaving(true);
       try {
+        // Group total usage per roll across all products in this order
+        const usageByRoll = new Map<string, { totalM2: number; productNames: string[] }>();
         for (const a of allAssignments) {
-          const rollData = await fetchRollRemainingMb(a.rollId, isEdit ? editOrder?.id : undefined);
+          const existing = usageByRoll.get(a.rollId);
+          if (existing) {
+            existing.totalM2 += a.usageM2;
+            if (!existing.productNames.includes(a.productName)) {
+              existing.productNames.push(a.productName);
+            }
+          } else {
+            usageByRoll.set(a.rollId, { totalM2: a.usageM2, productNames: [a.productName] });
+          }
+        }
+
+        // Validate each roll's total usage against remaining capacity
+        for (const [rollId, usage] of usageByRoll) {
+          const rollData = await fetchRollRemainingMb(rollId, isEdit ? editOrder?.id : undefined);
           const remainingM2 = mbToM2(rollData.remainingMb, rollData.widthMm);
-          if (a.usageM2 > remainingM2) {
-            const shortage = (a.usageM2 - remainingM2).toFixed(2);
+          if (usage.totalM2 > remainingM2 + 0.01) {
+            // small epsilon for floating point
+            const shortage = (usage.totalM2 - remainingM2).toFixed(2);
+            const names = usage.productNames.join(', ');
             toast.error(
-              `Rolka przypisana do „${a.productName}" ma za mało materiału. Zostało ${remainingM2.toFixed(2)} m², brakuje ${shortage} m².`,
+              `Rolka przypisana do „${names}" ma za mało materiału. Potrzeba ${usage.totalM2.toFixed(2)} m², zostało ${remainingM2.toFixed(2)} m² (brakuje ${shortage} m²).`,
             );
             setSaving(false);
             return;
@@ -311,17 +339,20 @@ const AddSalesOrderDrawer = ({
         // Delete old items and their roll usages (cascade handles usages)
         await (supabase.from('sales_order_items').delete().eq('order_id', editOrder.id) as any);
         if (products.length > 0) {
-          const items = products.map((p, idx) => ({
-            order_id: editOrder.id,
-            product_id: p.productId || null,
-            variant_id: p.variantId || null,
-            name: p.name,
-            quantity: p.quantity,
-            price_net: p.priceNet,
-            price_unit: p.priceUnit || 'szt.',
-            vehicle: p.vehicle || null,
-            sort_order: idx,
-          }));
+          const items = products.map((p, idx) => {
+            const qty = getEffectiveQty(p);
+            return {
+              order_id: editOrder.id,
+              product_id: p.productId || null,
+              variant_id: p.variantId || null,
+              name: p.name,
+              quantity: qty,
+              price_net: p.priceNet,
+              price_unit: p.priceUnit || 'szt.',
+              vehicle: p.vehicle || null,
+              sort_order: idx,
+            };
+          });
           const { data: insertedItems } = await (supabase
             .from('sales_order_items')
             .insert(items)
@@ -343,7 +374,10 @@ const AddSalesOrderDrawer = ({
                       usedMb: m2ToMb(a.usageM2, a.widthMm),
                     });
                   } catch (e) {
-                    console.warn('Roll usage creation failed:', e);
+                    console.error('Roll usage creation failed:', e);
+                    toast.error(
+                      `Błąd zapisu zużycia rolki: ${(e as any)?.message || 'Nieznany błąd'}`,
+                    );
                   }
                 }
               }
@@ -382,17 +416,21 @@ const AddSalesOrderDrawer = ({
         if (error) throw error;
 
         if (order?.id && products.length > 0) {
-          const items = products.map((p, idx) => ({
-            order_id: order.id,
-            product_id: p.productId || null,
-            variant_id: p.variantId || null,
-            name: p.name,
-            quantity: p.quantity,
-            price_net: p.priceNet,
-            price_unit: p.priceUnit || 'szt.',
-            vehicle: p.vehicle || null,
-            sort_order: idx,
-          }));
+          const items = products.map((p, idx) => {
+            // For m² products, store total assigned m² as quantity
+            const qty = getEffectiveQty(p);
+            return {
+              order_id: order.id,
+              product_id: p.productId || null,
+              variant_id: p.variantId || null,
+              name: p.name,
+              quantity: qty,
+              price_net: p.priceNet,
+              price_unit: p.priceUnit || 'szt.',
+              vehicle: p.vehicle || null,
+              sort_order: idx,
+            };
+          });
           const { data: insertedItems } = await (supabase
             .from('sales_order_items')
             .insert(items)
@@ -414,7 +452,10 @@ const AddSalesOrderDrawer = ({
                       usedMb: m2ToMb(a.usageM2, a.widthMm),
                     });
                   } catch (e) {
-                    console.warn('Roll usage creation failed:', e);
+                    console.error('Roll usage creation failed:', e);
+                    toast.error(
+                      `Błąd zapisu zużycia rolki: ${(e as any)?.message || 'Nieznany błąd'}`,
+                    );
                   }
                 }
               }

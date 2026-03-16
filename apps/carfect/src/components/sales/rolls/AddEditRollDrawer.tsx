@@ -137,7 +137,7 @@ const AddEditRollDrawer = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg flex flex-col"
+        className="w-full sm:max-w-lg flex flex-col bg-white"
         hideCloseButton
         onEscapeKeyDown={(e) => e.preventDefault()}
       >

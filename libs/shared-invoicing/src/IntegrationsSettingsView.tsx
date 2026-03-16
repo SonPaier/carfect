@@ -16,9 +16,10 @@ import type {
   FakturowniaConfig,
   IfirmaConfig,
   DocumentKind,
+  PaymentType,
   ProviderConfig,
 } from './invoicing.types';
-import { VAT_RATES, DOCUMENT_KINDS, CURRENCIES } from './invoicing.types';
+import { VAT_RATES, DOCUMENT_KINDS, CURRENCIES, PAYMENT_TYPES } from './invoicing.types';
 
 interface IntegrationsSettingsViewProps {
   instanceId: string | null;
@@ -54,6 +55,9 @@ export function IntegrationsSettingsView({
   const [paymentDays, setPaymentDays] = useState(14);
   const [documentKind, setDocumentKind] = useState<DocumentKind>('vat');
   const [currency, setCurrency] = useState('PLN');
+  const [defaultPaymentType, setDefaultPaymentType] = useState<PaymentType>('transfer');
+  const [defaultPlace, setDefaultPlace] = useState('');
+  const [defaultSellerPerson, setDefaultSellerPerson] = useState('');
   const [autoSendEmail, setAutoSendEmail] = useState(false);
 
   useEffect(() => {
@@ -63,6 +67,9 @@ export function IntegrationsSettingsView({
       setPaymentDays(settings.default_payment_days);
       setDocumentKind(settings.default_document_kind as DocumentKind);
       setCurrency(settings.default_currency);
+      setDefaultPaymentType((settings.default_payment_type as PaymentType) || 'transfer');
+      setDefaultPlace(settings.default_place || '');
+      setDefaultSellerPerson(settings.default_seller_person || '');
       setAutoSendEmail(settings.auto_send_email);
 
       if (settings.provider === 'fakturownia' && settings.provider_config) {
@@ -97,6 +104,9 @@ export function IntegrationsSettingsView({
       default_payment_days: paymentDays,
       default_document_kind: documentKind,
       default_currency: currency,
+      default_payment_type: defaultPaymentType,
+      default_place: defaultPlace || null,
+      default_seller_person: defaultSellerPerson || null,
       auto_send_email: autoSendEmail,
       active: !!activeProvider,
     });
@@ -215,6 +225,49 @@ export function IntegrationsSettingsView({
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label>Domyslna metoda platnosci</Label>
+        <Select
+          value={defaultPaymentType}
+          onValueChange={(v) => setDefaultPaymentType(v as PaymentType)}
+        >
+          <SelectTrigger className="bg-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PAYMENT_TYPES.map((pt) => (
+              <SelectItem key={pt.value} value={pt.value}>
+                {pt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Separator />
+      <h4 className="text-sm font-medium">Ustawienia dokumentu</h4>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Miejsce wystawienia</Label>
+          <Input
+            value={defaultPlace}
+            onChange={(e) => setDefaultPlace(e.target.value)}
+            placeholder="np. Warszawa"
+            className="bg-white"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Podpis wystawcy</Label>
+          <Input
+            value={defaultSellerPerson}
+            onChange={(e) => setDefaultSellerPerson(e.target.value)}
+            placeholder="np. Jan Kowalski"
+            className="bg-white"
+          />
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <Label htmlFor="auto-send">Automatycznie wysylaj mailem</Label>
         <Switch id="auto-send" checked={autoSendEmail} onCheckedChange={setAutoSendEmail} />
@@ -245,6 +298,7 @@ export function IntegrationsSettingsView({
                 config={fakturowniaConfig}
                 onChange={setFakturowniaConfig}
                 instanceId={instanceId || ''}
+                supabaseClient={supabaseClient}
               />
               {renderCommonSettings()}
             </CardContent>

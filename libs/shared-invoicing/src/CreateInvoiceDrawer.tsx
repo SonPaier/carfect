@@ -11,6 +11,7 @@ interface CreateInvoiceDrawerProps {
   onClose: () => void;
   instanceId: string;
   calendarItemId?: string;
+  salesOrderId?: string;
   customerId?: string | null;
   customerName?: string | null;
   customerEmail?: string | null;
@@ -18,6 +19,8 @@ interface CreateInvoiceDrawerProps {
   positions?: InvoicePosition[];
   onSuccess?: () => void;
   supabaseClient: any; // SupabaseClient
+  /** Table to query/update customer data. Defaults to 'customers'. */
+  customerTable?: string;
 }
 
 export function CreateInvoiceDrawer({
@@ -25,6 +28,7 @@ export function CreateInvoiceDrawer({
   onClose,
   instanceId,
   calendarItemId,
+  salesOrderId,
   customerId,
   customerName,
   customerEmail,
@@ -32,12 +36,14 @@ export function CreateInvoiceDrawer({
   positions: initialPositions,
   onSuccess,
   supabaseClient,
+  customerTable,
 }: CreateInvoiceDrawerProps) {
   const isMobile = useIsMobile();
 
   const form = useInvoiceForm(open, {
     instanceId,
     calendarItemId,
+    salesOrderId,
     customerId,
     customerName,
     customerEmail,
@@ -46,6 +52,7 @@ export function CreateInvoiceDrawer({
     onSuccess,
     onClose,
     supabaseClient,
+    customerTable,
   });
 
   return (
@@ -59,7 +66,7 @@ export function CreateInvoiceDrawer({
         side="right"
         hideCloseButton
         hideOverlay
-        className="flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full"
+        className="flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full bg-white"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetTitle className="sr-only">Wystaw fakture</SheetTitle>
@@ -101,6 +108,10 @@ export function CreateInvoiceDrawer({
             onBuyerPostCodeChange={form.setBuyerPostCode}
             buyerCity={form.buyerCity}
             onBuyerCityChange={form.setBuyerCity}
+            buyerCountry={form.buyerCountry}
+            onBuyerCountryChange={form.setBuyerCountry}
+            paymentType={form.paymentType}
+            onPaymentTypeChange={form.setPaymentType}
             positions={form.positions}
             onAddPosition={form.addPosition}
             onRemovePosition={form.removePosition}

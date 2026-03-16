@@ -1,34 +1,31 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 function jsonResponse(body: Record<string, unknown>, status: number) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
 // ─── Google Vision OCR ──────────────────────────────────────
 
-async function callGoogleVision(
-  imageBase64: string,
-  apiKey: string,
-): Promise<string> {
+async function callGoogleVision(imageBase64: string, apiKey: string): Promise<string> {
   const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
 
   const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       requests: [
         {
           image: { content: imageBase64 },
-          features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }],
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }],
         },
       ],
     }),
@@ -36,7 +33,7 @@ async function callGoogleVision(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Google Vision API error:", errorText);
+    console.error('Google Vision API error:', errorText);
     throw new Error(`Google Vision API error: ${response.status}`);
   }
 
@@ -47,9 +44,9 @@ async function callGoogleVision(
     throw new Error(`Vision API error: ${resp.error.message}`);
   }
 
-  const fullText = resp?.fullTextAnnotation?.text || "";
+  const fullText = resp?.fullTextAnnotation?.text || '';
   if (!fullText) {
-    throw new Error("No text detected in image");
+    throw new Error('No text detected in image');
   }
 
   return fullText;
@@ -74,7 +71,7 @@ function isDescriptionLine(line: string): boolean {
 
 // Lines that are clearly not product/brand names
 function isNoiseLine(line: string): boolean {
-  const s = line.replace(/\s/g, "");
+  const s = line.replace(/\s/g, '');
   if (/^\d{8,}$/.test(s)) return true; // barcode
   if (/^[A-Z0-9]{2,}-[A-Z0-9]{2,}-/.test(line)) return true; // product code
   if (/\d+\s*mm\s*[x×X]/i.test(line)) return true; // metric dimension
@@ -86,15 +83,18 @@ function isNoiseLine(line: string): boolean {
 // ─── Parser ─────────────────────────────────────────────────
 
 function parseRollLabel(rawText: string) {
-  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
-  const collapsed = rawText.replace(/\s+/g, " ");
+  const lines = rawText
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const collapsed = rawText.replace(/\s+/g, ' ');
 
   const result: Record<string, unknown> = {
-    brand: "",
-    productName: "",
-    description: "",
-    productCode: "",
-    barcode: "",
+    brand: '',
+    productName: '',
+    description: '',
+    productCode: '',
+    barcode: '',
     widthMm: 0,
     lengthM: 0,
   };
@@ -129,7 +129,7 @@ function parseRollLabel(rawText: string) {
   // ══════════════════════════════════════════════════════════
   // Pass 1: line that is purely/mostly digits (allow spaces between digit groups)
   for (let i = 0; i < lines.length; i++) {
-    const digitsOnly = lines[i].replace(/[\s\-\.]/g, "");
+    const digitsOnly = lines[i].replace(/[\s\-\.]/g, '');
     if (/^\d{8,14}$/.test(digitsOnly)) {
       result.barcode = digitsOnly;
       confidence.barcode = 0.95;
@@ -139,7 +139,7 @@ function parseRollLabel(rawText: string) {
     // Also match "8 801990 000153" style (space-separated digit groups)
     const spaced = lines[i].match(/^(\d[\d\s]{8,16}\d)$/);
     if (spaced) {
-      const clean = spaced[1].replace(/\s/g, "");
+      const clean = spaced[1].replace(/\s/g, '');
       if (clean.length >= 8 && clean.length <= 14) {
         result.barcode = clean;
         confidence.barcode = 0.9;
@@ -153,7 +153,7 @@ function parseRollLabel(rawText: string) {
   if (!result.barcode) {
     const runs = collapsed.match(/\d[\d\s]{7,15}\d/g) || [];
     for (const run of runs) {
-      const clean = run.replace(/\s/g, "");
+      const clean = run.replace(/\s/g, '');
       if (clean.length >= 8 && clean.length <= 14) {
         result.barcode = clean;
         confidence.barcode = 0.8;
@@ -165,7 +165,7 @@ function parseRollLabel(rawText: string) {
   // Pass 3: embedded in any line
   if (!result.barcode) {
     for (const line of lines) {
-      const match = line.replace(/\s/g, "").match(/(\d{8,14})/);
+      const match = line.replace(/\s/g, '').match(/(\d{8,14})/);
       if (match) {
         result.barcode = match[1];
         confidence.barcode = 0.7;
@@ -185,7 +185,7 @@ function parseRollLabel(rawText: string) {
 
   for (let i = 0; i < lines.length; i++) {
     if (consumed.has(i)) continue;
-    const clean = lines[i].replace(/[\s\-]/g, "");
+    const clean = lines[i].replace(/[\s\-]/g, '');
     if (clean === result.barcode) continue; // skip barcode line
 
     for (const pattern of codePatterns) {
@@ -205,7 +205,7 @@ function parseRollLabel(rawText: string) {
     const fallback = /\b([A-Z\d]{3,}-[A-Z\d]{3,}(?:-[A-Z\d]+)*)\b/i;
     for (let i = 0; i < lines.length; i++) {
       if (consumed.has(i)) continue;
-      const clean = lines[i].replace(/[\s\-]/g, "");
+      const clean = lines[i].replace(/[\s\-]/g, '');
       if (clean === result.barcode) continue;
       const match = lines[i].match(fallback);
       if (match && match[1].length >= 8) {
@@ -219,32 +219,56 @@ function parseRollLabel(rawText: string) {
 
   // ══════════════════════════════════════════════════════════
   // 4. DIMENSIONS (width × length)
+  //    Labels often show both imperial and metric:
+  //    "60" x 50ft / 1,524mm x 15m"
+  //    We prefer the metric part (after "/") and treat
+  //    length in meters as integer (rolls are always whole meters).
+  //    Comma in "1,524mm" is a thousands separator → 1524mm.
   // ══════════════════════════════════════════════════════════
   let dimFound = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
+    // If line contains "/" separator (imperial / metric), prefer the metric part
+    const metricPart = line.includes('/') ? line.split('/').pop()!.trim() : line;
+
     // Metric: 1524mm × 15m / 1,524mm x 15m (comma as thousands separator)
     const met =
-      line.match(/(\d[\d,]*(?:\.\d+)?)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i) ||
-      line.match(/(\d{3,5})\s*[x×X]\s*(\d{1,3}(?:\.\d+)?)\s*m\b/i);
+      metricPart.match(/(\d[\d,]*(?:\.\d+)?)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i) ||
+      metricPart.match(/(\d{3,5})\s*[x×X]\s*(\d{1,3}(?:\.\d+)?)\s*m\b/i);
 
     if (met) {
-      result.widthMm = parseFloat(met[1].replace(/,/g, ""));
-      result.lengthM = parseFloat(met[2].replace(/,/g, ""));
+      result.widthMm = parseFloat(met[1].replace(/,/g, ''));
+      result.lengthM = Math.round(parseFloat(met[2].replace(/,/g, '')));
       confidence.widthMm = 0.95;
       confidence.lengthM = 0.95;
       consumed.add(i);
       dimFound = true;
       break;
     }
+
+    // Also try full line if metric part didn't match
+    if (metricPart !== line) {
+      const metFull =
+        line.match(/(\d[\d,]*(?:\.\d+)?)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i) ||
+        line.match(/(\d{3,5})\s*[x×X]\s*(\d{1,3}(?:\.\d+)?)\s*m\b/i);
+      if (metFull) {
+        result.widthMm = parseFloat(metFull[1].replace(/,/g, ''));
+        result.lengthM = Math.round(parseFloat(metFull[2].replace(/,/g, '')));
+        confidence.widthMm = 0.9;
+        confidence.lengthM = 0.9;
+        consumed.add(i);
+        dimFound = true;
+        break;
+      }
+    }
   }
 
   if (!dimFound) {
-    const wMm = rawText.match(/\b(\d{3,4})\s*mm\b/i);
+    const wMm = rawText.match(/\b(\d[\d,]*)\s*mm\b/i);
     if (wMm) {
-      result.widthMm = parseFloat(wMm[1]);
+      result.widthMm = parseFloat(wMm[1].replace(/,/g, ''));
       confidence.widthMm = 0.6;
     }
 
@@ -252,15 +276,15 @@ function parseRollLabel(rawText: string) {
     if (lM && !result.lengthM) {
       const val = parseFloat(lM[1]);
       if (val > 0 && val < 200) {
-        result.lengthM = val;
+        result.lengthM = Math.round(val);
         confidence.lengthM = 0.5;
       }
     }
   }
 
-  // Round dimensions to 1 decimal place
-  if (result.widthMm) result.widthMm = Math.round((result.widthMm as number) * 10) / 10;
-  if (result.lengthM) result.lengthM = Math.round((result.lengthM as number) * 10) / 10;
+  // Width: round to integer (always whole mm), Length: always integer meters
+  if (result.widthMm) result.widthMm = Math.round(result.widthMm as number);
+  if (result.lengthM) result.lengthM = Math.round(result.lengthM as number);
 
   // ══════════════════════════════════════════════════════════
   // 5. BRAND & PRODUCT NAME — from remaining unconsumed lines
@@ -303,12 +327,12 @@ function parseRollLabel(rawText: string) {
         nameParts.push(line);
         // Stop once we have a reasonable product name (>= 3 chars combined)
         // but keep going if parts are very short (like "XP" alone)
-        const combined = nameParts.join(" ");
+        const combined = nameParts.join(' ');
         if (combined.length >= 6) break;
       }
 
       if (nameParts.length > 0) {
-        result.productName = nameParts.join(" ");
+        result.productName = nameParts.join(' ');
         confidence.productName = 0.85;
       }
     }
@@ -320,27 +344,24 @@ function parseRollLabel(rawText: string) {
 // ─── Main handler ───────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const googleApiKey = Deno.env.get("GOOGLE_VISION_API_KEY");
+    const googleApiKey = Deno.env.get('GOOGLE_VISION_API_KEY');
     if (!googleApiKey) {
-      return jsonResponse(
-        { error: "GOOGLE_VISION_API_KEY not configured" },
-        500,
-      );
+      return jsonResponse({ error: 'GOOGLE_VISION_API_KEY not configured' }, 500);
     }
 
     const { imageBase64 } = await req.json();
     if (!imageBase64) {
-      return jsonResponse({ error: "imageBase64 is required" }, 400);
+      return jsonResponse({ error: 'imageBase64 is required' }, 400);
     }
 
     // Step 1: OCR via Google Vision
     const rawText = await callGoogleVision(imageBase64, googleApiKey);
-    console.log("OCR raw text:", rawText);
+    console.log('OCR raw text:', rawText);
 
     // Step 2: Parse extracted text into structured data
     const { result: extracted, confidence } = parseRollLabel(rawText);
@@ -349,7 +370,7 @@ serve(async (req) => {
     if (!extracted.widthMm && !extracted.lengthM && !extracted.brand && !extracted.productName) {
       return jsonResponse(
         {
-          error: "Nie udało się odczytać danych z etykiety",
+          error: 'Nie udało się odczytać danych z etykiety',
           rawText,
           partial: extracted,
           confidence,
@@ -361,22 +382,22 @@ serve(async (req) => {
     // Flag warnings
     const warnings: string[] = [];
     if (confidence.barcode > 0 && confidence.barcode < 0.8) {
-      warnings.push("Kod kreskowy może być niepoprawny — sprawdź");
+      warnings.push('Kod kreskowy może być niepoprawny — sprawdź');
     }
     if (confidence.productCode > 0 && confidence.productCode < 0.8) {
-      warnings.push("Kod produktu może być niepoprawny — sprawdź");
+      warnings.push('Kod produktu może być niepoprawny — sprawdź');
     }
     if (confidence.brand > 0 && confidence.brand < 0.8) {
-      warnings.push("Marka mogła zostać źle odczytana — sprawdź");
+      warnings.push('Marka mogła zostać źle odczytana — sprawdź');
     }
     if (confidence.productName > 0 && confidence.productName < 0.8) {
-      warnings.push("Nazwa produktu mogła zostać źle odczytana — sprawdź");
+      warnings.push('Nazwa produktu mogła zostać źle odczytana — sprawdź');
     }
     if (confidence.widthMm > 0 && confidence.widthMm < 0.8) {
-      warnings.push("Szerokość mogła zostać źle odczytana — sprawdź");
+      warnings.push('Szerokość mogła zostać źle odczytana — sprawdź');
     }
     if (confidence.lengthM > 0 && confidence.lengthM < 0.8) {
-      warnings.push("Długość mogła zostać źle odczytana — sprawdź");
+      warnings.push('Długość mogła zostać źle odczytana — sprawdź');
     }
 
     return jsonResponse(
@@ -389,10 +410,7 @@ serve(async (req) => {
       200,
     );
   } catch (err) {
-    console.error("extract-roll-data error:", err);
-    return jsonResponse(
-      { error: err.message || "Internal error" },
-      500,
-    );
+    console.error('extract-roll-data error:', err);
+    return jsonResponse({ error: err.message || 'Internal error' }, 500);
   }
 });
