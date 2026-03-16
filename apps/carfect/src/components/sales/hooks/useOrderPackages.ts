@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export type DeliveryType = 'shipping' | 'pickup' | 'uber';
 export type PackagingType = 'karton' | 'tuba' | 'koperta';
+export type CourierType = 'dpd' | 'dhl' | 'inpost' | 'pocztex';
 
 export interface KartonDimensions {
   length: number;
@@ -19,6 +20,11 @@ export interface OrderPackage {
   shippingMethod: DeliveryType;
   packagingType?: PackagingType;
   dimensions?: KartonDimensions | TubaDimensions;
+  courier?: CourierType;
+  weight?: number;
+  contents?: string;
+  declaredValue?: number;
+  oversized?: boolean;
   productKeys: string[];
 }
 
@@ -39,6 +45,7 @@ export interface OrderProduct {
   quantity: number;
   vehicle: string;
   excludeFromDiscount?: boolean;
+  categoryName?: string;
   /** @deprecated Use rollAssignments instead */
   rollId?: string;
   /** @deprecated Use rollAssignments instead */
@@ -55,6 +62,11 @@ export const createDefaultPackage = (): OrderPackage => ({
   shippingMethod: 'shipping',
   packagingType: 'karton',
   dimensions: { length: 0, width: 0, height: 0 },
+  courier: 'dpd',
+  weight: 1,
+  contents: '',
+  declaredValue: 0,
+  oversized: false,
   productKeys: [],
 });
 
@@ -90,6 +102,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     priceNet: number;
     priceUnit?: string;
     excludeFromDiscount?: boolean;
+    categoryName?: string;
   }>) => {
     if (!activePackageId) return;
 
@@ -108,18 +121,27 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
         quantity: 1,
         vehicle: '',
         excludeFromDiscount: s.excludeFromDiscount,
+        categoryName: s.categoryName,
       };
     });
 
     const newKeys = newProducts.map(p => p.instanceKey);
+    const hasFolia = newProducts.some(p => p.categoryName?.toLowerCase().includes('folie'));
 
     setProducts(prev => [...prev, ...newProducts]);
 
     setPackages(prev => prev.map(pkg => {
-      if (pkg.id === activePackageId) {
-        return { ...pkg, productKeys: [...pkg.productKeys, ...newKeys] };
+      if (pkg.id !== activePackageId) return pkg;
+      const updatedPkg = { ...pkg, productKeys: [...pkg.productKeys, ...newKeys] };
+      // Auto-fill defaults based on product category
+      if (hasFolia && updatedPkg.shippingMethod === 'shipping') {
+        if (updatedPkg.packagingType === 'karton') {
+          updatedPkg.dimensions = { length: 160, width: 15, height: 15 };
+        }
+        updatedPkg.weight = 9;
+        updatedPkg.contents = updatedPkg.contents || 'Folia ochronna PPF';
       }
-      return pkg;
+      return updatedPkg;
     }));
 
     setActivePackageId(null);
@@ -130,9 +152,24 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
       pkg => pkg.id !== packageId && pkg.productKeys.includes(productKey)
     );
 
-    setPackages(prev => prev.map(pkg => {
-      if (pkg.id !== packageId) return pkg;
-      return { ...pkg, productKeys: pkg.productKeys.filter(k => k !== productKey) };
+    // Check if any Folia products remain in this package after removal
+    const pkg = packages.find(p => p.id === packageId);
+    const remainingKeys = pkg ? pkg.productKeys.filter(k => k !== productKey) : [];
+    const remainingProducts = products.filter(p => remainingKeys.includes(getItemKey(p)));
+    const stillHasFolia = remainingProducts.some(p => p.categoryName?.toLowerCase().includes('folie'));
+
+    setPackages(prev => prev.map(p => {
+      if (p.id !== packageId) return p;
+      const updated = { ...p, productKeys: p.productKeys.filter(k => k !== productKey) };
+      // Reset Folia defaults if no Folia products remain
+      if (!stillHasFolia && updated.shippingMethod === 'shipping') {
+        if (updated.packagingType === 'karton') {
+          updated.dimensions = { length: 0, width: 0, height: 0 };
+        }
+        updated.weight = 1;
+        updated.contents = '';
+      }
+      return updated;
     }));
 
     if (!inOtherPackage) {
@@ -220,9 +257,24 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
             shippingMethod: method,
             packagingType: pkg.packagingType || 'karton',
             dimensions: pkg.dimensions || { length: 0, width: 0, height: 0 },
+            courier: pkg.courier || 'dpd',
+            weight: pkg.weight ?? 1,
+            contents: pkg.contents ?? '',
+            declaredValue: pkg.declaredValue ?? 0,
+            oversized: pkg.oversized ?? false,
           };
         }
-        return { ...pkg, shippingMethod: method, packagingType: undefined, dimensions: undefined };
+        return {
+          ...pkg,
+          shippingMethod: method,
+          packagingType: undefined,
+          dimensions: undefined,
+          courier: undefined,
+          weight: undefined,
+          contents: undefined,
+          declaredValue: undefined,
+          oversized: undefined,
+        };
       })
     );
   };
@@ -250,6 +302,37 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
+  const updatePackageCourier = (packageId: string, courier: CourierType) => {
+    setPackages(prev =>
+      prev.map(pkg => pkg.id === packageId ? { ...pkg, courier } : pkg)
+    );
+  };
+
+  const updatePackageWeight = (packageId: string, weight: number) => {
+    if (weight < 0) return;
+    setPackages(prev =>
+      prev.map(pkg => pkg.id === packageId ? { ...pkg, weight } : pkg)
+    );
+  };
+
+  const updatePackageContents = (packageId: string, contents: string) => {
+    setPackages(prev =>
+      prev.map(pkg => pkg.id === packageId ? { ...pkg, contents } : pkg)
+    );
+  };
+
+  const updatePackageDeclaredValue = (packageId: string, declaredValue: number) => {
+    setPackages(prev =>
+      prev.map(pkg => pkg.id === packageId ? { ...pkg, declaredValue } : pkg)
+    );
+  };
+
+  const updatePackageOversized = (packageId: string, oversized: boolean) => {
+    setPackages(prev =>
+      prev.map(pkg => pkg.id === packageId ? { ...pkg, oversized } : pkg)
+    );
+  };
+
   return {
     packages,
     setPackages,
@@ -269,5 +352,10 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updatePackageShippingMethod,
     updatePackagePackagingType,
     updatePackageDimension,
+    updatePackageCourier,
+    updatePackageWeight,
+    updatePackageContents,
+    updatePackageDeclaredValue,
+    updatePackageOversized,
   };
 }

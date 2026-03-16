@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
-import { type OrderPackage, type OrderProduct, type DeliveryType, type PackagingType, type RollAssignment, getItemKey } from '../hooks/useOrderPackages';
+import { type OrderPackage, type OrderProduct, type DeliveryType, type PackagingType, type CourierType, type RollAssignment, getItemKey } from '../hooks/useOrderPackages';
 import PackageCard from './PackageCard';
 
 interface PackagesSectionProps {
@@ -12,6 +12,11 @@ interface PackagesSectionProps {
   onShippingMethodChange: (packageId: string, method: DeliveryType) => void;
   onPackagingTypeChange: (packageId: string, type: PackagingType) => void;
   onDimensionChange: (packageId: string, field: string, value: number) => void;
+  onCourierChange: (packageId: string, courier: CourierType) => void;
+  onWeightChange: (packageId: string, weight: number) => void;
+  onContentsChange: (packageId: string, contents: string) => void;
+  onDeclaredValueChange: (packageId: string, value: number) => void;
+  onOversizedChange: (packageId: string, oversized: boolean) => void;
   onAddProduct: (packageId: string) => void;
   onRemoveProduct: (packageId: string, productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
@@ -31,6 +36,11 @@ export const PackagesSection = ({
   onShippingMethodChange,
   onPackagingTypeChange,
   onDimensionChange,
+  onCourierChange,
+  onWeightChange,
+  onContentsChange,
+  onDeclaredValueChange,
+  onOversizedChange,
   onAddProduct,
   onRemoveProduct,
   onUpdateQuantity,
@@ -57,6 +67,11 @@ export const PackagesSection = ({
               onShippingMethodChange={(method) => onShippingMethodChange(pkg.id, method)}
               onPackagingTypeChange={(type) => onPackagingTypeChange(pkg.id, type)}
               onDimensionChange={(field, value) => onDimensionChange(pkg.id, field, value)}
+              onCourierChange={(courier) => onCourierChange(pkg.id, courier)}
+              onWeightChange={(weight) => onWeightChange(pkg.id, weight)}
+              onContentsChange={(contents) => onContentsChange(pkg.id, contents)}
+              onDeclaredValueChange={(value) => onDeclaredValueChange(pkg.id, value)}
+              onOversizedChange={(oversized) => onOversizedChange(pkg.id, oversized)}
               onAddProduct={() => onAddProduct(pkg.id)}
               onRemoveProduct={(productKey) => onRemoveProduct(pkg.id, productKey)}
               onUpdateQuantity={(productKey, qty) => onUpdateQuantity(productKey, qty)}
