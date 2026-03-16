@@ -4,7 +4,13 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -28,8 +34,14 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
   const { settings, isLoading, saveSettings, isSaving } = useInvoicingSettings(instanceId);
 
   const [activeProvider, setActiveProvider] = useState<InvoicingProvider | null>(null);
-  const [fakturowniaConfig, setFakturowniaConfig] = useState<FakturowniaConfig>({ domain: '', api_token: '' });
-  const [ifirmaConfig, setIfirmaConfig] = useState<IfirmaConfig>({ invoice_api_user: '', invoice_api_key: '' });
+  const [fakturowniaConfig, setFakturowniaConfig] = useState<FakturowniaConfig>({
+    domain: '',
+    api_token: '',
+  });
+  const [ifirmaConfig, setIfirmaConfig] = useState<IfirmaConfig>({
+    invoice_api_user: '',
+    invoice_api_key: '',
+  });
   const [vatRate, setVatRate] = useState(23);
   const [paymentDays, setPaymentDays] = useState(14);
   const [documentKind, setDocumentKind] = useState<DocumentKind>('vat');
@@ -63,11 +75,12 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
   };
 
   const handleSave = async () => {
-    const config: ProviderConfig | Record<string, never> = activeProvider === 'fakturownia'
-      ? fakturowniaConfig
-      : activeProvider === 'ifirma'
-        ? ifirmaConfig
-        : {};
+    const config: ProviderConfig | Record<string, never> =
+      activeProvider === 'fakturownia'
+        ? fakturowniaConfig
+        : activeProvider === 'ifirma'
+          ? ifirmaConfig
+          : {};
 
     saveSettings({
       provider: activeProvider,
@@ -81,9 +94,13 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
     });
 
     // Auto-register webhook for Fakturownia
-    if (activeProvider === 'fakturownia' && fakturowniaConfig.domain && fakturowniaConfig.api_token) {
+    if (
+      activeProvider === 'fakturownia' &&
+      fakturowniaConfig.domain &&
+      fakturowniaConfig.api_token
+    ) {
       try {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const projectId = import.meta.env.VITE_HISERVICE_SUPABASE_PROJECT_ID;
         const webhookUrl = `https://${projectId}.supabase.co/functions/v1/fakturownia-webhook`;
 
         const res = await fetch(
@@ -99,7 +116,7 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
                 enabled: true,
               },
             }),
-          }
+          },
         );
 
         if (res.ok) {
@@ -136,7 +153,9 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
             </SelectTrigger>
             <SelectContent>
               {VAT_RATES.map((r) => (
-                <SelectItem key={r.value} value={String(r.value)}>{r.label}</SelectItem>
+                <SelectItem key={r.value} value={String(r.value)}>
+                  {r.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -163,7 +182,9 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
             </SelectTrigger>
             <SelectContent>
               {DOCUMENT_KINDS.map((d) => (
-                <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                <SelectItem key={d.value} value={d.value}>
+                  {d.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -177,7 +198,9 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -186,11 +209,7 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
 
       <div className="flex items-center justify-between">
         <Label htmlFor="auto-send">Automatycznie wysyłaj mailem</Label>
-        <Switch
-          id="auto-send"
-          checked={autoSendEmail}
-          onCheckedChange={setAutoSendEmail}
-        />
+        <Switch id="auto-send" checked={autoSendEmail} onCheckedChange={setAutoSendEmail} />
       </div>
     </div>
   );
@@ -251,7 +270,11 @@ export function IntegrationsSettingsView({ instanceId }: IntegrationsSettingsVie
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={isSaving} className="w-full">
-        {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+        {isSaving ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <Save className="w-4 h-4 mr-2" />
+        )}
         Zapisz ustawienia
       </Button>
     </div>

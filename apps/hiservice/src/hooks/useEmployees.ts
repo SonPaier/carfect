@@ -31,7 +31,7 @@ export const useEmployees = (instanceId: string | null) => {
         .select('*')
         .eq('instance_id', instanceId)
         .order('sort_order', { ascending: true, nullsFirst: true });
-      
+
       if (error) throw error;
       return data || [];
     },
@@ -42,11 +42,11 @@ export const useEmployees = (instanceId: string | null) => {
 
 export const useCreateEmployee = (instanceId: string | null) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (input: EmployeeInput) => {
       if (!instanceId) throw new Error('No instance ID');
-      
+
       const { data, error } = await supabase
         .from('employees')
         .insert({
@@ -55,19 +55,19 @@ export const useCreateEmployee = (instanceId: string | null) => {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
     },
   });
 };
 
 export const useUpdateEmployee = (instanceId: string | null) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, ...input }: EmployeeInput & { id: string }) => {
       const { data, error } = await supabase
@@ -76,30 +76,27 @@ export const useUpdateEmployee = (instanceId: string | null) => {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
     },
   });
 };
 
 export const useDeleteEmployee = (instanceId: string | null) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (employeeId: string) => {
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .eq('id', employeeId);
-      
+      const { error } = await supabase.from('employees').delete().eq('id', employeeId);
+
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
     },
   });
 };

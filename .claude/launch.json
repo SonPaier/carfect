@@ -16,7 +16,7 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-c",
-        "cd /Users/rafnastaly/Documents/programming/carfect && pnpm --filter hiservice run dev --port $PORT"
+        "cd /Users/tomasznastaly/Documents/programming/carfect && pnpm --filter hiservice run dev --port $PORT"
       ],
       "port": 8082,
       "autoPort": true
