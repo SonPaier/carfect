@@ -1,14 +1,8 @@
-import { X, Loader2, Save } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
-import { Button } from '@shared/ui';
+import { X, Loader2, Save, ScanLine } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
+import { Button, EmptyState } from '@shared/ui';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRollScan } from '../hooks/useRollScan';
 import { createRollsBatch } from '../services/rollService';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,13 +17,9 @@ interface RollScanDrawerProps {
   onSaved?: () => void;
 }
 
-const RollScanDrawer = ({
-  open,
-  onOpenChange,
-  instanceId,
-  onSaved,
-}: RollScanDrawerProps) => {
+const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDrawerProps) => {
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scan = useRollScan({ instanceId });
 
@@ -42,7 +32,7 @@ const RollScanDrawer = ({
   };
 
   const savableResults = scan.results.filter(
-    (r) => r.status === 'confirmed' || r.status === 'review'
+    (r) => r.status === 'confirmed' || r.status === 'review',
   );
 
   const handleSave = async () => {
@@ -57,7 +47,7 @@ const RollScanDrawer = ({
       const d = item.extractedData;
       if (!d.productName || !d.widthMm || !d.lengthM) {
         toast.error(
-          `Rolka "${d.productName || 'bez nazwy'}" nie ma wymaganych danych (nazwa, szerokość, długość)`
+          `Rolka "${d.productName || 'bez nazwy'}" nie ma wymaganych danych (nazwa, szerokość, długość)`,
         );
         return;
       }
@@ -68,11 +58,11 @@ const RollScanDrawer = ({
       .map((r) => r.extractedData.productCode)
       .filter((code): code is string => !!code);
 
-    const batchDupes = productCodes.filter(
-      (code, i) => productCodes.indexOf(code) !== i
-    );
+    const batchDupes = productCodes.filter((code, i) => productCodes.indexOf(code) !== i);
     if (batchDupes.length > 0) {
-      toast.error(`Zduplikowane kody produktów w skanowaniu: ${[...new Set(batchDupes)].join(', ')}`);
+      toast.error(
+        `Zduplikowane kody produktów w skanowaniu: ${[...new Set(batchDupes)].join(', ')}`,
+      );
       return;
     }
 
@@ -106,7 +96,9 @@ const RollScanDrawer = ({
       }));
 
       await createRollsBatch(rollsToCreate);
-      toast.success(`Zapisano ${savableResults.length} ${savableResults.length === 1 ? 'rolkę' : 'rolek'}`);
+      toast.success(
+        `Zapisano ${savableResults.length} ${savableResults.length === 1 ? 'rolkę' : 'rolek'}`,
+      );
       scan.reset();
       onOpenChange(false);
       onSaved?.();
@@ -121,26 +113,50 @@ const RollScanDrawer = ({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-[700px] sm:max-w-[700px] flex flex-col"
+        className="w-full sm:w-[700px] sm:max-w-[700px] flex flex-col bg-white p-0 gap-0"
+        hideCloseButton
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <SheetHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
+        <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
           <SheetTitle>Skanowanie rolek</SheetTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
+          <button
+            type="button"
             onClick={handleClose}
+            className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
           >
-            <X className="w-4 h-4" />
-          </Button>
+            <X className="w-5 h-5" />
+          </button>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto py-4 space-y-6">
-          <RollScanUploadZone
-            onFilesSelected={scan.addFiles}
-            disabled={scan.processing}
-          />
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          {scan.results.length === 0 && !scan.processing ? (
+            <EmptyState
+              icon={ScanLine}
+              title="Wgraj zdjęcia etykiet rolek"
+              description="Obsługiwane formaty: JPG, PNG, HEIC. Możesz wgrać wiele zdjęć na raz."
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) {
+                    scan.addFiles(
+                      Array.from(e.target.files).filter((f) => f.type.startsWith('image/')),
+                    );
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <Button className="mt-2" onClick={() => fileInputRef.current?.click()}>
+                Wgraj rolki
+              </Button>
+            </EmptyState>
+          ) : (
+            <RollScanUploadZone onFilesSelected={scan.addFiles} disabled={scan.processing} />
+          )}
 
           <RollScanProgressList
             results={scan.results}
@@ -158,18 +174,16 @@ const RollScanDrawer = ({
                   : 'zdjęć nie zostało przetworzonych'}
               </p>
               <p className="text-xs text-red-600 mt-1">
-                Sprawdź czy zdjęcia są wyraźne i zawierają etykietę rolki. Możesz dodać nowe zdjęcia.
+                Sprawdź czy zdjęcia są wyraźne i zawierają etykietę rolki. Możesz dodać nowe
+                zdjęcia.
               </p>
             </div>
           )}
 
-          <RollScanResultsTable
-            results={scan.results}
-            onRemove={scan.removeResult}
-          />
+          <RollScanResultsTable results={scan.results} onRemove={scan.removeResult} />
         </div>
 
-        <SheetFooter className="border-t pt-4 gap-2">
+        <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-2">
           <Button variant="outline" onClick={handleClose} disabled={saving}>
             {scan.results.length > 0 ? 'Anuluj' : 'Zamknij'}
           </Button>
@@ -180,11 +194,10 @@ const RollScanDrawer = ({
               ) : (
                 <Save className="w-4 h-4 mr-2" />
               )}
-              Zapisz {savableResults.length}{' '}
-              {savableResults.length === 1 ? 'rolkę' : 'rolek'}
+              Zapisz {savableResults.length} {savableResults.length === 1 ? 'rolkę' : 'rolek'}
             </Button>
           )}
-        </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
   );

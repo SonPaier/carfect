@@ -18,11 +18,7 @@ interface RollInfo {
   remainingM2: number;
 }
 
-const MultiRollAssignment = ({
-  instanceId,
-  assignments,
-  onChange,
-}: MultiRollAssignmentProps) => {
+const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAssignmentProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
 
@@ -50,7 +46,9 @@ const MultiRollAssignment = ({
       });
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [assignments]);
 
   const handleRollsSelected = useCallback(
@@ -78,25 +76,21 @@ const MultiRollAssignment = ({
 
       onChange(newAssignments);
     },
-    [assignments, onChange]
+    [assignments, onChange],
   );
 
   const handleUsageChange = useCallback(
     (rollId: string, usageM2: number) => {
-      onChange(
-        assignments.map((a) =>
-          a.rollId === rollId ? { ...a, usageM2 } : a
-        )
-      );
+      onChange(assignments.map((a) => (a.rollId === rollId ? { ...a, usageM2 } : a)));
     },
-    [assignments, onChange]
+    [assignments, onChange],
   );
 
   const handleRemove = useCallback(
     (rollId: string) => {
       onChange(assignments.filter((a) => a.rollId !== rollId));
     },
-    [assignments, onChange]
+    [assignments, onChange],
   );
 
   if (assignments.length === 0) {
@@ -129,14 +123,15 @@ const MultiRollAssignment = ({
 
       {assignments.map((a) => {
         const info = rollInfoMap[a.rollId];
-        const rollName = info
-          ? `${info.roll.productCode || info.roll.barcode || '—'}`
-          : '...';
+        const rollName = info ? `${info.roll.productCode || info.roll.barcode || '—'}` : '...';
         const remaining = info?.remainingM2 ?? 0;
         const shortage = a.usageM2 > remaining ? a.usageM2 - remaining : 0;
 
         return (
-          <div key={a.rollId} className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
+          <div
+            key={a.rollId}
+            className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm"
+          >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs truncate">{rollName}</span>
@@ -156,12 +151,14 @@ const MultiRollAssignment = ({
             <Input
               type="number"
               min={0}
+              max={remaining > 0 ? remaining : undefined}
               step={0.1}
               value={a.usageM2 || ''}
-              onChange={(e) =>
-                handleUsageChange(a.rollId, e.target.value ? Number(e.target.value) : 0)
-              }
-              className="h-7 text-xs w-20"
+              onChange={(e) => {
+                const val = e.target.value ? Number(e.target.value) : 0;
+                handleUsageChange(a.rollId, val);
+              }}
+              className={`h-7 text-xs w-20 ${shortage > 0 ? 'border-destructive' : ''}`}
               placeholder="m²"
             />
             <span className="text-xs text-muted-foreground">m²</span>

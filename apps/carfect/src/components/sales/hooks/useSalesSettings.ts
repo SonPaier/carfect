@@ -43,9 +43,8 @@ export const useSaveSalesSettings = (instanceId: string | null) => {
   return useMutation({
     mutationFn: async (form: SalesCompanyData) => {
       if (!instanceId) throw new Error('No instance ID');
-      const { error } = await (supabase
-        .from('sales_instance_settings')
-        .upsert({
+      const { error } = await (supabase.from('sales_instance_settings').upsert(
+        {
           instance_id: instanceId,
           name: form.name || null,
           short_name: form.short_name || null,
@@ -60,9 +59,11 @@ export const useSaveSalesSettings = (instanceId: string | null) => {
           social_facebook: form.social_facebook || null,
           social_instagram: form.social_instagram || null,
           google_maps_url: form.google_maps_url || null,
-          bank_accounts: form.bank_accounts.filter(a => a.number.trim() !== ''),
+          bank_accounts: form.bank_accounts.filter((a) => a.number.trim() !== ''),
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'instance_id' }) as any);
+        },
+        { onConflict: 'instance_id' },
+      ) as any);
       if (error) throw error;
     },
     onSuccess: () => {

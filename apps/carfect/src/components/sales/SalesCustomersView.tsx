@@ -233,11 +233,17 @@ const SalesCustomersView = () => {
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Klienci</h2>
+        <Button size="sm" onClick={() => openDrawer(null)}>
+          <Plus className="w-4 h-4" />
+          Dodaj klienta
+        </Button>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      {/* Search */}
+      <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -250,13 +256,9 @@ const SalesCustomersView = () => {
             }}
           />
         </div>
-        <Button size="sm" className="gap-2" onClick={() => openDrawer(null)}>
-          <Plus className="w-4 h-4" />
-          Dodaj klienta
-        </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white dark:bg-card">
+      <div className="border rounded-lg overflow-hidden bg-white">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -493,7 +495,6 @@ const SalesCustomersView = () => {
       <AddSalesOrderDrawer
         open={orderDrawerOpen}
         onOpenChange={setOrderDrawerOpen}
-        orders={[]}
         initialCustomer={orderCustomer}
         onOrderCreated={() => {
           fetchCustomers();

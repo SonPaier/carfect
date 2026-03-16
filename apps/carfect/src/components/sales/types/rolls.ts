@@ -81,3 +81,8 @@ export function formatMbM2(mb: number, widthMm: number): string {
   const m2 = mbToM2(mb, widthMm);
   return `${mb.toFixed(1)} mb / ${m2.toFixed(2)} m²`;
 }
+
+export function formatMbM2Lines(mb: number, widthMm: number): { mb: string; m2: string } {
+  const m2 = mbToM2(mb, widthMm);
+  return { mb: `${mb.toFixed(1)} mb`, m2: `${m2.toFixed(2)} m²` };
+}

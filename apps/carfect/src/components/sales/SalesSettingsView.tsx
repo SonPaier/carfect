@@ -7,11 +7,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useSalesSettings, useSaveSalesSettings, type SalesCompanyData } from './hooks/useSalesSettings';
+import {
+  useSalesSettings,
+  useSaveSalesSettings,
+  type SalesCompanyData,
+} from './hooks/useSalesSettings';
 
 const SalesSettingsView = () => {
   const { roles } = useAuth();
-  const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
+  const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const queryClient = useQueryClient();
 
   const { data: settingsData, isLoading: loadingSettings } = useSalesSettings(instanceId);
@@ -35,7 +39,9 @@ const SalesSettingsView = () => {
     social_instagram: '',
     google_maps_url: '',
   });
-  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([{ name: '', number: '' }]);
+  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([
+    { name: '', number: '' },
+  ]);
 
   // Populate form when data loads
   useEffect(() => {
@@ -58,7 +64,9 @@ const SalesSettingsView = () => {
       const accounts = settingsData.bank_accounts;
       if (Array.isArray(accounts) && accounts.length > 0) {
         const normalized = (accounts as any[]).map((a: any) =>
-          typeof a === 'string' ? { name: '', number: a } : { name: a.name || '', number: a.number || '' }
+          typeof a === 'string'
+            ? { name: '', number: a }
+            : { name: a.name || '', number: a.number || '' },
         );
         setBankAccounts(normalized);
       } else {
@@ -68,7 +76,7 @@ const SalesSettingsView = () => {
   }, [settingsData]);
 
   const handleInputChange = (field: string, value: string) => {
-    setCompanyForm(prev => ({ ...prev, [field]: value }));
+    setCompanyForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,18 +112,18 @@ const SalesSettingsView = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('sales-logos')
-        .getPublicUrl(fileName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('sales-logos').getPublicUrl(fileName);
 
-      setCompanyForm(prev => ({ ...prev, logo_url: publicUrl }));
+      setCompanyForm((prev) => ({ ...prev, logo_url: publicUrl }));
 
       // Auto-save logo_url to database immediately
       await (supabase
         .from('sales_instance_settings')
         .upsert(
           { instance_id: instanceId, logo_url: publicUrl, updated_at: new Date().toISOString() },
-          { onConflict: 'instance_id' }
+          { onConflict: 'instance_id' },
         ) as any);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
@@ -136,14 +144,14 @@ const SalesSettingsView = () => {
       if (urlParts[1]) {
         await supabase.storage.from('sales-logos').remove([urlParts[1]]);
       }
-      setCompanyForm(prev => ({ ...prev, logo_url: '' }));
+      setCompanyForm((prev) => ({ ...prev, logo_url: '' }));
 
       // Auto-save removal to database
       await (supabase
         .from('sales_instance_settings')
         .upsert(
           { instance_id: instanceId, logo_url: null, updated_at: new Date().toISOString() },
-          { onConflict: 'instance_id' }
+          { onConflict: 'instance_id' },
         ) as any);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
@@ -239,9 +247,7 @@ const SalesSettingsView = () => {
           onChange={(e) => handleInputChange('short_name', e.target.value)}
           maxLength={20}
         />
-        <p className="text-xs text-muted-foreground">
-          Używana w wiadomościach SMS, max 20 znaków
-        </p>
+        <p className="text-xs text-muted-foreground">Używana w wiadomościach SMS, max 20 znaków</p>
       </div>
 
       {/* Invoice Company Name */}
@@ -393,7 +399,11 @@ const SalesSettingsView = () => {
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={saveMutation.isPending} className="w-full">
-        {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+        {saveMutation.isPending ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <Save className="w-4 h-4 mr-2" />
+        )}
         Zapisz
       </Button>
     </div>

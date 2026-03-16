@@ -111,9 +111,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
 
       // Each selected product becomes a new instance with a unique key
       const newProducts: OrderProduct[] = selected.map((s) => {
-        const displayName = s.variantName
-          ? `${s.shortName || s.fullName} - ${s.variantName}`
-          : s.shortName || s.fullName;
+        const displayName = s.variantName ? `${s.fullName} - ${s.variantName}` : s.fullName;
         return {
           instanceKey: crypto.randomUUID(),
           productId: s.productId,

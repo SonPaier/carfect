@@ -5,6 +5,7 @@ import {
   Users,
   Package,
   Cylinder,
+  Settings2,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -12,14 +13,13 @@ import {
   ChevronUp,
   ArrowLeftRight,
   X,
-  Settings,
 } from 'lucide-react';
 import { useInstanceData } from '@/hooks/useInstanceData';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
 import SalesProductsView from '@/components/sales/SalesProductsView';
 import SalesCustomersView from '@/components/sales/SalesCustomersView';
 import SalesRollsView from '@/components/sales/SalesRollsView';
-import SalesSettingsView from '@/components/sales/SalesSettingsView';
+import SalesCrmSettingsView from '@/components/sales/SalesCrmSettingsView';
 import { Button } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import {
@@ -43,9 +43,7 @@ const SalesDashboard = () => {
   const { user, roles, username: authUsername, signOut, hasRole } = useAuth();
 
   const currentView: SalesViewType =
-    view && validViews.includes(view as SalesViewType)
-      ? (view as SalesViewType)
-      : 'orders';
+    view && validViews.includes(view as SalesViewType) ? (view as SalesViewType) : 'orders';
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -79,15 +77,19 @@ const SalesDashboard = () => {
     navigate('/login');
   };
 
-  const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
+  const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: instanceData } = useInstanceData(instanceId);
 
-  const navItems: { key: SalesViewType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const navItems: {
+    key: SalesViewType;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
     { key: 'orders', label: 'Zamówienia', icon: ShoppingCart },
     { key: 'customers', label: 'Klienci', icon: Users },
     { key: 'products', label: 'Produkty', icon: Package },
-    { key: 'rolls', label: 'Rolki', icon: Cylinder },
-    { key: 'settings', label: 'Ustawienia', icon: Settings },
+    { key: 'rolls', label: 'Ewidencja rolek', icon: Cylinder },
+    { key: 'settings', label: 'Ustawienia', icon: Settings2 },
   ];
 
   const renderContent = () => {
@@ -101,7 +103,7 @@ const SalesDashboard = () => {
       case 'rolls':
         return <SalesRollsView />;
       case 'settings':
-        return <SalesSettingsView />;
+        return <SalesCrmSettingsView instanceId={instanceId} instanceData={instanceData} />;
     }
   };
 
@@ -124,27 +126,39 @@ const SalesDashboard = () => {
           className={cn(
             'fixed inset-y-0 left-0 z-50 flex flex-col bg-card border-r border-border/50 transition-all duration-300 lg:relative',
             sidebarCollapsed ? 'lg:w-16' : 'w-64',
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           )}
         >
           {/* Logo / header - same as AdminDashboard */}
-          <div className={cn('border-b border-border/50 flex items-center justify-between', sidebarCollapsed ? 'p-3' : 'p-6')}>
-            <button 
-              className={cn("flex items-center cursor-pointer hover:opacity-80 transition-opacity", sidebarCollapsed ? "justify-center" : "gap-3")}
+          <div
+            className={cn(
+              'border-b border-border/50 flex items-center justify-between',
+              sidebarCollapsed ? 'p-3' : 'p-6',
+            )}
+          >
+            <button
+              className={cn(
+                'flex items-center cursor-pointer hover:opacity-80 transition-opacity',
+                sidebarCollapsed ? 'justify-center' : 'gap-3',
+              )}
             >
               {instanceData?.logo_url && (
-                <img 
-                  src={instanceData.logo_url} 
-                  alt={instanceData.name} 
+                <img
+                  src={instanceData.logo_url}
+                  alt={instanceData.name}
                   className={cn(
-                    "rounded-xl object-contain shrink-0 bg-white",
-                    sidebarCollapsed ? "w-10 h-10" : "w-[40%] max-h-10"
+                    'rounded-xl object-contain shrink-0 bg-white',
+                    sidebarCollapsed ? 'w-10 h-10' : 'w-[40%] max-h-10',
                   )}
                 />
               )}
-              {!sidebarCollapsed && <div className="text-left min-w-0 flex-1 pr-2">
-                <h1 className="font-bold text-foreground leading-tight">{instanceData?.name || 'Panel Sprzedaży'}</h1>
-              </div>}
+              {!sidebarCollapsed && (
+                <div className="text-left min-w-0 flex-1 pr-2">
+                  <h1 className="font-bold text-foreground leading-tight">
+                    {instanceData?.name || 'Panel Sprzedaży'}
+                  </h1>
+                </div>
+              )}
             </button>
             {/* Mobile close */}
             <Button
@@ -158,7 +172,12 @@ const SalesDashboard = () => {
           </div>
 
           {/* Navigation */}
-          <nav className={cn('flex-1 overflow-y-auto', sidebarCollapsed ? 'p-1 space-y-1' : 'p-3 space-y-1')}>
+          <nav
+            className={cn(
+              'flex-1 overflow-y-auto',
+              sidebarCollapsed ? 'p-1 space-y-1' : 'p-3 space-y-1',
+            )}
+          >
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -167,7 +186,7 @@ const SalesDashboard = () => {
                   variant={currentView === item.key ? 'secondary' : 'ghost'}
                   className={cn(
                     'w-full gap-3',
-                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start'
+                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
                   )}
                   onClick={() => setCurrentView(item.key)}
                   title={item.label}
@@ -187,7 +206,7 @@ const SalesDashboard = () => {
                 variant="outline"
                 className={cn(
                   'w-full gap-3',
-                  sidebarCollapsed ? 'justify-center px-2' : 'justify-start'
+                  sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
                 )}
                 onClick={() => navigate(studioBasePath)}
                 title="Przejdź do Panelu Studio"
@@ -204,7 +223,7 @@ const SalesDashboard = () => {
               variant="ghost"
               className={cn(
                 'w-full text-muted-foreground hidden lg:flex gap-3',
-                sidebarCollapsed ? 'justify-center px-2' : 'justify-start'
+                sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
               )}
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               title={sidebarCollapsed ? 'Rozwiń menu' : 'Zwiń menu'}
@@ -219,7 +238,9 @@ const SalesDashboard = () => {
               )}
             </Button>
 
-            {!sidebarCollapsed && <Separator className="my-3 -mx-4 w-[calc(100%+2rem)] bg-border/30" />}
+            {!sidebarCollapsed && (
+              <Separator className="my-3 -mx-4 w-[calc(100%+2rem)] bg-border/30" />
+            )}
 
             {sidebarCollapsed ? (
               <Button
@@ -266,9 +287,7 @@ const SalesDashboard = () => {
 
           {/* Content area */}
           <div className="flex-1 overflow-auto p-4 md:p-6">
-            <div className="max-w-[var(--sales-content-max-width)] mx-auto">
-              {renderContent()}
-            </div>
+            <div className="max-w-[var(--sales-content-max-width)] mx-auto">{renderContent()}</div>
           </div>
         </main>
       </div>

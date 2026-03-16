@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
 import {
@@ -23,8 +23,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@shared/ui';
 import { ConfirmDialog, EmptyState } from '@shared/ui';
+import { CreateInvoiceDrawer } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type SalesOrder } from '@/data/salesMockData';
@@ -40,13 +42,22 @@ const formatCurrency = (value: number, currency: 'PLN' | 'EUR') => {
   );
 };
 
-export const getNextOrderNumber = (orders: SalesOrder[], date: Date = new Date()): string => {
+export const getNextOrderNumber = async (
+  instanceId: string,
+  date: Date = new Date(),
+): Promise<string> => {
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
   const monthStr = String(month).padStart(2, '0');
-  const prefix = `/${monthStr}/${year}`;
-  const countInMonth = orders.filter((o) => o.orderNumber.endsWith(prefix)).length;
-  return `${countInMonth + 1}/${monthStr}/${year}`;
+  const suffix = `/${monthStr}/${year}`;
+
+  const { count } = await (supabase
+    .from('sales_orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('instance_id', instanceId)
+    .like('order_number', `%${suffix}`) as any);
+
+  return `${(count || 0) + 1}/${monthStr}/${year}`;
 };
 
 type SortColumn =
@@ -58,24 +69,16 @@ type SortColumn =
   | 'totalNet';
 type SortDirection = 'asc' | 'desc';
 
-const parseOrderNumber = (orderNumber: string): number => {
-  const parts = orderNumber.split('/');
-  if (parts.length < 3) return 0;
-  const num = parseInt(parts[0]) || 0;
-  const month = parseInt(parts[1]) || 0;
-  const year = parseInt(parts[2]) || 0;
-  return year * 10000 + month * 100 + num;
-};
-
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25;
 
 const SalesOrdersView = () => {
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orders, setOrders] = useState<SalesOrder[]>([]);
-  const [customerCompanyMap, setCustomerCompanyMap] = useState<Record<string, string>>({});
+  const [totalCount, setTotalCount] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -87,68 +90,111 @@ const SalesOrdersView = () => {
   }>({ open: false, orderId: '', orderNumber: '' });
   const [sortColumn, setSortColumn] = useState<SortColumn>('orderNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [invoiceDrawerState, setInvoiceDrawerState] = useState<{
+    open: boolean;
+    order: SalesOrder | null;
+  }>({ open: false, order: null });
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   const fetchOrders = useCallback(async () => {
     if (!instanceId) return;
-    const { data, error } = await (supabase
+
+    // Map sort column to DB column
+    const sortColumnMap: Record<SortColumn, string> = {
+      orderNumber: 'created_at', // order_number isn't easily sortable in DB, use created_at
+      customerName: 'customer_name',
+      createdAt: 'created_at',
+      shippedAt: 'shipped_at',
+      status: 'status',
+      totalNet: 'total_net',
+    };
+    const dbSortCol = sortColumnMap[sortColumn] || 'created_at';
+
+    // Build query with server-side pagination
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    let query = supabase
       .from('sales_orders')
-      .select('*, sales_order_items(*)')
-      .eq('instance_id', instanceId)
-      .order('created_at', { ascending: false }) as any);
+      .select('*, sales_order_items(*)', { count: 'exact' })
+      .eq('instance_id', instanceId);
+
+    // Server-side search — escape PostgREST special chars
+    if (debouncedSearch.trim()) {
+      const escaped = debouncedSearch.trim().replace(/[%_\\(),."]/g, (c) => `\\${c}`);
+      const q = `%${escaped}%`;
+      query = query.or(
+        `customer_name.ilike.${q},order_number.ilike.${q},city.ilike.${q},contact_person.ilike.${q}`,
+      );
+    }
+
+    query = query.order(dbSortCol, { ascending: sortDirection === 'asc' }).range(from, to);
+
+    const { data, error, count } = await (query as any);
 
     if (error) {
       console.error('Error fetching orders:', error);
       return;
     }
 
-    const mapped: SalesOrder[] = (data || []).map((o: any) => ({
-      id: o.id,
-      orderNumber: o.order_number,
-      createdAt: o.created_at,
-      shippedAt: o.shipped_at || undefined,
-      customerName: o.customer_name,
-      customerId: o.customer_id || undefined,
-      city: o.city || undefined,
-      contactPerson: o.contact_person || undefined,
-      totalNet: Number(o.total_net),
-      totalGross: Number(o.total_gross),
-      currency: (o.currency || 'PLN') as 'PLN' | 'EUR',
-      products: (o.sales_order_items || []).map((item: any) => ({
-        name: item.name,
-        quantity: item.quantity,
-        priceNet: Number(item.price_net),
-        priceGross: Number(item.price_net) * 1.23,
-      })),
-      comment: o.comment || undefined,
-      status: o.status as 'nowy' | 'wysłany',
-      trackingNumber: o.tracking_number || undefined,
-      trackingUrl: o.apaczka_tracking_url || undefined,
-    }));
+    setTotalCount(count || 0);
 
-    setOrders(mapped);
-
-    // Fetch customer company names for search
-    const customerIds: string[] = Array.from(
-      new Set(
-        (data || [])
-          .map((o: any) => o.customer_id)
-          .filter((id: any): id is string => typeof id === 'string' && id.length > 0),
-      ),
-    );
-    if (customerIds.length > 0) {
-      const { data: customers } = await (supabase
-        .from('sales_customers')
-        .select('id, company')
-        .in('id', customerIds) as any);
-      if (customers) {
-        const map: Record<string, string> = {};
-        for (const c of customers as { id: string; company: string | null }[]) {
-          if (c.company) map[c.id] = c.company;
+    // Fetch invoices separately
+    const orderIds = (data || []).map((o: any) => o.id);
+    let invoiceMap: Record<string, any> = {};
+    if (orderIds.length > 0) {
+      const { data: invoices, error: invError } = await (supabase
+        .from('invoices')
+        .select('id, sales_order_id, invoice_number, status, pdf_url')
+        .in('sales_order_id', orderIds) as any);
+      if (!invError && invoices) {
+        for (const inv of invoices) {
+          invoiceMap[inv.sales_order_id] = inv;
         }
-        setCustomerCompanyMap(map);
       }
     }
-  }, [instanceId]);
+
+    const mapped: SalesOrder[] = (data || []).map((o: any) => {
+      const inv = invoiceMap[o.id];
+      return {
+        id: o.id,
+        orderNumber: o.order_number,
+        createdAt: o.created_at,
+        shippedAt: o.shipped_at || undefined,
+        customerName: o.customer_name,
+        customerId: o.customer_id || undefined,
+        city: o.city || undefined,
+        contactPerson: o.contact_person || undefined,
+        totalNet: Number(o.total_net),
+        totalGross: Number(o.total_gross),
+        currency: (o.currency || 'PLN') as 'PLN' | 'EUR',
+        products: (o.sales_order_items || []).map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          priceNet: Number(item.price_net),
+          priceGross: Number(item.price_net) * 1.23,
+        })),
+        comment: o.comment || undefined,
+        status: o.status as 'nowy' | 'wysłany',
+        trackingNumber: o.tracking_number || undefined,
+        trackingUrl: o.apaczka_tracking_url || undefined,
+        invoiceId: inv?.id || undefined,
+        invoiceNumber: inv?.invoice_number || undefined,
+        invoiceStatus: inv?.status || undefined,
+        invoicePdfUrl: inv?.pdf_url || undefined,
+      };
+    });
+
+    setOrders(mapped);
+  }, [instanceId, currentPage, sortColumn, sortDirection, debouncedSearch]);
 
   useEffect(() => {
     fetchOrders();
@@ -161,57 +207,10 @@ const SalesOrdersView = () => {
       setSortColumn(column);
       setSortDirection('desc');
     }
-  };
-
-  const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders;
-    const q = searchQuery.toLowerCase();
-    return orders.filter(
-      (o) =>
-        o.customerName.toLowerCase().includes(q) ||
-        o.orderNumber.toLowerCase().includes(q) ||
-        (o.city && o.city.toLowerCase().includes(q)) ||
-        (o.contactPerson && o.contactPerson.toLowerCase().includes(q)) ||
-        o.products.some((p) => p.name.toLowerCase().includes(q)) ||
-        ((o as any).customerId &&
-          customerCompanyMap[(o as any).customerId]?.toLowerCase().includes(q)),
-    );
-  }, [orders, searchQuery, customerCompanyMap]);
-
-  const sortedOrders = useMemo(() => {
-    const sorted = [...filteredOrders];
-    const dir = sortDirection === 'asc' ? 1 : -1;
-    sorted.sort((a, b) => {
-      switch (sortColumn) {
-        case 'orderNumber':
-          return (parseOrderNumber(a.orderNumber) - parseOrderNumber(b.orderNumber)) * dir;
-        case 'customerName':
-          return a.customerName.localeCompare(b.customerName) * dir;
-        case 'createdAt':
-          return a.createdAt.localeCompare(b.createdAt) * dir;
-        case 'shippedAt':
-          return (a.shippedAt || '').localeCompare(b.shippedAt || '') * dir;
-        case 'status':
-          return a.status.localeCompare(b.status) * dir;
-        case 'totalNet':
-          return (a.totalNet - b.totalNet) * dir;
-        default:
-          return 0;
-      }
-    });
-    return sorted;
-  }, [filteredOrders, sortColumn, sortDirection]);
-
-  const totalPages = Math.ceil(sortedOrders.length / ITEMS_PER_PAGE);
-  const paginatedOrders = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return sortedOrders.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedOrders, currentPage]);
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
     setCurrentPage(1);
   };
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const toggleExpand = (id: string) => {
     setExpandedRows((prev) => {
@@ -394,6 +393,34 @@ const SalesOrdersView = () => {
     setDrawerOpen(true);
   };
 
+  const handleCreateShipment = async (orderId: string) => {
+    try {
+      toast.info('Tworzę przesyłkę w Apaczka...');
+      const { data, error } = await supabase.functions.invoke('create-apaczka-shipment', {
+        body: { orderId },
+      });
+      if (error) {
+        let errDetail = '';
+        try {
+          const errBody = await (error as any).context?.json?.();
+          errDetail = errBody?.error || errBody?.message || '';
+        } catch {
+          /* ignore */
+        }
+        toast.error('Błąd tworzenia przesyłki' + (errDetail ? ': ' + errDetail : ''));
+        return;
+      }
+      if (data?.error) {
+        toast.error('Błąd: ' + data.error);
+        return;
+      }
+      toast.success(`Przesyłka utworzona. Nr listu: ${data.waybill_number}`);
+      fetchOrders();
+    } catch {
+      toast.error('Nie udało się utworzyć przesyłki');
+    }
+  };
+
   const SortableHead = ({
     column,
     children,
@@ -424,27 +451,27 @@ const SalesOrdersView = () => {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Zamówienia</h2>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Szukaj po firmie, mieście, osobie, produkcie..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9"
-          />
-        </div>
         <Button size="sm" onClick={() => setDrawerOpen(true)}>
           <Plus className="w-4 h-4" />
           Dodaj zamówienie
         </Button>
       </div>
 
+      {/* Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj po firmie, mieście, osobie, produkcie..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
       {/* Table */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="border rounded-lg overflow-hidden bg-white">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -464,6 +491,7 @@ const SalesOrdersView = () => {
               <SortableHead column="totalNet" className="text-right w-[120px]">
                 Kwota netto
               </SortableHead>
+              <TableHead className="w-[120px]">Płatność</TableHead>
               <SortableHead column="status" className="w-[100px]">
                 Status
               </SortableHead>
@@ -471,9 +499,9 @@ const SalesOrdersView = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedOrders.length === 0 ? (
+            {orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8}>
+                <TableCell colSpan={9}>
                   <EmptyState
                     icon={ShoppingCart}
                     title="Brak zamówień"
@@ -482,7 +510,7 @@ const SalesOrdersView = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedOrders.map((order) => {
+              orders.map((order) => {
                 const isExpanded = expandedRows.has(order.id);
 
                 return (
@@ -537,6 +565,20 @@ const SalesOrdersView = () => {
                         {formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
                       <TableCell>
+                        {order.invoiceStatus === 'paid' ? (
+                          <Badge className="bg-emerald-600 text-white text-xs">Opłacone</Badge>
+                        ) : order.invoiceId ? (
+                          <Badge
+                            variant="outline"
+                            className="border-blue-500 text-blue-600 text-xs"
+                          >
+                            Wystawiona FV
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -587,6 +629,39 @@ const SalesOrdersView = () => {
                             <DropdownMenuItem onClick={() => handleEditOrder(order)}>
                               Edytuj
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {order.invoiceId ? (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (order.invoicePdfUrl) {
+                                    window.open(order.invoicePdfUrl, '_blank');
+                                  } else {
+                                    toast.info('PDF faktury niedostępny');
+                                  }
+                                }}
+                              >
+                                Pobierz FV
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInvoiceDrawerState({ open: true, order });
+                                }}
+                              >
+                                Wystaw FV
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateShipment(order.id);
+                              }}
+                            >
+                              Utwórz przesyłkę
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
                               onClick={() =>
@@ -606,7 +681,7 @@ const SalesOrdersView = () => {
 
                     {isExpanded && (
                       <TableRow key={`${order.id}-expanded`} className="hover:bg-transparent">
-                        <TableCell colSpan={8} className="p-0">
+                        <TableCell colSpan={9} className="p-0">
                           <div className="bg-card px-6 py-4 border-t border-border/50">
                             {order.comment && (
                               <p className="text-sm text-muted-foreground mb-3">{order.comment}</p>
@@ -645,7 +720,7 @@ const SalesOrdersView = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
-            Strona {currentPage} z {totalPages} ({sortedOrders.length} zamówień)
+            Strona {currentPage} z {totalPages} ({totalCount} zamówień)
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -657,17 +732,41 @@ const SalesOrdersView = () => {
               <ChevronLeftIcon className="w-4 h-4" />
               Poprzednia
             </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === currentPage ? 'default' : 'outline'}
-                size="sm"
-                className="w-9"
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </Button>
-            ))}
+            {(() => {
+              const pages: (number | 'dots')[] = [];
+              if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+              } else {
+                pages.push(1);
+                if (currentPage > 3) pages.push('dots');
+                for (
+                  let i = Math.max(2, currentPage - 1);
+                  i <= Math.min(totalPages - 1, currentPage + 1);
+                  i++
+                ) {
+                  pages.push(i);
+                }
+                if (currentPage < totalPages - 2) pages.push('dots');
+                pages.push(totalPages);
+              }
+              return pages.map((page, idx) =>
+                page === 'dots' ? (
+                  <span key={`dots-${idx}`} className="px-2 text-muted-foreground text-sm">
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-9"
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                ),
+              );
+            })()}
             <Button
               variant="outline"
               size="sm"
@@ -686,7 +785,6 @@ const SalesOrdersView = () => {
           setDrawerOpen(open);
           if (!open) setEditOrder(null);
         }}
-        orders={orders}
         editOrder={editOrder}
         onOrderCreated={fetchOrders}
       />
@@ -699,6 +797,25 @@ const SalesOrdersView = () => {
         variant="destructive"
         onConfirm={() => handleDeleteOrder(deleteConfirm.orderId)}
       />
+      {invoiceDrawerState.order && (
+        <CreateInvoiceDrawer
+          open={invoiceDrawerState.open}
+          onClose={() => setInvoiceDrawerState({ open: false, order: null })}
+          instanceId={instanceId!}
+          salesOrderId={invoiceDrawerState.order.id}
+          customerId={invoiceDrawerState.order.customerId}
+          customerName={invoiceDrawerState.order.customerName}
+          positions={invoiceDrawerState.order.products.map((p) => ({
+            name: p.name,
+            quantity: p.quantity,
+            unit_price_gross: p.priceNet * 1.23,
+            vat_rate: 23,
+          }))}
+          onSuccess={fetchOrders}
+          supabaseClient={supabase}
+          customerTable="sales_customers"
+        />
+      )}
     </div>
   );
 };

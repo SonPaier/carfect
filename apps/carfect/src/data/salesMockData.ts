@@ -11,6 +11,7 @@ export interface SalesOrder {
   createdAt: string; // ISO date
   shippedAt?: string; // ISO date
   customerName: string;
+  customerId?: string;
   city?: string;
   contactPerson?: string;
   totalNet: number;
@@ -21,6 +22,11 @@ export interface SalesOrder {
   status: 'nowy' | 'wysłany';
   trackingNumber?: string;
   trackingUrl?: string;
+  /** Invoice data if exists */
+  invoiceId?: string;
+  invoiceNumber?: string;
+  invoiceStatus?: string; // 'draft' | 'issued' | 'sent' | 'paid'
+  invoicePdfUrl?: string;
 }
 
 export const mockSalesOrders: SalesOrder[] = [];
