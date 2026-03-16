@@ -512,6 +512,11 @@ const AddSalesOrderDrawer = ({
                 onShippingMethodChange={orderPackages.updatePackageShippingMethod}
                 onPackagingTypeChange={orderPackages.updatePackagePackagingType}
                 onDimensionChange={orderPackages.updatePackageDimension}
+                onCourierChange={orderPackages.updatePackageCourier}
+                onWeightChange={orderPackages.updatePackageWeight}
+                onContentsChange={orderPackages.updatePackageContents}
+                onDeclaredValueChange={orderPackages.updatePackageDeclaredValue}
+                onOversizedChange={orderPackages.updatePackageOversized}
                 onAddProduct={(packageId) => {
                   orderPackages.setActivePackageId(packageId);
                   orderPackages.setProductDrawerOpen(true);
@@ -619,32 +624,8 @@ const AddSalesOrderDrawer = ({
               orderPackages.setActivePackageId(null);
             }}
             instanceId={instanceId}
-            selectedProductIds={
-              orderPackages.activePackageId
-                ? products
-                    .filter(
-                      (p) =>
-                        !p.variantId &&
-                        orderPackages.packages
-                          .find((pk) => pk.id === orderPackages.activePackageId)
-                          ?.productKeys.includes(getItemKey(p)),
-                    )
-                    .map((p) => p.productId)
-                : []
-            }
-            selectedVariantIds={
-              orderPackages.activePackageId
-                ? products
-                    .filter(
-                      (p) =>
-                        p.variantId &&
-                        orderPackages.packages
-                          .find((pk) => pk.id === orderPackages.activePackageId)
-                          ?.productKeys.includes(getItemKey(p)),
-                    )
-                    .map((p) => p.variantId!)
-                : []
-            }
+            selectedProductIds={[]}
+            selectedVariantIds={[]}
             onConfirm={orderPackages.handleProductsConfirm}
           />
         </>

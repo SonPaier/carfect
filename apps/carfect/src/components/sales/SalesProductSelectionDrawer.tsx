@@ -14,6 +14,7 @@ export interface SalesProductOption {
   priceUnit: string;
   hasVariants?: boolean;
   excludeFromDiscount?: boolean;
+  categoryName?: string;
   variants?: SalesProductVariantOption[];
 }
 
@@ -36,6 +37,7 @@ export interface SelectedProductItem {
   priceNet: number;
   priceUnit: string;
   excludeFromDiscount?: boolean;
+  categoryName?: string;
 }
 
 interface SalesProductSelectionDrawerProps {
@@ -87,10 +89,18 @@ const SalesProductSelectionDrawer = ({
     const { data } = await (supabase
       .from('sales_products')
       .select(
-        'id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount',
+        'id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount, category_id',
       )
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
+
+    // Fetch category names
+    const { data: cats } = await (supabase
+      .from('unified_categories')
+      .select('id, name')
+      .eq('instance_id', instanceId)
+      .eq('category_type', 'sales') as any);
+    const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
 
     const allProducts: SalesProductOption[] = (data || []).map((p: any) => ({
       id: p.id,
@@ -100,6 +110,7 @@ const SalesProductSelectionDrawer = ({
       priceUnit: p.price_unit || 'szt.',
       hasVariants: p.has_variants || false,
       excludeFromDiscount: p.exclude_from_discount || false,
+      categoryName: p.category_id ? catMap.get(p.category_id) || undefined : undefined,
       variants: [],
     }));
 
@@ -204,6 +215,7 @@ const SalesProductSelectionDrawer = ({
               priceNet: product.priceNet,
               priceUnit: product.priceUnit,
               excludeFromDiscount: product.excludeFromDiscount,
+              categoryName: product.categoryName,
             });
             break;
           }
@@ -219,6 +231,7 @@ const SalesProductSelectionDrawer = ({
             priceNet: product.priceNet,
             priceUnit: product.priceUnit,
             excludeFromDiscount: product.excludeFromDiscount,
+            categoryName: product.categoryName,
           });
         }
       }
@@ -234,7 +247,7 @@ const SalesProductSelectionDrawer = ({
         side="right"
         hideOverlay
         hideCloseButton
-        className="w-full sm:max-w-[var(--drawer-width)] h-full p-0 flex flex-col shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] z-[1000] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
+        className="w-full sm:max-w-[var(--drawer-width)] h-full p-0 flex flex-col overflow-hidden shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] z-[1000] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
         onFocusOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
@@ -279,7 +292,12 @@ const SalesProductSelectionDrawer = ({
         </div>
 
         {/* Product List */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+          style={{ touchAction: 'pan-y' }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
