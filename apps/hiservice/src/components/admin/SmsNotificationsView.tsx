@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Loader2, MoreHorizontal, Trash2, Users, Bell } from 'lucide-react';
+import { EmptyState } from '@shared/ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -33,11 +34,14 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<TemplateWithCount[]>([]);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; template: NotificationTemplate | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    template: NotificationTemplate | null;
+  }>({
     open: false,
     template: null,
   });
-  
+
   const isAdminPath = location.pathname.startsWith('/admin');
   const basePath = isAdminPath ? '/admin/powiadomienia-sms' : '/powiadomienia-sms';
 
@@ -49,19 +53,21 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
 
   const fetchTemplates = async () => {
     if (!instanceId) return;
-    
+
     setLoading(true);
     try {
-      const { data: templatesData, error: templatesError } = await (supabase
-        .from('sms_notification_templates') as any)
+      const { data: templatesData, error: templatesError } = await (
+        supabase.from('sms_notification_templates') as any
+      )
         .select('id, name, description, items')
         .eq('instance_id', instanceId)
         .order('name');
 
       if (templatesError) throw templatesError;
 
-      const { data: countsData, error: countsError } = await (supabase
-        .from('customer_sms_notifications') as any)
+      const { data: countsData, error: countsError } = await (
+        supabase.from('customer_sms_notifications') as any
+      )
         .select('notification_template_id, customer_phone')
         .eq('instance_id', instanceId)
         .eq('status', 'scheduled')
@@ -79,7 +85,9 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
 
       const templatesWithCounts: TemplateWithCount[] = (templatesData || []).map((t: any) => ({
         ...t,
-        items: Array.isArray(t.items) ? t.items as { months: number; service_type: string }[] : [],
+        items: Array.isArray(t.items)
+          ? (t.items as { months: number; service_type: string }[])
+          : [],
         activeCustomersCount: countsByTemplate[t.id]?.size || 0,
       }));
 
@@ -97,8 +105,7 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
     if (!template) return;
 
     try {
-      const { count } = await (supabase
-        .from('customer_sms_notifications') as any)
+      const { count } = await (supabase.from('customer_sms_notifications') as any)
         .select('*', { count: 'exact', head: true })
         .eq('notification_template_id', template.id)
         .eq('status', 'scheduled');
@@ -109,14 +116,13 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
         return;
       }
 
-      const { error } = await (supabase
-        .from('sms_notification_templates') as any)
+      const { error } = await (supabase.from('sms_notification_templates') as any)
         .delete()
         .eq('id', template.id);
 
       if (error) throw error;
 
-      setTemplates(prev => prev.filter(t => t.id !== template.id));
+      setTemplates((prev) => prev.filter((t) => t.id !== template.id));
       toast.success('Szablon usunięty');
     } catch (error) {
       console.error('Error deleting template:', error);
@@ -157,14 +163,16 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : templates.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Bell className="h-16 w-16 text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground mb-4">Brak szablonów powiadomień SMS</p>
+        <EmptyState
+          icon={Bell}
+          title="Brak szablonów"
+          description="Dodaj pierwszy szablon powiadomień SMS."
+        >
           <Button onClick={handleAddNew} className="gap-2">
             <Plus className="h-4 w-4" />
             Dodaj szablon
           </Button>
-        </div>
+        </EmptyState>
       ) : (
         <div className="space-y-3">
           {templates.map((template) => (
@@ -182,12 +190,14 @@ export default function SmsNotificationsView({ instanceId }: SmsNotificationsVie
                 )}
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="text-xs">
-                    {template.items.length} {template.items.length === 1 ? 'przypomnienie' : 'przypomnień'}
+                    {template.items.length}{' '}
+                    {template.items.length === 1 ? 'przypomnienie' : 'przypomnień'}
                   </Badge>
                   {template.activeCustomersCount > 0 && (
                     <Badge variant="secondary" className="text-xs flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {template.activeCustomersCount} {template.activeCustomersCount === 1 ? 'klient' : 'klientów'}
+                      {template.activeCustomersCount}{' '}
+                      {template.activeCustomersCount === 1 ? 'klient' : 'klientów'}
                     </Badge>
                   )}
                 </div>

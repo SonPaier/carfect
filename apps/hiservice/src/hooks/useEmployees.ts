@@ -21,9 +21,11 @@ export interface EmployeeInput {
   sort_order?: number | null;
 }
 
+const employeesKey = (instanceId: string | null) => ['employees', instanceId] as const;
+
 export const useEmployees = (instanceId: string | null) => {
   return useQuery({
-    queryKey: ['employees', instanceId],
+    queryKey: employeesKey(instanceId),
     queryFn: async (): Promise<Employee[]> => {
       if (!instanceId) return [];
       const { data, error } = await supabase
@@ -57,10 +59,12 @@ export const useCreateEmployee = (instanceId: string | null) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Employee;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
+    onSuccess: (newEmployee) => {
+      queryClient.setQueryData<Employee[]>(employeesKey(instanceId), (old) =>
+        old ? [...old, newEmployee] : [newEmployee],
+      );
     },
   });
 };
@@ -78,10 +82,13 @@ export const useUpdateEmployee = (instanceId: string | null) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Employee;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
+    onSuccess: (updated) => {
+      queryClient.setQueryData<Employee[]>(
+        employeesKey(instanceId),
+        (old) => old?.map((e) => (e.id === updated.id ? updated : e)) ?? [],
+      );
     },
   });
 };
@@ -92,11 +99,14 @@ export const useDeleteEmployee = (instanceId: string | null) => {
   return useMutation({
     mutationFn: async (employeeId: string) => {
       const { error } = await supabase.from('employees').delete().eq('id', employeeId);
-
       if (error) throw error;
+      return employeeId;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['employees', instanceId] });
+    onSuccess: (deletedId) => {
+      queryClient.setQueryData<Employee[]>(
+        employeesKey(instanceId),
+        (old) => old?.filter((e) => e.id !== deletedId) ?? [],
+      );
     },
   });
 };

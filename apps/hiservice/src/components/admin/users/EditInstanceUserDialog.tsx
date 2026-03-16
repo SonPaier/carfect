@@ -44,11 +44,21 @@ interface EditInstanceUserDialogProps {
   onOpenChange: (open: boolean) => void;
   instanceId: string;
   user: InstanceUser | null;
-  onSuccess: () => void | Promise<void>;
+  onSuccess: (
+    linkedEmployeeId: string | null,
+    linkedEmployeeName: string | null,
+  ) => void | Promise<void>;
   employees?: Employee[];
 }
 
-const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSuccess, employees = [] }: EditInstanceUserDialogProps) => {
+const EditInstanceUserDialog = ({
+  open,
+  onOpenChange,
+  instanceId,
+  user,
+  onSuccess,
+  employees = [],
+}: EditInstanceUserDialogProps) => {
   const [username, setUsername] = useState('');
   const [role, setRole] = useState<'employee' | 'admin'>('employee');
   const [loading, setLoading] = useState(false);
@@ -62,29 +72,49 @@ const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSucces
       setUsername(user.username);
       setRole(user.role);
       // Find linked employee
-      const linked = employees.find(e => (e as any).linked_user_id === user.id);
+      const linked = employees.find((e) => (e as any).linked_user_id === user.id);
       setLinkedEmployeeId(linked?.id || null);
     }
   }, [user, open, employees]);
 
   const handleRoleChange = (newRole: 'employee' | 'admin') => {
-    if (newRole === 'admin' && role !== 'admin') { setPendingRole('admin'); setShowAdminConfirm(true); }
-    else setRole(newRole);
+    if (newRole === 'admin' && role !== 'admin') {
+      setPendingRole('admin');
+      setShowAdminConfirm(true);
+    } else setRole(newRole);
   };
 
-  const confirmAdminRole = () => { if (pendingRole === 'admin') setRole('admin'); setPendingRole(null); setShowAdminConfirm(false); };
-  const cancelAdminRole = () => { setPendingRole(null); setShowAdminConfirm(false); };
+  const confirmAdminRole = () => {
+    if (pendingRole === 'admin') setRole('admin');
+    setPendingRole(null);
+    setShowAdminConfirm(false);
+  };
+  const cancelAdminRole = () => {
+    setPendingRole(null);
+    setShowAdminConfirm(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!username.trim()) { toast.error('Nazwa użytkownika jest wymagana'); return; }
-    if (username.length < 3) { toast.error('Nazwa musi mieć min. 3 znaki'); return; }
+    if (!username.trim()) {
+      toast.error('Nazwa użytkownika jest wymagana');
+      return;
+    }
+    if (username.length < 3) {
+      toast.error('Nazwa musi mieć min. 3 znaki');
+      return;
+    }
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Sesja wygasła'); return; }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Sesja wygasła');
+        return;
+      }
 
       const response = await supabase.functions.invoke('manage-instance-users', {
         body: { action: 'update', instanceId, userId: user.id, username: username.trim(), role },
@@ -110,7 +140,10 @@ const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSucces
       }
 
       toast.success('Użytkownik zaktualizowany');
-      await onSuccess();
+      const linkedName = linkedEmployeeId
+        ? (employees.find((e) => e.id === linkedEmployeeId)?.name ?? null)
+        : null;
+      await onSuccess(linkedEmployeeId, linkedName);
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error updating user:', error);
@@ -122,7 +155,7 @@ const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSucces
 
   if (!user) return null;
 
-  const linkedEmployee = employees.find(e => e.id === linkedEmployeeId);
+  const linkedEmployee = employees.find((e) => e.id === linkedEmployeeId);
 
   return (
     <>
@@ -135,19 +168,29 @@ const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSucces
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Nazwa użytkownika</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="np. jan.kowalski" autoComplete="off" />
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="np. jan.kowalski"
+                autoComplete="off"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Rola</Label>
               <Select value={role} onValueChange={handleRoleChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">Pracownik</SelectItem>
                   <SelectItem value="admin">Admin Instancji</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {role === 'admin' ? 'Admin ma pełny dostęp do ustawień i zarządzania użytkownikami' : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
+                {role === 'admin'
+                  ? 'Admin ma pełny dostęp do ustawień i zarządzania użytkownikami'
+                  : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
               </p>
             </div>
             <div className="space-y-2">
@@ -159,15 +202,23 @@ const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSucces
                 onClick={() => setEmployeeDrawerOpen(true)}
               >
                 <UserIcon className="w-4 h-4 mr-2 shrink-0" />
-                {linkedEmployee
-                  ? linkedEmployee.name
-                  : <span className="text-muted-foreground">Wybierz pracownika...</span>
-                }
+                {linkedEmployee ? (
+                  linkedEmployee.name
+                ) : (
+                  <span className="text-muted-foreground">Wybierz pracownika...</span>
+                )}
               </Button>
               <p className="text-xs text-muted-foreground">Powiąż konto z rekordem pracownika</p>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Anuluj</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Anuluj
+              </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Zapisz zmiany
@@ -209,7 +260,9 @@ const EditInstanceUserDialog = ({ open, onOpenChange, instanceId, user, onSucces
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={cancelAdminRole}>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAdminRole}>Rozumiem, nadaj uprawnienia</AlertDialogAction>
+            <AlertDialogAction onClick={confirmAdminRole}>
+              Rozumiem, nadaj uprawnienia
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

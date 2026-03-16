@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -35,7 +41,19 @@ interface CreateProtocolFormProps {
   prefillCalendarItemId?: string | null;
 }
 
-const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProtocolId, prefillCustomerId, prefillCustomerName, prefillCustomerPhone, prefillCustomerEmail, prefillCustomerAddressId, prefillCalendarItemId }: CreateProtocolFormProps) => {
+const CreateProtocolForm = ({
+  open,
+  onClose,
+  instanceId,
+  onSuccess,
+  editingProtocolId,
+  prefillCustomerId,
+  prefillCustomerName,
+  prefillCustomerPhone,
+  prefillCustomerEmail,
+  prefillCustomerAddressId,
+  prefillCalendarItemId,
+}: CreateProtocolFormProps) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const isEditMode = !!editingProtocolId;
@@ -69,7 +87,11 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
         .eq('id', editingProtocolId)
         .single()
         .then(({ data, error }) => {
-          if (error || !data) { toast.error('Nie znaleziono protokołu'); onClose(); return; }
+          if (error || !data) {
+            toast.error('Nie znaleziono protokołu');
+            onClose();
+            return;
+          }
           setProtocolType(data.protocol_type);
           setCustomerId(data.customer_id);
           setCustomerName(data.customer_name);
@@ -113,7 +135,18 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
         setPreparedBy('');
       }
     }
-  }, [open, isEditMode, editingProtocolId, prefillCustomerId, prefillCustomerName, prefillCustomerPhone, prefillCustomerEmail, prefillCustomerAddressId, instanceId, user?.id]);
+  }, [
+    open,
+    isEditMode,
+    editingProtocolId,
+    prefillCustomerId,
+    prefillCustomerName,
+    prefillCustomerPhone,
+    prefillCustomerEmail,
+    prefillCustomerAddressId,
+    instanceId,
+    user?.id,
+  ]);
 
   const handleSelectCustomer = (customer: SelectedCustomer) => {
     setCustomerId(customer.id);
@@ -133,37 +166,49 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     if (!customerName.trim()) {
       toast.error('Podaj nazwę klienta');
       return;
     }
 
     setLoading(true);
+    const payload: any = {
+      instance_id: instanceId,
+      customer_id: customerId,
+      customer_name: customerName.trim(),
+      customer_phone: customerPhone.trim() || null,
+      customer_email: customerEmail.trim() || null,
+      customer_nip: customerNip.trim() || null,
+      customer_address_id: customerAddressId,
+      protocol_date: format(protocolDate, 'yyyy-MM-dd'),
+      protocol_type: protocolType,
+      prepared_by: preparedBy.trim() || null,
+      notes: notes.trim() || null,
+      customer_signature: customerSignature,
+      photo_urls: photoUrls,
+    };
     try {
-      const payload: any = {
-        instance_id: instanceId,
-        customer_id: customerId,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim() || null,
-        customer_email: customerEmail.trim() || null,
-        customer_nip: customerNip.trim() || null,
-        customer_address_id: customerAddressId,
-        protocol_date: format(protocolDate, 'yyyy-MM-dd'),
-        protocol_type: protocolType,
-        prepared_by: preparedBy.trim() || null,
-        notes: notes.trim() || null,
-        customer_signature: customerSignature,
-        photo_urls: photoUrls,
-      };
       if (!isEditMode && prefillCalendarItemId) {
-        payload.calendar_item_id = prefillCalendarItemId;
+        // Verify the calendar item still exists before linking
+        const { data: itemExists } = await supabase
+          .from('calendar_items')
+          .select('id')
+          .eq('id', prefillCalendarItemId)
+          .maybeSingle();
+        if (itemExists) {
+          payload.calendar_item_id = prefillCalendarItemId;
+        }
       }
       if (!isEditMode && user?.id) {
         payload.created_by_user_id = user.id;
       }
 
       if (isEditMode) {
-        const { error } = await supabase.from('protocols').update(payload).eq('id', editingProtocolId!);
+        const { error } = await supabase
+          .from('protocols')
+          .update(payload)
+          .eq('id', editingProtocolId!);
         if (error) throw error;
         toast.success('Protokół zaktualizowany');
       } else {
@@ -176,7 +221,23 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
       onClose();
     } catch (error: any) {
       console.error('Error saving protocol:', error);
-      toast.error('Błąd podczas zapisywania protokołu');
+      if (!isEditMode && error?.code === '23503') {
+        toast.error('Zlecenie zostało usunięte. Protokół zostanie zapisany bez powiązania.');
+        // Retry without calendar_item_id
+        try {
+          const { calendar_item_id: _, ...retryPayload } = payload;
+          const { error: retryError } = await supabase.from('protocols').insert(retryPayload);
+          if (retryError) throw retryError;
+          toast.success('Protokół utworzony');
+          onSuccess();
+          onClose();
+        } catch (retryErr) {
+          console.error('Retry failed:', retryErr);
+          toast.error('Błąd podczas zapisywania protokołu');
+        }
+      } else {
+        toast.error('Błąd podczas zapisywania protokołu');
+      }
     } finally {
       setLoading(false);
     }
@@ -210,7 +271,9 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
           <div className="space-y-2">
             <Label>Typ protokołu</Label>
             <Select value={protocolType} onValueChange={setProtocolType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="completion">Protokół zakończenia prac</SelectItem>
               </SelectContent>
@@ -222,7 +285,17 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
             <Label>Klient *</Label>
             <CustomerSearchInput
               instanceId={instanceId}
-              selectedCustomer={customerId ? { id: customerId, name: customerName, phone: customerPhone, email: customerEmail || null, company: null } : null}
+              selectedCustomer={
+                customerId
+                  ? {
+                      id: customerId,
+                      name: customerName,
+                      phone: customerPhone,
+                      email: customerEmail || null,
+                      company: null,
+                    }
+                  : null
+              }
               onSelect={handleSelectCustomer}
               onClear={handleClearCustomer}
             />
@@ -232,12 +305,24 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Imię i nazwisko *</Label>
-              <Input value={customerName} onChange={(e) => { setCustomerName(e.target.value); if (customerId) setCustomerId(null); }} placeholder="Jan Kowalski" />
+              <Input
+                value={customerName}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  if (customerId) setCustomerId(null);
+                }}
+                placeholder="Jan Kowalski"
+              />
             </div>
             {!isEditMode && (
               <div className="space-y-2">
                 <Label>Telefon</Label>
-                <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="+48 ..." type="tel" />
+                <Input
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="+48 ..."
+                  type="tel"
+                />
               </div>
             )}
           </div>
@@ -245,11 +330,20 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="jan@example.com" type="email" />
+              <Input
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="jan@example.com"
+                type="email"
+              />
             </div>
             <div className="space-y-2">
               <Label>NIP</Label>
-              <Input value={customerNip} onChange={(e) => setCustomerNip(e.target.value)} placeholder="123-456-78-90" />
+              <Input
+                value={customerNip}
+                onChange={(e) => setCustomerNip(e.target.value)}
+                placeholder="123-456-78-90"
+              />
             </div>
           </div>
 
@@ -275,7 +369,12 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
           {/* Notes */}
           <div className="space-y-2">
             <Label>Uwagi</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Dodatkowe uwagi..." rows={3} />
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Dodatkowe uwagi..."
+              rows={3}
+            />
           </div>
 
           {/* Date */}
@@ -283,7 +382,10 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
             <Label>Data protokołu</Label>
             <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full justify-start text-left font-normal")}>
+                <Button
+                  variant="outline"
+                  className={cn('w-full justify-start text-left font-normal')}
+                >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {format(protocolDate, 'EEEE, d MMM yyyy', { locale: pl })}
                 </Button>
@@ -292,7 +394,12 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
                 <Calendar
                   mode="single"
                   selected={protocolDate}
-                  onSelect={(date) => { if (date) { setProtocolDate(date); setDatePickerOpen(false); } }}
+                  onSelect={(date) => {
+                    if (date) {
+                      setProtocolDate(date);
+                      setDatePickerOpen(false);
+                    }
+                  }}
                   initialFocus
                   locale={pl}
                   className="p-3 pointer-events-auto"
@@ -304,7 +411,11 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
           {/* Prepared By */}
           <div className="space-y-2">
             <Label>Sporządził</Label>
-            <Input value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} placeholder="Imię i nazwisko osoby sporządzającej" />
+            <Input
+              value={preparedBy}
+              onChange={(e) => setPreparedBy(e.target.value)}
+              placeholder="Imię i nazwisko osoby sporządzającej"
+            />
           </div>
 
           {/* Signature */}
@@ -313,10 +424,26 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
             <div className="border border-border rounded-md bg-white overflow-hidden relative">
               {customerSignature ? (
                 <div className="relative">
-                  <img src={customerSignature} alt="Podpis" className="w-full" style={{ height: '160px', objectFit: 'contain' }} />
+                  <img
+                    src={customerSignature}
+                    alt="Podpis"
+                    className="w-full"
+                    style={{ height: '160px', objectFit: 'contain' }}
+                  />
                   <div className="absolute bottom-2 right-2 flex gap-1">
-                    <Button variant="secondary" size="sm" onClick={() => { setCustomerSignature(null); setSignatureOpen(true); }}>Podpisz ponownie</Button>
-                    <Button variant="ghost" size="sm" onClick={() => setCustomerSignature(null)}>Usuń</Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setCustomerSignature(null);
+                        setSignatureOpen(true);
+                      }}
+                    >
+                      Podpisz ponownie
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setCustomerSignature(null)}>
+                      Usuń
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -349,8 +476,19 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
 
   return (
     <>
-      <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-        <SheetContent side="right" className="w-full sm:w-[550px] sm:max-w-[550px] p-0" hideOverlay hideCloseButton onInteractOutside={(e) => e.preventDefault()}>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:w-[550px] sm:max-w-[550px] p-0"
+          hideOverlay
+          hideCloseButton
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           {formContent}
         </SheetContent>
       </Sheet>
@@ -358,7 +496,10 @@ const CreateProtocolForm = ({ open, onClose, instanceId, onSuccess, editingProto
       <SignatureDialog
         open={signatureOpen}
         onClose={() => setSignatureOpen(false)}
-        onSave={(dataUrl) => { setCustomerSignature(dataUrl); setSignatureOpen(false); }}
+        onSave={(dataUrl) => {
+          setCustomerSignature(dataUrl);
+          setSignatureOpen(false);
+        }}
       />
     </>
   );

@@ -105,7 +105,7 @@ const AddEditEmployeeDialog = ({
           id: employee.id,
           photo_url: publicUrl,
           name: name.trim() || employee.name,
-          hourly_rate: isAdmin && hourlyRate ? parseFloat(hourlyRate) : employee.hourly_rate,
+          hourly_rate: isAdmin && hourlyRate !== '' ? parseFloat(hourlyRate) : employee.hourly_rate,
         });
         toast.success('Zdjęcie zostało zapisane');
       } else {
@@ -124,7 +124,8 @@ const AddEditEmployeeDialog = ({
     setPhotoUrl(null);
   };
 
-  const isAccountValid = !createAccount || (username.trim().length >= 3 && password.length >= 6);
+  const isAccountValid =
+    !createAccount || (username.trim().length >= 3 && password.trim().length >= 6);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -133,11 +134,14 @@ const AddEditEmployeeDialog = ({
     }
     if (!isAccountValid) return;
     try {
-      const data = {
+      const data: { name: string; photo_url: string | null; hourly_rate?: number | null } = {
         name: name.trim(),
-        hourly_rate: isAdmin && hourlyRate ? parseFloat(hourlyRate) : null,
         photo_url: photoUrl,
       };
+      // Only admin can change hourly_rate; non-admin edits must not wipe it
+      if (isAdmin) {
+        data.hourly_rate = hourlyRate !== '' ? parseFloat(hourlyRate) : null;
+      }
       if (isEditing && employee) {
         await updateEmployee.mutateAsync({ id: employee.id, ...data });
         toast.success('Pracownik został zaktualizowany');
@@ -163,6 +167,7 @@ const AddEditEmployeeDialog = ({
           } catch (accountError: any) {
             console.error('Account creation error:', accountError);
             toast.error(`Błąd tworzenia konta: ${accountError.message || 'Nieznany błąd'}`);
+            return; // Don't close — employee created but account failed
           }
         }
       }

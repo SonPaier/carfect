@@ -53,32 +53,54 @@ export function useReminderTypes(instanceId: string | null) {
       .eq('active', true)
       .order('sort_order');
     setLoading(false);
-    if (error) { console.error(error); return; }
+    if (error) {
+      console.error(error);
+      return;
+    }
     setTypes((data as any[]) || []);
   }, [instanceId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   const addType = async (name: string) => {
     if (!instanceId) return;
-    const { error } = await supabase.from('reminder_types').insert({ instance_id: instanceId, name } as any);
-    if (error) { toast.error('Błąd dodawania typu'); return; }
+    const { error } = await supabase
+      .from('reminder_types')
+      .insert({ instance_id: instanceId, name } as any);
+    if (error) {
+      toast.error('Błąd dodawania typu');
+      return;
+    }
     toast.success('Typ dodany');
-    fetch();
+    await fetch();
   };
 
   const updateType = async (id: string, name: string) => {
-    const { error } = await supabase.from('reminder_types').update({ name } as any).eq('id', id);
-    if (error) { toast.error('Błąd edycji typu'); return; }
+    const { error } = await supabase
+      .from('reminder_types')
+      .update({ name } as any)
+      .eq('id', id);
+    if (error) {
+      toast.error('Błąd edycji typu');
+      return;
+    }
     toast.success('Typ zaktualizowany');
-    fetch();
+    await fetch();
   };
 
   const deleteType = async (id: string) => {
-    const { error } = await supabase.from('reminder_types').update({ active: false } as any).eq('id', id);
-    if (error) { toast.error('Błąd usuwania typu'); return; }
+    const { error } = await supabase
+      .from('reminder_types')
+      .update({ active: false } as any)
+      .eq('id', id);
+    if (error) {
+      toast.error('Błąd usuwania typu');
+      return;
+    }
     toast.success('Typ usunięty');
-    fetch();
+    await fetch();
   };
 
   return { types, loading, refetch: fetch, addType, updateType, deleteType };
@@ -103,53 +125,89 @@ export function useReminders(instanceId: string | null) {
       setLoading(false);
       isFirstLoad.current = false;
     }
-    if (error) { console.error(error); return; }
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     const items = (data as any[]) || [];
 
     // Fetch type names
-    const typeIds = [...new Set(items.filter(i => i.reminder_type_id).map(i => i.reminder_type_id))];
+    const typeIds = [
+      ...new Set(items.filter((i) => i.reminder_type_id).map((i) => i.reminder_type_id)),
+    ];
     if (typeIds.length > 0) {
-      const { data: types } = await supabase.from('reminder_types').select('id, name').in('id', typeIds);
+      const { data: types } = await supabase
+        .from('reminder_types')
+        .select('id, name')
+        .in('id', typeIds);
       if (types) {
-        const typeMap = new Map((types as any[]).map(t => [t.id, t.name]));
-        items.forEach(i => { if (i.reminder_type_id) i.reminder_type_name = typeMap.get(i.reminder_type_id); });
+        const typeMap = new Map((types as any[]).map((t) => [t.id, t.name]));
+        items.forEach((i) => {
+          if (i.reminder_type_id) i.reminder_type_name = typeMap.get(i.reminder_type_id);
+        });
       }
     }
 
     // Fetch customer names
-    const customerIds = [...new Set(items.filter(i => i.customer_id).map(i => i.customer_id))];
+    const customerIds = [...new Set(items.filter((i) => i.customer_id).map((i) => i.customer_id))];
     if (customerIds.length > 0) {
-      const { data: customers } = await supabase.from('customers').select('id, name').in('id', customerIds);
+      const { data: customers } = await supabase
+        .from('customers')
+        .select('id, name')
+        .in('id', customerIds);
       if (customers) {
-        const custMap = new Map(customers.map(c => [c.id, c.name]));
-        items.forEach(i => { if (i.customer_id) i.customer_name = custMap.get(i.customer_id); });
+        const custMap = new Map(customers.map((c) => [c.id, c.name]));
+        items.forEach((i) => {
+          if (i.customer_id) i.customer_name = custMap.get(i.customer_id);
+        });
       }
     }
 
     // Fetch assigned employee names
-    const employeeIds = [...new Set(items.filter(i => i.assigned_employee_id).map(i => i.assigned_employee_id))];
+    const employeeIds = [
+      ...new Set(items.filter((i) => i.assigned_employee_id).map((i) => i.assigned_employee_id)),
+    ];
     if (employeeIds.length > 0) {
-      const { data: employees } = await supabase.from('employees').select('id, name').in('id', employeeIds);
+      const { data: employees } = await supabase
+        .from('employees')
+        .select('id, name')
+        .in('id', employeeIds);
       if (employees) {
-        const empMap = new Map((employees as any[]).map(e => [e.id, e.name]));
-        items.forEach(i => { if (i.assigned_employee_id) i.assigned_employee_name = empMap.get(i.assigned_employee_id); });
+        const empMap = new Map((employees as any[]).map((e) => [e.id, e.name]));
+        items.forEach((i) => {
+          if (i.assigned_employee_id) i.assigned_employee_name = empMap.get(i.assigned_employee_id);
+        });
       }
     }
 
     setReminders(items);
   }, [instanceId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
-  const saveReminder = async (reminder: Partial<Reminder> & { instance_id: string }, id?: string) => {
+  const saveReminder = async (
+    reminder: Partial<Reminder> & { instance_id: string },
+    id?: string,
+  ) => {
     if (id) {
-      const { error } = await supabase.from('reminders').update(reminder as any).eq('id', id);
-      if (error) { toast.error('Błąd zapisywania'); return false; }
+      const { error } = await supabase
+        .from('reminders')
+        .update(reminder as any)
+        .eq('id', id);
+      if (error) {
+        toast.error('Błąd zapisywania');
+        return false;
+      }
       toast.success('Przypomnienie zaktualizowane');
     } else {
       const { error } = await supabase.from('reminders').insert(reminder as any);
-      if (error) { toast.error('Błąd tworzenia'); return false; }
+      if (error) {
+        toast.error('Błąd tworzenia');
+        return false;
+      }
       toast.success('Przypomnienie utworzone');
     }
     fetch();
@@ -157,12 +215,22 @@ export function useReminders(instanceId: string | null) {
   };
 
   const updateStatus = async (id: string, status: string, reminder?: Reminder) => {
-    const { error } = await supabase.from('reminders').update({ status } as any).eq('id', id);
-    if (error) { toast.error('Błąd zmiany statusu'); return; }
+    const { error } = await supabase
+      .from('reminders')
+      .update({ status } as any)
+      .eq('id', id);
+    if (error) {
+      toast.error('Błąd zmiany statusu');
+      return;
+    }
 
     // If recurring and marked done, create next occurrence
     if (status === 'done' && reminder?.is_recurring && reminder.recurring_type) {
-      const nextDeadline = getNextRecurringDeadline(reminder.deadline, reminder.recurring_type, reminder.recurring_value);
+      const nextDeadline = getNextRecurringDeadline(
+        reminder.deadline,
+        reminder.recurring_type,
+        reminder.recurring_value,
+      );
       if (nextDeadline) {
         await supabase.from('reminders').insert({
           instance_id: reminder.instance_id,
@@ -188,12 +256,21 @@ export function useReminders(instanceId: string | null) {
     }
 
     fetch();
-    toast.success(status === 'done' ? 'Oznaczono jako wykonane' : status === 'cancelled' ? 'Anulowane' : 'Przywrócono');
+    toast.success(
+      status === 'done'
+        ? 'Oznaczono jako wykonane'
+        : status === 'cancelled'
+          ? 'Anulowane'
+          : 'Przywrócono',
+    );
   };
 
   const deleteReminder = async (id: string) => {
     const { error } = await supabase.from('reminders').delete().eq('id', id);
-    if (error) { toast.error('Błąd usuwania'); return; }
+    if (error) {
+      toast.error('Błąd usuwania');
+      return;
+    }
     toast.success('Przypomnienie usunięte');
     fetch();
   };
@@ -204,7 +281,11 @@ export function useReminders(instanceId: string | null) {
 const fmtDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-function getNextRecurringDeadline(currentDeadline: string, recurringType: string, recurringValue: number | null): string | null {
+function getNextRecurringDeadline(
+  currentDeadline: string,
+  recurringType: string,
+  recurringValue: number | null,
+): string | null {
   const current = new Date(currentDeadline + 'T00:00:00');
   if (recurringType === 'monthly' && recurringValue) {
     const next = new Date(current);

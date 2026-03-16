@@ -8,11 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import {
   Drawer,
   DrawerContent,
@@ -27,17 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -85,7 +72,7 @@ interface ServiceFormDialogProps {
   instanceId: string;
   service?: ServiceData | null;
   categories: ServiceCategory[];
-  onSaved: () => void;
+  onSaved: (savedService?: any) => void | Promise<void>;
   defaultCategoryId?: string;
   totalServicesCount?: number;
   onDelete?: () => void;
@@ -94,13 +81,13 @@ interface ServiceFormDialogProps {
 
 function FieldInfo({ tooltip }: { tooltip: string }) {
   const [open, setOpen] = useState(false);
-  
+
   return (
     <TooltipProvider>
       <Tooltip open={open} onOpenChange={setOpen}>
         <TooltipTrigger asChild>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="p-0.5 text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.preventDefault();
@@ -136,7 +123,7 @@ const ServiceFormContent = ({
   service?: ServiceData | null;
   categories: ServiceCategory[];
   instanceId: string;
-  onSaved: () => void;
+  onSaved: (savedService?: any) => void | Promise<void>;
   onClose: () => void;
   defaultCategoryId?: string;
   totalServicesCount?: number;
@@ -150,15 +137,12 @@ const ServiceFormContent = ({
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState(false);
   const [shortNameError, setShortNameError] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const [smsTemplates, setSmsTemplates] = useState<SmsTemplateOption[]>([]);
 
-   const hasAdvancedValues = !!(
-    service?.is_popular ||
-    service?.notification_template_id
-  );
+  const hasAdvancedValues = !!(service?.is_popular || service?.notification_template_id);
   const [advancedOpen, setAdvancedOpen] = useState(hasAdvancedValues);
 
   const [formData, setFormData] = useState({
@@ -186,8 +170,9 @@ const ServiceFormContent = ({
     fetchTemplates();
   }, [instanceId]);
 
-  const selectedSmsTemplate = smsTemplates.find(t => t.id === formData.notification_template_id);
-  const smsTemplateItems: SmsTemplateItem[] = (selectedSmsTemplate?.items as SmsTemplateItem[]) || [];
+  const selectedSmsTemplate = smsTemplates.find((t) => t.id === formData.notification_template_id);
+  const smsTemplateItems: SmsTemplateItem[] =
+    (selectedSmsTemplate?.items as SmsTemplateItem[]) || [];
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -208,7 +193,7 @@ const ServiceFormContent = ({
   useEffect(() => {
     if (service?.id === initializedServiceIdRef.current) return;
     initializedServiceIdRef.current = service?.id || null;
-    
+
     if (service) {
       setFormData({
         name: service.name || '',
@@ -228,7 +213,7 @@ const ServiceFormContent = ({
   const handleSave = async () => {
     setNameError(false);
     setShortNameError(false);
-    
+
     if (!formData.name.trim()) {
       setNameError(true);
       toast.error('Nazwa usługi jest wymagana');
@@ -238,8 +223,8 @@ const ServiceFormContent = ({
     }
 
     const nameExists = existingServices.some(
-      s => s.id !== service?.id && 
-           s.name.toLowerCase().trim() === formData.name.toLowerCase().trim()
+      (s) =>
+        s.id !== service?.id && s.name.toLowerCase().trim() === formData.name.toLowerCase().trim(),
     );
     if (nameExists) {
       setNameError(true);
@@ -250,8 +235,9 @@ const ServiceFormContent = ({
 
     if (formData.short_name?.trim()) {
       const shortNameExists = existingServices.some(
-        s => s.id !== service?.id && 
-             s.short_name?.toLowerCase().trim() === formData.short_name.toLowerCase().trim()
+        (s) =>
+          s.id !== service?.id &&
+          s.short_name?.toLowerCase().trim() === formData.short_name.toLowerCase().trim(),
       );
       if (shortNameExists) {
         setShortNameError(true);
@@ -272,28 +258,37 @@ const ServiceFormContent = ({
         category_id: formData.category_id || null,
         is_popular: formData.is_popular,
         unit: formData.unit,
-        notification_template_id: formData.notification_template_id === '__none__' ? null : formData.notification_template_id,
+        notification_template_id:
+          formData.notification_template_id === '__none__'
+            ? null
+            : formData.notification_template_id,
         active: true,
       };
 
+      let savedRow: any = null;
+
       if (service?.id) {
-        const { error } = await (supabase
-          .from('unified_services') as any)
+        const { data, error } = await (supabase.from('unified_services') as any)
           .update(serviceData)
-          .eq('id', service.id);
-        
+          .eq('id', service.id)
+          .select()
+          .single();
+
         if (error) throw error;
+        savedRow = data;
         toast.success('Usługa zaktualizowana');
       } else {
-        const { error } = await (supabase
-          .from('unified_services') as any)
-          .insert({ ...serviceData, sort_order: totalServicesCount });
-        
+        const { data, error } = await (supabase.from('unified_services') as any)
+          .insert({ ...serviceData, sort_order: totalServicesCount })
+          .select()
+          .single();
+
         if (error) throw error;
+        savedRow = data;
         toast.success('Usługa dodana');
       }
 
-      onSaved();
+      onSaved(savedRow);
       onClose();
     } catch (error) {
       console.error('Error saving service:', error);
@@ -322,14 +317,21 @@ const ServiceFormContent = ({
             ref={nameInputRef}
             value={formData.name}
             onChange={(e) => {
-              setFormData(prev => ({ ...prev, name: e.target.value }));
+              setFormData((prev) => ({ ...prev, name: e.target.value }));
               if (nameError && e.target.value.trim()) setNameError(false);
             }}
-            className={cn("bg-white", nameError && "border-destructive focus-visible:ring-destructive")}
+            className={cn(
+              'bg-white',
+              nameError && 'border-destructive focus-visible:ring-destructive',
+            )}
           />
           {nameError && (
             <p className="text-sm text-destructive">
-              {existingServices.some(s => s.id !== service?.id && s.name.toLowerCase().trim() === formData.name.toLowerCase().trim())
+              {existingServices.some(
+                (s) =>
+                  s.id !== service?.id &&
+                  s.name.toLowerCase().trim() === formData.name.toLowerCase().trim(),
+              )
                 ? 'Nazwa jest już używana'
                 : 'Nazwa usługi jest wymagana'}
             </p>
@@ -337,10 +339,7 @@ const ServiceFormContent = ({
         </div>
 
         {/* Row 2: Short Name + Category */}
-        <div className={cn(
-          "grid gap-4",
-          isMobile ? "grid-cols-1" : "grid-cols-2"
-        )}>
+        <div className={cn('grid gap-4', isMobile ? 'grid-cols-1' : 'grid-cols-2')}>
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Label className="text-sm leading-5">Nazwa skrócona</Label>
@@ -349,15 +348,16 @@ const ServiceFormContent = ({
             <Input
               value={formData.short_name}
               onChange={(e) => {
-                setFormData(prev => ({ ...prev, short_name: e.target.value.toUpperCase() }));
+                setFormData((prev) => ({ ...prev, short_name: e.target.value.toUpperCase() }));
                 if (shortNameError) setShortNameError(false);
               }}
               maxLength={10}
-              className={cn("bg-white", shortNameError && "border-destructive focus-visible:ring-destructive")}
+              className={cn(
+                'bg-white',
+                shortNameError && 'border-destructive focus-visible:ring-destructive',
+              )}
             />
-            {shortNameError && (
-              <p className="text-sm text-destructive">Skrót jest już używany</p>
-            )}
+            {shortNameError && <p className="text-sm text-destructive">Skrót jest już używany</p>}
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
@@ -366,14 +366,16 @@ const ServiceFormContent = ({
             </div>
             <Select
               value={formData.category_id || 'none'}
-              onValueChange={(v) => setFormData(prev => ({ ...prev, category_id: v === 'none' ? '' : v }))}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, category_id: v === 'none' ? '' : v }))
+              }
             >
               <SelectTrigger className="bg-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Bez kategorii</SelectItem>
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>
@@ -389,20 +391,26 @@ const ServiceFormContent = ({
             <Label className="text-sm leading-5">Ustal, czy cena jest netto czy brutto</Label>
             <RadioGroup
               value={formData.prices_are_net ? 'net' : 'gross'}
-              onValueChange={(v) => setFormData(prev => ({ ...prev, prices_are_net: v === 'net' }))}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, prices_are_net: v === 'net' }))
+              }
               className="flex items-center gap-4"
             >
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="gross" id="price-gross" />
-                <Label htmlFor="price-gross" className="text-sm font-normal cursor-pointer">Cena brutto</Label>
+                <Label htmlFor="price-gross" className="text-sm font-normal cursor-pointer">
+                  Cena brutto
+                </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="net" id="price-net" />
-                <Label htmlFor="price-net" className="text-sm font-normal cursor-pointer">Cena netto</Label>
+                <Label htmlFor="price-net" className="text-sm font-normal cursor-pointer">
+                  Cena netto
+                </Label>
               </div>
             </RadioGroup>
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <Label className="text-sm leading-5">{priceLabel}</Label>
             <FieldInfo tooltip="Cena bazowa usługi" />
@@ -413,7 +421,7 @@ const ServiceFormContent = ({
               value={formData.price ?? ''}
               onChange={(e) => {
                 const numValue = e.target.value === '' ? null : parseFloat(e.target.value);
-                setFormData(prev => ({ ...prev, price: numValue }));
+                setFormData((prev) => ({ ...prev, price: numValue }));
               }}
               step="0.01"
               min="0"
@@ -421,7 +429,7 @@ const ServiceFormContent = ({
             />
             <Select
               value={formData.unit}
-              onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}
+              onValueChange={(v) => setFormData((prev) => ({ ...prev, unit: v }))}
             >
               <SelectTrigger className="w-24">
                 <SelectValue />
@@ -444,7 +452,7 @@ const ServiceFormContent = ({
           <Textarea
             ref={textareaRef}
             value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
             className="min-h-[144px] resize-none overflow-hidden bg-white"
             style={{ height: 'auto' }}
           />
@@ -457,25 +465,20 @@ const ServiceFormContent = ({
               type="button"
               className="flex items-center gap-2 text-sm text-primary font-semibold hover:text-primary/80 w-full py-2"
             >
-              <ChevronDown className={cn(
-                "w-4 h-4 transition-transform",
-                advancedOpen && "rotate-180"
-              )} />
+              <ChevronDown
+                className={cn('w-4 h-4 transition-transform', advancedOpen && 'rotate-180')}
+              />
               Zaawansowane właściwości
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-4 pt-2">
-
-
-
-
             {/* Is Popular */}
             <div className="flex items-center gap-3">
               <Checkbox
                 id="is_popular"
                 checked={formData.is_popular}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, is_popular: !!checked }))
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, is_popular: !!checked }))
                 }
               />
               <div className="flex items-center gap-1.5">
@@ -495,15 +498,19 @@ const ServiceFormContent = ({
               <div className="flex items-center gap-2">
                 <Select
                   value={formData.notification_template_id}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, notification_template_id: v }))}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({ ...prev, notification_template_id: v }))
+                  }
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Brak</SelectItem>
-                    {smsTemplates.map(t => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    {smsTemplates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -579,7 +586,11 @@ export const ServiceFormDialog = ({
       <Button variant="outline" onClick={handleClose} className="flex-1">
         Anuluj
       </Button>
-      <Button onClick={() => saveRef.current.save()} disabled={saveRef.current.saving} className="flex-1">
+      <Button
+        onClick={() => saveRef.current.save()}
+        disabled={saveRef.current.saving}
+        className="flex-1"
+      >
         {saveRef.current.saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
         Zapisz
       </Button>
@@ -589,7 +600,11 @@ export const ServiceFormDialog = ({
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" hideCloseButton className="flex flex-col p-0 gap-0 z-[1000] w-full h-full bg-white">
+        <SheetContent
+          side="right"
+          hideCloseButton
+          className="flex flex-col p-0 gap-0 z-[1000] w-full h-full bg-white"
+        >
           <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
             <SheetTitle className="text-lg font-semibold">{title}</SheetTitle>
           </div>
@@ -628,7 +643,10 @@ export const ServiceFormDialog = ({
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-semibold">{title}</SheetTitle>
-            <button onClick={handleClose} className="p-2 rounded-full hover:bg-primary/5 transition-colors">
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-full hover:bg-primary/5 transition-colors"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import EmptyState from '@/components/ui/empty-state';
+import { EmptyState } from '@shared/ui';
 import NotificationSettingsDrawer from './NotificationSettingsDrawer';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -23,7 +23,8 @@ interface NotificationsViewProps {
 }
 
 const NotificationsView = ({ instanceId, onItemClick }: NotificationsViewProps) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteAll } = useNotifications(instanceId);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteAll } =
+    useNotifications(instanceId);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const handleClick = (n: Notification) => {
     if (!n.read) markAsRead(n.id);
@@ -37,16 +38,32 @@ const NotificationsView = ({ instanceId, onItemClick }: NotificationsViewProps) 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-foreground">Aktywności</h1>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Ustawienia powiadomień" onClick={() => setSettingsOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Ustawienia powiadomień"
+            onClick={() => setSettingsOpen(true)}
+          >
             <Settings2 className="w-4 h-4" />
           </Button>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="icon" title="Oznacz wszystkie jako przeczytane" onClick={() => markAllAsRead()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Oznacz wszystkie jako przeczytane"
+              onClick={() => markAllAsRead()}
+            >
               <CheckCheck className="w-4 h-4" />
             </Button>
           )}
           {notifications.length > 0 && (
-            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" title="Usuń wszystkie" onClick={() => deleteAll()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:text-destructive"
+              title="Usuń wszystkie"
+              onClick={() => deleteAll()}
+            >
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
@@ -54,17 +71,19 @@ const NotificationsView = ({ instanceId, onItemClick }: NotificationsViewProps) 
       </div>
 
       {notifications.length === 0 ? (
-        <EmptyState icon={Bell} message="Brak powiadomień" />
+        <EmptyState
+          icon={Bell}
+          title="Brak powiadomień"
+          description="Nie masz żadnych aktywności."
+        />
       ) : (
         <div className="space-y-2">
-          {notifications.map(n => (
+          {notifications.map((n) => (
             <div
               key={n.id}
               className={cn(
-                "px-4 py-3 rounded-lg border border-border/50 transition-colors",
-                n.read
-                  ? "bg-muted/30"
-                  : "bg-card"
+                'px-4 py-3 rounded-lg border border-border/50 transition-colors',
+                n.read ? 'bg-muted/30' : 'bg-card',
               )}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -85,12 +104,15 @@ const NotificationsView = ({ instanceId, onItemClick }: NotificationsViewProps) 
               ) : (
                 <span className="text-sm text-foreground">{n.title}</span>
               )}
-              
             </div>
           ))}
         </div>
       )}
-      <NotificationSettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} instanceId={instanceId} />
+      <NotificationSettingsDrawer
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        instanceId={instanceId}
+      />
     </div>
   );
 };

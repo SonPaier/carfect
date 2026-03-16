@@ -705,7 +705,7 @@ const CalendarItemDetailsDrawer = ({
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      onDelete?.(item.id);
+      await onDelete?.(item.id);
       setDeleteDialogOpen(false);
       onClose();
     } catch {

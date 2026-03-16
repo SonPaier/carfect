@@ -128,11 +128,11 @@ const AddEditEmployeeCalendarDrawer = ({
     fetchEmployees();
   }, [open, instanceId]);
 
+  // Reset form when drawer opens or config changes
   useEffect(() => {
+    if (!open) return;
     if (config) {
       setName(config.name);
-      const matchingEmployee = employees.find((e) => e.user_id === config.user_id);
-      setSelectedEmployeeId(matchingEmployee?.employee_id || '');
       setSelectedColumnIds(config.column_ids || []);
       setVisibleFields({ ...defaultVisibleFields, ...(config.visible_fields || {}) });
       setAllowedActions({ ...defaultAllowedActions, ...(config.allowed_actions || {}) });
@@ -143,7 +143,14 @@ const AddEditEmployeeCalendarDrawer = ({
       setVisibleFields(defaultVisibleFields);
       setAllowedActions(defaultAllowedActions);
     }
-  }, [config, open, employees]);
+  }, [config, open]);
+
+  // Resolve employee selection when editing (needs employees to be loaded)
+  useEffect(() => {
+    if (!open || !config || employees.length === 0) return;
+    const matchingEmployee = employees.find((e) => e.user_id === config.user_id);
+    setSelectedEmployeeId(matchingEmployee?.employee_id || '');
+  }, [open, config, employees]);
 
   const handleColumnToggle = (columnId: string) => {
     setSelectedColumnIds((prev) =>
