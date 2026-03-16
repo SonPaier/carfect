@@ -20,7 +20,7 @@ interface EmployeeSelectionDrawerProps {
   singleSelect?: boolean;
   instanceId?: string | null;
   orderDateFrom?: string | null; // yyyy-MM-dd
-  orderDateTo?: string | null;   // yyyy-MM-dd
+  orderDateTo?: string | null; // yyyy-MM-dd
 }
 
 /** Check if an employee has days off overlapping with the order date range */
@@ -34,7 +34,7 @@ function getOverlappingDaysOff(
   const from = parseISO(orderFrom);
   const to = orderTo ? parseISO(orderTo) : from;
 
-  return daysOff.filter(d => {
+  return daysOff.filter((d) => {
     if (d.employee_id !== employeeId) return false;
     const dFrom = parseISO(d.date_from);
     const dTo = parseISO(d.date_to);
@@ -74,9 +74,11 @@ const EmployeeSelectionDrawer = ({
 
   const toggle = (id: string) => {
     if (singleSelect) {
-      setLocalSelected(prev => prev.includes(id) ? [] : [id]);
+      setLocalSelected((prev) => (prev.includes(id) ? [] : [id]));
     } else {
-      setLocalSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+      setLocalSelected((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      );
     }
   };
 
@@ -85,7 +87,7 @@ const EmployeeSelectionDrawer = ({
     onClose();
   };
 
-  const activeEmployees = employees.filter(e => e.active);
+  const activeEmployees = employees.filter((e) => e.active);
 
   // Pre-compute overlapping days off per employee
   const employeeDaysOffMap = useMemo(() => {
@@ -103,7 +105,11 @@ const EmployeeSelectionDrawer = ({
         <h2 className="text-lg font-semibold">
           {singleSelect ? 'Powiąż pracownika' : 'Przypisz pracowników'}
         </h2>
-        <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-md bg-background hover:bg-primary/5 transition-colors">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-8 h-8 flex items-center justify-center rounded-md bg-background hover:bg-primary/5 transition-colors"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -113,17 +119,21 @@ const EmployeeSelectionDrawer = ({
             type="button"
             onClick={() => setLocalSelected([])}
             className={cn(
-              "w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left",
-              localSelected.length === 0 ? "bg-primary/10 border border-primary/30" : "hover:bg-primary/5 border border-transparent"
+              'w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left',
+              localSelected.length === 0
+                ? 'bg-primary/10 border border-primary/30'
+                : 'hover:bg-primary/5 border border-transparent',
             )}
           >
             <span className="flex-1 text-sm font-medium text-muted-foreground">Brak</span>
             <div className="w-5 h-5 rounded-full border-2 border-border flex items-center justify-center shrink-0">
-              {localSelected.length === 0 && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+              {localSelected.length === 0 && (
+                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+              )}
             </div>
           </button>
         )}
-        {activeEmployees.map(emp => {
+        {activeEmployees.map((emp) => {
           const isSelected = localSelected.includes(emp.id);
           const overlaps = employeeDaysOffMap.get(emp.id);
           const hasConflict = !!overlaps;
@@ -134,21 +144,26 @@ const EmployeeSelectionDrawer = ({
               type="button"
               onClick={() => toggle(emp.id)}
               className={cn(
-                "w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left",
-                isSelected ? "bg-primary/10 border border-primary/30" : "hover:bg-primary/5 border border-transparent",
+                'w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left',
+                isSelected
+                  ? 'bg-primary/10 border border-primary/30'
+                  : 'hover:bg-primary/5 border border-transparent',
               )}
             >
               <Avatar className="w-8 h-8 shrink-0">
                 {emp.photo_url && <AvatarImage src={emp.photo_url} />}
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">{emp.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {emp.name.charAt(0)}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium block">{emp.name}</span>
-                {hasConflict && overlaps!.map(d => (
-                  <span key={d.id} className="text-[11px] text-destructive block">
-                    {formatDayOffLabel(d)}
-                  </span>
-                ))}
+                {hasConflict &&
+                  overlaps!.map((d) => (
+                    <span key={d.id} className="text-[11px] text-destructive block">
+                      {formatDayOffLabel(d)}
+                    </span>
+                  ))}
               </div>
               {singleSelect ? (
                 <div className="w-5 h-5 rounded-full border-2 border-border flex items-center justify-center shrink-0">
@@ -161,7 +176,9 @@ const EmployeeSelectionDrawer = ({
           );
         })}
         {activeEmployees.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-4">Brak aktywnych pracowników</p>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Brak aktywnych pracowników
+          </p>
         )}
       </div>
       <div className="sticky bottom-0 px-4 py-3 border-t border-border bg-white dark:bg-card shrink-0">
@@ -173,8 +190,21 @@ const EmployeeSelectionDrawer = ({
   );
 
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <SheetContent side="right" className={cn("z-[1100] h-full p-0 flex flex-col", isMobile ? "w-full" : "w-full sm:w-[550px] sm:max-w-[550px]")} hideCloseButton>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
+      <SheetContent
+        side="right"
+        className={cn(
+          'z-[1400] h-full p-0 flex flex-col',
+          isMobile ? 'w-full' : 'w-full sm:w-[550px] sm:max-w-[550px]',
+        )}
+        hideCloseButton
+        hideOverlay
+      >
         {content}
       </SheetContent>
     </Sheet>
