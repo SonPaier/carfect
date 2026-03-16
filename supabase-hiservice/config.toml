@@ -24,3 +24,6 @@ verify_jwt = false
 [functions.geocode-addresses]
 verify_jwt = false
 
+[functions.manage-instance-users]
+verify_jwt = false
+
