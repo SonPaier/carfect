@@ -12,7 +12,17 @@ import {
   Disc,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { Input, Button, Badge, EmptyState } from '@shared/ui';
+import {
+  Input,
+  Button,
+  Badge,
+  EmptyState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   DropdownMenu,
@@ -186,44 +196,29 @@ const SalesRollsView = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-        <button
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'active'
-              ? 'bg-background shadow-sm text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => setActiveTab('active')}
-        >
-          Na stanie
-          {activeTab === 'active' && rolls.length > 0 && (
-            <Badge variant="secondary" className="ml-2 text-xs">
-              {filteredRolls.length}
-            </Badge>
-          )}
-        </button>
-        <button
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'sold'
-              ? 'bg-background shadow-sm text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => setActiveTab('sold')}
-        >
-          Sprzedane
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Szukaj po nazwie, kodzie, barcode..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search + Status filter */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj po nazwie, kodzie, barcode..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">
+              Na stanie
+              {rolls.length > 0 && activeTab === 'active' ? ` (${filteredRolls.length})` : ''}
+            </SelectItem>
+            <SelectItem value="sold">Sprzedane</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}

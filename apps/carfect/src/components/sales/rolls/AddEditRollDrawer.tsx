@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Input, Button, Label, Textarea } from '@shared/ui';
 import { toast } from 'sonner';
 import type { SalesRoll } from '../types/rolls';
@@ -144,18 +138,18 @@ const AddEditRollDrawer = ({
       <SheetContent
         side="right"
         className="w-full sm:max-w-lg flex flex-col"
+        hideCloseButton
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <SheetTitle>{isEdit ? 'Edytuj rolkę' : 'Dodaj rolkę'}</SheetTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
+          <button
+            type="button"
             onClick={() => onOpenChange(false)}
+            className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
           >
-            <X className="w-4 h-4" />
-          </Button>
+            <X className="w-5 h-5" />
+          </button>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
@@ -222,9 +216,7 @@ const AddEditRollDrawer = ({
               <Input
                 type="number"
                 value={widthMm}
-                onChange={(e) =>
-                  setWidthMm(e.target.value ? Number(e.target.value) : '')
-                }
+                onChange={(e) => setWidthMm(e.target.value ? Number(e.target.value) : '')}
                 placeholder="np. 1524"
                 min={0}
               />
@@ -234,9 +226,7 @@ const AddEditRollDrawer = ({
               <Input
                 type="number"
                 value={lengthM}
-                onChange={(e) =>
-                  setLengthM(e.target.value ? Number(e.target.value) : '')
-                }
+                onChange={(e) => setLengthM(e.target.value ? Number(e.target.value) : '')}
                 placeholder="np. 15"
                 min={0}
                 step={0.1}

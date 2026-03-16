@@ -476,7 +476,7 @@ const AddSalesOrderDrawer = ({
         >
           {/* Fixed Header */}
           <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-            <div className="max-w-[1000px] ml-auto w-full flex items-center justify-between">
+            <div className="w-full flex items-center justify-between">
               <SheetTitle>
                 {isEdit
                   ? `Edytuj zamówienie: ${editOrder?.orderNumber}`
@@ -494,7 +494,7 @@ const AddSalesOrderDrawer = ({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="max-w-[1000px] ml-auto space-y-4">
+            <div className="space-y-4">
               <CustomerSearchSection {...customerSearch} onAddNewCustomer={handleAddNewCustomer} />
 
               {customerSearch.selectedCustomer && customerDiscount > 0 && (
@@ -587,7 +587,7 @@ const AddSalesOrderDrawer = ({
 
           {/* Fixed Footer */}
           <SheetFooter className="px-6 py-4 border-t shrink-0">
-            <div className="max-w-[1000px] ml-auto flex gap-3 w-full">
+            <div className="flex gap-3 w-full">
               <Button variant="outline" className="flex-1" onClick={handleClose}>
                 Anuluj
               </Button>

@@ -88,7 +88,7 @@ const SalesDashboard = () => {
     { key: 'orders', label: 'Zamówienia', icon: ShoppingCart },
     { key: 'customers', label: 'Klienci', icon: Users },
     { key: 'products', label: 'Produkty', icon: Package },
-    { key: 'rolls', label: 'Rolki', icon: Cylinder },
+    { key: 'rolls', label: 'Ewidencja rolek', icon: Cylinder },
     { key: 'settings', label: 'Ustawienia', icon: Settings2 },
   ];
 
