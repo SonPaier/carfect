@@ -12,12 +12,14 @@ import {
   ChevronUp,
   ArrowLeftRight,
   X,
+  Settings,
 } from 'lucide-react';
 import { useInstanceData } from '@/hooks/useInstanceData';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
 import SalesProductsView from '@/components/sales/SalesProductsView';
 import SalesCustomersView from '@/components/sales/SalesCustomersView';
 import SalesRollsView from '@/components/sales/SalesRollsView';
+import SalesSettingsView from '@/components/sales/SalesSettingsView';
 import { Button } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import {
@@ -30,9 +32,9 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
-type SalesViewType = 'orders' | 'customers' | 'products' | 'rolls';
+type SalesViewType = 'orders' | 'customers' | 'products' | 'rolls' | 'settings';
 
-const validViews: SalesViewType[] = ['orders', 'customers', 'products', 'rolls'];
+const validViews: SalesViewType[] = ['orders', 'customers', 'products', 'rolls', 'settings'];
 
 const SalesDashboard = () => {
   const navigate = useNavigate();
@@ -85,6 +87,7 @@ const SalesDashboard = () => {
     { key: 'customers', label: 'Klienci', icon: Users },
     { key: 'products', label: 'Produkty', icon: Package },
     { key: 'rolls', label: 'Rolki', icon: Cylinder },
+    { key: 'settings', label: 'Ustawienia', icon: Settings },
   ];
 
   const renderContent = () => {
@@ -97,6 +100,8 @@ const SalesDashboard = () => {
         return <SalesProductsView />;
       case 'rolls':
         return <SalesRollsView />;
+      case 'settings':
+        return <SalesSettingsView />;
     }
   };
 

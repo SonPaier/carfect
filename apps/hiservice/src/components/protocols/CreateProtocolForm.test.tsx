@@ -391,11 +391,9 @@ describe('CreateProtocolForm', () => {
         const builder: any = {};
         builder.select = vi.fn().mockReturnValue(builder);
         builder.eq = vi.fn().mockReturnValue(builder);
-        builder.single = vi
-          .fn()
-          .mockReturnValue({
-            then: (resolve: any) => resolve({ data: protocolData, error: null }),
-          });
+        builder.single = vi.fn().mockReturnValue({
+          then: (resolve: any) => resolve({ data: protocolData, error: null }),
+        });
         builder.update = vi
           .fn()
           .mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) });

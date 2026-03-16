@@ -5,11 +5,14 @@ import { Badge } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { ToggleGroup, ToggleGroupItem } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Checkbox } from '@shared/ui';
 import {
   type OrderPackage,
   type OrderProduct,
   type DeliveryType,
   type PackagingType,
+  type CourierType,
   type KartonDimensions,
   type TubaDimensions,
   type RollAssignment,
@@ -27,6 +30,11 @@ interface PackageCardProps {
   onShippingMethodChange: (method: DeliveryType) => void;
   onPackagingTypeChange: (type: PackagingType) => void;
   onDimensionChange: (field: string, value: number) => void;
+  onCourierChange: (courier: CourierType) => void;
+  onWeightChange: (weight: number) => void;
+  onContentsChange: (contents: string) => void;
+  onDeclaredValueChange: (value: number) => void;
+  onOversizedChange: (oversized: boolean) => void;
   onAddProduct: () => void;
   onRemoveProduct: (productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
@@ -51,6 +59,11 @@ const PackageCard = ({
   onShippingMethodChange,
   onPackagingTypeChange,
   onDimensionChange,
+  onCourierChange,
+  onWeightChange,
+  onContentsChange,
+  onDeclaredValueChange,
+  onOversizedChange,
   onAddProduct,
   onRemoveProduct,
   onUpdateQuantity,
@@ -225,6 +238,26 @@ const PackageCard = ({
           {/* Conditional: packaging fields (only for "shipping") */}
           {pkg.shippingMethod === 'shipping' && (
             <div className="space-y-2">
+              {/* Courier select */}
+              <div className="space-y-1">
+                <Label className="text-xs">Kurier</Label>
+                <Select
+                  value={pkg.courier || 'dpd'}
+                  onValueChange={(v) => onCourierChange(v as CourierType)}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dpd">DPD</SelectItem>
+                    <SelectItem value="dhl">DHL</SelectItem>
+                    <SelectItem value="inpost">InPost</SelectItem>
+                    <SelectItem value="pocztex">Pocztex</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Packaging type */}
               <RadioGroup
                 value={pkg.packagingType || 'karton'}
                 onValueChange={(v) => onPackagingTypeChange(v as PackagingType)}
@@ -259,8 +292,23 @@ const PackageCard = ({
                 </div>
               </RadioGroup>
 
-              {pkg.packagingType === 'koperta' ? null : pkg.packagingType === 'tuba' ? (
-                <div className="grid grid-cols-2 gap-2">
+              {/* Dimensions + Weight */}
+              {pkg.packagingType === 'koperta' ? (
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Waga (kg)</Label>
+                    <Input
+                      type="number"
+                      min={0.1}
+                      step={0.1}
+                      value={pkg.weight || 1}
+                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              ) : pkg.packagingType === 'tuba' ? (
+                <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Długość (cm)</Label>
                     <Input
@@ -283,9 +331,20 @@ const PackageCard = ({
                       className="h-8 text-sm"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Waga (kg)</Label>
+                    <Input
+                      type="number"
+                      min={0.1}
+                      step={0.1}
+                      value={pkg.weight || 1}
+                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Dł. (cm)</Label>
                     <Input
@@ -316,8 +375,59 @@ const PackageCard = ({
                       className="h-8 text-sm"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Waga (kg)</Label>
+                    <Input
+                      type="number"
+                      min={0.1}
+                      step={0.1}
+                      value={pkg.weight || 1}
+                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
                 </div>
               )}
+
+              {/* Oversized checkbox */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`pkg-${pkg.id}-oversized`}
+                  checked={pkg.oversized || false}
+                  onCheckedChange={(checked) => onOversizedChange(checked === true)}
+                />
+                <Label
+                  htmlFor={`pkg-${pkg.id}-oversized`}
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Paczka ponadwymiarowa
+                </Label>
+              </div>
+
+              {/* Contents */}
+              <div className="space-y-1">
+                <Label className="text-xs">Zawartość przesyłki</Label>
+                <Input
+                  type="text"
+                  value={pkg.contents || ''}
+                  onChange={(e) => onContentsChange(e.target.value)}
+                  placeholder=""
+                  className="h-8 text-sm"
+                />
+              </div>
+
+              {/* Declared value */}
+              <div className="space-y-1">
+                <Label className="text-xs">Deklarowana wartość (zł)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={pkg.declaredValue || ''}
+                  onChange={(e) => onDeclaredValueChange(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  className="h-8 text-sm"
+                />
+              </div>
             </div>
           )}
         </div>
