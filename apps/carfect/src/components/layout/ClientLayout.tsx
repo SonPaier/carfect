@@ -12,58 +12,76 @@ interface ClientLayoutProps {
   hideHeader?: boolean;
   hideFooter?: boolean;
 }
-const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(({
-  children,
-  hideHeader = false,
-  hideFooter = false
-}, ref) => {
-  const [instance, setInstance] = useState<Instance | null>(null);
-  useEffect(() => {
-    const fetchInstance = async () => {
-      // Get subdomain from hostname
-      const hostname = window.location.hostname;
-      let slug = 'demo'; // default fallback
+const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(
+  ({ children, hideHeader = false, hideFooter = false }, ref) => {
+    const [instance, setInstance] = useState<Instance | null>(null);
+    useEffect(() => {
+      const fetchInstance = async () => {
+        // Get subdomain from hostname
+        const hostname = window.location.hostname;
+        let slug = 'demo'; // default fallback
 
-      if (hostname.endsWith('.carfect.pl')) {
-        slug = hostname.replace('.carfect.pl', '');
-      }
-      const {
-        data
-      } = await supabase.from('instances').select('id, name, phone, logo_url').eq('slug', slug).single();
-      if (data) {
-        setInstance(data);
-      }
-    };
-    fetchInstance();
-  }, []);
-  return <div ref={ref} className="min-h-screen flex flex-col bg-background overflow-x-hidden">
-      {/* Header */}
-      {!hideHeader && <header className="bg-background">
-          <div className="container py-4">
-            <div className="flex items-center justify-center pt-[16px]">
-              {instance?.logo_url ? <img src={instance.logo_url} alt={instance.name} className="max-h-20 w-auto rounded-xl object-contain" /> : <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center glow-primary">
-                  <Car className="w-12 h-12 text-primary-foreground" />
-                </div>}
+        if (hostname.endsWith('.carfect.pl')) {
+          slug = hostname.replace('.carfect.pl', '');
+        }
+        const { data } = await supabase
+          .from('instances')
+          .select('id, name, phone, logo_url')
+          .eq('slug', slug)
+          .single();
+        if (data) {
+          setInstance(data);
+        }
+      };
+      fetchInstance();
+    }, []);
+    return (
+      <div ref={ref} className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+        {/* Header */}
+        {!hideHeader && (
+          <header className="bg-background">
+            <div className="container py-4">
+              <div className="flex items-center justify-center pt-[16px]">
+                {instance?.logo_url ? (
+                  <img
+                    src={instance.logo_url}
+                    alt={instance.name}
+                    className="max-h-20 w-auto rounded-xl object-contain"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center">
+                    <Car className="w-12 h-12 text-primary-foreground" />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </header>}
+          </header>
+        )}
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-x-hidden">
-        {children}
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col overflow-x-hidden">{children}</main>
 
-      {/* Fixed Footer - always at bottom of viewport */}
-      {!hideFooter && <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background shrink-0">
-          <div className="container py-3">
-            <p className="text-sm text-muted-foreground text-center">
-              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-2">
-                <img src="/carfect-logo.svg" alt="Carfect" className="h-4 opacity-60" />
-              </a> - System rezerwacji online
-            </p>
-          </div>
-        </footer>}
-    </div>;
-});
+        {/* Fixed Footer - always at bottom of viewport */}
+        {!hideFooter && (
+          <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background shrink-0">
+            <div className="container py-3">
+              <p className="text-sm text-muted-foreground text-center">
+                <a
+                  href="https://carfect.pl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors inline-flex items-center gap-2"
+                >
+                  <img src="/carfect-logo.svg" alt="Carfect" className="h-4 opacity-60" />
+                </a>{' '}
+                - System rezerwacji online
+              </p>
+            </div>
+          </footer>
+        )}
+      </div>
+    );
+  },
+);
 ClientLayout.displayName = 'ClientLayout';
 export default ClientLayout;

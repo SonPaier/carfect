@@ -14,10 +14,13 @@ export const compressImage = async (file: File, maxWidth = 1200, quality = 0.8):
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) { reject(new Error('No canvas context')); return; }
+      if (!ctx) {
+        reject(new Error('No canvas context'));
+        return;
+      }
       ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(
-        (blob) => blob ? resolve(blob) : reject(new Error('Compression failed')),
+        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
         'image/jpeg',
         quality,
       );
@@ -27,10 +30,7 @@ export const compressImage = async (file: File, maxWidth = 1200, quality = 0.8):
   });
 };
 
-export const compressVideo = (
-  file: File,
-  onProgress?: (pct: number) => void,
-): Promise<Blob> => {
+export const compressVideo = (file: File, onProgress?: (pct: number) => void): Promise<Blob> => {
   // Skip compression for files under 50MB
   const MAX_SIZE_NO_COMPRESS = 50 * 1024 * 1024;
   if (file.size < MAX_SIZE_NO_COMPRESS) {
@@ -94,7 +94,9 @@ export const compressVideo = (
       });
 
       const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: mimeType });
         resolve(blob.size < file.size ? blob : file);
@@ -147,8 +149,8 @@ export const uploadFileWithProgress = (
   signal?: AbortSignal,
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const supabaseUrl = import.meta.env.VITE_HISERVICE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_HISERVICE_SUPABASE_PUBLISHABLE_KEY;
 
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token || supabaseKey;

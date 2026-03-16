@@ -1,19 +1,23 @@
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
-import { Search, Plus, ChevronDown, ChevronRight, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, MoreHorizontal, ArrowUp, ArrowDown, ShoppingCart } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  MoreHorizontal,
+  ArrowUp,
+  ArrowDown,
+  ShoppingCart,
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,9 +31,13 @@ import { type SalesOrder } from '@/data/salesMockData';
 
 const formatCurrency = (value: number, currency: 'PLN' | 'EUR') => {
   if (currency === 'EUR') {
-    return value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    return (
+      value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+    );
   }
-  return value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+  return (
+    value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł'
+  );
 };
 
 export const getNextOrderNumber = (orders: SalesOrder[], date: Date = new Date()): string => {
@@ -41,7 +49,13 @@ export const getNextOrderNumber = (orders: SalesOrder[], date: Date = new Date()
   return `${countInMonth + 1}/${monthStr}/${year}`;
 };
 
-type SortColumn = 'orderNumber' | 'customerName' | 'createdAt' | 'shippedAt' | 'status' | 'totalNet';
+type SortColumn =
+  | 'orderNumber'
+  | 'customerName'
+  | 'createdAt'
+  | 'shippedAt'
+  | 'status'
+  | 'totalNet';
 type SortDirection = 'asc' | 'desc';
 
 const parseOrderNumber = (orderNumber: string): number => {
@@ -57,7 +71,7 @@ const ITEMS_PER_PAGE = 10;
 
 const SalesOrdersView = () => {
   const { roles } = useAuth();
-  const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
+  const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<SalesOrder[]>([]);
@@ -66,7 +80,11 @@ const SalesOrdersView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<any>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; orderId: string; orderNumber: string }>({ open: false, orderId: '', orderNumber: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    orderId: string;
+    orderNumber: string;
+  }>({ open: false, orderId: '', orderNumber: '' });
   const [sortColumn, setSortColumn] = useState<SortColumn>('orderNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -110,7 +128,13 @@ const SalesOrdersView = () => {
     setOrders(mapped);
 
     // Fetch customer company names for search
-    const customerIds: string[] = Array.from(new Set((data || []).map((o: any) => o.customer_id).filter((id: any): id is string => typeof id === 'string' && id.length > 0)));
+    const customerIds: string[] = Array.from(
+      new Set(
+        (data || [])
+          .map((o: any) => o.customer_id)
+          .filter((id: any): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    );
     if (customerIds.length > 0) {
       const { data: customers } = await (supabase
         .from('sales_customers')
@@ -126,7 +150,9 @@ const SalesOrdersView = () => {
     }
   }, [instanceId]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -147,7 +173,8 @@ const SalesOrdersView = () => {
         (o.city && o.city.toLowerCase().includes(q)) ||
         (o.contactPerson && o.contactPerson.toLowerCase().includes(q)) ||
         o.products.some((p) => p.name.toLowerCase().includes(q)) ||
-        ((o as any).customerId && customerCompanyMap[(o as any).customerId]?.toLowerCase().includes(q))
+        ((o as any).customerId &&
+          customerCompanyMap[(o as any).customerId]?.toLowerCase().includes(q)),
     );
   }, [orders, searchQuery, customerCompanyMap]);
 
@@ -161,9 +188,9 @@ const SalesOrdersView = () => {
         case 'customerName':
           return a.customerName.localeCompare(b.customerName) * dir;
         case 'createdAt':
-          return (a.createdAt.localeCompare(b.createdAt)) * dir;
+          return a.createdAt.localeCompare(b.createdAt) * dir;
         case 'shippedAt':
-          return ((a.shippedAt || '').localeCompare(b.shippedAt || '')) * dir;
+          return (a.shippedAt || '').localeCompare(b.shippedAt || '') * dir;
         case 'status':
           return a.status.localeCompare(b.status) * dir;
         case 'totalNet':
@@ -204,7 +231,15 @@ const SalesOrdersView = () => {
     }
     await (supabase.from('sales_orders').update(updates).eq('id', id) as any);
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: newStatus, shippedAt: newStatus === 'wysłany' ? new Date().toISOString() : undefined } : o))
+      prev.map((o) =>
+        o.id === id
+          ? {
+              ...o,
+              status: newStatus,
+              shippedAt: newStatus === 'wysłany' ? new Date().toISOString() : undefined,
+            }
+          : o,
+      ),
     );
   };
 
@@ -224,14 +259,18 @@ const SalesOrdersView = () => {
     // Fetch order items with vehicle info from DB
     const { data: items } = await (supabase
       .from('sales_order_items')
-      .select('id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order')
+      .select(
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order',
+      )
       .eq('order_id', order.id)
       .order('sort_order') as any);
 
     // Fetch delivery_type from the order
     const { data: orderData } = await (supabase
       .from('sales_orders')
-      .select('delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments')
+      .select(
+        'delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments',
+      )
       .eq('id', order.id)
       .single() as any);
 
@@ -268,8 +307,15 @@ const SalesOrdersView = () => {
     }
 
     // Build usage map by order_item_id (multi-roll: array per item)
-    const usagesByItemId: Record<string, Array<{ rollId: string; usedM2: number; widthMm: number }>> = {};
-    for (const u of (rollUsages || []) as { order_item_id: string; roll_id: string; used_m2: number }[]) {
+    const usagesByItemId: Record<
+      string,
+      Array<{ rollId: string; usedM2: number; widthMm: number }>
+    > = {};
+    for (const u of (rollUsages || []) as {
+      order_item_id: string;
+      roll_id: string;
+      used_m2: number;
+    }[]) {
       if (!usagesByItemId[u.order_item_id]) usagesByItemId[u.order_item_id] = [];
       usagesByItemId[u.order_item_id].push({
         rollId: u.roll_id,
@@ -279,7 +325,9 @@ const SalesOrdersView = () => {
     }
 
     // Fetch exclude_from_discount for products in this order
-    const productIds = [...new Set((items || []).map((i: any) => i.product_id).filter(Boolean))] as string[];
+    const productIds = [
+      ...new Set((items || []).map((i: any) => i.product_id).filter(Boolean)),
+    ] as string[];
     const excludeMap: Record<string, boolean> = {};
     if (productIds.length > 0) {
       const { data: prodData } = await (supabase
@@ -341,21 +389,32 @@ const SalesOrdersView = () => {
       bankAccountNumber: orderData?.bank_account_number || '',
       comment: orderData?.comment || '',
       sendEmail: false,
-      attachments: (orderData?.attachments as any[] || []).map((a: any) => a.url),
+      attachments: ((orderData?.attachments as any[]) || []).map((a: any) => a.url),
     });
     setDrawerOpen(true);
   };
 
-  const SortableHead = ({ column, children, className }: { column: SortColumn; children: React.ReactNode; className?: string }) => (
+  const SortableHead = ({
+    column,
+    children,
+    className,
+  }: {
+    column: SortColumn;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <TableHead className={className}>
       <button
         className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
         onClick={() => handleSort(column)}
       >
         {children}
-        {sortColumn === column && (
-          sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
-        )}
+        {sortColumn === column &&
+          (sortDirection === 'asc' ? (
+            <ArrowUp className="w-3.5 h-3.5" />
+          ) : (
+            <ArrowDown className="w-3.5 h-3.5" />
+          ))}
       </button>
     </TableHead>
   );
@@ -378,10 +437,7 @@ const SalesOrdersView = () => {
             className="pl-9"
           />
         </div>
-        <Button
-          size="sm"
-          onClick={() => setDrawerOpen(true)}
-        >
+        <Button size="sm" onClick={() => setDrawerOpen(true)}>
           <Plus className="w-4 h-4" />
           Dodaj zamówienie
         </Button>
@@ -392,13 +448,25 @@ const SalesOrdersView = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead column="orderNumber" className="w-[120px]">Nr</SortableHead>
-              <SortableHead column="customerName" className="w-[200px]">Klient</SortableHead>
-              <SortableHead column="createdAt" className="w-[100px]">Utworzono</SortableHead>
-              <SortableHead column="shippedAt" className="w-[100px]">Wysłano</SortableHead>
+              <SortableHead column="orderNumber" className="w-[120px]">
+                Nr
+              </SortableHead>
+              <SortableHead column="customerName" className="w-[200px]">
+                Klient
+              </SortableHead>
+              <SortableHead column="createdAt" className="w-[100px]">
+                Utworzono
+              </SortableHead>
+              <SortableHead column="shippedAt" className="w-[100px]">
+                Wysłano
+              </SortableHead>
               <TableHead className="w-[180px]">List przewozowy</TableHead>
-              <SortableHead column="totalNet" className="text-right w-[120px]">Kwota netto</SortableHead>
-              <SortableHead column="status" className="w-[100px]">Status</SortableHead>
+              <SortableHead column="totalNet" className="text-right w-[120px]">
+                Kwota netto
+              </SortableHead>
+              <SortableHead column="status" className="w-[100px]">
+                Status
+              </SortableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -438,7 +506,11 @@ const SalesOrdersView = () => {
                         {format(parseISO(order.createdAt), 'dd.MM.yyyy')}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {order.shippedAt ? format(parseISO(order.shippedAt), 'dd.MM.yyyy') : <span className="text-muted-foreground">—</span>}
+                        {order.shippedAt ? (
+                          format(parseISO(order.shippedAt), 'dd.MM.yyyy')
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {order.trackingNumber ? (
@@ -467,7 +539,10 @@ const SalesOrdersView = () => {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="focus:outline-none" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="focus:outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Badge
                                 variant={order.status === 'wysłany' ? 'default' : 'outline'}
                                 className={
@@ -476,7 +551,11 @@ const SalesOrdersView = () => {
                                     : 'border-amber-500 text-amber-600 cursor-pointer'
                                 }
                               >
-                              {order.status === 'nowy' ? 'Nowy' : order.status === 'wysłany' ? 'Wysłany' : order.status}
+                                {order.status === 'nowy'
+                                  ? 'Nowy'
+                                  : order.status === 'wysłany'
+                                    ? 'Wysłany'
+                                    : order.status}
                               </Badge>
                             </button>
                           </DropdownMenuTrigger>
@@ -510,7 +589,13 @@ const SalesOrdersView = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => setDeleteConfirm({ open: true, orderId: order.id, orderNumber: order.orderNumber })}
+                              onClick={() =>
+                                setDeleteConfirm({
+                                  open: true,
+                                  orderId: order.id,
+                                  orderNumber: order.orderNumber,
+                                })
+                              }
                             >
                               Usuń
                             </DropdownMenuItem>
@@ -537,7 +622,9 @@ const SalesOrdersView = () => {
                                   </span>
                                   <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs text-muted-foreground">
                                     <span>{product.quantity} szt.</span>
-                                    <span className="w-24 text-right">{formatCurrency(product.priceNet, order.currency)}</span>
+                                    <span className="w-24 text-right">
+                                      {formatCurrency(product.priceNet, order.currency)}
+                                    </span>
                                   </div>
                                 </div>
                               ))}
@@ -605,7 +692,7 @@ const SalesOrdersView = () => {
       />
       <ConfirmDialog
         open={deleteConfirm.open}
-        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
         title="Usuń zamówienie"
         description={`Czy na pewno chcesz usunąć zamówienie ${deleteConfirm.orderNumber}? Tej operacji nie można cofnąć.`}
         confirmLabel="Usuń"

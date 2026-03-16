@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Loader2, Mail } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { Label } from '@shared/ui';
 
 import { supabase } from '@/integrations/supabase/client';
+import { getPublicOfferUrl } from '@/lib/offerUtils';
 import { toast } from 'sonner';
 
 interface OfferData {
@@ -54,12 +49,12 @@ Pozdrawiamy serdecznie,
 {{instanceName}}
 {{contactPerson}}`;
 
-export function SendOfferEmailDialog({ 
-  open, 
-  onOpenChange, 
-  offer, 
+export function SendOfferEmailDialog({
+  open,
+  onOpenChange,
+  offer,
   instanceData,
-  onSent 
+  onSent,
 }: SendOfferEmailDialogProps) {
   const { t } = useTranslation();
   const [sending, setSending] = useState(false);
@@ -67,24 +62,14 @@ export function SendOfferEmailDialog({
 
   const customerEmail = offer.customer_data?.email || '';
 
-  // Generate offer URL
-  const getOfferUrl = () => {
-    const hostname = window.location.hostname;
-    if (hostname.endsWith('.admin.carfect.pl')) {
-      const instanceSlug = hostname.replace('.admin.carfect.pl', '');
-      return `https://${instanceSlug}.carfect.pl/offers/${offer.public_token}`;
-    } else if (hostname.endsWith('.carfect.pl')) {
-      return `${window.location.origin}/offers/${offer.public_token}`;
-    }
-    return `${window.location.origin}/offers/${offer.public_token}`;
-  };
+  const getOfferUrl = () => getPublicOfferUrl(offer.public_token);
 
   // Populate template when dialog opens
   useEffect(() => {
     if (open && instanceData) {
       const template = instanceData.offer_email_template || defaultEmailTemplate;
       const offerUrl = getOfferUrl();
-      
+
       let body = template
         .replace(/\{\{offerUrl\}\}/g, offerUrl)
         .replace(/\{\{instanceName\}\}/g, instanceData.name || '')
@@ -92,14 +77,17 @@ export function SendOfferEmailDialog({
         .replace(/\{\{phone\}\}/g, instanceData.phone || '')
         .replace(/\{\{address\}\}/g, instanceData.address || '')
         .replace(/\{\{website\}\}/g, instanceData.website || '');
-      
+
       // Clean up empty lines for missing data
-      body = body.split('\n').filter(line => {
-        const trimmed = line.trim();
-        if (trimmed === '📞' || trimmed === '📍' || trimmed === '🌐') return false;
-        return true;
-      }).join('\n');
-      
+      body = body
+        .split('\n')
+        .filter((line) => {
+          const trimmed = line.trim();
+          if (trimmed === '📞' || trimmed === '📍' || trimmed === '🌐') return false;
+          return true;
+        })
+        .join('\n');
+
       setEmailBody(body);
     }
   }, [open, instanceData, offer.public_token]);
@@ -113,9 +101,9 @@ export function SendOfferEmailDialog({
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-offer-email', {
-        body: { 
+        body: {
           offerId: offer.id,
-          customEmailBody: emailBody 
+          customEmailBody: emailBody,
         },
       });
 
@@ -123,10 +111,10 @@ export function SendOfferEmailDialog({
       if (data?.error) {
         throw new Error(data.error);
       }
-      
+
       // Then check for network/invoke error
       if (error) {
-        throw new Error(error.message || 'Błąd połączenia z serwerem');
+        throw new Error(error.message || t('sendEmail.connectionError'));
       }
 
       toast.success(t('offers.emailSent'));
@@ -134,32 +122,43 @@ export function SendOfferEmailDialog({
       onSent();
     } catch (error: unknown) {
       console.error('Error sending email:', error);
-      
+
       // Parse error message for human-readable display
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      let userMessage = 'Nie udało się wysłać wiadomości';
-      
+
+      let userMessage = t('sendEmail.sendFailed');
+
       if (errorMessage.includes('No customer email')) {
-        userMessage = 'Brak adresu email klienta';
+        userMessage = t('sendEmail.noCustomerEmail');
       } else if (errorMessage.includes('SMTP not configured')) {
-        userMessage = 'Wysyłka email nie jest skonfigurowana';
-      } else if (errorMessage.includes('Invalid address') || (errorMessage.includes('invalid') && errorMessage.includes('address'))) {
-        userMessage = 'Nieprawidłowy adres email - sprawdź czy nie ma literówki';
-      } else if (errorMessage.includes('mailbox unavailable') || errorMessage.includes('invalid DNS') || errorMessage.includes('550')) {
-        userMessage = 'Nieprawidłowy adres email - domena nie istnieje lub zawiera błąd';
-      } else if (errorMessage.includes('Mailbox not found') || errorMessage.includes('does not exist') || errorMessage.includes('User unknown')) {
-        userMessage = 'Adres email nie istnieje - sprawdź poprawność';
+        userMessage = t('sendEmail.smtpNotConfigured');
+      } else if (
+        errorMessage.includes('Invalid address') ||
+        (errorMessage.includes('invalid') && errorMessage.includes('address'))
+      ) {
+        userMessage = t('sendEmail.invalidAddress');
+      } else if (
+        errorMessage.includes('mailbox unavailable') ||
+        errorMessage.includes('invalid DNS') ||
+        errorMessage.includes('550')
+      ) {
+        userMessage = t('sendEmail.domainNotExists');
+      } else if (
+        errorMessage.includes('Mailbox not found') ||
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('User unknown')
+      ) {
+        userMessage = t('sendEmail.mailboxNotFound');
       } else if (errorMessage.includes('connection') || errorMessage.includes('timeout')) {
-        userMessage = 'Błąd połączenia z serwerem email - spróbuj ponownie';
+        userMessage = t('sendEmail.connectionTimeout');
       } else if (errorMessage.includes('rejected') || errorMessage.includes('spam')) {
-        userMessage = 'Wiadomość została odrzucona przez serwer odbiorcy';
+        userMessage = t('sendEmail.rejected');
       } else if (errorMessage.includes('authentication') || errorMessage.includes('auth')) {
-        userMessage = 'Błąd autoryzacji serwera email';
+        userMessage = t('sendEmail.authError');
       } else if (errorMessage.includes('non-2xx') || errorMessage.includes('Edge Function')) {
-        userMessage = 'Błąd wysyłki email - sprawdź poprawność adresu';
+        userMessage = t('sendEmail.genericError');
       }
-      
+
       toast.error(userMessage);
     } finally {
       setSending(false);
@@ -168,7 +167,10 @@ export function SendOfferEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[100dvh] sm:h-[80vh] flex flex-col p-0" style={{ zIndex: 1100 }}>
+      <DialogContent
+        className="max-w-3xl h-[100dvh] sm:h-[80vh] flex flex-col p-0"
+        style={{ zIndex: 1100 }}
+      >
         <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5" />
@@ -195,10 +197,19 @@ export function SendOfferEmailDialog({
         </div>
 
         <DialogFooter className="flex-shrink-0 border-t bg-background px-6 py-4 gap-2 sm:gap-0 flex-col-reverse sm:flex-row">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending} className="bg-white w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={sending}
+            className="bg-white w-full sm:w-auto"
+          >
             {t('sendEmailDialog.cancel')}
           </Button>
-          <Button onClick={handleSend} disabled={sending || !customerEmail} className="w-full sm:w-auto">
+          <Button
+            onClick={handleSend}
+            disabled={sending || !customerEmail}
+            className="w-full sm:w-auto"
+          >
             {sending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

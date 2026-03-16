@@ -3,14 +3,34 @@ import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useTranslation } from 'react-i18next';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Search, Phone, MessageSquare, Check, Trash2, AlertCircle, CheckCircle2, Calendar, Clock, GraduationCap } from 'lucide-react';
+import {
+  Search,
+  Phone,
+  MessageSquare,
+  Check,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  Calendar,
+  Clock,
+  GraduationCap,
+} from 'lucide-react';
 import { normalizeSearchQuery } from '@shared/utils';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Tabs, TabsContent } from '@shared/ui';
 import { AdminTabsList, AdminTabsTrigger } from './AdminTabsList';
 import { Badge } from '@shared/ui';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@shared/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@shared/ui';
 import ServiceTag from './ServiceTag';
@@ -113,12 +133,15 @@ const ReservationsView = ({
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [activeTab, setActiveTab] = useSessionStorageState<TabValue>('reservations-active-tab', 'all');
+  const [activeTab, setActiveTab] = useSessionStorageState<TabValue>(
+    'reservations-active-tab',
+    'all',
+  );
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [reservationToReject, setReservationToReject] = useState<Reservation | null>(null);
   const [deleteTrainingDialogOpen, setDeleteTrainingDialogOpen] = useState(false);
   const [trainingToDelete, setTrainingToDelete] = useState<Training | null>(null);
-  
+
   // Customer drawer state
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -164,20 +187,30 @@ const ReservationsView = ({
     today.setHours(0, 0, 0, 0);
 
     const reservationItems: ListItem[] = reservations
-      .filter(r => {
+      .filter((r) => {
         const resDate = parseISO(r.reservation_date);
         resDate.setHours(0, 0, 0, 0);
         return resDate >= today;
       })
-      .map(r => ({ type: 'reservation' as const, date: r.reservation_date, start_time: r.start_time, data: r }));
+      .map((r) => ({
+        type: 'reservation' as const,
+        date: r.reservation_date,
+        start_time: r.start_time,
+        data: r,
+      }));
 
     const trainingItems: ListItem[] = trainings
-      .filter(tr => {
+      .filter((tr) => {
         const trDate = parseISO(tr.start_date);
         trDate.setHours(0, 0, 0, 0);
         return trDate >= today;
       })
-      .map(tr => ({ type: 'training' as const, date: tr.start_date, start_time: tr.start_time, data: tr }));
+      .map((tr) => ({
+        type: 'training' as const,
+        date: tr.start_date,
+        start_time: tr.start_time,
+        data: tr,
+      }));
 
     return [...reservationItems, ...trainingItems];
   }, [reservations, trainings]);
@@ -186,9 +219,9 @@ const ReservationsView = ({
   const tabFiltered = useMemo(() => {
     switch (activeTab) {
       case 'reservations':
-        return allItems.filter(i => i.type === 'reservation');
+        return allItems.filter((i) => i.type === 'reservation');
       case 'trainings':
-        return allItems.filter(i => i.type === 'training');
+        return allItems.filter((i) => i.type === 'training');
       default:
         return allItems;
     }
@@ -200,14 +233,18 @@ const ReservationsView = ({
     const query = debouncedQuery.toLowerCase().trim();
     const normalizedQuery = normalizeSearchQuery(query);
 
-    return tabFiltered.filter(item => {
+    return tabFiltered.filter((item) => {
       if (item.type === 'reservation') {
         const r = item.data as Reservation;
-        const employeeNames = r.assigned_employee_ids && Array.isArray(r.assigned_employee_ids)
-          ? (r.assigned_employee_ids as string[]).map(id => employeeMap.get(id)?.toLowerCase() || '').join(' ')
-          : '';
+        const employeeNames =
+          r.assigned_employee_ids && Array.isArray(r.assigned_employee_ids)
+            ? (r.assigned_employee_ids as string[])
+                .map((id) => employeeMap.get(id)?.toLowerCase() || '')
+                .join(' ')
+            : '';
         return (
-          (r.confirmation_code && normalizeSearchQuery(r.confirmation_code).toLowerCase().includes(normalizedQuery)) ||
+          (r.confirmation_code &&
+            normalizeSearchQuery(r.confirmation_code).toLowerCase().includes(normalizedQuery)) ||
           r.customer_name?.toLowerCase().includes(query) ||
           (r.customer_phone && normalizeSearchQuery(r.customer_phone).includes(normalizedQuery)) ||
           r.vehicle_plate?.toLowerCase().includes(query) ||
@@ -215,9 +252,12 @@ const ReservationsView = ({
         );
       } else {
         const tr = item.data as Training;
-        const trEmployeeNames = tr.assigned_employee_ids && Array.isArray(tr.assigned_employee_ids)
-          ? (tr.assigned_employee_ids as string[]).map(id => employeeMap.get(id)?.toLowerCase() || '').join(' ')
-          : '';
+        const trEmployeeNames =
+          tr.assigned_employee_ids && Array.isArray(tr.assigned_employee_ids)
+            ? (tr.assigned_employee_ids as string[])
+                .map((id) => employeeMap.get(id)?.toLowerCase() || '')
+                .join(' ')
+            : '';
         return (
           tr.title?.toLowerCase().includes(query) ||
           tr.training_type?.toLowerCase().includes(query) ||
@@ -249,12 +289,12 @@ const ReservationsView = ({
   const counts = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const upcomingRes = reservations.filter(r => {
+    const upcomingRes = reservations.filter((r) => {
       const d = parseISO(r.reservation_date);
       d.setHours(0, 0, 0, 0);
       return d >= today;
     });
-    const upcomingTr = trainings.filter(tr => {
+    const upcomingTr = trainings.filter((tr) => {
       const d = parseISO(tr.start_date);
       d.setHours(0, 0, 0, 0);
       return d >= today;
@@ -301,14 +341,14 @@ const ReservationsView = ({
 
   const handleCustomerClick = async (e: React.MouseEvent, reservation: Reservation) => {
     e.stopPropagation();
-    
+
     const { data: customer } = await supabase
       .from('customers')
       .select('*')
       .eq('instance_id', reservation.instance_id)
       .eq('phone', reservation.customer_phone)
       .maybeSingle();
-    
+
     if (customer) {
       setSelectedCustomer(customer);
     } else {
@@ -325,7 +365,8 @@ const ReservationsView = ({
   };
 
   const renderServicePills = (reservation: Reservation) => {
-    const services = reservation.services_data || (reservation.service ? [reservation.service] : []);
+    const services =
+      reservation.services_data || (reservation.service ? [reservation.service] : []);
     if (services.length === 0) return null;
     return (
       <div className="flex flex-wrap gap-1">
@@ -337,7 +378,10 @@ const ReservationsView = ({
   };
 
   const getEmployeeNames = (ids: string[]) => {
-    return ids.map(id => employeeMap.get(id)).filter(Boolean).join(', ');
+    return ids
+      .map((id) => employeeMap.get(id))
+      .filter(Boolean)
+      .join(', ');
   };
 
   const renderReservationCard = (reservation: Reservation) => {
@@ -349,20 +393,26 @@ const ReservationsView = ({
         key={reservation.id}
         onClick={() => onReservationClick(reservation)}
         className={cn(
-          "p-4 transition-colors cursor-pointer hover:bg-hover",
-          isPending && "bg-amber-500/5"
+          'p-4 transition-colors cursor-pointer hover:bg-hover',
+          isPending && 'bg-amber-500/5',
         )}
       >
         {/* Desktop layout */}
         <div className="hidden sm:flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-              isPending ? "bg-amber-500/20 text-amber-600" : "bg-green-500/20 text-green-600"
-            )}>
-              {isPending ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+            <div
+              className={cn(
+                'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+                isPending ? 'bg-amber-500/20 text-amber-600' : 'bg-green-500/20 text-green-600',
+              )}
+            >
+              {isPending ? (
+                <AlertCircle className="w-4 h-4" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
             </div>
-            
+
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-3 text-sm">
                 <span className="font-medium text-foreground tabular-nums flex items-center gap-1.5">
@@ -376,7 +426,7 @@ const ReservationsView = ({
                   </>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="font-medium text-foreground">{reservation.vehicle_plate}</span>
                 <span className="text-muted-foreground">•</span>
@@ -387,7 +437,7 @@ const ReservationsView = ({
                   {reservation.customer_name}
                 </button>
               </div>
-              
+
               {renderServicePills(reservation)}
             </div>
           </div>
@@ -410,7 +460,7 @@ const ReservationsView = ({
             <Button
               variant="ghost"
               size="icon"
-               className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+              className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
               asChild
             >
               <a
@@ -450,20 +500,28 @@ const ReservationsView = ({
         {/* Mobile layout */}
         <div className="sm:hidden space-y-3">
           <div className="flex items-start gap-3">
-            <div className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-              isPending ? "bg-amber-500/20 text-amber-600" : "bg-green-500/20 text-green-600"
-            )}>
-              {isPending ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+            <div
+              className={cn(
+                'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+                isPending ? 'bg-amber-500/20 text-amber-600' : 'bg-green-500/20 text-green-600',
+              )}
+            >
+              {isPending ? (
+                <AlertCircle className="w-4 h-4" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
             </div>
             <div className="flex-1 min-w-0 space-y-1">
               <div className="text-sm font-medium text-foreground tabular-nums flex items-center gap-2">
                 {timeRange}
                 {reservation.station && (
-                  <span className="text-muted-foreground font-normal">• {reservation.station.name}</span>
+                  <span className="text-muted-foreground font-normal">
+                    • {reservation.station.name}
+                  </span>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-foreground">{reservation.vehicle_plate}</span>
                 <span className="text-muted-foreground">•</span>
@@ -474,11 +532,11 @@ const ReservationsView = ({
                   {reservation.customer_name}
                 </button>
               </div>
-              
+
               {renderServicePills(reservation)}
             </div>
           </div>
-          
+
           <div className="flex items-center justify-end gap-2 pt-1">
             {isPending && (
               <Button
@@ -496,7 +554,7 @@ const ReservationsView = ({
             <Button
               variant="ghost"
               size="icon"
-               className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-hover"
+              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-hover"
               asChild
             >
               <a href={`sms:${reservation.customer_phone}`} onClick={(e) => e.stopPropagation()}>
@@ -543,7 +601,7 @@ const ReservationsView = ({
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-violet-500/20 text-violet-600">
               <GraduationCap className="w-4 h-4" />
             </div>
-            
+
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-3 text-sm">
                 <span className="font-medium text-foreground tabular-nums flex items-center gap-1.5">
@@ -557,7 +615,7 @@ const ReservationsView = ({
                   </>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="font-medium text-foreground">{training.title}</span>
                 {assignedNames && (
@@ -570,7 +628,11 @@ const ReservationsView = ({
 
               <div className="flex flex-wrap gap-1">
                 <ServiceTag
-                  name={training.status === 'sold_out' ? t('trainings.statusSoldOut') : t('trainings.statusOpen')}
+                  name={
+                    training.status === 'sold_out'
+                      ? t('trainings.statusSoldOut')
+                      : t('trainings.statusOpen')
+                  }
                   shortcut={null}
                 />
               </div>
@@ -600,10 +662,12 @@ const ReservationsView = ({
               <div className="text-sm font-medium text-foreground tabular-nums flex items-center gap-2">
                 {timeRange}
                 {training.station && (
-                  <span className="text-muted-foreground font-normal">• {training.station.name}</span>
+                  <span className="text-muted-foreground font-normal">
+                    • {training.station.name}
+                  </span>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-foreground">{training.title}</span>
                 {assignedNames && (
@@ -616,13 +680,17 @@ const ReservationsView = ({
 
               <div className="flex flex-wrap gap-1">
                 <ServiceTag
-                  name={training.status === 'sold_out' ? t('trainings.statusSoldOut') : t('trainings.statusOpen')}
+                  name={
+                    training.status === 'sold_out'
+                      ? t('trainings.statusSoldOut')
+                      : t('trainings.statusOpen')
+                  }
                   shortcut={null}
                 />
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-end gap-2 pt-1">
             <Button
               variant="ghost"
@@ -651,7 +719,7 @@ const ReservationsView = ({
     <div className="space-y-4 max-w-3xl mx-auto pb-28">
       {/* Title */}
       <h1 className="text-2xl font-bold text-foreground">{t('reservations.title')}</h1>
-      
+
       {/* Sticky header on mobile */}
       <div className="sm:static sticky top-0 z-20 bg-background pb-4 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Search bar */}
@@ -700,7 +768,7 @@ const ReservationsView = ({
 
       {/* Content */}
       {groupDates.length === 0 ? (
-        <div className="glass-card p-12 flex flex-col items-center justify-center text-center">
+        <div className="bg-white border border-border p-12 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center mb-6">
             <Calendar className="w-10 h-10 text-muted-foreground" />
           </div>
@@ -708,9 +776,7 @@ const ReservationsView = ({
             {t('reservations.noReservations')}
           </h3>
           <p className="text-muted-foreground max-w-sm">
-            {debouncedQuery
-              ? t('reservations.noSearchResults')
-              : t('reservations.noUpcoming')}
+            {debouncedQuery ? t('reservations.noSearchResults') : t('reservations.noUpcoming')}
           </p>
         </div>
       ) : (
@@ -734,14 +800,19 @@ const ReservationsView = ({
       )}
 
       {/* Reject reservation dialog */}
-      <AlertDialog open={rejectDialogOpen} onOpenChange={(open) => { if (!open) handleCancelReject(); }}>
+      <AlertDialog
+        open={rejectDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCancelReject();
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('reservations.confirmRejectTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('reservations.confirmRejectDescription', { 
-                name: reservationToReject?.customer_name || '', 
-                phone: reservationToReject?.customer_phone || '' 
+              {t('reservations.confirmRejectDescription', {
+                name: reservationToReject?.customer_name || '',
+                phone: reservationToReject?.customer_phone || '',
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -758,13 +829,19 @@ const ReservationsView = ({
       </AlertDialog>
 
       {/* Delete training dialog */}
-      <AlertDialog open={deleteTrainingDialogOpen} onOpenChange={(open) => { if (!open) { setDeleteTrainingDialogOpen(false); setTrainingToDelete(null); } }}>
+      <AlertDialog
+        open={deleteTrainingDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTrainingDialogOpen(false);
+            setTrainingToDelete(null);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('trainings.deleteTraining')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('trainings.deleteConfirm')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('trainings.deleteConfirm')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>

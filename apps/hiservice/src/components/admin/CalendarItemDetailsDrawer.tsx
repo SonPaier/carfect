@@ -1,7 +1,29 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { User, Phone, Mail, Clock, Trash2, Pencil, Check, RotateCcw, X, FileText, DollarSign, MapPin, HardHat, MessageSquare, MoreVertical, ChevronDown, Plus, ClipboardCheck, Send, Loader2, Camera } from 'lucide-react';
+import {
+  User,
+  Phone,
+  Mail,
+  Clock,
+  Trash2,
+  Pencil,
+  Check,
+  RotateCcw,
+  X,
+  FileText,
+  DollarSign,
+  MapPin,
+  HardHat,
+  MessageSquare,
+  MoreVertical,
+  ChevronDown,
+  Plus,
+  ClipboardCheck,
+  Send,
+  Loader2,
+  Camera,
+} from 'lucide-react';
 import EmptyState from '@/components/ui/empty-state';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import type { Customer } from './CustomersView';
@@ -11,8 +33,22 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { LightTabsList, LightTabsTrigger } from '@/components/ui/light-tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -95,7 +131,9 @@ const InlineQuantityEdit = ({
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value);
 
-  useEffect(() => { setLocalValue(value); }, [value]);
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
 
   const commit = () => {
     setEditing(false);
@@ -122,9 +160,11 @@ const InlineQuantityEdit = ({
         min={1}
         autoFocus
         value={localValue}
-        onChange={e => setLocalValue(parseInt(e.target.value) || 1)}
+        onChange={(e) => setLocalValue(parseInt(e.target.value) || 1)}
         onBlur={commit}
-        onKeyDown={e => { if (e.key === 'Enter') commit(); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+        }}
         className="w-14 text-right text-sm border border-border rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
       />
       <span className="text-muted-foreground text-sm">{unit}</span>
@@ -156,14 +196,14 @@ const ServicesSummary = ({
         .eq('calendar_item_id', itemId);
       if (!itemServices?.length) return [];
 
-      const serviceIds = itemServices.map(s => s.service_id);
+      const serviceIds = itemServices.map((s) => s.service_id);
       const { data: services } = await supabase
         .from('unified_services')
         .select('id, name, short_name, price, unit')
         .in('id', serviceIds);
 
-      return itemServices.map(is => {
-        const svc = (services || []).find(s => s.id === is.service_id);
+      return itemServices.map((is) => {
+        const svc = (services || []).find((s) => s.id === is.service_id);
         const price = is.custom_price ?? svc?.price ?? 0;
         const qty = (is as any).quantity ?? 1;
         return {
@@ -211,13 +251,10 @@ const ServicesSummary = ({
 
       const existingMap = new Map((existingRows || []).map((row: any) => [row.service_id, row]));
 
-      await supabase
-        .from('calendar_item_services')
-        .delete()
-        .eq('calendar_item_id', itemId);
+      await supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId);
 
       if (serviceIds.length > 0) {
-        const rowsToInsert = serviceIds.map(serviceId => {
+        const rowsToInsert = serviceIds.map((serviceId) => {
           const existing = existingMap.get(serviceId);
           return {
             calendar_item_id: itemId,
@@ -228,9 +265,9 @@ const ServicesSummary = ({
           };
         });
 
-        const { error: insertError } = await (supabase
-          .from('calendar_item_services') as any)
-          .insert(rowsToInsert);
+        const { error: insertError } = await (
+          supabase.from('calendar_item_services') as any
+        ).insert(rowsToInsert);
 
         if (insertError) throw insertError;
       }
@@ -246,7 +283,7 @@ const ServicesSummary = ({
   if (!servicesData.length && !allowEdit) return null;
 
   const grandTotal = servicesData.reduce((sum, s) => sum + s.total, 0);
-  const selectedServiceIds = servicesData.map(s => s.service_id);
+  const selectedServiceIds = servicesData.map((s) => s.service_id);
 
   return (
     <div className="space-y-1">
@@ -262,12 +299,18 @@ const ServicesSummary = ({
                 onSave={(qty) => handleQuantityChange(s.service_id, qty)}
               />
             ) : (
-              <span className="text-muted-foreground whitespace-nowrap w-16 text-right">{s.quantity} {s.unit}</span>
+              <span className="text-muted-foreground whitespace-nowrap w-16 text-right">
+                {s.quantity} {s.unit}
+              </span>
             )}
             {!hidePrices && (
               <>
-                <span className="text-muted-foreground whitespace-nowrap w-16 text-right">{s.price} zł</span>
-                <span className="font-semibold whitespace-nowrap w-20 text-right">{s.total.toFixed(0)} zł</span>
+                <span className="text-muted-foreground whitespace-nowrap w-16 text-right">
+                  {s.price} zł
+                </span>
+                <span className="font-semibold whitespace-nowrap w-20 text-right">
+                  {s.total.toFixed(0)} zł
+                </span>
               </>
             )}
           </div>
@@ -333,7 +376,7 @@ const CalendarItemDetailsDrawer = ({
   const [addressCoords, setAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [smsNotifications, setSmsNotifications] = useState<SmsNotificationInfo[]>([]);
   const [protocolToken, setProtocolToken] = useState<string | null>(null);
-  
+
   // Inline notes editing
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
@@ -361,7 +404,10 @@ const CalendarItemDetailsDrawer = ({
   const { enabled: employeesEnabled } = useInstanceFeature(instanceId || null, 'employees');
   const { enabled: prioritiesEnabled } = useInstanceFeature(instanceId || null, 'priorities');
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId || null);
-  const { data: itemInvoices = [], refetch: refetchInvoices } = useInvoices(instanceId || null, item?.id);
+  const { data: itemInvoices = [], refetch: refetchInvoices } = useInvoices(
+    instanceId || null,
+    item?.id,
+  );
 
   // Work times query (work_started_at, work_ended_at)
   const { data: workTimesData } = useQuery({
@@ -393,17 +439,18 @@ const CalendarItemDetailsDrawer = ({
       if (error || !items) return [];
 
       // Fetch services for these items
-      const itemIds = items.map(i => i.id);
+      const itemIds = items.map((i) => i.id);
       const { data: services } = await supabase
         .from('calendar_item_services')
         .select('calendar_item_id, service_id, custom_price')
         .in('calendar_item_id', itemIds);
 
       // Fetch service names
-      const serviceIds = [...new Set((services || []).map(s => s.service_id))];
-      const { data: serviceDetails } = serviceIds.length > 0
-        ? await supabase.from('unified_services').select('id, name, price').in('id', serviceIds)
-        : { data: [] };
+      const serviceIds = [...new Set((services || []).map((s) => s.service_id))];
+      const { data: serviceDetails } =
+        serviceIds.length > 0
+          ? await supabase.from('unified_services').select('id, name, price').in('id', serviceIds)
+          : { data: [] };
 
       // Fetch protocols
       const { data: protocols } = await supabase
@@ -411,24 +458,29 @@ const CalendarItemDetailsDrawer = ({
         .select('calendar_item_id, public_token')
         .in('calendar_item_id', itemIds);
 
-      const serviceMap = new Map((serviceDetails || []).map(s => [s.id, s]));
-      const protocolMap = new Map((protocols || []).map(p => [p.calendar_item_id, p.public_token]));
+      const serviceMap = new Map((serviceDetails || []).map((s) => [s.id, s]));
+      const protocolMap = new Map(
+        (protocols || []).map((p) => [p.calendar_item_id, p.public_token]),
+      );
 
       // Fetch employee names
-      const allEmpIds = [...new Set(items.flatMap(i => i.assigned_employee_ids || []))];
-      const { data: employees } = allEmpIds.length > 0
-        ? await supabase.from('employees').select('id, name').in('id', allEmpIds)
-        : { data: [] };
-      const empMap = new Map((employees || []).map(e => [e.id, e.name]));
+      const allEmpIds = [...new Set(items.flatMap((i) => i.assigned_employee_ids || []))];
+      const { data: employees } =
+        allEmpIds.length > 0
+          ? await supabase.from('employees').select('id, name').in('id', allEmpIds)
+          : { data: [] };
+      const empMap = new Map((employees || []).map((e) => [e.id, e.name]));
 
-      return items.map(ci => {
+      return items.map((ci) => {
         const ciServices = (services || [])
-          .filter(s => s.calendar_item_id === ci.id)
-          .map(s => {
+          .filter((s) => s.calendar_item_id === ci.id)
+          .map((s) => {
             const svc = serviceMap.get(s.service_id);
             return { name: svc?.name || '', price: s.custom_price ?? svc?.price ?? undefined };
           });
-        const empNames = (ci.assigned_employee_ids || []).map(id => empMap.get(id)).filter(Boolean) as string[];
+        const empNames = (ci.assigned_employee_ids || [])
+          .map((id) => empMap.get(id))
+          .filter(Boolean) as string[];
         return {
           ...ci,
           services: ciServices,
@@ -458,8 +510,13 @@ const CalendarItemDetailsDrawer = ({
 
   // Fetch address
   useEffect(() => {
-    if (!item?.customer_address_id) { setAddressLabel(null); setAddressStreet(''); setAddressCoords(null); return; }
-   const fetchAddr = async () => {
+    if (!item?.customer_address_id) {
+      setAddressLabel(null);
+      setAddressStreet('');
+      setAddressCoords(null);
+      return;
+    }
+    const fetchAddr = async () => {
       const { data } = await supabase
         .from('customer_addresses')
         .select('name, street, city, lat, lng')
@@ -476,7 +533,10 @@ const CalendarItemDetailsDrawer = ({
 
   // Fetch protocol linked to this calendar item
   useEffect(() => {
-    if (!item?.id || !open) { setProtocolToken(null); return; }
+    if (!item?.id || !open) {
+      setProtocolToken(null);
+      return;
+    }
     const fetchProtocol = async () => {
       const { data } = await (supabase.from('protocols') as any)
         .select('public_token')
@@ -490,7 +550,10 @@ const CalendarItemDetailsDrawer = ({
 
   // Fetch SMS notifications
   useEffect(() => {
-    if (!item?.id || !open) { setSmsNotifications([]); return; }
+    if (!item?.id || !open) {
+      setSmsNotifications([]);
+      return;
+    }
     const fetchSms = async () => {
       const { data } = await (supabase.from('customer_sms_notifications') as any)
         .select('id, status, sent_at, service_type')
@@ -503,30 +566,47 @@ const CalendarItemDetailsDrawer = ({
   // Fetch instance short_name
   useEffect(() => {
     if (!instanceId || !open) return;
-    supabase.from('instances').select('short_name').eq('id', instanceId).single()
-      .then(({ data }) => { if (data) setInstanceShortName(data.short_name || ''); });
+    supabase
+      .from('instances')
+      .select('short_name')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data }) => {
+        if (data) setInstanceShortName(data.short_name || '');
+      });
   }, [instanceId, open]);
 
   // Fetch available SMS templates from item's services
   useEffect(() => {
-    if (!item?.id || !open || !instanceId) { setAvailableSmsTemplates([]); return; }
+    if (!item?.id || !open || !instanceId) {
+      setAvailableSmsTemplates([]);
+      return;
+    }
     const fetchTemplates = async () => {
       const { data: itemServices } = await supabase
         .from('calendar_item_services')
         .select('service_id')
         .eq('calendar_item_id', item.id);
-      if (!itemServices?.length) { setAvailableSmsTemplates([]); return; }
+      if (!itemServices?.length) {
+        setAvailableSmsTemplates([]);
+        return;
+      }
 
-      const serviceIds = itemServices.map(s => s.service_id);
+      const serviceIds = itemServices.map((s) => s.service_id);
       const { data: services } = await supabase
         .from('unified_services')
         .select('id, name, notification_template_id')
         .in('id', serviceIds);
-      
-      const templatesWithService = (services || []).filter(s => s.notification_template_id);
-      if (!templatesWithService.length) { setAvailableSmsTemplates([]); return; }
 
-      const templateIds = [...new Set(templatesWithService.map(s => s.notification_template_id!))];
+      const templatesWithService = (services || []).filter((s) => s.notification_template_id);
+      if (!templatesWithService.length) {
+        setAvailableSmsTemplates([]);
+        return;
+      }
+
+      const templateIds = [
+        ...new Set(templatesWithService.map((s) => s.notification_template_id!)),
+      ];
       const { data: templates } = await supabase
         .from('sms_notification_templates')
         .select('id, name, sms_template, items')
@@ -537,7 +617,7 @@ const CalendarItemDetailsDrawer = ({
         const tmplItems = Array.isArray(tmpl.items) ? tmpl.items : [];
         const hasImmediate = tmplItems.some((i: any) => i.trigger_type === 'immediate');
         if (hasImmediate && tmpl.sms_template) {
-          const svc = templatesWithService.find(s => s.notification_template_id === tmpl.id);
+          const svc = templatesWithService.find((s) => s.notification_template_id === tmpl.id);
           available.push({
             templateId: tmpl.id,
             templateName: tmpl.name,
@@ -551,8 +631,8 @@ const CalendarItemDetailsDrawer = ({
     fetchTemplates();
   }, [item?.id, open, instanceId]);
 
-  const unsent = availableSmsTemplates.filter(t => 
-    !smsNotifications.some(n => n.service_type === t.serviceName)
+  const unsent = availableSmsTemplates.filter(
+    (t) => !smsNotifications.some((n) => n.service_type === t.serviceName),
   );
 
   const handleSendSms = async (template: AvailableSmsTemplate) => {
@@ -562,8 +642,9 @@ const CalendarItemDetailsDrawer = ({
     }
     setSendingSms(true);
     try {
-      const { data: notif, error: notifError } = await (supabase
-        .from('customer_sms_notifications') as any)
+      const { data: notif, error: notifError } = await (
+        supabase.from('customer_sms_notifications') as any
+      )
         .insert({
           instance_id: instanceId,
           notification_template_id: template.templateId,
@@ -580,13 +661,13 @@ const CalendarItemDetailsDrawer = ({
 
       if (notifError) throw notifError;
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const projectId = import.meta.env.VITE_HISERVICE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_HISERVICE_SUPABASE_PUBLISHABLE_KEY;
       const message = template.smsTemplate;
 
       await fetch(`https://${projectId}.supabase.co/functions/v1/send-sms`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': anonKey },
+        headers: { 'Content-Type': 'application/json', apikey: anonKey },
         body: JSON.stringify({
           phone: item.customer_phone,
           message,
@@ -624,7 +705,7 @@ const CalendarItemDetailsDrawer = ({
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      onDelete?.(item.id);
+      await onDelete?.(item.id);
       setDeleteDialogOpen(false);
       onClose();
     } catch {
@@ -650,14 +731,17 @@ const CalendarItemDetailsDrawer = ({
   };
 
   const handleRemoveEmployee = async (empId: string) => {
-    const newIds = (item.assigned_employee_ids || []).filter(id => id !== empId);
+    const newIds = (item.assigned_employee_ids || []).filter((id) => id !== empId);
     const { error } = await supabase
       .from('calendar_items')
       .update({ assigned_employee_ids: newIds.length > 0 ? newIds : null })
       .eq('id', item.id);
-    if (error) { toast.error('Błąd usuwania pracownika'); return; }
+    if (error) {
+      toast.error('Błąd usuwania pracownika');
+      return;
+    }
     if (item.assigned_employees) {
-      item.assigned_employees = item.assigned_employees.filter(e => e.id !== empId);
+      item.assigned_employees = item.assigned_employees.filter((e) => e.id !== empId);
     }
     item.assigned_employee_ids = newIds;
   };
@@ -667,7 +751,10 @@ const CalendarItemDetailsDrawer = ({
       .from('calendar_items')
       .update({ assigned_employee_ids: ids.length > 0 ? ids : null })
       .eq('id', item.id);
-    if (error) { toast.error('Błąd przypisania pracowników'); return; }
+    if (error) {
+      toast.error('Błąd przypisania pracowników');
+      return;
+    }
   };
 
   // Footer
@@ -694,7 +781,10 @@ const CalendarItemDetailsDrawer = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {onDelete && (
-            <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-destructive">
+            <DropdownMenuItem
+              onClick={() => setDeleteDialogOpen(true)}
+              className="text-destructive"
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Usuń
             </DropdownMenuItem>
@@ -703,12 +793,14 @@ const CalendarItemDetailsDrawer = ({
       </DropdownMenu>
     );
 
-    const statusDropdown = (mainLabel: string, mainAction: () => void, mainColor: string, otherStatuses: { label: string; status: string; icon: React.ReactNode }[]) => (
+    const statusDropdown = (
+      mainLabel: string,
+      mainAction: () => void,
+      mainColor: string,
+      otherStatuses: { label: string; status: string; icon: React.ReactNode }[],
+    ) => (
       <div className="flex flex-1">
-        <Button
-          className={`${mainColor} flex-1 rounded-r-none`}
-          onClick={mainAction}
-        >
+        <Button className={`${mainColor} flex-1 rounded-r-none`} onClick={mainAction}>
           {mainLabel}
         </Button>
         <DropdownMenu>
@@ -718,7 +810,7 @@ const CalendarItemDetailsDrawer = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {otherStatuses.map(s => (
+            {otherStatuses.map((s) => (
               <DropdownMenuItem key={s.status} onClick={() => onStatusChange?.(item.id, s.status)}>
                 {s.icon}
                 {s.label}
@@ -738,12 +830,18 @@ const CalendarItemDetailsDrawer = ({
         {isEmployee ? (
           <>
             {item.status === 'confirmed' && onStartWork && (
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1" onClick={() => onStartWork(item.id)}>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
+                onClick={() => onStartWork(item.id)}
+              >
                 Rozpocznij pracę
               </Button>
             )}
             {item.status === 'in_progress' && onEndWork && (
-              <Button className="bg-sky-500 hover:bg-sky-600 text-white flex-1" onClick={() => onEndWork(item.id)}>
+              <Button
+                className="bg-sky-500 hover:bg-sky-600 text-white flex-1"
+                onClick={() => onEndWork(item.id)}
+              >
                 Zakończ pracę
               </Button>
             )}
@@ -760,25 +858,37 @@ const CalendarItemDetailsDrawer = ({
           </>
         ) : (
           <>
-            {item.status === 'confirmed' && onStartWork && statusDropdown(
-              'Rozpocznij pracę',
-              () => onStartWork(item.id),
-              'bg-emerald-600 hover:bg-emerald-700 text-white',
-              [
-                { label: 'Zakończone', status: 'completed', icon: <Check className="w-4 h-4 mr-2" /> },
-                { label: 'Anuluj', status: 'cancelled', icon: <X className="w-4 h-4 mr-2" /> },
-              ]
-            )}
+            {item.status === 'confirmed' &&
+              onStartWork &&
+              statusDropdown(
+                'Rozpocznij pracę',
+                () => onStartWork(item.id),
+                'bg-emerald-600 hover:bg-emerald-700 text-white',
+                [
+                  {
+                    label: 'Zakończone',
+                    status: 'completed',
+                    icon: <Check className="w-4 h-4 mr-2" />,
+                  },
+                  { label: 'Anuluj', status: 'cancelled', icon: <X className="w-4 h-4 mr-2" /> },
+                ],
+              )}
 
-            {item.status === 'in_progress' && onEndWork && statusDropdown(
-              'Zakończ pracę',
-              () => onEndWork(item.id),
-              'bg-sky-500 hover:bg-sky-600 text-white',
-              [
-                { label: 'Do wykonania', status: 'confirmed', icon: <RotateCcw className="w-4 h-4 mr-2" /> },
-                { label: 'Anuluj', status: 'cancelled', icon: <X className="w-4 h-4 mr-2" /> },
-              ]
-            )}
+            {item.status === 'in_progress' &&
+              onEndWork &&
+              statusDropdown(
+                'Zakończ pracę',
+                () => onEndWork(item.id),
+                'bg-sky-500 hover:bg-sky-600 text-white',
+                [
+                  {
+                    label: 'Do wykonania',
+                    status: 'confirmed',
+                    icon: <RotateCcw className="w-4 h-4 mr-2" />,
+                  },
+                  { label: 'Anuluj', status: 'cancelled', icon: <X className="w-4 h-4 mr-2" /> },
+                ],
+              )}
 
             {item.status === 'completed' && (
               <DropdownMenu>
@@ -794,8 +904,7 @@ const CalendarItemDetailsDrawer = ({
                     Do wykonania
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'in_progress')}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    W trakcie
+                    <RotateCcw className="w-4 h-4 mr-2" />W trakcie
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'cancelled')}>
                     <X className="w-4 h-4 mr-2" />
@@ -819,8 +928,7 @@ const CalendarItemDetailsDrawer = ({
                     Do wykonania
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'in_progress')}>
-                    <Clock className="w-4 h-4 mr-2" />
-                    W trakcie
+                    <Clock className="w-4 h-4 mr-2" />W trakcie
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'completed')}>
                     <Check className="w-4 h-4 mr-2" />
@@ -837,8 +945,18 @@ const CalendarItemDetailsDrawer = ({
 
   if (!item) {
     return (
-      <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-        <SheetContent side="right" hideCloseButton hideOverlay className={`flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full ${isEmployee ? 'sm:!w-full sm:!max-w-full' : ''}`}>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
+      >
+        <SheetContent
+          side="right"
+          hideCloseButton
+          hideOverlay
+          className={`flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full ${isEmployee ? 'sm:!w-full sm:!max-w-full' : ''}`}
+        >
           <SheetTitle className="sr-only">Szczegóły</SheetTitle>
           <SheetDescription className="sr-only">Brak danych</SheetDescription>
         </SheetContent>
@@ -848,7 +966,12 @@ const CalendarItemDetailsDrawer = ({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
+      >
         <SheetContent
           side="right"
           hideCloseButton
@@ -877,7 +1000,9 @@ const CalendarItemDetailsDrawer = ({
               {!hideHours && item.start_time && item.end_time && (
                 <>
                   <span className="text-muted-foreground">·</span>
-                  <span className="text-[14px] font-medium">{item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}</span>
+                  <span className="text-[14px] font-medium">
+                    {item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}
+                  </span>
                 </>
               )}
             </div>
@@ -887,12 +1012,25 @@ const CalendarItemDetailsDrawer = ({
                 {statusLabels[item.status] || item.status}
               </Badge>
               {!isEmployee && item.status !== 'confirmed' && (
-                <InvoiceStatusBadge status={itemInvoices.length > 0 ? (itemInvoices[0].status === 'sent' ? 'invoice_sent' : itemInvoices[0].status === 'paid' ? 'paid' : 'invoice_sent') : (item as any).payment_status} />
+                <InvoiceStatusBadge
+                  status={
+                    itemInvoices.length > 0
+                      ? itemInvoices[0].status === 'sent'
+                        ? 'invoice_sent'
+                        : itemInvoices[0].status === 'paid'
+                          ? 'paid'
+                          : 'invoice_sent'
+                      : (item as any).payment_status
+                  }
+                />
               )}
-              {prioritiesEnabled && (item as any).priority != null && (item as any).priority !== DEFAULT_PRIORITY && (() => {
-                const cfg = getPriorityConfig((item as any).priority);
-                return <Badge className={`${cfg.badgeCls} border`}>{cfg.label}</Badge>;
-              })()}
+              {prioritiesEnabled &&
+                (item as any).priority != null &&
+                (item as any).priority !== DEFAULT_PRIORITY &&
+                (() => {
+                  const cfg = getPriorityConfig((item as any).priority);
+                  return <Badge className={`${cfg.badgeCls} border`}>{cfg.label}</Badge>;
+                })()}
             </div>
           </div>
 
@@ -944,12 +1082,18 @@ const CalendarItemDetailsDrawer = ({
                         <span className="font-medium text-[15px]">{item.customer_name}</span>
                       )}
                       {item.customer_phone && (
-                        <a href={`tel:${item.customer_phone}`} className="p-1 rounded hover:bg-primary/5">
+                        <a
+                          href={`tel:${item.customer_phone}`}
+                          className="p-1 rounded hover:bg-primary/5"
+                        >
                           <Phone className="w-[17px] h-[17px] text-primary" />
                         </a>
                       )}
                       {item.customer_phone && (
-                        <a href={`sms:${item.customer_phone}`} className="p-1 rounded hover:bg-primary/5">
+                        <a
+                          href={`sms:${item.customer_phone}`}
+                          className="p-1 rounded hover:bg-primary/5"
+                        >
                           <MessageSquare className="w-[17px] h-[17px] text-primary" />
                         </a>
                       )}
@@ -963,9 +1107,9 @@ const CalendarItemDetailsDrawer = ({
                 <div className="space-y-0.5">
                   <span className="text-sm font-medium">Lokalizacja</span>
                   {addressLabel && (
-                  <div>
-                    <span className="font-medium text-[15px]">{addressLabel}</span>
-                  </div>
+                    <div>
+                      <span className="font-medium text-[15px]">{addressLabel}</span>
+                    </div>
                   )}
                   {addressStreet && (
                     <div>
@@ -978,11 +1122,26 @@ const CalendarItemDetailsDrawer = ({
                         >
                           {addressStreet}
                           <svg viewBox="0 0 92.3 132.3" className="w-4 h-4 shrink-0">
-                            <path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"/>
-                            <path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-32.4L10.8 16.5z"/>
-                            <path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.1 27.7-32.1-5.6-10.8-15.3-19-27.2-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"/>
-                            <path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.6-8.3 4.2-11.4L4.6 68.1c5.5 11.9 13.6 21.5 19.8 29.7l35.3-40.9c-3.2 3.9-8.1 6.3-13.5 6.9"/>
-                            <path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L24.4 97.8c2.6 3.4 5 6.7 7 9.9 6.5 10.4 11 21.2 14.8 24.6 3.8-3.4 8.3-14.2 12.9-23.1"/>
+                            <path
+                              fill="#1a73e8"
+                              d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"
+                            />
+                            <path
+                              fill="#ea4335"
+                              d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-32.4L10.8 16.5z"
+                            />
+                            <path
+                              fill="#4285f4"
+                              d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.1 27.7-32.1-5.6-10.8-15.3-19-27.2-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"
+                            />
+                            <path
+                              fill="#fbbc04"
+                              d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.6-8.3 4.2-11.4L4.6 68.1c5.5 11.9 13.6 21.5 19.8 29.7l35.3-40.9c-3.2 3.9-8.1 6.3-13.5 6.9"
+                            />
+                            <path
+                              fill="#34a853"
+                              d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L24.4 97.8c2.6 3.4 5 6.7 7 9.9 6.5 10.4 11 21.2 14.8 24.6 3.8-3.4 8.3-14.2 12.9-23.1"
+                            />
                           </svg>
                         </a>
                       ) : (
@@ -995,59 +1154,67 @@ const CalendarItemDetailsDrawer = ({
 
               {/* Assigned Employees */}
               {employeesEnabled && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  Przypisani pracownicy
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {isEmployee ? (
-                    // Readonly: show from allEmployees + assigned_employee_ids
-                    (item.assigned_employee_ids || []).map(empId => {
-                      const emp = allEmployees.find(e => e.id === empId);
-                      return emp ? (
-                        <span key={emp.id} className="inline-flex items-center bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs font-medium">
-                          {emp.name}
-                        </span>
-                      ) : null;
-                    })
-                  ) : (
-                    <>
-                      {(() => {
-                        const emps = item.assigned_employees && item.assigned_employees.length > 0
-                          ? item.assigned_employees
-                          : (item.assigned_employee_ids || []).map(id => allEmployees.find(e => e.id === id)).filter(Boolean).map(e => ({ id: e!.id, name: e!.name }));
-                        return emps.map(emp => (
-                          <span key={emp.id} className="inline-flex items-center gap-1 bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs font-medium">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    Przypisani pracownicy
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {isEmployee ? (
+                      // Readonly: show from allEmployees + assigned_employee_ids
+                      (item.assigned_employee_ids || []).map((empId) => {
+                        const emp = allEmployees.find((e) => e.id === empId);
+                        return emp ? (
+                          <span
+                            key={emp.id}
+                            className="inline-flex items-center bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs font-medium"
+                          >
                             {emp.name}
-                            <button
-                              onClick={() => handleRemoveEmployee(emp.id)}
-                              className="ml-0.5 hover:bg-white/20 rounded-full p-0.5"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
                           </span>
-                        ));
-                      })()}
-                      {instanceId && (
-                        <button
-                          onClick={() => setEmployeeDrawerOpen(true)}
-                          className="inline-flex items-center gap-1 border border-dashed border-border rounded-full px-3 py-1 text-xs text-muted-foreground hover:bg-primary/5 transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Dodaj
-                        </button>
-                      )}
-                    </>
-                  )}
+                        ) : null;
+                      })
+                    ) : (
+                      <>
+                        {(() => {
+                          const emps =
+                            item.assigned_employees && item.assigned_employees.length > 0
+                              ? item.assigned_employees
+                              : (item.assigned_employee_ids || [])
+                                  .map((id) => allEmployees.find((e) => e.id === id))
+                                  .filter(Boolean)
+                                  .map((e) => ({ id: e!.id, name: e!.name }));
+                          return emps.map((emp) => (
+                            <span
+                              key={emp.id}
+                              className="inline-flex items-center gap-1 bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs font-medium"
+                            >
+                              {emp.name}
+                              <button
+                                onClick={() => handleRemoveEmployee(emp.id)}
+                                className="ml-0.5 hover:bg-white/20 rounded-full p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ));
+                        })()}
+                        {instanceId && (
+                          <button
+                            onClick={() => setEmployeeDrawerOpen(true)}
+                            className="inline-flex items-center gap-1 border border-dashed border-border rounded-full px-3 py-1 text-xs text-muted-foreground hover:bg-primary/5 transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Dodaj
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
               )}
 
               {/* Notes */}
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  Notatki
-                </div>
+                <div className="flex items-center gap-2 text-sm font-medium">Notatki</div>
                 {editingNotes ? (
                   <Textarea
                     value={notesValue}
@@ -1078,42 +1245,52 @@ const CalendarItemDetailsDrawer = ({
                 />
               )}
 
-
               {/* FV + SMS section */}
               {!hidePrices && (item.status === 'completed' || item.status === 'in_progress') && (
                 <div className="space-y-2 pt-2 border-t border-border">
                   {/* Work time info */}
-                  {(item.status === 'completed' || item.status === 'in_progress') && workTimesData && (() => {
-                    const startDt = workTimesData.work_started_at ? new Date(workTimesData.work_started_at) : null;
-                    const endDt = workTimesData.work_ended_at ? new Date(workTimesData.work_ended_at) : null;
-                    if (!startDt) return null;
+                  {(item.status === 'completed' || item.status === 'in_progress') &&
+                    workTimesData &&
+                    (() => {
+                      const startDt = workTimesData.work_started_at
+                        ? new Date(workTimesData.work_started_at)
+                        : null;
+                      const endDt = workTimesData.work_ended_at
+                        ? new Date(workTimesData.work_ended_at)
+                        : null;
+                      if (!startDt) return null;
 
-                    const startH = format(startDt, 'HH:mm');
-                    const endH = endDt ? format(endDt, 'HH:mm') : '—';
+                      const startH = format(startDt, 'HH:mm');
+                      const endH = endDt ? format(endDt, 'HH:mm') : '—';
 
-                    let durationStr = '';
-                    if (startDt && endDt) {
-                      const diffMin = Math.round((endDt.getTime() - startDt.getTime()) / 60000);
-                      const hours = Math.floor(Math.abs(diffMin) / 60);
-                      const mins = Math.abs(diffMin) % 60;
-                      durationStr = `${hours}h ${mins.toString().padStart(2, '0')} min`;
-                    }
+                      let durationStr = '';
+                      if (startDt && endDt) {
+                        const diffMin = Math.round((endDt.getTime() - startDt.getTime()) / 60000);
+                        const hours = Math.floor(Math.abs(diffMin) / 60);
+                        const mins = Math.abs(diffMin) % 60;
+                        durationStr = `${hours}h ${mins.toString().padStart(2, '0')} min`;
+                      }
 
-                    const dateStr = format(startDt, 'd MMMM yyyy', { locale: pl });
-                    const sameDay = endDt && format(startDt, 'yyyy-MM-dd') === format(endDt, 'yyyy-MM-dd');
-                    const endDateStr = endDt && !sameDay ? format(endDt, 'd MMMM yyyy', { locale: pl }) : '';
+                      const dateStr = format(startDt, 'd MMMM yyyy', { locale: pl });
+                      const sameDay =
+                        endDt && format(startDt, 'yyyy-MM-dd') === format(endDt, 'yyyy-MM-dd');
+                      const endDateStr =
+                        endDt && !sameDay ? format(endDt, 'd MMMM yyyy', { locale: pl }) : '';
 
-                    return (
-                      <div className="flex items-center gap-1.5 text-sm text-foreground flex-wrap">
-                        <span className="font-medium shrink-0">Czas realizacji:</span>
-                        <span>od {startH}{endDateStr ? ` (${dateStr})` : ''} do {endH}</span>
-                        {sameDay && <span>, {dateStr}</span>}
-                        {endDateStr && <span>, {endDateStr}</span>}
-                        {!endDt && <span>, {dateStr}</span>}
-                        {durationStr && <span className="font-semibold">({durationStr})</span>}
-                      </div>
-                    );
-                  })()}
+                      return (
+                        <div className="flex items-center gap-1.5 text-sm text-foreground flex-wrap">
+                          <span className="font-medium shrink-0">Czas realizacji:</span>
+                          <span>
+                            od {startH}
+                            {endDateStr ? ` (${dateStr})` : ''} do {endH}
+                          </span>
+                          {sameDay && <span>, {dateStr}</span>}
+                          {endDateStr && <span>, {endDateStr}</span>}
+                          {!endDt && <span>, {dateStr}</span>}
+                          {durationStr && <span className="font-semibold">({durationStr})</span>}
+                        </div>
+                      );
+                    })()}
                   {invoicingSettings?.active && itemInvoices.length === 0 && (
                     <Button
                       variant="outline"
@@ -1126,7 +1303,7 @@ const CalendarItemDetailsDrawer = ({
                   )}
                   {itemInvoices.length > 0 && (
                     <div className="space-y-1">
-                      {itemInvoices.map(inv => {
+                      {itemInvoices.map((inv) => {
                         const hasPdf = inv.pdf_url || inv.provider === 'ifirma';
                         const handlePdfClick = async () => {
                           if (inv.pdf_url) {
@@ -1135,15 +1312,22 @@ const CalendarItemDetailsDrawer = ({
                             try {
                               const session = await supabase.auth.getSession();
                               const token = session.data.session?.access_token;
-                              const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`, {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${token}`,
-                                  'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                              const res = await fetch(
+                                `${import.meta.env.VITE_HISERVICE_SUPABASE_URL}/functions/v1/invoicing-api`,
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${token}`,
+                                    apikey: import.meta.env.VITE_HISERVICE_SUPABASE_PUBLISHABLE_KEY,
+                                  },
+                                  body: JSON.stringify({
+                                    action: 'get_ifirma_pdf',
+                                    instanceId,
+                                    invoiceId: inv.id,
+                                  }),
                                 },
-                                body: JSON.stringify({ action: 'get_ifirma_pdf', instanceId, invoiceId: inv.id }),
-                              });
+                              );
                               if (!res.ok) throw new Error(await res.text());
                               const blob = await res.blob();
                               const url = URL.createObjectURL(blob);
@@ -1158,7 +1342,10 @@ const CalendarItemDetailsDrawer = ({
                             }
                           }
                         };
-                        const priceDisplay = item.price != null ? `${item.price.toFixed(2)} zł netto` : `${inv.total_gross?.toFixed(2)} ${inv.currency}`;
+                        const priceDisplay =
+                          item.price != null
+                            ? `${item.price.toFixed(2)} zł netto`
+                            : `${inv.total_gross?.toFixed(2)} ${inv.currency}`;
                         return (
                           <button
                             key={inv.id}
@@ -1201,11 +1388,12 @@ const CalendarItemDetailsDrawer = ({
                     <MessageSquare className="w-4 h-4 text-muted-foreground" />
                     Powiadomienie SMS
                   </div>
-                  {smsNotifications.map(sms => (
+                  {smsNotifications.map((sms) => (
                     <div key={sms.id} className="ml-6 text-[15px]">
                       {sms.sent_at ? (
                         <span className="text-emerald-600">
-                          ✓ Wysłano SMS ({sms.service_type}) — {format(new Date(sms.sent_at), 'd MMM yyyy, HH:mm', { locale: pl })}
+                          ✓ Wysłano SMS ({sms.service_type}) —{' '}
+                          {format(new Date(sms.sent_at), 'd MMM yyyy, HH:mm', { locale: pl })}
                         </span>
                       ) : sms.status === 'pending' ? (
                         <span className="text-orange-600">
@@ -1218,7 +1406,7 @@ const CalendarItemDetailsDrawer = ({
                       ) : null}
                     </div>
                   ))}
-                  {unsent.map(template => (
+                  {unsent.map((template) => (
                     <div key={template.templateId} className="ml-6 space-y-1.5">
                       <p className="text-xs text-muted-foreground">
                         Szablon: {template.templateName}
@@ -1233,7 +1421,11 @@ const CalendarItemDetailsDrawer = ({
                         onClick={() => handleSendSms(template)}
                         className="text-xs"
                       >
-                        {sendingSms ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                        {sendingSms ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3 mr-1" />
+                        )}
                         Wyślij SMS
                       </Button>
                     </div>
@@ -1253,7 +1445,10 @@ const CalendarItemDetailsDrawer = ({
                   setMediaItems(newItems);
                   supabase
                     .from('calendar_items')
-                    .update({ media_items: newItems, photo_urls: newItems.filter(i => i.type === 'image').map(i => i.url) } as any)
+                    .update({
+                      media_items: newItems,
+                      photo_urls: newItems.filter((i) => i.type === 'image').map((i) => i.url),
+                    } as any)
                     .eq('id', item.id)
                     .then(({ error }) => {
                       if (error) console.error('Error saving media:', error);
@@ -1265,7 +1460,10 @@ const CalendarItemDetailsDrawer = ({
             {/* Tab: Historia */}
             <TabsContent value="history" className="flex-1 overflow-y-auto px-6 py-4 m-0">
               {!customerAddressId ? (
-                <EmptyState icon={MapPin} message="Przypisz adres serwisowy, aby zobaczyć historię lokalizacji." />
+                <EmptyState
+                  icon={MapPin}
+                  message="Przypisz adres serwisowy, aby zobaczyć historię lokalizacji."
+                />
               ) : historyItems.length === 0 ? (
                 <EmptyState icon={Clock} message="Brak innych zleceń dla tej lokalizacji." />
               ) : (
@@ -1283,13 +1481,23 @@ const CalendarItemDetailsDrawer = ({
                       assignedEmployeeNames={hi.employeeNames}
                       onClick={() => {
                         const histItem: CalendarItem = {
-                          id: hi.id, title: hi.title, item_date: hi.item_date, end_date: hi.end_date,
-                          start_time: hi.start_time, end_time: hi.end_time, column_id: hi.column_id,
-                          status: hi.status, admin_notes: hi.admin_notes, price: hi.price,
-                          customer_id: hi.customer_id, customer_address_id: hi.customer_address_id,
+                          id: hi.id,
+                          title: hi.title,
+                          item_date: hi.item_date,
+                          end_date: hi.end_date,
+                          start_time: hi.start_time,
+                          end_time: hi.end_time,
+                          column_id: hi.column_id,
+                          status: hi.status,
+                          admin_notes: hi.admin_notes,
+                          price: hi.price,
+                          customer_id: hi.customer_id,
+                          customer_address_id: hi.customer_address_id,
                           assigned_employee_ids: hi.assigned_employee_ids,
-                          customer_name: hi.customer_name, customer_phone: hi.customer_phone,
-                          customer_email: hi.customer_email, photo_urls: hi.photo_urls,
+                          customer_name: hi.customer_name,
+                          customer_phone: hi.customer_phone,
+                          customer_email: hi.customer_email,
+                          photo_urls: hi.photo_urls,
                         };
                         setHistoryDetailItem(histItem);
                         setHistoryDetailOpen(true);
@@ -1317,7 +1525,11 @@ const CalendarItemDetailsDrawer = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleting ? 'Usuwanie...' : 'Usuń'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1343,7 +1555,10 @@ const CalendarItemDetailsDrawer = ({
         customer={customerDetailData}
         instanceId={instanceId || null}
         open={customerDetailOpen}
-        onClose={() => { setCustomerDetailOpen(false); setCustomerDetailData(null); }}
+        onClose={() => {
+          setCustomerDetailOpen(false);
+          setCustomerDetailData(null);
+        }}
       />
 
       {/* Invoice Drawer */}
@@ -1367,7 +1582,10 @@ const CalendarItemDetailsDrawer = ({
       <CalendarItemDetailsDrawer
         item={historyDetailItem}
         open={historyDetailOpen}
-        onClose={() => { setHistoryDetailOpen(false); setHistoryDetailItem(null); }}
+        onClose={() => {
+          setHistoryDetailOpen(false);
+          setHistoryDetailItem(null);
+        }}
         columns={columns}
         instanceId={instanceId}
         hidePrices={hidePrices}

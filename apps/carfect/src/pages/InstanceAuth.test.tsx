@@ -80,7 +80,7 @@ const renderWithRouter = (slug: string = 'test') => {
           <Route path="/admin" element={<div data-testid="admin-dashboard">Admin Dashboard</div>} />
         </Routes>
       </MemoryRouter>
-    </HelmetProvider>
+    </HelmetProvider>,
   );
 };
 
@@ -99,7 +99,7 @@ describe('InstanceAuth', () => {
     vi.clearAllMocks();
     mockNavigate.mockReset();
     mockSignIn.mockReset();
-    
+
     // Default: instance exists and is active
     (supabase.from as Mock).mockImplementation((table: string) => {
       if (table === 'instances') {
@@ -118,7 +118,7 @@ describe('InstanceAuth', () => {
   describe('Form Validation', () => {
     it('LA-U-001: shows both errors when username and password are empty', async () => {
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /zaloguj/i })).toBeInTheDocument();
       });
@@ -133,7 +133,7 @@ describe('InstanceAuth', () => {
 
     it('LA-U-002: shows only username error when password is filled', async () => {
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/hasło/i)).toBeInTheDocument();
       });
@@ -149,7 +149,7 @@ describe('InstanceAuth', () => {
 
     it('LA-U-003: shows only password error when username is filled', async () => {
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -165,7 +165,7 @@ describe('InstanceAuth', () => {
 
     it('LA-U-004: treats whitespace-only username as empty', async () => {
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -185,9 +185,9 @@ describe('InstanceAuth', () => {
           return createQueryMock({ data: defaultInstance, error: null });
         }
         if (table === 'profiles') {
-          return createQueryMock({ 
-            data: { id: 'user-1', email: 'test@test.com', is_blocked: false }, 
-            error: null 
+          return createQueryMock({
+            data: { id: 'user-1', email: 'test@test.com', is_blocked: false },
+            error: null,
           });
         }
         return createQueryMock({ data: null, error: null });
@@ -195,7 +195,7 @@ describe('InstanceAuth', () => {
       mockSignIn.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -215,14 +215,14 @@ describe('InstanceAuth', () => {
 
     it('LA-U-006: clears field error when user starts typing', async () => {
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /zaloguj/i })).toBeInTheDocument();
       });
 
       // Trigger validation errors
       fireEvent.click(screen.getByRole('button', { name: /zaloguj/i }));
-      
+
       await waitFor(() => {
         expect(screen.getByText('Login jest wymagany')).toBeInTheDocument();
       });
@@ -252,7 +252,7 @@ describe('InstanceAuth', () => {
       });
 
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -272,16 +272,16 @@ describe('InstanceAuth', () => {
           return createQueryMock({ data: defaultInstance, error: null });
         }
         if (table === 'profiles') {
-          return createQueryMock({ 
-            data: { id: 'user-1', email: 'blocked@test.com', is_blocked: true }, 
-            error: null 
+          return createQueryMock({
+            data: { id: 'user-1', email: 'blocked@test.com', is_blocked: true },
+            error: null,
           });
         }
         return createQueryMock({ data: null, error: null });
       });
 
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -301,9 +301,9 @@ describe('InstanceAuth', () => {
           return createQueryMock({ data: defaultInstance, error: null });
         }
         if (table === 'profiles') {
-          return createQueryMock({ 
-            data: { id: 'user-1', email: 'test@test.com', is_blocked: false }, 
-            error: null 
+          return createQueryMock({
+            data: { id: 'user-1', email: 'test@test.com', is_blocked: false },
+            error: null,
           });
         }
         return createQueryMock({ data: null, error: null });
@@ -311,7 +311,7 @@ describe('InstanceAuth', () => {
       mockSignIn.mockResolvedValue({ error: { message: 'Invalid login credentials' } });
 
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -334,7 +334,7 @@ describe('InstanceAuth', () => {
       });
 
       renderWithRouter('nonexistent-slug');
-      
+
       await waitFor(() => {
         expect(screen.getByText('Nie znaleziono instancji')).toBeInTheDocument();
       });
@@ -343,16 +343,16 @@ describe('InstanceAuth', () => {
     it('LA-U-012: shows error when instance is inactive', async () => {
       (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'instances') {
-          return createQueryMock({ 
-            data: { ...defaultInstance, active: false }, 
-            error: null 
+          return createQueryMock({
+            data: { ...defaultInstance, active: false },
+            error: null,
           });
         }
         return createQueryMock({ data: null, error: null });
       });
 
       renderWithRouter('inactive');
-      
+
       await waitFor(() => {
         expect(screen.getByText('Ta instancja jest nieaktywna')).toBeInTheDocument();
       });
@@ -365,7 +365,7 @@ describe('InstanceAuth', () => {
   describe('UI/UX', () => {
     it('LA-U-013: toggles password visibility', async () => {
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/hasło/i)).toBeInTheDocument();
       });
@@ -376,7 +376,7 @@ describe('InstanceAuth', () => {
       // Find and click the toggle button (eye icon)
       const toggleButton = passwordInput.parentElement?.querySelector('button');
       expect(toggleButton).toBeInTheDocument();
-      
+
       fireEvent.click(toggleButton!);
       expect(passwordInput).toHaveAttribute('type', 'text');
 
@@ -398,7 +398,7 @@ describe('InstanceAuth', () => {
               <Route path="/:slug/login" element={<InstanceAuth />} />
             </Routes>
           </MemoryRouter>
-        </HelmetProvider>
+        </HelmetProvider>,
       );
 
       // Should show loading state
@@ -414,11 +414,54 @@ describe('InstanceAuth', () => {
       });
 
       renderWithRouter('unknown-slug');
-      
+
       await waitFor(() => {
         expect(screen.getByText('Nie znaleziono instancji')).toBeInTheDocument();
         expect(screen.getByText('Sprawdź czy adres URL jest poprawny')).toBeInTheDocument();
       });
+    });
+  });
+
+  // ============================================
+  // LOGIN REDIRECT (LA-U-020)
+  // ============================================
+  describe('Login Redirect', () => {
+    it('LA-U-020: does not navigate eagerly after successful login — waits for roles', async () => {
+      // Regression: handleSubmit used to call navigate('/dashboard') immediately
+      // after signIn, before roles were loaded. This caused a blank /dashboard page
+      // because RoleBasedRedirect rendered with loading=true.
+      (supabase.from as Mock).mockImplementation((table: string) => {
+        if (table === 'instances') {
+          return createQueryMock({ data: defaultInstance, error: null });
+        }
+        if (table === 'profiles') {
+          return createQueryMock({
+            data: { id: 'user-1', email: 'admin@test.com', is_blocked: false },
+            error: null,
+          });
+        }
+        return createQueryMock({ data: null, error: null });
+      });
+      mockSignIn.mockResolvedValue({ error: null });
+
+      renderWithRouter();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
+      });
+
+      fireEvent.change(screen.getByLabelText(/login/i), { target: { value: 'admin' } });
+      fireEvent.change(screen.getByLabelText(/hasło/i), { target: { value: 'admin123' } });
+      fireEvent.click(screen.getByRole('button', { name: /zaloguj/i }));
+
+      // Wait for signIn to be called
+      await waitFor(() => {
+        expect(mockSignIn).toHaveBeenCalledWith('admin@test.com', 'admin123');
+      });
+
+      // The key assertion: handleSubmit must NOT call navigate after successful login.
+      // The redirect is handled by the useEffect that waits for roles to load.
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
 
@@ -429,7 +472,7 @@ describe('InstanceAuth', () => {
     it('LA-U-017: decorative right panel is visible on desktop (lg:flex)', async () => {
       setViewport('desktop');
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -443,7 +486,7 @@ describe('InstanceAuth', () => {
     it('LA-U-018: decorative right panel is hidden on mobile', async () => {
       setViewport('mobile');
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });
@@ -459,7 +502,7 @@ describe('InstanceAuth', () => {
     it('LA-U-019: login form takes full width on mobile', async () => {
       setViewport('mobile');
       renderWithRouter();
-      
+
       await waitFor(() => {
         expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
       });

@@ -3,7 +3,6 @@
   "outputDirectory": "dist",
   "installCommand": "cd ../.. && pnpm install",
   "framework": "vite",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ../../libs/ .",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

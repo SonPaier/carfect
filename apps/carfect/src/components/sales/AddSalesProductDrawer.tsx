@@ -1,24 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, Plus } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,7 +38,13 @@ interface AddSalesProductDrawerProps {
   product?: SalesProductData | null;
 }
 
-const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, product }: AddSalesProductDrawerProps) => {
+const AddSalesProductDrawer = ({
+  open,
+  onOpenChange,
+  instanceId,
+  onSaved,
+  product,
+}: AddSalesProductDrawerProps) => {
   const isEdit = !!product;
   const [fullName, setFullName] = useState('');
   const [shortName, setShortName] = useState('');
@@ -99,18 +93,21 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       setExcludeFromDiscount(product.excludeFromDiscount || false);
       setHasVariants(product.hasVariants || false);
       if (product.hasVariants && product.id) {
-        (supabase
-          .from('sales_product_variants')
-          .select('id, name, sort_order')
-          .eq('product_id', product.id)
-          .order('sort_order') as any)
-          .then(({ data }: any) => {
-            setVariants((data || []).map((v: any) => ({
+        (
+          supabase
+            .from('sales_product_variants')
+            .select('id, name, sort_order')
+            .eq('product_id', product.id)
+            .order('sort_order') as any
+        ).then(({ data }: any) => {
+          setVariants(
+            (data || []).map((v: any) => ({
               id: v.id,
               name: v.name,
               sortOrder: v.sort_order,
-            })));
-          });
+            })),
+          );
+        });
       } else {
         setVariants([]);
       }
@@ -124,15 +121,15 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
   };
 
   const addVariant = () => {
-    setVariants(prev => [...prev, { name: '', sortOrder: prev.length }]);
+    setVariants((prev) => [...prev, { name: '', sortOrder: prev.length }]);
   };
 
   const removeVariant = (index: number) => {
-    setVariants(prev => prev.filter((_, i) => i !== index));
+    setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateVariantName = (index: number, value: string) => {
-    setVariants(prev => prev.map((v, i) => i === index ? { ...v, name: value } : v));
+    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, name: value } : v)));
   };
 
   const handleSubmit = async () => {
@@ -144,7 +141,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       toast.error('Dodaj przynajmniej jeden wariant');
       return;
     }
-    if (hasVariants && variants.some(v => !v.name.trim())) {
+    if (hasVariants && variants.some((v) => !v.name.trim())) {
       toast.error('Uzupełnij nazwy wariantów');
       return;
     }
@@ -181,10 +178,7 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
       }
 
       // Handle variants
-      await (supabase
-        .from('sales_product_variants')
-        .delete()
-        .eq('product_id', productId) as any);
+      await (supabase.from('sales_product_variants').delete().eq('product_id', productId) as any);
 
       if (hasVariants && variants.length > 0) {
         const variantPayload = variants.map((v, idx) => ({
@@ -348,7 +342,10 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
               <div className="space-y-3">
                 <Label>Warianty</Label>
                 {variants.map((variant, index) => (
-                  <div key={index} className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20">
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20"
+                  >
                     <Input
                       placeholder="Nazwa wariantu"
                       value={variant.name}
@@ -385,7 +382,16 @@ const AddSalesProductDrawer = ({ open, onOpenChange, instanceId, onSaved, produc
               Anuluj
             </Button>
             <Button className="flex-1" onClick={handleSubmit} disabled={saving}>
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Zapisuję...</> : isEdit ? 'Zapisz zmiany' : 'Dodaj produkt'}
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Zapisuję...
+                </>
+              ) : isEdit ? (
+                'Zapisz zmiany'
+              ) : (
+                'Dodaj produkt'
+              )}
             </Button>
           </div>
         </SheetFooter>

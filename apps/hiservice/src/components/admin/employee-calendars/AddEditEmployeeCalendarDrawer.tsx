@@ -4,19 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { EmployeeCalendarConfig } from './EmployeeCalendarCard';
@@ -26,10 +15,10 @@ interface CalendarColumn {
   name: string;
 }
 
-interface EmployeeUser {
-  user_id: string;
-  full_name: string | null;
-  email: string | null;
+interface EmployeeOption {
+  employee_id: string;
+  user_id: string | null;
+  name: string;
 }
 
 interface AddEditEmployeeCalendarDrawerProps {
@@ -86,11 +75,11 @@ const AddEditEmployeeCalendarDrawer = ({
   const [loading, setLoading] = useState(false);
   const [columns, setColumns] = useState<CalendarColumn[]>([]);
   const [columnsLoading, setColumnsLoading] = useState(true);
-  const [employeeUsers, setEmployeeUsers] = useState<EmployeeUser[]>([]);
-  const [employeeUsersLoading, setEmployeeUsersLoading] = useState(true);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(true);
 
   const [name, setName] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [selectedColumnIds, setSelectedColumnIds] = useState<string[]>([]);
   const [visibleFields, setVisibleFields] = useState(defaultVisibleFields);
   const [allowedActions, setAllowedActions] = useState(defaultAllowedActions);
@@ -112,66 +101,69 @@ const AddEditEmployeeCalendarDrawer = ({
       setColumnsLoading(false);
     };
 
-    const fetchEmployeeUsers = async () => {
-      setEmployeeUsersLoading(true);
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('user_id')
+    const fetchEmployees = async () => {
+      setEmployeesLoading(true);
+      const { data: emps } = await supabase
+        .from('employees')
+        .select('id, name, linked_user_id')
         .eq('instance_id', instanceId)
-        .eq('role', 'employee');
+        .eq('active', true)
+        .order('name');
 
-      if (roles && roles.length > 0) {
-        const userIds = roles.map(r => r.user_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
-
-        if (profiles) {
-          setEmployeeUsers(profiles.map(p => ({
-            user_id: p.id,
-            full_name: p.full_name,
-            email: p.email,
-          })));
-        }
+      if (emps && emps.length > 0) {
+        setEmployees(
+          emps.map((e: any) => ({
+            employee_id: e.id,
+            user_id: e.linked_user_id,
+            name: e.name,
+          })),
+        );
       } else {
-        setEmployeeUsers([]);
+        setEmployees([]);
       }
-      setEmployeeUsersLoading(false);
+      setEmployeesLoading(false);
     };
 
     fetchColumns();
-    fetchEmployeeUsers();
+    fetchEmployees();
   }, [open, instanceId]);
 
+  // Reset form when drawer opens or config changes
   useEffect(() => {
+    if (!open) return;
     if (config) {
       setName(config.name);
-      setSelectedUserId(config.user_id);
       setSelectedColumnIds(config.column_ids || []);
       setVisibleFields({ ...defaultVisibleFields, ...(config.visible_fields || {}) });
       setAllowedActions({ ...defaultAllowedActions, ...(config.allowed_actions || {}) });
     } else {
       setName('');
-      setSelectedUserId('');
+      setSelectedEmployeeId('');
       setSelectedColumnIds([]);
       setVisibleFields(defaultVisibleFields);
       setAllowedActions(defaultAllowedActions);
     }
   }, [config, open]);
 
+  // Resolve employee selection when editing (needs employees to be loaded)
+  useEffect(() => {
+    if (!open || !config || employees.length === 0) return;
+    const matchingEmployee = employees.find((e) => e.user_id === config.user_id);
+    setSelectedEmployeeId(matchingEmployee?.employee_id || '');
+  }, [open, config, employees]);
+
   const handleColumnToggle = (columnId: string) => {
-    setSelectedColumnIds(prev =>
-      prev.includes(columnId) ? prev.filter(id => id !== columnId) : [...prev, columnId]
+    setSelectedColumnIds((prev) =>
+      prev.includes(columnId) ? prev.filter((id) => id !== columnId) : [...prev, columnId],
     );
   };
 
   const handleVisibleFieldToggle = (field: keyof typeof visibleFields) => {
-    setVisibleFields(prev => ({ ...prev, [field]: !prev[field] }));
+    setVisibleFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const handleAllowedActionToggle = (action: keyof typeof allowedActions) => {
-    setAllowedActions(prev => ({ ...prev, [action]: !prev[action] }));
+    setAllowedActions((prev) => ({ ...prev, [action]: !prev[action] }));
   };
 
   const handleSave = async () => {
@@ -179,8 +171,15 @@ const AddEditEmployeeCalendarDrawer = ({
       toast.error('Nazwa kalendarza jest wymagana');
       return;
     }
-    if (!selectedUserId) {
+    if (!selectedEmployeeId) {
       toast.error('Wybierz pracownika');
+      return;
+    }
+    const selectedEmployee = employees.find((e) => e.employee_id === selectedEmployeeId);
+    if (!selectedEmployee?.user_id) {
+      toast.error(
+        'Wybrany pracownik nie ma powiązanego konta użytkownika. Najpierw powiąż go w zakładce Pracownicy.',
+      );
       return;
     }
     if (selectedColumnIds.length === 0) {
@@ -192,7 +191,7 @@ const AddEditEmployeeCalendarDrawer = ({
     try {
       const configData = {
         instance_id: instanceId,
-        user_id: selectedUserId,
+        user_id: selectedEmployee.user_id,
         name: name.trim(),
         column_ids: selectedColumnIds,
         visible_fields: visibleFields,
@@ -226,132 +225,144 @@ const AddEditEmployeeCalendarDrawer = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[550px] sm:max-w-[550px] h-full overflow-y-auto z-[1000]" hideCloseButton onInteractOutside={(e) => e.preventDefault()}>
-        <SheetHeader className="border-b pb-4 mb-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle>
-              {isEditing ? 'Edytuj kalendarz' : 'Dodaj kalendarz'}
-            </SheetTitle>
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="p-2 rounded-full hover:bg-primary/5 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </SheetHeader>
+      <SheetContent
+        side="right"
+        className="w-full sm:w-[550px] sm:max-w-[550px] h-full p-0 flex flex-col z-[1000]"
+        hideCloseButton
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <div className="p-6 flex-1 overflow-y-auto">
+          <SheetHeader className="border-b pb-4 mb-6">
+            <div className="flex items-center justify-between">
+              <SheetTitle>{isEditing ? 'Edytuj kalendarz' : 'Dodaj kalendarz'}</SheetTitle>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </SheetHeader>
 
-        <div className="space-y-6">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="calendar-name">Nazwa kalendarza</Label>
-            <Input
-              id="calendar-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="np. Jan Kowalski"
-            />
-          </div>
+          <div className="space-y-6">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="calendar-name">Nazwa kalendarza</Label>
+              <Input
+                id="calendar-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="np. Jan Kowalski"
+                className="bg-white"
+              />
+            </div>
 
-          {/* Employee select */}
-          <div className="space-y-2">
-            <Label>Pracownik</Label>
-            {employeeUsersLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : employeeUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Brak pracowników z rolą employee</p>
-            ) : (
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Wybierz pracownika" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employeeUsers.map(eu => (
-                    <SelectItem key={eu.user_id} value={eu.user_id}>
-                      {eu.full_name || eu.email || eu.user_id}
-                    </SelectItem>
+            {/* Employee select */}
+            <div className="space-y-2">
+              <Label>Pracownik</Label>
+              {employeesLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : employees.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Brak aktywnych pracowników</p>
+              ) : (
+                <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz pracownika" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[1100] bg-white">
+                    {employees.map((e) => (
+                      <SelectItem key={e.employee_id} value={e.employee_id}>
+                        {e.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Columns */}
+            <div className="space-y-3">
+              <Label>Kolumny kalendarza</Label>
+              {columnsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : columns.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Brak kolumn kalendarza</p>
+              ) : (
+                <div className="space-y-2">
+                  {columns.map((col) => (
+                    <label
+                      key={col.id}
+                      className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-hover transition-colors"
+                    >
+                      <Checkbox
+                        checked={selectedColumnIds.includes(col.id)}
+                        onCheckedChange={() => handleColumnToggle(col.id)}
+                      />
+                      <span className="font-medium text-foreground">{col.name}</span>
+                    </label>
                   ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
 
-          {/* Columns */}
-          <div className="space-y-3">
-            <Label>Kolumny kalendarza</Label>
-            {columnsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : columns.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Brak kolumn kalendarza</p>
-            ) : (
+            {/* Visible Fields */}
+            <div className="space-y-3">
+              <Label>Widoczne pola</Label>
+              <p className="text-xs text-muted-foreground">
+                Które informacje pracownik widzi na zleceniu
+              </p>
               <div className="space-y-2">
-                {columns.map(col => (
+                {Object.entries(visibleFields).map(([key, value]) => (
                   <label
-                    key={col.id}
-                    className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-primary/5 transition-colors"
+                    key={key}
+                    className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-hover transition-colors"
                   >
                     <Checkbox
-                      checked={selectedColumnIds.includes(col.id)}
-                      onCheckedChange={() => handleColumnToggle(col.id)}
+                      checked={value}
+                      onCheckedChange={() =>
+                        handleVisibleFieldToggle(key as keyof typeof visibleFields)
+                      }
                     />
-                    <span className="font-medium">{col.name}</span>
+                    <span className="text-sm text-foreground">{FIELD_LABELS[key] || key}</span>
                   </label>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Visible Fields */}
-          <div className="space-y-3">
-            <Label>Widoczne pola</Label>
-            <p className="text-xs text-muted-foreground">Które informacje pracownik widzi na zleceniu</p>
-            <div className="space-y-2">
-              {Object.entries(visibleFields).map(([key, value]) => (
-                <label
-                  key={key}
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-primary/5 transition-colors"
-                >
-                  <Checkbox
-                    checked={value}
-                    onCheckedChange={() => handleVisibleFieldToggle(key as keyof typeof visibleFields)}
-                  />
-                  <span className="text-sm">{FIELD_LABELS[key] || key}</span>
-                </label>
-              ))}
             </div>
-          </div>
 
-          {/* Allowed Actions */}
-          <div className="space-y-3">
-            <Label>Dozwolone akcje</Label>
-            <p className="text-xs text-muted-foreground">Co pracownik może robić w kalendarzu</p>
-            <div className="space-y-2">
-              {Object.entries(allowedActions).map(([key, value]) => (
-                <label
-                  key={key}
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-primary/5 transition-colors"
-                >
-                  <Checkbox
-                    checked={value}
-                    onCheckedChange={() => handleAllowedActionToggle(key as keyof typeof allowedActions)}
-                  />
-                  <span className="text-sm">{ACTION_LABELS[key] || key}</span>
-                </label>
-              ))}
+            {/* Allowed Actions */}
+            <div className="space-y-3">
+              <Label>Dozwolone akcje</Label>
+              <p className="text-xs text-muted-foreground">Co pracownik może robić w kalendarzu</p>
+              <div className="space-y-2">
+                {Object.entries(allowedActions).map(([key, value]) => (
+                  <label
+                    key={key}
+                    className="flex items-center gap-3 p-3 bg-white border rounded-lg cursor-pointer hover:bg-hover transition-colors"
+                  >
+                    <Checkbox
+                      checked={value}
+                      onCheckedChange={() =>
+                        handleAllowedActionToggle(key as keyof typeof allowedActions)
+                      }
+                    />
+                    <span className="text-sm text-foreground">{ACTION_LABELS[key] || key}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Save */}
-          <div className="pt-4 border-t">
-            <Button onClick={handleSave} disabled={loading} className="w-full">
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isEditing ? 'Zapisz' : 'Utwórz kalendarz'}
-            </Button>
+            {/* Save */}
+            <div className="pt-4 border-t">
+              <Button onClick={handleSave} disabled={loading} className="w-full">
+                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {loading ? 'Zapisywanie...' : isEditing ? 'Zapisz' : 'Utwórz kalendarz'}
+              </Button>
+            </div>
           </div>
         </div>
       </SheetContent>

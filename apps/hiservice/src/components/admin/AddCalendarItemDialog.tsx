@@ -11,7 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from '@/hooks/useNotifications';
@@ -34,7 +40,6 @@ interface CalendarColumn {
   id: string;
   name: string;
 }
-
 
 export interface EditingCalendarItem {
   id: string;
@@ -133,7 +138,7 @@ const AddCalendarItemDialog = ({
   const WORK_DAY_MINUTES = 9 * 60;
   const handleDurationPreset = (preset: string) => {
     setDurationPreset(preset);
-    const fractions: Record<string, number> = { full: 1, half: 0.5, third: 1/3, quarter: 0.25 };
+    const fractions: Record<string, number> = { full: 1, half: 0.5, third: 1 / 3, quarter: 0.25 };
     const fraction = fractions[preset];
     if (!fraction) return;
     const minutes = Math.round(WORK_DAY_MINUTES * fraction);
@@ -142,13 +147,13 @@ const AddCalendarItemDialog = ({
     const endH = Math.floor(endMin / 60);
     const endM = endMin % 60;
     const newEnd = `${String(Math.min(endH, 23)).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-    const closestOption = TIME_OPTIONS.find(t => t >= newEnd) || TIME_OPTIONS[TIME_OPTIONS.length - 1];
+    const closestOption =
+      TIME_OPTIONS.find((t) => t >= newEnd) || TIME_OPTIONS[TIME_OPTIONS.length - 1];
     setEndTime(closestOption);
   };
   const [adminNotes, setAdminNotes] = useState('');
   const [price, setPrice] = useState('');
   const [priority, setPriority] = useState<number>(DEFAULT_PRIORITY);
-
 
   // Service selection state
   const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
@@ -165,13 +170,19 @@ const AddCalendarItemDialog = ({
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [addCustomerPrefilledName, setAddCustomerPrefilledName] = useState('');
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [availableProjects, setAvailableProjects] = useState<{ id: string; title: string; customer_id: string | null; customer_address_id: string | null }[]>([]);
+  const [availableProjects, setAvailableProjects] = useState<
+    { id: string; title: string; customer_id: string | null; customer_address_id: string | null }[]
+  >([]);
 
   // SMS notification state
   const [sendImmediateSms, setSendImmediateSms] = useState(false);
   const [immediateSmsTemplate, setImmediateSmsTemplate] = useState<string | null>(null);
   const [immediateSmsTemplateId, setImmediateSmsTemplateId] = useState<string | null>(null);
-  const [existingSmsNotification, setExistingSmsNotification] = useState<{ id: string; status: string; sent_at: string | null } | null>(null);
+  const [existingSmsNotification, setExistingSmsNotification] = useState<{
+    id: string;
+    status: string;
+    sent_at: string | null;
+  } | null>(null);
   const [instanceShortName, setInstanceShortName] = useState('');
 
   // Fetch instance short_name
@@ -189,8 +200,16 @@ const AddCalendarItemDialog = ({
 
   // Fetch available projects
   useEffect(() => {
-    if (!open || !instanceId || !projectsEnabled) { setAvailableProjects([]); return; }
-    supabase.from('projects' as any).select('id, title, customer_id, customer_address_id').eq('instance_id', instanceId).in('status', ['not_started', 'in_progress', 'completed']).order('created_at', { ascending: false })
+    if (!open || !instanceId || !projectsEnabled) {
+      setAvailableProjects([]);
+      return;
+    }
+    supabase
+      .from('projects' as any)
+      .select('id, title, customer_id, customer_address_id')
+      .eq('instance_id', instanceId)
+      .in('status', ['not_started', 'in_progress', 'completed'])
+      .order('created_at', { ascending: false })
       .then(({ data }: any) => setAvailableProjects(data || []));
   }, [open, instanceId, projectsEnabled]);
 
@@ -256,24 +275,28 @@ const AddCalendarItemDialog = ({
           const svcIds = savedServices.map((s: any) => s.service_id);
           const { data: svcData } = await supabase
             .from('unified_services')
-            .select('id, name, short_name, price, duration_minutes, category_id, notification_template_id, unit')
+            .select(
+              'id, name, short_name, price, duration_minutes, category_id, notification_template_id, unit',
+            )
             .in('id', svcIds);
 
           if (svcData) {
             setAllServices(svcData as ServiceWithCategory[]);
             setSelectedServiceIds(svcIds);
-            setServiceItems(savedServices.map((ss: any) => {
-              const svc = svcData.find((s: any) => s.id === ss.service_id);
-              return {
-                service_id: ss.service_id,
-                custom_price: ss.custom_price,
-                quantity: ss.quantity ?? 1,
-                name: svc?.name,
-                short_name: svc?.short_name,
-                price: svc?.price,
-                unit: svc?.unit || 'szt.',
-              };
-            }));
+            setServiceItems(
+              savedServices.map((ss: any) => {
+                const svc = svcData.find((s: any) => s.id === ss.service_id);
+                return {
+                  service_id: ss.service_id,
+                  custom_price: ss.custom_price,
+                  quantity: ss.quantity ?? 1,
+                  name: svc?.name,
+                  short_name: svc?.short_name,
+                  price: svc?.price,
+                  unit: svc?.unit || 'szt.',
+                };
+              }),
+            );
           }
         } else {
           setSelectedServiceIds([]);
@@ -300,7 +323,8 @@ const AddCalendarItemDialog = ({
       const [sh, sm] = initStart.split(':').map(Number);
       const halfDayEnd = sh * 60 + sm + Math.round(WORK_DAY_MINUTES * 0.5);
       const halfEndStr = `${String(Math.floor(halfDayEnd / 60)).padStart(2, '0')}:${String(halfDayEnd % 60).padStart(2, '0')}`;
-      const halfClosest = TIME_OPTIONS.find(t => t >= halfEndStr) || TIME_OPTIONS[TIME_OPTIONS.length - 1];
+      const halfClosest =
+        TIME_OPTIONS.find((t) => t >= halfEndStr) || TIME_OPTIONS[TIME_OPTIONS.length - 1];
       setEndTime(halfClosest);
       setAdminNotes('');
       setPrice('');
@@ -323,10 +347,14 @@ const AddCalendarItemDialog = ({
               setCustomerAddressId(proj.customer_address_id);
             }
             if (proj.customer_id) {
-              const { data: cust } = await supabase.from('customers').select('id, name, phone, email').eq('id', proj.customer_id).single();
+              const { data: cust } = await supabase
+                .from('customers')
+                .select('id, name, phone, email')
+                .eq('id', proj.customer_id)
+                .single();
               if (cust) {
                 setCustomerId(cust.id);
-                setCustomerName(cust.name);
+                setCustomerName(cust.name || '');
                 setCustomerPhone(cust.phone || '');
                 setCustomerEmail(cust.email || '');
               }
@@ -343,28 +371,34 @@ const AddCalendarItemDialog = ({
         const loadInitialServices = async () => {
           const { data: svcData } = await supabase
             .from('unified_services')
-            .select('id, name, short_name, price, duration_minutes, category_id, notification_template_id, unit')
+            .select(
+              'id, name, short_name, price, duration_minutes, category_id, notification_template_id, unit',
+            )
             .in('id', initialServiceIds);
           if (svcData && svcData.length > 0) {
             setAllServices(svcData as ServiceWithCategory[]);
             setSelectedServiceIds(initialServiceIds);
-            setServiceItems(initialServiceIds.map(id => {
-              const svc = svcData.find(s => s.id === id);
-              return {
-                service_id: id,
-                custom_price: null,
-                quantity: 1,
-                name: svc?.name,
-                short_name: svc?.short_name,
-                price: svc?.price,
-                unit: (svc as any)?.unit || 'szt.',
-              };
-            }));
+            setServiceItems(
+              initialServiceIds.map((id) => {
+                const svc = svcData.find((s) => s.id === id);
+                return {
+                  service_id: id,
+                  custom_price: null,
+                  quantity: 1,
+                  name: svc?.name,
+                  short_name: svc?.short_name,
+                  price: svc?.price,
+                  unit: (svc as any)?.unit || 'szt.',
+                };
+              }),
+            );
             // Auto-generate title
-            const names = initialServiceIds.map(id => {
-              const s = svcData.find(sv => sv.id === id);
-              return s?.short_name || s?.name || '';
-            }).filter(Boolean);
+            const names = initialServiceIds
+              .map((id) => {
+                const s = svcData.find((sv) => sv.id === id);
+                return s?.short_name || s?.name || '';
+              })
+              .filter(Boolean);
             if (names.length > 0) {
               setTitle(names.join(', '));
             }
@@ -380,19 +414,39 @@ const AddCalendarItemDialog = ({
     setSendImmediateSms(false);
     setImmediateSmsTemplate(null);
     setImmediateSmsTemplateId(null);
-  }, [open, isEditMode, editingItem, initialDate, initialTime, initialColumnId, columns, initialCustomerId, initialCustomerName, initialCustomerPhone, initialCustomerEmail, initialCustomerAddressId, initialServiceIds, initialProjectId, availableProjects]);
+  }, [
+    open,
+    isEditMode,
+    editingItem,
+    initialDate,
+    initialTime,
+    initialColumnId,
+    columns,
+    initialCustomerId,
+    initialCustomerName,
+    initialCustomerPhone,
+    initialCustomerEmail,
+    initialCustomerAddressId,
+    initialServiceIds,
+    initialProjectId,
+    availableProjects,
+  ]);
 
   const handleSelectProject = async (selectedProjectId: string | null) => {
     setProjectId(selectedProjectId);
     if (!selectedProjectId) return;
-    const proj = availableProjects.find(p => p.id === selectedProjectId);
+    const proj = availableProjects.find((p) => p.id === selectedProjectId);
     if (!proj) return;
     if (proj.customer_id) {
-      const { data } = await supabase.from('customers').select('id, name, phone, email').eq('id', proj.customer_id).single();
+      const { data } = await supabase
+        .from('customers')
+        .select('id, name, phone, email')
+        .eq('id', proj.customer_id)
+        .single();
       if (data) {
         setCustomerId(data.id);
-        setCustomerName(data.name);
-        setCustomerPhone(data.phone);
+        setCustomerName(data.name || '');
+        setCustomerPhone(data.phone || '');
         setCustomerEmail(data.email || '');
       }
     }
@@ -403,8 +457,8 @@ const AddCalendarItemDialog = ({
 
   const handleSelectCustomer = (customer: SelectedCustomer) => {
     setCustomerId(customer.id);
-    setCustomerName(customer.name);
-    setCustomerPhone(customer.phone);
+    setCustomerName(customer.name || '');
+    setCustomerPhone(customer.phone || '');
     setCustomerEmail(customer.email || '');
   };
 
@@ -433,20 +487,24 @@ const AddCalendarItemDialog = ({
   };
 
   // Handle service selection confirmed
-  const handleServicesConfirmed = (serviceIds: string[], totalDuration: number, services: ServiceWithCategory[]) => {
+  const handleServicesConfirmed = (
+    serviceIds: string[],
+    totalDuration: number,
+    services: ServiceWithCategory[],
+  ) => {
     setSelectedServiceIds(serviceIds);
-    setAllServices(prev => {
-      const map = new Map(prev.map(s => [s.id, s]));
-      services.forEach(s => map.set(s.id, s));
+    setAllServices((prev) => {
+      const map = new Map(prev.map((s) => [s.id, s]));
+      services.forEach((s) => map.set(s.id, s));
       return Array.from(map.values());
     });
 
     // Create service items for new services
-    setServiceItems(prev => {
-      const existing = new Map(prev.map(si => [si.service_id, si]));
-      return serviceIds.map(id => {
+    setServiceItems((prev) => {
+      const existing = new Map(prev.map((si) => [si.service_id, si]));
+      return serviceIds.map((id) => {
         if (existing.has(id)) return existing.get(id)!;
-        const svc = services.find(s => s.id === id);
+        const svc = services.find((s) => s.id === id);
         return {
           service_id: id,
           custom_price: null,
@@ -461,23 +519,24 @@ const AddCalendarItemDialog = ({
 
     // Auto-generate title from selected services
     if (services.length > 0) {
-      const names = serviceIds.map(id => {
-        const s = services.find(sv => sv.id === id);
-        return s?.short_name || s?.name || '';
-      }).filter(Boolean);
+      const names = serviceIds
+        .map((id) => {
+          const s = services.find((sv) => sv.id === id);
+          return s?.short_name || s?.name || '';
+        })
+        .filter(Boolean);
       if (names.length > 0 && !title.trim()) {
         setTitle(names.join(', '));
       }
     }
 
-
     // Check for immediate SMS templates
     const fetchImmediateTemplates = async () => {
       const templateIds = services
-        .filter(s => serviceIds.includes(s.id) && (s as any).notification_template_id)
-        .map(s => (s as any).notification_template_id)
+        .filter((s) => serviceIds.includes(s.id) && (s as any).notification_template_id)
+        .map((s) => (s as any).notification_template_id)
         .filter(Boolean);
-      
+
       if (templateIds.length === 0) {
         setImmediateSmsTemplate(null);
         setImmediateSmsTemplateId(null);
@@ -486,8 +545,7 @@ const AddCalendarItemDialog = ({
       }
 
       const uniqueIds = [...new Set(templateIds)];
-      const { data: templates } = await (supabase
-        .from('sms_notification_templates') as any)
+      const { data: templates } = await (supabase.from('sms_notification_templates') as any)
         .select('id, sms_template, items')
         .in('id', uniqueIds);
 
@@ -512,20 +570,20 @@ const AddCalendarItemDialog = ({
   };
 
   const handleRemoveService = (serviceId: string) => {
-    setSelectedServiceIds(prev => prev.filter(id => id !== serviceId));
-    setServiceItems(prev => prev.filter(si => si.service_id !== serviceId));
+    setSelectedServiceIds((prev) => prev.filter((id) => id !== serviceId));
+    setServiceItems((prev) => prev.filter((si) => si.service_id !== serviceId));
   };
 
   const handlePriceChange = (serviceId: string, newPrice: number | null) => {
-    setServiceItems(prev => prev.map(si =>
-      si.service_id === serviceId ? { ...si, custom_price: newPrice } : si
-    ));
+    setServiceItems((prev) =>
+      prev.map((si) => (si.service_id === serviceId ? { ...si, custom_price: newPrice } : si)),
+    );
   };
 
   const handleQuantityChange = (serviceId: string, qty: number) => {
-    setServiceItems(prev => prev.map(si =>
-      si.service_id === serviceId ? { ...si, quantity: qty } : si
-    ));
+    setServiceItems((prev) =>
+      prev.map((si) => (si.service_id === serviceId ? { ...si, quantity: qty } : si)),
+    );
   };
 
   const handleTotalPriceChange = (newTotal: number) => {
@@ -534,11 +592,14 @@ const AddCalendarItemDialog = ({
 
   const createAndSendSms = async (calendarItemId: string) => {
     try {
-      const serviceType = allServices.find(s => (s as any).notification_template_id === immediateSmsTemplateId)?.name || 'serwis';
-      
+      const serviceType =
+        allServices.find((s) => (s as any).notification_template_id === immediateSmsTemplateId)
+          ?.name || 'serwis';
+
       // Create notification record
-      const { data: notif, error: notifError } = await (supabase
-        .from('customer_sms_notifications') as any)
+      const { data: notif, error: notifError } = await (
+        supabase.from('customer_sms_notifications') as any
+      )
         .insert({
           instance_id: instanceId,
           notification_template_id: immediateSmsTemplateId,
@@ -559,14 +620,14 @@ const AddCalendarItemDialog = ({
       }
 
       // Call edge function
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
+      const projectId = import.meta.env.VITE_HISERVICE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_HISERVICE_SUPABASE_PUBLISHABLE_KEY;
+
       fetch(`https://${projectId}.supabase.co/functions/v1/send-sms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': anonKey,
+          apikey: anonKey,
         },
         body: JSON.stringify({
           phone: customerPhone.trim(),
@@ -574,7 +635,7 @@ const AddCalendarItemDialog = ({
           instanceId: instanceId,
           notificationId: notif?.id,
         }),
-      }).catch(err => console.error('Error calling send-sms:', err));
+      }).catch((err) => console.error('Error calling send-sms:', err));
     } catch (err) {
       console.error('Error in createAndSendSms:', err);
     }
@@ -595,12 +656,14 @@ const AddCalendarItemDialog = ({
     }
 
     const hasDate = !!dateRange?.from;
-    // If dates are provided, validate them
+    // Require column when columns exist, unless it's a project item without date
+    const isProjectWithoutDate = !!projectId && !hasDate;
+    if (!columnId && columns.length > 0 && !isProjectWithoutDate) {
+      toast.error('Wybierz stanowisko');
+      return;
+    }
+    // If dates are provided, validate times
     if (hasDate) {
-      if (!columnId) {
-        toast.error('Wybierz kolumnę');
-        return;
-      }
       if (startTime >= endTime) {
         toast.error('Godzina końca musi być późniejsza niż początku');
         return;
@@ -650,12 +713,6 @@ const AddCalendarItemDialog = ({
           .update(data)
           .eq('id', calendarItemId);
         if (error) throw error;
-
-        // Send immediate SMS in edit mode if checkbox checked and no existing notification
-        if (sendImmediateSms && immediateSmsTemplateId && customerPhone.trim() && !existingSmsNotification) {
-          await createAndSendSms(calendarItemId);
-        }
-
         toast.success('Zlecenie zaktualizowane');
       } else {
         const { data: inserted, error } = await supabase
@@ -665,64 +722,72 @@ const AddCalendarItemDialog = ({
           .single();
         if (error) throw error;
         calendarItemId = inserted!.id;
-
-        // Send immediate SMS if checkbox checked
-        if (sendImmediateSms && immediateSmsTemplateId && customerPhone.trim() && inserted) {
-          await createAndSendSms(calendarItemId);
-        }
-
         toast.success('Zlecenie dodane');
       }
 
-      // Save services to calendar_item_services
-      // Delete existing services first
-      await supabase
-        .from('calendar_item_services' as any)
-        .delete()
-        .eq('calendar_item_id', calendarItemId);
-
-      // Insert new services
-      if (selectedServiceIds.length > 0) {
-        const serviceRows = selectedServiceIds.map(svcId => {
-          const si = serviceItems.find(s => s.service_id === svcId);
-          return {
-            calendar_item_id: calendarItemId,
-            service_id: svcId,
-            custom_price: si?.custom_price ?? null,
-            quantity: si?.quantity ?? 1,
-            instance_id: instanceId,
-          };
-        });
-        await supabase
-          .from('calendar_item_services' as any)
-          .insert(serviceRows);
-      }
-
-      // Notify assigned employees about new/updated assignment
-      if (activitiesEnabled && assignedEmployeeIds.length > 0 && hasDate) {
-        const { data: emps } = await supabase
-          .from('employees')
-          .select('linked_user_id')
-          .in('id', assignedEmployeeIds)
-          .not('linked_user_id', 'is', null);
-        const itemTitle = finalTitle || customerName.trim() || 'Zlecenie';
-        const itemDate = format(dateRange!.from!, 'dd.MM.yyyy');
-        for (const emp of emps || []) {
-          if (emp.linked_user_id) {
-            await createNotification({
-              instanceId,
-              userId: emp.linked_user_id,
-              type: isEditMode ? 'item_rescheduled' : 'item_assigned',
-              title: itemTitle,
-              description: `${itemDate}, ${startTime}–${endTime}`,
-              calendarItemId,
-            });
-          }
-        }
-      }
-
+      // Signal success immediately so the list refreshes —
+      // secondary operations (SMS, services, notifications) must not block this.
       onSuccess();
       onClose();
+
+      // Secondary operations: send SMS, save services, notify employees.
+      // Errors here are logged but don't block the user.
+      try {
+        // Send immediate SMS
+        if (sendImmediateSms && immediateSmsTemplateId && customerPhone.trim()) {
+          const shouldSendSms = isEditMode ? !existingSmsNotification : true;
+          if (shouldSendSms) {
+            await createAndSendSms(calendarItemId);
+          }
+        }
+
+        // Save services to calendar_item_services
+        // Delete existing services first
+        await supabase
+          .from('calendar_item_services' as any)
+          .delete()
+          .eq('calendar_item_id', calendarItemId);
+
+        // Insert new services
+        if (selectedServiceIds.length > 0) {
+          const serviceRows = selectedServiceIds.map((svcId) => {
+            const si = serviceItems.find((s) => s.service_id === svcId);
+            return {
+              calendar_item_id: calendarItemId,
+              service_id: svcId,
+              custom_price: si?.custom_price ?? null,
+              quantity: si?.quantity ?? 1,
+              instance_id: instanceId,
+            };
+          });
+          await supabase.from('calendar_item_services' as any).insert(serviceRows);
+        }
+
+        // Notify assigned employees about new/updated assignment
+        if (activitiesEnabled && assignedEmployeeIds.length > 0 && hasDate) {
+          const { data: emps } = await supabase
+            .from('employees')
+            .select('linked_user_id')
+            .in('id', assignedEmployeeIds)
+            .not('linked_user_id', 'is', null);
+          const itemTitle = finalTitle || customerName.trim() || 'Zlecenie';
+          const itemDate = format(dateRange!.from!, 'dd.MM.yyyy');
+          for (const emp of emps || []) {
+            if (emp.linked_user_id) {
+              await createNotification({
+                instanceId,
+                userId: emp.linked_user_id,
+                type: isEditMode ? 'item_rescheduled' : 'item_assigned',
+                title: itemTitle,
+                description: `${itemDate}, ${startTime}–${endTime}`,
+                calendarItemId,
+              });
+            }
+          }
+        }
+      } catch (secondaryError) {
+        console.error('Error in secondary operations (services/notifications):', secondaryError);
+      }
     } catch (error: any) {
       console.error('Error saving calendar item:', error);
       toast.error('Błąd podczas zapisywania');
@@ -733,7 +798,12 @@ const AddCalendarItemDialog = ({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
+      >
         <SheetContent
           side="right"
           hideCloseButton
@@ -748,7 +818,10 @@ const AddCalendarItemDialog = ({
               <SheetTitle className="text-lg font-semibold">
                 {isEditMode ? 'Edytuj zlecenie' : 'Nowe zlecenie'}
               </SheetTitle>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-primary/5 transition-colors">
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-primary/5 transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -763,12 +836,19 @@ const AddCalendarItemDialog = ({
                   <FolderKanban className="w-3.5 h-3.5" />
                   Projekt
                 </Label>
-                <Select value={projectId || '_none'} onValueChange={(v) => handleSelectProject(v === '_none' ? null : v)}>
-                  <SelectTrigger className="bg-white"><SelectValue placeholder="Bez projektu" /></SelectTrigger>
+                <Select
+                  value={projectId || '_none'}
+                  onValueChange={(v) => handleSelectProject(v === '_none' ? null : v)}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Bez projektu" />
+                  </SelectTrigger>
                   <SelectContent className="z-[1200]">
                     <SelectItem value="_none">Bez projektu</SelectItem>
-                    {availableProjects.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+                    {availableProjects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.title}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -780,10 +860,14 @@ const AddCalendarItemDialog = ({
               <div className="space-y-2">
                 <Label>Typ</Label>
                 <Select value={columnId} onValueChange={setColumnId}>
-                  <SelectTrigger className="bg-white"><SelectValue placeholder="Wybierz typ" /></SelectTrigger>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Wybierz typ" />
+                  </SelectTrigger>
                   <SelectContent className="z-[1200]">
-                    {columns.map(col => (
-                      <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>
+                    {columns.map((col) => (
+                      <SelectItem key={col.id} value={col.id}>
+                        {col.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -792,7 +876,11 @@ const AddCalendarItemDialog = ({
 
             <div className="space-y-2">
               <Label>Tytuł zlecenia</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} className="bg-white" />
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="bg-white"
+              />
             </div>
 
             {/* Customer Search */}
@@ -800,11 +888,24 @@ const AddCalendarItemDialog = ({
               <Label>Klient</Label>
               <CustomerSearchInput
                 instanceId={instanceId}
-                selectedCustomer={customerId ? { id: customerId, name: customerName, phone: customerPhone, email: customerEmail || null, company: null } : null}
+                selectedCustomer={
+                  customerId
+                    ? {
+                        id: customerId,
+                        name: customerName,
+                        phone: customerPhone,
+                        email: customerEmail || null,
+                        company: null,
+                      }
+                    : null
+                }
                 onSelect={handleSelectCustomer}
                 onClear={handleClearCustomer}
                 onCustomerClick={handleCustomerClick}
-                onAddNew={(q) => { setAddCustomerPrefilledName(q); setAddCustomerOpen(true); }}
+                onAddNew={(q) => {
+                  setAddCustomerPrefilledName(q);
+                  setAddCustomerOpen(true);
+                }}
               />
             </div>
 
@@ -816,8 +917,8 @@ const AddCalendarItemDialog = ({
               onChange={setCustomerAddressId}
               onCustomerResolved={(customer, addressId) => {
                 setCustomerId(customer.id);
-                setCustomerName(customer.name);
-                setCustomerPhone(customer.phone);
+                setCustomerName(customer.name || '');
+                setCustomerPhone(customer.phone || '');
                 setCustomerEmail(customer.email || '');
                 setCustomerAddressId(addressId);
               }}
@@ -838,7 +939,6 @@ const AddCalendarItemDialog = ({
               />
             </div>
 
-
             {/* Date - RadioGroup + Calendar */}
             <div className="space-y-2">
               <Label>Długość zlecenia</Label>
@@ -854,11 +954,15 @@ const AddCalendarItemDialog = ({
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="single" id="type-single" />
-                  <Label htmlFor="type-single" className="cursor-pointer font-normal">Jednodniowe</Label>
+                  <Label htmlFor="type-single" className="cursor-pointer font-normal">
+                    Jednodniowe
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="multi" id="type-multi" />
-                  <Label htmlFor="type-multi" className="cursor-pointer font-normal">Wielodniowe</Label>
+                  <Label htmlFor="type-multi" className="cursor-pointer font-normal">
+                    Wielodniowe
+                  </Label>
                 </div>
               </RadioGroup>
             </div>
@@ -870,15 +974,19 @@ const AddCalendarItemDialog = ({
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-white",
-                      !dateRange?.from && "text-muted-foreground"
+                      'w-full justify-start text-left font-normal bg-white',
+                      !dateRange?.from && 'text-muted-foreground',
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
-                      reservationType === 'multi' && dateRange.to && !isSameDay(dateRange.from, dateRange.to)
-                        ? `${format(dateRange.from, 'd MMM', { locale: pl })} – ${format(dateRange.to, 'd MMM yyyy', { locale: pl })}`
-                        : format(dateRange.from, 'EEEE, d MMM yyyy', { locale: pl })
+                      reservationType === 'multi' &&
+                      dateRange.to &&
+                      !isSameDay(dateRange.from, dateRange.to) ? (
+                        `${format(dateRange.from, 'd MMM', { locale: pl })} – ${format(dateRange.to, 'd MMM yyyy', { locale: pl })}`
+                      ) : (
+                        format(dateRange.from, 'EEEE, d MMM yyyy', { locale: pl })
+                      )
                     ) : (
                       <span>Wybierz datę</span>
                     )}
@@ -897,7 +1005,7 @@ const AddCalendarItemDialog = ({
                       }}
                       initialFocus
                       locale={pl}
-                      className={cn("p-3 pointer-events-auto")}
+                      className={cn('p-3 pointer-events-auto')}
                     />
                   ) : (
                     <Calendar
@@ -912,7 +1020,7 @@ const AddCalendarItemDialog = ({
                       numberOfMonths={isMobile ? 1 : 2}
                       initialFocus
                       locale={pl}
-                      className={cn("p-3 pointer-events-auto")}
+                      className={cn('p-3 pointer-events-auto')}
                     />
                   )}
                 </PopoverContent>
@@ -923,26 +1031,52 @@ const AddCalendarItemDialog = ({
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>Od</Label>
-                <Select value={startTime} onValueChange={(val) => { setStartTime(val); setDurationPreset(''); }}>
-                  <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                <Select
+                  value={startTime}
+                  onValueChange={(val) => {
+                    setStartTime(val);
+                    setDurationPreset('');
+                  }}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent className="z-[1200]">
-                    {TIME_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {TIME_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Do</Label>
-                <Select value={endTime} onValueChange={(val) => { setEndTime(val); setDurationPreset(''); }}>
-                  <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                <Select
+                  value={endTime}
+                  onValueChange={(val) => {
+                    setEndTime(val);
+                    setDurationPreset('');
+                  }}
+                >
+                  <SelectTrigger className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent className="z-[1200]">
-                    {TIME_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {TIME_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="invisible">Czas</Label>
                 <Select value={durationPreset} onValueChange={handleDurationPreset}>
-                  <SelectTrigger className="bg-white"><SelectValue placeholder="Czas trwania" /></SelectTrigger>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Czas trwania" />
+                  </SelectTrigger>
                   <SelectContent className="z-[1200]">
                     <SelectItem value="full">Cały dzień</SelectItem>
                     <SelectItem value="half">Pół dnia</SelectItem>
@@ -953,39 +1087,55 @@ const AddCalendarItemDialog = ({
               </div>
             </div>
 
-
             {/* Assigned Employees */}
             {employeesEnabled && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <HardHat className="w-3.5 h-3.5" />
-                Przypisani pracownicy
-              </Label>
-              <AssignedEmployeesChips
-                employees={allEmployees}
-                selectedIds={assignedEmployeeIds}
-                onRemove={(id) => setAssignedEmployeeIds(prev => prev.filter(x => x !== id))}
-              />
-              <Button type="button" variant="outline" size="sm" className="bg-white" onClick={() => setEmployeeDrawerOpen(true)}>
-                {assignedEmployeeIds.length > 0 ? 'Zmień pracowników' : 'Przypisz pracowników'}
-              </Button>
-            </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <HardHat className="w-3.5 h-3.5" />
+                  Przypisani pracownicy
+                </Label>
+                <AssignedEmployeesChips
+                  employees={allEmployees}
+                  selectedIds={assignedEmployeeIds}
+                  onRemove={(id) => setAssignedEmployeeIds((prev) => prev.filter((x) => x !== id))}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="bg-white"
+                  onClick={() => setEmployeeDrawerOpen(true)}
+                >
+                  {assignedEmployeeIds.length > 0 ? 'Zmień pracowników' : 'Przypisz pracowników'}
+                </Button>
+              </div>
             )}
 
             {/* Price + Priority */}
             <div className="flex gap-3">
               <div className="space-y-2 w-1/3">
                 <Label>Cena netto</Label>
-                <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} min="0" step="0.01" className="bg-white" />
+                <Input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="bg-white"
+                />
               </div>
               {prioritiesEnabled && (
                 <div className="space-y-2 w-1/3">
                   <Label>Priorytet</Label>
                   <Select value={String(priority)} onValueChange={(v) => setPriority(Number(v))}>
-                    <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent className="z-[1200]">
                       {PRIORITY_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          {opt.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -996,7 +1146,12 @@ const AddCalendarItemDialog = ({
             {/* Notes */}
             <div className="space-y-2">
               <Label>Notatki</Label>
-              <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} rows={3} className="bg-white" />
+              <Textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                rows={3}
+                className="bg-white"
+              />
             </div>
 
             {/* SMS Notification */}
@@ -1006,7 +1161,12 @@ const AddCalendarItemDialog = ({
                   return (
                     <div className="flex items-center gap-2 text-sm text-emerald-600 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                       <MessageSquare className="w-4 h-4" />
-                      <span>Wysłano SMS — {format(new Date(existingSmsNotification.sent_at), 'd MMM yyyy, HH:mm', { locale: pl })}</span>
+                      <span>
+                        Wysłano SMS —{' '}
+                        {format(new Date(existingSmsNotification.sent_at), 'd MMM yyyy, HH:mm', {
+                          locale: pl,
+                        })}
+                      </span>
                     </div>
                   );
                 }
@@ -1019,7 +1179,12 @@ const AddCalendarItemDialog = ({
                   );
                 }
               }
-              if (immediateSmsTemplate && (!existingSmsNotification || (!existingSmsNotification.sent_at && existingSmsNotification.status !== 'pending'))) {
+              if (
+                immediateSmsTemplate &&
+                (!existingSmsNotification ||
+                  (!existingSmsNotification.sent_at &&
+                    existingSmsNotification.status !== 'pending'))
+              ) {
                 const hasPhone = !!customerPhone.trim();
                 return (
                   <div className="space-y-2 p-3 border rounded-lg bg-card">
@@ -1031,16 +1196,23 @@ const AddCalendarItemDialog = ({
                         disabled={!hasPhone}
                         className="mt-0.5"
                       />
-                      <label htmlFor="send-sms" className={`text-sm cursor-pointer ${!hasPhone ? 'opacity-50' : ''}`}>
+                      <label
+                        htmlFor="send-sms"
+                        className={`text-sm cursor-pointer ${!hasPhone ? 'opacity-50' : ''}`}
+                      >
                         <div className="flex items-center gap-1 font-medium">
                           <MessageSquare className="w-3.5 h-3.5" />
                           Wyślij powiadomienie SMS
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">{immediateSmsTemplate}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                          {immediateSmsTemplate}
+                        </p>
                       </label>
                     </div>
                     {!hasPhone && (
-                      <p className="text-xs text-destructive ml-6">Wymagany numer telefonu klienta</p>
+                      <p className="text-xs text-destructive ml-6">
+                        Wymagany numer telefonu klienta
+                      </p>
                     )}
                   </div>
                 );
@@ -1085,7 +1257,10 @@ const AddCalendarItemDialog = ({
         customer={customerDetailData}
         instanceId={instanceId}
         open={customerDetailOpen}
-        onClose={() => { setCustomerDetailOpen(false); setCustomerDetailData(null); }}
+        onClose={() => {
+          setCustomerDetailOpen(false);
+          setCustomerDetailData(null);
+        }}
       />
 
       {/* Add New Customer Drawer */}
@@ -1098,8 +1273,8 @@ const AddCalendarItemDialog = ({
         prefilledName={addCustomerPrefilledName}
         onCustomerCreated={(newCustomer, firstAddressId) => {
           setCustomerId(newCustomer.id);
-          setCustomerName(newCustomer.name);
-          setCustomerPhone(newCustomer.phone);
+          setCustomerName(newCustomer.name || '');
+          setCustomerPhone(newCustomer.phone || '');
           setCustomerEmail(newCustomer.email || '');
           if (firstAddressId) {
             setCustomerAddressId(firstAddressId);

@@ -1,6 +1,18 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Search, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, MoreHorizontal, FileText, RefreshCw, MessageSquare, Plus, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import {
+  Search,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  MoreHorizontal,
+  FileText,
+  RefreshCw,
+  MessageSquare,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
@@ -12,14 +24,14 @@ import {
   TableBody,
   TableRow,
   TableHead,
-  TableCell } from
-'@/components/ui/table';
+  TableCell,
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger } from
-'@/components/ui/dropdown-menu';
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { PAYMENT_STATUS_CONFIG, type PaymentStatus } from '@/components/invoicing/invoicing.types';
 import { InvoiceStatusBadge } from '@/components/invoicing/InvoiceStatusBadge';
 import { CreateInvoiceDrawer } from '@/components/invoicing/CreateInvoiceDrawer';
@@ -72,15 +84,18 @@ const downloadIfirmaPdf = async (invoiceId: string, instanceId: string) => {
     // We need to use fetch directly for binary response
     const session = await supabase.auth.getSession();
     const token = session.data.session?.access_token;
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    const res = await fetch(
+      `${import.meta.env.VITE_HISERVICE_SUPABASE_URL}/functions/v1/invoicing-api`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_HISERVICE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ action: 'get_ifirma_pdf', instanceId, invoiceId }),
       },
-      body: JSON.stringify({ action: 'get_ifirma_pdf', instanceId, invoiceId }),
-    });
+    );
     if (!res.ok) {
       const errText = await res.text();
       throw new Error(errText);
@@ -100,14 +115,16 @@ const downloadIfirmaPdf = async (invoiceId: string, instanceId: string) => {
 
 const formatCurrency = (value: number | null) => {
   if (value == null || value === 0) return '—';
-  return value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+  return (
+    value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł'
+  );
 };
 
-const STATUS_CONFIG: Record<string, {label: string;badgeClass: string;}> = {
+const STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
   confirmed: { label: 'Do wykonania', badgeClass: 'border-amber-500 text-amber-600' },
   in_progress: { label: 'W realizacji', badgeClass: 'bg-blue-600 hover:bg-blue-700 text-white' },
   completed: { label: 'Zakończony', badgeClass: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-  cancelled: { label: 'Anulowany', badgeClass: 'bg-red-600 hover:bg-red-700 text-white' }
+  cancelled: { label: 'Anulowany', badgeClass: 'bg-red-600 hover:bg-red-700 text-white' },
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -136,7 +153,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortColumn(column);
       setSortDirection(column === 'price' ? 'desc' : 'asc');
@@ -145,39 +162,45 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
 
   const SortIcon = ({ column }: { column: string }) => {
     if (sortColumn !== column) return null;
-    return sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="w-3 h-3 ml-1" />
+    ) : (
+      <ArrowDown className="w-3 h-3 ml-1" />
+    );
   };
 
   const { data: columns = [] } = useQuery({
     queryKey: ['settlements-columns', instanceId],
     enabled: !!instanceId,
     queryFn: async () => {
-      const { data } = await supabase.
-      from('calendar_columns').
-      select('id, name').
-      eq('instance_id', instanceId).
-      eq('active', true).
-      order('sort_order');
+      const { data } = await supabase
+        .from('calendar_columns')
+        .select('id, name')
+        .eq('instance_id', instanceId)
+        .eq('active', true)
+        .order('sort_order');
       return data || [];
-    }
+    },
   });
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['settlements', instanceId],
     enabled: !!instanceId,
     queryFn: async () => {
-      const { data, error } = await supabase.
-      from('calendar_items').
-      select('id, title, item_date, customer_name, customer_id, customer_email, customer_phone, customer_address_id, created_at, status, payment_status, price, admin_notes, start_time, end_time, column_id, assigned_employee_ids, photo_urls, end_date, order_number').
-      eq('instance_id', instanceId).
-      order('item_date', { ascending: false });
+      const { data, error } = await supabase
+        .from('calendar_items')
+        .select(
+          'id, title, item_date, customer_name, customer_id, customer_email, customer_phone, customer_address_id, created_at, status, payment_status, price, admin_notes, start_time, end_time, column_id, assigned_employee_ids, photo_urls, end_date, order_number',
+        )
+        .eq('instance_id', instanceId)
+        .order('item_date', { ascending: false });
       if (error) throw error;
       return (data || []) as CalendarItemRow[];
-    }
+    },
   });
 
   const addressIds = useMemo(() => {
-    return [...new Set(items.map(i => i.customer_address_id).filter(Boolean))] as string[];
+    return [...new Set(items.map((i) => i.customer_address_id).filter(Boolean))] as string[];
   }, [items]);
 
   const { data: addressMap = {} } = useQuery({
@@ -194,36 +217,38 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
         map[a.id] = parts.length > 0 ? parts.join(', ') : a.name;
       });
       return map;
-    }
+    },
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['settlements-invoices', instanceId],
     enabled: !!instanceId,
     queryFn: async () => {
-      const { data, error } = await supabase.
-      from('invoices').
-      select('id, calendar_item_id, pdf_url, payment_to, provider').
-      eq('instance_id', instanceId);
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, calendar_item_id, pdf_url, payment_to, provider')
+        .eq('instance_id', instanceId);
       if (error) throw error;
       return (data || []) as InvoiceRow[];
-    }
+    },
   });
 
   const { data: smsTemplates = [] } = useQuery({
     queryKey: ['sms-payment-templates', instanceId],
     enabled: !!instanceId,
     queryFn: async () => {
-      const { data, error } = await (supabase.from('sms_payment_templates' as any) as any).
-      select('template_type, enabled').
-      eq('instance_id', instanceId);
+      const { data, error } = await (supabase.from('sms_payment_templates' as any) as any)
+        .select('template_type, enabled')
+        .eq('instance_id', instanceId);
       if (error) throw error;
-      return (data || []) as {template_type: string;enabled: boolean;}[];
-    }
+      return (data || []) as { template_type: string; enabled: boolean }[];
+    },
   });
 
   const blikTemplateEnabled = smsTemplates.some((t) => t.template_type === 'blik' && t.enabled);
-  const bankTemplateEnabled = smsTemplates.some((t) => t.template_type === 'bank_transfer' && t.enabled);
+  const bankTemplateEnabled = smsTemplates.some(
+    (t) => t.template_type === 'bank_transfer' && t.enabled,
+  );
 
   const invoicesByItemId = useMemo(() => {
     const map: Record<string, InvoiceRow> = {};
@@ -239,24 +264,48 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (o) =>
-        (o.customer_name || '').toLowerCase().includes(q) ||
-        (o.title || '').toLowerCase().includes(q) ||
-        (o.item_date || '').includes(q) ||
-        (o.customer_address_id && addressMap[o.customer_address_id] && addressMap[o.customer_address_id].toLowerCase().includes(q))
+          (o.customer_name || '').toLowerCase().includes(q) ||
+          (o.title || '').toLowerCase().includes(q) ||
+          (o.item_date || '').includes(q) ||
+          (o.customer_address_id &&
+            addressMap[o.customer_address_id] &&
+            addressMap[o.customer_address_id].toLowerCase().includes(q)),
       );
     }
     if (sortColumn) {
       result = [...result].sort((a, b) => {
         let valA: any, valB: any;
         switch (sortColumn) {
-          case 'order_number': valA = a.order_number || ''; valB = b.order_number || ''; break;
-          case 'title': valA = (a.title || '').toLowerCase(); valB = (b.title || '').toLowerCase(); break;
-          case 'customer_name': valA = (a.customer_name || '').toLowerCase(); valB = (b.customer_name || '').toLowerCase(); break;
-          case 'created_at': valA = a.created_at; valB = b.created_at; break;
-          case 'status': valA = a.status; valB = b.status; break;
-          case 'payment_status': valA = a.payment_status || ''; valB = b.payment_status || ''; break;
-          case 'price': valA = a.price ?? 0; valB = b.price ?? 0; break;
-          default: return 0;
+          case 'order_number':
+            valA = a.order_number || '';
+            valB = b.order_number || '';
+            break;
+          case 'title':
+            valA = (a.title || '').toLowerCase();
+            valB = (b.title || '').toLowerCase();
+            break;
+          case 'customer_name':
+            valA = (a.customer_name || '').toLowerCase();
+            valB = (b.customer_name || '').toLowerCase();
+            break;
+          case 'created_at':
+            valA = a.created_at;
+            valB = b.created_at;
+            break;
+          case 'status':
+            valA = a.status;
+            valB = b.status;
+            break;
+          case 'payment_status':
+            valA = a.payment_status || '';
+            valB = b.payment_status || '';
+            break;
+          case 'price':
+            valA = a.price ?? 0;
+            valB = b.price ?? 0;
+            break;
+          default:
+            return 0;
         }
         if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
         if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
@@ -277,15 +326,15 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     setCurrentPage(1);
   };
 
-  const invalidateSettlements = () => {
-    queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
+  const invalidateSettlements = async () => {
+    await queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
   };
 
   const changeStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase.
-    from('calendar_items').
-    update({ status: newStatus }).
-    eq('id', id);
+    const { error } = await supabase
+      .from('calendar_items')
+      .update({ status: newStatus })
+      .eq('id', id);
     if (error) {
       toast.error('Błąd zmiany statusu');
       return;
@@ -304,7 +353,10 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       supabase.from('protocols').delete().eq('calendar_item_id', itemId),
     ]);
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
-    if (error) { toast.error('Błąd usuwania'); return; }
+    if (error) {
+      toast.error('Błąd usuwania');
+      return;
+    }
     invalidateSettlements();
     toast.success('Zlecenie usunięte');
   };
@@ -333,14 +385,16 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   };
 
   const getStatusConfig = (status: string) => {
-    return STATUS_CONFIG[status] || { label: status, badgeClass: 'border-muted text-muted-foreground' };
+    return (
+      STATUS_CONFIG[status] || { label: status, badgeClass: 'border-muted text-muted-foreground' }
+    );
   };
 
   const changePaymentStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase.
-    from('calendar_items').
-    update({ payment_status: newStatus }).
-    eq('id', id);
+    const { error } = await supabase
+      .from('calendar_items')
+      .update({ payment_status: newStatus })
+      .eq('id', id);
     if (error) {
       toast.error('Błąd zmiany statusu płatności');
       return;
@@ -353,12 +407,12 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-invoice-statuses', {
-        body: { instanceId }
+        body: { instanceId },
       });
       if (error) throw error;
       toast.success(`Zsynchronizowano ${data?.synced || 0} z ${data?.total || 0} faktur`);
-      queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
-      queryClient.invalidateQueries({ queryKey: ['settlements-invoices', instanceId] });
+      queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+      queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
     } catch (e: any) {
       toast.error('Błąd synchronizacji: ' + (e.message || 'Nieznany błąd'));
     } finally {
@@ -401,8 +455,8 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       admin_notes: order.admin_notes,
       price: order.price,
       payment_status: order.payment_status,
-      photo_urls: Array.isArray(order.photo_urls) ? order.photo_urls as string[] : [],
-      end_date: order.end_date
+      photo_urls: Array.isArray(order.photo_urls) ? (order.photo_urls as string[]) : [],
+      end_date: order.end_date,
     };
     setDetailsItem(calendarItem);
     setDetailsDrawerOpen(true);
@@ -414,11 +468,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Zlecenia</h2>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSync}
-            disabled={syncing}>
+          <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
             Sprawdź statusy płatności
           </Button>
@@ -437,35 +487,40 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
             placeholder="Szukaj klienta, tytuł lub datę..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9" />
+            className="pl-9"
+          />
         </div>
       </div>
 
       {/* Mobile Cards */}
-      {isMobile ?
-      <div className="space-y-2">
-          {isLoading ?
-        <p className="text-center text-muted-foreground py-8">Ładowanie...</p> :
-        filteredOrders.length === 0 ?
-        <p className="text-center text-muted-foreground py-8">Brak zleceń spełniających kryteria</p> :
+      {isMobile ? (
+        <div className="space-y-2">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-8">Ładowanie...</p>
+          ) : filteredOrders.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Brak zleceń spełniających kryteria
+            </p>
+          ) : (
+            paginatedOrders.map((order) => {
+              const statusConfig = getStatusConfig(order.status);
+              const invoice = invoicesByItemId[order.id];
 
-        paginatedOrders.map((order) => {
-          const statusConfig = getStatusConfig(order.status);
-          const invoice = invoicesByItemId[order.id];
-
-          return (
-            <div
-              key={order.id}
-              className="rounded-lg border border-border bg-card p-3 space-y-2 cursor-pointer active:bg-primary/5"
-              onClick={() => openDetailsDrawer(order)}>
-
+              return (
+                <div
+                  key={order.id}
+                  className="rounded-lg border border-border bg-card p-3 space-y-2 cursor-pointer active:bg-primary/5"
+                  onClick={() => openDetailsDrawer(order)}
+                >
                   {/* Top row: title + amount */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{order.title || '—'}</p>
                       <p className="text-xs text-muted-foreground">{order.customer_name || '—'}</p>
                       {order.customer_address_id && addressMap[order.customer_address_id] && (
-                        <p className="text-xs text-muted-foreground/70 truncate">{addressMap[order.customer_address_id]}</p>
+                        <p className="text-xs text-muted-foreground/70 truncate">
+                          {addressMap[order.customer_address_id]}
+                        </p>
                       )}
                     </div>
                     <span className="text-sm font-semibold tabular-nums whitespace-nowrap">
@@ -477,334 +532,441 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-muted-foreground">
-                        {order.item_date ? format(parseISO(order.item_date), 'dd.MM.yyyy') : 'Bez daty'}
+                        {order.item_date
+                          ? format(parseISO(order.item_date), 'dd.MM.yyyy')
+                          : 'Bez daty'}
                       </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="focus:outline-none" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className="focus:outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Badge
-                          variant={['in_progress', 'completed', 'cancelled'].includes(order.status) ? 'default' : 'outline'}
-                          className={`${statusConfig.badgeClass} cursor-pointer text-[11px]`}>
-
+                              variant={
+                                ['in_progress', 'completed', 'cancelled'].includes(order.status)
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                              className={`${statusConfig.badgeClass} cursor-pointer text-[11px]`}
+                            >
                               {statusConfig.label}
                             </Badge>
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                          {Object.entries(STATUS_CONFIG).map(([key, config]) =>
-                      <DropdownMenuItem key={key} onClick={() => changeStatus(order.id, key)}>
-                          <Badge
-                          variant={['in_progress', 'completed', 'cancelled'].includes(key) ? 'default' : 'outline'}
-                          className={`${config.badgeClass}`}>
-
+                          {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                            <DropdownMenuItem key={key} onClick={() => changeStatus(order.id, key)}>
+                              <Badge
+                                variant={
+                                  ['in_progress', 'completed', 'cancelled'].includes(key)
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                className={`${config.badgeClass}`}
+                              >
                                 {config.label}
                               </Badge>
                             </DropdownMenuItem>
-                      )}
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      {order.status !== 'confirmed' &&
-                  <DropdownMenu>
+                      {order.status !== 'confirmed' && (
+                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="focus:outline-none" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="focus:outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <InvoiceStatusBadge
-                          status={order.payment_status}
-                          paymentTo={invoice?.payment_to}
-                          className="cursor-pointer text-[11px]" />
-
+                                status={order.payment_status}
+                                paymentTo={invoice?.payment_to}
+                                className="cursor-pointer text-[11px]"
+                              />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                            {Object.entries(PAYMENT_STATUS_CONFIG).map(([key, config]) =>
-                      <DropdownMenuItem key={key} onClick={() => changePaymentStatus(order.id, key)}>
-                                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.color}`}>
+                            {Object.entries(PAYMENT_STATUS_CONFIG).map(([key, config]) => (
+                              <DropdownMenuItem
+                                key={key}
+                                onClick={() => changePaymentStatus(order.id, key)}
+                              >
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.color}`}
+                                >
                                   {config.label}
                                 </span>
                               </DropdownMenuItem>
-                      )}
+                            ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                  }
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenuItem onSelect={() => openDetailsDrawer(order)}>Szczegóły</DropdownMenuItem>
-                          {(invoice?.pdf_url || invoice?.provider === 'ifirma') &&
-                      <DropdownMenuItem onSelect={() => {
-                        if (invoice.pdf_url) {
-                          window.open(invoice.pdf_url, '_blank');
-                        } else if (invoice.provider === 'ifirma') {
-                          downloadIfirmaPdf(invoice.id, instanceId);
-                        }
-                      }}>
+                          <DropdownMenuItem onSelect={() => openDetailsDrawer(order)}>
+                            Szczegóły
+                          </DropdownMenuItem>
+                          {(invoice?.pdf_url || invoice?.provider === 'ifirma') && (
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                if (invoice.pdf_url) {
+                                  window.open(invoice.pdf_url, '_blank');
+                                } else if (invoice.provider === 'ifirma') {
+                                  downloadIfirmaPdf(invoice.id, instanceId);
+                                }
+                              }}
+                            >
                               Pobierz FV
                             </DropdownMenuItem>
-                      }
-                          <DropdownMenuItem onSelect={() => openInvoiceDrawer(order)}>Wystaw FV</DropdownMenuItem>
-                          {blikTemplateEnabled &&
-                      <DropdownMenuItem onSelect={() => openSmsDialog(order, 'blik')}>
+                          )}
+                          <DropdownMenuItem onSelect={() => openInvoiceDrawer(order)}>
+                            Wystaw FV
+                          </DropdownMenuItem>
+                          {blikTemplateEnabled && (
+                            <DropdownMenuItem onSelect={() => openSmsDialog(order, 'blik')}>
                               <MessageSquare className="w-4 h-4 mr-2" />
                               Wyślij SMS BLIK
                             </DropdownMenuItem>
-                      }
-                          {bankTemplateEnabled &&
-                      <DropdownMenuItem onSelect={() => openSmsDialog(order, 'bank_transfer')}>
+                          )}
+                          {bankTemplateEnabled && (
+                            <DropdownMenuItem
+                              onSelect={() => openSmsDialog(order, 'bank_transfer')}
+                            >
                               <MessageSquare className="w-4 h-4 mr-2" />
                               Wyślij SMS z nr konta
                             </DropdownMenuItem>
-                      }
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </div>
-                </div>);
-
-        })
-        }
-        </div> : (
-
-      /* Desktop Table */
-      <div className="rounded-lg border border-border bg-card">
-        <Table className="table-fixed w-full">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[8%] cursor-pointer select-none" onClick={() => handleSort('order_number')}>
-                <span className="flex items-center">Nr<SortIcon column="order_number" /></span>
-              </TableHead>
-              <TableHead className="w-[19%] cursor-pointer select-none" onClick={() => handleSort('title')}>
-                <span className="flex items-center">Tytuł<SortIcon column="title" /></span>
-              </TableHead>
-              <TableHead className="w-[20%] cursor-pointer select-none" onClick={() => handleSort('customer_name')}>
-                <span className="flex items-center">Klient<SortIcon column="customer_name" /></span>
-              </TableHead>
-              <TableHead className="w-[12%] cursor-pointer select-none" onClick={() => handleSort('created_at')}>
-                <span className="flex items-center">
-                  <div className="leading-tight">
-                    <div>Data utw.</div>
-                    <div>Data zakoń.</div>
-                  </div>
-                  <SortIcon column="created_at" />
-                </span>
-              </TableHead>
-              <TableHead className="w-[12%] cursor-pointer select-none" onClick={() => handleSort('status')}>
-                <span className="flex items-center">Status<SortIcon column="status" /></span>
-              </TableHead>
-              <TableHead className="w-[14%] cursor-pointer select-none" onClick={() => handleSort('payment_status')}>
-                <span className="flex items-center">Status płatności<SortIcon column="payment_status" /></span>
-              </TableHead>
-              <TableHead className="text-right w-[10%] cursor-pointer select-none" onClick={() => handleSort('price')}>
-                <span className="flex items-center justify-end">Kwota netto<SortIcon column="price" /></span>
-              </TableHead>
-              <TableHead className="w-[5%]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ?
-            <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  Ładowanie...
-                </TableCell>
-              </TableRow> :
-            filteredOrders.length === 0 ?
-            <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  Brak zleceń spełniających kryteria
-                </TableCell>
-              </TableRow> :
-
-            paginatedOrders.map((order) => {
-              const statusConfig = getStatusConfig(order.status);
-              const invoice = invoicesByItemId[order.id];
-              const paymentKey = (order.payment_status || 'not_invoiced') as PaymentStatus;
-              const paymentConfig = PAYMENT_STATUS_CONFIG[paymentKey] || PAYMENT_STATUS_CONFIG.not_invoiced;
-
-              return (
-                <TableRow key={order.id} className="group cursor-pointer" onClick={() => openDetailsDrawer(order)}>
-                    <TableCell className="text-sm">
-                      {formatOrderNumber(order)}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      <div className="line-clamp-2">{order.title || '—'}</div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div>{order.customer_name || '—'}</div>
-                      {order.customer_address_id && addressMap[order.customer_address_id] && (
-                        <div className="text-xs text-muted-foreground truncate">{addressMap[order.customer_address_id]}</div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      <div className="leading-tight">
-                        <div>{format(parseISO(order.created_at), 'dd.MM.yyyy')}</div>
-                        {order.status === 'completed' &&
-                      <div>{order.item_date ? format(parseISO(order.item_date), 'dd.MM.yyyy') : 'Bez daty'}</div>
-                      }
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="focus:outline-none" onClick={(e) => e.stopPropagation()}>
-                            <Badge
-                            variant={['in_progress', 'completed', 'cancelled'].includes(order.status) ? 'default' : 'outline'}
-                            className={`${statusConfig.badgeClass} cursor-pointer`}>
-
-                              {statusConfig.label}
-                            </Badge>
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          {Object.entries(STATUS_CONFIG).map(([key, config]) =>
-                        <DropdownMenuItem key={key} onClick={() => changeStatus(order.id, key)}>
-                          <Badge
-                            variant={['in_progress', 'completed', 'cancelled'].includes(key) ? 'default' : 'outline'}
-                            className={`${config.badgeClass}`}>
-
-                                {config.label}
-                              </Badge>
-                            </DropdownMenuItem>
-                        )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    <TableCell>
-                      {order.status !== 'confirmed' ?
-                    <div className="flex items-center gap-1.5">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="focus:outline-none" onClick={(e) => e.stopPropagation()}>
-                                <InvoiceStatusBadge
-                              status={order.payment_status}
-                              paymentTo={invoice?.payment_to}
-                              className="cursor-pointer" />
-
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                              {Object.entries(PAYMENT_STATUS_CONFIG).map(([key, config]) =>
-                          <DropdownMenuItem key={key} onClick={() => changePaymentStatus(order.id, key)}>
-                                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.color}`}>
-                                    {config.label}
-                                  </span>
-                                </DropdownMenuItem>
-                          )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div> :
-
-                    <span className="text-muted-foreground text-xs">—</span>
-                    }
-                    </TableCell>
-                    <TableCell className="text-right text-sm tabular-nums">
-                      {formatCurrency(order.price)}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => e.stopPropagation()}>
-
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenuItem
-                          onSelect={() => openDetailsDrawer(order)}>
-
-                            Szczegóły
-                          </DropdownMenuItem>
-                          {(invoice?.pdf_url || invoice?.provider === 'ifirma') &&
-                        <DropdownMenuItem
-                          onSelect={() => {
-                            if (invoice.pdf_url) {
-                              window.open(invoice.pdf_url, '_blank');
-                            } else if (invoice.provider === 'ifirma') {
-                              downloadIfirmaPdf(invoice.id, instanceId);
-                            }
-                          }}>
-                              Pobierz FV
-                            </DropdownMenuItem>
-                        }
-                          <DropdownMenuItem
-                          onSelect={() => openInvoiceDrawer(order)}>
-
-                            Wystaw FV
-                          </DropdownMenuItem>
-                          {blikTemplateEnabled &&
-                        <DropdownMenuItem onSelect={() => openSmsDialog(order, 'blik')}>
-                              <MessageSquare className="w-4 h-4 mr-2" />
-                              Wyślij SMS BLIK
-                            </DropdownMenuItem>
-                        }
-                          {bankTemplateEnabled &&
-                        <DropdownMenuItem onSelect={() => openSmsDialog(order, 'bank_transfer')}>
-                              <MessageSquare className="w-4 h-4 mr-2" />
-                              Wyślij SMS z nr konta
-                            </DropdownMenuItem>
-                        }
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>);
-
+                </div>
+              );
             })
-            }
-          </TableBody>
-        </Table>
-      </div>)
-      }
+          )}
+        </div>
+      ) : (
+        /* Desktop Table */
+        <div className="rounded-lg border border-border bg-card">
+          <Table className="table-fixed w-full">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead
+                  className="w-[8%] cursor-pointer select-none"
+                  onClick={() => handleSort('order_number')}
+                >
+                  <span className="flex items-center">
+                    Nr
+                    <SortIcon column="order_number" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="w-[19%] cursor-pointer select-none"
+                  onClick={() => handleSort('title')}
+                >
+                  <span className="flex items-center">
+                    Tytuł
+                    <SortIcon column="title" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="w-[20%] cursor-pointer select-none"
+                  onClick={() => handleSort('customer_name')}
+                >
+                  <span className="flex items-center">
+                    Klient
+                    <SortIcon column="customer_name" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="w-[12%] cursor-pointer select-none"
+                  onClick={() => handleSort('created_at')}
+                >
+                  <span className="flex items-center">
+                    <div className="leading-tight">
+                      <div>Data utw.</div>
+                      <div>Data zakoń.</div>
+                    </div>
+                    <SortIcon column="created_at" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="w-[12%] cursor-pointer select-none"
+                  onClick={() => handleSort('status')}
+                >
+                  <span className="flex items-center">
+                    Status
+                    <SortIcon column="status" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="w-[14%] cursor-pointer select-none"
+                  onClick={() => handleSort('payment_status')}
+                >
+                  <span className="flex items-center">
+                    Status płatności
+                    <SortIcon column="payment_status" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="text-right w-[10%] cursor-pointer select-none"
+                  onClick={() => handleSort('price')}
+                >
+                  <span className="flex items-center justify-end">
+                    Kwota netto
+                    <SortIcon column="price" />
+                  </span>
+                </TableHead>
+                <TableHead className="w-[5%]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    Ładowanie...
+                  </TableCell>
+                </TableRow>
+              ) : filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    Brak zleceń spełniających kryteria
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedOrders.map((order) => {
+                  const statusConfig = getStatusConfig(order.status);
+                  const invoice = invoicesByItemId[order.id];
+                  const paymentKey = (order.payment_status || 'not_invoiced') as PaymentStatus;
+                  const paymentConfig =
+                    PAYMENT_STATUS_CONFIG[paymentKey] || PAYMENT_STATUS_CONFIG.not_invoiced;
+
+                  return (
+                    <TableRow
+                      key={order.id}
+                      className="group cursor-pointer"
+                      onClick={() => openDetailsDrawer(order)}
+                    >
+                      <TableCell className="text-sm">{formatOrderNumber(order)}</TableCell>
+                      <TableCell className="text-sm">
+                        <div className="line-clamp-2">{order.title || '—'}</div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div>{order.customer_name || '—'}</div>
+                        {order.customer_address_id && addressMap[order.customer_address_id] && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {addressMap[order.customer_address_id]}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <div className="leading-tight">
+                          <div>{format(parseISO(order.created_at), 'dd.MM.yyyy')}</div>
+                          {order.status === 'completed' && (
+                            <div>
+                              {order.item_date
+                                ? format(parseISO(order.item_date), 'dd.MM.yyyy')
+                                : 'Bez daty'}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="focus:outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Badge
+                                variant={
+                                  ['in_progress', 'completed', 'cancelled'].includes(order.status)
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                className={`${statusConfig.badgeClass} cursor-pointer`}
+                              >
+                                {statusConfig.label}
+                              </Badge>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                              <DropdownMenuItem
+                                key={key}
+                                onClick={() => changeStatus(order.id, key)}
+                              >
+                                <Badge
+                                  variant={
+                                    ['in_progress', 'completed', 'cancelled'].includes(key)
+                                      ? 'default'
+                                      : 'outline'
+                                  }
+                                  className={`${config.badgeClass}`}
+                                >
+                                  {config.label}
+                                </Badge>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                      <TableCell>
+                        {order.status !== 'confirmed' ? (
+                          <div className="flex items-center gap-1.5">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="focus:outline-none"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <InvoiceStatusBadge
+                                    status={order.payment_status}
+                                    paymentTo={invoice?.payment_to}
+                                    className="cursor-pointer"
+                                  />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                {Object.entries(PAYMENT_STATUS_CONFIG).map(([key, config]) => (
+                                  <DropdownMenuItem
+                                    key={key}
+                                    onClick={() => changePaymentStatus(order.id, key)}
+                                  >
+                                    <span
+                                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.color}`}
+                                    >
+                                      {config.label}
+                                    </span>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-sm tabular-nums">
+                        {formatCurrency(order.price)}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onSelect={() => openDetailsDrawer(order)}>
+                              Szczegóły
+                            </DropdownMenuItem>
+                            {(invoice?.pdf_url || invoice?.provider === 'ifirma') && (
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  if (invoice.pdf_url) {
+                                    window.open(invoice.pdf_url, '_blank');
+                                  } else if (invoice.provider === 'ifirma') {
+                                    downloadIfirmaPdf(invoice.id, instanceId);
+                                  }
+                                }}
+                              >
+                                Pobierz FV
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onSelect={() => openInvoiceDrawer(order)}>
+                              Wystaw FV
+                            </DropdownMenuItem>
+                            {blikTemplateEnabled && (
+                              <DropdownMenuItem onSelect={() => openSmsDialog(order, 'blik')}>
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                Wyślij SMS BLIK
+                              </DropdownMenuItem>
+                            )}
+                            {bankTemplateEnabled && (
+                              <DropdownMenuItem
+                                onSelect={() => openSmsDialog(order, 'bank_transfer')}
+                              >
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                Wyślij SMS z nr konta
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Pagination */}
-      {totalPages > 1 &&
-      <div className="flex items-center justify-between pt-2">
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
             Strona {currentPage} z {totalPages} ({filteredOrders.length} zleceń)
           </p>
           <div className="flex items-center gap-1">
             <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}>
-
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
               <ChevronLeftIcon className="w-4 h-4" />
             </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) =>
-          <Button
-            key={page}
-            variant={page === currentPage ? 'default' : 'outline'}
-            size="sm"
-            className="w-9"
-            onClick={() => setCurrentPage(page)}>
-
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={page === currentPage ? 'default' : 'outline'}
+                size="sm"
+                className="w-9"
+                onClick={() => setCurrentPage(page)}
+              >
                 {page}
               </Button>
-          )}
+            ))}
             <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}>
-
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
           </div>
         </div>
-      }
+      )}
 
       {/* Details Drawer */}
       <CalendarItemDetailsDrawer
         item={detailsItem}
         open={detailsDrawerOpen}
-        onClose={() => {setDetailsDrawerOpen(false);setDetailsItem(null);invalidateSettlements();}}
+        onClose={() => {
+          setDetailsDrawerOpen(false);
+          setDetailsItem(null);
+          invalidateSettlements();
+        }}
         columns={columns}
         instanceId={instanceId}
         onDelete={handleDeleteItem}
@@ -814,40 +976,48 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
         onEndWork={(itemId) => changeStatus(itemId, 'completed')}
       />
 
-
       {/* Invoice Drawer */}
       <CreateInvoiceDrawer
         open={invoiceDrawerOpen}
-        onClose={() => {setInvoiceDrawerOpen(false);setInvoiceTarget(null);}}
+        onClose={() => {
+          setInvoiceDrawerOpen(false);
+          setInvoiceTarget(null);
+        }}
         instanceId={instanceId}
         calendarItemId={invoiceTarget?.id}
         customerId={invoiceTarget?.customer_id}
         customerName={invoiceTarget?.customer_name}
         customerEmail={invoiceTarget?.customer_email}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
-          queryClient.invalidateQueries({ queryKey: ['settlements-invoices', instanceId] });
-        }} />
-
+          queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+          queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
+        }}
+      />
 
       {/* SMS Payment Dialog */}
-      {smsTarget &&
-      <SendPaymentSmsDialog
-        open={smsDialogOpen}
-        onClose={() => {setSmsDialogOpen(false);setSmsTarget(null);}}
-        templateType={smsTemplateType}
-        calendarItem={smsTarget}
-        instanceId={instanceId}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
-        }} />
-
-      }
+      {smsTarget && (
+        <SendPaymentSmsDialog
+          open={smsDialogOpen}
+          onClose={() => {
+            setSmsDialogOpen(false);
+            setSmsTarget(null);
+          }}
+          templateType={smsTemplateType}
+          calendarItem={smsTarget}
+          instanceId={instanceId}
+          onSuccess={() => {
+            queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+          }}
+        />
+      )}
 
       {/* Add Order Dialog */}
       <AddCalendarItemDialog
         open={addOrderOpen}
-        onClose={() => { setAddOrderOpen(false); setEditingItem(null); }}
+        onClose={() => {
+          setAddOrderOpen(false);
+          setEditingItem(null);
+        }}
         instanceId={instanceId}
         columns={columns}
         editingItem={editingItem}
@@ -855,10 +1025,10 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
           setAddOrderOpen(false);
           setEditingItem(null);
           invalidateSettlements();
-        }} />
-
-    </div>);
-
+        }}
+      />
+    </div>
+  );
 };
 
 export default SettlementsView;

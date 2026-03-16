@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Car, User, Lock, ArrowRight, Loader2, Building2, Eye, EyeOff, Phone, Mail, Bug } from 'lucide-react';
+import {
+  Car,
+  User,
+  Lock,
+  ArrowRight,
+  Loader2,
+  Building2,
+  Eye,
+  EyeOff,
+  Phone,
+  Mail,
+  Bug,
+} from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -25,23 +37,13 @@ interface FormErrors {
   password?: string;
   general?: string;
 }
-const InstanceAuth = ({
-  subdomainSlug
-}: InstanceAuthProps) => {
-  const {
-    slug: paramSlug
-  } = useParams<{
+const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
+  const { slug: paramSlug } = useParams<{
     slug: string;
   }>();
   const slug = subdomainSlug || paramSlug;
   const navigate = useNavigate();
-  const {
-    user,
-    loading: authLoading,
-    signIn,
-    hasRole,
-    hasInstanceRole
-  } = useAuth();
+  const { user, loading: authLoading, signIn, hasRole, hasInstanceRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [instance, setInstance] = useState<Instance | null>(null);
   const [instanceLoading, setInstanceLoading] = useState(true);
@@ -61,10 +63,11 @@ const InstanceAuth = ({
         setInstanceLoading(false);
         return;
       }
-      const {
-        data,
-        error
-      } = await supabase.from('instances').select('id, name, slug, logo_url, primary_color, active').eq('slug', slug).maybeSingle();
+      const { data, error } = await supabase
+        .from('instances')
+        .select('id, name, slug, logo_url, primary_color, active')
+        .eq('slug', slug)
+        .maybeSingle();
       if (error) {
         setInstanceError('Wystąpił błąd podczas wczytywania instancji');
         setInstanceLoading(false);
@@ -89,21 +92,28 @@ const InstanceAuth = ({
   // Redirect if already logged in with proper role
   useEffect(() => {
     if (authLoading || instanceLoading || !user || !instance) return;
-    const hasAccess = hasRole('super_admin') || hasInstanceRole('admin', instance.id) || hasInstanceRole('employee', instance.id) || hasInstanceRole('hall', instance.id);
+    const hasAccess =
+      hasRole('super_admin') ||
+      hasInstanceRole('admin', instance.id) ||
+      hasInstanceRole('employee', instance.id) ||
+      hasInstanceRole('hall', instance.id);
     if (hasAccess) {
-      supabase.from('profiles').select('is_blocked').eq('id', user.id).single().then(({
-        data
-      }) => {
-        if (data?.is_blocked) {
-          setErrors({
-            general: 'Twoje konto zostało zablokowane'
+      supabase
+        .from('profiles')
+        .select('is_blocked')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.is_blocked) {
+            setErrors({
+              general: 'Twoje konto zostało zablokowane',
+            });
+            return;
+          }
+          navigate(returnTo, {
+            replace: true,
           });
-          return;
-        }
-        navigate(returnTo, {
-          replace: true
         });
-      });
     }
   }, [authLoading, instanceLoading, user, instance, hasRole, hasInstanceRole, navigate, returnTo]);
   const validateForm = (): boolean => {
@@ -137,44 +147,45 @@ const InstanceAuth = ({
     }
     if (!instance) {
       setErrors({
-        general: 'Nie można zalogować - brak instancji'
+        general: 'Nie można zalogować - brak instancji',
       });
       return;
     }
     setLoading(true);
     try {
-      const {
-        data: profile,
-        error: lookupError
-      } = await supabase.from('profiles').select('id, email, is_blocked').eq('username', username).eq('instance_id', instance.id).maybeSingle();
+      const { data: profile, error: lookupError } = await supabase
+        .from('profiles')
+        .select('id, email, is_blocked')
+        .eq('username', username)
+        .eq('instance_id', instance.id)
+        .maybeSingle();
       if (lookupError || !profile?.email) {
         setErrors({
-          general: 'Nieprawidłowy login lub hasło'
+          general: 'Nieprawidłowy login lub hasło',
         });
         setLoading(false);
         return;
       }
       if (profile.is_blocked) {
         setErrors({
-          general: 'Twoje konto zostało zablokowane. Skontaktuj się z administratorem.'
+          general: 'Twoje konto zostało zablokowane. Skontaktuj się z administratorem.',
         });
         setLoading(false);
         return;
       }
-      const {
-        error
-      } = await signIn(profile.email, password);
+      const { error } = await signIn(profile.email, password);
       if (error) {
         // Track failed attempt
         const trackResult = await trackLoginAttempt(profile.id, instance.id, false);
-        
+
         if (trackResult?.blocked) {
           setErrors({
-            general: 'Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.'
+            general:
+              'Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.',
           });
         } else {
           setErrors({
-            general: 'Nieprawidłowy login lub hasło'
+            general: 'Nieprawidłowy login lub hasło',
           });
           // Show remaining attempts from 3rd failure
           if (trackResult?.show_warning && trackResult?.remaining_attempts != null) {
@@ -184,11 +195,12 @@ const InstanceAuth = ({
       } else {
         // Track successful attempt (resets counter)
         await trackLoginAttempt(profile.id, instance.id, true);
-        navigate(returnTo);
+        // Don't navigate here — the useEffect on auth state handles redirect
+        // after roles are fully loaded, avoiding a blank /dashboard flash
       }
     } catch (err) {
       setErrors({
-        general: 'Wystąpił błąd. Spróbuj ponownie.'
+        general: 'Wystąpił błąd. Spróbuj ponownie.',
       });
     } finally {
       setLoading(false);
@@ -196,9 +208,9 @@ const InstanceAuth = ({
   };
   const clearFieldError = (field: keyof FormErrors) => {
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
@@ -207,10 +219,7 @@ const InstanceAuth = ({
   };
   const handleTestBackendError = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('test-sentry-error');
+      const { data, error } = await supabase.functions.invoke('test-sentry-error');
       if (error) {
         toast.error('Backend test failed: ' + error.message);
         return;
@@ -223,24 +232,27 @@ const InstanceAuth = ({
     }
   };
   if (instanceLoading || authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>;
+      </div>
+    );
   }
   if (instanceError) {
-    return <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/10 mb-4">
             <Building2 className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground">{instanceError}</h1>
-          <p className="text-muted-foreground">
-            Sprawdź czy adres URL jest poprawny
-          </p>
+          <p className="text-muted-foreground">Sprawdź czy adres URL jest poprawny</p>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <>
+  return (
+    <>
       <Helmet>
         <title>Logowanie - {instance?.name || 'Panel'}</title>
         <meta name="description" content={`Zaloguj się do panelu ${instance?.name}`} />
@@ -253,47 +265,77 @@ const InstanceAuth = ({
             <div className="w-full max-w-md space-y-8">
               {/* Logo */}
               <div className="space-y-4 text-center">
-                {instance?.logo_url && <div className="flex justify-center mb-6">
-                    <img src={instance.logo_url} alt={instance.name} className="h-20 object-scale-down" />
-                  </div>}
+                {instance?.logo_url && (
+                  <div className="flex justify-center mb-6">
+                    <img
+                      src={instance.logo_url}
+                      alt={instance.name}
+                      className="h-20 object-scale-down"
+                    />
+                  </div>
+                )}
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                   Logowanie do panelu administracyjnego
                 </h1>
               </div>
 
               {/* General error */}
-              {errors.general && <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              {errors.general && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                   <p className="text-sm text-destructive">{errors.general}</p>
                   {remainingAttempts !== null && remainingAttempts > 0 && (
                     <p className="text-xs text-destructive/80 mt-1">
                       Pozostało prób: {remainingAttempts}
                     </p>
                   )}
-                </div>}
+                </div>
+              )}
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">Login</Label>
+                  <Label htmlFor="username" className="text-slate-700 dark:text-slate-300">
+                    Login
+                  </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <Input id="username" type="text" value={username} onChange={e => {
-                    setUsername(e.target.value);
-                    clearFieldError('username');
-                  }} className={`pl-10 h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${errors.username ? 'border-destructive focus-visible:ring-destructive' : ''}`} autoComplete="username" />
+                    <Input
+                      id="username"
+                      type="text"
+                      value={username}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        clearFieldError('username');
+                      }}
+                      className={`pl-10 h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${errors.username ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                      autoComplete="username"
+                    />
                   </div>
                   {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Hasło</Label>
+                  <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">
+                    Hasło
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => {
-                    setPassword(e.target.value);
-                    clearFieldError('password');
-                  }} className={`pl-10 pr-10 h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`} autoComplete="current-password" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        clearFieldError('password');
+                      }}
+                      className={`pl-10 pr-10 h-12 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                    >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
@@ -302,18 +344,32 @@ const InstanceAuth = ({
 
                 <div className="flex justify-end">
                   <Link
-                    to={subdomainSlug ? '/forgot-password' : (slug ? `/${slug}/forgot-password` : '/forgot-password')}
+                    to={
+                      subdomainSlug
+                        ? '/forgot-password'
+                        : slug
+                          ? `/${slug}/forgot-password`
+                          : '/forgot-password'
+                    }
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Zapomniałeś hasła?
                   </Link>
                 </div>
 
-                <Button type="submit" className="w-full h-12 gap-2 bg-[#A57C00] hover:bg-[#A57C00]/90 text-white text-base font-semibold" disabled={loading}>
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>
+                <Button
+                  type="submit"
+                  className="w-full h-12 gap-2 bg-[#A57C00] hover:bg-[#A57C00]/90 text-white text-base font-semibold"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
                       Zaloguj się
                       <ArrowRight className="w-5 h-5" />
-                    </>}
+                    </>
+                  )}
                 </Button>
               </form>
             </div>
@@ -323,14 +379,25 @@ const InstanceAuth = ({
           <div className="p-6 border-t border-slate-100 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs text-slate-400">
               <span>© {new Date().getFullYear()} Carfect</span>
-              <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              <a
+                href="https://carfect.pl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
                 carfect.pl
               </a>
-              <a href="tel:+48666610222" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              <a
+                href="tel:+48666610222"
+                className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
                 <Phone className="w-3 h-3" />
                 +48 666 610 222
               </a>
-              <a href="mailto:hello@carfect.pl" className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              <a
+                href="mailto:hello@carfect.pl"
+                className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
                 <Mail className="w-3 h-3" />
                 hello@carfect.pl
               </a>
@@ -346,7 +413,7 @@ const InstanceAuth = ({
             <div className="absolute bottom-40 left-10 w-48 h-48 bg-[#A57C00]/5 rounded-full blur-2xl" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#A57C00]/5 rounded-full blur-3xl" />
           </div>
-          
+
           {/* Content */}
           <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
             <div className="max-w-md text-center space-y-6 flex flex-col items-center">
@@ -358,11 +425,15 @@ const InstanceAuth = ({
           </div>
 
           {/* Grid pattern overlay */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
         </div>
       </div>
-    </>;
+    </>
+  );
 };
 export default InstanceAuth;

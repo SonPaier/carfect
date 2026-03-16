@@ -50,6 +50,11 @@ const persister = createIDBPersister();
 const persistOptions = {
   persister,
   maxAge: 1000 * 60 * 60 * 24, // 24h
+  // After restoring cache from IndexedDB, mark all queries as stale
+  // so they refetch fresh data on next observation.
+  onSuccess: () => {
+    queryClient.invalidateQueries();
+  },
 };
 
 // Subdomain detection for hiservice.pl

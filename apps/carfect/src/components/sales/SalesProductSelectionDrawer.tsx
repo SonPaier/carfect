@@ -4,12 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 
 export interface SalesProductOption {
   id: string;
@@ -80,8 +75,8 @@ const SalesProductSelectionDrawer = ({
   useEffect(() => {
     if (open) {
       const keys = new Set<string>();
-      initialSelectedProductIds.forEach(id => keys.add(id));
-      initialSelectedVariantIds.forEach(id => keys.add(`variant:${id}`));
+      initialSelectedProductIds.forEach((id) => keys.add(id));
+      initialSelectedVariantIds.forEach((id) => keys.add(`variant:${id}`));
       setSelectedKeys(keys);
       setSearchQuery('');
       setTimeout(() => searchInputRef.current?.focus(), 300);
@@ -93,7 +88,9 @@ const SalesProductSelectionDrawer = ({
     setLoading(true);
     const { data } = await (supabase
       .from('sales_products')
-      .select('id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount, category_id')
+      .select(
+        'id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount, category_id',
+      )
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false }) as any);
 
@@ -118,7 +115,7 @@ const SalesProductSelectionDrawer = ({
     }));
 
     // Fetch variants for products that have them
-    const variantProductIds = allProducts.filter(p => p.hasVariants).map(p => p.id);
+    const variantProductIds = allProducts.filter((p) => p.hasVariants).map((p) => p.id);
     if (variantProductIds.length > 0) {
       const { data: variants } = await (supabase
         .from('sales_product_variants')
@@ -128,7 +125,7 @@ const SalesProductSelectionDrawer = ({
 
       const variantsByProduct = new Map<string, SalesProductVariantOption[]>();
       (variants || []).forEach((v: any) => {
-        const parent = allProducts.find(p => p.id === v.product_id);
+        const parent = allProducts.find((p) => p.id === v.product_id);
         if (!parent) return;
         const list = variantsByProduct.get(v.product_id) || [];
         list.push({
@@ -142,7 +139,7 @@ const SalesProductSelectionDrawer = ({
         variantsByProduct.set(v.product_id, list);
       });
 
-      allProducts.forEach(p => {
+      allProducts.forEach((p) => {
         if (p.hasVariants) {
           p.variants = variantsByProduct.get(p.id) || [];
         }
@@ -153,20 +150,23 @@ const SalesProductSelectionDrawer = ({
     setLoading(false);
   }, [open, instanceId]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
     const q = searchQuery.toLowerCase();
-    return products.filter(p =>
-      p.fullName.toLowerCase().includes(q) ||
-      p.shortName.toLowerCase().includes(q) ||
-      (p.variants || []).some(v => v.variantName.toLowerCase().includes(q))
+    return products.filter(
+      (p) =>
+        p.fullName.toLowerCase().includes(q) ||
+        p.shortName.toLowerCase().includes(q) ||
+        (p.variants || []).some((v) => v.variantName.toLowerCase().includes(q)),
     );
   }, [products, searchQuery]);
 
   const toggleKey = (key: string) => {
-    setSelectedKeys(prev => {
+    setSelectedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -178,15 +178,18 @@ const SalesProductSelectionDrawer = ({
 
   const totalNet = useMemo(() => {
     let total = 0;
-    selectedKeys.forEach(key => {
+    selectedKeys.forEach((key) => {
       if (key.startsWith('variant:')) {
         const variantId = key.slice(8);
         for (const product of products) {
-          const variant = product.variants?.find(v => v.id === variantId);
-          if (variant) { total += product.priceNet; break; }
+          const variant = product.variants?.find((v) => v.id === variantId);
+          if (variant) {
+            total += product.priceNet;
+            break;
+          }
         }
       } else {
-        const product = products.find(p => p.id === key);
+        const product = products.find((p) => p.id === key);
         if (product) total += product.priceNet;
       }
     });
@@ -196,11 +199,11 @@ const SalesProductSelectionDrawer = ({
   const handleConfirm = () => {
     const selected: SelectedProductItem[] = [];
 
-    selectedKeys.forEach(key => {
+    selectedKeys.forEach((key) => {
       if (key.startsWith('variant:')) {
         const variantId = key.slice(8);
         for (const product of products) {
-          const variant = product.variants?.find(v => v.id === variantId);
+          const variant = product.variants?.find((v) => v.id === variantId);
           if (variant) {
             selected.push({
               id: variantId,
@@ -218,7 +221,7 @@ const SalesProductSelectionDrawer = ({
           }
         }
       } else {
-        const product = products.find(p => p.id === key);
+        const product = products.find((p) => p.id === key);
         if (product) {
           selected.push({
             id: product.id,
@@ -315,16 +318,24 @@ const SalesProductSelectionDrawer = ({
                         <div className="flex-1 text-left min-w-0">
                           {product.shortName ? (
                             <>
-                              <p className="font-bold text-foreground text-sm">{product.shortName}</p>
-                              <p className="text-muted-foreground text-xs leading-tight truncate">{product.fullName}</p>
+                              <p className="font-bold text-foreground text-sm">
+                                {product.shortName}
+                              </p>
+                              <p className="text-muted-foreground text-xs leading-tight truncate">
+                                {product.fullName}
+                              </p>
                             </>
                           ) : (
                             <p className="font-bold text-foreground text-sm">{product.fullName}</p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="font-semibold text-foreground text-sm">{formatCurrency(product.priceNet)}</p>
-                          <p className="text-xs text-muted-foreground">netto/{formatPriceUnit(product.priceUnit)}</p>
+                          <p className="font-semibold text-foreground text-sm">
+                            {formatCurrency(product.priceNet)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            netto/{formatPriceUnit(product.priceUnit)}
+                          </p>
                         </div>
                       </div>
                       {/* Variant rows (selectable) */}
@@ -337,19 +348,23 @@ const SalesProductSelectionDrawer = ({
                             type="button"
                             onClick={() => toggleKey(variantKey)}
                             className={cn(
-                              "w-full flex items-center px-4 pl-8 py-2.5 border-b border-border/50 transition-colors",
-                              isSelected ? "bg-primary/5" : "hover:bg-primary/5"
+                              'w-full flex items-center px-4 pl-8 py-2.5 border-b border-border/50 transition-colors',
+                              isSelected ? 'bg-primary/5' : 'hover:bg-primary/5',
                             )}
                           >
                             <div className="flex-1 text-left min-w-0">
-                              <p className="font-medium text-foreground text-sm">{variant.variantName}</p>
+                              <p className="font-medium text-foreground text-sm">
+                                {variant.variantName}
+                              </p>
                             </div>
-                            <div className={cn(
-                              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                              isSelected
-                                ? "bg-primary border-primary"
-                                : "border-muted-foreground/40"
-                            )}>
+                            <div
+                              className={cn(
+                                'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                                isSelected
+                                  ? 'bg-primary border-primary'
+                                  : 'border-muted-foreground/40',
+                              )}
+                            >
                               {isSelected && <Check className="w-4 h-4 text-primary-foreground" />}
                             </div>
                           </button>
@@ -367,15 +382,17 @@ const SalesProductSelectionDrawer = ({
                     type="button"
                     onClick={() => toggleKey(product.id)}
                     className={cn(
-                      "w-full flex items-center px-4 py-3 border-b border-border/50 transition-colors",
-                      isSelected ? "bg-primary/5" : "hover:bg-primary/5"
+                      'w-full flex items-center px-4 py-3 border-b border-border/50 transition-colors',
+                      isSelected ? 'bg-primary/5' : 'hover:bg-primary/5',
                     )}
                   >
                     <div className="flex-1 text-left min-w-0">
                       {product.shortName ? (
                         <>
                           <p className="font-bold text-foreground">{product.shortName}</p>
-                          <p className="text-muted-foreground text-xs leading-tight truncate">{product.fullName}</p>
+                          <p className="text-muted-foreground text-xs leading-tight truncate">
+                            {product.fullName}
+                          </p>
                         </>
                       ) : (
                         <p className="font-medium text-foreground">{product.fullName}</p>
@@ -383,16 +400,20 @@ const SalesProductSelectionDrawer = ({
                     </div>
 
                     <div className="text-right mr-4 shrink-0">
-                      <p className="font-semibold text-foreground text-sm">{formatCurrency(product.priceNet)}</p>
-                      <p className="text-xs text-muted-foreground">netto/{formatPriceUnit(product.priceUnit)}</p>
+                      <p className="font-semibold text-foreground text-sm">
+                        {formatCurrency(product.priceNet)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        netto/{formatPriceUnit(product.priceUnit)}
+                      </p>
                     </div>
 
-                    <div className={cn(
-                      "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                      isSelected
-                        ? "bg-primary border-primary"
-                        : "border-muted-foreground/40"
-                    )}>
+                    <div
+                      className={cn(
+                        'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                        isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40',
+                      )}
+                    >
                       {isSelected && <Check className="w-4 h-4 text-primary-foreground" />}
                     </div>
                   </button>

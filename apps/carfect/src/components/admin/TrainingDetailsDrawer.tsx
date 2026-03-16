@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Pencil, Trash2, X, Plus } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { Separator } from '@shared/ui';
@@ -30,6 +24,7 @@ interface TrainingDetailsDrawerProps {
   instanceId: string;
   onEdit: (training: Training) => void;
   onDeleted: () => void;
+  onStatusChanged?: (trainingId: string, newStatus: string) => void;
   readOnly?: boolean;
 }
 
@@ -40,6 +35,7 @@ export function TrainingDetailsDrawer({
   instanceId,
   onEdit,
   onDeleted,
+  onStatusChanged,
   readOnly = false,
 }: TrainingDetailsDrawerProps) {
   const { t } = useTranslation();
@@ -53,9 +49,12 @@ export function TrainingDetailsDrawer({
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const { data: employees = [] } = useEmployees(instanceId);
 
+  const [localStatus, setLocalStatus] = useState(training?.status ?? 'open');
+
   useEffect(() => {
     if (training) {
       setLocalDescription(training.description || '');
+      setLocalStatus(training.status);
       setEditingNotes(false);
     }
   }, [training]);
@@ -68,21 +67,27 @@ export function TrainingDetailsDrawer({
 
   if (!training) return null;
 
-  const isSoldOut = training.status === 'sold_out';
+  const isSoldOut = localStatus === 'sold_out';
   const isMultiDay = training.end_date && training.end_date !== training.start_date;
 
   const handleToggleStatus = async () => {
+    const prevStatus = localStatus;
+    const newStatus = isSoldOut ? 'open' : 'sold_out';
+    setLocalStatus(newStatus);
     setTogglingStatus(true);
     try {
-      const newStatus = isSoldOut ? 'open' : 'sold_out';
       const { error } = await supabase
         .from('trainings')
         .update({ status: newStatus } as any)
         .eq('id', training.id);
       if (error) throw error;
-      toast.success(newStatus === 'sold_out' ? t('trainings.statusSoldOut') : t('trainings.statusOpen'));
+      onStatusChanged?.(training.id, newStatus);
+      toast.success(
+        newStatus === 'sold_out' ? t('trainings.statusSoldOut') : t('trainings.statusOpen'),
+      );
     } catch (err) {
       console.error('Error toggling status:', err);
+      setLocalStatus(prevStatus);
       toast.error('Błąd zmiany statusu');
     } finally {
       setTogglingStatus(false);
@@ -92,10 +97,7 @@ export function TrainingDetailsDrawer({
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from('trainings')
-        .delete()
-        .eq('id', training.id);
+      const { error } = await supabase.from('trainings').delete().eq('id', training.id);
       if (error) throw error;
       toast.success(t('trainings.trainingDeleted'));
       onDeleted();
@@ -168,9 +170,7 @@ export function TrainingDetailsDrawer({
         >
           <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0 bg-white dark:bg-card">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-foreground">
-                {training.title}
-              </SheetTitle>
+              <SheetTitle className="text-foreground">{training.title}</SheetTitle>
               <button
                 type="button"
                 onClick={onClose}
@@ -189,9 +189,10 @@ export function TrainingDetailsDrawer({
                 <div className="flex items-center justify-between mt-1">
                   <Badge
                     variant="secondary"
-                    className={isSoldOut
-                      ? 'bg-fuchsia-600 text-white hover:bg-fuchsia-700'
-                      : 'bg-pink-200 text-pink-900 hover:bg-pink-300'
+                    className={
+                      isSoldOut
+                        ? 'bg-fuchsia-600 text-white hover:bg-fuchsia-700'
+                        : 'bg-pink-200 text-pink-900 hover:bg-pink-300'
                     }
                   >
                     {isSoldOut ? 'Zamknięte' : 'Otwarte'}
@@ -235,18 +236,19 @@ export function TrainingDetailsDrawer({
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Przypisani pracownicy</div>
                 <div className="flex flex-wrap gap-2 items-center">
-                  {training.assigned_employee_ids?.length > 0 && training.assigned_employee_ids.map(empId => {
-                    const emp = employees.find(e => e.id === empId);
-                    const name = emp?.name || 'Usunięty';
-                    return (
-                      <span
-                        key={empId}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium leading-none"
-                      >
-                        {name}
-                      </span>
-                    );
-                  })}
+                  {training.assigned_employee_ids?.length > 0 &&
+                    training.assigned_employee_ids.map((empId) => {
+                      const emp = employees.find((e) => e.id === empId);
+                      const name = emp?.name || 'Usunięty';
+                      return (
+                        <span
+                          key={empId}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium leading-none"
+                        >
+                          {name}
+                        </span>
+                      );
+                    })}
                   {!readOnly && (
                     <button
                       type="button"
@@ -276,7 +278,9 @@ export function TrainingDetailsDrawer({
                 ) : (
                   <p
                     className={`text-sm cursor-pointer hover:bg-hover-strong rounded px-1 py-0.5 -mx-1 ${
-                      !localDescription ? 'text-muted-foreground italic' : 'whitespace-pre-wrap text-foreground'
+                      !localDescription
+                        ? 'text-muted-foreground italic'
+                        : 'whitespace-pre-wrap text-foreground'
                     }`}
                     onClick={() => !readOnly && setEditingNotes(true)}
                   >
@@ -321,11 +325,7 @@ export function TrainingDetailsDrawer({
                   <Pencil className="w-4 h-4 mr-2" />
                   {t('trainings.editTraining')}
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
+                <Button variant="destructive" size="icon" onClick={() => setDeleteDialogOpen(true)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>

@@ -1,16 +1,19 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, ScanLine, MoreHorizontal, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Disc } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  ScanLine,
+  MoreHorizontal,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  Disc,
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Input, Button, Badge, EmptyState } from '@shared/ui';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,7 +91,7 @@ const SalesRollsView = () => {
         r.brand.toLowerCase().includes(q) ||
         r.productName.toLowerCase().includes(q) ||
         (r.productCode || '').toLowerCase().includes(q) ||
-        (r.barcode || '').includes(q)
+        (r.barcode || '').includes(q),
     );
   }, [rolls, searchQuery]);
 
@@ -123,7 +126,7 @@ const SalesRollsView = () => {
   const totalPages = Math.ceil(sortedRolls.length / ITEMS_PER_PAGE);
   const paginatedRolls = sortedRolls.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   const handleSort = (col: SortColumn) => {
@@ -275,12 +278,18 @@ const SalesRollsView = () => {
                 <TableCell colSpan={8}>
                   <EmptyState
                     icon={Disc}
-                    title={searchQuery
-                      ? 'Brak wyników wyszukiwania'
-                      : activeTab === 'active'
-                      ? 'Brak rolek na stanie'
-                      : 'Brak sprzedanych rolek'}
-                    description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszą rolkę do ewidencji'}
+                    title={
+                      searchQuery
+                        ? 'Brak wyników wyszukiwania'
+                        : activeTab === 'active'
+                          ? 'Brak rolek na stanie'
+                          : 'Brak sprzedanych rolek'
+                    }
+                    description={
+                      searchQuery
+                        ? 'Spróbuj zmienić kryteria wyszukiwania'
+                        : 'Dodaj pierwszą rolkę do ewidencji'
+                    }
                   />
                 </TableCell>
               </TableRow>
@@ -289,15 +298,16 @@ const SalesRollsView = () => {
                 <TableRow
                   key={roll.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => { setDetailsRoll(roll); setDetailsDrawerOpen(true); }}
+                  onClick={() => {
+                    setDetailsRoll(roll);
+                    setDetailsDrawerOpen(true);
+                  }}
                 >
                   <TableCell>
                     <div className="font-medium">{roll.productName}</div>
                     <div className="text-xs text-muted-foreground">{roll.brand}</div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {roll.productCode || '—'}
-                  </TableCell>
+                  <TableCell className="font-mono text-xs">{roll.productCode || '—'}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
                     {formatRollSize(roll.widthMm, roll.initialLengthM)}
                   </TableCell>
@@ -313,17 +323,15 @@ const SalesRollsView = () => {
                         (roll.remainingMb || 0) <= 0
                           ? 'text-destructive'
                           : (roll.remainingMb || 0) < roll.initialLengthM * 0.2
-                          ? 'text-orange-500'
-                          : 'text-green-600'
+                            ? 'text-orange-500'
+                            : 'text-green-600'
                       }`}
                     >
                       {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {roll.deliveryDate
-                      ? format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')
-                      : '—'}
+                    {roll.deliveryDate ? format(parseISO(roll.deliveryDate), 'dd.MM.yyyy') : '—'}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
@@ -336,7 +344,12 @@ const SalesRollsView = () => {
                         <DropdownMenuItem onClick={() => handleEditClick(roll)}>
                           Edytuj
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { setDetailsRoll(roll); setDetailsDrawerOpen(true); }}>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setDetailsRoll(roll);
+                            setDetailsDrawerOpen(true);
+                          }}
+                        >
                           Szczegóły
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -419,9 +432,7 @@ const SalesRollsView = () => {
       {/* Delete confirm */}
       <ConfirmDialog
         open={deleteConfirm.open}
-        onOpenChange={(open) =>
-          setDeleteConfirm((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
         title="Usuń rolkę"
         description={`Czy na pewno chcesz usunąć rolkę "${deleteConfirm.rollName}"? Tej operacji nie można cofnąć.`}
         onConfirm={handleDelete}

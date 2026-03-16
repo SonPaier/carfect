@@ -1,27 +1,32 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { NetworkFirst, NetworkOnly, StaleWhileRevalidate } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { ExpirationPlugin } from 'workbox-expiration';
 
-declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: Array<{ url: string; revision: string | null }> };
+declare const self: ServiceWorkerGlobalScope & {
+  __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
+};
 
 cleanupOutdatedCaches();
+
+// CRITICAL: version.json must ALWAYS come from network, never from cache
+registerRoute(({ url }) => url.pathname === '/version.json', new NetworkOnly());
 
 precacheAndRoute(self.__WB_MANIFEST);
 
 const navigationHandler = new NetworkFirst({
   cacheName: 'navigation-cache',
   networkTimeoutSeconds: 3,
-  plugins: [
-    new CacheableResponsePlugin({ statuses: [0, 200] }),
-  ],
+  plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
 });
 
-registerRoute(new NavigationRoute(navigationHandler, {
-  denylist: [/^\/~oauth/],
-}));
+registerRoute(
+  new NavigationRoute(navigationHandler, {
+    denylist: [/^\/~oauth/],
+  }),
+);
 
 // Supabase API — StaleWhileRevalidate for offline support (24h, 500 entries)
 registerRoute(
@@ -32,7 +37,7 @@ registerRoute(
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 500, maxAgeSeconds: 24 * 60 * 60 }),
     ],
-  })
+  }),
 );
 
 registerRoute(
@@ -46,7 +51,7 @@ registerRoute(
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 24 * 60 * 60 }),
     ],
-  })
+  }),
 );
 
 interface PushNotificationData {
@@ -78,9 +83,7 @@ self.addEventListener('push', (event) => {
     requireInteraction: true,
   };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Powiadomienie', options)
-  );
+  event.waitUntil(self.registration.showNotification(data.title || 'Powiadomienie', options));
 });
 
 // Notification click handler
@@ -101,32 +104,35 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       return self.clients.openWindow(url);
-    })
+    }),
   );
 });
 
+// Auto-update: immediately activate new SW and take control of all clients
 self.addEventListener('install', () => {
-  console.log('[SW] Installing');
+  console.log('[SW] Installing, version:', new Date().toISOString());
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((cacheName) => {
-            return !['navigation-cache', 'supabase-api-cache', 'static-assets', 'workbox-precache-v2'].some(
-              (keep) => cacheName.includes(keep)
-            );
-          })
-          .map((cacheName) => caches.delete(cacheName))
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => {
+              return ![
+                'navigation-cache',
+                'supabase-api-cache',
+                'static-assets',
+                'workbox-precache-v2',
+              ].some((keep) => cacheName.includes(keep));
+            })
+            .map((cacheName) => caches.delete(cacheName)),
+        );
+      })
+      .then(() => self.clients.claim()),
   );
-});
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });

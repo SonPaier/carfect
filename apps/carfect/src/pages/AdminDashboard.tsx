@@ -2,7 +2,29 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useIsMobile } from '@shared/ui';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, LogOut, Menu, CheckCircle, Settings, Users, UserCircle, PanelLeftClose, PanelLeft, FileText, CalendarClock, ChevronUp, Package, Bell, ClipboardCheck, Loader2, UsersRound, BadgeDollarSign, GraduationCap, ArrowLeftRight } from 'lucide-react';
+import {
+  Building2,
+  Calendar,
+  LogOut,
+  Menu,
+  CheckCircle,
+  Settings,
+  Users,
+  UserCircle,
+  PanelLeftClose,
+  PanelLeft,
+  FileText,
+  CalendarClock,
+  ChevronUp,
+  Package,
+  Bell,
+  ClipboardCheck,
+  Loader2,
+  UsersRound,
+  BadgeDollarSign,
+  GraduationCap,
+  ArrowLeftRight,
+} from 'lucide-react';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useStations } from '@/hooks/useStations';
 import { useBreaks } from '@/hooks/useBreaks';
@@ -19,7 +41,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger } from '@shared/ui';
+  DropdownMenuTrigger,
+} from '@shared/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Separator } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -135,21 +158,43 @@ interface ClosedDay {
   closed_date: string;
   reason: string | null;
 }
-type ViewType = 'calendar' | 'reservations' | 'customers' | 'pricelist' | 'settings' | 'offers' | 'products' | 'followup' | 'notifications' | 'halls' | 'protocols' | 'reminders' | 'employees';
-const validViews: ViewType[] = ['calendar', 'reservations', 'customers', 'pricelist', 'settings', 'offers', 'products', 'followup', 'notifications', 'halls', 'protocols', 'reminders', 'employees'];
+type ViewType =
+  | 'calendar'
+  | 'reservations'
+  | 'customers'
+  | 'pricelist'
+  | 'settings'
+  | 'offers'
+  | 'products'
+  | 'followup'
+  | 'notifications'
+  | 'halls'
+  | 'protocols'
+  | 'reminders'
+  | 'employees';
+const validViews: ViewType[] = [
+  'calendar',
+  'reservations',
+  'customers',
+  'pricelist',
+  'settings',
+  'offers',
+  'products',
+  'followup',
+  'notifications',
+  'halls',
+  'protocols',
+  'reminders',
+  'employees',
+];
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { view } = useParams<{view?: string;}>();
-  const {
-    user,
-    roles,
-    username: authUsername,
-    signOut
-  } = useAuth();
-  const { updateAvailable, isUpdating, applyUpdate, checkForUpdate, currentVersion } = useAppUpdate();
+  const { view } = useParams<{ view?: string }>();
+  const { user, roles, username: authUsername, signOut } = useAuth();
+  const { currentVersion } = useAppUpdate();
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Hall users always have collapsed sidebar
@@ -163,12 +208,7 @@ const AdminDashboard = () => {
 
   // Derive currentView from URL param
   const currentView: ViewType =
-  view && validViews.includes(view as ViewType) ? view as ViewType : 'calendar';
-
-  // Check for updates when view changes
-  useEffect(() => {
-    checkForUpdate();
-  }, [currentView, checkForUpdate]);
+    view && validViews.includes(view as ViewType) ? (view as ViewType) : 'calendar';
 
   // Support both route bases:
   // - dev/staging: /admin/:view
@@ -190,17 +230,16 @@ const AdminDashboard = () => {
     }
   };
 
-
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
 
   // Loaded date range for reservations - 1 week back from Monday initially, null = all future
-  const [loadedDateRange, setLoadedDateRange] = useState<{from: Date;to: null;}>(() => {
+  const [loadedDateRange, setLoadedDateRange] = useState<{ from: Date; to: null }>(() => {
     const today = new Date();
     const mondayThisWeek = startOfWeek(today, { weekStartsOn: 1 });
     return {
       from: subWeeks(mondayThisWeek, 1), // Monday one week earlier
-      to: null
+      to: null,
     };
   });
   const [isLoadingMoreReservations, setIsLoadingMoreReservations] = useState(false);
@@ -231,15 +270,17 @@ const AdminDashboard = () => {
   // Deep link handling ref to prevent infinite loops
   const deepLinkHandledRef = useRef(false);
 
-  const [allServices, setAllServices] = useState<Array<{
-    id: string;
-    name: string;
-    shortcut?: string | null;
-    duration_minutes?: number | null;
-    duration_small?: number | null;
-    duration_medium?: number | null;
-    duration_large?: number | null;
-  }>>([]);
+  const [allServices, setAllServices] = useState<
+    Array<{
+      id: string;
+      name: string;
+      shortcut?: string | null;
+      duration_minutes?: number | null;
+      duration_small?: number | null;
+      duration_medium?: number | null;
+      duration_large?: number | null;
+    }>
+  >([]);
   // Using cached hooks for stations - manual state is fallback for local updates
 
   // Add/Edit reservation dialog state
@@ -250,7 +291,7 @@ const AdminDashboard = () => {
     stationId: '',
     date: '',
     time: '',
-    stationType: '' as string
+    stationType: '' as string,
   });
 
   // Slot preview for live calendar highlight
@@ -262,21 +303,26 @@ const AdminDashboard = () => {
   } | null>(null);
 
   // Memoized callback to prevent re-renders in AddReservationDialogV2
-  const handleSlotPreviewChange = useCallback((preview: {
-    date: string;
-    startTime: string;
-    endTime: string;
-    stationId: string;
-  } | null) => {
-    setSlotPreview(preview);
-  }, []);
+  const handleSlotPreviewChange = useCallback(
+    (
+      preview: {
+        date: string;
+        startTime: string;
+        endTime: string;
+        stationId: string;
+      } | null,
+    ) => {
+      setSlotPreview(preview);
+    },
+    [],
+  );
 
   // Breaks state - using cached hooks, state for local updates
   const [addBreakOpen, setAddBreakOpen] = useState(false);
   const [newBreakData, setNewBreakData] = useState({
     stationId: '',
     date: '',
-    time: ''
+    time: '',
   });
 
   // Yard vehicle count for badge
@@ -302,6 +348,8 @@ const AdminDashboard = () => {
 
   // Protocol editing mode - used to hide sidebar/mobile nav
   const [protocolEditMode, setProtocolEditMode] = useState(false);
+  // Offer editing mode - used to hide mobile nav
+  const [offerEditMode, setOfferEditMode] = useState(false);
 
   // Trainings state
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -376,12 +424,12 @@ const AdminDashboard = () => {
     if (isSuperAdmin) {
       setUserRole('admin');
       const fetchFirstInstance = async () => {
-        const { data: instances } = await supabase.
-        from('instances').
-        select('id').
-        eq('active', true).
-        limit(1).
-        maybeSingle();
+        const { data: instances } = await supabase
+          .from('instances')
+          .select('id')
+          .eq('active', true)
+          .limit(1)
+          .maybeSingle();
         if (instances?.id) {
           setInstanceId(instances.id);
         }
@@ -404,11 +452,11 @@ const AdminDashboard = () => {
   // Fetch yard vehicle count for badge (lazy-loaded only when needed)
   const fetchYardVehicleCount = async () => {
     if (!instanceId) return;
-    const { count, error } = await supabase.
-    from('yard_vehicles').
-    select('*', { count: 'exact', head: true }).
-    eq('instance_id', instanceId).
-    eq('status', 'waiting');
+    const { count, error } = await supabase
+      .from('yard_vehicles')
+      .select('*', { count: 'exact', head: true })
+      .eq('instance_id', instanceId)
+      .eq('status', 'waiting');
     if (!error && count !== null) {
       setYardVehicleCount(count);
     }
@@ -417,11 +465,11 @@ const AdminDashboard = () => {
   // Fetch unread notifications count for badge
   const fetchUnreadNotificationsCount = async () => {
     if (!instanceId) return;
-    const { count, error } = await supabase.
-    from('notifications').
-    select('*', { count: 'exact', head: true }).
-    eq('instance_id', instanceId).
-    eq('read', false);
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('instance_id', instanceId)
+      .eq('read', false);
     if (!error && count !== null) {
       setUnreadNotificationsCount(count);
     }
@@ -435,7 +483,10 @@ const AdminDashboard = () => {
   }, [instanceId]);
 
   // Helper to find nearest working day
-  const findNearestWorkingDay = (date: Date, hours: Record<string, {open: string;close: string;} | null>): Date => {
+  const findNearestWorkingDay = (
+    date: Date,
+    hours: Record<string, { open: string; close: string } | null>,
+  ): Date => {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
     for (let i = 0; i < 7; i++) {
@@ -476,21 +527,21 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!instanceId) return;
 
-    const channel = supabase.
-    channel('yard-count-changes').
-    on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'yard_vehicles',
-        filter: `instance_id=eq.${instanceId}`
-      },
-      () => {
-        fetchYardVehicleCount();
-      }
-    ).
-    subscribe();
+    const channel = supabase
+      .channel('yard-count-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'yard_vehicles',
+          filter: `instance_id=eq.${instanceId}`,
+        },
+        () => {
+          fetchYardVehicleCount();
+        },
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -501,21 +552,21 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!instanceId) return;
 
-    const channel = supabase.
-    channel('notifications-count-changes').
-    on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'notifications',
-        filter: `instance_id=eq.${instanceId}`
-      },
-      () => {
-        fetchUnreadNotificationsCount();
-      }
-    ).
-    subscribe();
+    const channel = supabase
+      .channel('notifications-count-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `instance_id=eq.${instanceId}`,
+        },
+        () => {
+          fetchUnreadNotificationsCount();
+        },
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -532,111 +583,151 @@ const AdminDashboard = () => {
   // Fetch all services for multi-service mapping
   const fetchAllServices = async () => {
     if (!instanceId) return;
-    const {
-      data
-    } = await supabase.from('unified_services').select('id, name, short_name, duration_minutes, duration_small, duration_medium, duration_large').eq('instance_id', instanceId).eq('active', true).eq('service_type', 'reservation');
+    const { data } = await supabase
+      .from('unified_services')
+      .select(
+        'id, name, short_name, duration_minutes, duration_small, duration_medium, duration_large',
+      )
+      .eq('instance_id', instanceId)
+      .eq('active', true)
+      .eq('service_type', 'reservation');
     if (data) {
       setAllServices(data.map((s) => ({ ...s, shortcut: s.short_name })));
     }
   };
 
   // Map raw reservation data to Reservation type
-  const mapReservationData = useCallback((
-  data: any[],
-  servicesMap: Map<string, {id: string;name: string;shortcut?: string | null;price_small?: number | null;price_medium?: number | null;price_large?: number | null;price_from?: number | null;}>,
-  originalReservationsMap: Map<string, any>)
-  : Reservation[] => {
-    return data.map((r) => {
-      // Primary source: service_items JSONB (already contains names)
-      const serviceItems = r.service_items as unknown as ServiceItem[] | null;
-      const serviceIds = (r as any).service_ids as string[] | null;
+  const mapReservationData = useCallback(
+    (
+      data: any[],
+      servicesMap: Map<
+        string,
+        {
+          id: string;
+          name: string;
+          shortcut?: string | null;
+          price_small?: number | null;
+          price_medium?: number | null;
+          price_large?: number | null;
+          price_from?: number | null;
+        }
+      >,
+      originalReservationsMap: Map<string, any>,
+    ): Reservation[] => {
+      return data.map((r) => {
+        // Primary source: service_items JSONB (already contains names)
+        const serviceItems = r.service_items as unknown as ServiceItem[] | null;
+        const serviceIds = (r as any).service_ids as string[] | null;
 
-      let servicesDataMapped: Array<{
-        id?: string;
+        let servicesDataMapped: Array<{
+          id?: string;
+          name: string;
+          shortcut?: string | null;
+          price_small?: number | null;
+          price_medium?: number | null;
+          price_large?: number | null;
+          price_from?: number | null;
+        }> = [];
+
+        // Canonical list of selected services is `service_ids`.
+        // `service_items` may contain stale/legacy entries (e.g. after edits), so use it only to enrich.
+        if (serviceIds && serviceIds.length > 0) {
+          const itemsById = new Map<string, ServiceItem>();
+          (serviceItems || []).forEach((item) => {
+            const resolvedId = item.id || item.service_id;
+            if (resolvedId) itemsById.set(resolvedId, item);
+          });
+
+          servicesDataMapped = serviceIds.map((id) => {
+            const item = itemsById.get(id);
+            const svc = servicesMap.get(id);
+
+            return {
+              id,
+              name: item?.name ?? svc?.name ?? 'Usługa',
+              shortcut: item?.short_name ?? svc?.shortcut ?? null,
+              price_small: item?.price_small ?? svc?.price_small ?? null,
+              price_medium: item?.price_medium ?? svc?.price_medium ?? null,
+              price_large: item?.price_large ?? svc?.price_large ?? null,
+              price_from: item?.price_from ?? svc?.price_from ?? null,
+            };
+          });
+        } else if (serviceItems && serviceItems.length > 0) {
+          // Fallback: no service_ids, use service_items directly (dedupe by id)
+          const seen = new Set<string>();
+          servicesDataMapped = serviceItems
+            .map((item) => {
+              const resolvedId = item.id || item.service_id;
+              const svc = resolvedId ? servicesMap.get(resolvedId) : undefined;
+              return {
+                id: resolvedId,
+                name: item.name ?? svc?.name ?? 'Usługa',
+                shortcut: item.short_name ?? svc?.shortcut ?? null,
+                price_small: item.price_small ?? svc?.price_small ?? null,
+                price_medium: item.price_medium ?? svc?.price_medium ?? null,
+                price_large: item.price_large ?? svc?.price_large ?? null,
+                price_from: item.price_from ?? svc?.price_from ?? null,
+              };
+            })
+            .filter((svc) => {
+              if (!svc.id) return false;
+              if (seen.has(svc.id)) return false;
+              seen.add(svc.id);
+              return true;
+            });
+        }
+
+        const originalReservation = r.original_reservation_id
+          ? originalReservationsMap.get(r.original_reservation_id)
+          : null;
+
+        return {
+          ...r,
+          status: r.status || 'pending',
+          service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
+          service_items: Array.isArray(r.service_items)
+            ? (r.service_items as unknown as ServiceItem[])
+            : undefined,
+          assigned_employee_ids: Array.isArray(r.assigned_employee_ids)
+            ? (r.assigned_employee_ids as string[])
+            : undefined,
+          service: r.services
+            ? {
+                name: (r.services as any).name,
+                shortcut: (r.services as any).shortcut,
+              }
+            : undefined,
+          services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
+          station: r.stations
+            ? {
+                name: (r.stations as any).name,
+                type: (r.stations as any).type,
+              }
+            : undefined,
+          original_reservation: originalReservation || null,
+          created_by_username: r.created_by_username || null,
+          has_unified_services: r.has_unified_services ?? null,
+        };
+      });
+    },
+    [],
+  );
+
+  // Reference to services map for realtime updates
+  const servicesMapRef = useRef<
+    Map<
+      string,
+      {
+        id: string;
         name: string;
         shortcut?: string | null;
         price_small?: number | null;
         price_medium?: number | null;
         price_large?: number | null;
         price_from?: number | null;
-      }> = [];
-
-      // Canonical list of selected services is `service_ids`.
-      // `service_items` may contain stale/legacy entries (e.g. after edits), so use it only to enrich.
-      if (serviceIds && serviceIds.length > 0) {
-        const itemsById = new Map<string, ServiceItem>();
-        (serviceItems || []).forEach((item) => {
-          const resolvedId = item.id || item.service_id;
-          if (resolvedId) itemsById.set(resolvedId, item);
-        });
-
-        servicesDataMapped = serviceIds.map((id) => {
-          const item = itemsById.get(id);
-          const svc = servicesMap.get(id);
-
-          return {
-            id,
-            name: item?.name ?? svc?.name ?? 'Usługa',
-            shortcut: item?.short_name ?? svc?.shortcut ?? null,
-            price_small: item?.price_small ?? svc?.price_small ?? null,
-            price_medium: item?.price_medium ?? svc?.price_medium ?? null,
-            price_large: item?.price_large ?? svc?.price_large ?? null,
-            price_from: item?.price_from ?? svc?.price_from ?? null
-          };
-        });
-      } else if (serviceItems && serviceItems.length > 0) {
-        // Fallback: no service_ids, use service_items directly (dedupe by id)
-        const seen = new Set<string>();
-        servicesDataMapped = serviceItems.
-        map((item) => {
-          const resolvedId = item.id || item.service_id;
-          const svc = resolvedId ? servicesMap.get(resolvedId) : undefined;
-          return {
-            id: resolvedId,
-            name: item.name ?? svc?.name ?? 'Usługa',
-            shortcut: item.short_name ?? svc?.shortcut ?? null,
-            price_small: item.price_small ?? svc?.price_small ?? null,
-            price_medium: item.price_medium ?? svc?.price_medium ?? null,
-            price_large: item.price_large ?? svc?.price_large ?? null,
-            price_from: item.price_from ?? svc?.price_from ?? null
-          };
-        }).
-        filter((svc) => {
-          if (!svc.id) return false;
-          if (seen.has(svc.id)) return false;
-          seen.add(svc.id);
-          return true;
-        });
       }
-
-      const originalReservation = r.original_reservation_id ?
-      originalReservationsMap.get(r.original_reservation_id) :
-      null;
-
-      return {
-        ...r,
-        status: r.status || 'pending',
-        service_ids: Array.isArray(r.service_ids) ? r.service_ids as string[] : undefined,
-        service_items: Array.isArray(r.service_items) ? r.service_items as unknown as ServiceItem[] : undefined,
-        assigned_employee_ids: Array.isArray(r.assigned_employee_ids) ? r.assigned_employee_ids as string[] : undefined,
-        service: r.services ? {
-          name: (r.services as any).name,
-          shortcut: (r.services as any).shortcut
-        } : undefined,
-        services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-        station: r.stations ? {
-          name: (r.stations as any).name,
-          type: (r.stations as any).type
-        } : undefined,
-        original_reservation: originalReservation || null,
-        created_by_username: r.created_by_username || null,
-        has_unified_services: r.has_unified_services ?? null
-      };
-    });
-  }, []);
-
-  // Reference to services map for realtime updates
-  const servicesMapRef = useRef<Map<string, {id: string;name: string;shortcut?: string | null;price_small?: number | null;price_medium?: number | null;price_large?: number | null;price_from?: number | null;}>>(new Map());
+    >
+  >(new Map());
 
   // Fetch reservations from database with date range filter
   // Initial load: 2 months back + all future reservations
@@ -652,7 +743,10 @@ const AdminDashboard = () => {
     servicesMapRef.current = servicesMap;
 
     // Build query with date filter
-    let query = supabase.from('reservations').select(`
+    let query = supabase
+      .from('reservations')
+      .select(
+        `
         id,
         instance_id,
         customer_name,
@@ -682,9 +776,11 @@ const AdminDashboard = () => {
         has_unified_services,
         photo_urls,
         stations:station_id (name, type)
-      `).eq('instance_id', instanceId).
-    neq('status', 'cancelled').
-    gte('reservation_date', format(from, 'yyyy-MM-dd'));
+      `,
+      )
+      .eq('instance_id', instanceId)
+      .neq('status', 'cancelled')
+      .gte('reservation_date', format(from, 'yyyy-MM-dd'));
 
     // If to is not null, add upper bound filter
     if (to !== null) {
@@ -695,16 +791,16 @@ const AdminDashboard = () => {
 
     if (!error && data) {
       // Fetch original reservation data for change requests
-      const changeRequestIds = data.
-      filter((r) => r.original_reservation_id).
-      map((r) => r.original_reservation_id);
+      const changeRequestIds = data
+        .filter((r) => r.original_reservation_id)
+        .map((r) => r.original_reservation_id);
 
       const originalReservationsMap = new Map<string, any>();
       if (changeRequestIds.length > 0) {
-        const { data: originals } = await supabase.
-        from('reservations').
-        select('id, reservation_date, start_time, confirmation_code').
-        in('id', changeRequestIds);
+        const { data: originals } = await supabase
+          .from('reservations')
+          .select('id, reservation_date, start_time, confirmation_code')
+          .in('id', changeRequestIds);
 
         if (originals) {
           originals.forEach((o) => originalReservationsMap.set(o.id, o));
@@ -717,24 +813,28 @@ const AdminDashboard = () => {
 
   // Load more reservations when user navigates to dates near the edge of loaded data
   // Uses mutex ref to prevent race condition during rapid navigation
-  const loadMoreReservations = useCallback(async (direction: 'past') => {
-    // Use ref for synchronous check - prevents multiple calls during rapid navigation
-    if (!instanceId || isLoadingMoreRef.current) return;
+  const loadMoreReservations = useCallback(
+    async (direction: 'past') => {
+      // Use ref for synchronous check - prevents multiple calls during rapid navigation
+      if (!instanceId || isLoadingMoreRef.current) return;
 
-    if (direction === 'past') {
-      // Set mutex immediately (synchronous)
-      isLoadingMoreRef.current = true;
-      setIsLoadingMoreReservations(true); // For UI feedback
+      if (direction === 'past') {
+        // Set mutex immediately (synchronous)
+        isLoadingMoreRef.current = true;
+        setIsLoadingMoreReservations(true); // For UI feedback
 
-      try {
-        const newFrom = subMonths(loadedDateRange.from, 1);
-        const oldFrom = loadedDateRange.from;
+        try {
+          const newFrom = subMonths(loadedDateRange.from, 1);
+          const oldFrom = loadedDateRange.from;
 
-        // First fetch services to map service_ids
-        const servicesMap = servicesMapRef.current;
+          // First fetch services to map service_ids
+          const servicesMap = servicesMapRef.current;
 
-        // Fetch additional reservations
-        const { data, error } = await supabase.from('reservations').select(`
+          // Fetch additional reservations
+          const { data, error } = await supabase
+            .from('reservations')
+            .select(
+              `
             id,
             instance_id,
             customer_name,
@@ -764,62 +864,69 @@ const AdminDashboard = () => {
             photo_urls,
             assigned_employee_ids,
             stations:station_id (name, type)
-          `).eq('instance_id', instanceId).
-        neq('status', 'cancelled').
-        gte('reservation_date', format(newFrom, 'yyyy-MM-dd')).
-        lt('reservation_date', format(oldFrom, 'yyyy-MM-dd'));
+          `,
+            )
+            .eq('instance_id', instanceId)
+            .neq('status', 'cancelled')
+            .gte('reservation_date', format(newFrom, 'yyyy-MM-dd'))
+            .lt('reservation_date', format(oldFrom, 'yyyy-MM-dd'));
 
-        if (!error && data && data.length > 0) {
-          // Fetch original reservation data for change requests
-          const changeRequestIds = data.
-          filter((r) => r.original_reservation_id).
-          map((r) => r.original_reservation_id);
+          if (!error && data && data.length > 0) {
+            // Fetch original reservation data for change requests
+            const changeRequestIds = data
+              .filter((r) => r.original_reservation_id)
+              .map((r) => r.original_reservation_id);
 
-          const originalReservationsMap = new Map<string, any>();
-          if (changeRequestIds.length > 0) {
-            const { data: originals } = await supabase.
-            from('reservations').
-            select('id, reservation_date, start_time, confirmation_code').
-            in('id', changeRequestIds);
+            const originalReservationsMap = new Map<string, any>();
+            if (changeRequestIds.length > 0) {
+              const { data: originals } = await supabase
+                .from('reservations')
+                .select('id, reservation_date, start_time, confirmation_code')
+                .in('id', changeRequestIds);
 
-            if (originals) {
-              originals.forEach((o) => originalReservationsMap.set(o.id, o));
+              if (originals) {
+                originals.forEach((o) => originalReservationsMap.set(o.id, o));
+              }
             }
+
+            const mappedData = mapReservationData(data, servicesMap, originalReservationsMap);
+            setReservations((prev) => [...mappedData, ...prev]);
           }
 
-          const mappedData = mapReservationData(data, servicesMap, originalReservationsMap);
-          setReservations((prev) => [...mappedData, ...prev]);
+          setLoadedDateRange((prev) => ({ ...prev, from: newFrom }));
+        } finally {
+          // Always release mutex in finally block
+          isLoadingMoreRef.current = false;
+          setIsLoadingMoreReservations(false);
         }
-
-        setLoadedDateRange((prev) => ({ ...prev, from: newFrom }));
-      } finally {
-        // Always release mutex in finally block
-        isLoadingMoreRef.current = false;
-        setIsLoadingMoreReservations(false);
       }
-    }
-  }, [instanceId, loadedDateRange.from, mapReservationData]);
+    },
+    [instanceId, loadedDateRange.from, mapReservationData],
+  );
 
   // Debounced loadMoreReservations to prevent burst requests during rapid navigation
   const loadMoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle calendar date change - load more data if approaching edge
   // Uses debounce to prevent multiple requests during rapid scrolling/clicking
-  const handleCalendarDateChange = useCallback((date: Date) => {
-    setCalendarDate(date);
+  const handleCalendarDateChange = useCallback(
+    (date: Date) => {
+      setCalendarDate(date);
 
-    // Check if we're approaching the edge of loaded data (within 7 days buffer)
-    const bufferDays = 7;
-    if (date < addDays(loadedDateRange.from, bufferDays)) {
-      // Debounce loadMore to prevent burst requests
-      if (loadMoreDebounceRef.current) {
-        clearTimeout(loadMoreDebounceRef.current);
+      // Check if we're approaching the edge of loaded data (within 7 days buffer)
+      const bufferDays = 7;
+      if (date < addDays(loadedDateRange.from, bufferDays)) {
+        // Debounce loadMore to prevent burst requests
+        if (loadMoreDebounceRef.current) {
+          clearTimeout(loadMoreDebounceRef.current);
+        }
+        loadMoreDebounceRef.current = setTimeout(() => {
+          loadMoreReservations('past');
+        }, 300);
       }
-      loadMoreDebounceRef.current = setTimeout(() => {
-        loadMoreReservations('past');
-      }, 300);
-    }
-  }, [loadedDateRange.from, loadMoreReservations]);
+    },
+    [loadedDateRange.from, loadMoreReservations],
+  );
 
   // Cleanup debounce on unmount
   useEffect(() => {
@@ -855,18 +962,24 @@ const AdminDashboard = () => {
       setTrainings([]);
       return;
     }
-    const { data, error } = (await supabase.
-    from('trainings').
-    select('*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)').
-    eq('instance_id', instanceId)) as any;
+    const { data, error } = (await supabase
+      .from('trainings')
+      .select(
+        '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
+      )
+      .eq('instance_id', instanceId)) as any;
 
     if (!error && data) {
-      setTrainings(data.map((t: any) => ({
-        ...t,
-        assigned_employee_ids: Array.isArray(t.assigned_employee_ids) ? t.assigned_employee_ids : [],
-        station: t.stations ? { name: t.stations.name, type: t.stations.type } : null,
-        training_type_record: t.training_type_record || null
-      })));
+      setTrainings(
+        data.map((t: any) => ({
+          ...t,
+          assigned_employee_ids: Array.isArray(t.assigned_employee_ids)
+            ? t.assigned_employee_ids
+            : [],
+          station: t.stations ? { name: t.stations.name, type: t.stations.type } : null,
+          training_type_record: t.training_type_record || null,
+        })),
+      );
     }
   }, [instanceId, trainingsEnabled]);
 
@@ -900,7 +1013,9 @@ const AdminDashboard = () => {
       if (deepLinkHandledRef.current) return; // Already handled this code
 
       // First check if reservation is already in state
-      const existingReservation = reservations.find((r) => r.confirmation_code === reservationCodeFromUrl);
+      const existingReservation = reservations.find(
+        (r) => r.confirmation_code === reservationCodeFromUrl,
+      );
       if (existingReservation) {
         deepLinkHandledRef.current = true;
         setSelectedReservation(existingReservation);
@@ -913,9 +1028,10 @@ const AdminDashboard = () => {
       // Only try once when reservations are loaded
       if (reservations.length > 0) {
         deepLinkHandledRef.current = true;
-        const { data } = await supabase.
-        from('reservations').
-        select(`
+        const { data } = await supabase
+          .from('reservations')
+          .select(
+            `
             id,
             instance_id,
             customer_name,
@@ -942,23 +1058,32 @@ const AdminDashboard = () => {
             pickup_sms_sent_at,
             photo_urls,
             stations:station_id (name, type)
-          `).
-        eq('instance_id', instanceId).
-        eq('confirmation_code', reservationCodeFromUrl).
-        maybeSingle();
+          `,
+          )
+          .eq('instance_id', instanceId)
+          .eq('confirmation_code', reservationCodeFromUrl)
+          .maybeSingle();
 
         if (data) {
           const mappedReservation: Reservation = {
             ...data,
             status: data.status || 'pending',
-            service_ids: Array.isArray(data.service_ids) ? data.service_ids as string[] : undefined,
-            service_items: Array.isArray(data.service_items) ? data.service_items as unknown as ServiceItem[] : undefined,
-            assigned_employee_ids: Array.isArray(data.assigned_employee_ids) ? data.assigned_employee_ids as string[] : undefined,
+            service_ids: Array.isArray(data.service_ids)
+              ? (data.service_ids as string[])
+              : undefined,
+            service_items: Array.isArray(data.service_items)
+              ? (data.service_items as unknown as ServiceItem[])
+              : undefined,
+            assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+              ? (data.assigned_employee_ids as string[])
+              : undefined,
             service: undefined, // Legacy relation removed - use service_ids/service_items instead
-            station: data.stations ? {
-              name: (data.stations as any).name,
-              type: (data.stations as any).type
-            } : undefined
+            station: data.stations
+              ? {
+                  name: (data.stations as any).name,
+                  type: (data.stations as any).type,
+                }
+              : undefined,
           };
           // Add to state temporarily so drawer can open
           setReservations((prev) => [...prev, mappedReservation]);
@@ -1016,33 +1141,40 @@ const AdminDashboard = () => {
         currentChannel = null;
       }
 
-      currentChannel = supabase.channel(`reservations-changes-${Date.now()}`).
-      on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'reservations',
-        filter: `instance_id=eq.${instanceId}`
-      }, (payload) => {
-        console.log('Realtime reservation update:', payload);
+      currentChannel = supabase
+        .channel(`reservations-changes-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'reservations',
+            filter: `instance_id=eq.${instanceId}`,
+          },
+          (payload) => {
+            console.log('Realtime reservation update:', payload);
 
-        if (payload.eventType === 'INSERT') {
-          const newRecord = payload.new as any;
-          const reservationDate = parseISO(newRecord.reservation_date);
+            if (payload.eventType === 'INSERT') {
+              const newRecord = payload.new as any;
+              const reservationDate = parseISO(newRecord.reservation_date);
 
-          // Use ref to check date range without causing re-subscription
-          const isWithinRange = reservationDate >= loadedDateRangeRef.current.from;
+              // Use ref to check date range without causing re-subscription
+              const isWithinRange = reservationDate >= loadedDateRangeRef.current.from;
 
-          if (!isWithinRange) {
-            return;
-          }
+              if (!isWithinRange) {
+                return;
+              }
 
-          // Play sound only for customer reservations
-          if (newRecord.source === 'customer') {
-            playNotificationSound();
-          }
+              // Play sound only for customer reservations
+              if (newRecord.source === 'customer') {
+                playNotificationSound();
+              }
 
-          // Fetch the new reservation with service and station info
-          supabase.from('reservations').select(`
+              // Fetch the new reservation with service and station info
+              supabase
+                .from('reservations')
+                .select(
+                  `
               id,
               instance_id,
               customer_name,
@@ -1064,79 +1196,109 @@ const AdminDashboard = () => {
               photo_urls,
               assigned_employee_ids,
               stations:station_id (name, type)
-            `).eq('id', payload.new.id).single().then(({ data }) => {
-            if (data) {
-              // Primary source: service_items JSONB (already contains names)
-              const serviceItems = data.service_items as unknown as ServiceItem[] | null;
-              const serviceIds = (data as any).service_ids as string[] | null;
+            `,
+                )
+                .eq('id', payload.new.id)
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    // Primary source: service_items JSONB (already contains names)
+                    const serviceItems = data.service_items as unknown as ServiceItem[] | null;
+                    const serviceIds = (data as any).service_ids as string[] | null;
 
-              let servicesDataMapped: Array<{id?: string;name: string;shortcut?: string | null;price_small?: number | null;price_medium?: number | null;price_large?: number | null;price_from?: number | null;}> = [];
+                    let servicesDataMapped: Array<{
+                      id?: string;
+                      name: string;
+                      shortcut?: string | null;
+                      price_small?: number | null;
+                      price_medium?: number | null;
+                      price_large?: number | null;
+                      price_from?: number | null;
+                    }> = [];
 
-              // Use service_items as primary source (may or may not have names embedded)
-              if (serviceItems && serviceItems.length > 0) {
-                servicesDataMapped = serviceItems.map((item) => {
-                  const resolvedId = item.id || item.service_id;
-                  const cached = resolvedId ? servicesMapRef.current.get(resolvedId) : undefined;
+                    // Use service_items as primary source (may or may not have names embedded)
+                    if (serviceItems && serviceItems.length > 0) {
+                      servicesDataMapped = serviceItems.map((item) => {
+                        const resolvedId = item.id || item.service_id;
+                        const cached = resolvedId
+                          ? servicesMapRef.current.get(resolvedId)
+                          : undefined;
 
-                  return {
-                    id: resolvedId,
-                    name: item.name || cached?.name || 'Usługa',
-                    shortcut: item.short_name || cached?.shortcut || null,
-                    price_small: item.price_small ?? cached?.price_small ?? null,
-                    price_medium: item.price_medium ?? cached?.price_medium ?? null,
-                    price_large: item.price_large ?? cached?.price_large ?? null,
-                    price_from: item.price_from ?? cached?.price_from ?? null
-                  };
-                });
-              } else if (serviceIds && serviceIds.length > 0) {
-                // Fallback to service_ids lookup (for legacy reservations)
-                serviceIds.forEach((id) => {
-                  const svc = servicesMapRef.current.get(id);
-                  if (svc) {
-                    servicesDataMapped.push(svc);
+                        return {
+                          id: resolvedId,
+                          name: item.name || cached?.name || 'Usługa',
+                          shortcut: item.short_name || cached?.shortcut || null,
+                          price_small: item.price_small ?? cached?.price_small ?? null,
+                          price_medium: item.price_medium ?? cached?.price_medium ?? null,
+                          price_large: item.price_large ?? cached?.price_large ?? null,
+                          price_from: item.price_from ?? cached?.price_from ?? null,
+                        };
+                      });
+                    } else if (serviceIds && serviceIds.length > 0) {
+                      // Fallback to service_ids lookup (for legacy reservations)
+                      serviceIds.forEach((id) => {
+                        const svc = servicesMapRef.current.get(id);
+                        if (svc) {
+                          servicesDataMapped.push(svc);
+                        }
+                      });
+                    }
+
+                    const newReservation = {
+                      ...data,
+                      status: data.status || 'pending',
+                      service_ids: Array.isArray(data.service_ids)
+                        ? (data.service_ids as string[])
+                        : undefined,
+                      service_items: Array.isArray(data.service_items)
+                        ? (data.service_items as unknown as ServiceItem[])
+                        : undefined,
+                      assigned_employee_ids: Array.isArray((data as any).assigned_employee_ids)
+                        ? ((data as any).assigned_employee_ids as string[])
+                        : undefined,
+                      service: undefined, // Legacy relation removed - use service_ids/service_items instead
+                      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
+                      station: data.stations
+                        ? {
+                            name: (data.stations as any).name,
+                            type: (data.stations as any).type,
+                          }
+                        : undefined,
+                      created_by_username: (data as any).created_by_username || null,
+                    };
+                    setReservations((prev) => {
+                      // Prevent duplicates (in case fetch also returned this reservation)
+                      if (prev.some((r) => r.id === data.id)) {
+                        return prev.map((r) =>
+                          r.id === data.id ? (newReservation as Reservation) : r,
+                        );
+                      }
+                      return [...prev, newReservation as Reservation];
+                    });
+
+                    const isCustomerReservation = (data as any).source === 'customer';
+                    if (isCustomerReservation) {
+                      toast.success('🔔 Nowa rezerwacja od klienta!', {
+                        description: `${data.customer_name} - ${data.start_time}`,
+                      });
+                    }
                   }
                 });
+            } else if (payload.eventType === 'UPDATE') {
+              // Skip if recently updated locally (debounce to prevent flickering)
+              const lastLocalUpdate = recentlyUpdatedReservationsRef.current.get(payload.new.id);
+              if (lastLocalUpdate && Date.now() - lastLocalUpdate < 3000) {
+                console.log(
+                  '[Realtime] Skipping update for locally modified reservation:',
+                  payload.new.id,
+                );
+                return;
               }
 
-              const newReservation = {
-                ...data,
-                status: data.status || 'pending',
-                service_ids: Array.isArray(data.service_ids) ? data.service_ids as string[] : undefined,
-                service_items: Array.isArray(data.service_items) ? data.service_items as unknown as ServiceItem[] : undefined,
-                assigned_employee_ids: Array.isArray((data as any).assigned_employee_ids) ? (data as any).assigned_employee_ids as string[] : undefined,
-                service: undefined, // Legacy relation removed - use service_ids/service_items instead
-                services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-                station: data.stations ? {
-                  name: (data.stations as any).name,
-                  type: (data.stations as any).type
-                } : undefined,
-                created_by_username: (data as any).created_by_username || null
-              };
-              setReservations((prev) => {
-                // Prevent duplicates (in case fetch also returned this reservation)
-                if (prev.some((r) => r.id === data.id)) {
-                  return prev.map((r) => r.id === data.id ? newReservation as Reservation : r);
-                }
-                return [...prev, newReservation as Reservation];
-              });
-
-              const isCustomerReservation = (data as any).source === 'customer';
-              if (isCustomerReservation) {
-                toast.success('🔔 Nowa rezerwacja od klienta!', {
-                  description: `${data.customer_name} - ${data.start_time}`
-                });
-              }
-            }
-          });
-        } else if (payload.eventType === 'UPDATE') {
-          // Skip if recently updated locally (debounce to prevent flickering)
-          const lastLocalUpdate = recentlyUpdatedReservationsRef.current.get(payload.new.id);
-          if (lastLocalUpdate && Date.now() - lastLocalUpdate < 3000) {
-            console.log('[Realtime] Skipping update for locally modified reservation:', payload.new.id);
-            return;
-          }
-
-          supabase.from('reservations').select(`
+              supabase
+                .from('reservations')
+                .select(
+                  `
               id,
               instance_id,
               customer_name,
@@ -1162,146 +1324,184 @@ const AdminDashboard = () => {
               checked_service_ids,
               assigned_employee_ids,
               stations:station_id (name, type)
-            `).eq('id', payload.new.id).single().then(({ data }) => {
-            if (data) {
-              // Primary source: service_items JSONB (already contains names)
-              const serviceItems = data.service_items as unknown as ServiceItem[] | null;
-              const serviceIds = (data as any).service_ids as string[] | null;
+            `,
+                )
+                .eq('id', payload.new.id)
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    // Primary source: service_items JSONB (already contains names)
+                    const serviceItems = data.service_items as unknown as ServiceItem[] | null;
+                    const serviceIds = (data as any).service_ids as string[] | null;
 
-              let servicesDataMapped: Array<{id?: string;name: string;shortcut?: string | null;price_small?: number | null;price_medium?: number | null;price_large?: number | null;price_from?: number | null;}> = [];
+                    let servicesDataMapped: Array<{
+                      id?: string;
+                      name: string;
+                      shortcut?: string | null;
+                      price_small?: number | null;
+                      price_medium?: number | null;
+                      price_large?: number | null;
+                      price_from?: number | null;
+                    }> = [];
 
-              // Use service_items as primary source (may or may not have names embedded)
-              if (serviceItems && serviceItems.length > 0) {
-                servicesDataMapped = serviceItems.map((item) => {
-                  const resolvedId = item.id || item.service_id;
-                  const cached = resolvedId ? servicesMapRef.current.get(resolvedId) : undefined;
+                    // Use service_items as primary source (may or may not have names embedded)
+                    if (serviceItems && serviceItems.length > 0) {
+                      servicesDataMapped = serviceItems.map((item) => {
+                        const resolvedId = item.id || item.service_id;
+                        const cached = resolvedId
+                          ? servicesMapRef.current.get(resolvedId)
+                          : undefined;
 
-                  return {
-                    id: resolvedId,
-                    name: item.name || cached?.name || 'Usługa',
-                    shortcut: item.short_name || cached?.shortcut || null,
-                    price_small: item.price_small ?? cached?.price_small ?? null,
-                    price_medium: item.price_medium ?? cached?.price_medium ?? null,
-                    price_large: item.price_large ?? cached?.price_large ?? null,
-                    price_from: item.price_from ?? cached?.price_from ?? null
-                  };
-                });
-              } else if (serviceIds && serviceIds.length > 0) {
-                // Fallback to service_ids lookup (for legacy reservations)
-                serviceIds.forEach((id) => {
-                  const svc = servicesMapRef.current.get(id);
-                  if (svc) {
-                    servicesDataMapped.push(svc);
+                        return {
+                          id: resolvedId,
+                          name: item.name || cached?.name || 'Usługa',
+                          shortcut: item.short_name || cached?.shortcut || null,
+                          price_small: item.price_small ?? cached?.price_small ?? null,
+                          price_medium: item.price_medium ?? cached?.price_medium ?? null,
+                          price_large: item.price_large ?? cached?.price_large ?? null,
+                          price_from: item.price_from ?? cached?.price_from ?? null,
+                        };
+                      });
+                    } else if (serviceIds && serviceIds.length > 0) {
+                      // Fallback to service_ids lookup (for legacy reservations)
+                      serviceIds.forEach((id) => {
+                        const svc = servicesMapRef.current.get(id);
+                        if (svc) {
+                          servicesDataMapped.push(svc);
+                        }
+                        // Don't show "usługa usunięta" - just skip if not found in cache
+                        // The reservation still has the data, just wait for cache to load
+                      });
+                    }
+
+                    const updatedReservation = {
+                      ...data,
+                      status: data.status || 'pending',
+                      service_ids: Array.isArray(data.service_ids)
+                        ? (data.service_ids as string[])
+                        : undefined,
+                      service_items: Array.isArray(data.service_items)
+                        ? (data.service_items as unknown as ServiceItem[])
+                        : undefined,
+                      assigned_employee_ids: Array.isArray((data as any).assigned_employee_ids)
+                        ? ((data as any).assigned_employee_ids as string[])
+                        : undefined,
+                      service: undefined, // Legacy relation removed
+                      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
+                      station: data.stations
+                        ? {
+                            name: (data.stations as any).name,
+                            type: (data.stations as any).type,
+                          }
+                        : undefined,
+                      has_unified_services: (data as any).has_unified_services,
+                      photo_urls: (data as any).photo_urls,
+                      checked_service_ids: Array.isArray((data as any).checked_service_ids)
+                        ? ((data as any).checked_service_ids as string[])
+                        : undefined,
+                    };
+                    setReservations((prev) =>
+                      prev.map((r) =>
+                        r.id === payload.new.id ? (updatedReservation as Reservation) : r,
+                      ),
+                    );
+                    // Also update selectedReservation if viewing the same reservation
+                    setSelectedReservation((prev) =>
+                      prev?.id === payload.new.id ? (updatedReservation as Reservation) : prev,
+                    );
                   }
-                  // Don't show "usługa usunięta" - just skip if not found in cache
-                  // The reservation still has the data, just wait for cache to load
                 });
+            } else if (payload.eventType === 'DELETE') {
+              setReservations((prev) => prev.filter((r) => r.id !== payload.old.id));
+            }
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'trainings',
+            filter: `instance_id=eq.${instanceId}`,
+          },
+          async (payload) => {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const { data } = (await supabase
+                .from('trainings')
+                .select(
+                  '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
+                )
+                .eq('id', payload.new.id)
+                .single()) as any;
+              if (data) {
+                const mapped: Training = {
+                  ...data,
+                  assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+                    ? data.assigned_employee_ids
+                    : [],
+                  station: data.stations
+                    ? { name: data.stations.name, type: data.stations.type }
+                    : null,
+                  training_type_record: data.training_type_record || null,
+                };
+                // Always upsert — handles both INSERT and UPDATE, prevents duplicates
+                setTrainings((prev) => {
+                  const exists = prev.some((t) => t.id === mapped.id);
+                  if (exists) {
+                    return prev.map((t) => (t.id === mapped.id ? mapped : t));
+                  }
+                  return [...prev, mapped];
+                });
+                setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
               }
+            } else if (payload.eventType === 'DELETE') {
+              setTrainings((prev) => prev.filter((t) => t.id !== payload.old.id));
+              setSelectedTraining((prev) => (prev?.id === payload.old.id ? null : prev));
+            }
+          },
+        )
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
 
-              const updatedReservation = {
-                ...data,
-                status: data.status || 'pending',
-                service_ids: Array.isArray(data.service_ids) ? data.service_ids as string[] : undefined,
-                service_items: Array.isArray(data.service_items) ? data.service_items as unknown as ServiceItem[] : undefined,
-                assigned_employee_ids: Array.isArray((data as any).assigned_employee_ids) ? (data as any).assigned_employee_ids as string[] : undefined,
-                service: undefined, // Legacy relation removed
-                services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-                station: data.stations ? {
-                  name: (data.stations as any).name,
-                  type: (data.stations as any).type
-                } : undefined,
-                has_unified_services: (data as any).has_unified_services,
-                photo_urls: (data as any).photo_urls,
-                checked_service_ids: Array.isArray((data as any).checked_service_ids) ? (data as any).checked_service_ids as string[] : undefined
-              };
-              setReservations((prev) => prev.map((r) => r.id === payload.new.id ? updatedReservation as Reservation : r));
-              // Also update selectedReservation if viewing the same reservation
-              setSelectedReservation((prev) =>
-              prev?.id === payload.new.id ? updatedReservation as Reservation : prev
+          if (status === 'SUBSCRIBED') {
+            setRealtimeConnected(true);
+            retryCount = 0;
+            // Sync after reconnect to recover any missed events
+            // Throttle: skip if we fetched less than 5s ago (prevents rapid reconnect loops)
+            const now = Date.now();
+            if (now - lastRealtimeFetchRef.current > 5000 && !isFetchingRef.current) {
+              lastRealtimeFetchRef.current = now;
+              isFetchingRef.current = true;
+              Promise.all([fetchReservationsRef.current(), fetchTrainingsRef.current()]).finally(
+                () => {
+                  isFetchingRef.current = false;
+                },
               );
             }
-          });
-        } else if (payload.eventType === 'DELETE') {
-          setReservations((prev) => prev.filter((r) => r.id !== payload.old.id));
-        }
-      }).
-      on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'trainings',
-        filter: `instance_id=eq.${instanceId}`
-      }, async (payload) => {
-        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-          const { data } = (await supabase.
-          from('trainings').
-          select('*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)').
-          eq('id', payload.new.id).
-          single()) as any;
-          if (data) {
-            const mapped: Training = {
-              ...data,
-              assigned_employee_ids: Array.isArray(data.assigned_employee_ids) ? data.assigned_employee_ids : [],
-              station: data.stations ? { name: data.stations.name, type: data.stations.type } : null,
-              training_type_record: data.training_type_record || null
-            };
-            // Always upsert — handles both INSERT and UPDATE, prevents duplicates
-            setTrainings((prev) => {
-              const exists = prev.some((t) => t.id === mapped.id);
-              if (exists) {
-                return prev.map((t) => t.id === mapped.id ? mapped : t);
-              }
-              return [...prev, mapped];
-            });
-            setSelectedTraining((prev) => prev?.id === mapped.id ? mapped : prev);
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            setRealtimeConnected(false);
+
+            if (isCleanedUp) return;
+
+            if (retryCount < maxRetries) {
+              retryCount++;
+              const delay = Math.min(1000 * Math.pow(1.5, retryCount), 30000);
+              console.log(`Realtime retry ${retryCount}/${maxRetries} in ${delay}ms`);
+
+              retryTimeoutId = setTimeout(() => {
+                if (isCleanedUp) return;
+                setupRealtimeChannel();
+              }, delay);
+            } else {
+              console.error('Max realtime retries reached, falling back to periodic fetch');
+              retryTimeoutId = setTimeout(() => {
+                if (isCleanedUp) return;
+                retryCount = 0;
+                setupRealtimeChannel();
+              }, 30000);
+            }
           }
-        } else if (payload.eventType === 'DELETE') {
-          setTrainings((prev) => prev.filter((t) => t.id !== payload.old.id));
-          setSelectedTraining((prev) => prev?.id === payload.old.id ? null : prev);
-        }
-      }).
-      subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-
-        if (status === 'SUBSCRIBED') {
-          setRealtimeConnected(true);
-          retryCount = 0;
-          // Sync after reconnect to recover any missed events
-          // Throttle: skip if we fetched less than 5s ago (prevents rapid reconnect loops)
-          const now = Date.now();
-          if (now - lastRealtimeFetchRef.current > 5000 && !isFetchingRef.current) {
-            lastRealtimeFetchRef.current = now;
-            isFetchingRef.current = true;
-            Promise.all([
-              fetchReservationsRef.current(),
-              fetchTrainingsRef.current(),
-            ]).finally(() => {
-              isFetchingRef.current = false;
-            });
-          }
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          setRealtimeConnected(false);
-
-          if (isCleanedUp) return;
-
-          if (retryCount < maxRetries) {
-            retryCount++;
-            const delay = Math.min(1000 * Math.pow(1.5, retryCount), 30000);
-            console.log(`Realtime retry ${retryCount}/${maxRetries} in ${delay}ms`);
-
-            retryTimeoutId = setTimeout(() => {
-              if (isCleanedUp) return;
-              setupRealtimeChannel();
-            }, delay);
-          } else {
-            console.error('Max realtime retries reached, falling back to periodic fetch');
-            retryTimeoutId = setTimeout(() => {
-              if (isCleanedUp) return;
-              retryCount = 0;
-              setupRealtimeChannel();
-            }, 30000);
-          }
-        }
-      });
+        });
     };
 
     // Initial connection
@@ -1327,10 +1527,13 @@ const AdminDashboard = () => {
     const workEnd = 18 * 60; // 18:00 in minutes
 
     return stations.map((station) => {
-      const stationReservations = reservations.filter((r) => r.station_id === station.id && r.reservation_date === today).map((r) => ({
-        start: parseInt(r.start_time.split(':')[0]) * 60 + parseInt(r.start_time.split(':')[1]),
-        end: parseInt(r.end_time.split(':')[0]) * 60 + parseInt(r.end_time.split(':')[1])
-      })).sort((a, b) => a.start - b.start);
+      const stationReservations = reservations
+        .filter((r) => r.station_id === station.id && r.reservation_date === today)
+        .map((r) => ({
+          start: parseInt(r.start_time.split(':')[0]) * 60 + parseInt(r.start_time.split(':')[1]),
+          end: parseInt(r.end_time.split(':')[0]) * 60 + parseInt(r.end_time.split(':')[1]),
+        }))
+        .sort((a, b) => a.start - b.start);
 
       // Find gaps
       const gaps: {
@@ -1342,7 +1545,7 @@ const AdminDashboard = () => {
         if (res.start > searchStart) {
           gaps.push({
             start: searchStart,
-            end: res.start
+            end: res.start,
           });
         }
         searchStart = Math.max(searchStart, res.end);
@@ -1352,7 +1555,7 @@ const AdminDashboard = () => {
       if (searchStart < workEnd) {
         gaps.push({
           start: searchStart,
-          end: workEnd
+          end: workEnd,
         });
       }
 
@@ -1365,16 +1568,19 @@ const AdminDashboard = () => {
         const durationHours = (gap.end - gap.start) / 60;
         const startStr = `${startHour}:${startMin.toString().padStart(2, '0')}`;
         const endStr = `${endHour}:${endMin.toString().padStart(2, '0')}`;
-        const durationStr = durationHours >= 1 ? `${Math.floor(durationHours)}h${durationHours % 1 > 0 ? ` ${Math.round(durationHours % 1 * 60)}min` : ''}` : `${Math.round(durationHours * 60)}min`;
+        const durationStr =
+          durationHours >= 1
+            ? `${Math.floor(durationHours)}h${durationHours % 1 > 0 ? ` ${Math.round((durationHours % 1) * 60)}min` : ''}`
+            : `${Math.round(durationHours * 60)}min`;
         return {
           label: `${startStr} - ${endStr}`,
           duration: durationStr,
-          durationMinutes: gap.end - gap.start
+          durationMinutes: gap.end - gap.start,
         };
       });
       return {
         ...station,
-        freeRanges
+        freeRanges,
       };
     });
   };
@@ -1410,38 +1616,43 @@ const AdminDashboard = () => {
     setEditingTraining(null);
     setAddTrainingOpen(true);
   };
-  const handleDeleteReservation = async (reservationId: string, customerData: {
-    name: string;
-    phone: string;
-    email?: string;
-    instance_id: string;
-  }) => {
+  const handleDeleteReservation = async (
+    reservationId: string,
+    customerData: {
+      name: string;
+      phone: string;
+      email?: string;
+      instance_id: string;
+    },
+  ) => {
     try {
       // First, save the customer to customers table (upsert by phone)
-      const {
-        error: customerError
-      } = await supabase.from('customers').upsert({
-        instance_id: customerData.instance_id,
-        name: customerData.name,
-        phone: customerData.phone,
-        email: customerData.email
-      }, {
-        onConflict: 'instance_id,phone',
-        ignoreDuplicates: false
-      });
+      const { error: customerError } = await supabase.from('customers').upsert(
+        {
+          instance_id: customerData.instance_id,
+          name: customerData.name,
+          phone: customerData.phone,
+          email: customerData.email,
+        },
+        {
+          onConflict: 'instance_id,phone',
+          ignoreDuplicates: false,
+        },
+      );
       if (customerError) {
         console.error('Error saving customer:', customerError);
         // Continue with cancellation even if customer save fails
       }
 
       // Soft delete - update status to cancelled with timestamp and user
-      const {
-        error: updateError
-      } = await supabase.from('reservations').update({
-        status: 'cancelled',
-        cancelled_at: new Date().toISOString(),
-        cancelled_by: user?.id || null
-      }).eq('id', reservationId);
+      const { error: updateError } = await supabase
+        .from('reservations')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: user?.id || null,
+        })
+        .eq('id', reservationId);
 
       if (updateError) {
         toast.error(t('errors.generic'));
@@ -1456,7 +1667,7 @@ const AdminDashboard = () => {
           title: `🚫 Rezerwacja anulowana`,
           body: `${customerData.name} - anulowana przez admina`,
           url: '/admin',
-          tag: `deleted-reservation-${reservationId}`
+          tag: `deleted-reservation-${reservationId}`,
         });
       }
 
@@ -1487,21 +1698,27 @@ const AdminDashboard = () => {
 
       try {
         // Save customer data before deleting
-        await supabase.from('customers').upsert({
-          instance_id: instanceId,
-          name: reservation.customer_name,
-          phone: reservation.customer_phone,
-        }, {
-          onConflict: 'instance_id,phone',
-          ignoreDuplicates: false
-        });
+        await supabase.from('customers').upsert(
+          {
+            instance_id: instanceId,
+            name: reservation.customer_name,
+            phone: reservation.customer_phone,
+          },
+          {
+            onConflict: 'instance_id,phone',
+            ignoreDuplicates: false,
+          },
+        );
 
         // Soft delete - update status to cancelled with timestamp and user
-        const { error } = await supabase.from('reservations').update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancelled_by: user?.id || null
-        }).eq('id', reservationId);
+        const { error } = await supabase
+          .from('reservations')
+          .update({
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancelled_by: user?.id || null,
+          })
+          .eq('id', reservationId);
 
         if (error) {
           console.error('Error rejecting reservation:', error);
@@ -1524,7 +1741,7 @@ const AdminDashboard = () => {
           deleteExecuted = true; // Prevent delete
           setReservations((prev) => [...prev, reservation]);
           toast.success(t('common.success'));
-        }
+        },
       },
       duration: 5000,
       onDismiss: () => {
@@ -1532,14 +1749,20 @@ const AdminDashboard = () => {
       },
       onAutoClose: () => {
         executeDelete();
-      }
+      },
     });
   };
   const handleReservationSave = (reservationId: string, data: Partial<Reservation>) => {
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      ...data
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              ...data,
+            }
+          : r,
+      ),
+    );
     setSelectedReservation(null);
     toast.success(t('reservations.reservationUpdated'));
   };
@@ -1552,7 +1775,7 @@ const AdminDashboard = () => {
       stationId,
       date,
       time,
-      stationType: station?.type || ''
+      stationType: station?.type || '',
     });
     setAddReservationOpen(true);
   };
@@ -1566,7 +1789,7 @@ const AdminDashboard = () => {
       stationId: reservation.station_id || '',
       date: reservation.reservation_date,
       time: reservation.start_time?.substring(0, 5) || '',
-      stationType: station?.type || ''
+      stationType: station?.type || '',
     });
     setAddReservationOpen(true);
   };
@@ -1580,7 +1803,7 @@ const AdminDashboard = () => {
       stationId: '',
       date: '',
       time: '',
-      stationType: ''
+      stationType: '',
     });
     setAddReservationOpen(true);
   };
@@ -1594,7 +1817,7 @@ const AdminDashboard = () => {
     setNewBreakData({
       stationId,
       date,
-      time
+      time,
     });
     setAddBreakOpen(true);
   };
@@ -1602,9 +1825,7 @@ const AdminDashboard = () => {
     invalidateBreaksCache();
   };
   const handleDeleteBreak = async (breakId: string) => {
-    const {
-      error
-    } = await supabase.from('breaks').delete().eq('id', breakId);
+    const { error } = await supabase.from('breaks').delete().eq('id', breakId);
     if (error) {
       toast.error(t('errors.generic'));
       console.error('Error deleting break:', error);
@@ -1618,9 +1839,7 @@ const AdminDashboard = () => {
     const existingClosedDay = closedDays.find((cd) => cd.closed_date === date);
     if (existingClosedDay) {
       // Day is closed - open it (delete from closed_days)
-      const {
-        error
-      } = await supabase.from('closed_days').delete().eq('id', existingClosedDay.id);
+      const { error } = await supabase.from('closed_days').delete().eq('id', existingClosedDay.id);
       if (error) {
         toast.error(t('errors.generic'));
         console.error('Error opening day:', error);
@@ -1633,11 +1852,9 @@ const AdminDashboard = () => {
       const newClosedDay = {
         instance_id: instanceId,
         closed_date: date,
-        reason: null
+        reason: null,
       };
-      const {
-        error
-      } = await supabase.from('closed_days').insert(newClosedDay).select().single();
+      const { error } = await supabase.from('closed_days').insert(newClosedDay).select().single();
       if (error) {
         toast.error(t('errors.generic'));
         console.error('Error closing day:', error);
@@ -1654,30 +1871,50 @@ const AdminDashboard = () => {
     const previousStatus = reservation.status;
 
     // Optimistic UI update (so it disappears from "Niepotwierdzone" instantly)
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      status: 'confirmed'
-    } : r));
-    setSelectedReservation((prev) => prev && prev.id === reservationId ? {
-      ...prev,
-      status: 'confirmed'
-    } : prev);
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: 'confirmed',
+            }
+          : r,
+      ),
+    );
+    setSelectedReservation((prev) =>
+      prev && prev.id === reservationId
+        ? {
+            ...prev,
+            status: 'confirmed',
+          }
+        : prev,
+    );
 
-    const { error } = await supabase.
-    from('reservations').
-    update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).
-    eq('id', reservationId);
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+      .eq('id', reservationId);
 
     if (error) {
       // Rollback optimistic update
-      setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-        ...r,
-        status: previousStatus
-      } : r));
-      setSelectedReservation((prev) => prev && prev.id === reservationId ? {
-        ...prev,
-        status: previousStatus
-      } : prev);
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservationId
+            ? {
+                ...r,
+                status: previousStatus,
+              }
+            : r,
+        ),
+      );
+      setSelectedReservation((prev) =>
+        prev && prev.id === reservationId
+          ? {
+              ...prev,
+              status: previousStatus,
+            }
+          : prev,
+      );
 
       toast.error(t('errors.generic'));
       console.error('Error confirming reservation:', error);
@@ -1687,7 +1924,20 @@ const AdminDashboard = () => {
     // Send confirmation SMS
     try {
       const dateObj = new Date(reservation.reservation_date);
-      const monthNames = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "wrzesnia", "pazdziernika", "listopada", "grudnia"];
+      const monthNames = [
+        'stycznia',
+        'lutego',
+        'marca',
+        'kwietnia',
+        'maja',
+        'czerwca',
+        'lipca',
+        'sierpnia',
+        'wrzesnia',
+        'pazdziernika',
+        'listopada',
+        'grudnia',
+      ];
       const dayNum = dateObj.getDate();
       const monthName = monthNames[dateObj.getMonth()];
       const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
@@ -1697,8 +1947,8 @@ const AdminDashboard = () => {
         body: {
           phone: reservation.customer_phone,
           message,
-          instanceId
-        }
+          instanceId,
+        },
       });
       toast.success(t('reservations.reservationConfirmed'));
     } catch (smsError) {
@@ -1710,12 +1960,13 @@ const AdminDashboard = () => {
     const reservation = reservations.find((r) => r.id === reservationId);
     if (!reservation) return;
 
-    const {
-      error: updateError
-    } = await supabase.from('reservations').update({
-      status: 'in_progress',
-      started_at: new Date().toISOString()
-    }).eq('id', reservationId);
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+      })
+      .eq('id', reservationId);
 
     if (updateError) {
       toast.error(t('errors.generic'));
@@ -1724,13 +1975,19 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      status: 'in_progress'
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: 'in_progress',
+            }
+          : r,
+      ),
+    );
 
     toast.success(t('reservations.workStarted'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
     });
   };
 
@@ -1743,7 +2000,7 @@ const AdminDashboard = () => {
 
     const updateData: Record<string, any> = {
       status: 'completed',
-      completed_at: now.toISOString()
+      completed_at: now.toISOString(),
     };
 
     // Shorten end_time if finishing early
@@ -1751,9 +2008,10 @@ const AdminDashboard = () => {
       updateData.end_time = nowTime;
     }
 
-    const {
-      error: updateError
-    } = await supabase.from('reservations').update(updateData).eq('id', reservationId);
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update(updateData)
+      .eq('id', reservationId);
 
     if (updateError) {
       toast.error(t('errors.generic'));
@@ -1762,14 +2020,20 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      status: 'completed',
-      ...(updateData.end_time ? { end_time: updateData.end_time } : {})
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: 'completed',
+              ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
+            }
+          : r,
+      ),
+    );
 
     toast.success(t('reservations.workEnded'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
     });
   };
 
@@ -1777,12 +2041,13 @@ const AdminDashboard = () => {
     const reservation = reservations.find((r) => r.id === reservationId);
     if (!reservation) return;
 
-    const {
-      error: updateError
-    } = await supabase.from('reservations').update({
-      status: 'released',
-      released_at: new Date().toISOString()
-    }).eq('id', reservationId);
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({
+        status: 'released',
+        released_at: new Date().toISOString(),
+      })
+      .eq('id', reservationId);
 
     if (updateError) {
       toast.error(t('errors.generic'));
@@ -1791,13 +2056,19 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      status: 'released'
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: 'released',
+            }
+          : r,
+      ),
+    );
 
     toast.success(t('reservations.vehicleReleased'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
     });
   };
 
@@ -1809,43 +2080,63 @@ const AdminDashboard = () => {
 
     // Optimistic update - set timestamp immediately
     const now = new Date().toISOString();
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      pickup_sms_sent_at: now
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              pickup_sms_sent_at: now,
+            }
+          : r,
+      ),
+    );
     // Also update selectedReservation for drawer UI
-    setSelectedReservation((prev) => prev && prev.id === reservationId ? {
-      ...prev,
-      pickup_sms_sent_at: now
-    } : prev);
+    setSelectedReservation((prev) =>
+      prev && prev.id === reservationId
+        ? {
+            ...prev,
+            pickup_sms_sent_at: now,
+          }
+        : prev,
+    );
 
     try {
       await supabase.functions.invoke('send-sms-message', {
         body: {
           phone: reservation.customer_phone,
           message: `${instanceName}: Twoj samochod jest gotowy do odbioru. Zapraszamy!`,
-          instanceId
-        }
+          instanceId,
+        },
       });
 
       // Save pickup SMS sent timestamp to DB
-      await supabase.
-      from('reservations').
-      update({ pickup_sms_sent_at: now }).
-      eq('id', reservationId);
+      await supabase
+        .from('reservations')
+        .update({ pickup_sms_sent_at: now })
+        .eq('id', reservationId);
 
       toast.success(t('reservations.pickupSmsSent', { customerName: reservation.customer_name }));
     } catch (error) {
       console.error('SMS error:', error);
       // Rollback optimistic update on error
-      setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-        ...r,
-        pickup_sms_sent_at: reservation.pickup_sms_sent_at
-      } : r));
-      setSelectedReservation((prev) => prev && prev.id === reservationId ? {
-        ...prev,
-        pickup_sms_sent_at: reservation.pickup_sms_sent_at
-      } : prev);
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservationId
+            ? {
+                ...r,
+                pickup_sms_sent_at: reservation.pickup_sms_sent_at,
+              }
+            : r,
+        ),
+      );
+      setSelectedReservation((prev) =>
+        prev && prev.id === reservationId
+          ? {
+              ...prev,
+              pickup_sms_sent_at: reservation.pickup_sms_sent_at,
+            }
+          : prev,
+      );
       toast.error(t('errors.generic'));
     }
   };
@@ -1856,49 +2147,61 @@ const AdminDashboard = () => {
 
     // Optimistic update - set timestamp immediately
     const now = new Date().toISOString();
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      confirmation_sms_sent_at: now
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              confirmation_sms_sent_at: now,
+            }
+          : r,
+      ),
+    );
     // Also update selectedReservation for drawer UI
-    setSelectedReservation((prev) => prev && prev.id === reservationId ? {
-      ...prev,
-      confirmation_sms_sent_at: now
-    } : prev);
+    setSelectedReservation((prev) =>
+      prev && prev.id === reservationId
+        ? {
+            ...prev,
+            confirmation_sms_sent_at: now,
+          }
+        : prev,
+    );
 
     try {
       // Fetch instance data for SMS
-      const { data: instData } = await supabase.
-      from('instances').
-      select('name, short_name, google_maps_url, slug').
-      eq('id', instanceId).
-      single();
+      const { data: instData } = await supabase
+        .from('instances')
+        .select('name, short_name, google_maps_url, slug')
+        .eq('id', instanceId)
+        .single();
 
       if (!instData) return;
 
       // Check if SMS edit link feature is enabled
-      const { data: smsEditLinkFeature } = await supabase.
-      from('instance_features').
-      select('enabled, parameters').
-      eq('instance_id', instanceId).
-      eq('feature_key', 'sms_edit_link').
-      maybeSingle();
+      const { data: smsEditLinkFeature } = await supabase
+        .from('instance_features')
+        .select('enabled, parameters')
+        .eq('instance_id', instanceId)
+        .eq('feature_key', 'sms_edit_link')
+        .maybeSingle();
 
       // Determine if edit link should be included
       let includeEditLink = false;
       if (smsEditLinkFeature?.enabled) {
-        const params = smsEditLinkFeature.parameters as {phones?: string[];} | null;
+        const params = smsEditLinkFeature.parameters as { phones?: string[] } | null;
         if (!params || !params.phones || params.phones.length === 0) {
           includeEditLink = true;
         } else {
-          let normalizedPhone = reservation.customer_phone.replace(/\s+/g, "").replace(/[^\d+]/g, "");
-          if (!normalizedPhone.startsWith("+")) {
-            normalizedPhone = "+48" + normalizedPhone;
+          let normalizedPhone = reservation.customer_phone
+            .replace(/\s+/g, '')
+            .replace(/[^\d+]/g, '');
+          if (!normalizedPhone.startsWith('+')) {
+            normalizedPhone = '+48' + normalizedPhone;
           }
           includeEditLink = params.phones.some((p) => {
-            let normalizedAllowed = p.replace(/\s+/g, "").replace(/[^\d+]/g, "");
-            if (!normalizedAllowed.startsWith("+")) {
-              normalizedAllowed = "+48" + normalizedAllowed;
+            let normalizedAllowed = p.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+            if (!normalizedAllowed.startsWith('+')) {
+              normalizedAllowed = '+48' + normalizedAllowed;
             }
             return normalizedPhone === normalizedAllowed;
           });
@@ -1906,7 +2209,20 @@ const AdminDashboard = () => {
       }
 
       // Format date for SMS
-      const monthNamesFull = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'wrzesnia', 'pazdziernika', 'listopada', 'grudnia'];
+      const monthNamesFull = [
+        'stycznia',
+        'lutego',
+        'marca',
+        'kwietnia',
+        'maja',
+        'czerwca',
+        'lipca',
+        'sierpnia',
+        'wrzesnia',
+        'pazdziernika',
+        'listopada',
+        'grudnia',
+      ];
       const dateObj = new Date(reservation.reservation_date);
       const dayNum = dateObj.getDate();
       const monthNameFull = monthNamesFull[dateObj.getMonth()];
@@ -1922,28 +2238,40 @@ const AdminDashboard = () => {
         body: {
           phone: reservation.customer_phone,
           message: smsMessage,
-          instanceId
-        }
+          instanceId,
+        },
       });
 
       // Save confirmation SMS sent timestamp to DB
-      await supabase.
-      from('reservations').
-      update({ confirmation_sms_sent_at: now }).
-      eq('id', reservationId);
+      await supabase
+        .from('reservations')
+        .update({ confirmation_sms_sent_at: now })
+        .eq('id', reservationId);
 
-      toast.success(t('reservations.confirmationSmsSent', { customerName: reservation.customer_name }));
+      toast.success(
+        t('reservations.confirmationSmsSent', { customerName: reservation.customer_name }),
+      );
     } catch (error) {
       console.error('SMS error:', error);
       // Rollback optimistic update on error
-      setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-        ...r,
-        confirmation_sms_sent_at: reservation.confirmation_sms_sent_at
-      } : r));
-      setSelectedReservation((prev) => prev && prev.id === reservationId ? {
-        ...prev,
-        confirmation_sms_sent_at: reservation.confirmation_sms_sent_at
-      } : prev);
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservationId
+            ? {
+                ...r,
+                confirmation_sms_sent_at: reservation.confirmation_sms_sent_at,
+              }
+            : r,
+        ),
+      );
+      setSelectedReservation((prev) =>
+        prev && prev.id === reservationId
+          ? {
+              ...prev,
+              confirmation_sms_sent_at: reservation.confirmation_sms_sent_at,
+            }
+          : prev,
+      );
       toast.error(t('errors.generic'));
     }
   };
@@ -1952,13 +2280,14 @@ const AdminDashboard = () => {
     const reservation = reservations.find((r) => r.id === reservationId);
     if (!reservation) return;
 
-    const {
-      error: updateError
-    } = await supabase.from('reservations').update({
-      status: 'confirmed',
-      started_at: null,
-      completed_at: null
-    }).eq('id', reservationId);
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({
+        status: 'confirmed',
+        started_at: null,
+        completed_at: null,
+      })
+      .eq('id', reservationId);
 
     if (updateError) {
       toast.error(t('errors.generic'));
@@ -1967,13 +2296,19 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      status: 'confirmed'
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: 'confirmed',
+            }
+          : r,
+      ),
+    );
 
     toast.success(t('reservations.revertedToConfirmed'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
     });
   };
 
@@ -1981,13 +2316,14 @@ const AdminDashboard = () => {
     const reservation = reservations.find((r) => r.id === reservationId);
     if (!reservation) return;
 
-    const {
-      error: updateError
-    } = await supabase.from('reservations').update({
-      status: 'in_progress',
-      completed_at: null,
-      released_at: null
-    }).eq('id', reservationId);
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({
+        status: 'in_progress',
+        completed_at: null,
+        released_at: null,
+      })
+      .eq('id', reservationId);
 
     if (updateError) {
       toast.error(t('errors.generic'));
@@ -1996,13 +2332,19 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      status: 'in_progress'
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: 'in_progress',
+            }
+          : r,
+      ),
+    );
 
     toast.success(t('reservations.revertedToInProgress'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
     });
   };
 
@@ -2032,10 +2374,10 @@ const AdminDashboard = () => {
       }
     }
 
-    const { error: updateError } = await supabase.
-    from('reservations').
-    update(updateData).
-    eq('id', reservationId);
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update(updateData)
+      .eq('id', reservationId);
 
     if (updateError) {
       toast.error(t('errors.generic'));
@@ -2043,7 +2385,17 @@ const AdminDashboard = () => {
       return;
     }
 
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? { ...r, status: newStatus, ...(updateData.end_time ? { end_time: updateData.end_time } : {}) } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              status: newStatus,
+              ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
+            }
+          : r,
+      ),
+    );
     toast.success(t('reservations.statusChanged'));
   };
 
@@ -2058,11 +2410,11 @@ const AdminDashboard = () => {
     }
 
     // Get original reservation
-    const { data: originalReservation, error: fetchError } = await supabase.
-    from('reservations').
-    select('confirmation_code, reservation_date, start_time').
-    eq('id', originalId).
-    single();
+    const { data: originalReservation, error: fetchError } = await supabase
+      .from('reservations')
+      .select('confirmation_code, reservation_date, start_time')
+      .eq('id', originalId)
+      .single();
 
     if (fetchError || !originalReservation) {
       toast.error(t('errors.generic'));
@@ -2075,10 +2427,10 @@ const AdminDashboard = () => {
     const tempCode = `TEMP_${Date.now()}`;
 
     // Step 1: Change original's code to temp (to avoid unique constraint conflict)
-    const { error: tempError } = await supabase.
-    from('reservations').
-    update({ confirmation_code: tempCode }).
-    eq('id', originalId);
+    const { error: tempError } = await supabase
+      .from('reservations')
+      .update({ confirmation_code: tempCode })
+      .eq('id', originalId);
 
     if (tempError) {
       console.error('Error setting temp code:', tempError);
@@ -2087,15 +2439,15 @@ const AdminDashboard = () => {
     }
 
     // Step 2: Update change request: set original's code, clear link, set to confirmed
-    const { error: updateNewError } = await supabase.
-    from('reservations').
-    update({
-      confirmation_code: originalCode,
-      original_reservation_id: null,
-      status: 'confirmed',
-      confirmed_at: new Date().toISOString()
-    }).
-    eq('id', changeRequestId);
+    const { error: updateNewError } = await supabase
+      .from('reservations')
+      .update({
+        confirmation_code: originalCode,
+        original_reservation_id: null,
+        status: 'confirmed',
+        confirmed_at: new Date().toISOString(),
+      })
+      .eq('id', changeRequestId);
 
     if (updateNewError) {
       console.error('Error updating change request:', updateNewError);
@@ -2104,14 +2456,14 @@ const AdminDashboard = () => {
     }
 
     // Step 3: Cancel original reservation with the new code
-    const { error: cancelError } = await supabase.
-    from('reservations').
-    update({
-      status: 'cancelled',
-      cancelled_at: new Date().toISOString(),
-      confirmation_code: newCode
-    }).
-    eq('id', originalId);
+    const { error: cancelError } = await supabase
+      .from('reservations')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        confirmation_code: newCode,
+      })
+      .eq('id', originalId);
 
     if (cancelError) {
       console.error('Error cancelling original:', cancelError);
@@ -2119,7 +2471,9 @@ const AdminDashboard = () => {
 
     // Send SMS to customer with new optimized format
     try {
-      const dateFormatted = format(new Date(changeRequest.reservation_date), 'd MMMM', { locale: pl });
+      const dateFormatted = format(new Date(changeRequest.reservation_date), 'd MMMM', {
+        locale: pl,
+      });
       const timeFormatted = changeRequest.start_time.slice(0, 5);
       const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalCode}`;
 
@@ -2131,26 +2485,31 @@ const AdminDashboard = () => {
         body: {
           phone: changeRequest.customer_phone,
           message: smsMessage,
-          instanceId
-        }
+          instanceId,
+        },
       });
     } catch (smsError) {
       console.error('SMS error:', smsError);
     }
 
     // Update local state
-    setReservations((prev) => prev.
-    filter((r) => r.id !== originalId).
-    map((r) => r.id === changeRequestId ? {
-      ...r,
-      confirmation_code: originalCode,
-      status: 'confirmed',
-      original_reservation_id: null
-    } as any : r)
+    setReservations((prev) =>
+      prev
+        .filter((r) => r.id !== originalId)
+        .map((r) =>
+          r.id === changeRequestId
+            ? ({
+                ...r,
+                confirmation_code: originalCode,
+                status: 'confirmed',
+                original_reservation_id: null,
+              } as any)
+            : r,
+        ),
     );
 
     toast.success(t('myReservation.changeApproved'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
     });
   };
 
@@ -2164,19 +2523,19 @@ const AdminDashboard = () => {
     // Get original reservation for SMS
     let originalReservation: any = null;
     if (originalId) {
-      const { data } = await supabase.
-      from('reservations').
-      select('reservation_date, start_time, confirmation_code').
-      eq('id', originalId).
-      single();
+      const { data } = await supabase
+        .from('reservations')
+        .select('reservation_date, start_time, confirmation_code')
+        .eq('id', originalId)
+        .single();
       originalReservation = data;
     }
 
     // Delete the change request
-    const { error: deleteError } = await supabase.
-    from('reservations').
-    delete().
-    eq('id', changeRequestId);
+    const { error: deleteError } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', changeRequestId);
 
     if (deleteError) {
       toast.error(t('errors.generic'));
@@ -2186,7 +2545,9 @@ const AdminDashboard = () => {
     // Send SMS to customer with new optimized format
     if (originalReservation) {
       try {
-        const dateFormatted = format(new Date(originalReservation.reservation_date), 'd MMMM', { locale: pl });
+        const dateFormatted = format(new Date(originalReservation.reservation_date), 'd MMMM', {
+          locale: pl,
+        });
         const timeFormatted = originalReservation.start_time.slice(0, 5);
         const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalReservation.confirmation_code}`;
 
@@ -2198,8 +2559,8 @@ const AdminDashboard = () => {
           body: {
             phone: changeRequest.customer_phone,
             message: smsMessage,
-            instanceId
-          }
+            instanceId,
+          },
         });
       } catch (smsError) {
         console.error('SMS error:', smsError);
@@ -2217,19 +2578,25 @@ const AdminDashboard = () => {
     if (!reservation || !instanceId) return;
 
     // Save customer data before updating
-    await supabase.from('customers').upsert({
-      instance_id: instanceId,
-      name: reservation.customer_name,
-      phone: reservation.customer_phone,
-    }, {
-      onConflict: 'instance_id,phone',
-      ignoreDuplicates: false
-    });
+    await supabase.from('customers').upsert(
+      {
+        instance_id: instanceId,
+        name: reservation.customer_name,
+        phone: reservation.customer_phone,
+      },
+      {
+        onConflict: 'instance_id,phone',
+        ignoreDuplicates: false,
+      },
+    );
 
-    const { error } = await supabase.from('reservations').update({
-      status: 'no_show',
-      no_show_at: new Date().toISOString()
-    }).eq('id', reservationId);
+    const { error } = await supabase
+      .from('reservations')
+      .update({
+        status: 'no_show',
+        no_show_at: new Date().toISOString(),
+      })
+      .eq('id', reservationId);
 
     if (error) {
       toast.error(t('errors.generic'));
@@ -2243,7 +2610,12 @@ const AdminDashboard = () => {
     toast.success(t('reservations.noShowMarked'));
   };
 
-  const handleReservationMove = async (reservationId: string, newStationId: string, newDate: string, newTime?: string) => {
+  const handleReservationMove = async (
+    reservationId: string,
+    newStationId: string,
+    newDate: string,
+    newTime?: string,
+  ) => {
     const reservation = reservations.find((r) => r.id === reservationId);
     if (!reservation) return;
 
@@ -2252,11 +2624,11 @@ const AdminDashboard = () => {
       station_id: reservation.station_id,
       reservation_date: reservation.reservation_date,
       start_time: reservation.start_time,
-      end_time: reservation.end_time
+      end_time: reservation.end_time,
     };
     const updates: any = {
       station_id: newStationId,
-      reservation_date: newDate
+      reservation_date: newDate,
     };
     if (newTime) {
       // Calculate new end time based on duration
@@ -2275,9 +2647,7 @@ const AdminDashboard = () => {
     markAsLocallyUpdated(reservationId);
 
     // Update in database
-    const {
-      error
-    } = await supabase.from('reservations').update(updates).eq('id', reservationId);
+    const { error } = await supabase.from('reservations').update(updates).eq('id', reservationId);
     if (error) {
       toast.error(t('errors.generic'));
       console.error('Error moving reservation:', error);
@@ -2285,20 +2655,29 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-      ...r,
-      ...updates
-    } : r));
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === reservationId
+          ? {
+              ...r,
+              ...updates,
+            }
+          : r,
+      ),
+    );
     // Get vehicle model from reservation
     const vehicleModel = reservation.vehicle_plate || t('addReservation.defaultVehicle');
 
     // Show toast with reservation details
     toast.success(t('reservations.reservationMoved'), {
-      description:
-      <div className="flex flex-col">
-          <span>{updates.start_time} - {updates.end_time}</span>
+      description: (
+        <div className="flex flex-col">
+          <span>
+            {updates.start_time} - {updates.end_time}
+          </span>
           <span>{vehicleModel}</span>
-        </div>,
+        </div>
+      ),
 
       icon: <CheckCircle className="h-5 w-5 text-green-500" />,
       duration: 5000,
@@ -2306,9 +2685,10 @@ const AdminDashboard = () => {
         label: t('common.undo'),
         onClick: async () => {
           // Restore original state in database
-          const {
-            error: undoError
-          } = await supabase.from('reservations').update(originalState).eq('id', reservationId);
+          const { error: undoError } = await supabase
+            .from('reservations')
+            .update(originalState)
+            .eq('id', reservationId);
           if (undoError) {
             toast.error(t('errors.generic'));
             console.error('Error undoing move:', undoError);
@@ -2316,18 +2696,37 @@ const AdminDashboard = () => {
           }
 
           // Restore local state
-          setReservations((prev) => prev.map((r) => r.id === reservationId ? {
-            ...r,
-            ...originalState
-          } : r));
+          setReservations((prev) =>
+            prev.map((r) =>
+              r.id === reservationId
+                ? {
+                    ...r,
+                    ...originalState,
+                  }
+                : r,
+            ),
+          );
           toast.success(t('common.success'));
-        }
-      }
+        },
+      },
     });
   };
 
   // Handle yard vehicle drop onto calendar
-  const handleYardVehicleDrop = async (vehicle: {id: string;customer_name: string;customer_phone: string;vehicle_plate: string;car_size: 'small' | 'medium' | 'large' | null;service_ids: string[];notes: string | null;}, stationId: string, date: string, time: string) => {
+  const handleYardVehicleDrop = async (
+    vehicle: {
+      id: string;
+      customer_name: string;
+      customer_phone: string;
+      vehicle_plate: string;
+      car_size: 'small' | 'medium' | 'large' | null;
+      service_ids: string[];
+      notes: string | null;
+    },
+    stationId: string,
+    date: string,
+    time: string,
+  ) => {
     if (!instanceId) return;
 
     // Default car size to 'medium' if not set
@@ -2347,9 +2746,11 @@ const AdminDashboard = () => {
         // Get duration based on car size (with fallback chain)
         let duration = 0;
         if (effectiveCarSize === 'small') {
-          duration = service.duration_small || service.duration_medium || service.duration_minutes || 60;
+          duration =
+            service.duration_small || service.duration_medium || service.duration_minutes || 60;
         } else if (effectiveCarSize === 'large') {
-          duration = service.duration_large || service.duration_medium || service.duration_minutes || 60;
+          duration =
+            service.duration_large || service.duration_medium || service.duration_minutes || 60;
         } else {
           // medium or fallback
           duration = service.duration_medium || service.duration_minutes || 60;
@@ -2365,7 +2766,9 @@ const AdminDashboard = () => {
     // Calculate end time based on duration
     const [hours, mins] = time.split(':').map(Number);
     const endMinutes = hours * 60 + mins + totalDuration;
-    const endTime = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
+    const endTime = `${Math.floor(endMinutes / 60)
+      .toString()
+      .padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
 
     // Generate confirmation code
     const confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -2383,28 +2786,33 @@ const AdminDashboard = () => {
 
     try {
       // Create reservation from yard vehicle data
-      const { error: reservationError } = await supabase.from('reservations').insert([{
-        instance_id: instanceId,
-        station_id: stationId,
-        reservation_date: date,
-        start_time: time,
-        end_time: endTime,
-        customer_name: vehicle.customer_name,
-        customer_phone: normalizePhoneForStorage(vehicle.customer_phone) || '',
-        vehicle_plate: vehicle.vehicle_plate,
-        car_size: vehicle.car_size,
-        service_id: primaryServiceId,
-        service_ids: vehicle.service_ids || [],
-        admin_notes: vehicle.notes,
-        confirmation_code: confirmationCode,
-        status: 'confirmed' as const,
-        source: 'admin'
-      }]);
+      const { error: reservationError } = await supabase.from('reservations').insert([
+        {
+          instance_id: instanceId,
+          station_id: stationId,
+          reservation_date: date,
+          start_time: time,
+          end_time: endTime,
+          customer_name: vehicle.customer_name,
+          customer_phone: normalizePhoneForStorage(vehicle.customer_phone) || '',
+          vehicle_plate: vehicle.vehicle_plate,
+          car_size: vehicle.car_size,
+          service_id: primaryServiceId,
+          service_ids: vehicle.service_ids || [],
+          admin_notes: vehicle.notes,
+          confirmation_code: confirmationCode,
+          status: 'confirmed' as const,
+          source: 'admin',
+        },
+      ]);
 
       if (reservationError) throw reservationError;
 
       // Delete from yard_vehicles
-      const { error: deleteError } = await supabase.from('yard_vehicles').delete().eq('id', vehicle.id);
+      const { error: deleteError } = await supabase
+        .from('yard_vehicles')
+        .delete()
+        .eq('id', vehicle.id);
       if (deleteError) console.error('Error deleting yard vehicle:', deleteError);
 
       fetchReservations();
@@ -2417,208 +2825,353 @@ const AdminDashboard = () => {
 
   const pendingCount = reservations.filter((r) => (r.status || 'pending') === 'pending').length;
 
-
-  return <>
+  return (
+    <>
       <Helmet>
         <title>Panel Admina - {instanceData?.name || 'Carfect'}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* PWA Update Banner */}
-      {updateAvailable &&
-    <div className="fixed top-0 left-0 right-0 z-[100] bg-primary text-primary-foreground p-3 flex items-center justify-between shadow-lg">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">
-              Dostępna nowa wersja aplikacji
-            </span>
-            {currentVersion &&
-        <span className="text-xs opacity-80">
-                Wersja {currentVersion}
-              </span>
+      <div
+        className="min-h-screen h-screen bg-background flex overflow-hidden"
+        style={
+          {
+            '--sidebar-w': protocolEditMode
+              ? '0px'
+              : sidebarCollapsed || userRole === 'hall'
+                ? '4rem'
+                : '16rem',
+          } as React.CSSProperties
         }
-          </div>
-          <Button
-        size="sm"
-        className="bg-white text-black hover:bg-white/90"
-        onClick={applyUpdate}
-        disabled={isUpdating}>
-
-            {isUpdating ? 'Aktualizuję...' : 'Aktualizuj'}
-          </Button>
-        </div>
-    }
-
-      <div className={cn("min-h-screen h-screen bg-background flex overflow-hidden", updateAvailable && "pt-14")}>
+      >
         {/* Sidebar - Mobile Overlay */}
-        {sidebarOpen && !protocolEditMode && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+        {sidebarOpen && !protocolEditMode && (
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
         {/* Sidebar - fixed height, never scrolls */}
-        <aside className={cn("fixed lg:sticky top-0 inset-y-0 left-0 z-50 h-screen bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0", sidebarCollapsed || userRole === 'hall' ? "lg:w-16" : "w-64", protocolEditMode && "hidden")}>
+        <aside
+          className={cn(
+            'fixed lg:sticky top-0 inset-y-0 left-0 z-50 h-screen bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+            sidebarCollapsed || userRole === 'hall' ? 'lg:w-16' : 'w-64',
+            protocolEditMode && 'hidden',
+          )}
+        >
           <div className="flex flex-col h-full overflow-hidden">
             {/* Logo */}
-            <div className={cn("border-b border-border/50 flex items-center justify-between", sidebarCollapsed || userRole === 'hall' ? "p-3" : "p-6")}>
+            <div
+              className={cn(
+                'border-b border-border/50 flex items-center justify-between',
+                sidebarCollapsed || userRole === 'hall' ? 'p-3' : 'p-6',
+              )}
+            >
               <button
-              onClick={() => {
-                if (userRole === 'hall') {
-                  navigate(adminBasePath ? '/admin/halls/1' : '/halls/1');
-                } else {
-                  setCurrentView('calendar');
-                }
-              }}
-              className={cn("flex items-center cursor-pointer hover:opacity-80 transition-opacity", sidebarCollapsed || userRole === 'hall' ? "justify-center" : "gap-3")}>
+                onClick={() => {
+                  if (userRole === 'hall') {
+                    navigate(adminBasePath ? '/admin/halls/1' : '/halls/1');
+                  } else {
+                    setCurrentView('calendar');
+                  }
+                }}
+                className={cn(
+                  'flex items-center cursor-pointer hover:opacity-80 transition-opacity',
+                  sidebarCollapsed || userRole === 'hall' ? 'justify-center' : 'gap-3',
+                )}
+              >
+                {instanceData?.logo_url && (
+                  <img
+                    src={instanceData.logo_url}
+                    alt={instanceData.name}
+                    className={cn(
+                      'object-contain shrink-0 bg-white',
 
-                {instanceData?.logo_url &&
-              <img
-                src={instanceData.logo_url}
-                alt={instanceData.name}
-                className={cn("object-contain shrink-0 bg-white",
-
-                sidebarCollapsed || userRole === 'hall' ? "w-10 h-10" : "w-[40%] max-h-10"
-                )} />
-
-              }
-                {!(sidebarCollapsed || userRole === 'hall') && <div className="text-left min-w-0 flex-1 pr-2">
-                    <h1 className="font-bold text-foreground leading-tight">{instanceData?.name || 'Panel Admina'}</h1>
-                  </div>}
+                      sidebarCollapsed || userRole === 'hall' ? 'w-10 h-10' : 'w-[40%] max-h-10',
+                    )}
+                  />
+                )}
+                {!(sidebarCollapsed || userRole === 'hall') && (
+                  <div className="text-left min-w-0 flex-1 pr-2">
+                    <h1 className="font-bold text-foreground leading-tight">
+                      {instanceData?.name || 'Panel Admina'}
+                    </h1>
+                  </div>
+                )}
               </button>
             </div>
 
             {/* Navigation */}
-            <nav className={cn("flex-1 space-y-2", sidebarCollapsed || userRole === 'hall' ? "p-2" : "p-4")}>
+            <nav
+              className={cn(
+                'flex-1 space-y-2',
+                sidebarCollapsed || userRole === 'hall' ? 'p-2' : 'p-4',
+              )}
+            >
               {/* Hall role: simplified menu - only Halls and Protocols */}
-              {userRole === 'hall' ?
-            <>
+              {userRole === 'hall' ? (
+                <>
                   {/* Halls - always visible for hall role */}
-                  <Button variant={currentView === 'halls' ? 'secondary' : 'ghost'} className="w-full justify-center px-2" onClick={() => {setSidebarOpen(false);navigate(adminBasePath ? '/admin/halls/1' : '/halls/1');}} title={t('navigation.halls')}>
+                  <Button
+                    variant={currentView === 'halls' ? 'secondary' : 'ghost'}
+                    className="w-full justify-center px-2"
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      navigate(adminBasePath ? '/admin/halls/1' : '/halls/1');
+                    }}
+                    title={t('navigation.halls')}
+                  >
                     <Building2 className="w-4 h-4 shrink-0" />
                   </Button>
                   {/* Protocols */}
-                  {hasFeature('vehicle_reception_protocol') && <Button variant={currentView === 'protocols' ? 'secondary' : 'ghost'} className="w-full justify-center px-2" onClick={() => {setSidebarOpen(false);setCurrentView('protocols');}} title="Protokoły">
-                    <ClipboardCheck className="w-4 h-4 shrink-0" />
-                  </Button>}
-                </> :
-
-            <>
+                  {hasFeature('vehicle_reception_protocol') && (
+                    <Button
+                      variant={currentView === 'protocols' ? 'secondary' : 'ghost'}
+                      className="w-full justify-center px-2"
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('protocols');
+                      }}
+                      title="Protokoły"
+                    >
+                      <ClipboardCheck className="w-4 h-4 shrink-0" />
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
                   {/* Full navigation for admin/employee */}
                   {/* 1. Kalendarz */}
-                  <Button variant={currentView === 'calendar' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('calendar');}} title="Kalendarz">
+                  <Button
+                    variant={currentView === 'calendar' ? 'secondary' : 'ghost'}
+                    className={cn(
+                      'w-full gap-3',
+                      sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                    )}
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      setCurrentView('calendar');
+                    }}
+                    title="Kalendarz"
+                  >
                     <Calendar className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && "Kalendarz"}
+                    {!sidebarCollapsed && 'Kalendarz'}
                   </Button>
                   {/* 2. Rezerwacje */}
-                  <Button variant={currentView === 'reservations' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('reservations');}} title="Rezerwacje">
+                  <Button
+                    variant={currentView === 'reservations' ? 'secondary' : 'ghost'}
+                    className={cn(
+                      'w-full gap-3',
+                      sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                    )}
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      setCurrentView('reservations');
+                    }}
+                    title="Rezerwacje"
+                  >
                     <div className="relative">
                       <Users className="w-4 h-4 shrink-0" />
-                      {sidebarCollapsed && pendingCount > 0 && <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 text-[10px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
+                      {sidebarCollapsed && pendingCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 text-[10px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
                           {pendingCount}
-                        </span>}
+                        </span>
+                      )}
                     </div>
-                    {!sidebarCollapsed && <>
+                    {!sidebarCollapsed && (
+                      <>
                         <span className="flex-1 text-left">Rezerwacje</span>
-                        {pendingCount > 0 && <span className="min-w-[20px] h-5 px-1.5 text-xs font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
+                        {pendingCount > 0 && (
+                          <span className="min-w-[20px] h-5 px-1.5 text-xs font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
                             {pendingCount}
-                          </span>}
-                      </>}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </Button>
                   {/* 3. Oferty */}
-                  {hasFeature('offers') && <Button variant={currentView === 'offers' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('offers');}} title="Oferty">
+                  {hasFeature('offers') && (
+                    <Button
+                      variant={currentView === 'offers' ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('offers');
+                      }}
+                      title="Oferty"
+                    >
                       <FileText className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && "Oferty"}
-                    </Button>}
+                      {!sidebarCollapsed && 'Oferty'}
+                    </Button>
+                  )}
                   {/* 4. Protokoły */}
-                  {hasFeature('vehicle_reception_protocol') && <Button variant={currentView === 'protocols' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('protocols');}} title="Protokoły">
-                    <ClipboardCheck className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && "Protokoły"}
-                  </Button>}
+                  {hasFeature('vehicle_reception_protocol') && (
+                    <Button
+                      variant={currentView === 'protocols' ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('protocols');
+                      }}
+                      title="Protokoły"
+                    >
+                      <ClipboardCheck className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Protokoły'}
+                    </Button>
+                  )}
                   {/* 5. Klienci */}
-                  <Button variant={currentView === 'customers' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('customers');}} title="Klienci">
+                  <Button
+                    variant={currentView === 'customers' ? 'secondary' : 'ghost'}
+                    className={cn(
+                      'w-full gap-3',
+                      sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                    )}
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      setCurrentView('customers');
+                    }}
+                    title="Klienci"
+                  >
                     <UserCircle className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && "Klienci"}
+                    {!sidebarCollapsed && 'Klienci'}
                   </Button>
                   {/* 6. Pracownicy - admin only */}
-                  {userRole !== 'employee' && <Button variant={currentView === 'employees' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('employees');}} title="Pracownicy">
-                    <UsersRound className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && "Pracownicy"}
-                  </Button>}
+                  {userRole !== 'employee' && (
+                    <Button
+                      variant={currentView === 'employees' ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('employees');
+                      }}
+                      title="Pracownicy"
+                    >
+                      <UsersRound className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Pracownicy'}
+                    </Button>
+                  )}
                   {/* 7. Usługi - admin only */}
-                  {userRole !== 'employee' && <Button variant={currentView === 'pricelist' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('pricelist');}} title="Usługi">
-                    <BadgeDollarSign className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && "Usługi"}
-                  </Button>}
+                  {userRole !== 'employee' && (
+                    <Button
+                      variant={currentView === 'pricelist' ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('pricelist');
+                      }}
+                      title="Usługi"
+                    >
+                      <BadgeDollarSign className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Usługi'}
+                    </Button>
+                  )}
                   {/* 8. Powiadomienia - ukryte */}
                   {/* 9. Ustawienia - admin only, always last */}
-                  {userRole !== 'employee' && <Button variant={currentView === 'settings' ? 'secondary' : 'ghost'} className={cn("w-full gap-3", sidebarCollapsed ? "justify-center px-2" : "justify-start")} onClick={() => {setSidebarOpen(false);setCurrentView('settings');}} title="Ustawienia">
-                    <Settings className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && "Ustawienia"}
-                  </Button>}
+                  {userRole !== 'employee' && (
+                    <Button
+                      variant={currentView === 'settings' ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('settings');
+                      }}
+                      title="Ustawienia"
+                    >
+                      <Settings className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Ustawienia'}
+                    </Button>
+                  )}
                 </>
-            }
+              )}
             </nav>
 
             {/* Sales CRM switch button */}
-            {hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') &&
-          <div className={cn(sidebarCollapsed ? 'px-1 pb-1' : 'px-3 pb-1')}>
+            {hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') && (
+              <div className={cn(sidebarCollapsed ? 'px-1 pb-1' : 'px-3 pb-1')}>
                 <Separator className="mb-2" />
                 <Button
-              variant="outline"
-              className={cn(
-                'w-full gap-3',
-                sidebarCollapsed ? 'justify-center px-2' : 'justify-start'
-              )}
-              onClick={() => navigate(adminBasePath + '/sales-crm')}
-              title="Przejdź do Panelu Sprzedaży">
-
+                  variant="outline"
+                  className={cn(
+                    'w-full gap-3',
+                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                  )}
+                  onClick={() => navigate(adminBasePath + '/sales-crm')}
+                  title="Przejdź do Panelu Sprzedaży"
+                >
                   <ArrowLeftRight className="w-4 h-4 shrink-0" />
                   {!sidebarCollapsed && 'Panel Sprzedaży'}
                 </Button>
               </div>
-          }
+            )}
 
             {/* Collapse toggle & User menu */}
-            <div className={cn(sidebarCollapsed || userRole === 'hall' ? "p-2 space-y-2" : "p-4 space-y-3")}>
-              {/* Collapse button - desktop only, hidden for hall role */}
-              {userRole !== 'hall' &&
-            <Button
-              variant="ghost"
+            <div
               className={cn(
-                "w-full text-muted-foreground hidden lg:flex gap-3",
-                sidebarCollapsed ? "justify-center px-2" : "justify-start"
+                sidebarCollapsed || userRole === 'hall' ? 'p-2 space-y-2' : 'p-4 space-y-3',
               )}
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              title={sidebarCollapsed ? "Rozwiń menu" : "Zwiń menu"}>
-
-                  {sidebarCollapsed ?
-              <PanelLeft className="w-4 h-4 shrink-0" /> :
-
-              <>
+            >
+              {/* Collapse button - desktop only, hidden for hall role */}
+              {userRole !== 'hall' && (
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    'w-full text-muted-foreground hidden lg:flex gap-3',
+                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                  )}
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  title={sidebarCollapsed ? 'Rozwiń menu' : 'Zwiń menu'}
+                >
+                  {sidebarCollapsed ? (
+                    <PanelLeft className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <>
                       <PanelLeftClose className="w-4 h-4 shrink-0" />
                       Zwiń menu
                     </>
-              }
+                  )}
                 </Button>
-            }
+              )}
 
               {/* Divider between collapse button and user menu */}
-              {!(sidebarCollapsed || userRole === 'hall') && <Separator className="my-3 -mx-4 w-[calc(100%+2rem)] bg-border/30" />}
+              {!(sidebarCollapsed || userRole === 'hall') && (
+                <Separator className="my-3 -mx-4 w-[calc(100%+2rem)] bg-border/30" />
+              )}
 
               {/* Email -> dropdown (logout) - For hall role always show icon only */}
-              {sidebarCollapsed || userRole === 'hall' ?
-            <Button
-              variant="ghost"
-              className="w-full justify-center px-2 text-muted-foreground"
-              onClick={handleLogout}
-              title="Wyloguj się">
-
+              {sidebarCollapsed || userRole === 'hall' ? (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-center px-2 text-muted-foreground"
+                  onClick={handleLogout}
+                  title="Wyloguj się"
+                >
                   <LogOut className="w-4 h-4 shrink-0" />
-                </Button> :
-
-            user &&
-            <DropdownMenu>
+                </Button>
+              ) : (
+                user && (
+                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
-                  variant="ghost"
-                  className="w-full justify-between text-muted-foreground px-3 h-auto py-2">
-
+                        variant="ghost"
+                        className="w-full justify-between text-muted-foreground px-3 h-auto py-2"
+                      >
                         <span className="text-sm truncate">{username || user.email}</span>
                         <ChevronUp className="w-4 h-4 shrink-0 ml-2" />
                       </Button>
@@ -2630,38 +3183,74 @@ const AdminDashboard = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-
-            }
+                )
+              )}
             </div>
           </div>
         </aside>
 
         {/* Main Content - scrollable */}
         <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-
           {/* Content */}
-          <div className={cn(
-          "flex-1 space-y-6 overflow-auto pb-28 lg:pb-8",
-          currentView === 'calendar' ? "p-0 lg:p-4 lg:pt-0" : "p-4"
-        )}>
+          <div
+            className={cn(
+              'flex-1 space-y-6 overflow-auto pb-28 lg:pb-8',
+              currentView === 'calendar' ? 'p-0 lg:p-4 lg:pt-0' : 'p-4',
+            )}
+          >
             {/* Header - only shown for settings view */}
-            {currentView === 'settings' && <h1 className="text-2xl font-bold text-foreground">
-                {t('settings.title')}
-              </h1>}
+            {currentView === 'settings' && (
+              <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
+            )}
 
             {/* Free Time Ranges Per Station - Hidden on desktop, shown via bottom sheet on mobile */}
 
             {/* View Content */}
-            {currentView === 'calendar' && <div className="flex-1 min-h-[600px] h-full relative flex">
+            {currentView === 'calendar' && (
+              <div className="flex-1 min-h-[600px] h-full relative flex">
                 <div className="flex-1 min-w-0 transition-[min-width] duration-300 ease-in-out">
-                  <AdminCalendar stations={stations} reservations={reservations} breaks={breaks} closedDays={closedDays} workingHours={workingHours} onReservationClick={handleReservationClick} onAddReservation={handleAddReservation} onAddBreak={handleAddBreak} onDeleteBreak={handleDeleteBreak} onToggleClosedDay={handleToggleClosedDay} onReservationMove={handleReservationMove} onConfirmReservation={handleConfirmReservation} onYardVehicleDrop={handleYardVehicleDrop} onDateChange={handleCalendarDateChange} instanceId={instanceId || undefined} yardVehicleCount={yardVehicleCount} selectedReservationId={selectedReservation?.id || editingReservation?.id} slotPreview={slotPreview} isLoadingMore={isLoadingMoreReservations} employees={cachedEmployees} stationEmployeesMap={stationEmployeesMap} showEmployeesOnStations={instanceSettings?.assign_employees_to_stations ?? false} showEmployeesOnReservations={instanceSettings?.assign_employees_to_reservations ?? false} trainings={trainings} onTrainingClick={handleTrainingClick} trainingsEnabled={trainingsEnabled} forceCompact={!isMobile && (addReservationOpen || addReservationV2Open)} />
+                  <AdminCalendar
+                    stations={stations}
+                    reservations={reservations}
+                    breaks={breaks}
+                    closedDays={closedDays}
+                    workingHours={workingHours}
+                    onReservationClick={handleReservationClick}
+                    onAddReservation={handleAddReservation}
+                    onAddBreak={handleAddBreak}
+                    onDeleteBreak={handleDeleteBreak}
+                    onToggleClosedDay={handleToggleClosedDay}
+                    onReservationMove={handleReservationMove}
+                    onConfirmReservation={handleConfirmReservation}
+                    onYardVehicleDrop={handleYardVehicleDrop}
+                    onDateChange={handleCalendarDateChange}
+                    instanceId={instanceId || undefined}
+                    yardVehicleCount={yardVehicleCount}
+                    selectedReservationId={selectedReservation?.id || editingReservation?.id}
+                    slotPreview={slotPreview}
+                    isLoadingMore={isLoadingMoreReservations}
+                    employees={cachedEmployees}
+                    stationEmployeesMap={stationEmployeesMap}
+                    showEmployeesOnStations={
+                      instanceSettings?.assign_employees_to_stations ?? false
+                    }
+                    showEmployeesOnReservations={
+                      instanceSettings?.assign_employees_to_reservations ?? false
+                    }
+                    trainings={trainings}
+                    onTrainingClick={handleTrainingClick}
+                    trainingsEnabled={trainingsEnabled}
+                    forceCompact={!isMobile && (addReservationOpen || addReservationV2Open)}
+                  />
                 </div>
                 {/* Inline reservation drawer on desktop — animated slide */}
                 {!isMobile && instanceId && (
                   <div
                     className={cn(
-                      "shrink-0 border-l border-border h-full overflow-hidden transition-[width,opacity] duration-300 ease-in-out will-change-[width,opacity]",
-                      (addReservationOpen || addReservationV2Open) ? "w-[27rem] opacity-100" : "w-0 opacity-0 border-l-0"
+                      'shrink-0 border-l border-border h-full overflow-hidden transition-[width,opacity] duration-300 ease-in-out will-change-[width,opacity]',
+                      addReservationOpen || addReservationV2Open
+                        ? 'w-[27rem] opacity-100'
+                        : 'w-0 opacity-0 border-l-0',
                     )}
                   >
                     <div className="w-[27rem] h-full">
@@ -2684,26 +3273,30 @@ const AdminDashboard = () => {
                         initialDate={newReservationData.date}
                         initialTime={newReservationData.time}
                         initialStationId={newReservationData.stationId}
-                        editingReservation={editingReservation ? {
-                          id: editingReservation.id,
-                          customer_name: editingReservation.customer_name,
-                          customer_phone: editingReservation.customer_phone,
-                          vehicle_plate: editingReservation.vehicle_plate,
-                          car_size: (editingReservation as any).car_size || null,
-                          reservation_date: editingReservation.reservation_date,
-                          end_date: editingReservation.end_date,
-                          start_time: editingReservation.start_time,
-                          end_time: editingReservation.end_time,
-                          station_id: editingReservation.station_id,
-                          service_ids: editingReservation.service_ids,
-                          service_id: (editingReservation as any).service_id,
-                          service_items: editingReservation.service_items,
-                          admin_notes: (editingReservation as any).admin_notes,
-                          price: editingReservation.price,
-                          offer_number: editingReservation.offer_number,
-                          has_unified_services: editingReservation.has_unified_services,
-                          assigned_employee_ids: editingReservation.assigned_employee_ids
-                        } : null}
+                        editingReservation={
+                          editingReservation
+                            ? {
+                                id: editingReservation.id,
+                                customer_name: editingReservation.customer_name,
+                                customer_phone: editingReservation.customer_phone,
+                                vehicle_plate: editingReservation.vehicle_plate,
+                                car_size: (editingReservation as any).car_size || null,
+                                reservation_date: editingReservation.reservation_date,
+                                end_date: editingReservation.end_date,
+                                start_time: editingReservation.start_time,
+                                end_time: editingReservation.end_time,
+                                station_id: editingReservation.station_id,
+                                service_ids: editingReservation.service_ids,
+                                service_id: (editingReservation as any).service_id,
+                                service_items: editingReservation.service_items,
+                                admin_notes: (editingReservation as any).admin_notes,
+                                price: editingReservation.price,
+                                offer_number: editingReservation.offer_number,
+                                has_unified_services: editingReservation.has_unified_services,
+                                assigned_employee_ids: editingReservation.assigned_employee_ids,
+                              }
+                            : null
+                        }
                         currentUsername={username}
                         trainingsEnabled={trainingsEnabled}
                         onSwitchToTraining={handleSwitchToTraining}
@@ -2711,72 +3304,93 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* FAB removed - plus button is now in MobileBottomNav */}
-              </div>}
+              </div>
+            )}
 
-            {currentView === 'reservations' &&
-          <ReservationsView
-            reservations={reservations}
-            allServices={allServices}
-            onReservationClick={handleReservationClick}
-            onConfirmReservation={handleConfirmReservation}
-            onRejectReservation={handleRejectReservation}
-            trainings={trainings}
-            trainingsEnabled={trainingsEnabled}
-            onTrainingClick={handleTrainingClick}
-            onDeleteTraining={async (id) => {
-              const { error } = await supabase.from('trainings').delete().eq('id', id);
-              if (!error) {
-                fetchTrainingsRef.current();
-              }
-            }}
-            employees={cachedEmployees} />
-
-          }
+            {currentView === 'reservations' && (
+              <ReservationsView
+                reservations={reservations}
+                allServices={allServices}
+                onReservationClick={handleReservationClick}
+                onConfirmReservation={handleConfirmReservation}
+                onRejectReservation={handleRejectReservation}
+                trainings={trainings}
+                trainingsEnabled={trainingsEnabled}
+                onTrainingClick={handleTrainingClick}
+                onDeleteTraining={async (id) => {
+                  const { error } = await supabase.from('trainings').delete().eq('id', id);
+                  if (!error) {
+                    fetchTrainingsRef.current();
+                  }
+                }}
+                employees={cachedEmployees}
+              />
+            )}
 
             {currentView === 'customers' && <CustomersView instanceId={instanceId} />}
 
-            {currentView === 'pricelist' && instanceId &&
-          <div className="max-w-3xl mx-auto">
+            {currentView === 'pricelist' && instanceId && (
+              <div className="max-w-3xl mx-auto">
                 <PriceListSettings instanceId={instanceId} />
               </div>
-          }
+            )}
 
-            {currentView === 'settings' &&
-          <SettingsView
-            instanceId={instanceId}
-            instanceData={instanceData}
-            onInstanceUpdate={() => queryClient.invalidateQueries({ queryKey: ['instance_data', instanceId] })}
-            onWorkingHoursUpdate={() => queryClient.invalidateQueries({ queryKey: ['working_hours', instanceId] })} />
+            {currentView === 'settings' && (
+              <SettingsView
+                instanceId={instanceId}
+                instanceData={instanceData}
+                onInstanceUpdate={() =>
+                  queryClient.invalidateQueries({ queryKey: ['instance_data', instanceId] })
+                }
+                onWorkingHoursUpdate={() =>
+                  queryClient.invalidateQueries({ queryKey: ['working_hours', instanceId] })
+                }
+              />
+            )}
 
-          }
-
-            {currentView === 'offers' && <OffersView instanceId={instanceId} instanceData={instanceData} onReserveFromOffer={(offerData) => {
-              setCurrentView('calendar');
-              setNewReservationData({ stationId: '', date: '', time: '', stationType: '' });
-              setEditingReservation(offerData);
-              setAddReservationV2Open(true);
-            }} />}
+            {currentView === 'offers' && (
+              <OffersView
+                instanceId={instanceId}
+                instanceData={instanceData}
+                onEditModeChange={setOfferEditMode}
+                onReserveFromOffer={(offerData) => {
+                  setCurrentView('calendar');
+                  setNewReservationData({ stationId: '', date: '', time: '', stationType: '' });
+                  setEditingReservation(offerData);
+                  setAddReservationV2Open(true);
+                }}
+              />
+            )}
 
             {currentView === 'products' && <ProductsView instanceId={instanceId} />}
 
             {currentView === 'followup' && <FollowUpView instanceId={instanceId} />}
 
-            {currentView === 'notifications' && <NotificationsView
-            instanceId={instanceId}
-            onNavigateBack={() => setCurrentView('calendar')}
-            onNavigateToOffers={() => setCurrentView('offers')}
-            onNavigateToReservations={() => setCurrentView('reservations')}
-            onReservationClick={handleReservationClick}
-            onNotificationsChange={fetchUnreadNotificationsCount} />
-          }
+            {currentView === 'notifications' && (
+              <NotificationsView
+                instanceId={instanceId}
+                onNavigateBack={() => setCurrentView('calendar')}
+                onNavigateToOffers={() => setCurrentView('offers')}
+                onNavigateToReservations={() => setCurrentView('reservations')}
+                onReservationClick={handleReservationClick}
+                onNotificationsChange={fetchUnreadNotificationsCount}
+              />
+            )}
 
             {/* Halls view removed - now in Settings */}
 
-            {currentView === 'protocols' && instanceId && <ProtocolsView instanceId={instanceId} onEditModeChange={setProtocolEditMode} />}
+            {currentView === 'protocols' && instanceId && (
+              <ProtocolsView instanceId={instanceId} onEditModeChange={setProtocolEditMode} />
+            )}
 
-            {currentView === 'reminders' && instanceId && <RemindersView instanceId={instanceId} onNavigateBack={() => setCurrentView('pricelist')} />}
+            {currentView === 'reminders' && instanceId && (
+              <RemindersView
+                instanceId={instanceId}
+                onNavigateBack={() => setCurrentView('pricelist')}
+              />
+            )}
 
             {currentView === 'employees' && instanceId && <EmployeesView instanceId={instanceId} />}
           </div>
@@ -2785,164 +3399,189 @@ const AdminDashboard = () => {
 
       {/* Reservation Details Drawer */}
       <ReservationDetailsDrawer
-      reservation={selectedReservation}
-      open={!!selectedReservation}
-      onClose={() => setSelectedReservation(null)}
-      onDelete={handleDeleteReservation}
-      onEdit={handleEditReservation}
-      onNoShow={handleNoShow}
-      onConfirm={async (id) => {
-        await handleConfirmReservation(id);
-        setSelectedReservation(null);
-      }}
-      onStartWork={async (id) => {
-        await handleStartWork(id);
-        setSelectedReservation(null);
-      }}
-      onEndWork={async (id) => {
-        await handleEndWork(id);
-        setSelectedReservation(null);
-      }}
-      onRelease={async (id) => {
-        await handleReleaseVehicle(id);
-        setSelectedReservation(null);
-      }}
-      onRevertToConfirmed={async (id) => {
-        await handleRevertToConfirmed(id);
-        setSelectedReservation(null);
-      }}
-      onRevertToInProgress={async (id) => {
-        await handleRevertToInProgress(id);
-        setSelectedReservation(null);
-      }}
-      onApproveChangeRequest={async (id) => {
-        await handleApproveChangeRequest(id);
-        setSelectedReservation(null);
-      }}
-      onRejectChangeRequest={async (id) => {
-        await handleRejectChangeRequest(id);
-        setSelectedReservation(null);
-      }}
-      onStatusChange={async (id, status) => {
-        await handleStatusChange(id, status);
-        setSelectedReservation(null);
-      }}
-      onSendPickupSms={handleSendPickupSms}
-      onSendConfirmationSms={handleSendConfirmationSms} />
-
+        reservation={selectedReservation}
+        open={!!selectedReservation}
+        onClose={() => setSelectedReservation(null)}
+        onDelete={handleDeleteReservation}
+        onEdit={handleEditReservation}
+        onNoShow={handleNoShow}
+        onConfirm={async (id) => {
+          await handleConfirmReservation(id);
+          setSelectedReservation(null);
+        }}
+        onStartWork={async (id) => {
+          await handleStartWork(id);
+          setSelectedReservation(null);
+        }}
+        onEndWork={async (id) => {
+          await handleEndWork(id);
+          setSelectedReservation(null);
+        }}
+        onRelease={async (id) => {
+          await handleReleaseVehicle(id);
+          setSelectedReservation(null);
+        }}
+        onRevertToConfirmed={async (id) => {
+          await handleRevertToConfirmed(id);
+          setSelectedReservation(null);
+        }}
+        onRevertToInProgress={async (id) => {
+          await handleRevertToInProgress(id);
+          setSelectedReservation(null);
+        }}
+        onApproveChangeRequest={async (id) => {
+          await handleApproveChangeRequest(id);
+          setSelectedReservation(null);
+        }}
+        onRejectChangeRequest={async (id) => {
+          await handleRejectChangeRequest(id);
+          setSelectedReservation(null);
+        }}
+        onStatusChange={async (id, status) => {
+          await handleStatusChange(id, status);
+          setSelectedReservation(null);
+        }}
+        onSendPickupSms={handleSendPickupSms}
+        onSendConfirmationSms={handleSendConfirmationSms}
+      />
 
       {/* Add/Edit Reservation Dialog V2 — Sheet mode for mobile or non-calendar views */}
-      {instanceId && (isMobile || currentView !== 'calendar') &&
-    <AddReservationDialogV2
-      open={addReservationOpen || addReservationV2Open}
-      onClose={() => {
-        setAddReservationOpen(false);
-        setAddReservationV2Open(false);
-        setEditingReservation(null);
-        setSlotPreview(null);
-        setSelectedReservation(null);
-      }}
-      onSlotPreviewChange={handleSlotPreviewChange}
-      instanceId={instanceId}
-      onSuccess={handleReservationAdded}
-      workingHours={workingHours}
-      mode="reservation"
-      stationId={newReservationData.stationId}
-      initialDate={newReservationData.date}
-      initialTime={newReservationData.time}
-      initialStationId={newReservationData.stationId}
-      editingReservation={editingReservation ? {
-        id: editingReservation.id,
-        customer_name: editingReservation.customer_name,
-        customer_phone: editingReservation.customer_phone,
-        vehicle_plate: editingReservation.vehicle_plate,
-        car_size: (editingReservation as any).car_size || null,
-        reservation_date: editingReservation.reservation_date,
-        end_date: editingReservation.end_date,
-        start_time: editingReservation.start_time,
-        end_time: editingReservation.end_time,
-        station_id: editingReservation.station_id,
-        service_ids: editingReservation.service_ids,
-        service_id: (editingReservation as any).service_id,
-        service_items: editingReservation.service_items,
-        admin_notes: (editingReservation as any).admin_notes,
-        price: editingReservation.price,
-        offer_number: editingReservation.offer_number,
-        has_unified_services: editingReservation.has_unified_services,
-        assigned_employee_ids: editingReservation.assigned_employee_ids
-      } : null}
-      currentUsername={username}
-      trainingsEnabled={trainingsEnabled}
-      onSwitchToTraining={handleSwitchToTraining} />
-    }
+      {instanceId && (isMobile || currentView !== 'calendar') && (
+        <AddReservationDialogV2
+          open={addReservationOpen || addReservationV2Open}
+          onClose={() => {
+            setAddReservationOpen(false);
+            setAddReservationV2Open(false);
+            setEditingReservation(null);
+            setSlotPreview(null);
+            setSelectedReservation(null);
+          }}
+          onSlotPreviewChange={handleSlotPreviewChange}
+          instanceId={instanceId}
+          onSuccess={handleReservationAdded}
+          workingHours={workingHours}
+          mode="reservation"
+          stationId={newReservationData.stationId}
+          initialDate={newReservationData.date}
+          initialTime={newReservationData.time}
+          initialStationId={newReservationData.stationId}
+          editingReservation={
+            editingReservation
+              ? {
+                  id: editingReservation.id,
+                  customer_name: editingReservation.customer_name,
+                  customer_phone: editingReservation.customer_phone,
+                  vehicle_plate: editingReservation.vehicle_plate,
+                  car_size: (editingReservation as any).car_size || null,
+                  reservation_date: editingReservation.reservation_date,
+                  end_date: editingReservation.end_date,
+                  start_time: editingReservation.start_time,
+                  end_time: editingReservation.end_time,
+                  station_id: editingReservation.station_id,
+                  service_ids: editingReservation.service_ids,
+                  service_id: (editingReservation as any).service_id,
+                  service_items: editingReservation.service_items,
+                  admin_notes: (editingReservation as any).admin_notes,
+                  price: editingReservation.price,
+                  offer_number: editingReservation.offer_number,
+                  has_unified_services: editingReservation.has_unified_services,
+                  assigned_employee_ids: editingReservation.assigned_employee_ids,
+                }
+              : null
+          }
+          currentUsername={username}
+          trainingsEnabled={trainingsEnabled}
+          onSwitchToTraining={handleSwitchToTraining}
+        />
+      )}
 
       {/* Add Training Drawer */}
-      {instanceId && trainingsEnabled &&
-    <AddTrainingDrawer
-      open={addTrainingOpen}
-      onClose={() => {
-        setAddTrainingOpen(false);
-        setEditingTraining(null);
-      }}
-      instanceId={instanceId}
-      onSuccess={() => {
-        fetchTrainings();
-        setEditingTraining(null);
-      }}
-      editingTraining={editingTraining}
-      currentUsername={username}
-      initialDate={newReservationData.date}
-      initialTime={newReservationData.time}
-      initialStationId={newReservationData.stationId} />
-
-    }
+      {instanceId && trainingsEnabled && (
+        <AddTrainingDrawer
+          open={addTrainingOpen}
+          onClose={() => {
+            setAddTrainingOpen(false);
+            setEditingTraining(null);
+          }}
+          instanceId={instanceId}
+          onSuccess={() => {
+            fetchTrainings();
+            setEditingTraining(null);
+          }}
+          editingTraining={editingTraining}
+          currentUsername={username}
+          initialDate={newReservationData.date}
+          initialTime={newReservationData.time}
+          initialStationId={newReservationData.stationId}
+        />
+      )}
 
       {/* Training Details Drawer */}
-      {instanceId && trainingsEnabled && selectedTraining &&
-    <TrainingDetailsDrawer
-      open={trainingDetailsOpen}
-      onClose={() => {
-        setTrainingDetailsOpen(false);
-        setSelectedTraining(null);
-      }}
-      training={selectedTraining}
-      instanceId={instanceId}
-      onEdit={(training) => {
-        setTrainingDetailsOpen(false);
-        setEditingTraining(training);
-        setAddTrainingOpen(true);
-      }}
-      onDeleted={() => {
-        setTrainingDetailsOpen(false);
-        setSelectedTraining(null);
-        setTrainings((prev) => prev.filter((t) => t.id !== selectedTraining.id));
-      }} />
-
-    }
+      {instanceId && trainingsEnabled && selectedTraining && (
+        <TrainingDetailsDrawer
+          open={trainingDetailsOpen}
+          onClose={() => {
+            setTrainingDetailsOpen(false);
+            setSelectedTraining(null);
+          }}
+          training={selectedTraining}
+          instanceId={instanceId}
+          onEdit={(training) => {
+            setTrainingDetailsOpen(false);
+            setEditingTraining(training);
+            setAddTrainingOpen(true);
+          }}
+          onDeleted={() => {
+            setTrainingDetailsOpen(false);
+            setSelectedTraining(null);
+            setTrainings((prev) => prev.filter((t) => t.id !== selectedTraining.id));
+          }}
+          onStatusChanged={(trainingId, newStatus) => {
+            setTrainings((prev) =>
+              prev.map((t) => (t.id === trainingId ? { ...t, status: newStatus } : t)),
+            );
+          }}
+        />
+      )}
 
       {/* Add Break Dialog */}
-      {instanceId && <AddBreakDialog open={addBreakOpen} onOpenChange={setAddBreakOpen} instanceId={instanceId} stations={stations} initialData={newBreakData} onBreakAdded={handleBreakAdded} />}
+      {instanceId && (
+        <AddBreakDialog
+          open={addBreakOpen}
+          onOpenChange={setAddBreakOpen}
+          instanceId={instanceId}
+          stations={stations}
+          initialData={newBreakData}
+          onBreakAdded={handleBreakAdded}
+        />
+      )}
 
-      <InstanceSettingsDialog open={instanceSettingsOpen} onOpenChange={setInstanceSettingsOpen} instance={instanceData} onUpdate={() => {
-      queryClient.invalidateQueries({ queryKey: ['instance_data', instanceId] });
-    }} />
+      <InstanceSettingsDialog
+        open={instanceSettingsOpen}
+        onOpenChange={setInstanceSettingsOpen}
+        instance={instanceData}
+        onUpdate={() => {
+          queryClient.invalidateQueries({ queryKey: ['instance_data', instanceId] });
+        }}
+      />
 
-      {/* Mobile Bottom Navigation - hidden when editing protocols */}
-      {!protocolEditMode &&
-    <MobileBottomNav
-      currentView={currentView}
-      onViewChange={setCurrentView}
-      onAddReservation={handleQuickAddReservation}
-      onLogout={handleLogout}
-      unreadNotificationsCount={unreadNotificationsCount}
-      offersEnabled={hasFeature('offers')}
-      followupEnabled={hasFeature('followup')}
-      hallViewEnabled={hasFeature('hall_view')}
-      protocolsEnabled={hasFeature('vehicle_reception_protocol')}
-      userRole={userRole}
-      currentVersion={currentVersion} />
-
-    }
-    </>;
+      {/* Mobile Bottom Navigation - hidden when editing protocols or offers */}
+      {!protocolEditMode && !offerEditMode && (
+        <MobileBottomNav
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onAddReservation={handleQuickAddReservation}
+          onLogout={handleLogout}
+          unreadNotificationsCount={unreadNotificationsCount}
+          offersEnabled={hasFeature('offers')}
+          followupEnabled={hasFeature('followup')}
+          hallViewEnabled={hasFeature('hall_view')}
+          protocolsEnabled={hasFeature('vehicle_reception_protocol')}
+          userRole={userRole}
+          currentVersion={currentVersion}
+        />
+      )}
+    </>
+  );
 };
 export default AdminDashboard;

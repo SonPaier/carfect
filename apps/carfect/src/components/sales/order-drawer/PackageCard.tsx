@@ -39,7 +39,12 @@ interface PackageCardProps {
   onRemoveProduct: (productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
   onUpdateVehicle: (productKey: string, vehicle: string) => void;
-  onUpdateRollAssignment?: (productKey: string, rollId: string | null, usageM2: number, widthMm?: number) => void;
+  onUpdateRollAssignment?: (
+    productKey: string,
+    rollId: string | null,
+    usageM2: number,
+    widthMm?: number,
+  ) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
   onToggleDiscount?: (productKey: string) => void;
   customerDiscount?: number;
@@ -97,36 +102,85 @@ const PackageCard = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-medium leading-tight truncate">{p.name}</p>
-                          {p.excludeFromDiscount && customerDiscount != null && customerDiscount > 0 && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 text-muted-foreground">BRAK RABATU</Badge>
-                          )}
+                          {p.excludeFromDiscount &&
+                            customerDiscount != null &&
+                            customerDiscount > 0 && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 shrink-0 text-muted-foreground"
+                              >
+                                BRAK RABATU
+                              </Badge>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-foreground/70">{formatCurrency(p.priceNet)} netto/{p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.'}</span>
+                          <span className="text-sm text-foreground/70">
+                            {formatCurrency(p.priceNet)} netto/
+                            {p.priceUnit === 'piece'
+                              ? 'szt.'
+                              : p.priceUnit === 'meter'
+                                ? 'm²'
+                                : p.priceUnit || 'szt.'}
+                          </span>
                           {customerDiscount != null && customerDiscount > 0 && (
-                            <button type="button" className="text-xs text-primary hover:underline" onClick={(e) => { e.stopPropagation(); onToggleDiscount?.(itemKey); }}>
+                            <button
+                              type="button"
+                              className="text-xs text-primary hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleDiscount?.(itemKey);
+                              }}
+                            >
                               {p.excludeFromDiscount ? 'Włącz rabat' : 'Wyłącz rabat'}
                             </button>
                           )}
                         </div>
                       </div>
-                      <button type="button" onClick={() => onRemoveProduct(itemKey)} className="text-muted-foreground hover:text-destructive shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => onRemoveProduct(itemKey)}
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                      >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
                       {(!p.priceUnit || p.priceUnit === 'szt.' || p.priceUnit === 'piece') && (
                         <div className="flex items-center gap-1 shrink-0">
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity - 1)} disabled={p.quantity <= 1}>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => onUpdateQuantity(itemKey, p.quantity - 1)}
+                            disabled={p.quantity <= 1}
+                          >
                             <Minus className="w-3 h-3" />
                           </Button>
-                          <Input type="number" min={1} value={p.quantity} onChange={(e) => onUpdateQuantity(itemKey, parseInt(e.target.value) || 1)} className="w-12 h-6 text-center text-sm px-1" />
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(itemKey, p.quantity + 1)}>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={p.quantity}
+                            onChange={(e) =>
+                              onUpdateQuantity(itemKey, parseInt(e.target.value) || 1)
+                            }
+                            className="w-12 h-6 text-center text-sm px-1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => onUpdateQuantity(itemKey, p.quantity + 1)}
+                          >
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
-                      <Input placeholder="Pojazd" value={p.vehicle} onChange={(e) => onUpdateVehicle(itemKey, e.target.value)} className="h-6 text-sm flex-1" />
+                      <Input
+                        placeholder="Pojazd"
+                        value={p.vehicle}
+                        onChange={(e) => onUpdateVehicle(itemKey, e.target.value)}
+                        className="h-6 text-sm flex-1"
+                      />
                     </div>
                     {/* Roll assignment for meter-based products */}
                     {p.priceUnit === 'meter' && onSetRollAssignments && (
@@ -141,7 +195,12 @@ const PackageCard = ({
               })}
             </div>
           )}
-          <Button variant="outline" size="sm" className="w-full gap-1.5 text-sm font-medium" onClick={onAddProduct}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5 text-sm font-medium"
+            onClick={onAddProduct}
+          >
             <Plus className="w-4 h-4" />
             {packageProducts.length > 0 ? 'Dodaj kolejny produkt' : 'Dodaj produkt'}
           </Button>
@@ -157,14 +216,22 @@ const PackageCard = ({
             <ToggleGroup
               type="single"
               value={pkg.shippingMethod}
-              onValueChange={(v) => { if (v) onShippingMethodChange(v as DeliveryType); }}
+              onValueChange={(v) => {
+                if (v) onShippingMethodChange(v as DeliveryType);
+              }}
               variant="outline"
               size="sm"
               className="justify-start flex-wrap"
             >
-              <ToggleGroupItem value="shipping" className="text-xs px-3">Wysyłka</ToggleGroupItem>
-              <ToggleGroupItem value="pickup" className="text-xs px-3">Odbiór osobisty</ToggleGroupItem>
-              <ToggleGroupItem value="uber" className="text-xs px-3">Uber</ToggleGroupItem>
+              <ToggleGroupItem value="shipping" className="text-xs px-3">
+                Wysyłka
+              </ToggleGroupItem>
+              <ToggleGroupItem value="pickup" className="text-xs px-3">
+                Odbiór osobisty
+              </ToggleGroupItem>
+              <ToggleGroupItem value="uber" className="text-xs px-3">
+                Uber
+              </ToggleGroupItem>
             </ToggleGroup>
           </div>
 
@@ -174,7 +241,10 @@ const PackageCard = ({
               {/* Courier select */}
               <div className="space-y-1">
                 <Label className="text-xs">Kurier</Label>
-                <Select value={pkg.courier || 'dpd'} onValueChange={(v) => onCourierChange(v as CourierType)}>
+                <Select
+                  value={pkg.courier || 'dpd'}
+                  onValueChange={(v) => onCourierChange(v as CourierType)}
+                >
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -195,19 +265,28 @@ const PackageCard = ({
               >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="karton" id={`pkg-${pkg.id}-karton`} />
-                  <Label htmlFor={`pkg-${pkg.id}-karton`} className="text-sm font-normal cursor-pointer">
+                  <Label
+                    htmlFor={`pkg-${pkg.id}-karton`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
                     Karton
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="tuba" id={`pkg-${pkg.id}-tuba`} />
-                  <Label htmlFor={`pkg-${pkg.id}-tuba`} className="text-sm font-normal cursor-pointer">
+                  <Label
+                    htmlFor={`pkg-${pkg.id}-tuba`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
                     Tuba
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="koperta" id={`pkg-${pkg.id}-koperta`} />
-                  <Label htmlFor={`pkg-${pkg.id}-koperta`} className="text-sm font-normal cursor-pointer">
+                  <Label
+                    htmlFor={`pkg-${pkg.id}-koperta`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
                     Koperta
                   </Label>
                 </div>
@@ -218,41 +297,94 @@ const PackageCard = ({
                 <div className="grid grid-cols-1 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Waga (kg)</Label>
-                    <Input type="number" min={0.1} step={0.1} value={pkg.weight || 1} onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0.1}
+                      step={0.1}
+                      value={pkg.weight || 1}
+                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 </div>
               ) : pkg.packagingType === 'tuba' ? (
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Długość (cm)</Label>
-                    <Input type="number" min={0} value={(pkg.dimensions as TubaDimensions)?.length || ''} onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as TubaDimensions)?.length || ''}
+                      onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Średnica (cm)</Label>
-                    <Input type="number" min={0} value={(pkg.dimensions as TubaDimensions)?.diameter || ''} onChange={(e) => onDimensionChange('diameter', parseFloat(e.target.value) || 0)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as TubaDimensions)?.diameter || ''}
+                      onChange={(e) =>
+                        onDimensionChange('diameter', parseFloat(e.target.value) || 0)
+                      }
+                      className="h-8 text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Waga (kg)</Label>
-                    <Input type="number" min={0.1} step={0.1} value={pkg.weight || 1} onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0.1}
+                      step={0.1}
+                      value={pkg.weight || 1}
+                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Dł. (cm)</Label>
-                    <Input type="number" min={0} value={(pkg.dimensions as KartonDimensions)?.length || ''} onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as KartonDimensions)?.length || ''}
+                      onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Szer. (cm)</Label>
-                    <Input type="number" min={0} value={(pkg.dimensions as KartonDimensions)?.width || ''} onChange={(e) => onDimensionChange('width', parseFloat(e.target.value) || 0)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as KartonDimensions)?.width || ''}
+                      onChange={(e) => onDimensionChange('width', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Wys. (cm)</Label>
-                    <Input type="number" min={0} value={(pkg.dimensions as KartonDimensions)?.height || ''} onChange={(e) => onDimensionChange('height', parseFloat(e.target.value) || 0)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(pkg.dimensions as KartonDimensions)?.height || ''}
+                      onChange={(e) => onDimensionChange('height', parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Waga (kg)</Label>
-                    <Input type="number" min={0.1} step={0.1} value={pkg.weight || 1} onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)} className="h-8 text-sm" />
+                    <Input
+                      type="number"
+                      min={0.1}
+                      step={0.1}
+                      value={pkg.weight || 1}
+                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 </div>
               )}
@@ -264,7 +396,10 @@ const PackageCard = ({
                   checked={pkg.oversized || false}
                   onCheckedChange={(checked) => onOversizedChange(checked === true)}
                 />
-                <Label htmlFor={`pkg-${pkg.id}-oversized`} className="text-sm font-normal cursor-pointer">
+                <Label
+                  htmlFor={`pkg-${pkg.id}-oversized`}
+                  className="text-sm font-normal cursor-pointer"
+                >
                   Paczka ponadwymiarowa
                 </Label>
               </div>

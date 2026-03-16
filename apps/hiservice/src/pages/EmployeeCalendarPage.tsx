@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, subDays, addDays } from 'date-fns';
-import { Calendar as CalendarIcon, ClipboardCheck, Clock, LayoutDashboard, LogOut, Menu, MoreHorizontal, X, Bell } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  ClipboardCheck,
+  Clock,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MoreHorizontal,
+  X,
+  Bell,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +30,12 @@ import EmployeeDashboard from '@/components/employee/EmployeeDashboard';
 import EmployeeTimeTrackingView from '@/components/employee/EmployeeTimeTrackingView';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useDashboardSettings } from '@/hooks/useDashboardSettings';
-import type { CalendarItem, CalendarColumn, Break, AssignedEmployee } from '@/components/admin/AdminCalendar';
+import type {
+  CalendarItem,
+  CalendarColumn,
+  Break,
+  AssignedEmployee,
+} from '@/components/admin/AdminCalendar';
 import type { EditingCalendarItem } from '@/components/admin/AddCalendarItemDialog';
 import { Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -61,7 +76,9 @@ const EmployeeCalendarPage = () => {
   const [dashboardMapOpen, setDashboardMapOpen] = useState(false);
   const [dashboardMapItems, setDashboardMapItems] = useState<CalendarItemRow[]>([]);
   const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
-  const [hqLocation, setHqLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const [hqLocation, setHqLocation] = useState<{ lat: number; lng: number; name: string } | null>(
+    null,
+  );
   const isMobile = useIsMobile();
   const { data: workingHours } = useWorkingHours(instanceId);
   const { enabled: activitiesEnabled } = useInstanceFeature(instanceId, 'activities');
@@ -75,6 +92,7 @@ const EmployeeCalendarPage = () => {
   // Protocol form state
   const [protocolFormOpen, setProtocolFormOpen] = useState(false);
   const [protocolEditId, setProtocolEditId] = useState<string | null>(null);
+  const [protocolFormKey, setProtocolFormKey] = useState(0);
   const [protocolPrefill, setProtocolPrefill] = useState<{
     customerId?: string | null;
     customerName?: string;
@@ -126,7 +144,10 @@ const EmployeeCalendarPage = () => {
       .eq('active', true)
       .in('id', columnIds)
       .order('sort_order');
-    if (error) { console.error('Error fetching columns:', error); return; }
+    if (error) {
+      console.error('Error fetching columns:', error);
+      return;
+    }
     setCalendarColumns(data || []);
   }, [instanceId, config]);
 
@@ -141,7 +162,9 @@ const EmployeeCalendarPage = () => {
 
     let query = supabase
       .from('calendar_items')
-      .select('id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority')
+      .select(
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority',
+      )
       .eq('instance_id', instanceId)
       .in('column_id', columnIds)
       .gte('item_date', rangeStart)
@@ -153,20 +176,30 @@ const EmployeeCalendarPage = () => {
     }
 
     const { data, error } = await query;
-    if (error) { console.error('Error fetching items:', error); return; }
+    if (error) {
+      console.error('Error fetching items:', error);
+      return;
+    }
 
     const items = data || [];
 
     // Fetch address names
-    const addressIds = [...new Set(items.filter(i => i.customer_address_id).map(i => i.customer_address_id!))];
+    const addressIds = [
+      ...new Set(items.filter((i) => i.customer_address_id).map((i) => i.customer_address_id!)),
+    ];
     if (addressIds.length > 0) {
       const { data: addresses } = await supabase
         .from('customer_addresses')
         .select('id, name, lat, lng, city, street')
         .in('id', addressIds);
       if (addresses) {
-        const addressMap = new Map(addresses.map(a => [a.id, { name: a.name, lat: a.lat, lng: a.lng, city: a.city, street: a.street }]));
-        items.forEach(item => {
+        const addressMap = new Map(
+          addresses.map((a) => [
+            a.id,
+            { name: a.name, lat: a.lat, lng: a.lng, city: a.city, street: a.street },
+          ]),
+        );
+        items.forEach((item) => {
           if (item.customer_address_id) {
             const addr = addressMap.get(item.customer_address_id);
             (item as any).address_name = addr?.name || null;
@@ -180,18 +213,18 @@ const EmployeeCalendarPage = () => {
     }
 
     // Fetch assigned employees
-    const allEmployeeIds = [...new Set(items.flatMap(i => i.assigned_employee_ids || []))];
+    const allEmployeeIds = [...new Set(items.flatMap((i) => i.assigned_employee_ids || []))];
     if (allEmployeeIds.length > 0) {
       const { data: employees } = await supabase
         .from('employees')
         .select('id, name, photo_url')
         .in('id', allEmployeeIds);
       if (employees) {
-        const empMap = new Map(employees.map(e => [e.id, e]));
-        items.forEach(item => {
+        const empMap = new Map(employees.map((e) => [e.id, e]));
+        items.forEach((item) => {
           if (item.assigned_employee_ids?.length) {
             (item as any).assigned_employees = item.assigned_employee_ids
-              .map(id => empMap.get(id))
+              .map((id) => empMap.get(id))
               .filter(Boolean) as AssignedEmployee[];
           }
         });
@@ -216,7 +249,10 @@ const EmployeeCalendarPage = () => {
       .in('column_id', columnIds)
       .gte('break_date', rangeStart)
       .lte('break_date', rangeEnd);
-    if (error) { console.error('Error fetching breaks:', error); return; }
+    if (error) {
+      console.error('Error fetching breaks:', error);
+      return;
+    }
     setCalendarBreaks(data || []);
   }, [instanceId, config, currentCalendarDate]);
 
@@ -254,7 +290,11 @@ const EmployeeCalendarPage = () => {
       .single()
       .then(({ data }) => {
         if (data && (data as any).address_lat && (data as any).address_lng) {
-          setHqLocation({ lat: (data as any).address_lat, lng: (data as any).address_lng, name: data.name || 'Baza' });
+          setHqLocation({
+            lat: (data as any).address_lat,
+            lng: (data as any).address_lng,
+            name: data.name || 'Baza',
+          });
         }
       });
   }, [instanceId]);
@@ -264,14 +304,29 @@ const EmployeeCalendarPage = () => {
     if (!instanceId || currentView !== 'kalendarz') return;
     const channel = supabase
       .channel('employee-calendar-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_items', filter: `instance_id=eq.${instanceId}` }, () => {
-        fetchItems();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'breaks', filter: `instance_id=eq.${instanceId}` }, () => {
-        fetchBreaks();
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'calendar_items',
+          filter: `instance_id=eq.${instanceId}`,
+        },
+        () => {
+          fetchItems();
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'breaks', filter: `instance_id=eq.${instanceId}` },
+        () => {
+          fetchBreaks();
+        },
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [instanceId, currentView, fetchItems, fetchBreaks]);
 
   const allowedActions = {
@@ -303,20 +358,30 @@ const EmployeeCalendarPage = () => {
 
   const handleDeleteBreak = async (breakId: string) => {
     const { error } = await supabase.from('breaks').delete().eq('id', breakId);
-    if (error) { toast.error('Błąd usuwania przerwy'); return; }
+    if (error) {
+      toast.error('Błąd usuwania przerwy');
+      return;
+    }
     fetchBreaks();
     toast.success('Przerwa usunięta');
   };
 
-  const handleItemMove = async (itemId: string, newColumnId: string, newDate: string, newTime?: string) => {
+  const handleItemMove = async (
+    itemId: string,
+    newColumnId: string,
+    newDate: string,
+    newTime?: string,
+  ) => {
     if (!allowedActions.change_time && !allowedActions.change_column) return;
-    const item = calendarItems.find(i => i.id === itemId);
+    const item = calendarItems.find((i) => i.id === itemId);
     if (!item) return;
 
     const updateData: any = { column_id: newColumnId, item_date: newDate };
     if (newTime) {
-      const originalStart = parseFloat(item.start_time.split(':')[0]) + parseFloat(item.start_time.split(':')[1]) / 60;
-      const originalEnd = parseFloat(item.end_time.split(':')[0]) + parseFloat(item.end_time.split(':')[1]) / 60;
+      const originalStart =
+        parseFloat(item.start_time.split(':')[0]) + parseFloat(item.start_time.split(':')[1]) / 60;
+      const originalEnd =
+        parseFloat(item.end_time.split(':')[0]) + parseFloat(item.end_time.split(':')[1]) / 60;
       const duration = originalEnd - originalStart;
       const newStartParts = newTime.split(':').map(Number);
       const newEndTotal = newStartParts[0] + newStartParts[1] / 60 + duration;
@@ -326,9 +391,12 @@ const EmployeeCalendarPage = () => {
       updateData.end_time = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
     }
 
-    setCalendarItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updateData } : i));
+    setCalendarItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...updateData } : i)));
     const { error } = await supabase.from('calendar_items').update(updateData).eq('id', itemId);
-    if (error) { toast.error('Błąd przenoszenia'); fetchItems(); }
+    if (error) {
+      toast.error('Błąd przenoszenia');
+      fetchItems();
+    }
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -341,26 +409,46 @@ const EmployeeCalendarPage = () => {
       supabase.from('protocols').delete().eq('calendar_item_id', itemId),
     ]);
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
-    if (error) { toast.error('Błąd usuwania'); return; }
-    setCalendarItems(prev => prev.filter(i => i.id !== itemId));
+    if (error) {
+      toast.error('Błąd usuwania');
+      return;
+    }
+    setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
     toast.success('Zlecenie usunięte');
   };
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
-    setCalendarItems(prev => prev.map(i => i.id === itemId ? { ...i, status: newStatus } : i));
-    setSelectedItem(prev => prev && prev.id === itemId ? { ...prev, status: newStatus } : prev);
+    setCalendarItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)),
+    );
+    setSelectedItem((prev) => (prev && prev.id === itemId ? { ...prev, status: newStatus } : prev));
     const updatePayload: Record<string, any> = { status: newStatus };
     if (newStatus === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
     if (newStatus === 'completed') updatePayload.work_ended_at = new Date().toISOString();
-    const { error } = await supabase.from('calendar_items').update(updatePayload as any).eq('id', itemId);
-    if (error) { toast.error('Błąd zmiany statusu'); fetchItems(); return; }
-    setDashboardRefreshKey(k => k + 1);
+    const { error } = await supabase
+      .from('calendar_items')
+      .update(updatePayload as any)
+      .eq('id', itemId);
+    if (error) {
+      toast.error('Błąd zmiany statusu');
+      fetchItems();
+      return;
+    }
+    setDashboardRefreshKey((k) => k + 1);
 
     // Notify admins when employee starts/completes a task
-    if (activitiesEnabled && instanceId && (newStatus === 'in_progress' || newStatus === 'completed')) {
+    if (
+      activitiesEnabled &&
+      instanceId &&
+      (newStatus === 'in_progress' || newStatus === 'completed')
+    ) {
       // Fetch item title directly from DB to ensure we have it regardless of view state
       let itemTitle = 'Zlecenie';
-      const { data: itemData } = await supabase.from('calendar_items').select('title, customer_name').eq('id', itemId).single();
+      const { data: itemData } = await supabase
+        .from('calendar_items')
+        .select('title, customer_name')
+        .eq('id', itemId)
+        .single();
       if (itemData) {
         itemTitle = itemData.title || itemData.customer_name || 'Zlecenie';
       }
@@ -370,16 +458,23 @@ const EmployeeCalendarPage = () => {
       // Get employee name for the notification
       let employeeName = username || 'Pracownik';
       if (linkedEmployeeId) {
-        const { data: empData } = await supabase.from('employees').select('name').eq('id', linkedEmployeeId).single();
+        const { data: empData } = await supabase
+          .from('employees')
+          .select('name')
+          .eq('id', linkedEmployeeId)
+          .single();
         if (empData?.name) employeeName = empData.name;
       }
 
-      const notifTitle = newStatus === 'in_progress'
-        ? `Pracownik ${employeeName} rozpoczął zlecenie ${itemTitle}`
-        : `Pracownik ${employeeName} zakończył zlecenie ${itemTitle}`;
+      const notifTitle =
+        newStatus === 'in_progress'
+          ? `Pracownik ${employeeName} rozpoczął zlecenie ${itemTitle}`
+          : `Pracownik ${employeeName} zakończył zlecenie ${itemTitle}`;
 
       // Find admin user_ids for this instance via security definer function
-      const { data: adminUsers } = await supabase.rpc('get_instance_admin_user_ids', { _instance_id: instanceId });
+      const { data: adminUsers } = await supabase.rpc('get_instance_admin_user_ids', {
+        _instance_id: instanceId,
+      });
       for (const ar of adminUsers || []) {
         await createNotification({
           instanceId,
@@ -395,19 +490,30 @@ const EmployeeCalendarPage = () => {
   const handleEditItem = (item: CalendarItem) => {
     if (!allowedActions.edit_item) return;
     setEditingItem({
-      id: item.id, title: item.title, customer_name: item.customer_name,
-      customer_phone: item.customer_phone, customer_email: item.customer_email,
-      customer_id: item.customer_id, customer_address_id: item.customer_address_id,
-      assigned_employee_ids: item.assigned_employee_ids, item_date: item.item_date,
-      end_date: item.end_date, start_time: item.start_time, end_time: item.end_time,
-      column_id: item.column_id, admin_notes: item.admin_notes, price: item.price,
+      id: item.id,
+      title: item.title,
+      customer_name: item.customer_name,
+      customer_phone: item.customer_phone,
+      customer_email: item.customer_email,
+      customer_id: item.customer_id,
+      customer_address_id: item.customer_address_id,
+      assigned_employee_ids: item.assigned_employee_ids,
+      item_date: item.item_date,
+      end_date: item.end_date,
+      start_time: item.start_time,
+      end_time: item.end_time,
+      column_id: item.column_id,
+      admin_notes: item.admin_notes,
+      price: item.price,
       priority: (item as any).priority,
     });
     setDetailsOpen(false);
     setAddItemOpen(true);
   };
 
-  const handleLogout = async () => { await signOut(); };
+  const handleLogout = async () => {
+    await signOut();
+  };
   const displayName = username || user?.email || 'Pracownik';
 
   if (loading) {
@@ -419,25 +525,39 @@ const EmployeeCalendarPage = () => {
   }
 
   const navItems = [
-    { id: 'dashboard' as EmployeeView, label: dashboardSettings.viewMode === 'week' ? 'Mój tydzień' : 'Mój dzień', icon: LayoutDashboard },
+    {
+      id: 'dashboard' as EmployeeView,
+      label: dashboardSettings.viewMode === 'week' ? 'Mój tydzień' : 'Mój dzień',
+      icon: LayoutDashboard,
+    },
     { id: 'czas-pracy' as EmployeeView, label: 'Czas pracy', icon: Clock },
-    ...(protocolsEnabled ? [{ id: 'protokoly' as EmployeeView, label: 'Protokoły', icon: ClipboardCheck }] : []),
+    ...(protocolsEnabled
+      ? [{ id: 'protokoly' as EmployeeView, label: 'Protokoły', icon: ClipboardCheck }]
+      : []),
   ];
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar overlay - only on mobile when "Więcej" is tapped */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-[60] bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
-      <aside className={cn(
-        "fixed lg:sticky top-0 inset-y-0 left-0 z-[70] h-screen w-64 bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
+      <aside
+        className={cn(
+          'fixed lg:sticky top-0 inset-y-0 left-0 z-[70] h-screen w-64 bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        )}
+      >
         <div className="flex flex-col h-full overflow-hidden">
           <div className="p-6 border-b border-border/50 flex items-center justify-between">
-            <button onClick={() => setCurrentView('kalendarz')} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <button
+              onClick={() => setCurrentView('kalendarz')}
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <div className="rounded-xl bg-primary flex items-center justify-center shrink-0 w-10 h-10">
                 <span className="text-primary-foreground font-bold text-lg">Hi</span>
               </div>
@@ -445,7 +565,12 @@ const EmployeeCalendarPage = () => {
                 <h1 className="font-bold text-foreground truncate">HiService</h1>
               </div>
             </button>
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -456,7 +581,10 @@ const EmployeeCalendarPage = () => {
                 key={id}
                 variant={currentView === id ? 'secondary' : 'ghost'}
                 className="w-full justify-start gap-3"
-                onClick={() => { setCurrentView(id); setSidebarOpen(false); }}
+                onClick={() => {
+                  setCurrentView(id);
+                  setSidebarOpen(false);
+                }}
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
@@ -466,7 +594,11 @@ const EmployeeCalendarPage = () => {
 
           <div className="p-4 space-y-3">
             <div className="border-t border-border/30 pt-3">
-              <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground" onClick={handleLogout}>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 text-muted-foreground"
+                onClick={handleLogout}
+              >
                 <LogOut className="w-4 h-4" />
                 Wyloguj ({displayName})
               </Button>
@@ -483,7 +615,9 @@ const EmployeeCalendarPage = () => {
                 key={dashboardRefreshKey}
                 instanceId={instanceId}
                 columnIds={config.column_ids || []}
-                hidePrices={config?.visible_fields && (config.visible_fields as any).price === false}
+                hidePrices={
+                  config?.visible_fields && (config.visible_fields as any).price === false
+                }
                 hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
                 onItemClick={(item) => handleItemClick(item)}
                 linkedEmployeeId={linkedEmployeeId}
@@ -498,33 +632,44 @@ const EmployeeCalendarPage = () => {
               <CalendarItemDetailsDrawer
                 item={selectedItem}
                 open={detailsOpen}
-                onClose={() => { setDetailsOpen(false); setSelectedItem(null); }}
+                onClose={() => {
+                  setDetailsOpen(false);
+                  setSelectedItem(null);
+                  fetchItems();
+                }}
                 columns={calendarColumns}
                 onStatusChange={handleStatusChange}
                 onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
                 onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
                 canEditServices={!!allowedActions.edit_services}
-                hidePrices={config?.visible_fields && (config.visible_fields as any).price === false}
+                hidePrices={
+                  config?.visible_fields && (config.visible_fields as any).price === false
+                }
                 hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
-                onAddProtocol={protocolsEnabled ? async (item) => {
-                  setDetailsOpen(false);
-                  const { data: existing } = await supabase
-                    .from('protocols')
-                    .select('id')
-                    .eq('calendar_item_id', item.id)
-                    .eq('instance_id', instanceId!)
-                    .maybeSingle();
-                  setProtocolEditId(existing?.id || null);
-                  setProtocolPrefill({
-                    customerId: item.customer_id,
-                    customerName: item.customer_name || '',
-                    customerPhone: item.customer_phone || '',
-                    customerEmail: item.customer_email || '',
-                    customerAddressId: item.customer_address_id,
-                    calendarItemId: item.id,
-                  });
-                  setProtocolFormOpen(true);
-                } : undefined}
+                onAddProtocol={
+                  protocolsEnabled
+                    ? async (item) => {
+                        setDetailsOpen(false);
+                        const { data: existing } = await supabase
+                          .from('protocols')
+                          .select('id')
+                          .eq('calendar_item_id', item.id)
+                          .eq('instance_id', instanceId!)
+                          .maybeSingle();
+                        setProtocolEditId(existing?.id || null);
+                        setProtocolPrefill({
+                          customerId: item.customer_id,
+                          customerName: item.customer_name || '',
+                          customerPhone: item.customer_phone || '',
+                          customerEmail: item.customer_email || '',
+                          customerAddressId: item.customer_address_id,
+                          calendarItemId: item.id,
+                        });
+                        setProtocolFormKey((k) => k + 1);
+                        setProtocolFormOpen(true);
+                      }
+                    : undefined
+                }
                 instanceId={instanceId || undefined}
                 forceSideRight
                 isEmployee
@@ -536,27 +681,46 @@ const EmployeeCalendarPage = () => {
                   <div className="flex flex-col h-full">
                     <div className="px-4 py-3 border-b flex items-center justify-between">
                       <h3 className="font-bold text-lg">Mapa zleceń</h3>
-                      <Button variant="ghost" size="icon" onClick={() => setDashboardMapOpen(false)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDashboardMapOpen(false)}
+                      >
                         <X className="w-5 h-5" />
                       </Button>
                     </div>
                     <div className="flex-1">
                       <CalendarMap
-                        items={dashboardMapItems.map(di => ({
-                          id: di.id, title: di.title, item_date: di.item_date,
-                          start_time: di.start_time, end_time: di.end_time,
-                          column_id: di.column_id, status: di.status,
-                          customer_name: di.customer_name, customer_phone: di.customer_phone,
-                          customer_email: di.customer_email, customer_id: di.customer_id,
-                          customer_address_id: di.customer_address_id,
-                          assigned_employee_ids: di.assigned_employee_ids,
-                          admin_notes: di.admin_notes, price: di.price,
-                          address_lat: di.address_lat, address_lng: di.address_lng,
-                          address_city: di.address_city, address_street: di.address_street,
-                          address_name: di.address_name,
-                        } as any))}
+                        items={dashboardMapItems.map(
+                          (di) =>
+                            ({
+                              id: di.id,
+                              title: di.title,
+                              item_date: di.item_date,
+                              start_time: di.start_time,
+                              end_time: di.end_time,
+                              column_id: di.column_id,
+                              status: di.status,
+                              customer_name: di.customer_name,
+                              customer_phone: di.customer_phone,
+                              customer_email: di.customer_email,
+                              customer_id: di.customer_id,
+                              customer_address_id: di.customer_address_id,
+                              assigned_employee_ids: di.assigned_employee_ids,
+                              admin_notes: di.admin_notes,
+                              price: di.price,
+                              address_lat: di.address_lat,
+                              address_lng: di.address_lng,
+                              address_city: di.address_city,
+                              address_street: di.address_street,
+                              address_name: di.address_name,
+                            }) as any,
+                        )}
                         columns={calendarColumns}
-                        onItemClick={(item) => { setDashboardMapOpen(false); handleItemClick(item); }}
+                        onItemClick={(item) => {
+                          setDashboardMapOpen(false);
+                          handleItemClick(item);
+                        }}
                         hqLocation={hqLocation}
                         instanceId={instanceId || ''}
                       />
@@ -571,8 +735,11 @@ const EmployeeCalendarPage = () => {
             <NotificationsView
               instanceId={instanceId}
               onItemClick={(calendarItemId) => {
-                supabase.from('calendar_items')
-                  .select('id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number')
+                supabase
+                  .from('calendar_items')
+                  .select(
+                    'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number',
+                  )
                   .eq('id', calendarItemId)
                   .single()
                   .then(({ data }) => {
@@ -600,44 +767,57 @@ const EmployeeCalendarPage = () => {
                     onItemMove={handleItemMove}
                     onDateChange={(date) => setCurrentCalendarDate(date)}
                     selectedItemId={selectedItem?.id}
-                    onToggleMap={() => setMapOpen(prev => !prev)}
+                    onToggleMap={() => setMapOpen((prev) => !prev)}
                     mapOpen={mapOpen}
-                    hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
+                    hideHours={
+                      config?.visible_fields && (config.visible_fields as any).hours === false
+                    }
                     prioritiesEnabled={prioritiesEnabled}
                   />
-
 
                   <CalendarItemDetailsDrawer
                     item={selectedItem}
                     open={detailsOpen}
-                    onClose={() => { setDetailsOpen(false); setSelectedItem(null); }}
+                    onClose={() => {
+                      setDetailsOpen(false);
+                      setSelectedItem(null);
+                      fetchItems();
+                    }}
                     columns={calendarColumns}
                     onStatusChange={handleStatusChange}
                     onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
                     onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
-                    
                     canEditServices={!!allowedActions.edit_services}
-                    hidePrices={config?.visible_fields && (config.visible_fields as any).price === false}
-                    hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
-                    onAddProtocol={protocolsEnabled ? async (item) => {
-                      setDetailsOpen(false);
-                      const { data: existing } = await supabase
-                        .from('protocols')
-                        .select('id')
-                        .eq('calendar_item_id', item.id)
-                        .eq('instance_id', instanceId!)
-                        .maybeSingle();
-                      setProtocolEditId(existing?.id || null);
-                      setProtocolPrefill({
-                        customerId: item.customer_id,
-                        customerName: item.customer_name || '',
-                        customerPhone: item.customer_phone || '',
-                        customerEmail: item.customer_email || '',
-                        customerAddressId: item.customer_address_id,
-                        calendarItemId: item.id,
-                      });
-                      setProtocolFormOpen(true);
-                    } : undefined}
+                    hidePrices={
+                      config?.visible_fields && (config.visible_fields as any).price === false
+                    }
+                    hideHours={
+                      config?.visible_fields && (config.visible_fields as any).hours === false
+                    }
+                    onAddProtocol={
+                      protocolsEnabled
+                        ? async (item) => {
+                            setDetailsOpen(false);
+                            const { data: existing } = await supabase
+                              .from('protocols')
+                              .select('id')
+                              .eq('calendar_item_id', item.id)
+                              .eq('instance_id', instanceId!)
+                              .maybeSingle();
+                            setProtocolEditId(existing?.id || null);
+                            setProtocolPrefill({
+                              customerId: item.customer_id,
+                              customerName: item.customer_name || '',
+                              customerPhone: item.customer_phone || '',
+                              customerEmail: item.customer_email || '',
+                              customerAddressId: item.customer_address_id,
+                              calendarItemId: item.id,
+                            });
+                            setProtocolFormKey((k) => k + 1);
+                            setProtocolFormOpen(true);
+                          }
+                        : undefined
+                    }
                     instanceId={instanceId || undefined}
                     isEmployee
                   />
@@ -681,14 +861,16 @@ const EmployeeCalendarPage = () => {
           {[
             { id: 'dashboard' as EmployeeView, label: 'Mój dzień', icon: LayoutDashboard },
             { id: 'czas-pracy' as EmployeeView, label: 'Czas pracy', icon: Clock },
-            ...(activitiesEnabled ? [{ id: 'aktywnosci' as EmployeeView, label: 'Aktywności', icon: Bell }] : []),
+            ...(activitiesEnabled
+              ? [{ id: 'aktywnosci' as EmployeeView, label: 'Aktywności', icon: Bell }]
+              : []),
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setCurrentView(id)}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-xs transition-colors relative",
-                currentView === id ? "text-primary font-semibold" : "text-foreground"
+                'flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-xs transition-colors relative',
+                currentView === id ? 'text-primary font-semibold' : 'text-foreground',
               )}
             >
               <Icon className="w-5 h-5" />
@@ -703,8 +885,8 @@ const EmployeeCalendarPage = () => {
           <button
             onClick={() => setSidebarOpen(true)}
             className={cn(
-              "flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-xs transition-colors",
-              sidebarOpen ? "text-primary font-semibold" : "text-foreground"
+              'flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-xs transition-colors',
+              sidebarOpen ? 'text-primary font-semibold' : 'text-foreground',
             )}
           >
             <MoreHorizontal className="w-5 h-5" />
@@ -717,10 +899,16 @@ const EmployeeCalendarPage = () => {
       {instanceId && (
         <AddCalendarItemDialog
           open={addItemOpen}
-          onClose={() => { setAddItemOpen(false); setEditingItem(null); }}
+          onClose={() => {
+            setAddItemOpen(false);
+            setEditingItem(null);
+          }}
           instanceId={instanceId}
           columns={calendarColumns}
-          onSuccess={() => { fetchItems(); setEditingItem(null); }}
+          onSuccess={() => {
+            fetchItems();
+            setEditingItem(null);
+          }}
           editingItem={editingItem}
           initialDate={newItemData.date}
           initialTime={newItemData.time}
@@ -731,10 +919,19 @@ const EmployeeCalendarPage = () => {
       {/* Protocol form - rendered outside view blocks so it's always available */}
       {instanceId && (
         <CreateProtocolForm
+          key={protocolFormKey}
           open={protocolFormOpen}
-          onClose={() => { setProtocolFormOpen(false); setProtocolPrefill({}); setProtocolEditId(null); }}
+          onClose={() => {
+            setProtocolFormOpen(false);
+            setProtocolPrefill({});
+            setProtocolEditId(null);
+          }}
           instanceId={instanceId}
-          onSuccess={() => { setProtocolFormOpen(false); setProtocolPrefill({}); setProtocolEditId(null); }}
+          onSuccess={() => {
+            setProtocolFormOpen(false);
+            setProtocolPrefill({});
+            setProtocolEditId(null);
+          }}
           editingProtocolId={protocolEditId}
           prefillCustomerId={protocolPrefill.customerId}
           prefillCustomerName={protocolPrefill.customerName}
@@ -750,7 +947,11 @@ const EmployeeCalendarPage = () => {
         <CalendarItemDetailsDrawer
           item={selectedItem}
           open={detailsOpen}
-          onClose={() => { setDetailsOpen(false); setSelectedItem(null); }}
+          onClose={() => {
+            setDetailsOpen(false);
+            setSelectedItem(null);
+            fetchItems();
+          }}
           columns={calendarColumns}
           onStatusChange={handleStatusChange}
           onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}

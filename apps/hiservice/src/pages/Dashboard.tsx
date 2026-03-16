@@ -2,7 +2,18 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { format, subDays, addDays, startOfMonth, endOfMonth } from 'date-fns';
-import { Calendar, Users, BadgeDollarSign, Settings, HardHat, ClipboardCheck, Receipt, Bell, LayoutDashboard, FolderKanban } from 'lucide-react';
+import {
+  Calendar,
+  Users,
+  BadgeDollarSign,
+  Settings,
+  HardHat,
+  ClipboardCheck,
+  Receipt,
+  Bell,
+  LayoutDashboard,
+  FolderKanban,
+} from 'lucide-react';
 import DashboardLayout, { type ViewType } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import SettingsView from '@/components/admin/SettingsView';
@@ -15,7 +26,12 @@ import AddBreakDialog from '@/components/admin/AddBreakDialog';
 import CalendarMapPanel from '@/components/admin/CalendarMapPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { CalendarItem, CalendarColumn, Break, AssignedEmployee } from '@/components/admin/AdminCalendar';
+import type {
+  CalendarItem,
+  CalendarColumn,
+  Break,
+  AssignedEmployee,
+} from '@/components/admin/AdminCalendar';
 import type { EditingCalendarItem } from '@/components/admin/AddCalendarItemDialog';
 import { EmployeesView } from '@/components/admin/employees';
 import ProtocolsView from '@/components/protocols/ProtocolsView';
@@ -32,24 +48,77 @@ import { useInstanceFeature } from '@/hooks/useInstanceFeatures';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { MessageSquare } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCalendarItemsRealtime } from '@/hooks/useCalendarItemsRealtime';
 
 import { useReminders, useReminderTypes } from '@/hooks/useReminders';
 import type { Reminder } from '@/hooks/useReminders';
 
-const validViews: ViewType[] = ['dashboard', 'kalendarz', 'klienci', 'uslugi', 'pracownicy', 'protokoly', 'rozliczenia', 'projekty', 'przypomnienia', 'powiadomienia-sms', 'ustawienia', 'aktywnosci'];
+const validViews: ViewType[] = [
+  'dashboard',
+  'kalendarz',
+  'klienci',
+  'uslugi',
+  'pracownicy',
+  'protokoly',
+  'rozliczenia',
+  'projekty',
+  'przypomnienia',
+  'powiadomienia-sms',
+  'ustawienia',
+  'aktywnosci',
+];
 
-const viewConfig: Record<ViewType, { label: string; icon: React.ElementType; description: string }> = {
-  dashboard: { label: 'Twój dzień', icon: LayoutDashboard, description: 'Przegląd zadań na ten tydzień' },
-  kalendarz: { label: 'Kalendarz', icon: Calendar, description: 'Zarządzaj harmonogramem i rezerwacjami' },
+const viewConfig: Record<
+  ViewType,
+  { label: string; icon: React.ElementType; description: string }
+> = {
+  dashboard: {
+    label: 'Twój dzień',
+    icon: LayoutDashboard,
+    description: 'Przegląd zadań na ten tydzień',
+  },
+  kalendarz: {
+    label: 'Kalendarz',
+    icon: Calendar,
+    description: 'Zarządzaj harmonogramem i rezerwacjami',
+  },
   klienci: { label: 'Klienci', icon: Users, description: 'Przeglądaj i zarządzaj bazą klientów' },
-  pracownicy: { label: 'Pracownicy', icon: HardHat, description: 'Zarządzaj pracownikami i czasem pracy' },
-  protokoly: { label: 'Protokoły', icon: ClipboardCheck, description: 'Protokoły serwisowe zakończenia prac' },
-  rozliczenia: { label: 'Rozliczenia', icon: Receipt, description: 'Rozliczenia i statusy płatności zleceń' },
-  projekty: { label: 'Projekty', icon: FolderKanban, description: 'Wieloetapowe projekty grupujące zlecenia' },
-  przypomnienia: { label: 'Przypomnienia', icon: Bell, description: "Śledź ważne terminy i deadline'y" },
+  pracownicy: {
+    label: 'Pracownicy',
+    icon: HardHat,
+    description: 'Zarządzaj pracownikami i czasem pracy',
+  },
+  protokoly: {
+    label: 'Protokoły',
+    icon: ClipboardCheck,
+    description: 'Protokoły serwisowe zakończenia prac',
+  },
+  rozliczenia: {
+    label: 'Rozliczenia',
+    icon: Receipt,
+    description: 'Rozliczenia i statusy płatności zleceń',
+  },
+  projekty: {
+    label: 'Projekty',
+    icon: FolderKanban,
+    description: 'Wieloetapowe projekty grupujące zlecenia',
+  },
+  przypomnienia: {
+    label: 'Przypomnienia',
+    icon: Bell,
+    description: "Śledź ważne terminy i deadline'y",
+  },
   uslugi: { label: 'Usługi', icon: BadgeDollarSign, description: 'Konfiguruj usługi i cennik' },
-  'powiadomienia-sms': { label: 'Powiadomienia SMS', icon: MessageSquare, description: 'Szablony powiadomień SMS dla klientów' },
-  ustawienia: { label: 'Ustawienia', icon: Settings, description: 'Ustawienia systemu i konfiguracja' },
+  'powiadomienia-sms': {
+    label: 'Powiadomienia SMS',
+    icon: MessageSquare,
+    description: 'Szablony powiadomień SMS dla klientów',
+  },
+  ustawienia: {
+    label: 'Ustawienia',
+    icon: Settings,
+    description: 'Ustawienia systemu i konfiguracja',
+  },
   aktywnosci: { label: 'Aktywności', icon: Bell, description: 'Powiadomienia i aktywności' },
 };
 
@@ -80,16 +149,22 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  const currentView: ViewType = view && validViews.includes(view as ViewType) ? (view as ViewType) : 'dashboard';
+  const currentView: ViewType =
+    view && validViews.includes(view as ViewType) ? (view as ViewType) : 'dashboard';
 
-  const adminRole = roles.find(r => (r.role === 'admin' || r.role === 'employee') && r.instance_id);
+  const adminRole = roles.find(
+    (r) => (r.role === 'admin' || r.role === 'employee') && r.instance_id,
+  );
   const instanceId = adminRole?.instance_id ?? null;
   const { enabled: activitiesEnabled } = useInstanceFeature(instanceId, 'activities');
   const { enabled: employeesEnabled } = useInstanceFeature(instanceId, 'employees');
   const { enabled: protocolsEnabled } = useInstanceFeature(instanceId, 'protocols');
   const { enabled: remindersEnabled } = useInstanceFeature(instanceId, 'reminders');
   const { enabled: prioritiesEnabled } = useInstanceFeature(instanceId, 'priorities');
-  const { enabled: employeeCalendarViewEnabled } = useInstanceFeature(instanceId, 'employee_calendar_view');
+  const { enabled: employeeCalendarViewEnabled } = useInstanceFeature(
+    instanceId,
+    'employee_calendar_view',
+  );
   const { enabled: projectsEnabled } = useInstanceFeature(instanceId, 'projects');
 
   const hostname = window.location.hostname;
@@ -97,7 +172,9 @@ const Dashboard = () => {
   const basePath = isSubdomain ? '' : '/admin';
 
   const handleViewChange = (newView: ViewType) => {
-    navigate(newView === 'dashboard' ? (basePath || '/') : `${basePath}/${newView}`, { replace: true });
+    navigate(newView === 'dashboard' ? basePath || '/' : `${basePath}/${newView}`, {
+      replace: true,
+    });
   };
 
   // Calendar state
@@ -115,27 +192,41 @@ const Dashboard = () => {
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [calendarViewMode, setCalendarViewMode] = useState<string>('day');
   const [mapOpen, setMapOpen] = useState(false);
-  const [hqLocation, setHqLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
-  const [mapOrderPrefill, setMapOrderPrefill] = useState<{ customerId?: string; customerName?: string; customerPhone?: string; customerEmail?: string; customerAddressId?: string }>({});
-  const [employeesList, setEmployeesList] = useState<{ id: string; name: string; sort_order: number | null }[]>([]);
+  const [hqLocation, setHqLocation] = useState<{ lat: number; lng: number; name: string } | null>(
+    null,
+  );
+  const [mapOrderPrefill, setMapOrderPrefill] = useState<{
+    customerId?: string;
+    customerName?: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    customerAddressId?: string;
+  }>({});
+  const [employeesList, setEmployeesList] = useState<
+    { id: string; name: string; sort_order: number | null }[]
+  >([]);
 
   // Employee calendar view mode from URL
   const employeeViewMode = searchParams.get('view') === 'employees';
   const toggleEmployeeView = useCallback(() => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (next.get('view') === 'employees') {
-        next.delete('view');
-      } else {
-        next.set('view', 'employees');
-      }
-      return next;
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (next.get('view') === 'employees') {
+          next.delete('view');
+        } else {
+          next.set('view', 'employees');
+        }
+        return next;
+      },
+      { replace: true },
+    );
   }, [setSearchParams]);
 
   // Protocol form state
   const [protocolFormOpen, setProtocolFormOpen] = useState(false);
   const [protocolEditId, setProtocolEditId] = useState<string | null>(null);
+  const [protocolFormKey, setProtocolFormKey] = useState(0);
   const [protocolPrefill, setProtocolPrefill] = useState<{
     customerId?: string | null;
     customerName?: string;
@@ -164,7 +255,10 @@ const Dashboard = () => {
       .eq('instance_id', instanceId)
       .eq('active', true)
       .order('sort_order');
-    if (error) { console.error('Error fetching columns:', error); return; }
+    if (error) {
+      console.error('Error fetching columns:', error);
+      return;
+    }
     setCalendarColumns(data || []);
   }, [instanceId]);
 
@@ -180,28 +274,47 @@ const Dashboard = () => {
       rangeStart = format(subDays(currentCalendarDate, 7), 'yyyy-MM-dd');
       rangeEnd = format(addDays(currentCalendarDate, mapOpen ? 30 : 14), 'yyyy-MM-dd');
     }
+    console.log('[fetchItems] called, range:', rangeStart, '→', rangeEnd);
     const { data, error } = await supabase
       .from('calendar_items')
-      .select('id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, project_id')
+      .select(
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, project_id',
+      )
       .eq('instance_id', instanceId)
       .not('item_date', 'is', null)
       .gte('item_date', rangeStart)
       .lte('item_date', rangeEnd);
-    if (error) { console.error('Error fetching items:', error); return; }
-    
+    if (error) {
+      console.error('[fetchItems] ERROR:', error);
+      return;
+    }
+
     const items = data || [];
-    
+    console.log(
+      '[fetchItems] got',
+      items.length,
+      'items, titles:',
+      items.map((i) => i.title).join(', '),
+    );
+
     // Fetch address names for items that have customer_address_id
-    const addressIds = [...new Set(items.filter(i => i.customer_address_id).map(i => i.customer_address_id!))];
+    const addressIds = [
+      ...new Set(items.filter((i) => i.customer_address_id).map((i) => i.customer_address_id!)),
+    ];
     if (addressIds.length > 0) {
       const { data: addresses } = await supabase
         .from('customer_addresses')
         .select('id, name, lat, lng, city, street')
         .in('id', addressIds);
-      
+
       if (addresses) {
-        const addressMap = new Map(addresses.map(a => [a.id, { name: a.name, lat: a.lat, lng: a.lng, city: a.city, street: a.street }]));
-        items.forEach(item => {
+        const addressMap = new Map(
+          addresses.map((a) => [
+            a.id,
+            { name: a.name, lat: a.lat, lng: a.lng, city: a.city, street: a.street },
+          ]),
+        );
+        items.forEach((item) => {
           if (item.customer_address_id) {
             const addr = addressMap.get(item.customer_address_id);
             (item as any).address_name = addr?.name || null;
@@ -215,19 +328,19 @@ const Dashboard = () => {
     }
 
     // Fetch assigned employees
-    const allEmployeeIds = [...new Set(items.flatMap(i => i.assigned_employee_ids || []))];
+    const allEmployeeIds = [...new Set(items.flatMap((i) => i.assigned_employee_ids || []))];
     if (allEmployeeIds.length > 0) {
       const { data: employees } = await supabase
         .from('employees')
         .select('id, name, photo_url')
         .in('id', allEmployeeIds);
-      
+
       if (employees) {
-        const empMap = new Map(employees.map(e => [e.id, e]));
-        items.forEach(item => {
+        const empMap = new Map(employees.map((e) => [e.id, e]));
+        items.forEach((item) => {
           if (item.assigned_employee_ids?.length) {
             (item as any).assigned_employees = item.assigned_employee_ids
-              .map(id => empMap.get(id))
+              .map((id) => empMap.get(id))
               .filter(Boolean) as AssignedEmployee[];
           }
         });
@@ -235,21 +348,21 @@ const Dashboard = () => {
     }
 
     // Fetch project names for items with project_id
-    const projectIds = [...new Set(items.filter(i => i.project_id).map(i => i.project_id!))];
+    const projectIds = [...new Set(items.filter((i) => i.project_id).map((i) => i.project_id!))];
     if (projectIds.length > 0) {
       const { data: projectsData } = await (supabase.from('projects' as any) as any)
         .select('id, title')
         .in('id', projectIds);
       if (projectsData) {
         const projMap = new Map(projectsData.map((p: any) => [p.id, p.title]));
-        items.forEach(item => {
+        items.forEach((item) => {
           if (item.project_id) {
             (item as any).project_name = projMap.get(item.project_id) || null;
           }
         });
       }
     }
-    
+
     setCalendarItems(items as CalendarItem[]);
   }, [instanceId, currentCalendarDate, mapOpen, calendarViewMode]);
 
@@ -264,7 +377,10 @@ const Dashboard = () => {
       .eq('instance_id', instanceId)
       .gte('break_date', rangeStart)
       .lte('break_date', rangeEnd);
-    if (error) { console.error('Error fetching breaks:', error); return; }
+    if (error) {
+      console.error('Error fetching breaks:', error);
+      return;
+    }
     setCalendarBreaks(data || []);
   }, [instanceId, currentCalendarDate]);
 
@@ -277,7 +393,10 @@ const Dashboard = () => {
       .eq('instance_id', instanceId)
       .eq('active', true)
       .order('sort_order');
-    if (error) { console.error('Error fetching employees:', error); return; }
+    if (error) {
+      console.error('Error fetching employees:', error);
+      return;
+    }
     setEmployeesList(data || []);
   }, [instanceId]);
 
@@ -291,12 +410,19 @@ const Dashboard = () => {
     if (currentView === 'dashboard' || currentView === 'projekty') {
       fetchColumns();
     }
-  }, [currentView, fetchColumns, fetchItems, fetchBreaks, fetchEmployees, employeeCalendarViewEnabled]);
+  }, [
+    currentView,
+    fetchColumns,
+    fetchItems,
+    fetchBreaks,
+    fetchEmployees,
+    employeeCalendarViewEnabled,
+  ]);
 
   // Employee view data transformation
   const employeeColumns = useMemo<CalendarColumn[]>(() => {
     if (!employeeViewMode) return [];
-    return employeesList.map(emp => ({
+    return employeesList.map((emp) => ({
       id: emp.id,
       name: emp.name,
       color: null,
@@ -305,10 +431,10 @@ const Dashboard = () => {
 
   const employeeViewItems = useMemo<CalendarItem[]>(() => {
     if (!employeeViewMode) return [];
-    return calendarItems.flatMap(item => {
+    return calendarItems.flatMap((item) => {
       const empIds = item.assigned_employee_ids;
       if (!empIds?.length) return [];
-      return empIds.map(empId => ({
+      return empIds.map((empId) => ({
         ...item,
         id: `${item.id}__emp_${empId}`,
         column_id: empId,
@@ -337,8 +463,12 @@ const Dashboard = () => {
           // Check same day overlap
           const aDates = getDateRange(a);
           const bDates = getDateRange(b);
-          const commonDates = aDates.filter(d => bDates.includes(d));
-          if (commonDates.length > 0 && parseTime(a.start_time) < parseTime(b.end_time) && parseTime(b.start_time) < parseTime(a.end_time)) {
+          const commonDates = aDates.filter((d) => bDates.includes(d));
+          if (
+            commonDates.length > 0 &&
+            parseTime(a.start_time) < parseTime(b.end_time) &&
+            parseTime(b.start_time) < parseTime(a.end_time)
+          ) {
             conflicts.add(a.id);
             conflicts.add(b.id);
           }
@@ -358,27 +488,62 @@ const Dashboard = () => {
       .single()
       .then(({ data }) => {
         if (data && (data as any).address_lat && (data as any).address_lng) {
-          setHqLocation({ lat: (data as any).address_lat, lng: (data as any).address_lng, name: data.name || 'Baza' });
+          setHqLocation({
+            lat: (data as any).address_lat,
+            lng: (data as any).address_lng,
+            name: data.name || 'Baza',
+          });
         }
       });
   }, [instanceId]);
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!instanceId || currentView !== 'kalendarz') return;
+  // Realtime subscription — targeted INSERT/UPDATE/DELETE with debounce
+  const invalidateRelatedQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
+  }, [queryClient, instanceId]);
 
-    const channel = supabase
-      .channel('calendar-items-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_items', filter: `instance_id=eq.${instanceId}` }, () => {
-        fetchItems();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'breaks', filter: `instance_id=eq.${instanceId}` }, () => {
-        fetchBreaks();
-      })
-      .subscribe();
+  const handleRealtimeInsert = useCallback(
+    (item: CalendarItem) => {
+      setCalendarItems((prev) => {
+        if (prev.some((i) => i.id === item.id)) return prev;
+        return [...prev, item];
+      });
+      invalidateRelatedQueries();
+    },
+    [invalidateRelatedQueries],
+  );
 
-    return () => { supabase.removeChannel(channel); };
-  }, [instanceId, currentView, fetchItems, fetchBreaks]);
+  const handleRealtimeUpdate = useCallback(
+    (item: CalendarItem) => {
+      setCalendarItems((prev) => prev.map((i) => (i.id === item.id ? item : i)));
+      setSelectedItem((prev) => (prev && prev.id === item.id ? item : prev));
+      setDashboardSelectedItem((prev) => (prev && prev.id === item.id ? item : prev));
+      invalidateRelatedQueries();
+    },
+    [invalidateRelatedQueries],
+  );
+
+  const handleRealtimeDelete = useCallback(
+    (itemId: string) => {
+      setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+      queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
+        old ? old.filter((i: any) => i.id !== itemId) : [],
+      );
+      invalidateRelatedQueries();
+    },
+    [invalidateRelatedQueries, queryClient, instanceId],
+  );
+
+  const { markAsLocallyUpdated } = useCalendarItemsRealtime({
+    instanceId,
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate,
+    onDelete: handleRealtimeDelete,
+    onRefetch: fetchItems,
+    onBreakChange: fetchBreaks,
+  });
 
   // Handlers
   const handleItemClick = (item: CalendarItem) => {
@@ -394,7 +559,11 @@ const Dashboard = () => {
     setAddItemOpen(true);
   };
 
-  const handleProjectAddOrder = (projectId: string, customerId: string | null, customerAddressId: string | null) => {
+  const handleProjectAddOrder = (
+    projectId: string,
+    customerId: string | null,
+    customerAddressId: string | null,
+  ) => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(projectId);
@@ -402,7 +571,11 @@ const Dashboard = () => {
     setAddItemOpen(true);
   };
 
-  const handleNearbyAddressClick = async (address: { id: string; customer_id: string; customer_name?: string }) => {
+  const handleNearbyAddressClick = async (address: {
+    id: string;
+    customer_id: string;
+    customer_name?: string;
+  }) => {
     const { data: customer } = await supabase
       .from('customers')
       .select('id, name, phone, email')
@@ -428,13 +601,21 @@ const Dashboard = () => {
 
   const handleDeleteBreak = async (breakId: string) => {
     const { error } = await supabase.from('breaks').delete().eq('id', breakId);
-    if (error) { toast.error('Błąd usuwania przerwy'); return; }
+    if (error) {
+      toast.error('Błąd usuwania przerwy');
+      return;
+    }
     fetchBreaks();
     toast.success('Przerwa usunięta');
   };
 
-  const handleItemMove = async (itemId: string, newColumnId: string, newDate: string, newTime?: string) => {
-    const item = calendarItems.find(i => i.id === itemId);
+  const handleItemMove = async (
+    itemId: string,
+    newColumnId: string,
+    newDate: string,
+    newTime?: string,
+  ) => {
+    const item = calendarItems.find((i) => i.id === itemId);
     if (!item) return;
 
     const updateData: any = { column_id: newColumnId, item_date: newDate };
@@ -442,13 +623,17 @@ const Dashboard = () => {
     if (item.end_date && item.end_date !== item.item_date) {
       const origStart = new Date(item.item_date + 'T00:00:00');
       const newStart = new Date(newDate + 'T00:00:00');
-      const daysDiff = Math.round((newStart.getTime() - origStart.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.round(
+        (newStart.getTime() - origStart.getTime()) / (1000 * 60 * 60 * 24),
+      );
       const origEnd = new Date(item.end_date + 'T00:00:00');
       updateData.end_date = format(addDays(origEnd, daysDiff), 'yyyy-MM-dd');
     }
     if (newTime) {
-      const originalStart = parseFloat(item.start_time.split(':')[0]) + parseFloat(item.start_time.split(':')[1]) / 60;
-      const originalEnd = parseFloat(item.end_time.split(':')[0]) + parseFloat(item.end_time.split(':')[1]) / 60;
+      const originalStart =
+        parseFloat(item.start_time.split(':')[0]) + parseFloat(item.start_time.split(':')[1]) / 60;
+      const originalEnd =
+        parseFloat(item.end_time.split(':')[0]) + parseFloat(item.end_time.split(':')[1]) / 60;
       const duration = originalEnd - originalStart;
       const newStartParts = newTime.split(':').map(Number);
       const newEndTotal = newStartParts[0] + newStartParts[1] / 60 + duration;
@@ -458,8 +643,9 @@ const Dashboard = () => {
       updateData.end_time = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
     }
 
-    // Optimistic update
-    setCalendarItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updateData } : i));
+    // Optimistic update + debounce realtime
+    markAsLocallyUpdated(itemId);
+    setCalendarItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...updateData } : i)));
 
     const { error } = await supabase.from('calendar_items').update(updateData).eq('id', itemId);
     if (error) {
@@ -488,9 +674,20 @@ const Dashboard = () => {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    // Get item info before deletion to notify employees
-    const item = calendarItems.find(i => i.id === itemId);
-    
+    const item = calendarItems.find((i) => i.id === itemId);
+
+    // Optimistic update — remove from UI immediately (calendar + lista zleceń)
+    markAsLocallyUpdated(itemId);
+    setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+    queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
+      old ? old.filter((i: any) => i.id !== itemId) : [],
+    );
+    toast.success('Zlecenie usunięte');
+    queryClient.invalidateQueries({ queryKey: ['settlements-invoices', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
+
+    // Delete from DB in background
     await Promise.all([
       supabase.from('invoices').delete().eq('calendar_item_id', itemId),
       supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId),
@@ -499,9 +696,13 @@ const Dashboard = () => {
       supabase.from('protocols').delete().eq('calendar_item_id', itemId),
     ]);
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
-    if (error) { toast.error('Błąd usuwania'); return; }
+    if (error) {
+      toast.error('Błąd usuwania — przywracam');
+      fetchItems(); // rollback
+      return;
+    }
 
-    // Notify assigned employees about deletion
+    // Notify assigned employees (fire-and-forget)
     if (activitiesEnabled && item?.assigned_employee_ids?.length && instanceId) {
       const { data: emps } = await supabase
         .from('employees')
@@ -520,21 +721,26 @@ const Dashboard = () => {
         }
       }
     }
-
-    setCalendarItems(prev => prev.filter(i => i.id !== itemId));
-    toast.success('Zlecenie usunięte');
   };
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
-    // Optimistic update
-    setCalendarItems(prev => prev.map(i => i.id === itemId ? { ...i, status: newStatus } : i));
-    setSelectedItem(prev => prev && prev.id === itemId ? { ...prev, status: newStatus } : prev);
-    setDashboardSelectedItem(prev => prev && prev.id === itemId ? { ...prev, status: newStatus } : prev);
+    // Optimistic update + debounce realtime
+    markAsLocallyUpdated(itemId);
+    setCalendarItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)),
+    );
+    setSelectedItem((prev) => (prev && prev.id === itemId ? { ...prev, status: newStatus } : prev));
+    setDashboardSelectedItem((prev) =>
+      prev && prev.id === itemId ? { ...prev, status: newStatus } : prev,
+    );
 
     const updatePayload: Record<string, any> = { status: newStatus };
     if (newStatus === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
     if (newStatus === 'completed') updatePayload.work_ended_at = new Date().toISOString();
-    const { error } = await supabase.from('calendar_items').update(updatePayload as any).eq('id', itemId);
+    const { error } = await supabase
+      .from('calendar_items')
+      .update(updatePayload as any)
+      .eq('id', itemId);
     if (error) {
       toast.error('Błąd zmiany statusu');
       fetchItems();
@@ -570,11 +776,12 @@ const Dashboard = () => {
   };
 
   const handleItemSuccess = () => {
+    console.log('[handleItemSuccess] called, triggering fetchItems');
     fetchItems();
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
-    queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
+    queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
     queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
     queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
     queryClient.invalidateQueries({ queryKey: ['projects-stages', instanceId] });
@@ -590,14 +797,20 @@ const Dashboard = () => {
     if (!instanceId) return;
     const { data } = await supabase
       .from('calendar_items')
-      .select('id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority')
+      .select(
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority',
+      )
       .eq('id', itemId)
       .single();
     if (!data) return;
 
     // Fetch address
     if (data.customer_address_id) {
-      const { data: addr } = await supabase.from('customer_addresses').select('id, name, lat, lng, city').eq('id', data.customer_address_id).single();
+      const { data: addr } = await supabase
+        .from('customer_addresses')
+        .select('id, name, lat, lng, city')
+        .eq('id', data.customer_address_id)
+        .single();
       if (addr) {
         (data as any).address_name = addr.name;
         (data as any).address_lat = addr.lat;
@@ -608,7 +821,10 @@ const Dashboard = () => {
 
     // Fetch employees
     if (data.assigned_employee_ids?.length) {
-      const { data: employees } = await supabase.from('employees').select('id, name, photo_url').in('id', data.assigned_employee_ids);
+      const { data: employees } = await supabase
+        .from('employees')
+        .select('id, name, photo_url')
+        .in('id', data.assigned_employee_ids);
       if (employees) {
         (data as any).assigned_employees = employees as AssignedEmployee[];
       }
@@ -653,23 +869,43 @@ const Dashboard = () => {
     }
 
     if (currentView === 'uslugi' && instanceId) {
-      return <div className="max-w-[1000px] mx-auto"><ServicesView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <ServicesView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'klienci' && instanceId) {
-      return <div className="max-w-[1000px] mx-auto"><CustomersView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <CustomersView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'pracownicy' && instanceId) {
-      return <div className="max-w-[1000px] mx-auto"><EmployeesView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <EmployeesView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'protokoly' && instanceId && protocolsEnabled) {
-      return <div className="max-w-[1000px] mx-auto"><ProtocolsView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <ProtocolsView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'rozliczenia' && instanceId) {
-      return <div className="max-w-[1000px] mx-auto"><SettlementsView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <SettlementsView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'projekty' && instanceId && projectsEnabled) {
@@ -704,32 +940,41 @@ const Dashboard = () => {
           <CalendarItemDetailsDrawer
             item={selectedItem}
             open={detailsOpen}
-            onClose={() => { setDetailsOpen(false); setSelectedItem(null); }}
+            onClose={() => {
+              setDetailsOpen(false);
+              setSelectedItem(null);
+              fetchItems();
+            }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
             onEdit={handleEditItem}
             onStatusChange={handleStatusChange}
             onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
             onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
-            onAddProtocol={protocolsEnabled ? async (item) => {
-              setDetailsOpen(false);
-              const { data: existing } = await supabase
-                .from('protocols')
-                .select('id')
-                .eq('calendar_item_id', item.id)
-                .eq('instance_id', instanceId!)
-                .maybeSingle();
-              setProtocolEditId(existing?.id || null);
-              setProtocolPrefill({
-                customerId: item.customer_id,
-                customerName: item.customer_name || '',
-                customerPhone: item.customer_phone || '',
-                customerEmail: item.customer_email || '',
-                customerAddressId: item.customer_address_id,
-                calendarItemId: item.id,
-              });
-              setProtocolFormOpen(true);
-            } : undefined}
+            onAddProtocol={
+              protocolsEnabled
+                ? async (item) => {
+                    setDetailsOpen(false);
+                    const { data: existing } = await supabase
+                      .from('protocols')
+                      .select('id')
+                      .eq('calendar_item_id', item.id)
+                      .eq('instance_id', instanceId!)
+                      .maybeSingle();
+                    setProtocolEditId(existing?.id || null);
+                    setProtocolPrefill({
+                      customerId: item.customer_id,
+                      customerName: item.customer_name || '',
+                      customerPhone: item.customer_phone || '',
+                      customerEmail: item.customer_email || '',
+                      customerAddressId: item.customer_address_id,
+                      calendarItemId: item.id,
+                    });
+                    setProtocolFormKey((k) => k + 1);
+                    setProtocolFormOpen(true);
+                  }
+                : undefined
+            }
             instanceId={instanceId || undefined}
           />
         </>
@@ -737,20 +982,25 @@ const Dashboard = () => {
     }
 
     if (currentView === 'powiadomienia-sms') {
-      return <div className="max-w-[1000px] mx-auto"><SmsNotificationsView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <SmsNotificationsView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'przypomnienia' && instanceId && remindersEnabled) {
-      return <div className="max-w-[1000px] mx-auto"><RemindersView instanceId={instanceId} /></div>;
+      return (
+        <div className="max-w-[1000px] mx-auto">
+          <RemindersView instanceId={instanceId} />
+        </div>
+      );
     }
 
     if (currentView === 'aktywnosci' && instanceId && activitiesEnabled) {
       return (
         <div className="max-w-[1000px] mx-auto">
-          <NotificationsView
-            instanceId={instanceId}
-            onItemClick={handleDashboardItemClick}
-          />
+          <NotificationsView instanceId={instanceId} onItemClick={handleDashboardItemClick} />
         </div>
       );
     }
@@ -766,8 +1016,11 @@ const Dashboard = () => {
               // Strip virtual ID suffix for employee view
               if (employeeViewMode && item.id.includes('__emp_')) {
                 const originalId = item.id.split('__emp_')[0];
-                const original = calendarItems.find(i => i.id === originalId);
-                if (original) { handleItemClick(original); return; }
+                const original = calendarItems.find((i) => i.id === originalId);
+                if (original) {
+                  handleItemClick(original);
+                  return;
+                }
               }
               handleItemClick(item);
             }}
@@ -778,45 +1031,56 @@ const Dashboard = () => {
             onDateChange={handleDateChange}
             onViewModeChange={(mode) => setCalendarViewMode(mode)}
             selectedItemId={selectedItem?.id}
-            onToggleMap={employeeViewMode ? undefined : (() => setMapOpen(prev => !prev))}
+            onToggleMap={employeeViewMode ? undefined : () => setMapOpen((prev) => !prev)}
             mapOpen={employeeViewMode ? false : mapOpen}
             hideEmployeeChips={!employeesEnabled}
             workingHours={workingHours}
             prioritiesEnabled={prioritiesEnabled}
             employeeViewActive={employeeViewMode}
-            onToggleEmployeeView={employeeCalendarViewEnabled && employeesEnabled ? toggleEmployeeView : undefined}
+            onToggleEmployeeView={
+              employeeCalendarViewEnabled && employeesEnabled ? toggleEmployeeView : undefined
+            }
             conflictItemIds={conflictItemIds}
           />
 
           <CalendarItemDetailsDrawer
             item={selectedItem}
             open={detailsOpen}
-            onClose={() => { setDetailsOpen(false); setSelectedItem(null); }}
+            onClose={() => {
+              setDetailsOpen(false);
+              setSelectedItem(null);
+              fetchItems();
+            }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
             onEdit={handleEditItem}
             onStatusChange={handleStatusChange}
             onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
             onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
-            onAddProtocol={protocolsEnabled ? async (item) => {
-              setDetailsOpen(false);
-              const { data: existing } = await supabase
-                .from('protocols')
-                .select('id')
-                .eq('calendar_item_id', item.id)
-                .eq('instance_id', instanceId!)
-                .maybeSingle();
-              setProtocolEditId(existing?.id || null);
-              setProtocolPrefill({
-                customerId: item.customer_id,
-                customerName: item.customer_name || '',
-                customerPhone: item.customer_phone || '',
-                customerEmail: item.customer_email || '',
-                customerAddressId: item.customer_address_id,
-                calendarItemId: item.id,
-              });
-              setProtocolFormOpen(true);
-            } : undefined}
+            onAddProtocol={
+              protocolsEnabled
+                ? async (item) => {
+                    setDetailsOpen(false);
+                    const { data: existing } = await supabase
+                      .from('protocols')
+                      .select('id')
+                      .eq('calendar_item_id', item.id)
+                      .eq('instance_id', instanceId!)
+                      .maybeSingle();
+                    setProtocolEditId(existing?.id || null);
+                    setProtocolPrefill({
+                      customerId: item.customer_id,
+                      customerName: item.customer_name || '',
+                      customerPhone: item.customer_phone || '',
+                      customerEmail: item.customer_email || '',
+                      customerAddressId: item.customer_address_id,
+                      calendarItemId: item.id,
+                    });
+                    setProtocolFormKey((k) => k + 1);
+                    setProtocolFormOpen(true);
+                  }
+                : undefined
+            }
             instanceId={instanceId || undefined}
           />
 
@@ -860,21 +1124,36 @@ const Dashboard = () => {
           <p className="text-muted-foreground max-w-md">{description}</p>
         </div>
         <div className="px-4 py-2 rounded-lg bg-muted/30 border border-border/50">
-          <p className="text-sm text-muted-foreground">Placeholder — wkrótce tu będzie pełna funkcjonalność</p>
+          <p className="text-sm text-muted-foreground">
+            Placeholder — wkrótce tu będzie pełna funkcjonalność
+          </p>
         </div>
       </div>
     );
   };
 
   return (
-    <DashboardLayout currentView={currentView} onViewChange={handleViewChange} instanceId={instanceId}>
+    <DashboardLayout
+      currentView={currentView}
+      onViewChange={handleViewChange}
+      instanceId={instanceId}
+    >
       {renderContent()}
       {instanceId && (
         <CreateProtocolForm
+          key={protocolFormKey}
           open={protocolFormOpen}
-          onClose={() => { setProtocolFormOpen(false); setProtocolPrefill({}); setProtocolEditId(null); }}
+          onClose={() => {
+            setProtocolFormOpen(false);
+            setProtocolPrefill({});
+            setProtocolEditId(null);
+          }}
           instanceId={instanceId}
-          onSuccess={() => { setProtocolFormOpen(false); setProtocolPrefill({}); setProtocolEditId(null); }}
+          onSuccess={() => {
+            setProtocolFormOpen(false);
+            setProtocolPrefill({});
+            setProtocolEditId(null);
+          }}
           editingProtocolId={protocolEditId}
           prefillCustomerId={protocolPrefill.customerId}
           prefillCustomerName={protocolPrefill.customerName}
@@ -887,7 +1166,13 @@ const Dashboard = () => {
       {instanceId && (
         <AddCalendarItemDialog
           open={addItemOpen}
-          onClose={() => { setAddItemOpen(false); setEditingItem(null); setMapOrderPrefill({}); setInitialProjectId(undefined); }}
+          onClose={() => {
+            setAddItemOpen(false);
+            setEditingItem(null);
+            setMapOrderPrefill({});
+            setInitialProjectId(undefined);
+            fetchItems();
+          }}
           instanceId={instanceId}
           columns={calendarColumns}
           onSuccess={handleItemSuccess}
@@ -908,47 +1193,65 @@ const Dashboard = () => {
       <CalendarItemDetailsDrawer
         item={dashboardSelectedItem}
         open={dashboardDetailsOpen}
-        onClose={() => { setDashboardDetailsOpen(false); setDashboardSelectedItem(null); }}
+        onClose={() => {
+          setDashboardDetailsOpen(false);
+          setDashboardSelectedItem(null);
+          fetchItems();
+        }}
         columns={calendarColumns}
         onDelete={handleDeleteItem}
         onEdit={handleEditItem}
         onStatusChange={handleStatusChange}
         onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
         onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
-        onAddProtocol={protocolsEnabled ? async (item) => {
-          setDashboardDetailsOpen(false);
-          const { data: existing } = await supabase
-            .from('protocols')
-            .select('id')
-            .eq('calendar_item_id', item.id)
-            .eq('instance_id', instanceId!)
-            .maybeSingle();
-          setProtocolEditId(existing?.id || null);
-          setProtocolPrefill({
-            customerId: item.customer_id,
-            customerName: item.customer_name || '',
-            customerPhone: item.customer_phone || '',
-            customerEmail: item.customer_email || '',
-            customerAddressId: item.customer_address_id,
-            calendarItemId: item.id,
-          });
-          setProtocolFormOpen(true);
-        } : undefined}
+        onAddProtocol={
+          protocolsEnabled
+            ? async (item) => {
+                setDashboardDetailsOpen(false);
+                const { data: existing } = await supabase
+                  .from('protocols')
+                  .select('id')
+                  .eq('calendar_item_id', item.id)
+                  .eq('instance_id', instanceId!)
+                  .maybeSingle();
+                setProtocolEditId(existing?.id || null);
+                setProtocolPrefill({
+                  customerId: item.customer_id,
+                  customerName: item.customer_name || '',
+                  customerPhone: item.customer_phone || '',
+                  customerEmail: item.customer_email || '',
+                  customerAddressId: item.customer_address_id,
+                  calendarItemId: item.id,
+                });
+                setProtocolFormOpen(true);
+              }
+            : undefined
+        }
         instanceId={instanceId || undefined}
       />
 
       {instanceId && (
         <AddEditReminderDrawer
           open={dashboardReminderOpen}
-          onClose={() => { setDashboardReminderOpen(false); setDashboardEditingReminder(null); }}
+          onClose={() => {
+            setDashboardReminderOpen(false);
+            setDashboardEditingReminder(null);
+          }}
           instanceId={instanceId}
           reminderTypes={reminderTypes}
           onSave={async (data, id) => {
             const ok = await saveReminder(data, id);
-            if (ok) { setDashboardReminderOpen(false); setDashboardEditingReminder(null); }
+            if (ok) {
+              setDashboardReminderOpen(false);
+              setDashboardEditingReminder(null);
+            }
             return ok;
           }}
-          onDelete={async (id) => { await deleteReminder(id); setDashboardReminderOpen(false); setDashboardEditingReminder(null); }}
+          onDelete={async (id) => {
+            await deleteReminder(id);
+            setDashboardReminderOpen(false);
+            setDashboardEditingReminder(null);
+          }}
           editingReminder={dashboardEditingReminder}
         />
       )}
