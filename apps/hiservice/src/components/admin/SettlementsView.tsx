@@ -326,8 +326,8 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     setCurrentPage(1);
   };
 
-  const invalidateSettlements = () => {
-    queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
+  const invalidateSettlements = async () => {
+    await queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
   };
 
   const changeStatus = async (id: string, newStatus: string) => {
@@ -411,8 +411,8 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       });
       if (error) throw error;
       toast.success(`Zsynchronizowano ${data?.synced || 0} z ${data?.total || 0} faktur`);
-      queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
-      queryClient.invalidateQueries({ queryKey: ['settlements-invoices', instanceId] });
+      queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+      queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
     } catch (e: any) {
       toast.error('Błąd synchronizacji: ' + (e.message || 'Nieznany błąd'));
     } finally {
@@ -989,8 +989,8 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
         customerName={invoiceTarget?.customer_name}
         customerEmail={invoiceTarget?.customer_email}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
-          queryClient.invalidateQueries({ queryKey: ['settlements-invoices', instanceId] });
+          queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+          queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
         }}
       />
 
@@ -1006,7 +1006,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
           calendarItem={smsTarget}
           instanceId={instanceId}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
+            queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
           }}
         />
       )}

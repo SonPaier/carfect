@@ -2,13 +2,7 @@ import { defineWorkspace } from 'vitest/config';
 
 export default defineWorkspace([
   'apps/carfect/vitest.config.ts',
-  {
-    test: {
-      name: 'hiservice',
-      root: 'apps/hiservice',
-      include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    },
-  },
+  'apps/hiservice/vitest.config.ts',
   {
     test: {
       name: 'shared-utils',

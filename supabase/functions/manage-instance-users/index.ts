@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { captureException } from "../_shared/sentry.ts";
+import { captureException } from '../_shared/sentry.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,20 +31,23 @@ Deno.serve(async (req) => {
     // Verify the caller's authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Brak autoryzacji' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Brak autoryzacji' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user: caller }, error: authError } = await supabase.auth.getUser(token);
-    
+    const {
+      data: { user: caller },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+
     if (authError || !caller) {
-      return new Response(
-        JSON.stringify({ error: 'Nieprawidłowy token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Nieprawidłowy token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Get caller's roles
@@ -53,28 +56,28 @@ Deno.serve(async (req) => {
       .select('role, instance_id')
       .eq('user_id', caller.id);
 
-    const isSuperAdmin = callerRoles?.some(r => r.role === 'super_admin');
+    const isSuperAdmin = callerRoles?.some((r) => r.role === 'super_admin');
 
     // Parse request body
     const body: ManageUserRequest = await req.json();
     const { action, instanceId, userId, username, password, role, adminPassword } = body;
 
     if (!instanceId) {
-      return new Response(
-        JSON.stringify({ error: 'Brak ID instancji' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Brak ID instancji' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Check if caller has permission to manage users in this instance
     const isInstanceAdmin = callerRoles?.some(
-      r => r.role === 'admin' && r.instance_id === instanceId
+      (r) => r.role === 'admin' && r.instance_id === instanceId,
     );
 
     if (!isSuperAdmin && !isInstanceAdmin) {
       return new Response(
         JSON.stringify({ error: 'Brak uprawnień do zarządzania użytkownikami w tej instancji' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -92,7 +95,7 @@ Deno.serve(async (req) => {
           console.error('Error fetching profiles:', profilesError);
           return new Response(
             JSON.stringify({ error: 'Nie udało się pobrać listy użytkowników' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
@@ -108,14 +111,16 @@ Deno.serve(async (req) => {
 
         if (rolesError) {
           console.error('Error fetching roles:', rolesError);
-          return new Response(
-            JSON.stringify({ error: 'Nie udało się pobrać ról użytkowników' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Nie udało się pobrać ról użytkowników' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         const users = (profiles || []).map((profile: any) => {
-          const userRoles = (roles || []).filter((r: any) => r.user_id === profile.id).map((r: any) => r.role);
+          const userRoles = (roles || [])
+            .filter((r: any) => r.user_id === profile.id)
+            .map((r: any) => r.role);
           // Determine role priority: admin > sales > hall > employee
           let userRole = 'employee';
           if (userRoles.includes('admin')) {
@@ -135,25 +140,27 @@ Deno.serve(async (req) => {
           };
         });
 
-        return new Response(
-          JSON.stringify({ success: true, users }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ success: true, users }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
       case 'create': {
         if (!username || !password || !role) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane: username, password, role' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Wymagane: username, password, role' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Validate role
         if (role !== 'admin' && role !== 'employee' && role !== 'hall' && role !== 'sales') {
           return new Response(
-            JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({
+              error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales',
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
@@ -168,7 +175,7 @@ Deno.serve(async (req) => {
         if (existingUser) {
           return new Response(
             JSON.stringify({ error: 'Użytkownik o tej nazwie już istnieje w tej instancji' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
@@ -184,10 +191,10 @@ Deno.serve(async (req) => {
 
         if (createError || !newUser.user) {
           console.error('Error creating user:', createError);
-          return new Response(
-            JSON.stringify({ error: 'Nie udało się utworzyć użytkownika' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Nie udało się utworzyć użytkownika' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Update profile with username and instance_id
@@ -206,61 +213,68 @@ Deno.serve(async (req) => {
           await supabase.auth.admin.deleteUser(newUser.user.id);
           return new Response(
             JSON.stringify({ error: 'Nie udało się skonfigurować profilu użytkownika' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
         // Assign role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: newUser.user.id,
-            role: role,
-            instance_id: instanceId,
-          });
+        const { error: roleError } = await supabase.from('user_roles').insert({
+          user_id: newUser.user.id,
+          role: role,
+          instance_id: instanceId,
+        });
 
         if (roleError) {
           console.error('Error assigning role:', roleError);
           await supabase.auth.admin.deleteUser(newUser.user.id);
           return new Response(
             JSON.stringify({ error: 'Nie udało się przypisać roli użytkownikowi' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
         console.log(`User created: ${username} (${role}) in instance ${instanceId}`);
 
         return new Response(
-          JSON.stringify({ 
-            success: true, 
+          JSON.stringify({
+            success: true,
             userId: newUser.user.id,
-            message: 'Użytkownik utworzony pomyślnie'
+            message: 'Użytkownik utworzony pomyślnie',
           }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
       case 'update': {
         if (!userId) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane: userId' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Wymagane: userId' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
-        // Verify user belongs to this instance
-        const { data: targetProfile } = await supabase
+        // Verify user belongs to this instance (check both profiles and user_roles)
+        const { data: updateTargetProfile } = await supabase
           .from('profiles')
           .select('id, instance_id')
           .eq('id', userId)
-          .eq('instance_id', instanceId)
           .maybeSingle();
 
-        if (!targetProfile) {
-          return new Response(
-            JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        const { data: updateTargetRoles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('instance_id', instanceId);
+
+        const updateBelongs =
+          updateTargetProfile?.instance_id === instanceId ||
+          (updateTargetRoles && updateTargetRoles.length > 0);
+
+        if (!updateTargetProfile || !updateBelongs) {
+          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Update username if provided
@@ -277,7 +291,7 @@ Deno.serve(async (req) => {
           if (existingUser) {
             return new Response(
               JSON.stringify({ error: 'Użytkownik o tej nazwie już istnieje w tej instancji' }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
             );
           }
 
@@ -290,7 +304,7 @@ Deno.serve(async (req) => {
             console.error('Error updating username:', updateError);
             return new Response(
               JSON.stringify({ error: 'Nie udało się zaktualizować nazwy użytkownika' }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
             );
           }
         }
@@ -299,8 +313,10 @@ Deno.serve(async (req) => {
         if (role) {
           if (role !== 'admin' && role !== 'employee' && role !== 'hall' && role !== 'sales') {
             return new Response(
-              JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales' }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              JSON.stringify({
+                error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales',
+              }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
             );
           }
 
@@ -314,7 +330,7 @@ Deno.serve(async (req) => {
             console.error('Error updating role:', roleError);
             return new Response(
               JSON.stringify({ error: 'Nie udało się zaktualizować roli użytkownika' }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
             );
           }
         }
@@ -323,40 +339,49 @@ Deno.serve(async (req) => {
 
         return new Response(
           JSON.stringify({ success: true, message: 'Użytkownik zaktualizowany' }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
       case 'block':
       case 'unblock': {
         if (!userId) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane: userId' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Wymagane: userId' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
-        // Verify user belongs to this instance
-        const { data: targetProfile } = await supabase
+        // Verify user belongs to this instance (check both profiles and user_roles)
+        const { data: blockTargetProfile } = await supabase
           .from('profiles')
           .select('id, instance_id')
           .eq('id', userId)
-          .eq('instance_id', instanceId)
           .maybeSingle();
 
-        if (!targetProfile) {
-          return new Response(
-            JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        const { data: blockTargetRoles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('instance_id', instanceId);
+
+        const blockBelongs =
+          blockTargetProfile?.instance_id === instanceId ||
+          (blockTargetRoles && blockTargetRoles.length > 0);
+
+        if (!blockTargetProfile || !blockBelongs) {
+          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Prevent blocking yourself
         if (userId === caller.id) {
-          return new Response(
-            JSON.stringify({ error: 'Nie możesz zablokować samego siebie' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Nie możesz zablokować samego siebie' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         const isBlocked = action === 'block';
@@ -368,35 +393,37 @@ Deno.serve(async (req) => {
         if (blockError) {
           console.error('Error blocking/unblocking user:', blockError);
           return new Response(
-            JSON.stringify({ error: `Nie udało się ${isBlocked ? 'zablokować' : 'odblokować'} użytkownika` }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({
+              error: `Nie udało się ${isBlocked ? 'zablokować' : 'odblokować'} użytkownika`,
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
         console.log(`User ${action}ed: ${userId} in instance ${instanceId}`);
 
         return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: isBlocked ? 'Użytkownik zablokowany' : 'Użytkownik odblokowany' 
+          JSON.stringify({
+            success: true,
+            message: isBlocked ? 'Użytkownik zablokowany' : 'Użytkownik odblokowany',
           }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
       case 'reset-password': {
         if (!userId || !password) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane: userId, password' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Wymagane: userId, password' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Require admin's own password for identity confirmation
         if (!adminPassword) {
           return new Response(
             JSON.stringify({ error: 'Wymagane potwierdzenie hasłem administratora' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
@@ -407,88 +434,99 @@ Deno.serve(async (req) => {
         });
 
         if (verifyError) {
-          return new Response(
-            JSON.stringify({ error: 'Nieprawidłowe hasło administratora' }),
-            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Nieprawidłowe hasło administratora' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
-        // Verify user belongs to this instance
-        const { data: targetProfile } = await supabase
+        // Verify user belongs to this instance (check both profiles and user_roles)
+        const { data: resetTargetProfile } = await supabase
           .from('profiles')
           .select('id, instance_id')
           .eq('id', userId)
-          .eq('instance_id', instanceId)
           .maybeSingle();
 
-        if (!targetProfile) {
-          return new Response(
-            JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        const { data: resetTargetRoles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('instance_id', instanceId);
+
+        const resetBelongs =
+          resetTargetProfile?.instance_id === instanceId ||
+          (resetTargetRoles && resetTargetRoles.length > 0);
+
+        if (!resetTargetProfile || !resetBelongs) {
+          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         // Reset password using admin API
-        const { error: passwordError } = await supabase.auth.admin.updateUserById(
-          userId,
-          { password }
-        );
+        const { error: passwordError } = await supabase.auth.admin.updateUserById(userId, {
+          password,
+        });
 
         if (passwordError) {
           console.error('Error resetting password:', passwordError);
-          return new Response(
-            JSON.stringify({ error: 'Nie udało się zresetować hasła' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Nie udało się zresetować hasła' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
-        console.log(`Password reset for user: ${userId} in instance ${instanceId} by admin: ${caller.id}`);
+        console.log(
+          `Password reset for user: ${userId} in instance ${instanceId} by admin: ${caller.id}`,
+        );
 
         return new Response(
           JSON.stringify({ success: true, message: 'Hasło zostało zresetowane' }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
       case 'delete': {
         if (!userId) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane: userId' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Wymagane: userId' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
-        // Verify user belongs to this instance
+        // Verify user belongs to this instance (check both profiles and user_roles)
         const { data: targetProfile } = await supabase
           .from('profiles')
           .select('id, instance_id')
           .eq('id', userId)
-          .eq('instance_id', instanceId)
           .maybeSingle();
 
-        if (!targetProfile) {
-          return new Response(
-            JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        // Prevent deleting yourself
-        if (userId === caller.id) {
-          return new Response(
-            JSON.stringify({ error: 'Nie możesz usunąć samego siebie' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        // Check if this is the last admin in the instance
         const { data: targetRoles } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', userId)
           .eq('instance_id', instanceId);
 
-        const isTargetAdmin = targetRoles?.some(r => r.role === 'admin');
+        const belongsToInstance =
+          targetProfile?.instance_id === instanceId || (targetRoles && targetRoles.length > 0);
+
+        if (!targetProfile || !belongsToInstance) {
+          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Prevent deleting yourself
+        if (userId === caller.id) {
+          return new Response(JSON.stringify({ error: 'Nie możesz usunąć samego siebie' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const isTargetAdmin = targetRoles?.some((r) => r.role === 'admin');
 
         if (isTargetAdmin) {
           // Count admins in this instance
@@ -501,7 +539,7 @@ Deno.serve(async (req) => {
           if (adminCount === 1) {
             return new Response(
               JSON.stringify({ error: 'Nie można usunąć ostatniego administratora instancji' }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
             );
           }
         }
@@ -511,37 +549,37 @@ Deno.serve(async (req) => {
 
         if (deleteError) {
           console.error('Error deleting user:', deleteError);
-          return new Response(
-            JSON.stringify({ error: 'Nie udało się usunąć użytkownika' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ error: 'Nie udało się usunąć użytkownika' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         console.log(`User deleted: ${userId} from instance ${instanceId}`);
 
-        return new Response(
-          JSON.stringify({ success: true, message: 'Użytkownik usunięty' }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ success: true, message: 'Użytkownik usunięty' }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
       default:
-        return new Response(
-          JSON.stringify({ error: 'Nieznana akcja' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ error: 'Nieznana akcja' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
     }
   } catch (error) {
     console.error('Unexpected error:', error);
     const err = error instanceof Error ? error : new Error(String(error));
     await captureException(err, {
-      transaction: "manage-instance-users",
+      transaction: 'manage-instance-users',
       request: req,
-      tags: { function: "manage-instance-users" },
+      tags: { function: 'manage-instance-users' },
     });
-    return new Response(
-      JSON.stringify({ error: 'Wystąpił nieoczekiwany błąd' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Wystąpił nieoczekiwany błąd' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

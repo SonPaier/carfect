@@ -354,7 +354,7 @@ const AddCalendarItemDialog = ({
                 .single();
               if (cust) {
                 setCustomerId(cust.id);
-                setCustomerName(cust.name);
+                setCustomerName(cust.name || '');
                 setCustomerPhone(cust.phone || '');
                 setCustomerEmail(cust.email || '');
               }
@@ -445,8 +445,8 @@ const AddCalendarItemDialog = ({
         .single();
       if (data) {
         setCustomerId(data.id);
-        setCustomerName(data.name);
-        setCustomerPhone(data.phone);
+        setCustomerName(data.name || '');
+        setCustomerPhone(data.phone || '');
         setCustomerEmail(data.email || '');
       }
     }
@@ -457,8 +457,8 @@ const AddCalendarItemDialog = ({
 
   const handleSelectCustomer = (customer: SelectedCustomer) => {
     setCustomerId(customer.id);
-    setCustomerName(customer.name);
-    setCustomerPhone(customer.phone);
+    setCustomerName(customer.name || '');
+    setCustomerPhone(customer.phone || '');
     setCustomerEmail(customer.email || '');
   };
 
@@ -656,12 +656,14 @@ const AddCalendarItemDialog = ({
     }
 
     const hasDate = !!dateRange?.from;
-    // If dates are provided, validate them
+    // Require column when columns exist, unless it's a project item without date
+    const isProjectWithoutDate = !!projectId && !hasDate;
+    if (!columnId && columns.length > 0 && !isProjectWithoutDate) {
+      toast.error('Wybierz stanowisko');
+      return;
+    }
+    // If dates are provided, validate times
     if (hasDate) {
-      if (!columnId) {
-        toast.error('Wybierz kolumnę');
-        return;
-      }
       if (startTime >= endTime) {
         toast.error('Godzina końca musi być późniejsza niż początku');
         return;
@@ -711,17 +713,6 @@ const AddCalendarItemDialog = ({
           .update(data)
           .eq('id', calendarItemId);
         if (error) throw error;
-
-        // Send immediate SMS in edit mode if checkbox checked and no existing notification
-        if (
-          sendImmediateSms &&
-          immediateSmsTemplateId &&
-          customerPhone.trim() &&
-          !existingSmsNotification
-        ) {
-          await createAndSendSms(calendarItemId);
-        }
-
         toast.success('Zlecenie zaktualizowane');
       } else {
         const { data: inserted, error } = await supabase
@@ -731,62 +722,72 @@ const AddCalendarItemDialog = ({
           .single();
         if (error) throw error;
         calendarItemId = inserted!.id;
-
-        // Send immediate SMS if checkbox checked
-        if (sendImmediateSms && immediateSmsTemplateId && customerPhone.trim() && inserted) {
-          await createAndSendSms(calendarItemId);
-        }
-
         toast.success('Zlecenie dodane');
       }
 
-      // Save services to calendar_item_services
-      // Delete existing services first
-      await supabase
-        .from('calendar_item_services' as any)
-        .delete()
-        .eq('calendar_item_id', calendarItemId);
-
-      // Insert new services
-      if (selectedServiceIds.length > 0) {
-        const serviceRows = selectedServiceIds.map((svcId) => {
-          const si = serviceItems.find((s) => s.service_id === svcId);
-          return {
-            calendar_item_id: calendarItemId,
-            service_id: svcId,
-            custom_price: si?.custom_price ?? null,
-            quantity: si?.quantity ?? 1,
-            instance_id: instanceId,
-          };
-        });
-        await supabase.from('calendar_item_services' as any).insert(serviceRows);
-      }
-
-      // Notify assigned employees about new/updated assignment
-      if (activitiesEnabled && assignedEmployeeIds.length > 0 && hasDate) {
-        const { data: emps } = await supabase
-          .from('employees')
-          .select('linked_user_id')
-          .in('id', assignedEmployeeIds)
-          .not('linked_user_id', 'is', null);
-        const itemTitle = finalTitle || customerName.trim() || 'Zlecenie';
-        const itemDate = format(dateRange!.from!, 'dd.MM.yyyy');
-        for (const emp of emps || []) {
-          if (emp.linked_user_id) {
-            await createNotification({
-              instanceId,
-              userId: emp.linked_user_id,
-              type: isEditMode ? 'item_rescheduled' : 'item_assigned',
-              title: itemTitle,
-              description: `${itemDate}, ${startTime}–${endTime}`,
-              calendarItemId,
-            });
-          }
-        }
-      }
-
+      // Signal success immediately so the list refreshes —
+      // secondary operations (SMS, services, notifications) must not block this.
       onSuccess();
       onClose();
+
+      // Secondary operations: send SMS, save services, notify employees.
+      // Errors here are logged but don't block the user.
+      try {
+        // Send immediate SMS
+        if (sendImmediateSms && immediateSmsTemplateId && customerPhone.trim()) {
+          const shouldSendSms = isEditMode ? !existingSmsNotification : true;
+          if (shouldSendSms) {
+            await createAndSendSms(calendarItemId);
+          }
+        }
+
+        // Save services to calendar_item_services
+        // Delete existing services first
+        await supabase
+          .from('calendar_item_services' as any)
+          .delete()
+          .eq('calendar_item_id', calendarItemId);
+
+        // Insert new services
+        if (selectedServiceIds.length > 0) {
+          const serviceRows = selectedServiceIds.map((svcId) => {
+            const si = serviceItems.find((s) => s.service_id === svcId);
+            return {
+              calendar_item_id: calendarItemId,
+              service_id: svcId,
+              custom_price: si?.custom_price ?? null,
+              quantity: si?.quantity ?? 1,
+              instance_id: instanceId,
+            };
+          });
+          await supabase.from('calendar_item_services' as any).insert(serviceRows);
+        }
+
+        // Notify assigned employees about new/updated assignment
+        if (activitiesEnabled && assignedEmployeeIds.length > 0 && hasDate) {
+          const { data: emps } = await supabase
+            .from('employees')
+            .select('linked_user_id')
+            .in('id', assignedEmployeeIds)
+            .not('linked_user_id', 'is', null);
+          const itemTitle = finalTitle || customerName.trim() || 'Zlecenie';
+          const itemDate = format(dateRange!.from!, 'dd.MM.yyyy');
+          for (const emp of emps || []) {
+            if (emp.linked_user_id) {
+              await createNotification({
+                instanceId,
+                userId: emp.linked_user_id,
+                type: isEditMode ? 'item_rescheduled' : 'item_assigned',
+                title: itemTitle,
+                description: `${itemDate}, ${startTime}–${endTime}`,
+                calendarItemId,
+              });
+            }
+          }
+        }
+      } catch (secondaryError) {
+        console.error('Error in secondary operations (services/notifications):', secondaryError);
+      }
     } catch (error: any) {
       console.error('Error saving calendar item:', error);
       toast.error('Błąd podczas zapisywania');
@@ -916,8 +917,8 @@ const AddCalendarItemDialog = ({
               onChange={setCustomerAddressId}
               onCustomerResolved={(customer, addressId) => {
                 setCustomerId(customer.id);
-                setCustomerName(customer.name);
-                setCustomerPhone(customer.phone);
+                setCustomerName(customer.name || '');
+                setCustomerPhone(customer.phone || '');
                 setCustomerEmail(customer.email || '');
                 setCustomerAddressId(addressId);
               }}
@@ -1272,8 +1273,8 @@ const AddCalendarItemDialog = ({
         prefilledName={addCustomerPrefilledName}
         onCustomerCreated={(newCustomer, firstAddressId) => {
           setCustomerId(newCustomer.id);
-          setCustomerName(newCustomer.name);
-          setCustomerPhone(newCustomer.phone);
+          setCustomerName(newCustomer.name || '');
+          setCustomerPhone(newCustomer.phone || '');
           setCustomerEmail(newCustomer.email || '');
           if (firstAddressId) {
             setCustomerAddressId(firstAddressId);
