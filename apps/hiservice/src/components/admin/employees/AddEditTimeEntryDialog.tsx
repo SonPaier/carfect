@@ -55,7 +55,8 @@ const AddEditTimeEntryDialog = ({ open, onOpenChange, instanceId, employees, ent
     if (!date) { toast.error('Wybierz datę'); return; }
     if (startTime >= endTime) { toast.error('Godzina końca musi być późniejsza niż godzina początku'); return; }
     try {
-      const data = { employee_id: employeeId, entry_date: format(date, 'yyyy-MM-dd'), start_time: startTime, end_time: endTime };
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const data = { employee_id: employeeId, entry_date: dateStr, start_time: `${dateStr}T${startTime}:00`, end_time: `${dateStr}T${endTime}:00` };
       if (isEditing && entry) {
         await updateEntry.mutateAsync({ id: entry.id, ...data });
         toast.success('Wpis został zaktualizowany');

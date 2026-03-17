@@ -117,11 +117,12 @@ const AddEditProjectDrawer = ({ open, onClose, instanceId, editingProject, onSuc
         if (error) throw error;
         toast.success('Projekt zaktualizowany');
       } else {
-        const { error } = await (supabase.from('projects' as any) as any).insert(data);
+        const { data: inserted, error } = await (supabase.from('projects' as any) as any).insert(data).select();
         if (error) throw error;
+        console.log('Insert result:', JSON.stringify(inserted));
         toast.success('Projekt dodany');
       }
-      onSuccess();
+      await onSuccess();
     } catch (error: any) {
       console.error('Error saving project:', error);
       toast.error('Błąd podczas zapisywania');
