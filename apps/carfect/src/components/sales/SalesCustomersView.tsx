@@ -49,6 +49,9 @@ interface SalesCustomer {
   billing_street: string | null;
   billing_postal_code: string | null;
   billing_city: string | null;
+  billing_country_code: string | null;
+  billing_street_line2: string | null;
+  shipping_same_as_billing: boolean;
 }
 
 type SortField = 'name' | 'last_order' | 'city';
@@ -108,7 +111,7 @@ const SalesCustomersView = () => {
     const { data, error } = await (supabase
       .from('sales_customers')
       .select(
-        'id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city',
+        'id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city, billing_country_code, billing_street_line2, shipping_same_as_billing',
       )
       .eq('instance_id', instanceId)
       .order('name') as any);
