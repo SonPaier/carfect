@@ -176,20 +176,9 @@ const SalesProductsView = () => {
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Produkty</h2>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Szukaj po nazwie..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9"
-          />
-        </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => setCategoryDialogOpen(true)}>
             <Settings2 className="w-4 h-4" />
@@ -208,7 +197,20 @@ const SalesProductsView = () => {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card">
+      {/* Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj po nazwie..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      <div className="border rounded-lg overflow-hidden bg-white">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">

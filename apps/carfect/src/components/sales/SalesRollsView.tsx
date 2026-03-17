@@ -12,7 +12,17 @@ import {
   Disc,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { Input, Button, Badge, EmptyState } from '@shared/ui';
+import {
+  Input,
+  Button,
+  Badge,
+  EmptyState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   DropdownMenu,
@@ -23,7 +33,7 @@ import {
 import { ConfirmDialog } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
-import { formatRollSize, formatMbM2 } from './types/rolls';
+import { formatRollSize, formatMbM2Lines } from './types/rolls';
 import { fetchRolls, deleteRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
@@ -34,6 +44,24 @@ type SortColumn = 'productName' | 'productCode' | 'widthMm' | 'remainingMb' | 'd
 type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
+
+const MbM2Display = ({
+  mb,
+  widthMm,
+  className,
+}: {
+  mb: number;
+  widthMm: number;
+  className?: string;
+}) => {
+  const f = formatMbM2Lines(mb, widthMm);
+  return (
+    <div className={className}>
+      <div className="text-sm">{f.mb}</div>
+      <div className="text-xs text-muted-foreground">{f.m2}</div>
+    </div>
+  );
+};
 
 const SalesRollsView = () => {
   const { roles } = useAuth();
@@ -173,61 +201,46 @@ const SalesRollsView = () => {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-xl font-semibold">Ewidencja rolek</h2>
+        <h2 className="text-xl font-semibold text-foreground">Ewidencja rolek</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleAddManual}>
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="w-4 h-4" />
             Dodaj ręcznie
           </Button>
           <Button size="sm" onClick={() => setScanDrawerOpen(true)}>
-            <ScanLine className="w-4 h-4 mr-1" />
+            <ScanLine className="w-4 h-4" />
             Skanuj rolki
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-        <button
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'active'
-              ? 'bg-background shadow-sm text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => setActiveTab('active')}
-        >
-          Na stanie
-          {activeTab === 'active' && rolls.length > 0 && (
-            <Badge variant="secondary" className="ml-2 text-xs">
-              {filteredRolls.length}
-            </Badge>
-          )}
-        </button>
-        <button
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'sold'
-              ? 'bg-background shadow-sm text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => setActiveTab('sold')}
-        >
-          Sprzedane
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Szukaj po nazwie, kodzie, barcode..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search + Status filter */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj po nazwie, kodzie, barcode..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">
+              Na stanie
+              {rolls.length > 0 && activeTab === 'active' ? ` (${filteredRolls.length})` : ''}
+            </SelectItem>
+            <SelectItem value="sold">Sprzedane</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden bg-white">
         <Table>
           <TableHeader>
             <TableRow>
@@ -297,7 +310,7 @@ const SalesRollsView = () => {
               paginatedRolls.map((roll) => (
                 <TableRow
                   key={roll.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer hover:bg-hover-strong"
                   onClick={() => {
                     setDetailsRoll(roll);
                     setDetailsDrawerOpen(true);
@@ -305,30 +318,29 @@ const SalesRollsView = () => {
                 >
                   <TableCell>
                     <div className="font-medium">{roll.productName}</div>
-                    <div className="text-xs text-muted-foreground">{roll.brand}</div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{roll.productCode || '—'}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
                     {formatRollSize(roll.widthMm, roll.initialLengthM)}
                   </TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
-                    {formatMbM2(roll.initialLengthM, roll.widthMm)}
+                    <MbM2Display mb={roll.initialLengthM} widthMm={roll.widthMm} />
                   </TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
-                    {formatMbM2(roll.currentUsageMb || 0, roll.widthMm)}
+                    <MbM2Display mb={roll.currentUsageMb || 0} widthMm={roll.widthMm} />
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <span
-                      className={`text-sm font-medium ${
+                    <MbM2Display
+                      mb={roll.remainingMb || 0}
+                      widthMm={roll.widthMm}
+                      className={`font-medium ${
                         (roll.remainingMb || 0) <= 0
                           ? 'text-destructive'
                           : (roll.remainingMb || 0) < roll.initialLengthM * 0.2
                             ? 'text-orange-500'
                             : 'text-green-600'
                       }`}
-                    >
-                      {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
-                    </span>
+                    />
                   </TableCell>
                   <TableCell className="text-sm">
                     {roll.deliveryDate ? format(parseISO(roll.deliveryDate), 'dd.MM.yyyy') : '—'}

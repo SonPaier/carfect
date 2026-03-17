@@ -39,6 +39,8 @@ interface PackagesSectionProps {
   onToggleDiscount?: (productKey: string) => void;
   customerDiscount?: number;
   onAddPackage: () => void;
+  customerPostalCode?: string;
+  customerCity?: string;
 }
 
 export const PackagesSection = ({
@@ -63,6 +65,8 @@ export const PackagesSection = ({
   onToggleDiscount,
   customerDiscount,
   onAddPackage,
+  customerPostalCode,
+  customerCity,
 }: PackagesSectionProps) => {
   return (
     <div className="space-y-2">
@@ -99,6 +103,8 @@ export const PackagesSection = ({
               onSetRollAssignments={onSetRollAssignments}
               onToggleDiscount={onToggleDiscount}
               customerDiscount={customerDiscount}
+              customerPostalCode={customerPostalCode}
+              customerCity={customerCity}
             />
           ))}
         </div>

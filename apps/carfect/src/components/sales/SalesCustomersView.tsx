@@ -49,6 +49,9 @@ interface SalesCustomer {
   billing_street: string | null;
   billing_postal_code: string | null;
   billing_city: string | null;
+  billing_country_code: string | null;
+  billing_street_line2: string | null;
+  shipping_same_as_billing: boolean;
 }
 
 type SortField = 'name' | 'last_order' | 'city';
@@ -108,7 +111,7 @@ const SalesCustomersView = () => {
     const { data, error } = await (supabase
       .from('sales_customers')
       .select(
-        'id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city',
+        'id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city, billing_country_code, billing_street_line2, shipping_same_as_billing',
       )
       .eq('instance_id', instanceId)
       .order('name') as any);
@@ -233,11 +236,17 @@ const SalesCustomersView = () => {
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Klienci</h2>
+        <Button size="sm" onClick={() => openDrawer(null)}>
+          <Plus className="w-4 h-4" />
+          Dodaj klienta
+        </Button>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      {/* Search */}
+      <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -250,13 +259,9 @@ const SalesCustomersView = () => {
             }}
           />
         </div>
-        <Button size="sm" className="gap-2" onClick={() => openDrawer(null)}>
-          <Plus className="w-4 h-4" />
-          Dodaj klienta
-        </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white dark:bg-card">
+      <div className="border rounded-lg overflow-hidden bg-white">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -493,7 +498,6 @@ const SalesCustomersView = () => {
       <AddSalesOrderDrawer
         open={orderDrawerOpen}
         onOpenChange={setOrderDrawerOpen}
-        orders={[]}
         initialCustomer={orderCustomer}
         onOrderCreated={() => {
           fetchCustomers();

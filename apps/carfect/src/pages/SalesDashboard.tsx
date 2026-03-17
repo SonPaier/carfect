@@ -5,6 +5,7 @@ import {
   Users,
   Package,
   Cylinder,
+  Settings2,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -12,14 +13,13 @@ import {
   ChevronUp,
   ArrowLeftRight,
   X,
-  Settings,
 } from 'lucide-react';
 import { useSalesSettings } from '@/components/sales/hooks/useSalesSettings';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
 import SalesProductsView from '@/components/sales/SalesProductsView';
 import SalesCustomersView from '@/components/sales/SalesCustomersView';
 import SalesRollsView from '@/components/sales/SalesRollsView';
-import SalesSettingsView from '@/components/sales/SalesSettingsView';
+import SalesCrmSettingsView from '@/components/sales/SalesCrmSettingsView';
 import { Button } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import {
@@ -88,8 +88,8 @@ const SalesDashboard = () => {
     { key: 'orders', label: 'Zamówienia', icon: ShoppingCart },
     { key: 'customers', label: 'Klienci', icon: Users },
     { key: 'products', label: 'Produkty', icon: Package },
-    { key: 'rolls', label: 'Rolki', icon: Cylinder },
-    { key: 'settings', label: 'Ustawienia', icon: Settings },
+    { key: 'rolls', label: 'Ewidencja rolek', icon: Cylinder },
+    { key: 'settings', label: 'Ustawienia', icon: Settings2 },
   ];
 
   const renderContent = () => {
@@ -103,7 +103,7 @@ const SalesDashboard = () => {
       case 'rolls':
         return <SalesRollsView />;
       case 'settings':
-        return <SalesSettingsView />;
+        return <SalesCrmSettingsView instanceId={instanceId} instanceData={instanceData} />;
     }
   };
 
