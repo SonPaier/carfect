@@ -579,6 +579,7 @@ const AddSalesOrderDrawer = ({
                 onAddPackage={orderPackages.addPackage}
                 customerPostalCode={customerAddress.postalCode}
                 customerCity={customerAddress.city}
+                availableCouriers={instanceData?.apaczka_services || []}
               />
 
               <PaymentSection
