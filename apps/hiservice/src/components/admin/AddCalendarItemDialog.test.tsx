@@ -80,7 +80,8 @@ describe('AddCalendarItemDialog', () => {
       expect(getInputByLabel('Tytuł zlecenia')).toBeInTheDocument();
       expect(screen.getByText('Klient')).toBeInTheDocument();
       expect(screen.getByText('Usługi i produkty')).toBeInTheDocument();
-      expect(screen.getByText('Długość zlecenia')).toBeInTheDocument();
+      expect(screen.getByText('Data rozpoczęcia')).toBeInTheDocument();
+      expect(screen.getByText('Data zakończenia')).toBeInTheDocument();
       expect(screen.getByText('Cena netto')).toBeInTheDocument();
       expect(getInputByLabel('Notatki')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Dodaj zlecenie' })).toBeInTheDocument();

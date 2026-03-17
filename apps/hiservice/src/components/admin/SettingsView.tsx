@@ -23,11 +23,12 @@ import type { AddressSearchResult } from '@/lib/addressSearch';
 
 interface SettingsViewProps {
   instanceId: string | null;
+  onColumnsChange?: () => void;
 }
 
 type SettingsTab = 'company' | 'calendar' | 'employee-calendars' | 'users' | 'sms-templates' | 'integrations' | 'app';
 
-const SettingsView = ({ instanceId }: SettingsViewProps) => {
+const SettingsView = ({ instanceId, onColumnsChange }: SettingsViewProps) => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { currentVersion } = useAppUpdate();
@@ -323,7 +324,7 @@ const SettingsView = ({ instanceId }: SettingsViewProps) => {
           <div className="space-y-8">
             <WorkingHoursSettings instanceId={instanceId} />
             <div className="border-t border-border" />
-            <CalendarColumnsSettings instanceId={instanceId} />
+            <CalendarColumnsSettings instanceId={instanceId} onColumnsChange={onColumnsChange} />
           </div>
         );
 

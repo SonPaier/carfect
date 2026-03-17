@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Search,
   Plus,
@@ -347,7 +347,10 @@ const ProjectsView = ({
 
   const projectIds = useMemo(() => projects.map((p) => p.id), [projects]);
   const { data: allOrders = [] } = useQuery({
-    queryKey: ['projects-orders', instanceId],
+    // Include projectIds in the key so that when projects are added/removed the
+    // query re-keys and fetches only the current set of project orders, preventing
+    // stale closure bugs where the queryFn captures an outdated projectIds array.
+    queryKey: ['projects-orders', instanceId, projectIds],
     enabled: projectIds.length > 0,
     queryFn: async () => {
       const { data } = await (supabase.from('calendar_items') as any)
@@ -398,16 +401,35 @@ const ProjectsView = ({
   }, [filteredProjects, currentPage]);
 
   const handleDelete = async (id: string) => {
-    // Optimistic update — remove from UI immediately
-    queryClient.setQueryData(['projects', instanceId], (old: any[]) =>
-      old ? old.filter((p: any) => p.id !== id) : [],
+    if (!confirm('Czy na pewno chcesz usunąć ten projekt? Zlecenia zostaną odpięte.')) return;
+    // Optimistic removal — update cache immediately so UI responds without waiting for refetch
+    queryClient.setQueryData(['projects', instanceId], (old: ProjectRow[] | undefined) =>
+      old ? old.filter((p) => p.id !== id) : old,
     );
-    toast.success('Projekt usunięty');
+    queryClient.setQueryData(
+      ['projects-orders', instanceId],
+      (old: ProjectOrder[] | undefined) => (old ? old.filter((o) => o.project_id !== id) : old),
+    );
 
-    const { error } = await (supabase.from('projects' as any) as any).delete().eq('id', id);
-    if (error) {
-      toast.error('Błąd usuwania projektu — przywracam');
-      queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
+    try {
+      // Detach calendar items from project before deleting
+      const { error: detachError } = await supabase
+        .from('calendar_items')
+        .update({ project_id: null, stage_number: null } as any)
+        .eq('project_id', id);
+      if (detachError) throw detachError;
+
+      const { error } = await (supabase.from('projects' as any) as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+
+      toast.success('Projekt usunięty');
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Błąd usuwania projektu');
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   };
 
@@ -422,8 +444,15 @@ const ProjectsView = ({
   };
 
   const invalidate = () => {
-    queryClient.refetchQueries({ queryKey: ['projects', instanceId] });
-    queryClient.refetchQueries({ queryKey: ['projects-orders', instanceId] });
+    // Use prefix match — covers both ['projects-orders', instanceId] and
+    // ['projects-orders', instanceId, projectIds] variants.
+    queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
+  };
+
+  const invalidateNoRefetch = () => {
+    queryClient.invalidateQueries({ queryKey: ['projects', instanceId], refetchType: 'none' });
+    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId], refetchType: 'none' });
   };
 
   const handleOrderClick = (orderId: string) => {
@@ -449,25 +478,14 @@ const ProjectsView = ({
         return;
       }
       toast.success('Zlecenie usunięte z projektu');
+      // Optimistic: remove the order's project link from cache immediately
+      queryClient.setQueryData(
+        ['projects-orders', instanceId],
+        (old: ProjectOrder[] | undefined) => (old ? old.filter((o) => o.id !== orderId) : old),
+      );
       invalidate();
     }
   };
-
-  // Auto-update project status based on orders
-  useEffect(() => {
-    if (!allOrders.length || !projects.length) return;
-    projects.forEach(async (project) => {
-      const projectOrders = ordersMap[project.id] || [];
-      if (projectOrders.length === 0) return;
-      const hasInProgress = projectOrders.some((o) => o.status === 'in_progress');
-      if (hasInProgress && project.status !== 'in_progress') {
-        await (supabase.from('projects' as any) as any)
-          .update({ status: 'in_progress' })
-          .eq('id', project.id);
-        queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
-      }
-    });
-  }, [allOrders, projects, ordersMap, instanceId, queryClient]);
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent, projectId: string) => {
@@ -489,7 +507,7 @@ const ProjectsView = ({
 
       // Optimistic update
       queryClient.setQueryData(
-        ['projects-orders', instanceId, projectIds],
+        ['projects-orders', instanceId],
         (old: ProjectOrder[] | undefined) => {
           if (!old) return old;
           const updateMap = new Map(updates.map((u) => [u.id, u.stage_number]));
@@ -500,12 +518,19 @@ const ProjectsView = ({
       );
 
       // Persist
-      for (const u of updates) {
-        await (supabase.from('calendar_items') as any)
-          .update({ stage_number: u.stage_number })
-          .eq('id', u.id);
+      try {
+        await Promise.all(
+          updates.map((u) =>
+            (supabase.from('calendar_items') as any)
+              .update({ stage_number: u.stage_number })
+              .eq('id', u.id)
+              .then(({ error }: any) => { if (error) throw error; }),
+          ),
+        );
+      } catch (error) {
+        console.error('Error reordering stages:', error);
+        toast.error('Błąd zmiany kolejności');
       }
-
       queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
     },
     [ordersMap, queryClient, instanceId, projectIds],
@@ -786,10 +811,10 @@ const ProjectsView = ({
         }}
         instanceId={instanceId}
         editingProject={editingProject}
-        onSuccess={() => {
+        onSuccess={async () => {
+          await queryClient.refetchQueries({ queryKey: ['projects', instanceId] });
           setDrawerOpen(false);
           setEditingProject(null);
-          invalidate();
         }}
       />
 
@@ -803,14 +828,14 @@ const ProjectsView = ({
         instanceId={instanceId}
         onEdit={(project) => {
           setDetailsOpen(false);
-          handleEdit(project);
+          setTimeout(() => handleEdit(project), 300);
         }}
         onOrdersChanged={invalidate}
         onAddOrder={
           onAddOrder
             ? (projectId, customerId, customerAddressId) => {
                 setDetailsOpen(false);
-                onAddOrder(projectId, customerId, customerAddressId);
+                setTimeout(() => onAddOrder(projectId, customerId, customerAddressId), 300);
               }
             : undefined
         }
@@ -818,7 +843,7 @@ const ProjectsView = ({
           onOpenCalendarItem
             ? (orderId) => {
                 setDetailsOpen(false);
-                onOpenCalendarItem(orderId);
+                setTimeout(() => onOpenCalendarItem(orderId), 300);
               }
             : undefined
         }
