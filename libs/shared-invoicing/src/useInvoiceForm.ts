@@ -134,12 +134,12 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     const fetch = async () => {
       const { data } = await supabaseClient
         .from('calendar_item_services')
-        .select('custom_price, service_id, unified_services(name, price, unit)')
+        .select('custom_price, quantity, service_id, unified_services(name, price, unit)')
         .eq('calendar_item_id', calendarItemId);
       if (data?.length) {
         const pos: InvoicePosition[] = data.map((s: any) => ({
           name: s.unified_services?.name || 'Usluga',
-          quantity: 1,
+          quantity: Number(s.quantity) || 1,
           unit_price_gross: s.custom_price ?? s.unified_services?.price ?? 0,
           vat_rate: settings?.default_vat_rate ?? 23,
           unit: s.unified_services?.unit || 'szt',

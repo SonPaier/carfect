@@ -161,6 +161,29 @@ const DashboardOverview = ({ instanceId, workingHours, onItemClick, onReminderCl
       }
     });
 
+    // Fill in price from services total for payment items that have price=null
+    const itemsWithoutPrice = allPayItems.filter(i => i.price == null).map(i => i.id);
+    if (itemsWithoutPrice.length > 0) {
+      const { data: serviceSums } = await supabase
+        .from('calendar_item_services')
+        .select('calendar_item_id, custom_price, quantity, unified_services(price)')
+        .in('calendar_item_id', itemsWithoutPrice);
+      if (serviceSums) {
+        const totalMap = new Map<string, number>();
+        for (const s of serviceSums as any[]) {
+          const unitPrice = s.custom_price ?? s.unified_services?.price ?? 0;
+          const qty = Number(s.quantity) || 1;
+          const current = totalMap.get(s.calendar_item_id) || 0;
+          totalMap.set(s.calendar_item_id, current + unitPrice * qty);
+        }
+        allPayItems.forEach(item => {
+          if (item.price == null && totalMap.has(item.id)) {
+            item.price = totalMap.get(item.id)!;
+          }
+        });
+      }
+    }
+
     allPayItems.sort((a, b) => {
       if (a.overdue_days && !b.overdue_days) return -1;
       if (!a.overdue_days && b.overdue_days) return 1;
@@ -511,9 +534,9 @@ const PaymentCard = ({ item, isFirst, onClick }: {
       {item.customer_name && (
         <div className="text-sm text-foreground">{item.customer_name}</div>
       )}
-      {(item.price ?? 0) > 0 && (
+      {item.price != null && (
         <div className="text-sm font-medium text-foreground">
-          {item.price?.toFixed(2)} PLN
+          {item.price.toFixed(2)} PLN
         </div>
       )}
     </div>
