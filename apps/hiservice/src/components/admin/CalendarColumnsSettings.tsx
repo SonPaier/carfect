@@ -28,6 +28,7 @@ interface CalendarColumn {
 
 interface CalendarColumnsSettingsProps {
   instanceId: string | null;
+  onColumnsChange?: () => void;
 }
 
 const COLUMN_COLORS = [
@@ -71,7 +72,7 @@ function SortableColumnItem({ column, onEdit, onDelete }: { column: CalendarColu
   );
 }
 
-const CalendarColumnsSettings = ({ instanceId }: CalendarColumnsSettingsProps) => {
+const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumnsSettingsProps) => {
   const queryClient = useQueryClient();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [columns, setColumns] = useState<CalendarColumn[]>([]);
@@ -142,6 +143,7 @@ const CalendarColumnsSettings = ({ instanceId }: CalendarColumnsSettingsProps) =
       setEditDialogOpen(false);
       fetchColumns();
       queryClient.invalidateQueries({ queryKey: ['calendar_columns', instanceId] });
+      onColumnsChange?.();
     } catch (error) {
       console.error('Error saving column:', error);
       toast.error('Błąd zapisu');
@@ -162,6 +164,7 @@ const CalendarColumnsSettings = ({ instanceId }: CalendarColumnsSettingsProps) =
         supabase.from('calendar_columns').update({ sort_order: i }).eq('id', c.id)
       ));
       queryClient.invalidateQueries({ queryKey: ['calendar_columns', instanceId] });
+      onColumnsChange?.();
     } catch (error) {
       console.error('Error reordering:', error);
       toast.error('Błąd zmiany kolejności');
@@ -177,6 +180,7 @@ const CalendarColumnsSettings = ({ instanceId }: CalendarColumnsSettingsProps) =
       toast.success('Kolumna usunięta');
       fetchColumns();
       queryClient.invalidateQueries({ queryKey: ['calendar_columns', instanceId] });
+      onColumnsChange?.();
     } catch (error) {
       console.error('Error deleting column:', error);
       toast.error('Błąd usuwania');

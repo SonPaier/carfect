@@ -267,7 +267,7 @@ export function CategoryManagementDialog({
     try {
       const { error } = await supabase
         .from('unified_categories')
-        .delete()
+        .update({ active: false })
         .eq('id', cat.id);
 
       if (error) throw error;

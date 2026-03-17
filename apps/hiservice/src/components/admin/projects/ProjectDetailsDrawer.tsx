@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { X, Plus, Edit2 } from 'lucide-react';
+import { X, Plus, Edit2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import CustomerEditDrawer from '../CustomerEditDrawer';
+import type { Customer } from '../CustomersView';
 
 interface ProjectDetailsDrawerProps {
   open: boolean;
@@ -33,6 +35,18 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; badgeClass: string }>
 };
 
 const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, onOrdersChanged, onAddOrder, onOrderClick }: ProjectDetailsDrawerProps) => {
+  const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const queryClient = useQueryClient();
+
+  const handleCustomerClick = async (customerId: string) => {
+    const { data } = await supabase.from('customers').select('*').eq('id', customerId).single();
+    if (data) {
+      setSelectedCustomer(data as Customer);
+      setCustomerDrawerOpen(true);
+    }
+  };
+
   const { data: project } = useQuery({
     queryKey: ['project-detail', projectId],
     enabled: !!projectId && open,
@@ -84,9 +98,8 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
   const completedOrders = nonCancelledOrders.filter((o: any) => o.status === 'completed');
   const statusCfg = STATUS_CONFIG[project?.status] || STATUS_CONFIG.not_started;
 
-  if (!project) return null;
-
   return (
+    <>
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <SheetContent
         side="right"
@@ -95,6 +108,12 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
         className="flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
+        {!project ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+        <>
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-semibold truncate pr-2">{project.title}</SheetTitle>
@@ -120,7 +139,12 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
             {customerName && (
               <div>
                 <p className="text-xs text-muted-foreground">Klient</p>
-                <p className="text-sm font-medium">{customerName}</p>
+                <button
+                  className="text-sm font-medium text-primary hover:underline text-left"
+                  onClick={() => project?.customer_id && handleCustomerClick(project.customer_id)}
+                >
+                  {customerName}
+                </button>
               </div>
             )}
 
@@ -213,8 +237,24 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
             </Button>
           </div>
         )}
+        </>
+        )}
       </SheetContent>
     </Sheet>
+
+    <CustomerEditDrawer
+      customer={selectedCustomer}
+      instanceId={instanceId}
+      open={customerDrawerOpen}
+      onClose={() => {
+        setCustomerDrawerOpen(false);
+        setSelectedCustomer(null);
+      }}
+      onCustomerUpdated={() => {
+        queryClient.invalidateQueries({ queryKey: ['project-customer', project?.customer_id] });
+      }}
+    />
+    </>
   );
 };
 
