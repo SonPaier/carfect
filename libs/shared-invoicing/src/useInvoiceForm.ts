@@ -104,6 +104,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   // Fetch service address from calendar item as fallback for buyer address
   useEffect(() => {
     if (!open || !calendarItemId) return;
+    // If customer is linked, billing address comes from customer effect — skip
+    if (customerId) return;
     const fetchAddress = async () => {
       // Only fetch if no billing address was set
       if (buyerCity || buyerPostCode || buyerStreet) return;
@@ -134,12 +136,12 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     const fetch = async () => {
       const { data } = await supabaseClient
         .from('calendar_item_services')
-        .select('custom_price, service_id, unified_services(name, price, unit)')
+        .select('custom_price, quantity, service_id, unified_services(name, price, unit)')
         .eq('calendar_item_id', calendarItemId);
       if (data?.length) {
         const pos: InvoicePosition[] = data.map((s: any) => ({
           name: s.unified_services?.name || 'Usluga',
-          quantity: 1,
+          quantity: s.quantity != null ? Number(s.quantity) : 1,
           unit_price_gross: s.custom_price ?? s.unified_services?.price ?? 0,
           vat_rate: settings?.default_vat_rate ?? 23,
           unit: s.unified_services?.unit || 'szt',
@@ -215,6 +217,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     // Always convert positions to brutto for the API
     const grossPositions = positions.map((p) => {
       if (priceMode === 'netto') {
+        if (p.vat_rate === -1) return p; // exempt — netto equals brutto
         const rate = p.vat_rate / 100;
         return { ...p, unit_price_gross: p.unit_price_gross * (1 + rate) };
       }

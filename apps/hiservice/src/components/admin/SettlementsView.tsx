@@ -32,9 +32,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PAYMENT_STATUS_CONFIG, type PaymentStatus } from '@/components/invoicing/invoicing.types';
+import { PAYMENT_STATUS_CONFIG, type PaymentStatus, CreateInvoiceDrawer } from '@shared/invoicing';
 import { InvoiceStatusBadge } from '@/components/invoicing/InvoiceStatusBadge';
-import { CreateInvoiceDrawer } from '@/components/invoicing/CreateInvoiceDrawer';
 import CalendarItemDetailsDrawer from './CalendarItemDetailsDrawer';
 import SendPaymentSmsDialog from './SendPaymentSmsDialog';
 import AddCalendarItemDialog from './AddCalendarItemDialog';
@@ -988,6 +987,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
         customerId={invoiceTarget?.customer_id}
         customerName={invoiceTarget?.customer_name}
         customerEmail={invoiceTarget?.customer_email}
+        supabaseClient={supabase}
         onSuccess={() => {
           queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
           queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
