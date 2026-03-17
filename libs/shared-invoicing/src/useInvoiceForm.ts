@@ -215,6 +215,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     // Always convert positions to brutto for the API
     const grossPositions = positions.map((p) => {
       if (priceMode === 'netto') {
+        if (p.vat_rate === -1) return p; // exempt — netto equals brutto
         const rate = p.vat_rate / 100;
         return { ...p, unit_price_gross: p.unit_price_gross * (1 + rate) };
       }
