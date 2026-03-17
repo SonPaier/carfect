@@ -102,6 +102,11 @@ Break spec into atomic tasks with exact file paths, code snippets, verification 
 
 Execute tasks sequentially. Backend first, then frontend.
 Each task: implement → verify → commit.
+
+**Squat method:** While implementing, fix pre-existing issues you encounter along the way (broken patterns, missing edge cases, stale code). Cover every bug fix and behavioral change with a test. Don't leave tech debt you touched in a worse state than you found it.
+
+**DB migrations:** Apply immediately after creating them (`supabase db push`). Never defer to a later step.
+
 **Gate:** All tasks complete, all tests passing.
 
 ### Step 5: Test → `tester`
@@ -112,6 +117,8 @@ If a test fails, the IMPLEMENTATION is wrong — not the test.
 Tester NEVER modifies failing test assertions to match buggy code.
 Failures are reported back to implementer for fixing.
 </HARD-RULE>
+
+**Squat method applies here too:** Every bug found in Steps 6-8 must get a regression test. Every behavioral change (new field order, conditional visibility, sync logic) must have test coverage. Tests are not optional — they are part of the implementation, not a separate phase to skip.
 
 **Gate:** All tests passing.
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
-import { X, Pencil } from 'lucide-react';
+import { X, Pencil, Search, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -11,10 +11,13 @@ import { Separator } from '@shared/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Badge } from '@shared/ui';
+import { Checkbox } from '@shared/ui';
+import { Collapsible, CollapsibleContent } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@shared/ui';
-import NipLookupForm from './NipLookupForm';
+import { useGusLookup } from './hooks/useGusLookup';
+import { COUNTRIES } from './constants';
 
 interface SalesCustomer {
   id: string;
@@ -37,6 +40,9 @@ interface SalesCustomer {
   billing_street: string | null;
   billing_postal_code: string | null;
   billing_city: string | null;
+  billing_country_code: string | null;
+  billing_street_line2: string | null;
+  shipping_same_as_billing: boolean;
 }
 
 interface Props {
@@ -54,67 +60,29 @@ const CURRENCIES = [
   { value: 'USD', label: 'USD ($)' },
 ] as const;
 
-const COUNTRIES = [
-  { code: 'PL', name: 'Polska' },
-  { code: 'DE', name: 'Niemcy' },
-  { code: 'CZ', name: 'Czechy' },
-  { code: 'SK', name: 'Słowacja' },
-  { code: 'UA', name: 'Ukraina' },
-  { code: 'LT', name: 'Litwa' },
-  { code: 'FR', name: 'Francja' },
-  { code: 'GB', name: 'Wielka Brytania' },
-  { code: 'IT', name: 'Włochy' },
-  { code: 'ES', name: 'Hiszpania' },
-  { code: 'NL', name: 'Holandia' },
-  { code: 'BE', name: 'Belgia' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'CH', name: 'Szwajcaria' },
-  { code: 'SE', name: 'Szwecja' },
-  { code: 'NO', name: 'Norwegia' },
-  { code: 'DK', name: 'Dania' },
-  { code: 'FI', name: 'Finlandia' },
-  { code: 'PT', name: 'Portugalia' },
-  { code: 'IE', name: 'Irlandia' },
-  { code: 'HU', name: 'Węgry' },
-  { code: 'RO', name: 'Rumunia' },
-  { code: 'BG', name: 'Bułgaria' },
-  { code: 'HR', name: 'Chorwacja' },
-  { code: 'SI', name: 'Słowenia' },
-  { code: 'EE', name: 'Estonia' },
-  { code: 'LV', name: 'Łotwa' },
-  { code: 'GR', name: 'Grecja' },
-  { code: 'US', name: 'Stany Zjednoczone' },
-  { code: 'CA', name: 'Kanada' },
-  { code: 'CN', name: 'Chiny' },
-  { code: 'JP', name: 'Japonia' },
-  { code: 'KR', name: 'Korea Południowa' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'BY', name: 'Białoruś' },
-  { code: 'TR', name: 'Turcja' },
-  { code: 'RU', name: 'Rosja' },
-] as const;
-
 const emptyForm = {
   name: '',
-  contactPerson: '',
+  nip: '',
   phone: '',
   email: '',
+  contactPerson: '',
   currency: 'PLN',
   discountEnabled: false,
   discountPercent: 0,
   isNetPayer: false,
-  notes: '',
+  billingCountry: 'PL',
+  billingStreet: '',
+  billingStreetLine2: '',
+  billingPostalCode: '',
+  billingCity: '',
+  shippingSameAsBilling: false,
   shippingAddressee: '',
   shippingCountry: 'PL',
   shippingStreet: '',
   shippingStreetLine2: '',
   shippingPostalCode: '',
   shippingCity: '',
-  nip: '',
-  company: '',
-  billingStreet: '',
-  billingPostalCode: '',
-  billingCity: '',
+  notes: '',
 };
 
 const AddEditSalesCustomerDrawer = ({
@@ -133,6 +101,7 @@ const AddEditSalesCustomerDrawer = ({
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const { lookupNip, loading: gusLoading } = useGusLookup();
 
   const fetchOrders = useCallback(async () => {
     if (!customer?.id) return;
@@ -168,31 +137,46 @@ const AddEditSalesCustomerDrawer = ({
     if (customer) {
       setForm({
         name: customer.name || '',
-        contactPerson: customer.contact_person || '',
+        nip: customer.nip || '',
         phone: customer.phone || '',
         email: customer.email || '',
+        contactPerson: customer.contact_person || '',
         currency: customer.default_currency || 'PLN',
         discountEnabled: (customer.discount_percent ?? 0) > 0,
         discountPercent: customer.discount_percent ?? 0,
         isNetPayer: customer.is_net_payer ?? false,
-        notes: customer.sales_notes || '',
+        billingCountry: customer.billing_country_code || 'PL',
+        billingStreet: customer.billing_street || '',
+        billingStreetLine2: customer.billing_street_line2 || '',
+        billingPostalCode: customer.billing_postal_code || '',
+        billingCity: customer.billing_city || '',
+        shippingSameAsBilling: customer.shipping_same_as_billing ?? false,
         shippingAddressee: customer.shipping_addressee || '',
         shippingCountry: customer.shipping_country_code || 'PL',
         shippingStreet: customer.shipping_street || '',
         shippingStreetLine2: customer.shipping_street_line2 || '',
         shippingPostalCode: customer.shipping_postal_code || '',
         shippingCity: customer.shipping_city || '',
-        nip: customer.nip || '',
-        company: customer.company || '',
-        billingStreet: customer.billing_street || '',
-        billingPostalCode: customer.billing_postal_code || '',
-        billingCity: customer.billing_city || '',
+        notes: customer.sales_notes || '',
       });
     } else {
       setForm(emptyForm);
       setEditMode(true);
     }
   }, [open, customer]);
+
+  const handleGusLookup = async () => {
+    const result = await lookupNip(form.nip);
+    if (result) {
+      setForm({
+        ...form,
+        name: result.name,
+        billingStreet: result.street,
+        billingPostalCode: result.postalCode,
+        billingCity: result.city,
+      });
+    }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) {
@@ -216,18 +200,29 @@ const AddEditSalesCustomerDrawer = ({
         discount_percent: form.discountEnabled ? form.discountPercent : null,
         is_net_payer: form.isNetPayer,
         sales_notes: form.notes.trim() || null,
+        nip: form.nip.trim() || null,
+        company: form.name.trim() || null,
+        billing_country_code: form.billingCountry || 'PL',
+        billing_street: form.billingStreet.trim() || null,
+        billing_street_line2: form.billingStreetLine2.trim() || null,
+        billing_postal_code: form.billingPostalCode.trim() || null,
+        billing_city: form.billingCity.trim() || null,
+        shipping_same_as_billing: form.shippingSameAsBilling,
         shipping_addressee: form.shippingAddressee.trim() || null,
         shipping_country_code: form.shippingCountry || 'PL',
         shipping_street: form.shippingStreet.trim() || null,
         shipping_street_line2: form.shippingStreetLine2.trim() || null,
         shipping_postal_code: form.shippingPostalCode.trim() || null,
         shipping_city: form.shippingCity.trim() || null,
-        nip: form.nip.trim() || null,
-        company: form.company.trim() || null,
-        billing_street: form.billingStreet.trim() || null,
-        billing_postal_code: form.billingPostalCode.trim() || null,
-        billing_city: form.billingCity.trim() || null,
       };
+
+      if (form.shippingSameAsBilling) {
+        payload.shipping_country_code = payload.billing_country_code;
+        payload.shipping_street = payload.billing_street;
+        payload.shipping_street_line2 = payload.billing_street_line2;
+        payload.shipping_postal_code = payload.billing_postal_code;
+        payload.shipping_city = payload.billing_city;
+      }
 
       if (customer?.id) {
         const { error } = await (supabase
@@ -262,25 +257,59 @@ const AddEditSalesCustomerDrawer = ({
       <TabsContent value="data" className="flex-1 overflow-y-auto space-y-4 pr-1">
         <div className="space-y-3 text-sm">
           <ViewField label="Nazwa" value={form.name} />
-          <ViewField label="Osoba kontaktowa" value={form.contactPerson} />
+          <ViewField label="NIP" value={form.nip} />
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3 text-sm">
           <ViewField label="Telefon" value={form.phone} isPhone />
           <ViewField label="Email" value={form.email} isEmail />
+          <ViewField label="Osoba kontaktowa" value={form.contactPerson} />
           <ViewField
             label="Waluta"
             value={CURRENCIES.find((c) => c.value === form.currency)?.label || form.currency}
           />
           {form.discountEnabled && <ViewField label="Rabat" value={`${form.discountPercent}%`} />}
           <ViewField label="Płatnik" value={form.isNetPayer ? 'netto' : 'brutto'} />
-          <ViewField label="Notatki" value={form.notes} />
         </div>
 
-        {(form.shippingStreet || form.shippingCity || form.shippingAddressee) && (
+        {(form.billingStreet || form.billingCity) && (
           <>
             <Separator />
             <div className="space-y-3 text-sm">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Adres wysyłki
+                Adres firmy
               </h4>
+              <ViewField
+                label="Kraj"
+                value={
+                  COUNTRIES.find((c) => c.code === form.billingCountry)?.name || form.billingCountry
+                }
+              />
+              <ViewField
+                label="Adres"
+                value={[
+                  form.billingStreet,
+                  form.billingStreetLine2,
+                  `${form.billingPostalCode} ${form.billingCity}`,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+              />
+            </div>
+          </>
+        )}
+
+        <Separator />
+        <div className="space-y-3 text-sm">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Adres nadawcy
+          </h4>
+          {form.shippingSameAsBilling ? (
+            <p className="text-sm text-muted-foreground italic">Taki sam jak adres firmy</p>
+          ) : (
+            <>
               {form.shippingAddressee && (
                 <ViewField label="Adresat" value={form.shippingAddressee} />
               )}
@@ -301,22 +330,18 @@ const AddEditSalesCustomerDrawer = ({
                   .filter(Boolean)
                   .join(', ')}
               />
+            </>
+          )}
+        </div>
+
+        {form.notes && (
+          <>
+            <Separator />
+            <div className="space-y-3 text-sm">
+              <ViewField label="Notatki" value={form.notes} />
             </div>
           </>
         )}
-
-        <Separator />
-        <NipLookupForm
-          readOnly
-          value={{
-            nip: form.nip,
-            company: form.company,
-            billingStreet: form.billingStreet,
-            billingPostalCode: form.billingPostalCode,
-            billingCity: form.billingCity,
-          }}
-          onChange={() => {}}
-        />
       </TabsContent>
 
       <TabsContent value="orders" className="flex-1 overflow-y-auto">
@@ -377,6 +402,7 @@ const AddEditSalesCustomerDrawer = ({
 
   const renderFormMode = () => (
     <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+      {/* Section 1: Identyfikacja */}
       <div className="space-y-3">
         <div>
           <Label htmlFor="name">Nazwa *</Label>
@@ -387,13 +413,37 @@ const AddEditSalesCustomerDrawer = ({
           />
         </div>
         <div>
-          <Label htmlFor="contact-person">Osoba kontaktowa</Label>
-          <Input
-            id="contact-person"
-            value={form.contactPerson}
-            onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
-          />
+          <Label htmlFor="nip">NIP</Label>
+          <div className="flex gap-2">
+            <Input
+              id="nip"
+              value={form.nip}
+              onChange={(e) => setForm({ ...form, nip: e.target.value })}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGusLookup}
+              disabled={gusLoading || !form.nip.trim()}
+              className="shrink-0"
+            >
+              {gusLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Search className="w-4 h-4 mr-1" />
+              )}
+              Pobierz dane z GUS
+            </Button>
+          </div>
         </div>
+      </div>
+
+      <Separator />
+
+      {/* Section 2: Kontakt i warunki */}
+      <div className="space-y-3">
         <div>
           <Label htmlFor="phone">Telefon *</Label>
           <Input
@@ -409,6 +459,14 @@ const AddEditSalesCustomerDrawer = ({
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label htmlFor="contact-person">Osoba kontaktowa</Label>
+          <Input
+            id="contact-person"
+            value={form.contactPerson}
+            onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
           />
         </div>
         <div>
@@ -429,11 +487,7 @@ const AddEditSalesCustomerDrawer = ({
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      <Separator />
-
-      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label htmlFor="discount-toggle">Rabat</Label>
           <Switch
@@ -466,6 +520,85 @@ const AddEditSalesCustomerDrawer = ({
         </div>
       </div>
 
+      <Separator />
+
+      {/* Section 3: Adres firmy */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Adres firmy
+        </h4>
+        <AddressFields
+          prefix="billing"
+          country={form.billingCountry}
+          street={form.billingStreet}
+          streetLine2={form.billingStreetLine2}
+          postalCode={form.billingPostalCode}
+          city={form.billingCity}
+          onCountryChange={(value) =>
+            setForm({
+              ...form,
+              billingCountry: value,
+              ...(value === 'PL' ? { billingStreetLine2: '' } : {}),
+            })
+          }
+          onStreetChange={(value) => setForm({ ...form, billingStreet: value })}
+          onStreetLine2Change={(value) => setForm({ ...form, billingStreetLine2: value })}
+          onPostalCodeChange={(value) => setForm({ ...form, billingPostalCode: value })}
+          onCityChange={(value) => setForm({ ...form, billingCity: value })}
+        />
+      </div>
+
+      <Separator />
+
+      {/* Section 4: Adres nadawcy */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Adres nadawcy
+        </h4>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="same-as-billing"
+            checked={form.shippingSameAsBilling}
+            onCheckedChange={(checked) => setForm({ ...form, shippingSameAsBilling: !!checked })}
+          />
+          <Label htmlFor="same-as-billing" className="text-sm font-normal cursor-pointer">
+            Taki sam jak adres firmy
+          </Label>
+        </div>
+        <Collapsible open={!form.shippingSameAsBilling}>
+          <CollapsibleContent className="space-y-3">
+            <div>
+              <Label htmlFor="ship-addressee">Adresat</Label>
+              <Input
+                id="ship-addressee"
+                value={form.shippingAddressee}
+                onChange={(e) => setForm({ ...form, shippingAddressee: e.target.value })}
+              />
+            </div>
+            <AddressFields
+              prefix="ship"
+              country={form.shippingCountry}
+              street={form.shippingStreet}
+              streetLine2={form.shippingStreetLine2}
+              postalCode={form.shippingPostalCode}
+              city={form.shippingCity}
+              onCountryChange={(value) =>
+                setForm({
+                  ...form,
+                  shippingCountry: value,
+                  ...(value === 'PL' ? { shippingStreetLine2: '' } : {}),
+                })
+              }
+              onStreetChange={(value) => setForm({ ...form, shippingStreet: value })}
+              onStreetLine2Change={(value) => setForm({ ...form, shippingStreetLine2: value })}
+              onPostalCodeChange={(value) => setForm({ ...form, shippingPostalCode: value })}
+              onCityChange={(value) => setForm({ ...form, shippingCity: value })}
+            />
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
+      {/* Notatki — bottom */}
       <div>
         <Label htmlFor="notes">Notatki</Label>
         <Textarea
@@ -475,97 +608,6 @@ const AddEditSalesCustomerDrawer = ({
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
         />
       </div>
-
-      <Separator />
-
-      <div className="space-y-3">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Adres wysyłki
-        </h4>
-        <div>
-          <Label htmlFor="ship-addressee">Adresat</Label>
-          <Input
-            id="ship-addressee"
-            value={form.shippingAddressee}
-            onChange={(e) => setForm({ ...form, shippingAddressee: e.target.value })}
-          />
-        </div>
-        <div>
-          <Label htmlFor="ship-country">Kraj</Label>
-          <Select
-            value={form.shippingCountry}
-            onValueChange={(value) => setForm({ ...form, shippingCountry: value })}
-          >
-            <SelectTrigger id="ship-country">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRIES.map((c) => (
-                <SelectItem key={c.code} value={c.code}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="ship-street">Adres</Label>
-          <Input
-            id="ship-street"
-            placeholder="Linia 1"
-            value={form.shippingStreet}
-            onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })}
-          />
-          <Input
-            id="ship-street-line2"
-            className="mt-1"
-            placeholder="Linia 2 (opcjonalne)"
-            value={form.shippingStreetLine2}
-            onChange={(e) => setForm({ ...form, shippingStreetLine2: e.target.value })}
-          />
-        </div>
-        <div className="grid grid-cols-[120px_1fr] gap-2">
-          <div>
-            <Label htmlFor="ship-postal">Kod pocztowy</Label>
-            <Input
-              id="ship-postal"
-              placeholder="00-000"
-              value={form.shippingPostalCode}
-              onChange={(e) => setForm({ ...form, shippingPostalCode: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="ship-city">Miasto</Label>
-            <Input
-              id="ship-city"
-              value={form.shippingCity}
-              onChange={(e) => setForm({ ...form, shippingCity: e.target.value })}
-            />
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      <NipLookupForm
-        value={{
-          nip: form.nip,
-          company: form.company,
-          billingStreet: form.billingStreet,
-          billingPostalCode: form.billingPostalCode,
-          billingCity: form.billingCity,
-        }}
-        onChange={(nipData) =>
-          setForm({
-            ...form,
-            nip: nipData.nip,
-            company: nipData.company,
-            billingStreet: nipData.billingStreet,
-            billingPostalCode: nipData.billingPostalCode,
-            billingCity: nipData.billingCity,
-          })
-        }
-      />
     </div>
   );
 
@@ -608,8 +650,37 @@ const AddEditSalesCustomerDrawer = ({
               variant="outline"
               className="flex-1"
               onClick={() => {
-                if (isEdit) setEditMode(false);
-                else onOpenChange(false);
+                if (isEdit) {
+                  if (customer) {
+                    setForm({
+                      name: customer.name || '',
+                      nip: customer.nip || '',
+                      phone: customer.phone || '',
+                      email: customer.email || '',
+                      contactPerson: customer.contact_person || '',
+                      currency: customer.default_currency || 'PLN',
+                      discountEnabled: (customer.discount_percent ?? 0) > 0,
+                      discountPercent: customer.discount_percent ?? 0,
+                      isNetPayer: customer.is_net_payer ?? false,
+                      billingCountry: customer.billing_country_code || 'PL',
+                      billingStreet: customer.billing_street || '',
+                      billingStreetLine2: customer.billing_street_line2 || '',
+                      billingPostalCode: customer.billing_postal_code || '',
+                      billingCity: customer.billing_city || '',
+                      shippingSameAsBilling: customer.shipping_same_as_billing ?? false,
+                      shippingAddressee: customer.shipping_addressee || '',
+                      shippingCountry: customer.shipping_country_code || 'PL',
+                      shippingStreet: customer.shipping_street || '',
+                      shippingStreetLine2: customer.shipping_street_line2 || '',
+                      shippingPostalCode: customer.shipping_postal_code || '',
+                      shippingCity: customer.shipping_city || '',
+                      notes: customer.sales_notes || '',
+                    });
+                  }
+                  setEditMode(false);
+                } else {
+                  onOpenChange(false);
+                }
               }}
             >
               Anuluj
@@ -623,6 +694,83 @@ const AddEditSalesCustomerDrawer = ({
     </Sheet>
   );
 };
+
+const AddressFields = ({
+  prefix,
+  country,
+  street,
+  streetLine2,
+  postalCode,
+  city,
+  onCountryChange,
+  onStreetChange,
+  onStreetLine2Change,
+  onPostalCodeChange,
+  onCityChange,
+}: {
+  prefix: string;
+  country: string;
+  street: string;
+  streetLine2: string;
+  postalCode: string;
+  city: string;
+  onCountryChange: (value: string) => void;
+  onStreetChange: (value: string) => void;
+  onStreetLine2Change: (value: string) => void;
+  onPostalCodeChange: (value: string) => void;
+  onCityChange: (value: string) => void;
+}) => (
+  <>
+    <div>
+      <Label htmlFor={`${prefix}-country`}>Kraj</Label>
+      <Select value={country} onValueChange={onCountryChange}>
+        <SelectTrigger id={`${prefix}-country`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {COUNTRIES.map((c) => (
+            <SelectItem key={c.code} value={c.code}>
+              {c.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+    <div>
+      <Label htmlFor={`${prefix}-street`}>Ulica</Label>
+      <Input
+        id={`${prefix}-street`}
+        placeholder="Linia 1"
+        value={street}
+        onChange={(e) => onStreetChange(e.target.value)}
+      />
+      {country !== 'PL' && (
+        <Input
+          id={`${prefix}-street-line2`}
+          className="mt-1"
+          placeholder="Linia 2"
+          value={streetLine2}
+          onChange={(e) => onStreetLine2Change(e.target.value)}
+        />
+      )}
+    </div>
+    <div className="grid grid-cols-[120px_1fr] gap-2">
+      <div>
+        <Label htmlFor={`${prefix}-postal`}>Kod pocztowy</Label>
+        <Input
+          id={`${prefix}-postal`}
+          placeholder="00-000"
+          value={postalCode}
+          onChange={(e) => onPostalCodeChange(e.target.value)}
+        />
+      </div>
+      <div>
+        <Label htmlFor={`${prefix}-city`}>Miasto</Label>
+        <Input id={`${prefix}-city`} value={city} onChange={(e) => onCityChange(e.target.value)} />
+      </div>
+    </div>
+  </>
+);
 
 const ViewField = ({
   label,
