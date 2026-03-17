@@ -118,11 +118,25 @@ serve(async (req) => {
       );
     }
 
-    // 7. Get service ID (from instance config or error)
-    const serviceId = (instance?.apaczka_service_id as number) || null;
+    // 7. Get service ID — from package courier matched to instance apaczka_services
+    const apaczkaServices = (instance?.apaczka_services as Array<{ name: string; serviceId: number }>) || [];
+    const firstShippingPkg = packages.find((p) => p.shippingMethod === "shipping");
+    const courierName = firstShippingPkg?.courier || "";
+
+    let serviceId: number | null = null;
+    if (apaczkaServices.length > 0 && courierName) {
+      const matched = apaczkaServices.find(
+        (s) => s.name.toLowerCase() === courierName.toLowerCase(),
+      );
+      serviceId = matched?.serviceId || null;
+    }
+    // Fallback to legacy single service ID
+    if (!serviceId) {
+      serviceId = (instance?.apaczka_service_id as number) || null;
+    }
     if (!serviceId) {
       return jsonResponse(
-        { error: "Brak konfiguracji serwisu kurierskiego (apaczka_service_id) na instancji" },
+        { error: "Brak konfiguracji serwisu kurierskiego — dodaj serwisy w Ustawieniach → Apaczka" },
         422,
       );
     }
