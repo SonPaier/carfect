@@ -40,12 +40,12 @@ const RollSelectDrawer = ({
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<string[]>([]);
 
   // Reset selection when opening
   useEffect(() => {
     if (open) {
-      setSelected(new Set(selectedRollIds));
+      setSelected([...selectedRollIds]);
       setSearch('');
     }
   }, [open, selectedRollIds]);
@@ -87,11 +87,15 @@ const RollSelectDrawer = ({
       );
     }
 
-    // Sort: selected first, then by remaining m² descending
+    // Sort: selected first (in selection order), then by remaining m² descending
+    const selectedSet = new Set(selected);
     return [...result].sort((a, b) => {
-      const aSelected = selected.has(a.id) ? 1 : 0;
-      const bSelected = selected.has(b.id) ? 1 : 0;
+      const aSelected = selectedSet.has(a.id) ? 1 : 0;
+      const bSelected = selectedSet.has(b.id) ? 1 : 0;
       if (aSelected !== bSelected) return bSelected - aSelected;
+      if (aSelected && bSelected) {
+        return selected.indexOf(a.id) - selected.indexOf(b.id);
+      }
       return (b.remainingMb || 0) - (a.remainingMb || 0);
     });
   }, [rolls, search, selected]);
@@ -99,13 +103,10 @@ const RollSelectDrawer = ({
   const toggleRoll = (roll: SalesRoll) => {
     if (multiSelect) {
       setSelected((prev) => {
-        const next = new Set(prev);
-        if (next.has(roll.id)) {
-          next.delete(roll.id);
-        } else {
-          next.add(roll.id);
+        if (prev.includes(roll.id)) {
+          return prev.filter((id) => id !== roll.id);
         }
-        return next;
+        return [...prev, roll.id];
       });
     } else {
       // Single select: confirm immediately
@@ -115,7 +116,8 @@ const RollSelectDrawer = ({
   };
 
   const handleConfirm = () => {
-    const selectedRolls = rolls.filter((r) => selected.has(r.id));
+    const rollMap = new Map(rolls.map((r) => [r.id, r]));
+    const selectedRolls = selected.map((id) => rollMap.get(id)!).filter(Boolean);
     onConfirm(selectedRolls);
     onOpenChange(false);
   };
@@ -148,7 +150,7 @@ const RollSelectDrawer = ({
             </p>
           ) : (
             filteredRolls.map((roll) => {
-              const isSelected = selected.has(roll.id);
+              const isSelected = selected.includes(roll.id);
               const remainingM2 = mbToM2(roll.remainingMb || 0, roll.widthMm);
               const isLow = (roll.remainingMb || 0) < (roll.initialLengthM || roll.lengthM) * 0.2;
               const isEmpty = (roll.remainingMb || 0) <= 0;
@@ -202,13 +204,13 @@ const RollSelectDrawer = ({
         {multiSelect && (
           <div className="mt-4 pt-4 border-t flex items-center justify-between">
             <span className="text-sm text-foreground/60">
-              {selected.size > 0
-                ? `Wybrano: ${selected.size}`
+              {selected.length > 0
+                ? `Wybrano: ${selected.length}`
                 : '\u00A0'}
             </span>
             <Button
               onClick={handleConfirm}
-              disabled={selected.size === 0}
+              disabled={selected.length === 0}
             >
               Potwierdź wybór
             </Button>

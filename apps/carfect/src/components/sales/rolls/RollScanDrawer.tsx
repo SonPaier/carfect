@@ -71,6 +71,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
         .from('sales_rolls')
         .select('product_code')
         .eq('instance_id', instanceId)
+        .eq('status', 'active')
         .in('product_code', productCodes) as any);
 
       const existingCodes = (existing || []).map((r: any) => r.product_code);
