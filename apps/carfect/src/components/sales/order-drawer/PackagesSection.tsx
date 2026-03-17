@@ -10,12 +10,13 @@ import {
   type RollAssignment,
   getItemKey,
 } from '../hooks/useOrderPackages';
-import PackageCard from './PackageCard';
+import PackageCard, { type ApaczkaService } from './PackageCard';
 
 interface PackagesSectionProps {
   packages: OrderPackage[];
   products: OrderProduct[];
   instanceId: string | null;
+  availableCouriers?: ApaczkaService[];
   onRemovePackage: (packageId: string) => void;
   onShippingMethodChange: (packageId: string, method: DeliveryType) => void;
   onPackagingTypeChange: (packageId: string, type: PackagingType) => void;
@@ -67,6 +68,7 @@ export const PackagesSection = ({
   onAddPackage,
   customerPostalCode,
   customerCity,
+  availableCouriers,
 }: PackagesSectionProps) => {
   return (
     <div className="space-y-2">
@@ -94,6 +96,7 @@ export const PackagesSection = ({
               onUpdateQuantity={(productKey, qty) => onUpdateQuantity(productKey, qty)}
               onUpdateVehicle={(productKey, vehicle) => onUpdateVehicle(productKey, vehicle)}
               instanceId={instanceId}
+              availableCouriers={availableCouriers}
               onUpdateRollAssignment={
                 onUpdateRollAssignment
                   ? (productKey, rollId, usageM2, widthMm) =>

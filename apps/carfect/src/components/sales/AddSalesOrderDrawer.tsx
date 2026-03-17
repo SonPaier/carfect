@@ -307,7 +307,14 @@ const AddSalesOrderDrawer = ({
         data: { user },
       } = await supabase.auth.getUser();
 
-      const packagesPayload = orderPackages.packages.length > 0 ? orderPackages.packages : null;
+      // Convert productKeys from UI UUIDs to sort_order indices for stable DB storage
+      const keyToIndex = new Map(products.map((p, idx) => [getItemKey(p), String(idx)]));
+      const packagesPayload = orderPackages.packages.length > 0
+        ? orderPackages.packages.map((pkg) => ({
+            ...pkg,
+            productKeys: pkg.productKeys.map((k) => keyToIndex.get(k) ?? k),
+          }))
+        : null;
       const effectiveDeliveryType =
         orderPackages.packages.length > 0
           ? orderPackages.packages[0].shippingMethod
@@ -572,6 +579,7 @@ const AddSalesOrderDrawer = ({
                 onAddPackage={orderPackages.addPackage}
                 customerPostalCode={customerAddress.postalCode}
                 customerCity={customerAddress.city}
+                availableCouriers={instanceData?.apaczka_services || []}
               />
 
               <PaymentSection

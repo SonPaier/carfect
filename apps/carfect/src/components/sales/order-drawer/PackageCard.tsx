@@ -22,11 +22,17 @@ import { formatCurrency } from '../constants';
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
 import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
+export interface ApaczkaService {
+  name: string;
+  serviceId: number;
+}
+
 interface PackageCardProps {
   pkg: OrderPackage;
   index: number;
   packageProducts: OrderProduct[];
   instanceId: string | null;
+  availableCouriers?: ApaczkaService[];
   onRemove: () => void;
   onShippingMethodChange: (method: DeliveryType) => void;
   onPackagingTypeChange: (type: PackagingType) => void;
@@ -58,6 +64,7 @@ const PackageCard = ({
   index,
   packageProducts,
   instanceId,
+  availableCouriers = [],
   onRemove,
   onShippingMethodChange,
   onPackagingTypeChange,
@@ -249,17 +256,27 @@ const PackageCard = ({
               <div className="space-y-1">
                 <Label className="text-xs">Kurier</Label>
                 <Select
-                  value={pkg.courier || 'dpd'}
+                  value={pkg.courier || ''}
                   onValueChange={(v) => onCourierChange(v as CourierType)}
                 >
                   <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
+                    <SelectValue placeholder="Wybierz kuriera" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dpd">DPD</SelectItem>
-                    <SelectItem value="dhl">DHL</SelectItem>
-                    <SelectItem value="inpost">InPost</SelectItem>
-                    <SelectItem value="pocztex">Pocztex</SelectItem>
+                    {availableCouriers.length > 0 ? (
+                      availableCouriers.map((c) => (
+                        <SelectItem key={c.name} value={c.name.toLowerCase()}>
+                          {c.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="dpd">DPD</SelectItem>
+                        <SelectItem value="dhl">DHL</SelectItem>
+                        <SelectItem value="inpost">InPost</SelectItem>
+                        <SelectItem value="pocztex">Pocztex</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

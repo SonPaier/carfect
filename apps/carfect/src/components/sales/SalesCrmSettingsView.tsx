@@ -6,7 +6,7 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Building2, FileText, Truck, Loader2, Save, ChevronDown } from 'lucide-react';
+import { Building2, FileText, Truck, Loader2, Save, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SalesSettingsView from './SalesSettingsView';
@@ -31,7 +31,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
   // Apaczka settings state
   const [apaczkaAppId, setApaczkaAppId] = useState('');
   const [apaczkaAppSecret, setApaczkaAppSecret] = useState('');
-  const [apaczkaServiceId, setApaczkaServiceId] = useState<number | ''>('');
+  const [apaczkaServices, setApaczkaServices] = useState<{ name: string; serviceId: number | '' }[]>([]);
   const [senderAddress, setSenderAddress] = useState({
     name: '',
     contact_person: '',
@@ -49,7 +49,12 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
     if (instanceData) {
       setApaczkaAppId(instanceData.apaczka_app_id || '');
       setApaczkaAppSecret(instanceData.apaczka_app_secret || '');
-      setApaczkaServiceId(instanceData.apaczka_service_id || '');
+      setApaczkaServices(
+        (instanceData.apaczka_services || []).map((s: any) => ({
+          name: s.name || '',
+          serviceId: s.serviceId ?? '',
+        })),
+      );
       if (instanceData.apaczka_sender_address) {
         setSenderAddress({
           name: instanceData.apaczka_sender_address.name || '',
@@ -74,7 +79,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         .update({
           apaczka_app_id: apaczkaAppId || null,
           apaczka_app_secret: apaczkaAppSecret || null,
-          apaczka_service_id: apaczkaServiceId || null,
+          apaczka_services: apaczkaServices.filter((s) => s.name && s.serviceId),
           apaczka_sender_address: senderAddress,
         })
         .eq('id', instanceId);
@@ -141,17 +146,53 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>ID serwisu kurierskiego</Label>
-                  <Input
-                    type="number"
-                    value={apaczkaServiceId}
-                    onChange={(e) =>
-                      setApaczkaServiceId(e.target.value ? Number(e.target.value) : '')
-                    }
-                    placeholder="np. 52"
-                    className="bg-white w-40"
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Serwisy kurierskie</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setApaczkaServices([...apaczkaServices, { name: '', serviceId: '' }])}
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Dodaj
+                    </Button>
+                  </div>
+                  {apaczkaServices.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Brak skonfigurowanych serwisów. Dodaj kurier + ID serwisu z Apaczka.</p>
+                  )}
+                  {apaczkaServices.map((service, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={service.name}
+                        onChange={(e) => {
+                          const updated = [...apaczkaServices];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setApaczkaServices(updated);
+                        }}
+                        placeholder="np. DPD"
+                        className="bg-white h-9 flex-1"
+                      />
+                      <Input
+                        type="number"
+                        value={service.serviceId}
+                        onChange={(e) => {
+                          const updated = [...apaczkaServices];
+                          updated[idx] = { ...updated[idx], serviceId: e.target.value ? Number(e.target.value) : '' };
+                          setApaczkaServices(updated);
+                        }}
+                        placeholder="ID serwisu"
+                        className="bg-white h-9 w-28"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setApaczkaServices(apaczkaServices.filter((_, i) => i !== idx))}
+                        className="p-1 rounded hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
 
                 <Separator />
