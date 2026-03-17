@@ -16,7 +16,7 @@ import InstanceUsersTab from './users/InstanceUsersTab';
 import AddressSearchInput from './AddressSearchInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
-import { IntegrationsSettingsView } from '@/components/invoicing/IntegrationsSettingsView';
+import { IntegrationsSettingsView } from '@shared/invoicing';
 import SmsPaymentTemplatesView from './settings/SmsPaymentTemplatesView';
 import { useInstanceFeature } from '@/hooks/useInstanceFeatures';
 import type { AddressSearchResult } from '@/lib/addressSearch';
@@ -337,7 +337,7 @@ const SettingsView = ({ instanceId }: SettingsViewProps) => {
         return <SmsPaymentTemplatesView instanceId={instanceId} />;
 
       case 'integrations':
-        return <IntegrationsSettingsView instanceId={instanceId} />;
+        return <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />;
 
       case 'app':
         return (

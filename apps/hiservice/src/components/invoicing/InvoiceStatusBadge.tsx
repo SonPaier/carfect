@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
-import { PAYMENT_STATUS_CONFIG, type PaymentStatus } from './invoicing.types';
+import { PAYMENT_STATUS_CONFIG, type PaymentStatus } from '@shared/invoicing';
 
 interface InvoiceStatusBadgeProps {
   status: PaymentStatus | string | null;

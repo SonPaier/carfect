@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Invoice } from './invoicing.types';
+import type { Invoice } from '@shared/invoicing';
 
 export function useInvoices(instanceId: string | null, calendarItemId?: string) {
   return useQuery({
