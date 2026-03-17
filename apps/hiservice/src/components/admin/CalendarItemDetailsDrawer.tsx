@@ -58,9 +58,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import EmployeeSelectionDrawer from './EmployeeSelectionDrawer';
 import { MediaUploader } from '@/components/media/MediaUploader';
 import type { MediaItem } from '@/components/media/mediaTypes';
-import { CreateInvoiceDrawer } from '@/components/invoicing/CreateInvoiceDrawer';
+import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
 import { InvoiceStatusBadge } from '@/components/invoicing/InvoiceStatusBadge';
-import { useInvoicingSettings } from '@/components/invoicing/useInvoicingSettings';
 import { useInvoices } from '@/components/invoicing/useInvoices';
 import CustomerOrderCard from './CustomerOrderCard';
 import ServiceSelectionDrawer, { type ServiceWithCategory } from './ServiceSelectionDrawer';
@@ -403,7 +402,7 @@ const CalendarItemDetailsDrawer = ({
   const { data: allEmployees = [] } = useEmployees(instanceId || null);
   const { enabled: employeesEnabled } = useInstanceFeature(instanceId || null, 'employees');
   const { enabled: prioritiesEnabled } = useInstanceFeature(instanceId || null, 'priorities');
-  const { settings: invoicingSettings } = useInvoicingSettings(instanceId || null);
+  const { settings: invoicingSettings } = useInvoicingSettings(instanceId || null, supabase);
   const { data: itemInvoices = [], refetch: refetchInvoices } = useInvoices(
     instanceId || null,
     item?.id,
@@ -1571,6 +1570,7 @@ const CalendarItemDetailsDrawer = ({
           customerId={item.customer_id}
           customerName={item.customer_name}
           customerEmail={item.customer_email}
+          supabaseClient={supabase}
           onSuccess={() => {
             refetchInvoices();
             onStatusChange?.(item.id, item.status);

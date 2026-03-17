@@ -12,7 +12,7 @@ export type PaymentStatus =
   | 'sms_blik_sent'
   | 'sms_bank_sent';
 
-export type DocumentKind = 'vat' | 'proforma';
+export type DocumentKind = 'vat' | 'proforma' | 'receipt';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'sent' | 'paid' | 'overdue';
 
@@ -95,6 +95,7 @@ export const VAT_RATES = [
 export const DOCUMENT_KINDS: { value: DocumentKind; label: string }[] = [
   { value: 'vat', label: 'Faktura VAT' },
   { value: 'proforma', label: 'Proforma' },
+  { value: 'receipt', label: 'Paragon' },
 ];
 
 export const CURRENCIES = ['PLN', 'EUR', 'USD'];
