@@ -70,3 +70,6 @@ verify_jwt = false
 
 [functions.create-apaczka-shipment]
 verify_jwt = false
+
+[functions.invoicing-api]
+verify_jwt = false

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, List, Plus, MoreHorizontal, Users, FileText, Settings, LogOut, X, ClipboardCheck, UsersRound } from 'lucide-react';
+import { Building2, Calendar, List, Plus, MoreHorizontal, Users, FileText, Settings, LogOut, X, ClipboardCheck, UsersRound, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import {
@@ -25,6 +25,8 @@ interface MobileBottomNavProps {
   protocolsEnabled?: boolean;
   userRole?: 'admin' | 'employee' | 'hall' | null;
   currentVersion?: string;
+  salesCrmEnabled?: boolean;
+  onSwitchToSalesCrm?: () => void;
 }
 
 const MobileBottomNav = ({
@@ -39,6 +41,8 @@ const MobileBottomNav = ({
   protocolsEnabled = false,
   userRole = 'admin',
   currentVersion,
+  salesCrmEnabled = false,
+  onSwitchToSalesCrm,
 }: MobileBottomNavProps) => {
   const { t } = useTranslation();
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -188,8 +192,20 @@ const MobileBottomNav = ({
               </div>
             </div>
 
-            {/* Logout button - sticky at bottom */}
-            <div className="border-t border-border p-4 safe-area-pb">
+            {/* Sales CRM switch & Logout - sticky at bottom */}
+            <div className="border-t border-border p-4 safe-area-pb space-y-2">
+              {salesCrmEnabled && onSwitchToSalesCrm && (
+                <button
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    onSwitchToSalesCrm();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-border hover:bg-hover rounded-lg transition-colors"
+                >
+                  <ArrowLeftRight className="w-5 h-5" />
+                  <span className="text-base font-medium">Panel Sprzedaży</span>
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-destructive/10 hover:bg-destructive/20 rounded-lg transition-colors text-destructive"

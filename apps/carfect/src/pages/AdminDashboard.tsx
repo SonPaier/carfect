@@ -3579,6 +3579,8 @@ const AdminDashboard = () => {
           protocolsEnabled={hasFeature('vehicle_reception_protocol')}
           userRole={userRole}
           currentVersion={currentVersion}
+          salesCrmEnabled={hasFeature('sales_crm') && roles.some((r) => r.role === 'sales')}
+          onSwitchToSalesCrm={() => navigate(adminBasePath + '/sales-crm')}
         />
       )}
     </>

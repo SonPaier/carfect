@@ -41,15 +41,10 @@ export function FakturowniaConfigForm({
     setTesting(true);
     setTestResult(null);
     try {
-      const { data, error } = await supabaseClient.functions.invoke('invoicing-api', {
-        body: {
-          action: 'test_connection',
-          instanceId,
-          provider: 'fakturownia',
-          config: { domain, api_token: apiToken },
-        },
-      });
-      setTestResult(error || !data?.success ? 'error' : 'success');
+      const res = await fetch(
+        `https://${domain}.fakturownia.pl/invoices.json?period=last_5&page=1&per_page=1&api_token=${apiToken}`,
+      );
+      setTestResult(res.ok ? 'success' : 'error');
     } catch {
       setTestResult('error');
     } finally {
