@@ -172,7 +172,7 @@ const DashboardOverview = ({ instanceId, workingHours, onItemClick, onReminderCl
         const totalMap = new Map<string, number>();
         for (const s of serviceSums as any[]) {
           const unitPrice = s.custom_price ?? s.unified_services?.price ?? 0;
-          const qty = Number(s.quantity) || 1;
+          const qty = s.quantity != null ? Number(s.quantity) : 1;
           const current = totalMap.get(s.calendar_item_id) || 0;
           totalMap.set(s.calendar_item_id, current + unitPrice * qty);
         }
