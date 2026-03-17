@@ -104,6 +104,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   // Fetch service address from calendar item as fallback for buyer address
   useEffect(() => {
     if (!open || !calendarItemId) return;
+    // If customer is linked, billing address comes from customer effect — skip
+    if (customerId) return;
     const fetchAddress = async () => {
       // Only fetch if no billing address was set
       if (buyerCity || buyerPostCode || buyerStreet) return;
@@ -139,7 +141,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       if (data?.length) {
         const pos: InvoicePosition[] = data.map((s: any) => ({
           name: s.unified_services?.name || 'Usluga',
-          quantity: Number(s.quantity) || 1,
+          quantity: s.quantity != null ? Number(s.quantity) : 1,
           unit_price_gross: s.custom_price ?? s.unified_services?.price ?? 0,
           vat_rate: settings?.default_vat_rate ?? 23,
           unit: s.unified_services?.unit || 'szt.',
