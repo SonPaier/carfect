@@ -30,6 +30,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let valuationInfo: Record<string, unknown> | null = null;
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -118,19 +119,27 @@ serve(async (req) => {
       );
     }
 
-    // 7. Get service ID — from package courier matched to instance apaczka_services
+    // 7. Get service ID — prefer courierServiceId from package, fallback to name matching
     const apaczkaServices = (instance?.apaczka_services as Array<{ name: string; serviceId: number }>) || [];
     const firstShippingPkg = packages.find((p) => p.shippingMethod === "shipping");
-    const courierName = firstShippingPkg?.courier || "";
 
     let serviceId: number | null = null;
-    if (apaczkaServices.length > 0 && courierName) {
-      const matched = apaczkaServices.find(
-        (s) => s.name.toLowerCase() === courierName.toLowerCase(),
-      );
-      serviceId = matched?.serviceId || null;
+    // Primary: use courierServiceId stored on package (new flow)
+    const pkgServiceId = (firstShippingPkg as any)?.courierServiceId;
+    if (pkgServiceId && typeof pkgServiceId === "number") {
+      serviceId = pkgServiceId;
     }
-    // Fallback to legacy single service ID
+    // Fallback: match by courier name (legacy orders)
+    if (!serviceId) {
+      const courierName = firstShippingPkg?.courier || "";
+      if (apaczkaServices.length > 0 && courierName) {
+        const matched = apaczkaServices.find(
+          (s) => s.name.toLowerCase() === courierName.toLowerCase(),
+        );
+        serviceId = matched?.serviceId || null;
+      }
+    }
+    // Fallback: legacy single service ID on instance
     if (!serviceId) {
       serviceId = (instance?.apaczka_service_id as number) || null;
     }
@@ -163,6 +172,7 @@ serve(async (req) => {
         "order_valuation",
         { order: apaczkaOrder },
       );
+      valuationInfo = valuation.response ?? null;
       console.log("[Apaczka] VALUATION:", JSON.stringify(valuation.response));
     } catch (valErr: unknown) {
       const ve = valErr instanceof Error ? valErr : new Error(String(valErr));
@@ -227,6 +237,7 @@ serve(async (req) => {
         apaczka_order_id: apaczkaOrderData.id,
         waybill_number: apaczkaOrderData.waybill_number,
         tracking_url: apaczkaOrderData.tracking_url,
+        valuation: valuationInfo,
       },
       200,
     );
@@ -238,18 +249,19 @@ serve(async (req) => {
       request: req,
     });
 
-    // If it's an Apaczka API error, include details
+    // If it's an Apaczka API error, include details + valuation
     const apaczkaResponse = (err as any).apaczkaResponse;
     if (apaczkaResponse) {
       return jsonResponse(
         {
           error: err.message,
           apaczka_errors: apaczkaResponse.errors || null,
+          valuation: valuationInfo,
         },
         502,
       );
     }
 
-    return jsonResponse({ error: err.message }, 500);
+    return jsonResponse({ error: err.message, valuation: valuationInfo }, 500);
   }
 });

@@ -21,7 +21,7 @@ interface PackagesSectionProps {
   onShippingMethodChange: (packageId: string, method: DeliveryType) => void;
   onPackagingTypeChange: (packageId: string, type: PackagingType) => void;
   onDimensionChange: (packageId: string, field: string, value: number) => void;
-  onCourierChange: (packageId: string, courier: CourierType) => void;
+  onCourierChange: (packageId: string, courierServiceId: number, courierName: string) => void;
   onWeightChange: (packageId: string, weight: number) => void;
   onContentsChange: (packageId: string, contents: string) => void;
   onDeclaredValueChange: (packageId: string, value: number) => void;
@@ -86,7 +86,7 @@ export const PackagesSection = ({
               onShippingMethodChange={(method) => onShippingMethodChange(pkg.id, method)}
               onPackagingTypeChange={(type) => onPackagingTypeChange(pkg.id, type)}
               onDimensionChange={(field, value) => onDimensionChange(pkg.id, field, value)}
-              onCourierChange={(courier) => onCourierChange(pkg.id, courier)}
+              onCourierChange={(serviceId, name) => onCourierChange(pkg.id, serviceId, name)}
               onWeightChange={(weight) => onWeightChange(pkg.id, weight)}
               onContentsChange={(contents) => onContentsChange(pkg.id, contents)}
               onDeclaredValueChange={(value) => onDeclaredValueChange(pkg.id, value)}

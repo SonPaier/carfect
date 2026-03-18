@@ -19,7 +19,7 @@ export interface SalesOrder {
   currency: 'PLN' | 'EUR';
   products: SalesOrderProduct[];
   comment?: string;
-  status: 'nowy' | 'wysłany';
+  status: 'nowy' | 'wysłany' | 'anulowany';
   trackingNumber?: string;
   trackingUrl?: string;
   /** Invoice data if exists */

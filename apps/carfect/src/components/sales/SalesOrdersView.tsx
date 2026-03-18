@@ -88,6 +88,11 @@ const SalesOrdersView = () => {
     orderId: string;
     orderNumber: string;
   }>({ open: false, orderId: '', orderNumber: '' });
+  const [cancelShipmentConfirm, setCancelShipmentConfirm] = useState<{
+    open: boolean;
+    orderId: string;
+    orderNumber: string;
+  }>({ open: false, orderId: '', orderNumber: '' });
   const [sortColumn, setSortColumn] = useState<SortColumn>('orderNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [invoiceDrawerState, setInvoiceDrawerState] = useState<{
@@ -183,7 +188,7 @@ const SalesOrdersView = () => {
           priceGross: Number(item.price_net) * 1.23,
         })),
         comment: o.comment || undefined,
-        status: o.status as 'nowy' | 'wysłany',
+        status: o.status as SalesOrder['status'],
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
         invoiceId: inv?.id || undefined,
@@ -409,13 +414,42 @@ const SalesOrdersView = () => {
         return;
       }
       if (data?.error) {
-        toast.error('Błąd: ' + data.error);
+        const valPrice = data.valuation?.price_gross
+          ? ` | Wycena: ${data.valuation.price_gross} PLN`
+          : '';
+        toast.error('Błąd: ' + data.error + valPrice, { duration: 10000 });
         return;
       }
       toast.success(`Przesyłka utworzona. Nr listu: ${data.waybill_number}`);
       fetchOrders();
     } catch {
       toast.error('Nie udało się utworzyć przesyłki');
+    }
+  };
+
+  const handleCancelShipment = async (orderId: string) => {
+    try {
+      await (supabase
+        .from('sales_orders')
+        .update({
+          status: 'anulowany',
+          apaczka_order_id: null,
+          tracking_number: null,
+          apaczka_tracking_url: null,
+          shipped_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderId) as any);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, status: 'anulowany' as const, trackingNumber: undefined, trackingUrl: undefined }
+            : o,
+        ),
+      );
+      toast.success('Przesyłka anulowana');
+    } catch {
+      toast.error('Nie udało się anulować przesyłki');
     }
   };
 
@@ -588,14 +622,18 @@ const SalesOrdersView = () => {
                                 className={
                                   order.status === 'wysłany'
                                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                                    : 'border-amber-500 text-amber-600 cursor-pointer'
+                                    : order.status === 'anulowany'
+                                      ? 'border-red-500 text-red-600 cursor-pointer'
+                                      : 'border-amber-500 text-amber-600 cursor-pointer'
                                 }
                               >
                                 {order.status === 'nowy'
                                   ? 'Nowy'
                                   : order.status === 'wysłany'
                                     ? 'Wysłany'
-                                    : order.status}
+                                    : order.status === 'anulowany'
+                                      ? 'Anulowany'
+                                      : order.status}
                               </Badge>
                             </button>
                           </DropdownMenuTrigger>
@@ -607,6 +645,11 @@ const SalesOrdersView = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => changeStatus(order.id, 'wysłany')}>
                               <Badge className="bg-emerald-600 text-white">Wysłany</Badge>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'anulowany')}>
+                              <Badge variant="outline" className="border-red-500 text-red-600">
+                                Anulowany
+                              </Badge>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -659,6 +702,21 @@ const SalesOrdersView = () => {
                             >
                               Utwórz przesyłkę
                             </DropdownMenuItem>
+                            {order.trackingNumber && (
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCancelShipmentConfirm({
+                                    open: true,
+                                    orderId: order.id,
+                                    orderNumber: order.orderNumber,
+                                  });
+                                }}
+                              >
+                                Anuluj przesyłkę
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
@@ -794,6 +852,15 @@ const SalesOrdersView = () => {
         confirmLabel="Usuń"
         variant="destructive"
         onConfirm={() => handleDeleteOrder(deleteConfirm.orderId)}
+      />
+      <ConfirmDialog
+        open={cancelShipmentConfirm.open}
+        onOpenChange={(open) => setCancelShipmentConfirm((prev) => ({ ...prev, open }))}
+        title="Anuluj przesyłkę"
+        description={`Czy na pewno chcesz anulować przesyłkę dla zamówienia ${cancelShipmentConfirm.orderNumber}? Dane śledzenia zostaną usunięte.`}
+        confirmLabel="Anuluj przesyłkę"
+        variant="destructive"
+        onConfirm={() => handleCancelShipment(cancelShipmentConfirm.orderId)}
       />
       {invoiceDrawerState.order && (
         <CreateInvoiceDrawer

@@ -6,7 +6,7 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Building2, FileText, Truck, Loader2, Save, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { Building2, FileText, Truck, Loader2, Save, ChevronDown, Trash2, RefreshCw, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SalesSettingsView from './SalesSettingsView';
@@ -43,6 +43,8 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
     email: '',
   });
   const [savingApaczka, setSavingApaczka] = useState(false);
+  const [fetchingServices, setFetchingServices] = useState(false);
+  const [availableServices, setAvailableServices] = useState<{ id: number; name: string; supplier: string; domestic: boolean }[]>([]);
 
   // Populate from instanceData
   useEffect(() => {
@@ -94,6 +96,55 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
 
   const handleSenderAddressChange = (field: string, value: string) => {
     setSenderAddress((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFetchServices = async () => {
+    if (!instanceId) return;
+    if (!apaczkaAppId || !apaczkaAppSecret) {
+      toast.error('Najpierw uzupełnij App ID i App Secret');
+      return;
+    }
+    setFetchingServices(true);
+    try {
+      // Save credentials first so the edge function can use them
+      await supabase
+        .from('instances')
+        .update({
+          apaczka_app_id: apaczkaAppId,
+          apaczka_app_secret: apaczkaAppSecret,
+        })
+        .eq('id', instanceId);
+
+      const { data, error } = await supabase.functions.invoke('apaczka-services', {
+        body: { instanceId },
+      });
+      if (error) {
+        let errDetail = '';
+        try {
+          const errBody = await (error as any).context?.json?.();
+          errDetail = errBody?.error || '';
+        } catch { /* ignore */ }
+        throw new Error(errDetail || 'Nie udało się pobrać serwisów');
+      }
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      setAvailableServices(data.services || []);
+      toast.success(`Pobrano ${data.services?.length || 0} serwisów z Apaczka`);
+    } catch (err: any) {
+      toast.error('Błąd pobierania serwisów: ' + (err.message || ''));
+    } finally {
+      setFetchingServices(false);
+    }
+  };
+
+  const toggleService = (service: { id: number; name: string; supplier: string }) => {
+    const exists = apaczkaServices.some((s) => s.serviceId === service.id);
+    if (exists) {
+      setApaczkaServices(apaczkaServices.filter((s) => s.serviceId !== service.id));
+    } else {
+      setApaczkaServices([...apaczkaServices, { name: service.supplier || service.name, serviceId: service.id }]);
+    }
   };
 
   const activeTabData = tabs.find((t) => t.key === activeTab)!;
@@ -151,48 +202,80 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                     <Label>Serwisy kurierskie</Label>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => setApaczkaServices([...apaczkaServices, { name: '', serviceId: '' }])}
+                      onClick={handleFetchServices}
+                      disabled={fetchingServices}
                     >
-                      <Plus className="w-4 h-4 mr-1" /> Dodaj
+                      {fetchingServices ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                      )}
+                      Pobierz z Apaczka
                     </Button>
                   </div>
-                  {apaczkaServices.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Brak skonfigurowanych serwisów. Dodaj kurier + ID serwisu z Apaczka.</p>
-                  )}
-                  {apaczkaServices.map((service, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        value={service.name}
-                        onChange={(e) => {
-                          const updated = [...apaczkaServices];
-                          updated[idx] = { ...updated[idx], name: e.target.value };
-                          setApaczkaServices(updated);
-                        }}
-                        placeholder="np. DPD"
-                        className="bg-white h-9 flex-1"
-                      />
-                      <Input
-                        type="number"
-                        value={service.serviceId}
-                        onChange={(e) => {
-                          const updated = [...apaczkaServices];
-                          updated[idx] = { ...updated[idx], serviceId: e.target.value ? Number(e.target.value) : '' };
-                          setApaczkaServices(updated);
-                        }}
-                        placeholder="ID serwisu"
-                        className="bg-white h-9 w-28"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setApaczkaServices(apaczkaServices.filter((_, i) => i !== idx))}
-                        className="p-1 rounded hover:bg-destructive/10"
-                      >
-                        <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
+
+                  {availableServices.length > 0 && (
+                    <div className="border border-border rounded-md divide-y divide-border max-h-60 overflow-y-auto">
+                      {availableServices.map((service) => {
+                        const isSelected = apaczkaServices.some((s) => s.serviceId === service.id);
+                        return (
+                          <button
+                            type="button"
+                            key={service.id}
+                            onClick={() => toggleService(service)}
+                            className={cn(
+                              'flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors w-full text-left',
+                              isSelected && 'bg-primary/5',
+                            )}
+                          >
+                            <div className={cn(
+                              'w-4 h-4 rounded border flex items-center justify-center shrink-0',
+                              isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input',
+                            )}>
+                              {isSelected && <Check className="w-3 h-3" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium">{service.name}</span>
+                              <span className="text-muted-foreground ml-2">({service.supplier})</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0">ID: {service.id}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
+                  )}
+
+                  {availableServices.length === 0 && apaczkaServices.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Brak skonfigurowanych serwisów. Kliknij "Pobierz z Apaczka" aby załadować dostępne serwisy.
+                    </p>
+                  )}
+
+                  {apaczkaServices.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Wybrane serwisy:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {apaczkaServices.map((service) => (
+                          <span
+                            key={service.serviceId}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-xs"
+                          >
+                            <Check className="w-3 h-3" />
+                            {service.name} (#{service.serviceId})
+                            <button
+                              type="button"
+                              onClick={() => setApaczkaServices(apaczkaServices.filter((s) => s.serviceId !== service.serviceId))}
+                              className="ml-0.5 hover:text-destructive"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
