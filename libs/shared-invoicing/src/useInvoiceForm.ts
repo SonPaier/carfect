@@ -181,7 +181,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         netto += lineTotal / (1 + rate);
       }
     }
-    return { totalNetto: netto, totalVat: brutto - netto, totalGross: brutto };
+    const r = (v: number) => Math.round(v * 100) / 100;
+    return { totalNetto: r(netto), totalVat: r(brutto - netto), totalGross: r(brutto) };
   }, [positions, priceMode]);
 
   const addPosition = () => {
@@ -220,13 +221,25 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       toast.error('Uzupelnij nazwy pozycji');
       return;
     }
+    if (positions.some((p) => p.quantity <= 0)) {
+      toast.error('Ilość musi być większa od 0');
+      return;
+    }
+    if (positions.some((p) => p.unit_price_gross < 0)) {
+      toast.error('Cena nie może być ujemna');
+      return;
+    }
+    if (paymentDays < 1) {
+      toast.error('Termin płatności musi wynosić min. 1 dzień');
+      return;
+    }
 
     // Always convert positions to brutto for the API
     const grossPositions = positions.map((p) => {
       if (priceMode === 'netto') {
         if (p.vat_rate === -1) return p; // exempt — netto equals brutto
         const rate = p.vat_rate / 100;
-        return { ...p, unit_price_gross: p.unit_price_gross * (1 + rate) };
+        return { ...p, unit_price_gross: Math.round(p.unit_price_gross * (1 + rate) * 100) / 100 };
       }
       return p;
     });

@@ -360,6 +360,144 @@ describe('useInvoiceForm', () => {
     });
   });
 
+  describe('Validation — quantity, price, paymentDays', () => {
+    it('rejects quantity of 0', async () => {
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            customerName: 'Firma',
+            positions: [{ name: 'Service', quantity: 0, unit_price_gross: 100, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => expect(result.current.buyerName).toBe('Firma'));
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Ilość musi być większa od 0');
+      expect(mockFunctionsInvoke).not.toHaveBeenCalled();
+    });
+
+    it('rejects negative quantity', async () => {
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            customerName: 'Firma',
+            positions: [{ name: 'Service', quantity: -1, unit_price_gross: 100, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => expect(result.current.buyerName).toBe('Firma'));
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Ilość musi być większa od 0');
+      expect(mockFunctionsInvoke).not.toHaveBeenCalled();
+    });
+
+    it('rejects negative unit_price_gross', async () => {
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            customerName: 'Firma',
+            positions: [{ name: 'Service', quantity: 1, unit_price_gross: -50, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => expect(result.current.buyerName).toBe('Firma'));
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Cena nie może być ujemna');
+      expect(mockFunctionsInvoke).not.toHaveBeenCalled();
+    });
+
+    it('rejects paymentDays of 0', async () => {
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            customerName: 'Firma',
+            positions: [{ name: 'Service', quantity: 1, unit_price_gross: 100, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => expect(result.current.buyerName).toBe('Firma'));
+
+      act(() => {
+        result.current.setPaymentDays(0);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Termin płatności musi wynosić min. 1 dzień');
+      expect(mockFunctionsInvoke).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Rounding — floating-point precision', () => {
+    it('rounds totalNetto to 2 decimal places in brutto mode', async () => {
+      // 100 / 1.23 = 81.30081... should round to 81.30
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      act(() => {
+        result.current.setPriceMode('brutto');
+      });
+
+      await waitFor(() => {
+        expect(result.current.totalNetto).toBe(81.3);
+        expect(result.current.totalGross).toBe(100);
+        expect(result.current.totalVat).toBe(18.7);
+      });
+    });
+
+    it('rounds netto-to-gross conversion to 2 decimal places on submit', async () => {
+      // 81.30 * 1.23 = 99.999... should round to 99.999 → 100 (or precisely Math.round(81.30*1.23*100)/100 = 100)
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            customerName: 'Firma',
+            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 33.33, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => expect(result.current.buyerName).toBe('Firma'));
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      const body = mockFunctionsInvoke.mock.calls[0][1].body;
+      const pos = body.invoiceData.positions[0];
+      // 33.33 * 1.23 = 40.9959 → rounded to 41.00
+      expect(pos.unit_price_gross).toBe(41);
+    });
+  });
+
   describe('Submit - netto to gross conversion', () => {
     it('converts netto positions to gross before sending to API', async () => {
       const { result } = renderHook(
