@@ -710,12 +710,52 @@ const SalesOrdersView = () => {
                             <DropdownMenuSeparator />
                             {order.invoiceId ? (
                               <DropdownMenuItem
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
                                   if (order.invoicePdfUrl) {
                                     window.open(order.invoicePdfUrl, '_blank');
-                                  } else {
-                                    toast.info('PDF faktury niedostępny');
+                                    return;
+                                  }
+                                  try {
+                                    toast.info('Pobieram PDF...');
+                                    const session = await supabase.auth.getSession();
+                                    const token = session.data.session?.access_token;
+                                    const res = await fetch(
+                                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
+                                      {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          Authorization: `Bearer ${token}`,
+                                          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                                        },
+                                        body: JSON.stringify({
+                                          action: 'get_pdf_url',
+                                          instanceId,
+                                          invoiceId: order.invoiceId,
+                                        }),
+                                      },
+                                    );
+                                    if (!res.ok) throw new Error(await res.text());
+                                    const contentType = res.headers.get('content-type') || '';
+                                    if (contentType.includes('application/pdf')) {
+                                      const blob = await res.blob();
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = `faktura-${order.invoiceNumber || order.invoiceId}.pdf`;
+                                      a.click();
+                                      URL.revokeObjectURL(url);
+                                    } else {
+                                      const json = await res.json();
+                                      if (json.pdf_url) {
+                                        window.open(json.pdf_url, '_blank');
+                                      } else {
+                                        toast.error('PDF faktury niedostępny');
+                                      }
+                                    }
+                                  } catch {
+                                    toast.error('Nie udało się pobrać PDF');
                                   }
                                 }}
                               >
