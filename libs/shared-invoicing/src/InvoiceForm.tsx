@@ -356,7 +356,7 @@ export function InvoiceForm({
                   </Select>
                 </div>
                 <div className="space-y-1 flex-1">
-                  <Label className="text-[10px] text-muted-foreground">Cena netto</Label>
+                  <Label className="text-[10px] text-muted-foreground">{priceLabel}</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -371,16 +371,26 @@ export function InvoiceForm({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Wartość netto</Label>
+                  <Label className="text-[10px] text-muted-foreground">Wartość całkowita netto</Label>
                   <Input
                     type="number"
                     step="0.01"
                     min={0}
-                    value={(pos.unit_price_gross * pos.quantity).toFixed(2)}
-                    onChange={(e) => {
-                      const total = Number(e.target.value);
+                    defaultValue=""
+                    key={`total-${idx}-${pos.unit_price_gross}-${pos.quantity}`}
+                    placeholder={(pos.unit_price_gross * pos.quantity).toFixed(2)}
+                    onFocus={(e) => {
+                      if (!e.target.value) e.target.value = (pos.unit_price_gross * pos.quantity).toFixed(2);
+                      e.target.select();
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim();
+                      if (!val) return;
+                      const total = Number(val);
+                      if (isNaN(total) || total < 0) return;
                       const unitPrice = pos.quantity > 0 ? total / pos.quantity : 0;
                       onUpdatePosition(idx, 'unit_price_gross', parseFloat(unitPrice.toFixed(6)));
+                      e.target.value = '';
                     }}
                     className="bg-white h-8 text-sm"
                   />
@@ -392,8 +402,12 @@ export function InvoiceForm({
                     min={0}
                     max={100}
                     step="1"
-                    value={pos.discount ?? 0}
-                    onChange={(e) => onUpdatePosition(idx, 'discount', Number(e.target.value))}
+                    value={pos.discount || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onUpdatePosition(idx, 'discount', val === '' ? 0 : Number(val));
+                    }}
+                    placeholder="0"
                     className="bg-white h-8 text-sm"
                   />
                 </div>

@@ -498,6 +498,85 @@ describe('useInvoiceForm', () => {
     });
   });
 
+  describe('Discount calculation', () => {
+    it('applies discount percentage to totals in netto mode', async () => {
+      // 100 netto * 10% discount = 90 netto, 90 * 1.23 = 110.7 gross
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 10 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => {
+        expect(result.current.totalNetto).toBe(90);
+        expect(result.current.totalGross).toBeCloseTo(110.7, 1);
+      });
+    });
+
+    it('applies discount percentage to totals in brutto mode', async () => {
+      // 100 brutto * 20% discount = 80 brutto, 80 / 1.23 = 65.04 netto
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 20 }],
+          }),
+        { wrapper },
+      );
+
+      act(() => {
+        result.current.setPriceMode('brutto');
+      });
+
+      await waitFor(() => {
+        expect(result.current.totalGross).toBe(80);
+        expect(result.current.totalNetto).toBeCloseTo(65.04, 1);
+      });
+    });
+
+    it('sends discounted unit price to API (discount baked into price)', async () => {
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            customerName: 'Firma',
+            positions: [{ name: 'Service', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 10 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => expect(result.current.buyerName).toBe('Firma'));
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      const body = mockFunctionsInvoke.mock.calls[0][1].body;
+      const pos = body.invoiceData.positions[0];
+      // 100 * 0.9 (discount) * 1.23 (VAT) = 110.7
+      expect(pos.unit_price_gross).toBe(110.7);
+      expect(pos.discount).toBe(0); // discount baked in, not passed separately
+    });
+
+    it('treats missing discount as 0%', async () => {
+      const { result } = renderHook(
+        () =>
+          useInvoiceForm(true, {
+            ...defaultOptions,
+            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23 }],
+          }),
+        { wrapper },
+      );
+
+      await waitFor(() => {
+        expect(result.current.totalNetto).toBe(100);
+      });
+    });
+  });
+
   describe('Submit - netto to gross conversion', () => {
     it('converts netto positions to gross before sending to API', async () => {
       const { result } = renderHook(

@@ -170,7 +170,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     let netto = 0;
     let brutto = 0;
     for (const p of positions) {
-      const lineTotal = p.unit_price_gross * p.quantity;
+      const discountMultiplier = 1 - (p.discount || 0) / 100;
+      const lineTotal = p.unit_price_gross * p.quantity * discountMultiplier;
       // vat_rate -1 means "zwolniony" (exempt) — netto equals brutto
       if (p.vat_rate === -1) {
         netto += lineTotal;
@@ -239,14 +240,16 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       return;
     }
 
-    // Always convert positions to brutto for the API
+    // Always convert positions to brutto for the API, applying discount
     const grossPositions = positions.map((p) => {
+      const discountMultiplier = 1 - (p.discount || 0) / 100;
+      const discountedPrice = Math.round(p.unit_price_gross * discountMultiplier * 100) / 100;
       if (priceMode === 'netto') {
-        if (p.vat_rate === -1) return p; // exempt — netto equals brutto
+        if (p.vat_rate === -1) return { ...p, unit_price_gross: discountedPrice, discount: 0 };
         const rate = p.vat_rate / 100;
-        return { ...p, unit_price_gross: Math.round(p.unit_price_gross * (1 + rate) * 100) / 100 };
+        return { ...p, unit_price_gross: Math.round(discountedPrice * (1 + rate) * 100) / 100, discount: 0 };
       }
-      return p;
+      return { ...p, unit_price_gross: discountedPrice, discount: 0 };
     });
 
     setSubmitting(true);

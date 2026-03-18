@@ -53,6 +53,7 @@ export interface InvoicePosition {
   unit_price_gross: number;
   vat_rate: number;
   unit?: string;
+  discount?: number;
 }
 
 export interface Invoice {
