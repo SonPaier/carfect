@@ -38,7 +38,7 @@ async function fakturowniaCreateInvoice(
       positions: invoiceData.positions.map((p: any) => ({
         name: p.name,
         tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),
-        total_price_gross: Number(p.unit_price_gross) * Number(p.quantity),
+        total_price_gross: Math.round(Number(p.unit_price_gross) * Number(p.quantity) * 100) / 100,
         quantity: Number(p.quantity),
       })),
       ...(invoiceData.client_id ? { client_id: invoiceData.client_id } : {}),
@@ -304,6 +304,35 @@ Deno.serve(async (req) => {
     if (action === 'create_invoice') {
       const { invoiceData, salesOrderId, customerId, autoSendEmail } = params;
 
+      // Validate invoice data
+      if (!invoiceData?.positions || !Array.isArray(invoiceData.positions) || invoiceData.positions.length === 0) {
+        return new Response(JSON.stringify({ error: 'Brak pozycji na fakturze' }), {
+          status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!invoiceData.buyer_name?.trim()) {
+        return new Response(JSON.stringify({ error: 'Brak nazwy nabywcy' }), {
+          status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      for (const p of invoiceData.positions) {
+        if (!p.name?.trim()) {
+          return new Response(JSON.stringify({ error: 'Pozycja bez nazwy' }), {
+            status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (typeof p.quantity !== 'number' || p.quantity <= 0) {
+          return new Response(JSON.stringify({ error: 'Ilość musi być większa od 0' }), {
+            status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (typeof p.unit_price_gross !== 'number' || p.unit_price_gross < 0) {
+          return new Response(JSON.stringify({ error: 'Cena nie może być ujemna' }), {
+            status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       let result: any;
 
       if (provider === 'fakturownia') {
@@ -376,6 +405,7 @@ Deno.serve(async (req) => {
         .from('invoices')
         .select('*')
         .eq('id', invoiceId)
+        .eq('instance_id', instanceId)
         .single();
 
       if (!inv?.external_invoice_id) {
@@ -401,6 +431,7 @@ Deno.serve(async (req) => {
         .from('invoices')
         .select('*')
         .eq('id', invoiceId)
+        .eq('instance_id', instanceId)
         .single();
 
       if (!inv) throw new Error('Invoice not found');
@@ -432,6 +463,7 @@ Deno.serve(async (req) => {
         .from('invoices')
         .select('*')
         .eq('id', invoiceId)
+        .eq('instance_id', instanceId)
         .single();
 
       if (!inv?.external_invoice_id) throw new Error('Invoice not found');

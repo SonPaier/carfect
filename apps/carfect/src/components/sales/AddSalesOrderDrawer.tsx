@@ -346,7 +346,8 @@ const AddSalesOrderDrawer = ({
 
         if (error) throw error;
 
-        // Delete old items and their roll usages (cascade handles usages)
+        // Delete old roll usages and items explicitly (don't rely on cascade)
+        await (supabase.from('sales_roll_usages').delete().eq('order_id', editOrder.id) as any);
         await (supabase.from('sales_order_items').delete().eq('order_id', editOrder.id) as any);
         if (products.length > 0) {
           const items = products.map((p, idx) => {
@@ -397,12 +398,14 @@ const AddSalesOrderDrawer = ({
 
         toast.success('Zamówienie zaktualizowane');
       } else {
+        // Regenerate order number at save time to avoid race conditions
+        const freshOrderNumber = await getNextOrderNumber(instanceId!);
         const { data: order, error } = await (supabase
           .from('sales_orders')
           .insert({
             instance_id: instanceId,
             customer_id: customerSearch.selectedCustomer.id,
-            order_number: nextOrderNumber,
+            order_number: freshOrderNumber,
             customer_name: customerSearch.selectedCustomer.name,
             total_net: totalNet,
             total_gross: totalGross,

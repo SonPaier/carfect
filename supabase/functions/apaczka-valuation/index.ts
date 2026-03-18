@@ -46,8 +46,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } },
     );
-    const { error: authError } = await anonClient.auth.getUser();
-    if (authError) {
+    const { data: { user }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !user) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
@@ -59,6 +59,16 @@ serve(async (req) => {
 
     if (!instanceId) {
       return jsonResponse({ error: 'instanceId jest wymagany' }, 400);
+    }
+    // Verify user belongs to this instance
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('instance_id', instanceId)
+      .maybeSingle();
+    if (!roleCheck) {
+      return jsonResponse({ error: 'Forbidden' }, 403);
     }
     if (!packages || packages.length === 0) {
       return jsonResponse({ error: 'Brak paczek do wyceny' }, 400);

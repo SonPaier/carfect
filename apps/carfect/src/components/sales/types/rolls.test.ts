@@ -41,9 +41,22 @@ describe('m2ToMb', () => {
     expect(m2ToMb(0, 1520)).toBe(0);
   });
 
-  it('handles division by zero gracefully (widthMm = 0)', () => {
-    const result = m2ToMb(15.2, 0);
-    expect(result).toBe(Infinity);
+  it('returns 0 when widthMm is 0 (division by zero guard)', () => {
+    expect(m2ToMb(15.2, 0)).toBe(0);
+  });
+
+  it('returns 0 when widthMm is negative', () => {
+    expect(m2ToMb(15.2, -100)).toBe(0);
+  });
+});
+
+describe('mbToM2 edge cases', () => {
+  it('returns 0 when widthMm is 0', () => {
+    expect(mbToM2(10, 0)).toBe(0);
+  });
+
+  it('returns 0 when widthMm is negative', () => {
+    expect(mbToM2(10, -500)).toBe(0);
   });
 });
 

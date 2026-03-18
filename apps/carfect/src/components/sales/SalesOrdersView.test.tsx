@@ -357,4 +357,55 @@ describe('SalesOrdersView', () => {
       expect(screen.getByText('Wysłany')).toBeInTheDocument();
     });
   });
+
+  describe('status change — clearing Apaczka data (regression H4+H5)', () => {
+    it('sends null for Apaczka fields when changeStatus sets non-wysłany status', async () => {
+      let updatePayload: any = null;
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'sales_orders') {
+          const chain = createChainMock(mockOrders);
+          chain.update = vi.fn((payload: any) => {
+            updatePayload = payload;
+            return chain;
+          });
+          return chain;
+        }
+        return createChainMock([]);
+      });
+
+      const user = userEvent.setup();
+      render(<SalesOrdersView />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Wysłany')).toBeInTheDocument();
+      });
+
+      // Click the status badge to open dropdown
+      const wysłanyBadge = screen.getByText('Wysłany');
+      await user.click(wysłanyBadge);
+
+      // Find the "Nowy" option in the dropdown menu
+      await waitFor(() => {
+        const menuItems = screen.getAllByRole('menuitem');
+        expect(menuItems.length).toBeGreaterThan(0);
+      });
+
+      const nowyMenuItem = screen.getAllByRole('menuitem').find(
+        (el) => el.textContent?.includes('Nowy'),
+      );
+      if (nowyMenuItem) {
+        await user.click(nowyMenuItem);
+
+        await waitFor(() => {
+          expect(updatePayload).not.toBeNull();
+        });
+
+        expect(updatePayload.status).toBe('nowy');
+        expect(updatePayload.apaczka_order_id).toBeNull();
+        expect(updatePayload.tracking_number).toBeNull();
+        expect(updatePayload.apaczka_tracking_url).toBeNull();
+        expect(updatePayload.shipped_at).toBeNull();
+      }
+    });
+  });
 });

@@ -62,6 +62,17 @@ serve(async (req) => {
       return jsonResponse({ error: "instanceId is required" }, 400);
     }
 
+    // Verify user belongs to this instance
+    const { data: roleCheck } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", user!.id)
+      .eq("instance_id", instanceId)
+      .maybeSingle();
+    if (!roleCheck) {
+      return jsonResponse({ error: "Forbidden" }, 403);
+    }
+
     // Fetch instance to get Apaczka credentials
     const { data: instance, error: instErr } = await supabase
       .from("instances")

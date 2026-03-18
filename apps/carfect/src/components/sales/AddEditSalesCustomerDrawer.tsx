@@ -126,7 +126,7 @@ const AddEditSalesCustomerDrawer = ({
           .in('sales_order_id', orderIds) as any,
         supabase
           .from('sales_roll_usages')
-          .select('order_id, roll_number, used_m2, width_mm')
+          .select('order_id, used_m2, used_mb, sales_rolls(product_name, product_code, width_mm)')
           .in('order_id', orderIds) as any,
       ]);
       for (const inv of invRes.data || []) {
@@ -217,6 +217,10 @@ const AddEditSalesCustomerDrawer = ({
     }
     if (!form.phone.trim()) {
       toast.error('Telefon jest wymagany');
+      return;
+    }
+    if (form.discountPercent < 0 || form.discountPercent > 100) {
+      toast.error('Rabat musi być między 0 a 100%');
       return;
     }
 
@@ -455,8 +459,8 @@ const AddEditSalesCustomerDrawer = ({
                   <div className="text-xs mt-1">
                     {o.rolls.map((r: any, idx: number) => (
                       <div key={idx} className="flex justify-between">
-                        <span>Rolka {r.roll_number}</span>
-                        <span>{r.used_m2 ? `${r.used_m2} m²` : ''}{r.width_mm ? ` / ${r.width_mm} mm` : ''}</span>
+                        <span>{r.sales_rolls?.product_name || r.sales_rolls?.product_code || 'Rolka'}</span>
+                        <span>{r.used_m2 ? `${r.used_m2} m²` : ''}{r.sales_rolls?.width_mm ? ` / ${r.sales_rolls.width_mm} mm` : ''}</span>
                       </div>
                     ))}
                   </div>
