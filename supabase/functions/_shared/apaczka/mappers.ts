@@ -157,13 +157,15 @@ export function mapPackagesToShipmentItems(
 
       if (pkg.packagingType === "tuba") {
         const dims = pkg.dimensions as TubaDimensions | undefined;
+        const diameter = dims?.diameter || 0;
+        // Map tuba as PACZKA with non-standard flag — RURA not supported by all couriers
         return {
           dimension1: dims?.length || 0,
-          dimension2: dims?.diameter || 0,
-          dimension3: 0,
+          dimension2: diameter,
+          dimension3: diameter,
           weight,
-          is_nstd: isNstd,
-          shipment_type_code: "RURA",
+          is_nstd: 1,
+          shipment_type_code: "PACZKA",
           customs_data: [],
         };
       }

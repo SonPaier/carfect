@@ -83,7 +83,7 @@ serve(async (req) => {
       [],
     );
 
-    // Response is { services: [...], options: {...}, ... }
+    // Response is { services: [...], options: {...}, package_type: {...}, ... }
     const rawServices = result.response?.services || [];
     const services = rawServices.map((s: ServiceStructureItem) => ({
       id: Number(s.service_id),
@@ -93,7 +93,9 @@ serve(async (req) => {
       deliveryTime: s.delivery_time,
     }));
 
-    return jsonResponse({ success: true, services }, 200);
+    const packageTypes = result.response?.package_type || {};
+
+    return jsonResponse({ success: true, services, packageTypes }, 200);
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     console.error("Error in apaczka-services:", err.message);
