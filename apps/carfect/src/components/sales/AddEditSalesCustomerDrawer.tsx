@@ -109,11 +109,43 @@ const AddEditSalesCustomerDrawer = ({
     const { data } = await (supabase
       .from('sales_orders')
       .select(
-        'id, order_number, created_at, total_net, currency, status, delivery_type, payment_method',
+        'id, order_number, created_at, total_net, currency, status, delivery_type, payment_method, tracking_number, apaczka_tracking_url, sales_order_items(name, quantity, price_net, price_unit)',
       )
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false }) as any);
-    setOrders((data as any[]) || []);
+
+    // Fetch invoices and roll usages for these orders
+    const orderIds = (data || []).map((o: any) => o.id);
+    let invoiceMap: Record<string, any> = {};
+    let rollMap: Record<string, any[]> = {};
+    if (orderIds.length > 0) {
+      const [invRes, rollRes] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, sales_order_id, invoice_number, pdf_url')
+          .in('sales_order_id', orderIds) as any,
+        supabase
+          .from('sales_roll_usages')
+          .select('order_id, roll_number, used_m2, width_mm')
+          .in('order_id', orderIds) as any,
+      ]);
+      for (const inv of invRes.data || []) {
+        invoiceMap[inv.sales_order_id] = inv;
+      }
+      for (const ru of rollRes.data || []) {
+        if (!rollMap[ru.order_id]) rollMap[ru.order_id] = [];
+        rollMap[ru.order_id].push(ru);
+      }
+    }
+
+    setOrders(
+      (data || []).map((o: any) => ({
+        ...o,
+        items: o.sales_order_items || [],
+        invoice: invoiceMap[o.id] || null,
+        rolls: rollMap[o.id] || [],
+      })),
+    );
     setOrdersLoading(false);
   }, [customer?.id]);
 
@@ -352,7 +384,7 @@ const AddEditSalesCustomerDrawer = ({
         ) : (
           <div className="space-y-2">
             {orders.map((o: any) => (
-              <div key={o.id} className="border rounded-md p-3 text-sm space-y-1">
+              <div key={o.id} className="border rounded-md p-3 text-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{o.order_number}</span>
                   <span className="text-xs text-muted-foreground">
@@ -360,38 +392,105 @@ const AddEditSalesCustomerDrawer = ({
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${o.status === 'wysłany' ? 'bg-emerald-600 text-white' : 'border border-amber-500 text-amber-600'}`}
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        o.status === 'wysłany'
+                          ? 'bg-emerald-600 text-white'
+                          : o.status === 'anulowany'
+                            ? 'border border-red-500 text-red-600'
+                            : 'border border-amber-500 text-amber-600'
+                      }`}
                     >
-                      {o.status === 'nowy' ? 'Nowy' : o.status === 'wysłany' ? 'Wysłany' : o.status}
+                      {o.status === 'nowy'
+                        ? 'Nowy'
+                        : o.status === 'wysłany'
+                          ? 'Wysłany'
+                          : o.status === 'anulowany'
+                            ? 'Anulowany'
+                            : o.status}
                     </span>
                     {o.delivery_type && (
-                      <Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                         {o.delivery_type === 'shipping'
                           ? 'Wysyłka'
                           : o.delivery_type === 'pickup'
-                            ? 'Odbiór osobisty'
+                            ? 'Odbiór'
                             : o.delivery_type === 'uber'
                               ? 'Uber'
                               : o.delivery_type}
                       </Badge>
                     )}
                     {o.payment_method && (
-                      <Badge>
-                        {o.payment_method === 'cod'
-                          ? 'Za pobraniem'
-                          : o.payment_method === 'transfer'
-                            ? 'Przelew'
-                            : o.payment_method}
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {o.payment_method === 'cod' ? 'Pobranie' : o.payment_method === 'transfer' ? 'Przelew' : o.payment_method}
                       </Badge>
                     )}
                   </div>
-                  <span>
+                  <span className="font-medium text-foreground">
                     {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}{' '}
                     {o.currency === 'EUR' ? '€' : 'zł'}
                   </span>
                 </div>
+
+                {/* Products */}
+                {o.items.length > 0 && (
+                  <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t border-border/50">
+                    {o.items.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between">
+                        <span className="truncate mr-2">
+                          {item.quantity > 1 ? `${item.quantity}× ` : ''}
+                          {item.name}
+                        </span>
+                        <span className="shrink-0">
+                          {(Number(item.price_net) * item.quantity).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Rolls */}
+                {o.rolls.length > 0 && (
+                  <div className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+                    <span className="font-medium">Rolki: </span>
+                    {o.rolls.map((r: any, idx: number) => (
+                      <span key={idx}>
+                        {r.roll_number}
+                        {r.used_m2 ? ` (${r.used_m2} m²)` : ''}
+                        {idx < o.rolls.length - 1 ? ', ' : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Links: tracking + invoice */}
+                {(o.tracking_number || o.invoice) && (
+                  <div className="flex items-center gap-3 text-xs pt-1 border-t border-border/50">
+                    {o.tracking_number && (
+                      <a
+                        href={o.apaczka_tracking_url || '#'}
+                        target={o.apaczka_tracking_url ? '_blank' : undefined}
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                        onClick={(e) => {
+                          if (!o.apaczka_tracking_url) {
+                            e.preventDefault();
+                            navigator.clipboard.writeText(o.tracking_number);
+                            toast.info('Numer listu skopiowany');
+                          }
+                        }}
+                      >
+                        📦 {o.tracking_number}
+                      </a>
+                    )}
+                    {o.invoice && (
+                      <span className="text-muted-foreground">
+                        🧾 {o.invoice.invoice_number || 'FV'}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
