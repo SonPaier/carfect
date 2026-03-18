@@ -76,6 +76,7 @@ const SalesOrdersView = () => {
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
   const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([]);
+  const [shipmentInFlight, setShipmentInFlight] = useState<string | null>(null);
 
   useEffect(() => {
     if (!instanceId) return;
@@ -248,6 +249,12 @@ const SalesOrdersView = () => {
     } else {
       updates.shipped_at = null;
     }
+    // When leaving 'wysłany', clear Apaczka data so shipment can be re-created
+    if (newStatus !== 'wysłany') {
+      updates.apaczka_order_id = null;
+      updates.tracking_number = null;
+      updates.apaczka_tracking_url = null;
+    }
     await (supabase.from('sales_orders').update(updates).eq('id', id) as any);
     setOrders((prev) =>
       prev.map((o) =>
@@ -256,6 +263,8 @@ const SalesOrdersView = () => {
               ...o,
               status: newStatus,
               shippedAt: newStatus === 'wysłany' ? new Date().toISOString() : undefined,
+              trackingNumber: newStatus === 'wysłany' ? o.trackingNumber : undefined,
+              trackingUrl: newStatus === 'wysłany' ? o.trackingUrl : undefined,
             }
           : o,
       ),
@@ -425,6 +434,8 @@ const SalesOrdersView = () => {
   };
 
   const handleCreateShipment = async (orderId: string) => {
+    if (shipmentInFlight) return;
+    setShipmentInFlight(orderId);
     try {
       toast.info('Tworzę przesyłkę w Apaczka...');
       const { data, error } = await supabase.functions.invoke('create-apaczka-shipment', {
@@ -452,6 +463,8 @@ const SalesOrdersView = () => {
       fetchOrders();
     } catch {
       toast.error('Nie udało się utworzyć przesyłki');
+    } finally {
+      setShipmentInFlight(null);
     }
   };
 
