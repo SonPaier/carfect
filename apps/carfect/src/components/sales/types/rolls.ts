@@ -66,6 +66,7 @@ export function rollWidthM(roll: { widthMm: number }): number {
 }
 
 export function mbToM2(mb: number, widthMm: number): number {
+  if (widthMm <= 0) return 0;
   return mb * (widthMm / 1000);
 }
 

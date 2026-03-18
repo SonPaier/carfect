@@ -128,6 +128,20 @@ serve(async (req) => {
       });
     }
 
+    // Verify user belongs to the order's instance
+    const { data: roleCheck } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("instance_id", order.instance_id)
+      .maybeSingle();
+    if (!roleCheck) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Fetch customer
     const { data: customer } = await supabase
       .from("sales_customers")
