@@ -170,8 +170,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     let netto = 0;
     let brutto = 0;
     for (const p of positions) {
-      const discountMultiplier = 1 - (p.discount || 0) / 100;
-      const lineTotal = p.unit_price_gross * p.quantity * discountMultiplier;
+      const lineTotal = p.unit_price_gross * p.quantity * (1 - (p.discount ?? 0) / 100);
       // vat_rate -1 means "zwolniony" (exempt) — netto equals brutto
       if (p.vat_rate === -1) {
         netto += lineTotal;

@@ -377,10 +377,10 @@ export function InvoiceForm({
                     step="0.01"
                     min={0}
                     defaultValue=""
-                    key={`total-${idx}-${pos.unit_price_gross}-${pos.quantity}`}
-                    placeholder={(pos.unit_price_gross * pos.quantity).toFixed(2)}
+                    key={`total-${idx}-${pos.unit_price_gross}-${pos.quantity}-${pos.discount}`}
+                    placeholder={(pos.unit_price_gross * pos.quantity * (1 - (pos.discount ?? 0) / 100)).toFixed(2)}
                     onFocus={(e) => {
-                      if (!e.target.value) e.target.value = (pos.unit_price_gross * pos.quantity).toFixed(2);
+                      if (!e.target.value) e.target.value = (pos.unit_price_gross * pos.quantity * (1 - (pos.discount ?? 0) / 100)).toFixed(2);
                       e.target.select();
                     }}
                     onBlur={(e) => {
@@ -388,7 +388,8 @@ export function InvoiceForm({
                       if (!val) return;
                       const total = Number(val);
                       if (isNaN(total) || total < 0) return;
-                      const unitPrice = pos.quantity > 0 ? total / pos.quantity : 0;
+                      const discountFactor = 1 - (pos.discount ?? 0) / 100;
+                      const unitPrice = pos.quantity > 0 ? total / pos.quantity / (discountFactor || 1) : 0;
                       onUpdatePosition(idx, 'unit_price_gross', parseFloat(unitPrice.toFixed(6)));
                       e.target.value = '';
                     }}
