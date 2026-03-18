@@ -806,7 +806,7 @@ const SalesOrdersView = () => {
           positions={invoiceDrawerState.order.products.map((p) => ({
             name: p.name,
             quantity: p.quantity,
-            unit_price_gross: p.priceNet * 1.23,
+            unit_price_gross: p.priceNet,
             vat_rate: 23,
           }))}
           onSuccess={fetchOrders}

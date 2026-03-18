@@ -47,7 +47,7 @@ export async function fetchRolls(
 ): Promise<SalesRoll[]> {
   // For 'sold' tab we need all rolls that have usages and remaining < threshold
   // For 'active' we fetch only active-status rolls
-  const query = supabase
+  let query = supabase
     .from('sales_rolls')
     .select('*')
     .eq('instance_id', instanceId)
@@ -56,7 +56,7 @@ export async function fetchRolls(
   // Active tab: only active status
   // Sold tab: any status (active or archived) — we'll filter by usage+remaining client-side
   if (tab === 'active') {
-    (query as any).eq('status', 'active');
+    query = (query as any).eq('status', 'active');
   }
 
   const { data: rollRows, error } = await (query as any);
