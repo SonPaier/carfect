@@ -14,6 +14,7 @@ import {
   ArrowLeftRight,
   X,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useSalesSettings } from '@/components/sales/hooks/useSalesSettings';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
 import SalesProductsView from '@/components/sales/SalesProductsView';
@@ -79,6 +80,19 @@ const SalesDashboard = () => {
 
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: salesSettings } = useSalesSettings(instanceId);
+  const [instanceData, setInstanceData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('instances')
+      .select('*')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data }) => {
+        if (data) setInstanceData(data);
+      });
+  }, [instanceId]);
 
   const navItems: {
     key: SalesViewType;
