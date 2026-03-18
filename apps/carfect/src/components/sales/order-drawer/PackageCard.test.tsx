@@ -80,54 +80,29 @@ describe('PackageCard', () => {
       expect(screen.getByRole('option', { name: 'GLS' })).toBeInTheDocument();
     });
 
-    it('falls back to hardcoded DPD/DHL/InPost/Pocztex when availableCouriers is empty', async () => {
+    it('shows empty state message when no couriers configured', async () => {
       const user = userEvent.setup();
 
       render(<PackageCard {...defaultProps} availableCouriers={[]} />);
 
       await user.click(screen.getByRole('combobox'));
 
-      expect(screen.getByRole('option', { name: 'DPD' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'DHL' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'InPost' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Pocztex' })).toBeInTheDocument();
-    });
-
-    it('falls back to hardcoded couriers when availableCouriers prop is omitted', async () => {
-      const user = userEvent.setup();
-
-      render(<PackageCard {...defaultProps} />);
-
-      await user.click(screen.getByRole('combobox'));
-
-      expect(screen.getByRole('option', { name: 'DPD' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'DHL' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'InPost' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Pocztex' })).toBeInTheDocument();
+      expect(screen.getByText(/Skonfiguruj serwisy/)).toBeInTheDocument();
     });
 
     it('shows placeholder "Wybierz kuriera" when no courier is selected', () => {
-      render(<PackageCard {...defaultProps} pkg={{ ...basePackage, courier: undefined }} />);
+      render(<PackageCard {...defaultProps} pkg={{ ...basePackage, courierServiceId: undefined }} />);
 
       expect(screen.getByText('Wybierz kuriera')).toBeInTheDocument();
     });
 
-    it('calls onCourierChange when a courier is selected', async () => {
+    it('calls onCourierChange with serviceId and name when a courier is selected', async () => {
       const user = userEvent.setup();
       const onCourierChange = vi.fn();
-
-      render(<PackageCard {...defaultProps} onCourierChange={onCourierChange} />);
-
-      await user.click(screen.getByRole('combobox'));
-      await user.click(screen.getByRole('option', { name: 'DHL' }));
-
-      expect(onCourierChange).toHaveBeenCalledWith('dhl');
-    });
-
-    it('calls onCourierChange with lowercased courier name for custom couriers', async () => {
-      const user = userEvent.setup();
-      const onCourierChange = vi.fn();
-      const availableCouriers = [{ name: 'GLS', serviceId: 5 }];
+      const availableCouriers = [
+        { name: 'DPD', serviceId: 21 },
+        { name: 'DHL', serviceId: 30 },
+      ];
 
       render(
         <PackageCard
@@ -138,9 +113,26 @@ describe('PackageCard', () => {
       );
 
       await user.click(screen.getByRole('combobox'));
-      await user.click(screen.getByRole('option', { name: 'GLS' }));
+      await user.click(screen.getByRole('option', { name: 'DHL' }));
 
-      expect(onCourierChange).toHaveBeenCalledWith('gls');
+      expect(onCourierChange).toHaveBeenCalledWith(30, 'DHL');
+    });
+
+    it('renders available couriers from props', async () => {
+      const user = userEvent.setup();
+      const availableCouriers = [
+        { name: 'GLS', serviceId: 5 },
+        { name: 'DPD', serviceId: 21 },
+      ];
+
+      render(
+        <PackageCard {...defaultProps} availableCouriers={availableCouriers} />,
+      );
+
+      await user.click(screen.getByRole('combobox'));
+
+      expect(screen.getByRole('option', { name: 'GLS' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'DPD' })).toBeInTheDocument();
     });
   });
 

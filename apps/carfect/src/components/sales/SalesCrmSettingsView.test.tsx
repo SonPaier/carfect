@@ -76,59 +76,38 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
       ).toBeInTheDocument();
     });
 
-    it('shows "Dodaj" button for adding courier services', async () => {
+    it('shows "Pobierz z Apaczka" button for fetching courier services', async () => {
       render(<SalesCrmSettingsView {...defaultProps} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      expect(screen.getByRole('button', { name: /Dodaj/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Pobierz z Apaczka/i })).toBeInTheDocument();
     });
   });
 
-  describe('Courier services — add', () => {
-    it('adds a row with name and serviceId inputs when clicking Dodaj', async () => {
-      render(<SalesCrmSettingsView {...defaultProps} />);
+  describe('Courier services — with existing services', () => {
+    it('hides helper text when services are loaded from instanceData', async () => {
+      const instanceData = {
+        ...defaultInstanceData,
+        apaczka_services: [{ name: 'InPost', serviceId: 5 }],
+      };
+      render(<SalesCrmSettingsView instanceId="inst-1" instanceData={instanceData} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      await user.click(screen.getByRole('button', { name: /Dodaj/i }));
-
-      expect(screen.getByPlaceholderText('np. DPD')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('ID serwisu')).toBeInTheDocument();
-    });
-
-    it('hides helper text after adding a service', async () => {
-      render(<SalesCrmSettingsView {...defaultProps} />);
-      await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      await user.click(screen.getByRole('button', { name: /Dodaj/i }));
 
       expect(screen.queryByText(/Brak skonfigurowanych serwisów/i)).not.toBeInTheDocument();
     });
 
-    it('adds multiple rows when clicking Dodaj multiple times', async () => {
-      render(<SalesCrmSettingsView {...defaultProps} />);
+    it('shows selected services as badges', async () => {
+      const instanceData = {
+        ...defaultInstanceData,
+        apaczka_services: [
+          { name: 'DPD', serviceId: 21 },
+          { name: 'DHL', serviceId: 30 },
+        ],
+      };
+      render(<SalesCrmSettingsView instanceId="inst-1" instanceData={instanceData} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      await user.click(screen.getByRole('button', { name: /Dodaj/i }));
-      await user.click(screen.getByRole('button', { name: /Dodaj/i }));
 
-      expect(screen.getAllByPlaceholderText('np. DPD')).toHaveLength(2);
-    });
-  });
-
-  describe('Courier services — remove', () => {
-    it('removes a service row when clicking the trash icon', async () => {
-      render(<SalesCrmSettingsView {...defaultProps} />);
-      await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      await user.click(screen.getByRole('button', { name: /Dodaj/i }));
-
-      expect(screen.getByPlaceholderText('np. DPD')).toBeInTheDocument();
-
-      // Find the trash/remove button — it's the button right after the service ID input
-      const serviceIdInput = screen.getByPlaceholderText('ID serwisu');
-      const row = serviceIdInput.parentElement?.parentElement as HTMLElement;
-      const buttons = row?.querySelectorAll('button');
-      const trashBtn = buttons?.[buttons.length - 1] as HTMLElement;
-      expect(trashBtn).toBeTruthy();
-      await user.click(trashBtn);
-
-      expect(screen.queryByPlaceholderText('np. DPD')).not.toBeInTheDocument();
-      expect(screen.getByText(/Brak skonfigurowanych serwisów/i)).toBeInTheDocument();
+      expect(screen.getByText(/DPD \(#21\)/)).toBeInTheDocument();
+      expect(screen.getByText(/DHL \(#30\)/)).toBeInTheDocument();
     });
   });
 
@@ -140,14 +119,13 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
         return createChainMock(null, null);
       });
 
-      render(<SalesCrmSettingsView {...defaultProps} />);
+      const instanceData = {
+        ...defaultInstanceData,
+        apaczka_services: [{ name: 'DPD', serviceId: 21 }],
+      };
+
+      render(<SalesCrmSettingsView instanceId="inst-1" instanceData={instanceData} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-
-      // Add a service
-      await user.click(screen.getByRole('button', { name: /Dodaj/i }));
-      await user.type(screen.getByPlaceholderText('np. DPD'), 'DPD');
-      await user.type(screen.getByPlaceholderText('ID serwisu'), '1');
-
       await user.click(screen.getByRole('button', { name: /Zapisz ustawienia Apaczka/i }));
 
       await waitFor(() => {
@@ -157,7 +135,7 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
       const payload = (updateChain.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(payload).toHaveProperty('apaczka_services');
       expect(Array.isArray(payload.apaczka_services)).toBe(true);
-      expect(payload.apaczka_services[0]).toMatchObject({ name: 'DPD', serviceId: 1 });
+      expect(payload.apaczka_services[0]).toMatchObject({ name: 'DPD', serviceId: 21 });
     });
 
     it('calls update on instances table with eq instanceId', async () => {
@@ -227,10 +205,8 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
       render(<SalesCrmSettingsView instanceId="inst-1" instanceData={instanceData} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
 
-      const nameInputs = screen.getAllByPlaceholderText('np. DPD');
-      expect(nameInputs).toHaveLength(2);
-      expect(nameInputs[0]).toHaveValue('DPD');
-      expect(nameInputs[1]).toHaveValue('DHL');
+      expect(screen.getByText(/DPD \(#10\)/)).toBeInTheDocument();
+      expect(screen.getByText(/DHL \(#20\)/)).toBeInTheDocument();
     });
 
     it('populates App ID and App Secret from instanceData', async () => {
@@ -246,17 +222,6 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
       expect(screen.getByDisplayValue('app_12345')).toBeInTheDocument();
     });
 
-    it('does not show helper text when services are loaded from instanceData', async () => {
-      const instanceData = {
-        ...defaultInstanceData,
-        apaczka_services: [{ name: 'InPost', serviceId: 5 }],
-      };
-
-      render(<SalesCrmSettingsView instanceId="inst-1" instanceData={instanceData} />);
-      await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-
-      expect(screen.queryByText(/Brak skonfigurowanych serwisów/i)).not.toBeInTheDocument();
-    });
   });
 
   describe('Sender address fields', () => {
