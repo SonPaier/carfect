@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils';
 interface EmbedConfig {
   branding: {
     bg_color: string;
+    section_bg_color: string;
+    section_text_color: string;
     primary_color: string;
     logo_url: string | null;
   };
@@ -349,6 +351,9 @@ function EmbedLeadFormContent() {
   }
 
   const primaryColor = config?.branding.primary_color || '#2563eb';
+  const sectionBgColor = config?.branding.section_bg_color || '#ffffff';
+  const sectionTextColor = config?.branding.section_text_color || '#1e293b';
+  const sectionStyle = { backgroundColor: sectionBgColor, color: sectionTextColor };
 
   return (
     <div 
@@ -356,18 +361,16 @@ function EmbedLeadFormContent() {
       style={{ backgroundColor: config?.branding.bg_color || '#f8fafc' }}
     >
       <div className="max-w-lg mx-auto">
-        {/* Header */}
-        <div className="text-center mb-6">
-          {config?.branding.logo_url && (
-            <img 
-              src={config.branding.logo_url} 
+        {/* Logo */}
+        {config?.branding.logo_url && (
+          <div className="text-center mb-6">
+            <img
+              src={config.branding.logo_url}
               alt={config.instance_info.name}
-              className="h-12 mx-auto mb-4 object-contain"
+              className="h-12 mx-auto object-contain"
             />
-          )}
-          <h1 className="text-2xl font-bold">{t('embed.title')}</h1>
-          <p className="text-muted-foreground mt-1">{t('embed.subtitle')}</p>
-        </div>
+          </div>
+        )}
 
         {/* Error display at top */}
         {error && (
@@ -378,7 +381,7 @@ function EmbedLeadFormContent() {
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           {/* Customer Data Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+          <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <h2 className="font-semibold text-lg">{t('embed.customerSection')}</h2>
             
             <div className="space-y-2">
@@ -437,7 +440,7 @@ function EmbedLeadFormContent() {
           </div>
 
           {/* Vehicle Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+          <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <h2 className="font-semibold text-lg">{t('embed.vehicleSection')}</h2>
             
             <div className="space-y-2">
@@ -521,10 +524,10 @@ function EmbedLeadFormContent() {
           </div>
 
           {/* Templates Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+          <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <div>
               <h2 className="font-semibold text-lg">{t('embed.packagesSection')}</h2>
-              <p className="text-sm text-muted-foreground">{t('embed.packagesHint')}</p>
+              <p className="text-sm opacity-70">{t('embed.packagesHint')}</p>
             </div>
             
             <div className="grid gap-3">
@@ -666,7 +669,7 @@ function EmbedLeadFormContent() {
                           )}
                         </button>
                         {isExpanded && (
-                          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                          <p className="text-sm opacity-70 mt-1 whitespace-pre-wrap">
                             {template.description}
                           </p>
                         )}
@@ -683,10 +686,10 @@ function EmbedLeadFormContent() {
 
           {/* Extras Section */}
           {config?.extras && config.extras.length > 0 && (
-            <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+            <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
               <div>
                 <h2 className="font-semibold text-lg">Dodatki</h2>
-                <p className="text-sm text-muted-foreground">Opcjonalne usługi dodatkowe</p>
+                <p className="text-sm opacity-70">Opcjonalne usługi dodatkowe</p>
               </div>
               
               <div className="grid gap-2">
@@ -723,10 +726,10 @@ function EmbedLeadFormContent() {
           )}
 
           {/* Planned Timeframe Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+          <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <div>
               <h2 className="font-semibold text-lg">Planowany termin realizacji</h2>
-              <p className="text-sm text-muted-foreground">Kiedy chciałbyś zrealizować usługę?</p>
+              <p className="text-sm opacity-70">Kiedy chciałbyś zrealizować usługę?</p>
             </div>
             
             <Select 
@@ -746,10 +749,10 @@ function EmbedLeadFormContent() {
           </div>
 
           {/* Budget Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+          <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <div>
               <h2 className="font-semibold text-lg">{t('embed.budgetSection')}</h2>
-              <p className="text-sm text-muted-foreground">{t('embed.budgetHint')}</p>
+              <p className="text-sm opacity-70">{t('embed.budgetHint')}</p>
             </div>
             
             <div className="space-y-2">
@@ -776,7 +779,7 @@ function EmbedLeadFormContent() {
           </div>
 
           {/* GDPR Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="rounded-lg p-4 shadow-sm" style={sectionStyle}>
             <div className="flex items-start gap-3">
               <Checkbox
                 id="gdpr"
@@ -791,7 +794,7 @@ function EmbedLeadFormContent() {
               />
               <Label 
                 htmlFor="gdpr" 
-                className="text-sm text-muted-foreground font-normal cursor-pointer"
+                className="text-sm opacity-70 font-normal cursor-pointer"
               >
                 <span className="text-red-500 font-medium">*</span>{' '}
                 {t('embed.gdprLabel', {

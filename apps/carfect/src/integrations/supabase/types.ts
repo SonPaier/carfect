@@ -1083,6 +1083,11 @@ export type Database = {
           use_global_products: boolean
           website: string | null
           widget_config: Json | null
+          widget_branding_enabled: boolean
+          widget_bg_color: string | null
+          widget_section_bg_color: string | null
+          widget_section_text_color: string | null
+          widget_primary_color: string | null
           working_hours: Json | null
         }
         Insert: {
@@ -1146,6 +1151,11 @@ export type Database = {
           use_global_products?: boolean
           website?: string | null
           widget_config?: Json | null
+          widget_branding_enabled?: boolean
+          widget_bg_color?: string | null
+          widget_section_bg_color?: string | null
+          widget_section_text_color?: string | null
+          widget_primary_color?: string | null
           working_hours?: Json | null
         }
         Update: {
@@ -1209,6 +1219,11 @@ export type Database = {
           use_global_products?: boolean
           website?: string | null
           widget_config?: Json | null
+          widget_branding_enabled?: boolean
+          widget_bg_color?: string | null
+          widget_section_bg_color?: string | null
+          widget_section_text_color?: string | null
+          widget_primary_color?: string | null
           working_hours?: Json | null
         }
         Relationships: []

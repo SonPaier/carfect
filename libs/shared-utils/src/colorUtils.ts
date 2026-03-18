@@ -96,3 +96,18 @@ export interface OfferBranding {
   offer_primary_color: string;
   offer_scope_header_text_color: string;
 }
+
+export const DEFAULT_WIDGET_BRANDING = {
+  widget_bg_color: '#f8fafc',
+  widget_section_bg_color: '#ffffff',
+  widget_section_text_color: '#1e293b',
+  widget_primary_color: '#2563eb',
+};
+
+export interface WidgetBranding {
+  widget_branding_enabled: boolean;
+  widget_bg_color: string;
+  widget_section_bg_color: string;
+  widget_section_text_color: string;
+  widget_primary_color: string;
+}
