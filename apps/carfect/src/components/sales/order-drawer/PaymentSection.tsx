@@ -52,7 +52,7 @@ export const PaymentSection = ({
         </Select>
       </div>
 
-      {bankAccounts.length > 0 && (
+      {paymentMethod === 'transfer' && bankAccounts.length > 0 && (
         <div className="space-y-2">
           <Label>Numer konta</Label>
           <Select
