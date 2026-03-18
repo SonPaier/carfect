@@ -44,6 +44,7 @@ interface CustomerEditDrawerProps {
   customerCategories?: CustomerCategory[];
   customerCategoryMap?: Map<string, string[]>;
   prefilledName?: string;
+  modal?: boolean;
 }
 
 const CustomerEditDrawer = ({
@@ -61,6 +62,7 @@ const CustomerEditDrawer = ({
   customerCategories: customerCategoriesProp = [],
   customerCategoryMap: customerCategoryMapProp,
   prefilledName = '',
+  modal,
 }: CustomerEditDrawerProps) => {
   // Auto-fetch categories when not provided via props
   const { categories: fetchedCategories, customerCategoryMap: fetchedCategoryMap } =
@@ -540,6 +542,7 @@ const CustomerEditDrawer = ({
         onOpenChange={(nextOpen) => {
           if (!nextOpen) handleClose();
         }}
+        modal={modal}
       >
         <SheetContent
           className="w-full sm:w-[550px] sm:max-w-[550px] h-full p-0 flex flex-col z-[1400]"

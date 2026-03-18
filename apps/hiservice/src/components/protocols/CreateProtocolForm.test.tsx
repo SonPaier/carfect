@@ -34,7 +34,7 @@ vi.mock('./SignatureDialog', () => ({
 }));
 
 vi.mock('@/components/admin/CustomerSearchInput', () => ({
-  default: ({ onSelect, onClear }: any) => (
+  default: ({ onSelect, onClear, onCustomerClick }: any) => (
     <div data-testid="customer-search">
       <button
         onClick={() =>
@@ -50,8 +50,19 @@ vi.mock('@/components/admin/CustomerSearchInput', () => ({
         Select Customer
       </button>
       <button onClick={onClear}>Clear Customer</button>
+      <button onClick={() => onCustomerClick?.('cust-1')}>Click Customer Name</button>
     </div>
   ),
+}));
+
+vi.mock('@/components/admin/CustomerEditDrawer', () => ({
+  default: ({ open, customer, onClose }: any) =>
+    open ? (
+      <div data-testid="customer-edit-drawer">
+        <span data-testid="drawer-customer-name">{customer?.name}</span>
+        <button onClick={onClose}>Close Drawer</button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/components/admin/CustomerAddressSelect', () => ({
@@ -472,6 +483,131 @@ describe('CreateProtocolForm', () => {
     });
     expect(insertedPayload).toBeDefined();
     expect(insertedPayload.calendar_item_id).toBeUndefined();
+  });
+
+  it('opens customer detail drawer when customer name is clicked', async () => {
+    const customerData = {
+      id: 'cust-1',
+      name: 'Jan Kowalski',
+      phone: '123456789',
+      email: 'jan@test.pl',
+    };
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'customers') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: customerData, error: null }),
+        };
+      }
+      if (table === 'employees') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const { user } = renderForm();
+    await waitFor(() => {
+      expect(screen.getByText('Utwórz protokół')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Click Customer Name'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('customer-edit-drawer')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('drawer-customer-name')).toHaveTextContent('Jan Kowalski');
+  });
+
+  it('closes customer detail drawer', async () => {
+    const customerData = {
+      id: 'cust-1',
+      name: 'Jan Kowalski',
+      phone: '123456789',
+      email: 'jan@test.pl',
+    };
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'customers') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: customerData, error: null }),
+        };
+      }
+      if (table === 'employees') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const { user } = renderForm();
+    await waitFor(() => {
+      expect(screen.getByText('Utwórz protokół')).toBeInTheDocument();
+    });
+
+    // Open drawer
+    await user.click(screen.getByText('Click Customer Name'));
+    await waitFor(() => {
+      expect(screen.getByTestId('customer-edit-drawer')).toBeInTheDocument();
+    });
+
+    // Close drawer
+    await user.click(screen.getByText('Close Drawer'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('customer-edit-drawer')).not.toBeInTheDocument();
+    });
+  });
+
+  it('does not open drawer when customer fetch fails', async () => {
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'customers') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } }),
+        };
+      }
+      if (table === 'employees') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const { user } = renderForm();
+    await waitFor(() => {
+      expect(screen.getByText('Utwórz protokół')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Click Customer Name'));
+
+    // Give it a moment, drawer should NOT appear
+    await waitFor(() => {
+      expect(screen.queryByTestId('customer-edit-drawer')).not.toBeInTheDocument();
+    });
   });
 
   it('clears customer data when Clear Customer is clicked', async () => {

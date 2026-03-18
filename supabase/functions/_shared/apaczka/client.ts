@@ -46,7 +46,7 @@ export async function createApaczkaSignature(
 export async function buildApaczkaPayload(
   credentials: ApaczkaCredentials,
   route: string,
-  request: Record<string, unknown>,
+  request: Record<string, unknown> | unknown[],
 ): Promise<{
   app_id: string;
   request: string;
@@ -77,7 +77,7 @@ export async function buildApaczkaPayload(
 export async function apaczkaFetch<T>(
   credentials: ApaczkaCredentials,
   route: string,
-  request: Record<string, unknown>,
+  request: Record<string, unknown> | unknown[],
 ): Promise<ApaczkaApiResponse<T>> {
   // Ensure route has trailing slash for URL, but sign with the route as-is
   const urlRoute = route.endsWith("/") ? route : `${route}/`;
