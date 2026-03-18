@@ -219,6 +219,10 @@ const AddEditSalesCustomerDrawer = ({
       toast.error('Telefon jest wymagany');
       return;
     }
+    if (form.discountPercent < 0 || form.discountPercent > 100) {
+      toast.error('Rabat musi być między 0 a 100%');
+      return;
+    }
 
     setSaving(true);
     try {

@@ -12,7 +12,7 @@ import {
   ShoppingCart,
   Users,
 } from 'lucide-react';
-import { Input, EmptyState } from '@shared/ui';
+import { Input, EmptyState, ConfirmDialog } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
@@ -75,6 +75,8 @@ const SalesCustomersView = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<SalesCustomer | null>(null);
   const [initialEditMode, setInitialEditMode] = useState(false);
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; name: string }>({ open: false, id: '', name: '' });
 
   // Order drawer state
   const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
@@ -202,7 +204,11 @@ const SalesCustomersView = () => {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from('sales_customers').delete().eq('id', id);
     if (error) {
-      toast.error('Błąd usuwania klienta');
+      if (error.code === '23503') {
+        toast.error('Nie można usunąć klienta — ma powiązane zamówienia');
+      } else {
+        toast.error('Błąd usuwania klienta');
+      }
     } else {
       toast.success('Klient usunięty');
       fetchCustomers();
@@ -368,7 +374,7 @@ const SalesCustomersView = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => handleDelete(c.id)}
+                              onClick={() => setDeleteConfirm({ open: true, id: c.id, name: c.name })}
                             >
                               Usuń
                             </DropdownMenuItem>
@@ -503,6 +509,15 @@ const SalesCustomersView = () => {
           fetchCustomers();
           fetchLastOrderDates();
         }}
+      />
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
+        title="Usuń klienta"
+        description={`Czy na pewno chcesz usunąć klienta "${deleteConfirm.name}"?`}
+        confirmLabel="Usuń"
+        variant="destructive"
+        onConfirm={() => handleDelete(deleteConfirm.id)}
       />
     </div>
   );
