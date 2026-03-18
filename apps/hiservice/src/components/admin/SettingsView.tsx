@@ -16,18 +16,19 @@ import InstanceUsersTab from './users/InstanceUsersTab';
 import AddressSearchInput from './AddressSearchInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
-import { IntegrationsSettingsView } from '@/components/invoicing/IntegrationsSettingsView';
+import { IntegrationsSettingsView } from '@shared/invoicing';
 import SmsPaymentTemplatesView from './settings/SmsPaymentTemplatesView';
 import { useInstanceFeature } from '@/hooks/useInstanceFeatures';
 import type { AddressSearchResult } from '@/lib/addressSearch';
 
 interface SettingsViewProps {
   instanceId: string | null;
+  onColumnsChange?: () => void;
 }
 
 type SettingsTab = 'company' | 'calendar' | 'employee-calendars' | 'users' | 'sms-templates' | 'integrations' | 'app';
 
-const SettingsView = ({ instanceId }: SettingsViewProps) => {
+const SettingsView = ({ instanceId, onColumnsChange }: SettingsViewProps) => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { currentVersion } = useAppUpdate();
@@ -323,7 +324,7 @@ const SettingsView = ({ instanceId }: SettingsViewProps) => {
           <div className="space-y-8">
             <WorkingHoursSettings instanceId={instanceId} />
             <div className="border-t border-border" />
-            <CalendarColumnsSettings instanceId={instanceId} />
+            <CalendarColumnsSettings instanceId={instanceId} onColumnsChange={onColumnsChange} />
           </div>
         );
 
@@ -337,7 +338,7 @@ const SettingsView = ({ instanceId }: SettingsViewProps) => {
         return <SmsPaymentTemplatesView instanceId={instanceId} />;
 
       case 'integrations':
-        return <IntegrationsSettingsView instanceId={instanceId} />;
+        return <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />;
 
       case 'app':
         return (

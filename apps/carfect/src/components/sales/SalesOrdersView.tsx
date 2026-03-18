@@ -358,20 +358,18 @@ const SalesOrdersView = () => {
       };
     });
 
-    // Rebuild package productKeys: the stored packages have old instanceKeys
-    // that don't match the new ones. Map them 1:1 by position (sort_order).
+    // Rebuild package productKeys: stored packages have sort_order indices as keys.
+    // Map each index to the corresponding editProduct's instanceKey (item.id).
     const rawPackages: any[] = orderData?.packages || [];
     let editPackages = rawPackages;
     if (rawPackages.length > 0 && editProducts.length > 0) {
-      const allOldKeys: string[] = [];
-      rawPackages.forEach((pkg: any) => allOldKeys.push(...(pkg.productKeys || [])));
-      const oldToNew: Record<string, string> = {};
-      allOldKeys.forEach((oldKey: string, idx: number) => {
-        if (editProducts[idx]) oldToNew[oldKey] = editProducts[idx].instanceKey;
-      });
       editPackages = rawPackages.map((pkg: any) => ({
         ...pkg,
-        productKeys: (pkg.productKeys || []).map((k: string) => oldToNew[k] || k),
+        productKeys: (pkg.productKeys || []).map((k: string) => {
+          const idx = Number(k);
+          if (!isNaN(idx) && editProducts[idx]) return editProducts[idx].instanceKey;
+          return k; // fallback for legacy UUID keys
+        }),
       }));
     }
 

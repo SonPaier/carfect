@@ -500,8 +500,12 @@ const Dashboard = () => {
   // Realtime subscription — targeted INSERT/UPDATE/DELETE with debounce
   const invalidateRelatedQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['settlements', instanceId] });
-    queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
-    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
+    // Mark projects stale WITHOUT an immediate background refetch (refetchType: 'none').
+    // An immediate refetch here races with optimistic setQueryData calls in ProjectsView
+    // (e.g. during delete) and can restore a just-removed project. Data will be re-fetched
+    // on the next user interaction / window focus.
+    queryClient.invalidateQueries({ queryKey: ['projects', instanceId], refetchType: 'none' });
+    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId], refetchType: 'none' });
   }, [queryClient, instanceId]);
 
   const handleRealtimeInsert = useCallback(
@@ -684,8 +688,10 @@ const Dashboard = () => {
     );
     toast.success('Zlecenie usunięte');
     queryClient.invalidateQueries({ queryKey: ['settlements-invoices', instanceId] });
-    queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
-    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
+    // Mark stale without immediate refetch — prevents a background fetch from racing
+    // with the optimistic removal and restoring the deleted item in projects views.
+    queryClient.invalidateQueries({ queryKey: ['projects', instanceId], refetchType: 'none' });
+    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId], refetchType: 'none' });
 
     // Delete from DB in background
     await Promise.all([
@@ -865,7 +871,7 @@ const Dashboard = () => {
     }
 
     if (currentView === 'ustawienia') {
-      return <SettingsView instanceId={instanceId} />;
+      return <SettingsView instanceId={instanceId} onColumnsChange={fetchColumns} />;
     }
 
     if (currentView === 'uslugi' && instanceId) {

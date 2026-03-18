@@ -1,7 +1,7 @@
 import { useState, DragEvent, useRef, useCallback, useEffect } from 'react';
 import { format, addDays, subDays, isSameDay, startOfWeek, addWeeks, subWeeks, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Clock, Plus, Calendar as CalendarIcon, CalendarDays, Phone, Columns2, Coffee, X, Settings2, Maximize2, Minimize2, ChevronsLeftRight, RefreshCw, FileText, User, MapPin, DollarSign, Users, FolderKanban } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Plus, Calendar as CalendarIcon, CalendarDays, Phone, Coffee, X, Settings2, Maximize2, Minimize2, ChevronsLeftRight, RefreshCw, FileText, User, MapPin, DollarSign, Users, FolderKanban } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { InvoiceStatusBadge } from '@/components/invoicing/InvoiceStatusBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MonthCalendarView from './MonthCalendarView';
 
-type ViewMode = 'day' | 'two-days' | 'week' | 'month';
+type ViewMode = 'day' | 'week' | 'month';
 
 export interface CalendarColumn {
   id: string;
@@ -193,7 +193,7 @@ const AdminCalendar = ({
   const [dragOverSlot, setDragOverSlot] = useState<{ hour: number; slotIndex: number } | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [configPopoverOpen, setConfigPopoverOpen] = useState(false);
-  const [weekViewColumnId, setWeekViewColumnId] = useState<string | null>(null);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCompact, setIsCompact] = useState(() => {
     return localStorage.getItem('calendar-compact-mode') === 'true';
@@ -412,8 +412,6 @@ const AdminCalendar = ({
     else setCurrentDate(addDays(currentDate, 1));
   };
 
-  const getTwoDays = (): Date[] => [currentDate, addDays(currentDate, 1)];
-  const twoDays = viewMode === 'two-days' ? getTwoDays() : [currentDate, addDays(currentDate, 1)];
 
   const handleToday = () => {
     setCurrentDate(new Date());
@@ -653,13 +651,13 @@ const AdminCalendar = ({
     return (
       <div
         key={item.id}
-        draggable={!isMobile && !employeeViewActive}
-        onDragStart={(e) => !employeeViewActive && handleDragStart(e, item)}
+        draggable={!isMobile && !employeeViewActive && !isMultiDay}
+        onDragStart={(e) => !employeeViewActive && !isMultiDay && handleDragStart(e, item)}
         onDragEnd={handleDragEnd}
         className={cn(
           "absolute rounded-lg border px-1 md:px-2 py-0 md:py-1 md:pb-1.5",
-          !isMobile && !employeeViewActive && "cursor-grab active:cursor-grabbing",
-          (isMobile || employeeViewActive) && "cursor-pointer",
+          !isMobile && !employeeViewActive && !isMultiDay && "cursor-grab active:cursor-grabbing",
+          (isMobile || employeeViewActive || isMultiDay) && "cursor-pointer",
           "transition-all duration-150 hover:shadow-lg hover:z-20",
           "overflow-hidden select-none",
           getStatusColor(item.status),
@@ -910,25 +908,11 @@ const AdminCalendar = ({
                 ? format(currentDate, 'LLLL yyyy', { locale: pl })
                 : viewMode === 'week'
                 ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                : viewMode === 'two-days'
-                  ? `${format(currentDate, 'd MMM', { locale: pl })} - ${format(addDays(currentDate, 1), 'd MMM', { locale: pl })}`
-                  : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
             </h2>
           )}
 
           <div className="flex items-center gap-2">
-            {/* Week view column selector */}
-            {!isMobile && viewMode === 'week' && columns.length > 0 && (
-              <Select value={weekViewColumnId || columns[0]?.id || ''} onValueChange={(value) => setWeekViewColumnId(value)}>
-                <SelectTrigger className="h-9 w-[140px] text-sm">
-                  <SelectValue placeholder="Kolumna" />
-                </SelectTrigger>
-                <SelectContent className="z-[1000]">
-                  {columns.map((col) => <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-
             {/* Unified view settings popover */}
             <Popover open={configPopoverOpen} onOpenChange={setConfigPopoverOpen}>
               <PopoverTrigger asChild>
@@ -944,7 +928,6 @@ const AdminCalendar = ({
                       <h4 className="font-medium text-sm">Pokaż</h4>
                       <div className="flex border border-border rounded-lg overflow-hidden">
                         <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('day'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">Dzień</Button>
-                        <Button variant={viewMode === 'two-days' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('two-days'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">2 dni</Button>
                         <Button variant={viewMode === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('week'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">Tydzień</Button>
                         <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('month'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">Miesiąc</Button>
                       </div>
@@ -1119,221 +1102,178 @@ const AdminCalendar = ({
         </div>
       </>}
 
-      {/* TWO-DAYS VIEW */}
-      {viewMode === 'two-days' && <>
-        {/* Day + Column headers */}
-        <div className="border-b border-border bg-muted/20">
-          <div className="flex">
-            <div className="w-10 md:w-16 shrink-0 border-r border-border" />
-            {twoDays.map((day, dayIdx) => {
-              const dayStr = format(day, 'yyyy-MM-dd');
-              const isDayToday = isSameDay(day, new Date());
-              return (
-                <div key={dayStr} className={cn("flex-1", dayIdx < 1 && "border-r-2 border-border")}>
-                  <div className={cn("p-1 md:p-2 text-center font-medium text-xs border-b border-border cursor-pointer hover:bg-primary/5 transition-colors", isDayToday && "bg-primary/10")} onClick={() => { setCurrentDate(day); setViewMode('day'); }}>
-                    <span className={cn("font-bold", isDayToday && "text-primary")}>{format(day, 'EEEE d MMM', { locale: pl })}</span>
-                  </div>
-                  <div className="flex">
-                    {visibleColumns.map((col, stationIdx) => (
-                      <div key={`${dayStr}-${col.id}`} className={cn("flex-1 p-1 md:p-2 text-center font-medium text-[10px] md:text-xs", !isMobile && !isCompact && "min-w-[220px]", stationIdx < visibleColumns.length - 1 && "border-r border-border")} style={col.color ? { backgroundColor: col.color } : undefined}>
-                        <div className={cn("text-foreground", isMobile ? "truncate" : "whitespace-normal break-words")}>{col.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Two-day grid */}
-        <div className="flex-1 overflow-auto">
-          <div className="flex relative" style={{ minHeight: totalHeight }}>
-            <div className="w-10 md:w-16 shrink-0 border-r border-border bg-muted/10">
-              {HOURS.map((hour) => (
-                <div key={hour} className="relative" style={{ height: HOUR_HEIGHT }}>
-                  <span className="absolute -top-2 right-1 md:right-2 text-[10px] md:text-xs text-foreground bg-background px-1 z-10">{`${hour.toString().padStart(2, '0')}:00`}</span>
-                  <div className="absolute left-0 right-0 top-0 h-full">
-                    {Array.from({ length: SLOTS_PER_HOUR }, (_, i) => (
-                      <div key={i} className={cn("border-b", i === SLOTS_PER_HOUR - 1 ? "border-border" : "border-border/40")} style={{ height: SLOT_HEIGHT }} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {twoDays.map((day, dayIdx) => {
-              const dayStr = format(day, 'yyyy-MM-dd');
-              const isDayToday = isSameDay(day, new Date());
-              const today = startOfDay(new Date());
-              const dayDate = startOfDay(day);
-              const isPastDay = isBefore(dayDate, today);
-
-              return (
-                <div key={dayStr} className={cn("flex-1 flex", dayIdx < 1 && "border-r-2 border-border")}>
-                  {visibleColumns.map((col, stationIdx) => {
-                    let pastHatchHeight = 0;
-                    if (isPastDay) pastHatchHeight = totalHeight;
-                    const dayItems = getItemsForColumnAndDate(col.id, dayStr);
-                    const dayBreaks = getBreaksForColumnAndDate(col.id, dayStr);
-
-                    return (
-                      <div
-                        key={`${dayStr}-${col.id}`}
-                        className={cn(
-                          "flex-1 relative transition-colors duration-150",
-                          !isMobile && !isCompact && "min-w-[220px]",
-                          stationIdx < visibleColumns.length - 1 && "border-r border-border",
-                          isDayToday && "bg-primary/5",
-                          dragOverColumn === col.id && dragOverDate === dayStr && !dragOverSlot && "bg-primary/10"
-                        )}
-                        style={col.color && !(dragOverColumn === col.id && dragOverDate === dayStr) ? { backgroundColor: getColumnCellBg(col.color) } : undefined}
-                        onDragOver={(e) => handleDragOver(e, col.id, dayStr)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, col.id, dayStr)}
-                      >
-                        {pastHatchHeight > 0 && <div className="absolute left-0 right-0 top-0 hatched-pattern pointer-events-none z-10" style={{ height: pastHatchHeight }} />}
-                        {renderGridSlots(col.id, dayStr)}
-                        {draggedItem && dragOverColumn === col.id && dragOverDate === dayStr && dragPreviewStyle && (
-                          <div className="absolute left-0.5 right-0.5 rounded-lg border-2 border-dashed border-primary bg-primary/20 pointer-events-none flex items-center justify-center" style={{ top: dragPreviewStyle.top, height: dragPreviewStyle.height, zIndex: 10000 }}>
-                            <span className="text-[10px] font-bold text-foreground bg-background px-2 py-1 rounded-md shadow-lg border border-border">Przenieś na {dragPreviewStyle.time}</span>
-                          </div>
-                        )}
-                        {dayItems.map((item) => renderItemTile(item, dayStr, dayItems))}
-                        {dayBreaks.map((b) => renderBreakTile(b))}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-
-            {twoDays.some(d => isSameDay(d, new Date())) && currentHour >= DEFAULT_START_HOUR && currentHour <= DEFAULT_END_HOUR && (
-              <div className="absolute left-0 right-0 z-40 pointer-events-none" style={{ top: currentTimeTop }}>
-                <div className="flex items-center">
-                  <div className="w-14 md:w-16 flex justify-end pr-1"><div className="w-2 h-2 rounded-full bg-red-500" /></div>
-                  <div className="flex-1 h-0.5 bg-red-500" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </>}
-
       {/* WEEK VIEW */}
-      {viewMode === 'week' && <>
-        <div className="flex border-b border-border bg-muted/20">
-          <div className="w-16 md:w-20 shrink-0 p-2 flex items-center justify-center border-r border-border">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-          </div>
-          {weekDays.map((day, idx) => {
-            const dayStr = format(day, 'yyyy-MM-dd');
-            const isDayToday = isSameDay(day, new Date());
-            const selectedColId = weekViewColumnId || columns[0]?.id;
-            const dayReservations = selectedColId ? getItemsForColumnAndDate(selectedColId, dayStr) : [];
+      {viewMode === 'week' && (() => {
+        const weekColumnColorMap = new Map<string, string>();
+        columns.forEach((col) => { if (col.color) weekColumnColorMap.set(col.id, col.color); });
 
-            return (
-              <div key={dayStr} className={cn("flex-1 p-2 md:p-3 text-center font-medium text-xs md:text-sm min-w-[80px] cursor-pointer hover:bg-primary/5 transition-colors", idx < 6 && "border-r border-border", isDayToday && "bg-primary/10")} onClick={() => { setCurrentDate(day); setViewMode('day'); }}>
-                <div className={cn("text-foreground", isDayToday && "text-primary font-bold")}>{format(day, 'EEEE', { locale: pl })}</div>
-                <div className={cn("text-lg font-bold", isDayToday && "text-primary")}>{format(day, 'd')}</div>
-                <div className="text-xs text-muted-foreground">{`${dayReservations.length} zleceń`}</div>
-              </div>
-            );
-          })}
-        </div>
+        const weekItemsByDate = new Map<string, CalendarItem[]>();
+        for (const item of items) {
+          if (item.status === 'cancelled') continue;
+          if (!item.item_date) continue;
+          const startDate = item.item_date;
+          const endDate = item.end_date || item.item_date;
+          let current = new Date(startDate + 'T00:00:00');
+          const end = new Date(endDate + 'T00:00:00');
+          while (current <= end) {
+            const dateStr = format(current, 'yyyy-MM-dd');
+            if (!weekItemsByDate.has(dateStr)) weekItemsByDate.set(dateStr, []);
+            weekItemsByDate.get(dateStr)!.push(item);
+            current = addDays(current, 1);
+          }
+        }
+        for (const [, dayItems] of weekItemsByDate) {
+          dayItems.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        }
 
-        <div className="flex-1 overflow-auto">
-          <div className="flex relative" style={{ minHeight: totalHeight }}>
-            <div className="w-16 md:w-20 shrink-0 border-r border-border bg-muted/10">
-              {HOURS.map((hour) => (
-                <div key={hour} className="relative" style={{ height: HOUR_HEIGHT }}>
-                  <span className="absolute -top-2 right-1 md:right-2 text-[10px] md:text-xs text-foreground bg-background px-1 z-10">{`${hour.toString().padStart(2, '0')}:00`}</span>
-                  <div className="absolute left-0 right-0 top-0 h-full">
-                    {Array.from({ length: SLOTS_PER_HOUR }, (_, i) => (
-                      <div key={i} className={cn("border-b", i === SLOTS_PER_HOUR - 1 ? "border-border" : "border-border/40")} style={{ height: SLOT_HEIGHT }} />
-                    ))}
+        const todayDate = new Date();
+
+        return (
+          <div className="flex flex-col flex-1">
+            {/* Day names header */}
+            <div className="grid grid-cols-7 border-b border-border">
+              {weekDays.map((day, idx) => {
+                const isDayToday = isSameDay(day, todayDate);
+                return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "text-center py-2 border-r border-border last:border-r-0 cursor-pointer hover:bg-primary/5 transition-colors",
+                      isDayToday && "bg-primary/10"
+                    )}
+                    onClick={() => { setCurrentDate(day); setViewMode('day'); }}
+                  >
+                    <div className={cn("text-xs font-medium text-muted-foreground", isDayToday && "text-primary font-bold")}>
+                      {format(day, 'EEEE', { locale: pl })}
+                    </div>
+                    <div className={cn(
+                      "text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center mx-auto",
+                      isDayToday && "bg-primary text-primary-foreground"
+                    )}>
+                      {format(day, 'd')}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {weekDays.map((day, idx) => {
-              const dayStr = format(day, 'yyyy-MM-dd');
-              const isDayToday = isSameDay(day, new Date());
-              const selectedColId = weekViewColumnId || columns[0]?.id;
-              const dayItems = selectedColId ? getItemsForColumnAndDate(selectedColId, dayStr) : [];
-              const dayBreaks = selectedColId ? getBreaksForColumnAndDate(selectedColId, dayStr) : [];
-              const today = startOfDay(new Date());
-              const dayDate = startOfDay(day);
-              const isPastDay = isBefore(dayDate, today);
-              let pastHatchHeight = 0;
-              if (isPastDay) pastHatchHeight = totalHeight;
+            {/* Single week grid */}
+            <div className="grid grid-cols-7 flex-1 min-h-[300px]">
+              {weekDays.map((day) => {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const isDayToday = isSameDay(day, todayDate);
+                const dayItems = weekItemsByDate.get(dateStr) || [];
+                const isDragOver = dragOverDate === dateStr;
 
-              return (
-                <div key={dayStr} className={cn("flex-1 relative min-w-[80px]", idx < 6 && "border-r border-border", isDayToday && "bg-primary/5")}
-                  onDragOver={(e) => selectedColId && handleDragOver(e, selectedColId, dayStr)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => selectedColId && handleDrop(e, selectedColId, dayStr)}
-                >
-                  {pastHatchHeight > 0 && <div className="absolute left-0 right-0 top-0 hatched-pattern pointer-events-none z-10" style={{ height: pastHatchHeight }} />}
-                  {HOURS.map((hour) => (
-                    <div key={hour} style={{ height: HOUR_HEIGHT }}>
-                      {Array.from({ length: SLOTS_PER_HOUR }, (_, i) => {
-                        const isDropTarget = selectedColId && dragOverColumn === selectedColId && dragOverDate === dayStr && dragOverSlot?.hour === hour && dragOverSlot?.slotIndex === i;
-                        const isDisabled = isPastDay;
+                return (
+                  <div
+                    key={dateStr}
+                    className={cn(
+                      'border-r border-border last:border-r-0 p-1 flex flex-col min-h-0 overflow-hidden overflow-y-auto transition-colors bg-white dark:bg-card',
+                      isDayToday && 'bg-primary/5',
+                      isDragOver && 'bg-primary/10 ring-1 ring-inset ring-primary/30'
+                    )}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverDate(dateStr);
+                    }}
+                    onDragLeave={(e) => {
+                      const relatedTarget = e.relatedTarget as HTMLElement;
+                      if (relatedTarget && (e.currentTarget as HTMLElement).contains(relatedTarget)) return;
+                      setDragOverDate(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverDate(null);
+                      if (!draggedItem || !onItemMove) return;
+                      if (draggedItem.item_date === dateStr) return;
+                      onItemMove(draggedItem.id, draggedItem.column_id || '', dateStr);
+                      setDraggedItem(null);
+                    }}
+                  >
+                    {/* Item tiles */}
+                    <div className="flex flex-col gap-0.5 min-h-0 flex-1">
+                      {dayItems.map((item) => {
+                        const colColor = item.column_id ? weekColumnColorMap.get(item.column_id) : undefined;
+                        const address = [item.address_city, item.address_street].filter(Boolean).join(', ') || item.address_name || '';
+                        const employees = item.assigned_employees || [];
+                        const isMultiDay = item.end_date && item.end_date !== item.item_date;
+
+                        const tileStyle = colColor ? {
+                          backgroundColor: colColor,
+                          borderLeft: `3px solid ${colColor}`,
+                        } : undefined;
 
                         return (
-                          <div key={i} className={cn(
-                            "border-b group transition-colors relative",
-                            i % 2 === 0 && "border-border/50",
-                            i % 2 !== 0 && "border-border/20",
-                            isDropTarget && !isDisabled && "bg-primary/30 border-primary",
-                            !isDropTarget && !isDisabled && "hover:bg-primary/5 hover:z-50 cursor-pointer",
-                            isDisabled && "cursor-not-allowed"
-                          )} style={{ height: SLOT_HEIGHT }}
-                            onClick={() => !isDisabled && selectedColId && handleSlotClick(selectedColId, hour, i, dayStr)}
-                            onContextMenu={(e) => !isDisabled && selectedColId && handleSlotContextMenu(e, selectedColId, hour, i, dayStr)}
-                            onTouchStart={() => !isDisabled && selectedColId && handleTouchStart(selectedColId, hour, i, dayStr)}
-                            onTouchEnd={handleTouchEnd}
-                            onTouchMove={handleTouchMove}
-                            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!isDisabled && selectedColId) handleSlotDragOver(e, selectedColId, hour, i, dayStr); }}
-                            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (!isDisabled && selectedColId) handleDrop(e, selectedColId, dayStr, hour, i); }}
-                          >
-                            {!isDisabled && (
-                              <div className="h-full w-full flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Plus className="w-3 h-3 text-primary" />
-                                <span className="text-xs font-medium text-primary">{`${hour.toString().padStart(2, '0')}:${(i * SLOT_MINUTES).toString().padStart(2, '0')}`}</span>
-                              </div>
+                          <button
+                            key={`${item.id}-${dateStr}`}
+                            draggable={!isMobile && !isMultiDay}
+                            onDragStart={(e) => {
+                              if (isMultiDay) return;
+                              setDraggedItem(item);
+                              e.dataTransfer.effectAllowed = 'move';
+                              e.dataTransfer.setData('text/plain', item.id);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedItem(null);
+                              setDragOverDate(null);
+                            }}
+                            onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+                            className={cn(
+                              'text-left rounded-sm px-1.5 py-0.5 hover:opacity-80 transition-opacity group shrink-0',
+                              !isMobile && !isMultiDay && 'cursor-grab active:cursor-grabbing',
+                              (isMobile || isMultiDay) && 'cursor-pointer',
+                              draggedItem?.id === item.id && 'opacity-40',
+                              !colColor && 'bg-muted/60 border-l-[3px] border-muted-foreground/30'
                             )}
-                          </div>
+                            style={tileStyle}
+                          >
+                            {isMobile ? (
+                              <div className="text-[10px] font-semibold text-foreground line-clamp-2">
+                                {item.title}
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <span className="text-[11px] font-bold tabular-nums shrink-0 text-foreground">
+                                    {item.start_time?.slice(0, 5)}
+                                  </span>
+                                  <span className="text-[11px] font-bold truncate text-foreground">
+                                    {item.title}
+                                  </span>
+                                </div>
+                                {address && (
+                                  <div className="text-[10px] text-foreground/70 truncate pl-0.5">
+                                    {address}
+                                  </div>
+                                )}
+                                {employees.length > 0 && (
+                                  <div className="flex flex-wrap gap-0.5 mt-0.5">
+                                    {employees.map((emp) => (
+                                      <span
+                                        key={emp.id}
+                                        className="text-[9px] rounded px-1 py-px truncate max-w-[80px] font-medium bg-foreground/10 text-foreground/80"
+                                      >
+                                        {emp.name.split(' ')[0]}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </button>
                         );
                       })}
                     </div>
-                  ))}
-
-                  {selectedColId && draggedItem && dragOverColumn === selectedColId && dragOverDate === dayStr && dragPreviewStyle && (
-                    <div className="absolute left-0.5 right-0.5 rounded-lg border-2 border-dashed border-primary bg-primary/20 pointer-events-none z-10 flex items-center justify-center" style={{ top: dragPreviewStyle.top, height: dragPreviewStyle.height }}>
-                      <span className="text-[9px] font-semibold text-primary bg-background/80 px-1 py-0.5 rounded">{dragPreviewStyle.time}</span>
-                    </div>
-                  )}
-
-                  {dayItems.map((item) => renderItemTile(item, dayStr, dayItems))}
-                  {dayBreaks.map((b) => renderBreakTile(b))}
-                </div>
-              );
-            })}
-
-            {weekDays.some(d => isSameDay(d, new Date())) && showCurrentTime && (
-              <div className="absolute left-0 right-0 z-40 pointer-events-none" style={{ top: currentTimeTop }}>
-                <div className="flex items-center">
-                  <div className="w-16 md:w-20 flex justify-end pr-1"><div className="w-2 h-2 rounded-full bg-red-500" /></div>
-                  <div className="flex-1 h-0.5 bg-red-500" />
-                </div>
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </>}
+        );
+      })()}
 
       {/* MONTH VIEW */}
       {viewMode === 'month' && (
