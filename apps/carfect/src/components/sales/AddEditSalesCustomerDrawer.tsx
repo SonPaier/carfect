@@ -435,7 +435,7 @@ const AddEditSalesCustomerDrawer = ({
 
                 {/* Products */}
                 {o.items.length > 0 && (
-                  <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t border-border/50">
+                  <div className="text-xs space-y-0.5 mt-1">
                     {o.items.map((item: any, idx: number) => (
                       <div key={idx} className="flex justify-between">
                         <span className="truncate mr-2">
@@ -452,43 +452,81 @@ const AddEditSalesCustomerDrawer = ({
 
                 {/* Rolls */}
                 {o.rolls.length > 0 && (
-                  <div className="text-xs text-muted-foreground pt-1 border-t border-border/50">
-                    <span className="font-medium">Rolki: </span>
+                  <div className="text-xs mt-1">
                     {o.rolls.map((r: any, idx: number) => (
-                      <span key={idx}>
-                        {r.roll_number}
-                        {r.used_m2 ? ` (${r.used_m2} m²)` : ''}
-                        {idx < o.rolls.length - 1 ? ', ' : ''}
-                      </span>
+                      <div key={idx} className="flex justify-between">
+                        <span>Rolka {r.roll_number}</span>
+                        <span>{r.used_m2 ? `${r.used_m2} m²` : ''}{r.width_mm ? ` / ${r.width_mm} mm` : ''}</span>
+                      </div>
                     ))}
                   </div>
                 )}
 
-                {/* Links: tracking + invoice */}
-                {(o.tracking_number || o.invoice) && (
-                  <div className="flex items-center gap-3 text-xs pt-1 border-t border-border/50">
-                    {o.tracking_number && (
-                      <a
-                        href={o.apaczka_tracking_url || '#'}
-                        target={o.apaczka_tracking_url ? '_blank' : undefined}
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                        onClick={(e) => {
-                          if (!o.apaczka_tracking_url) {
-                            e.preventDefault();
-                            navigator.clipboard.writeText(o.tracking_number);
-                            toast.info('Numer listu skopiowany');
+                {/* Tracking + Invoice */}
+                {o.tracking_number && (
+                  <div className="text-xs mt-1">
+                    <span>List przewozowy: </span>
+                    <a
+                      href={o.apaczka_tracking_url || '#'}
+                      target={o.apaczka_tracking_url ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                      onClick={(e) => {
+                        if (!o.apaczka_tracking_url) {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(o.tracking_number);
+                          toast.info('Numer listu skopiowany');
+                        }
+                      }}
+                    >
+                      {o.tracking_number}
+                    </a>
+                  </div>
+                )}
+                {o.invoice && (
+                  <div className="text-xs mt-1">
+                    <span>Faktura: </span>
+                    <a
+                      href="#"
+                      className="text-primary hover:underline"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const session = await supabase.auth.getSession();
+                          const token = session.data.session?.access_token;
+                          const res = await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${token}`,
+                                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                              },
+                              body: JSON.stringify({
+                                action: 'get_pdf_url',
+                                instanceId,
+                                invoiceId: o.invoice.id,
+                              }),
+                            },
+                          );
+                          if (!res.ok) throw new Error();
+                          const contentType = res.headers.get('content-type') || '';
+                          if (contentType.includes('application/pdf')) {
+                            const blob = await res.blob();
+                            window.open(URL.createObjectURL(blob), '_blank');
+                          } else {
+                            const json = await res.json();
+                            if (json.pdf_url) window.open(json.pdf_url, '_blank');
+                            else toast.error('PDF niedostępny');
                           }
-                        }}
-                      >
-                        📦 {o.tracking_number}
-                      </a>
-                    )}
-                    {o.invoice && (
-                      <span className="text-muted-foreground">
-                        🧾 {o.invoice.invoice_number || 'FV'}
-                      </span>
-                    )}
+                        } catch {
+                          toast.error('Nie udało się pobrać PDF');
+                        }
+                      }}
+                    >
+                      {o.invoice.invoice_number || 'Pobierz'}
+                    </a>
                   </div>
                 )}
               </div>
