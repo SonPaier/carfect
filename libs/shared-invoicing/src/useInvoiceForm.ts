@@ -55,7 +55,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const [buyerCountry, setBuyerCountry] = useState('PL');
   const [paymentType, setPaymentType] = useState<PaymentType>('transfer');
   const [positions, setPositions] = useState<InvoicePosition[]>([
-    { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23 },
+    { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23, unit: 'szt.', discount: 0 },
   ]);
 
   // Initialize from props/settings
@@ -142,7 +142,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
           quantity: 1,
           unit_price_gross: s.custom_price ?? s.unified_services?.price ?? 0,
           vat_rate: settings?.default_vat_rate ?? 23,
-          unit: s.unified_services?.unit || 'szt',
+          unit: s.unified_services?.unit || 'szt.',
         }));
         setPositions(pos);
       }
@@ -185,7 +185,14 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const addPosition = () => {
     setPositions([
       ...positions,
-      { name: '', quantity: 1, unit_price_gross: 0, vat_rate: settings?.default_vat_rate ?? 23 },
+      {
+        name: '',
+        quantity: 1,
+        unit_price_gross: 0,
+        vat_rate: settings?.default_vat_rate ?? 23,
+        unit: 'szt.',
+        discount: 0,
+      },
     ]);
   };
 

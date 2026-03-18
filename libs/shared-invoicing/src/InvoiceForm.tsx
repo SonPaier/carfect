@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { Plus, Trash2, Search, Loader2 } from 'lucide-react';
+import { Trash2, Search, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { RadioGroup, RadioGroupItem } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
 import { toast } from 'sonner';
 import {
   DOCUMENT_KINDS,
-  VAT_RATES,
   PAYMENT_TYPES,
   type InvoicePosition,
   type DocumentKind,
@@ -283,34 +281,9 @@ export function InvoiceForm({
 
       <Separator />
 
-      {/* Price mode radio */}
-      <RadioGroup
-        value={priceMode}
-        onValueChange={(v) => onPriceModeChange(v as PriceMode)}
-        className="flex gap-4"
-      >
-        <div className="flex items-center gap-2">
-          <RadioGroupItem value="netto" id="price-netto" />
-          <Label htmlFor="price-netto" className="text-sm cursor-pointer">
-            Kwoty netto
-          </Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <RadioGroupItem value="brutto" id="price-brutto" />
-          <Label htmlFor="price-brutto" className="text-sm cursor-pointer">
-            Kwoty brutto
-          </Label>
-        </div>
-      </RadioGroup>
-
       {/* Positions */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Pozycje</h3>
-          <Button type="button" variant="ghost" size="sm" onClick={onAddPosition}>
-            <Plus className="w-4 h-4 mr-1" /> Dodaj
-          </Button>
-        </div>
+        <h3 className="text-sm font-semibold">Pozycje</h3>
         {positions.map((pos, idx) => (
           <div key={idx} className="space-y-2 p-3 rounded-lg border border-border bg-white">
             <div className="flex items-center gap-2">
@@ -329,47 +302,77 @@ export function InvoiceForm({
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Ilosc</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={pos.quantity}
-                  onChange={(e) => onUpdatePosition(idx, 'quantity', Number(e.target.value))}
-                  className="bg-white h-8 text-sm"
-                />
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <div className="space-y-1 w-14 shrink-0">
+                  <Label className="text-[10px] text-muted-foreground">Ilość</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={pos.quantity}
+                    onChange={(e) => onUpdatePosition(idx, 'quantity', Number(e.target.value))}
+                    className="bg-white h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1 w-20 shrink-0">
+                  <Label className="text-[10px] text-muted-foreground">Jednostka</Label>
+                  <Select
+                    value={
+                      pos.unit === 'meter' || pos.unit === 'm2' || pos.unit === 'm²' ? 'm2' : 'szt.'
+                    }
+                    onValueChange={(v) => onUpdatePosition(idx, 'unit', v)}
+                  >
+                    <SelectTrigger className="bg-white h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="szt.">szt.</SelectItem>
+                      <SelectItem value="m2">m2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 flex-1">
+                  <Label className="text-[10px] text-muted-foreground">Cena netto</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={pos.unit_price_gross}
+                    onChange={(e) =>
+                      onUpdatePosition(idx, 'unit_price_gross', Number(e.target.value))
+                    }
+                    className="bg-white h-8 text-sm"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">{priceLabel}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={pos.unit_price_gross}
-                  onChange={(e) =>
-                    onUpdatePosition(idx, 'unit_price_gross', Number(e.target.value))
-                  }
-                  className="bg-white h-8 text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">VAT</Label>
-                <Select
-                  value={String(pos.vat_rate)}
-                  onValueChange={(v) => onUpdatePosition(idx, 'vat_rate', Number(v))}
-                >
-                  <SelectTrigger className="bg-white h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VAT_RATES.map((r) => (
-                      <SelectItem key={r.value} value={String(r.value)}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Wartość netto</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={(pos.unit_price_gross * pos.quantity).toFixed(2)}
+                    onChange={(e) => {
+                      const total = Number(e.target.value);
+                      const unitPrice = pos.quantity > 0 ? total / pos.quantity : 0;
+                      onUpdatePosition(idx, 'unit_price_gross', parseFloat(unitPrice.toFixed(6)));
+                    }}
+                    className="bg-white h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Rabat %</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="1"
+                    value={pos.discount ?? 0}
+                    onChange={(e) => onUpdatePosition(idx, 'discount', Number(e.target.value))}
+                    className="bg-white h-8 text-sm"
+                  />
+                </div>
               </div>
             </div>
           </div>

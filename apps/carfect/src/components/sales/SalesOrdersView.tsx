@@ -181,6 +181,7 @@ const SalesOrdersView = () => {
           quantity: item.quantity,
           priceNet: Number(item.price_net),
           priceGross: Number(item.price_net) * 1.23,
+          unit: item.price_unit || 'szt.',
         })),
         comment: o.comment || undefined,
         status: o.status as 'nowy' | 'wysłany',
@@ -252,6 +253,19 @@ const SalesOrdersView = () => {
     } catch (err: any) {
       toast.error('Błąd usuwania: ' + (err.message || ''));
     }
+  };
+
+  const handleOpenInvoiceDrawer = async (order: SalesOrder) => {
+    let customerDiscount = 0;
+    if (order.customerId) {
+      const { data: cust } = await (supabase
+        .from('sales_customers')
+        .select('discount_percent')
+        .eq('id', order.customerId)
+        .single() as any);
+      customerDiscount = cust?.discount_percent ?? 0;
+    }
+    setInvoiceDrawerState({ open: true, order: { ...order, customerDiscount } });
   };
 
   const handleEditOrder = async (order: SalesOrder) => {
@@ -517,15 +531,24 @@ const SalesOrdersView = () => {
                   <Fragment key={order.id}>
                     <TableRow
                       className="group hover:bg-hover-strong cursor-pointer"
-                      onClick={() => toggleExpand(order.id)}
+                      onClick={() => handleEditOrder(order)}
                     >
                       <TableCell className="text-sm">
                         <div className="flex items-center gap-1.5">
-                          {isExpanded ? (
-                            <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                          )}
+                          <button
+                            type="button"
+                            className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(order.id);
+                            }}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                          </button>
                           {order.orderNumber}
                         </div>
                       </TableCell>
@@ -647,7 +670,7 @@ const SalesOrdersView = () => {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setInvoiceDrawerState({ open: true, order });
+                                  handleOpenInvoiceDrawer(order);
                                 }}
                               >
                                 Wystaw FV
@@ -664,13 +687,14 @@ const SalesOrdersView = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() =>
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setDeleteConfirm({
                                   open: true,
                                   orderId: order.id,
                                   orderNumber: order.orderNumber,
-                                })
-                              }
+                                });
+                              }}
                             >
                               Usuń
                             </DropdownMenuItem>
@@ -808,8 +832,10 @@ const SalesOrdersView = () => {
           positions={invoiceDrawerState.order.products.map((p) => ({
             name: p.name,
             quantity: p.quantity,
-            unit_price_gross: p.priceNet * 1.23,
+            unit_price_gross: p.priceNet,
             vat_rate: 23,
+            unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
+            discount: invoiceDrawerState.order!.customerDiscount ?? 0,
           }))}
           onSuccess={fetchOrders}
           supabaseClient={supabase}
