@@ -112,12 +112,6 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
   return (
     <div className="p-4 min-h-full" style={{ backgroundColor: bgColor }}>
       <div className="max-w-md mx-auto space-y-4">
-        {/* Header */}
-        <div className="text-center mb-4" style={{ color: sectionTextColor }}>
-          <h1 className="text-lg font-bold">Zapytaj o wycenę</h1>
-          <p className="text-sm opacity-70">Wypełnij formularz</p>
-        </div>
-
         {/* Customer Section */}
         <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
           <h2 className="font-medium text-sm">Dane kontaktowe</h2>

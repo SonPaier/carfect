@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     // Fetch instance data
     const { data: instance, error: instanceError } = await supabase
       .from('instances')
-      .select('id, name, short_name, address, nip, logo_url, offer_bg_color, offer_primary_color, contact_person, phone, widget_config')
+      .select('id, name, short_name, address, nip, logo_url, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color, widget_branding_enabled, widget_bg_color, widget_section_bg_color, widget_section_text_color, widget_primary_color, contact_person, phone, widget_config')
       .eq('slug', instanceSlug)
       .eq('active', true)
       .maybeSingle();
@@ -172,11 +172,39 @@ Deno.serve(async (req) => {
     }
 
     const response = {
-      branding: {
-        bg_color: instance.offer_bg_color || '#f8fafc',
-        primary_color: instance.offer_primary_color || '#2563eb',
-        logo_url: instance.logo_url || null,
-      },
+      branding: (() => {
+        // Must match DEFAULT_WIDGET_BRANDING in libs/shared-utils/src/colorUtils.ts
+        const DEFAULT_BG = '#f8fafc';
+        const DEFAULT_SECTION_BG = '#ffffff';
+        const DEFAULT_SECTION_TEXT = '#1e293b';
+        const DEFAULT_PRIMARY = '#2563eb';
+
+        if (instance.widget_branding_enabled) {
+          return {
+            bg_color: instance.widget_bg_color || DEFAULT_BG,
+            section_bg_color: instance.widget_section_bg_color || DEFAULT_SECTION_BG,
+            section_text_color: instance.widget_section_text_color || DEFAULT_SECTION_TEXT,
+            primary_color: instance.widget_primary_color || DEFAULT_PRIMARY,
+            logo_url: instance.logo_url || null,
+          };
+        }
+        if (instance.offer_branding_enabled) {
+          return {
+            bg_color: instance.offer_bg_color || DEFAULT_BG,
+            section_bg_color: instance.offer_section_bg_color || DEFAULT_SECTION_BG,
+            section_text_color: instance.offer_section_text_color || DEFAULT_SECTION_TEXT,
+            primary_color: instance.offer_primary_color || DEFAULT_PRIMARY,
+            logo_url: instance.logo_url || null,
+          };
+        }
+        return {
+          bg_color: DEFAULT_BG,
+          section_bg_color: DEFAULT_SECTION_BG,
+          section_text_color: DEFAULT_SECTION_TEXT,
+          primary_color: DEFAULT_PRIMARY,
+          logo_url: instance.logo_url || null,
+        };
+      })(),
       instance_info: {
         name: instance.name,
         short_name: instance.short_name,

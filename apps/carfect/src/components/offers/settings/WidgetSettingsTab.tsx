@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -12,6 +12,8 @@ import { ScrollArea } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import EmbedLeadFormPreview from './EmbedLeadFormPreview';
 import { ScopeProductSelectionDrawer } from '../services/ScopeProductSelectionDrawer';
+import { WidgetBrandingSettings } from './WidgetBrandingSettings';
+import { DEFAULT_BRANDING, DEFAULT_WIDGET_BRANDING } from '@shared/utils';
 
 interface WidgetConfig {
   visible_templates: string[];
@@ -72,6 +74,39 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
     sectionTextColor: string;
     primaryColor: string;
   } | null>(null);
+  const [initialWidgetBranding, setInitialWidgetBranding] = useState<{
+    widget_branding_enabled: boolean;
+    widget_bg_color: string | null;
+    widget_section_bg_color: string | null;
+    widget_section_text_color: string | null;
+    widget_primary_color: string | null;
+  } | null>(null);
+
+  // Offer-based branding (set once on fetch, used when widget branding is disabled)
+  const [offerBranding, setOfferBranding] = useState<{
+    bgColor: string;
+    sectionBgColor: string;
+    sectionTextColor: string;
+    primaryColor: string;
+  } | null>(null);
+
+  // Update preview branding in real-time from child component state
+  const handleBrandingChange = (widgetBranding?: { enabled: boolean; bgColor: string; sectionBgColor: string; sectionTextColor: string; primaryColor: string }) => {
+    if (!widgetBranding) return;
+    onChange();
+
+    if (widgetBranding.enabled) {
+      setBranding({
+        bgColor: widgetBranding.bgColor,
+        sectionBgColor: widgetBranding.sectionBgColor,
+        sectionTextColor: widgetBranding.sectionTextColor,
+        primaryColor: widgetBranding.primaryColor,
+      });
+    } else {
+      // Revert to offer-based branding when widget branding is disabled
+      setBranding(offerBranding);
+    }
+  };
 
   // Fetch data
   useEffect(() => {
@@ -81,7 +116,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         // Fetch instance with widget_config and branding colors
         const { data: instance } = await supabase
           .from('instances')
-          .select('slug, widget_config, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color')
+          .select('slug, widget_config, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color, widget_branding_enabled, widget_bg_color, widget_section_bg_color, widget_section_text_color, widget_primary_color')
           .eq('id', instanceId)
           .single();
 
@@ -94,17 +129,35 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
               extras: parsed.extras || [],
             });
           }
-          
-          // Set branding if enabled
-          if (instance.offer_branding_enabled) {
+
+          // Pass initial widget branding to child to avoid duplicate fetch
+          setInitialWidgetBranding({
+            widget_branding_enabled: instance.widget_branding_enabled,
+            widget_bg_color: instance.widget_bg_color,
+            widget_section_bg_color: instance.widget_section_bg_color,
+            widget_section_text_color: instance.widget_section_text_color,
+            widget_primary_color: instance.widget_primary_color,
+          });
+
+          // Store offer branding for toggle-off fallback
+          const offerBrand = instance.offer_branding_enabled ? {
+            bgColor: instance.offer_bg_color || DEFAULT_BRANDING.offer_bg_color,
+            sectionBgColor: instance.offer_section_bg_color || DEFAULT_BRANDING.offer_section_bg_color,
+            sectionTextColor: instance.offer_section_text_color || DEFAULT_BRANDING.offer_section_text_color,
+            primaryColor: instance.offer_primary_color || DEFAULT_BRANDING.offer_primary_color,
+          } : null;
+          setOfferBranding(offerBrand);
+
+          // Set branding with fallback: widget -> offer -> defaults
+          if (instance.widget_branding_enabled) {
             setBranding({
-              bgColor: instance.offer_bg_color || '#f8fafc',
-              sectionBgColor: instance.offer_section_bg_color || '#ffffff',
-              sectionTextColor: instance.offer_section_text_color || '#1e293b',
-              primaryColor: instance.offer_primary_color || '#2563eb',
+              bgColor: instance.widget_bg_color || DEFAULT_WIDGET_BRANDING.widget_bg_color,
+              sectionBgColor: instance.widget_section_bg_color || DEFAULT_WIDGET_BRANDING.widget_section_bg_color,
+              sectionTextColor: instance.widget_section_text_color || DEFAULT_WIDGET_BRANDING.widget_section_text_color,
+              primaryColor: instance.widget_primary_color || DEFAULT_WIDGET_BRANDING.widget_primary_color,
             });
           } else {
-            setBranding(null);
+            setBranding(offerBrand);
           }
         }
 
@@ -525,6 +578,23 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
               )}
             </Button>
           </div>
+        </div>
+
+        <Separator />
+
+        {/* Widget branding */}
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-medium">Wygląd widgetu</h3>
+            <p className="text-sm text-muted-foreground">
+              Osobne kolory dla widgetu. Gdy wyłączone, używane są kolory z ustawień oferty.
+            </p>
+          </div>
+          <WidgetBrandingSettings
+            instanceId={instanceId}
+            initialData={initialWidgetBranding}
+            onChange={handleBrandingChange}
+          />
         </div>
       </div>
 
