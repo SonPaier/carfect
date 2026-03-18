@@ -741,11 +741,7 @@ const SalesOrdersView = () => {
                                     if (contentType.includes('application/pdf')) {
                                       const blob = await res.blob();
                                       const url = URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url;
-                                      a.download = `faktura-${order.invoiceNumber || order.invoiceId}.pdf`;
-                                      a.click();
-                                      URL.revokeObjectURL(url);
+                                      window.open(url, '_blank');
                                     } else {
                                       const json = await res.json();
                                       if (json.pdf_url) {
