@@ -255,7 +255,11 @@ const SalesOrdersView = () => {
       updates.tracking_number = null;
       updates.apaczka_tracking_url = null;
     }
-    await (supabase.from('sales_orders').update(updates).eq('id', id) as any);
+    const { error } = await (supabase.from('sales_orders').update(updates).eq('id', id) as any);
+    if (error) {
+      toast.error('Błąd zmiany statusu');
+      return;
+    }
     setOrders((prev) =>
       prev.map((o) =>
         o.id === id
@@ -470,7 +474,7 @@ const SalesOrdersView = () => {
 
   const handleCancelShipment = async (orderId: string) => {
     try {
-      await (supabase
+      const { error } = await (supabase
         .from('sales_orders')
         .update({
           status: 'anulowany',
@@ -481,6 +485,7 @@ const SalesOrdersView = () => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', orderId) as any);
+      if (error) throw error;
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId
