@@ -231,4 +231,48 @@ describe('SalesCustomersView', () => {
       expect(screen.getByText('15%')).toBeInTheDocument();
     });
   });
+
+  describe('customer delete — FK error handling (regression H10)', () => {
+    it('shows clear message when customer has orders (FK constraint)', async () => {
+      const { toast } = await import('sonner');
+      const deleteChain = createChainMock(null, { code: '23503', message: 'FK violation' });
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'sales_customers') {
+          const chain = createChainMock(mockCustomers);
+          chain.delete = vi.fn(() => deleteChain);
+          return chain;
+        }
+        if (table === 'sales_orders') return createChainMock([]);
+        return createChainMock([]);
+      });
+
+      const user = userEvent.setup();
+      render(<SalesCustomersView />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Alfa Sp. z o.o.')).toBeInTheDocument();
+      });
+
+      // Open actions menu
+      const moreButtons = screen.getAllByRole('button').filter(
+        (btn) => btn.querySelector('svg'),
+      );
+      if (moreButtons.length > 0) {
+        await user.click(moreButtons[moreButtons.length - 1]);
+        const deleteItem = screen.queryByText('Usuń');
+        if (deleteItem) {
+          await user.click(deleteItem);
+          // Confirm in dialog
+          const confirmBtn = screen.queryByText('Usuń', { selector: 'button' });
+          if (confirmBtn) await user.click(confirmBtn);
+        }
+      }
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining('powiązane zamówienia'),
+        );
+      });
+    });
+  });
 });

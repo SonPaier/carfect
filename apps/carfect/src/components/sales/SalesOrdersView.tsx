@@ -474,18 +474,12 @@ const SalesOrdersView = () => {
 
   const handleCancelShipment = async (orderId: string) => {
     try {
-      const { error } = await (supabase
-        .from('sales_orders')
-        .update({
-          status: 'anulowany',
-          apaczka_order_id: null,
-          tracking_number: null,
-          apaczka_tracking_url: null,
-          shipped_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderId) as any);
+      toast.info('Anuluję przesyłkę w Apaczka...');
+      const { data, error } = await supabase.functions.invoke('cancel-apaczka-shipment', {
+        body: { orderId },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId
@@ -494,8 +488,8 @@ const SalesOrdersView = () => {
         ),
       );
       toast.success('Przesyłka anulowana');
-    } catch {
-      toast.error('Nie udało się anulować przesyłki');
+    } catch (err: any) {
+      toast.error('Nie udało się anulować przesyłki' + (err.message ? ': ' + err.message : ''));
     }
   };
 
