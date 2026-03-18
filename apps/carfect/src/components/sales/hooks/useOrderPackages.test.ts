@@ -81,7 +81,8 @@ describe('useOrderPackages', () => {
       expect(pkg.shippingMethod).toBe('shipping');
       expect(pkg.packagingType).toBe('karton');
       expect(pkg.dimensions).toEqual({ length: 0, width: 0, height: 0 });
-      expect(pkg.courier).toBe('dpd');
+      expect(pkg.courier).toBeUndefined();
+      expect(pkg.courierServiceId).toBeUndefined();
       expect(pkg.weight).toBe(1);
       expect(pkg.contents).toBe('');
       expect(pkg.declaredValue).toBe(0);
@@ -467,7 +468,6 @@ describe('useOrderPackages', () => {
       const pkg = result.current.packages[0];
       expect(pkg.shippingMethod).toBe('shipping');
       expect(pkg.packagingType).toBe('karton');
-      expect(pkg.courier).toBe('dpd');
     });
   });
 
@@ -761,12 +761,13 @@ describe('useOrderPackages', () => {
       expect((result.current.packages[0].dimensions as { length: number })?.length).toBe(120);
     });
 
-    it('updatePackageCourier changes courier', () => {
+    it('updatePackageCourier changes courierServiceId and courier name', () => {
       const { result } = setupHook();
       act(() => { result.current.addPackage(); });
       const pkgId = result.current.packages[0].id;
-      act(() => { result.current.updatePackageCourier(pkgId, 'dhl'); });
-      expect(result.current.packages[0].courier).toBe('dhl');
+      act(() => { result.current.updatePackageCourier(pkgId, 21, 'DHL'); });
+      expect(result.current.packages[0].courierServiceId).toBe(21);
+      expect(result.current.packages[0].courier).toBe('DHL');
     });
   });
 });
