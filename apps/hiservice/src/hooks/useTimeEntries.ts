@@ -142,6 +142,16 @@ export const useDeleteTimeEntry = (instanceId: string | null) => {
   });
 };
 
+export const getEffectiveMinutes = (entry: TimeEntry): number => {
+  if (entry.total_minutes && entry.total_minutes > 0) return entry.total_minutes;
+  if (entry.start_time && entry.end_time) {
+    const start = new Date(entry.start_time).getTime();
+    const end = new Date(entry.end_time).getTime();
+    if (end > start) return Math.floor((end - start) / 60000);
+  }
+  return 0;
+};
+
 export const calculateMonthlySummary = (entries: TimeEntry[]): Map<string, TimeEntrySummary> => {
   const summaryMap = new Map<string, TimeEntrySummary>();
   
@@ -152,7 +162,7 @@ export const calculateMonthlySummary = (entries: TimeEntry[]): Map<string, TimeE
       entries_count: 0,
     };
     
-    existing.total_minutes += entry.total_minutes || 0;
+    existing.total_minutes += getEffectiveMinutes(entry);
     existing.entries_count += 1;
     
     summaryMap.set(entry.employee_id, existing);
