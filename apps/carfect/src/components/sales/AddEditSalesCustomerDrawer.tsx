@@ -109,11 +109,43 @@ const AddEditSalesCustomerDrawer = ({
     const { data } = await (supabase
       .from('sales_orders')
       .select(
-        'id, order_number, created_at, total_net, currency, status, delivery_type, payment_method',
+        'id, order_number, created_at, total_net, currency, status, delivery_type, payment_method, tracking_number, apaczka_tracking_url, sales_order_items(name, quantity, price_net, price_unit)',
       )
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false }) as any);
-    setOrders((data as any[]) || []);
+
+    // Fetch invoices and roll usages for these orders
+    const orderIds = (data || []).map((o: any) => o.id);
+    let invoiceMap: Record<string, any> = {};
+    let rollMap: Record<string, any[]> = {};
+    if (orderIds.length > 0) {
+      const [invRes, rollRes] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, sales_order_id, invoice_number, pdf_url')
+          .in('sales_order_id', orderIds) as any,
+        supabase
+          .from('sales_roll_usages')
+          .select('order_id, roll_number, used_m2, width_mm')
+          .in('order_id', orderIds) as any,
+      ]);
+      for (const inv of invRes.data || []) {
+        invoiceMap[inv.sales_order_id] = inv;
+      }
+      for (const ru of rollRes.data || []) {
+        if (!rollMap[ru.order_id]) rollMap[ru.order_id] = [];
+        rollMap[ru.order_id].push(ru);
+      }
+    }
+
+    setOrders(
+      (data || []).map((o: any) => ({
+        ...o,
+        items: o.sales_order_items || [],
+        invoice: invoiceMap[o.id] || null,
+        rolls: rollMap[o.id] || [],
+      })),
+    );
     setOrdersLoading(false);
   }, [customer?.id]);
 
@@ -352,7 +384,7 @@ const AddEditSalesCustomerDrawer = ({
         ) : (
           <div className="space-y-2">
             {orders.map((o: any) => (
-              <div key={o.id} className="border rounded-md p-3 text-sm space-y-1">
+              <div key={o.id} className="border rounded-md p-3 text-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{o.order_number}</span>
                   <span className="text-xs text-muted-foreground">
@@ -360,38 +392,143 @@ const AddEditSalesCustomerDrawer = ({
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${o.status === 'wysłany' ? 'bg-emerald-600 text-white' : 'border border-amber-500 text-amber-600'}`}
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        o.status === 'wysłany'
+                          ? 'bg-emerald-600 text-white'
+                          : o.status === 'anulowany'
+                            ? 'border border-red-500 text-red-600'
+                            : 'border border-amber-500 text-amber-600'
+                      }`}
                     >
-                      {o.status === 'nowy' ? 'Nowy' : o.status === 'wysłany' ? 'Wysłany' : o.status}
+                      {o.status === 'nowy'
+                        ? 'Nowy'
+                        : o.status === 'wysłany'
+                          ? 'Wysłany'
+                          : o.status === 'anulowany'
+                            ? 'Anulowany'
+                            : o.status}
                     </span>
                     {o.delivery_type && (
-                      <Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                         {o.delivery_type === 'shipping'
                           ? 'Wysyłka'
                           : o.delivery_type === 'pickup'
-                            ? 'Odbiór osobisty'
+                            ? 'Odbiór'
                             : o.delivery_type === 'uber'
                               ? 'Uber'
                               : o.delivery_type}
                       </Badge>
                     )}
                     {o.payment_method && (
-                      <Badge>
-                        {o.payment_method === 'cod'
-                          ? 'Za pobraniem'
-                          : o.payment_method === 'transfer'
-                            ? 'Przelew'
-                            : o.payment_method}
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {o.payment_method === 'cod' ? 'Pobranie' : o.payment_method === 'transfer' ? 'Przelew' : o.payment_method}
                       </Badge>
                     )}
                   </div>
-                  <span>
+                  <span className="font-medium text-foreground">
                     {o.total_net?.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}{' '}
                     {o.currency === 'EUR' ? '€' : 'zł'}
                   </span>
                 </div>
+
+                {/* Products */}
+                {o.items.length > 0 && (
+                  <div className="text-xs space-y-0.5 mt-1">
+                    {o.items.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between">
+                        <span className="truncate mr-2">
+                          {item.quantity > 1 ? `${item.quantity}× ` : ''}
+                          {item.name}
+                        </span>
+                        <span className="shrink-0">
+                          {(Number(item.price_net) * item.quantity).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Rolls */}
+                {o.rolls.length > 0 && (
+                  <div className="text-xs mt-1">
+                    {o.rolls.map((r: any, idx: number) => (
+                      <div key={idx} className="flex justify-between">
+                        <span>Rolka {r.roll_number}</span>
+                        <span>{r.used_m2 ? `${r.used_m2} m²` : ''}{r.width_mm ? ` / ${r.width_mm} mm` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tracking + Invoice */}
+                {o.tracking_number && (
+                  <div className="text-xs mt-1">
+                    <span>List przewozowy: </span>
+                    <a
+                      href={o.apaczka_tracking_url || '#'}
+                      target={o.apaczka_tracking_url ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                      onClick={(e) => {
+                        if (!o.apaczka_tracking_url) {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(o.tracking_number);
+                          toast.info('Numer listu skopiowany');
+                        }
+                      }}
+                    >
+                      {o.tracking_number}
+                    </a>
+                  </div>
+                )}
+                {o.invoice && (
+                  <div className="text-xs mt-1">
+                    <span>Faktura: </span>
+                    <a
+                      href="#"
+                      className="text-primary hover:underline"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const session = await supabase.auth.getSession();
+                          const token = session.data.session?.access_token;
+                          const res = await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${token}`,
+                                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                              },
+                              body: JSON.stringify({
+                                action: 'get_pdf_url',
+                                instanceId,
+                                invoiceId: o.invoice.id,
+                              }),
+                            },
+                          );
+                          if (!res.ok) throw new Error();
+                          const contentType = res.headers.get('content-type') || '';
+                          if (contentType.includes('application/pdf')) {
+                            const blob = await res.blob();
+                            window.open(URL.createObjectURL(blob), '_blank');
+                          } else {
+                            const json = await res.json();
+                            if (json.pdf_url) window.open(json.pdf_url, '_blank');
+                            else toast.error('PDF niedostępny');
+                          }
+                        } catch {
+                          toast.error('Nie udało się pobrać PDF');
+                        }
+                      }}
+                    >
+                      {o.invoice.invoice_number || 'Pobierz'}
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
           </div>

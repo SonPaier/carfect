@@ -34,6 +34,7 @@ async function fakturowniaCreateInvoice(
       oid_unique: invoiceData.oid ? 'yes' : undefined,
       ...(invoiceData.place ? { place: invoiceData.place } : {}),
       ...(invoiceData.seller_person ? { seller_person: invoiceData.seller_person } : {}),
+      ...(invoiceData.bank_account ? { bank_account: invoiceData.bank_account } : {}),
       positions: invoiceData.positions.map((p: any) => ({
         name: p.name,
         tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),
@@ -256,7 +257,10 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,

@@ -19,7 +19,18 @@ const mockFunctionsInvoke = vi.fn();
 
 const createChainMock = (resolveData: unknown = null, resolveError: unknown = null) => {
   const chain: Record<string, unknown> = {};
-  const methods = ['select', 'eq', 'order', 'limit', 'single', 'maybeSingle', 'insert', 'update', 'delete', 'upsert'];
+  const methods = [
+    'select',
+    'eq',
+    'order',
+    'limit',
+    'single',
+    'maybeSingle',
+    'insert',
+    'update',
+    'delete',
+    'upsert',
+  ];
   methods.forEach((method) => {
     chain[method] = vi.fn(() => chain);
   });
@@ -60,9 +71,8 @@ const customerData = {
 };
 
 function setupMocks(overrides: { settingsActive?: boolean } = {}) {
-  const activeSettings = overrides.settingsActive === false
-    ? { ...settingsData, active: false }
-    : settingsData;
+  const activeSettings =
+    overrides.settingsActive === false ? { ...settingsData, active: false } : settingsData;
 
   mockFrom.mockImplementation((table: string) => {
     if (table === 'invoicing_settings') return createChainMock(activeSettings);
@@ -88,9 +98,7 @@ function renderDrawer(props: Record<string, unknown> = {}) {
     customerName: 'FIRMA TEST',
     customerEmail: 'test@firma.pl',
     customerNip: '1234567890',
-    positions: [
-      { name: 'Crystal XP', quantity: 2, unit_price_gross: 75.65, vat_rate: 23 },
-    ],
+    positions: [{ name: 'Crystal XP', quantity: 2, unit_price_gross: 75.65, vat_rate: 23 }],
     supabaseClient: mockSupabaseClient,
     customerTable: 'sales_customers',
   };
@@ -193,9 +201,7 @@ describe('CreateInvoiceDrawer', () => {
       setupMocks({ settingsActive: false });
       renderDrawer();
       await waitFor(() => {
-        expect(
-          screen.getByText(/Skonfiguruj integracje fakturowania/i),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/Skonfiguruj integracje fakturowania/i)).toBeInTheDocument();
       });
     });
   });

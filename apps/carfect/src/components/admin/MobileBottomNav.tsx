@@ -1,17 +1,38 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, List, Plus, MoreHorizontal, Users, FileText, Settings, LogOut, X, ClipboardCheck, UsersRound, ArrowLeftRight } from 'lucide-react';
+import {
+  Building2,
+  Calendar,
+  List,
+  Plus,
+  MoreHorizontal,
+  Users,
+  FileText,
+  Settings,
+  LogOut,
+  X,
+  ClipboardCheck,
+  UsersRound,
+  ArrowLeftRight,
+} from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 
-
-type ViewType = 'calendar' | 'reservations' | 'customers' | 'pricelist' | 'settings' | 'offers' | 'products' | 'followup' | 'notifications' | 'halls' | 'protocols' | 'reminders' | 'employees';
+type ViewType =
+  | 'calendar'
+  | 'reservations'
+  | 'customers'
+  | 'pricelist'
+  | 'settings'
+  | 'offers'
+  | 'products'
+  | 'followup'
+  | 'notifications'
+  | 'halls'
+  | 'protocols'
+  | 'reminders'
+  | 'employees';
 
 interface MobileBottomNavProps {
   currentView: ViewType;
@@ -58,34 +79,51 @@ const MobileBottomNav = ({
   };
 
   // Menu items - simplified for hall role (only halls and protocols)
-  const moreMenuItems = userRole === 'hall' 
-    ? [
-        // Hall role: only Hale and Protokoły
-        ...(hallViewEnabled ? [{ id: 'halls' as ViewType, icon: Building2, label: t('navigation.halls') }] : []),
-        ...(protocolsEnabled ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: 'Protokoły' }] : []),
-      ]
-    : [
-        // Full menu for admin/employee - nowa kolejność
-        // 1. Kalendarz
-        { id: 'calendar' as ViewType, icon: Calendar, label: 'Kalendarz' },
-        // 2. Rezerwacje
-        { id: 'reservations' as ViewType, icon: List, label: 'Rezerwacje' },
-        // 3. Oferty (when enabled)
-        ...(offersEnabled ? [{ id: 'offers' as ViewType, icon: FileText, label: t('navigation.offers') }] : []),
-        // 4. Protokoły (when enabled)
-        ...(protocolsEnabled ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: 'Protokoły' }] : []),
-        // 5. Klienci
-        { id: 'customers' as ViewType, icon: Users, label: t('navigation.customers') },
-        // 6. Pracownicy (admin only)
-        ...(userRole !== 'employee' ? [{ id: 'employees' as ViewType, icon: UsersRound, label: 'Pracownicy' }] : []),
-        // 7. Usługi (admin only)
-        ...(userRole !== 'employee' ? [{ id: 'pricelist' as ViewType, icon: FileText, label: 'Usługi' }] : []),
-        // 8. Powiadomienia - ukryte
-        // 9. Ustawienia (admin only, always last)
-        ...(userRole !== 'employee' ? [{ id: 'settings' as ViewType, icon: Settings, label: t('navigation.settings') }] : []),
-        // Hale (when enabled)
-        ...(hallViewEnabled ? [{ id: 'halls' as ViewType, icon: Building2, label: t('navigation.halls') }] : []),
-      ];
+  const moreMenuItems =
+    userRole === 'hall'
+      ? [
+          // Hall role: only Hale and Protokoły
+          ...(hallViewEnabled
+            ? [{ id: 'halls' as ViewType, icon: Building2, label: t('navigation.halls') }]
+            : []),
+          ...(protocolsEnabled
+            ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: 'Protokoły' }]
+            : []),
+        ]
+      : [
+          // Full menu for admin/employee - nowa kolejność
+          // 1. Kalendarz
+          { id: 'calendar' as ViewType, icon: Calendar, label: 'Kalendarz' },
+          // 2. Rezerwacje
+          { id: 'reservations' as ViewType, icon: List, label: 'Rezerwacje' },
+          // 3. Oferty (when enabled)
+          ...(offersEnabled
+            ? [{ id: 'offers' as ViewType, icon: FileText, label: t('navigation.offers') }]
+            : []),
+          // 4. Protokoły (when enabled)
+          ...(protocolsEnabled
+            ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: 'Protokoły' }]
+            : []),
+          // 5. Klienci
+          { id: 'customers' as ViewType, icon: Users, label: t('navigation.customers') },
+          // 6. Pracownicy (admin only)
+          ...(userRole !== 'employee'
+            ? [{ id: 'employees' as ViewType, icon: UsersRound, label: 'Pracownicy' }]
+            : []),
+          // 7. Usługi (admin only)
+          ...(userRole !== 'employee'
+            ? [{ id: 'pricelist' as ViewType, icon: FileText, label: 'Usługi' }]
+            : []),
+          // 8. Powiadomienia - ukryte
+          // 9. Ustawienia (admin only, always last)
+          ...(userRole !== 'employee'
+            ? [{ id: 'settings' as ViewType, icon: Settings, label: t('navigation.settings') }]
+            : []),
+          // Hale (when enabled)
+          ...(hallViewEnabled
+            ? [{ id: 'halls' as ViewType, icon: Building2, label: t('navigation.halls') }]
+            : []),
+        ];
 
   return (
     <>
@@ -95,8 +133,8 @@ const MobileBottomNav = ({
           {/* Kalendarz */}
           <button
             className={cn(
-              "h-12 w-12 flex items-center justify-center",
-              currentView === 'calendar' ? "text-primary" : "text-muted-foreground"
+              'h-12 w-12 flex items-center justify-center',
+              currentView === 'calendar' ? 'text-primary' : 'text-muted-foreground',
             )}
             onClick={() => onViewChange('calendar')}
           >
@@ -106,8 +144,8 @@ const MobileBottomNav = ({
           {/* Rezerwacje */}
           <button
             className={cn(
-              "h-12 w-12 flex items-center justify-center",
-              currentView === 'reservations' ? "text-primary" : "text-muted-foreground"
+              'h-12 w-12 flex items-center justify-center',
+              currentView === 'reservations' ? 'text-primary' : 'text-muted-foreground',
             )}
             onClick={() => onViewChange('reservations')}
           >
@@ -126,8 +164,8 @@ const MobileBottomNav = ({
           {/* Oferty */}
           <button
             className={cn(
-              "h-12 w-12 flex items-center justify-center",
-              currentView === 'offers' ? "text-primary" : "text-muted-foreground"
+              'h-12 w-12 flex items-center justify-center',
+              currentView === 'offers' ? 'text-primary' : 'text-muted-foreground',
             )}
             onClick={() => onViewChange('offers')}
           >
@@ -137,8 +175,10 @@ const MobileBottomNav = ({
           {/* Więcej */}
           <button
             className={cn(
-              "h-12 w-12 flex items-center justify-center relative",
-              ['settings', 'products', 'followup', 'notifications'].includes(currentView) ? "text-primary" : "text-muted-foreground"
+              'h-12 w-12 flex items-center justify-center relative',
+              ['settings', 'products', 'followup', 'notifications'].includes(currentView)
+                ? 'text-primary'
+                : 'text-muted-foreground',
             )}
             onClick={() => setMoreMenuOpen(true)}
           >
@@ -159,7 +199,7 @@ const MobileBottomNav = ({
             <SheetHeader className="p-6 pb-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <SheetTitle>{t('navigation.more')}</SheetTitle>
-                <button 
+                <button
                   type="button"
                   onClick={() => setMoreMenuOpen(false)}
                   className="p-2 rounded-full hover:bg-hover transition-colors"
@@ -176,8 +216,8 @@ const MobileBottomNav = ({
                     key={item.id}
                     onClick={() => handleMoreMenuItemClick(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-hover transition-colors",
-                      currentView === item.id && "bg-muted text-primary"
+                      'w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-hover transition-colors',
+                      currentView === item.id && 'bg-muted text-primary',
                     )}
                   >
                     <item.icon className="w-5 h-5" />

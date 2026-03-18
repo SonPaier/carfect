@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useInstanceData } from '@/hooks/useInstanceData';
+import { useSalesSettings } from './hooks/useSalesSettings';
 import { getNextOrderNumber } from './SalesOrdersView';
 import AddEditSalesCustomerDrawer from './AddEditSalesCustomerDrawer';
 import SalesProductSelectionDrawer from './SalesProductSelectionDrawer';
@@ -74,8 +75,10 @@ const AddSalesOrderDrawer = ({
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: instanceData } = useInstanceData(instanceId);
+  const { data: salesSettings } = useSalesSettings(instanceId);
   const bankAccounts = useMemo(() => {
-    const raw = instanceData?.bank_accounts;
+    // Prefer sales_instance_settings, fallback to instances
+    const raw = salesSettings?.bank_accounts ?? instanceData?.bank_accounts;
     if (!Array.isArray(raw) || raw.length === 0) return [];
     return raw
       .map((a: any) =>
@@ -84,7 +87,7 @@ const AddSalesOrderDrawer = ({
           : { name: a.name || '', number: a.number || '' },
       )
       .filter((a: { number: string }) => a.number.trim() !== '');
-  }, [instanceData?.bank_accounts]);
+  }, [salesSettings?.bank_accounts, instanceData?.bank_accounts]);
 
   // Hooks
   const customerSearch = useCustomerSearch(instanceId);

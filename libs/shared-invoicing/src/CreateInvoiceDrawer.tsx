@@ -21,6 +21,7 @@ interface CreateInvoiceDrawerProps {
   supabaseClient: any; // SupabaseClient
   /** Table to query/update customer data. Defaults to 'customers'. */
   customerTable?: string;
+  bankAccounts?: { name: string; number: string }[];
 }
 
 export function CreateInvoiceDrawer({
@@ -37,6 +38,7 @@ export function CreateInvoiceDrawer({
   onSuccess,
   supabaseClient,
   customerTable,
+  bankAccounts,
 }: CreateInvoiceDrawerProps) {
   const isMobile = useIsMobile();
 
@@ -53,6 +55,7 @@ export function CreateInvoiceDrawer({
     onClose,
     supabaseClient,
     customerTable,
+    bankAccounts,
   });
 
   return (
@@ -125,6 +128,9 @@ export function CreateInvoiceDrawer({
             autoSendEmail={form.autoSendEmail}
             onAutoSendEmailChange={form.setAutoSendEmail}
             settingsActive={form.settings?.active}
+            bankAccounts={form.bankAccounts}
+            selectedBankAccount={form.selectedBankAccount}
+            onBankAccountChange={form.setSelectedBankAccount}
           />
         </div>
 

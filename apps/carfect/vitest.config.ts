@@ -1,14 +1,14 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: "jsdom",
+    environment: 'jsdom',
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       reporter: ['text', 'html'],
       include: ['src/lib/**', 'src/hooks/**', 'src/components/**'],
@@ -16,10 +16,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@shared/ui": path.resolve(__dirname, "../../libs/ui/src/index.ts"),
-      "@shared/utils": path.resolve(__dirname, "../../libs/shared-utils/src/index.ts"),
-      "@shared/invoicing": path.resolve(__dirname, "../../libs/shared-invoicing/src/index.ts"),
+      '@': path.resolve(__dirname, './src'),
+      '@shared/ui': path.resolve(__dirname, '../../libs/ui/src/index.ts'),
+      '@shared/utils': path.resolve(__dirname, '../../libs/shared-utils/src/index.ts'),
+      '@shared/invoicing': path.resolve(__dirname, '../../libs/shared-invoicing/src/index.ts'),
     },
   },
 });

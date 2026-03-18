@@ -75,6 +75,20 @@ const SalesOrdersView = () => {
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
+  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([]);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('instances')
+      .select('bank_accounts')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data }: any) => {
+        if (data?.bank_accounts) setBankAccounts(data.bank_accounts);
+      });
+  }, [instanceId]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orders, setOrders] = useState<SalesOrder[]>([]);
@@ -186,6 +200,7 @@ const SalesOrdersView = () => {
           quantity: item.quantity,
           priceNet: Number(item.price_net),
           priceGross: Number(item.price_net) * 1.23,
+          unit: item.price_unit || 'szt.',
         })),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
@@ -257,6 +272,19 @@ const SalesOrdersView = () => {
     } catch (err: any) {
       toast.error('Błąd usuwania: ' + (err.message || ''));
     }
+  };
+
+  const handleOpenInvoiceDrawer = async (order: SalesOrder) => {
+    let customerDiscount = 0;
+    if (order.customerId) {
+      const { data: cust } = await (supabase
+        .from('sales_customers')
+        .select('discount_percent')
+        .eq('id', order.customerId)
+        .single() as any);
+      customerDiscount = cust?.discount_percent ?? 0;
+    }
+    setInvoiceDrawerState({ open: true, order: { ...order, customerDiscount } });
   };
 
   const handleEditOrder = async (order: SalesOrder) => {
@@ -549,15 +577,24 @@ const SalesOrdersView = () => {
                   <Fragment key={order.id}>
                     <TableRow
                       className="group hover:bg-hover-strong cursor-pointer"
-                      onClick={() => toggleExpand(order.id)}
+                      onClick={() => handleEditOrder(order)}
                     >
                       <TableCell className="text-sm">
                         <div className="flex items-center gap-1.5">
-                          {isExpanded ? (
-                            <ChevronDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
-                          )}
+                          <button
+                            type="button"
+                            className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(order.id);
+                            }}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                          </button>
                           {order.orderNumber}
                         </div>
                       </TableCell>
@@ -673,12 +710,48 @@ const SalesOrdersView = () => {
                             <DropdownMenuSeparator />
                             {order.invoiceId ? (
                               <DropdownMenuItem
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
                                   if (order.invoicePdfUrl) {
                                     window.open(order.invoicePdfUrl, '_blank');
-                                  } else {
-                                    toast.info('PDF faktury niedostępny');
+                                    return;
+                                  }
+                                  try {
+                                    toast.info('Pobieram PDF...');
+                                    const session = await supabase.auth.getSession();
+                                    const token = session.data.session?.access_token;
+                                    const res = await fetch(
+                                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
+                                      {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          Authorization: `Bearer ${token}`,
+                                          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                                        },
+                                        body: JSON.stringify({
+                                          action: 'get_pdf_url',
+                                          instanceId,
+                                          invoiceId: order.invoiceId,
+                                        }),
+                                      },
+                                    );
+                                    if (!res.ok) throw new Error(await res.text());
+                                    const contentType = res.headers.get('content-type') || '';
+                                    if (contentType.includes('application/pdf')) {
+                                      const blob = await res.blob();
+                                      const url = URL.createObjectURL(blob);
+                                      window.open(url, '_blank');
+                                    } else {
+                                      const json = await res.json();
+                                      if (json.pdf_url) {
+                                        window.open(json.pdf_url, '_blank');
+                                      } else {
+                                        toast.error('PDF faktury niedostępny');
+                                      }
+                                    }
+                                  } catch {
+                                    toast.error('Nie udało się pobrać PDF');
                                   }
                                 }}
                               >
@@ -688,7 +761,7 @@ const SalesOrdersView = () => {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setInvoiceDrawerState({ open: true, order });
+                                  handleOpenInvoiceDrawer(order);
                                 }}
                               >
                                 Wystaw FV
@@ -720,13 +793,14 @@ const SalesOrdersView = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() =>
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setDeleteConfirm({
                                   open: true,
                                   orderId: order.id,
                                   orderNumber: order.orderNumber,
-                                })
-                              }
+                                });
+                              }}
                             >
                               Usuń
                             </DropdownMenuItem>
@@ -875,10 +949,13 @@ const SalesOrdersView = () => {
             quantity: p.quantity,
             unit_price_gross: p.priceNet,
             vat_rate: 23,
+            unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
+            discount: invoiceDrawerState.order!.customerDiscount ?? 0,
           }))}
           onSuccess={fetchOrders}
           supabaseClient={supabase}
           customerTable="sales_customers"
+          bankAccounts={bankAccounts}
         />
       )}
     </div>

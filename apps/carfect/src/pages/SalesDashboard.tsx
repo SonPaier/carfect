@@ -14,7 +14,8 @@ import {
   ArrowLeftRight,
   X,
 } from 'lucide-react';
-import { useInstanceData } from '@/hooks/useInstanceData';
+import { supabase } from '@/integrations/supabase/client';
+import { useSalesSettings } from '@/components/sales/hooks/useSalesSettings';
 import SalesOrdersView from '@/components/sales/SalesOrdersView';
 import SalesProductsView from '@/components/sales/SalesProductsView';
 import SalesCustomersView from '@/components/sales/SalesCustomersView';
@@ -78,7 +79,20 @@ const SalesDashboard = () => {
   };
 
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
-  const { data: instanceData } = useInstanceData(instanceId);
+  const { data: salesSettings } = useSalesSettings(instanceId);
+  const [instanceData, setInstanceData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('instances')
+      .select('*')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data }) => {
+        if (data) setInstanceData(data);
+      });
+  }, [instanceId]);
 
   const navItems: {
     key: SalesViewType;
@@ -142,10 +156,10 @@ const SalesDashboard = () => {
                 sidebarCollapsed ? 'justify-center' : 'gap-3',
               )}
             >
-              {instanceData?.logo_url && (
+              {salesSettings?.logo_url && (
                 <img
-                  src={instanceData.logo_url}
-                  alt={instanceData.name}
+                  src={salesSettings.logo_url}
+                  alt={salesSettings.name}
                   className={cn(
                     'rounded-xl object-contain shrink-0 bg-white',
                     sidebarCollapsed ? 'w-10 h-10' : 'w-[40%] max-h-10',
@@ -155,7 +169,7 @@ const SalesDashboard = () => {
               {!sidebarCollapsed && (
                 <div className="text-left min-w-0 flex-1 pr-2">
                   <h1 className="font-bold text-foreground leading-tight">
-                    {instanceData?.name || 'Panel Sprzedaży'}
+                    {salesSettings?.name || 'Panel Sprzedaży'}
                   </h1>
                 </div>
               )}

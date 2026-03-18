@@ -20,6 +20,8 @@ export interface UseInvoiceFormOptions {
   supabaseClient: any; // SupabaseClient
   /** Table to query/update customer data. Defaults to 'customers'. */
   customerTable?: string;
+  /** Available bank accounts from instance config */
+  bankAccounts?: { name: string; number: string }[];
 }
 
 export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
@@ -36,6 +38,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     onClose,
     supabaseClient,
     customerTable = 'customers',
+    bankAccounts = [],
   } = options;
 
   const { settings } = useInvoicingSettings(instanceId, supabaseClient);
@@ -54,8 +57,9 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const [buyerCity, setBuyerCity] = useState('');
   const [buyerCountry, setBuyerCountry] = useState('PL');
   const [paymentType, setPaymentType] = useState<PaymentType>('transfer');
+  const [selectedBankAccount, setSelectedBankAccount] = useState('');
   const [positions, setPositions] = useState<InvoicePosition[]>([
-    { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23 },
+    { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23, unit: 'szt.', discount: 0 },
   ]);
 
   // Initialize from props/settings
@@ -74,6 +78,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerCity('');
     setBuyerCountry('PL');
     setAutoSendEmail(settings?.auto_send_email ?? false);
+    setSelectedBankAccount(bankAccounts[0]?.number || '');
     if (initialPositions?.length) {
       setPositions(initialPositions);
     }
@@ -144,7 +149,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
           quantity: s.quantity != null ? Number(s.quantity) : 1,
           unit_price_gross: s.custom_price ?? s.unified_services?.price ?? 0,
           vat_rate: settings?.default_vat_rate ?? 23,
-          unit: s.unified_services?.unit || 'szt',
+          unit: s.unified_services?.unit || 'szt.',
         }));
         setPositions(pos);
       }
@@ -165,7 +170,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     let netto = 0;
     let brutto = 0;
     for (const p of positions) {
-      const lineTotal = p.unit_price_gross * p.quantity;
+      const discountMultiplier = 1 - (p.discount || 0) / 100;
+      const lineTotal = p.unit_price_gross * p.quantity * discountMultiplier;
       // vat_rate -1 means "zwolniony" (exempt) — netto equals brutto
       if (p.vat_rate === -1) {
         netto += lineTotal;
@@ -181,13 +187,21 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         netto += lineTotal / (1 + rate);
       }
     }
-    return { totalNetto: netto, totalVat: brutto - netto, totalGross: brutto };
+    const r = (v: number) => Math.round(v * 100) / 100;
+    return { totalNetto: r(netto), totalVat: r(brutto - netto), totalGross: r(brutto) };
   }, [positions, priceMode]);
 
   const addPosition = () => {
     setPositions([
       ...positions,
-      { name: '', quantity: 1, unit_price_gross: 0, vat_rate: settings?.default_vat_rate ?? 23 },
+      {
+        name: '',
+        quantity: 1,
+        unit_price_gross: 0,
+        vat_rate: settings?.default_vat_rate ?? 23,
+        unit: 'szt.',
+        discount: 0,
+      },
     ]);
   };
 
@@ -213,15 +227,29 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       toast.error('Uzupelnij nazwy pozycji');
       return;
     }
+    if (positions.some((p) => p.quantity <= 0)) {
+      toast.error('Ilość musi być większa od 0');
+      return;
+    }
+    if (positions.some((p) => p.unit_price_gross < 0)) {
+      toast.error('Cena nie może być ujemna');
+      return;
+    }
+    if (paymentDays < 1) {
+      toast.error('Termin płatności musi wynosić min. 1 dzień');
+      return;
+    }
 
-    // Always convert positions to brutto for the API
+    // Always convert positions to brutto for the API, applying discount
     const grossPositions = positions.map((p) => {
+      const discountMultiplier = 1 - (p.discount || 0) / 100;
+      const discountedPrice = Math.round(p.unit_price_gross * discountMultiplier * 100) / 100;
       if (priceMode === 'netto') {
-        if (p.vat_rate === -1) return p; // exempt — netto equals brutto
+        if (p.vat_rate === -1) return { ...p, unit_price_gross: discountedPrice, discount: 0 };
         const rate = p.vat_rate / 100;
-        return { ...p, unit_price_gross: p.unit_price_gross * (1 + rate) };
+        return { ...p, unit_price_gross: Math.round(discountedPrice * (1 + rate) * 100) / 100, discount: 0 };
       }
-      return p;
+      return { ...p, unit_price_gross: discountedPrice, discount: 0 };
     });
 
     setSubmitting(true);
@@ -249,6 +277,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
             buyer_country: buyerCountry || 'PL',
             place: settings?.default_place || undefined,
             seller_person: settings?.default_seller_person || undefined,
+            bank_account: selectedBankAccount || undefined,
             currency: 'PLN',
             positions: grossPositions,
             oid: calendarItemId,
@@ -330,6 +359,9 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     totalGross,
     autoSendEmail,
     setAutoSendEmail,
+    bankAccounts,
+    selectedBankAccount,
+    setSelectedBankAccount,
     addPosition,
     removePosition,
     updatePosition,
