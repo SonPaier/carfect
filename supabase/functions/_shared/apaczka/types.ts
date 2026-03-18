@@ -113,6 +113,9 @@ export interface OrderPackage {
   shippingMethod: "shipping" | "pickup" | "uber";
   packagingType?: "karton" | "tuba";
   dimensions?: KartonDimensions | TubaDimensions;
+  weight?: number;
+  contents?: string;
+  oversized?: boolean;
   productKeys: string[];
 }
 

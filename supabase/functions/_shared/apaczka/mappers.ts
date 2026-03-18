@@ -94,7 +94,7 @@ export function mapOrderToApaczkaRequest(params: {
     pickup: buildDefaultPickup(),
     shipment: shipmentItems,
     comment: (order.comment as string) || "",
-    content: "Produkty",
+    content: buildContentDescription(packages),
     is_zebra: 0,
   };
 
@@ -152,14 +152,17 @@ export function mapPackagesToShipmentItems(
   return packages
     .filter((pkg) => pkg.shippingMethod === "shipping")
     .map((pkg) => {
+      const weight = pkg.weight || DEFAULT_WEIGHT_KG;
+      const isNstd = pkg.oversized ? 1 : 0;
+
       if (pkg.packagingType === "tuba") {
         const dims = pkg.dimensions as TubaDimensions | undefined;
         return {
           dimension1: dims?.length || 0,
           dimension2: dims?.diameter || 0,
           dimension3: 0,
-          weight: DEFAULT_WEIGHT_KG,
-          is_nstd: 0,
+          weight,
+          is_nstd: isNstd,
           shipment_type_code: "RURA",
           customs_data: [],
         };
@@ -170,12 +173,20 @@ export function mapPackagesToShipmentItems(
         dimension1: dims?.length || 0,
         dimension2: dims?.width || 0,
         dimension3: dims?.height || 0,
-        weight: DEFAULT_WEIGHT_KG,
-        is_nstd: 0,
+        weight,
+        is_nstd: isNstd,
         shipment_type_code: "PACZKA",
         customs_data: [],
       };
     });
+}
+
+function buildContentDescription(packages: OrderPackage[]): string {
+  const contents = packages
+    .filter((p) => p.shippingMethod === "shipping" && p.contents)
+    .map((p) => p.contents!.trim())
+    .filter(Boolean);
+  return contents.length > 0 ? contents.join(", ") : "Produkty";
 }
 
 function buildCod(totalGross: number, bankAccountNumber: string): ApaczkaCod {
