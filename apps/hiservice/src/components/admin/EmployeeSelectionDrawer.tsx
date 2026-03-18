@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Check, X } from 'lucide-react';
-import { format, eachDayOfInterval, parseISO, isWithinInterval } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useEmployeeDaysOff, DAY_OFF_TYPE_LABELS } from '@/hooks/useEmployeeDaysOff';
+import { useEmployeeDaysOff } from '@/hooks/useEmployeeDaysOff';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import type { Employee } from '@/hooks/useEmployees';
 import type { EmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
 
@@ -21,6 +23,9 @@ interface EmployeeSelectionDrawerProps {
   instanceId?: string | null;
   orderDateFrom?: string | null; // yyyy-MM-dd
   orderDateTo?: string | null; // yyyy-MM-dd
+  orderStartTime?: string | null; // HH:mm
+  orderEndTime?: string | null; // HH:mm
+  editingItemId?: string | null; // exclude current item from conflict check
 }
 
 /** Check if an employee has days off overlapping with the order date range */
@@ -52,6 +57,30 @@ function formatDayOffLabel(d: EmployeeDayOff): string {
   return `Nieobecny ${format(from, 'd MMM', { locale: pl })} – ${format(to, 'd MMM', { locale: pl })}`;
 }
 
+interface CalendarItemConflict {
+  id: string;
+  title: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  item_date: string;
+  assigned_employee_ids: string[] | null;
+}
+
+function getEmployeeConflicts(
+  employeeId: string,
+  items: CalendarItemConflict[],
+  orderStartTime: string | null | undefined,
+  orderEndTime: string | null | undefined,
+): CalendarItemConflict[] {
+  return items.filter((item) => {
+    if (!item.assigned_employee_ids?.includes(employeeId)) return false;
+    // If no times on either side, treat as full-day conflict
+    if (!orderStartTime || !orderEndTime || !item.start_time || !item.end_time) return true;
+    // Time ranges overlap if one starts before the other ends
+    return orderStartTime < item.end_time && orderEndTime > item.start_time;
+  });
+}
+
 const EmployeeSelectionDrawer = ({
   open,
   onClose,
@@ -62,11 +91,39 @@ const EmployeeSelectionDrawer = ({
   instanceId,
   orderDateFrom,
   orderDateTo,
+  orderStartTime,
+  orderEndTime,
+  editingItemId,
 }: EmployeeSelectionDrawerProps) => {
   const isMobile = useIsMobile();
   const [localSelected, setLocalSelected] = useState<string[]>(selectedIds);
 
   const { data: allDaysOff = [] } = useEmployeeDaysOff(instanceId || null);
+
+  // Fetch calendar items in date range to detect busy employees
+  const { data: conflictItems = [] } = useQuery({
+    queryKey: ['employee_conflicts', instanceId, orderDateFrom, orderDateTo, editingItemId],
+    queryFn: async (): Promise<CalendarItemConflict[]> => {
+      if (!instanceId || !orderDateFrom) return [];
+      const dateTo = orderDateTo || orderDateFrom;
+      let query = supabase
+        .from('calendar_items')
+        .select('id, title, start_time, end_time, item_date, assigned_employee_ids')
+        .eq('instance_id', instanceId)
+        .not('assigned_employee_ids', 'is', null)
+        .not('status', 'eq', 'cancelled')
+        .lte('item_date', dateTo)
+        .or(`end_date.gte.${orderDateFrom},end_date.is.null,item_date.gte.${orderDateFrom}`);
+      if (editingItemId) {
+        query = query.neq('id', editingItemId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!instanceId && !!orderDateFrom && open,
+    staleTime: 30 * 1000,
+  });
 
   useEffect(() => {
     if (open) setLocalSelected(selectedIds);
@@ -98,6 +155,16 @@ const EmployeeSelectionDrawer = ({
     }
     return map;
   }, [activeEmployees, allDaysOff, orderDateFrom, orderDateTo]);
+
+  // Pre-compute busy conflicts per employee
+  const employeeBusyMap = useMemo(() => {
+    const map = new Map<string, CalendarItemConflict[]>();
+    for (const emp of activeEmployees) {
+      const conflicts = getEmployeeConflicts(emp.id, conflictItems, orderStartTime, orderEndTime);
+      if (conflicts.length > 0) map.set(emp.id, conflicts);
+    }
+    return map;
+  }, [activeEmployees, conflictItems, orderStartTime, orderEndTime]);
 
   const content = (
     <div className="flex flex-col h-full">
@@ -136,7 +203,7 @@ const EmployeeSelectionDrawer = ({
         {activeEmployees.map((emp) => {
           const isSelected = localSelected.includes(emp.id);
           const overlaps = employeeDaysOffMap.get(emp.id);
-          const hasConflict = !!overlaps;
+          const busyItems = employeeBusyMap.get(emp.id);
 
           return (
             <button
@@ -158,12 +225,16 @@ const EmployeeSelectionDrawer = ({
               </Avatar>
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium block">{emp.name}</span>
-                {hasConflict &&
-                  overlaps!.map((d) => (
-                    <span key={d.id} className="text-[11px] text-destructive block">
-                      {formatDayOffLabel(d)}
-                    </span>
-                  ))}
+                {overlaps?.map((d) => (
+                  <span key={d.id} className="text-[11px] text-destructive block">
+                    {formatDayOffLabel(d)}
+                  </span>
+                ))}
+                {busyItems?.map((item) => (
+                  <span key={item.id} className="text-[11px] text-orange-500 block">
+                    Zajęty {item.start_time && item.end_time ? `${item.start_time}–${item.end_time}` : ''}{item.title ? ` · ${item.title}` : ''}
+                  </span>
+                ))}
               </div>
               {singleSelect ? (
                 <div className="w-5 h-5 rounded-full border-2 border-border flex items-center justify-center shrink-0">

@@ -1,18 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useEmployees, Employee } from '@/hooks/useEmployees';
-import { useTimeEntriesForDateRange, calculateMonthlySummary, formatMinutesToTime, TimeEntry } from '@/hooks/useTimeEntries';
-import { useEmployeeDaysOff, DAY_OFF_TYPE_LABELS, DayOffType, EmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
+import { useTimeEntriesForDateRange, calculateMonthlySummary, formatMinutesToTime, getEffectiveMinutes, TimeEntry } from '@/hooks/useTimeEntries';
+import { useEmployeeDaysOff } from '@/hooks/useEmployeeDaysOff';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, ChevronLeft, ChevronRight, Loader2, User, Settings2, CalendarOff, MoreVertical, FileText, ClipboardList } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { format, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, getISOWeek, addWeeks, subWeeks, isWithinInterval, eachDayOfInterval, isSameMonth, isSameWeek, getDay, isWeekend, getWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, getISOWeek, addWeeks, subWeeks, eachDayOfInterval, getDay, getWeek } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import AddEditEmployeeDialog from './AddEditEmployeeDialog';
@@ -26,10 +25,6 @@ import AddEditTimeEntryDialog from './AddEditTimeEntryDialog';
 const WEEKDAY_TO_KEY: Record<number, string> = {
   0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
   4: 'thursday', 5: 'friday', 6: 'saturday',
-};
-
-const WEEKDAY_SHORT: Record<number, string> = {
-  0: 'ND', 1: 'PN', 2: 'WT', 3: 'ŚR', 4: 'CZ', 5: 'PT', 6: 'SB',
 };
 
 interface EmployeesViewProps {
@@ -70,9 +65,6 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const dateFrom = isWeeklyMode ? format(weekStart, 'yyyy-MM-dd') : format(monthStart, 'yyyy-MM-dd');
   const dateTo = isWeeklyMode ? format(weekEnd, 'yyyy-MM-dd') : format(monthEnd, 'yyyy-MM-dd');
   
-  const periodStart = isWeeklyMode ? weekStart : monthStart;
-  const periodEnd = isWeeklyMode ? weekEnd : monthEnd;
-
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees(instanceId);
   const { data: timeEntries = [], isLoading: loadingEntries } = useTimeEntriesForDateRange(instanceId, dateFrom, dateTo);
   const { data: daysOff = [], isLoading: loadingDaysOff } = useEmployeeDaysOff(instanceId, null);
@@ -207,7 +199,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       const ds = format(day, 'yyyy-MM-dd');
       const entries = empMap.get(ds);
       if (!entries) return sum;
-      return sum + entries.reduce((s, e) => s + (e.total_minutes || 0), 0);
+      return sum + entries.reduce((s, e) => s + getEffectiveMinutes(e), 0);
     }, 0);
   };
 
@@ -241,63 +233,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     }, 0);
   }, [activeEmployees, periodSummary, preOpeningByEmployee, timeCalculationMode]);
 
-  const getDaysOffForEmployee = (employeeId: string) => {
-    return daysOff.filter(d => {
-      if (d.employee_id !== employeeId) return false;
-      const from = parseISO(d.date_from);
-      const to = parseISO(d.date_to);
-      return from <= periodEnd && to >= periodStart;
-    });
+  const isEmployeeDayOff = (employeeId: string, dateStr: string) => {
+    return daysOff.some(d => d.employee_id === employeeId && dateStr >= d.date_from && dateStr <= d.date_to);
   };
 
-  type DayOffLine = { from: string; to: string | null };
-  
-  const formatDaysOffForPeriodLines = (employeeDaysOff: EmployeeDayOff[]): DayOffLine[] => {
-    const allDates: Date[] = [];
-    employeeDaysOff.forEach(item => {
-      const from = parseISO(item.date_from);
-      const to = parseISO(item.date_to);
-      const daysInRange = eachDayOfInterval({ start: from, end: to });
-      daysInRange.forEach(day => {
-        const isInPeriod = isWeeklyMode 
-          ? isSameWeek(day, currentDate, { weekStartsOn: 1 })
-          : isSameMonth(day, currentDate);
-        if (isInPeriod) allDates.push(day);
-      });
-    });
-    if (allDates.length === 0) return [];
-    allDates.sort((a, b) => a.getTime() - b.getTime());
-    const uniqueDates = allDates.filter((d, i, arr) => i === 0 || d.getTime() !== arr[i-1].getTime());
-
-    const formatDateWithDay = (date: Date) => {
-      const dayNum = format(date, 'd');
-      const monthName = format(date, 'LLLL', { locale: pl });
-      const weekday = WEEKDAY_SHORT[getDay(date)];
-      return `${dayNum} ${monthName} (${weekday})`;
-    };
-
-    const lines: DayOffLine[] = [];
-    let rangeStart: Date | null = null;
-    let rangeEnd: Date | null = null;
-
-    uniqueDates.forEach((date, idx) => {
-      const prevDate = uniqueDates[idx - 1];
-      const isConsecutive = prevDate && (date.getTime() - prevDate.getTime()) === 24 * 60 * 60 * 1000;
-      if (isConsecutive && rangeStart) {
-        rangeEnd = date;
-      } else {
-        if (rangeStart) {
-          lines.push({ from: formatDateWithDay(rangeStart), to: rangeEnd ? formatDateWithDay(rangeEnd) : null });
-        }
-        rangeStart = date;
-        rangeEnd = null;
-      }
-    });
-    if (rangeStart) {
-      lines.push({ from: formatDateWithDay(rangeStart), to: rangeEnd ? formatDateWithDay(rangeEnd) : null });
-    }
-    return lines;
-  };
 
   const handlePrevPeriod = () => {
     if (isWeeklyMode) setCurrentDate(subWeeks(currentDate, 1));
@@ -415,9 +354,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               </TableHeader>
               <TableBody>
                 {weeks.map((week, wi) => {
-                  const today = format(new Date(), 'yyyy-MM-dd');
-                  const visibleDays = week.days.filter(day => format(day, 'yyyy-MM-dd') <= today);
-                  if (visibleDays.length === 0) return null;
+                  const visibleDays = week.days;
                   return (
                     <>
                       {visibleDays.map(day => {
@@ -431,19 +368,25 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                               const empMap = entriesByEmployeeAndDate.get(emp.id);
                               const entries = empMap?.get(dateStr);
                               const hasEntry = entries && entries.length > 0;
-                              const totalMin = hasEntry ? entries.reduce((s, e) => s + (e.total_minutes || 0), 0) : 0;
+                              const totalMin = hasEntry ? entries.reduce((s, e) => s + getEffectiveMinutes(e), 0) : 0;
                               const displayTime = totalMin > 0 ? formatMinutesToTime(totalMin) : '';
                               const firstEntry = hasEntry ? entries[0] : null;
                                const startT = firstEntry?.start_time ? firstEntry.start_time.slice(11, 16) : undefined;
                                const endT = firstEntry?.end_time ? firstEntry.end_time.slice(11, 16) : undefined;
                               const hasStartEnd = startT && endT;
+                              const isDayOff = isEmployeeDayOff(emp.id, dateStr);
                               return (
                                 <TableCell
                                   key={emp.id}
-                                  className="text-center cursor-pointer hover:bg-primary/5 transition-colors p-1 border-r last:border-r-0"
+                                  className={cn(
+                                    "text-center cursor-pointer hover:bg-primary/5 transition-colors p-1 border-r last:border-r-0",
+                                    isDayOff && "bg-orange-50 dark:bg-orange-950/20"
+                                  )}
                                   onClick={() => handleCellClick(emp.id, day)}
                                 >
-                                  {displayTime ? (
+                                  {isDayOff ? (
+                                    <span className="text-xs font-medium text-orange-500">Wolne</span>
+                                  ) : displayTime ? (
                                     <div className="flex flex-col items-center">
                                       {hasStartEnd && (
                                         <span className="text-[10px] text-muted-foreground leading-tight">{startT}-{endT}</span>
@@ -512,48 +455,6 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
             </Table>
           </div>
 
-          {(() => {
-            const employeesWithDaysOff = activeEmployees
-              .map(emp => ({ employee: emp, daysOffLines: formatDaysOffForPeriodLines(getDaysOffForEmployee(emp.id)) }))
-              .filter(item => item.daysOffLines.length > 0);
-            if (employeesWithDaysOff.length === 0) return null;
-            return (
-              <div className="mt-6 space-y-3">
-                <h3 className="font-medium text-muted-foreground">Nieobecności</h3>
-                <div className="space-y-2">
-                  {employeesWithDaysOff.map(({ employee, daysOffLines }) => (
-                    <div key={employee.id} className="flex items-start gap-3 p-3 border rounded-lg bg-card">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={employee.photo_url || undefined} alt={employee.name} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                          {employee.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium mb-1">{employee.name}</div>
-                        <div className="text-sm space-y-1.5">
-                          {daysOffLines.map((line, idx) => (
-                            <div key={idx}>
-                              {line.to ? (
-                                <>
-                                  <span className="text-muted-foreground">od </span>
-                                  <span className="font-medium text-foreground">{line.from}</span>
-                                  <span className="text-muted-foreground"> do </span>
-                                  <span className="font-medium text-foreground">{line.to}</span>
-                                </>
-                              ) : (
-                                <span className="font-medium text-foreground">{line.from}</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
         </>
       )}
 

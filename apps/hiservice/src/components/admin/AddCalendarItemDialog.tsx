@@ -1239,6 +1239,9 @@ const AddCalendarItemDialog = ({
         instanceId={instanceId}
         orderDateFrom={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : null}
         orderDateTo={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null}
+        orderStartTime={startTime || null}
+        orderEndTime={endTime || null}
+        editingItemId={editingItem?.id || null}
       />
 
       {/* Customer Detail Drawer */}
