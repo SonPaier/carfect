@@ -55,6 +55,9 @@ interface InvoiceFormProps {
   autoSendEmail: boolean;
   onAutoSendEmailChange: (v: boolean) => void;
   settingsActive?: boolean;
+  bankAccounts?: { name: string; number: string }[];
+  selectedBankAccount?: string;
+  onBankAccountChange?: (v: string) => void;
 }
 
 export function InvoiceForm({
@@ -95,6 +98,9 @@ export function InvoiceForm({
   autoSendEmail,
   onAutoSendEmailChange,
   settingsActive,
+  bankAccounts = [],
+  selectedBankAccount = '',
+  onBankAccountChange,
 }: InvoiceFormProps) {
   const [nipLoading, setNipLoading] = useState(false);
   const priceLabel = priceMode === 'netto' ? 'Cena netto' : 'Cena brutto';
@@ -205,6 +211,24 @@ export function InvoiceForm({
           </Select>
         </div>
       </div>
+
+      {bankAccounts.length > 0 && (
+        <div className="space-y-1.5">
+          <Label className="text-xs">Konto bankowe</Label>
+          <Select value={selectedBankAccount} onValueChange={(v) => onBankAccountChange?.(v)}>
+            <SelectTrigger className="bg-white h-9">
+              <SelectValue placeholder="Wybierz konto" />
+            </SelectTrigger>
+            <SelectContent>
+              {bankAccounts.map((acc) => (
+                <SelectItem key={acc.number} value={acc.number}>
+                  {acc.name ? `${acc.name} — ${acc.number}` : acc.number}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <Separator />
 

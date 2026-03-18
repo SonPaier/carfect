@@ -34,6 +34,7 @@ async function fakturowniaCreateInvoice(
       oid_unique: invoiceData.oid ? 'yes' : undefined,
       ...(invoiceData.place ? { place: invoiceData.place } : {}),
       ...(invoiceData.seller_person ? { seller_person: invoiceData.seller_person } : {}),
+      ...(invoiceData.bank_account ? { bank_account: invoiceData.bank_account } : {}),
       positions: invoiceData.positions.map((p: any) => ({
         name: p.name,
         tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),

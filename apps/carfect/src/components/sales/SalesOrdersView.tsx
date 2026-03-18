@@ -75,6 +75,20 @@ const SalesOrdersView = () => {
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
+  const [bankAccounts, setBankAccounts] = useState<{ name: string; number: string }[]>([]);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('instances')
+      .select('bank_accounts')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data }: any) => {
+        if (data?.bank_accounts) setBankAccounts(data.bank_accounts);
+      });
+  }, [instanceId]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orders, setOrders] = useState<SalesOrder[]>([]);
@@ -905,6 +919,7 @@ const SalesOrdersView = () => {
           onSuccess={fetchOrders}
           supabaseClient={supabase}
           customerTable="sales_customers"
+          bankAccounts={bankAccounts}
         />
       )}
     </div>

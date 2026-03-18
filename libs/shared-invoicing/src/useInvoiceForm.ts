@@ -20,6 +20,8 @@ export interface UseInvoiceFormOptions {
   supabaseClient: any; // SupabaseClient
   /** Table to query/update customer data. Defaults to 'customers'. */
   customerTable?: string;
+  /** Available bank accounts from instance config */
+  bankAccounts?: { name: string; number: string }[];
 }
 
 export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
@@ -36,6 +38,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     onClose,
     supabaseClient,
     customerTable = 'customers',
+    bankAccounts = [],
   } = options;
 
   const { settings } = useInvoicingSettings(instanceId, supabaseClient);
@@ -54,6 +57,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const [buyerCity, setBuyerCity] = useState('');
   const [buyerCountry, setBuyerCountry] = useState('PL');
   const [paymentType, setPaymentType] = useState<PaymentType>('transfer');
+  const [selectedBankAccount, setSelectedBankAccount] = useState('');
   const [positions, setPositions] = useState<InvoicePosition[]>([
     { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23, unit: 'szt.', discount: 0 },
   ]);
@@ -74,6 +78,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerCity('');
     setBuyerCountry('PL');
     setAutoSendEmail(settings?.auto_send_email ?? false);
+    setSelectedBankAccount(bankAccounts[0]?.number || '');
     if (initialPositions?.length) {
       setPositions(initialPositions);
     }
@@ -269,6 +274,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
             buyer_country: buyerCountry || 'PL',
             place: settings?.default_place || undefined,
             seller_person: settings?.default_seller_person || undefined,
+            bank_account: selectedBankAccount || undefined,
             currency: 'PLN',
             positions: grossPositions,
             oid: calendarItemId,
@@ -350,6 +356,9 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     totalGross,
     autoSendEmail,
     setAutoSendEmail,
+    bankAccounts,
+    selectedBankAccount,
+    setSelectedBankAccount,
     addPosition,
     removePosition,
     updatePosition,
