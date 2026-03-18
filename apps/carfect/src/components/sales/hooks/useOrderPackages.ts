@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 export type DeliveryType = 'shipping' | 'pickup' | 'uber';
 export type PackagingType = 'karton' | 'tuba' | 'koperta';
-export type CourierType = 'dpd' | 'dhl' | 'inpost' | 'pocztex';
+/** @deprecated Use courierServiceId (number) instead */
+export type CourierType = string;
 
 export interface KartonDimensions {
   length: number;
@@ -21,6 +22,7 @@ export interface OrderPackage {
   packagingType?: PackagingType;
   dimensions?: KartonDimensions | TubaDimensions;
   courier?: CourierType;
+  courierServiceId?: number;
   weight?: number;
   contents?: string;
   declaredValue?: number;
@@ -62,7 +64,8 @@ export const createDefaultPackage = (): OrderPackage => ({
   shippingMethod: 'shipping',
   packagingType: 'karton',
   dimensions: { length: 0, width: 0, height: 0 },
-  courier: 'dpd',
+  courier: undefined,
+  courierServiceId: undefined,
   weight: 1,
   contents: '',
   declaredValue: 0,
@@ -261,7 +264,8 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
             shippingMethod: method,
             packagingType: pkg.packagingType || 'karton',
             dimensions: pkg.dimensions || { length: 0, width: 0, height: 0 },
-            courier: pkg.courier || 'dpd',
+            courier: pkg.courier,
+            courierServiceId: pkg.courierServiceId,
             weight: pkg.weight ?? 1,
             contents: pkg.contents ?? '',
             declaredValue: pkg.declaredValue ?? 0,
@@ -274,6 +278,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
           packagingType: undefined,
           dimensions: undefined,
           courier: undefined,
+          courierServiceId: undefined,
           weight: undefined,
           contents: undefined,
           declaredValue: undefined,
@@ -307,8 +312,8 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
-  const updatePackageCourier = (packageId: string, courier: CourierType) => {
-    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, courier } : pkg)));
+  const updatePackageCourier = (packageId: string, courierServiceId: number, courierName: string) => {
+    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, courierServiceId, courier: courierName } : pkg)));
   };
 
   const updatePackageWeight = (packageId: string, weight: number) => {

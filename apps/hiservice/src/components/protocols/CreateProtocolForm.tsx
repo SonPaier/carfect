@@ -21,6 +21,8 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import CustomerSearchInput, { type SelectedCustomer } from '@/components/admin/CustomerSearchInput';
 import CustomerAddressSelect from '@/components/admin/CustomerAddressSelect';
+import CustomerEditDrawer from '@/components/admin/CustomerEditDrawer';
+import type { Customer } from '@/components/admin/CustomersView';
 import { ProtocolPhotosUploader } from './ProtocolPhotosUploader';
 import SignatureDialog from './SignatureDialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
@@ -75,6 +77,10 @@ const CreateProtocolForm = ({
   const [preparedBy, setPreparedBy] = useState('');
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
+  const [customerDetailData, setCustomerDetailData] = useState<Customer | null>(null);
+  // Delayed mount: protocol Sheet must fully unmount before CustomerEditDrawer mounts
+  const [customerDrawerMounted, setCustomerDrawerMounted] = useState(false);
+  const customerDetailOpen = !!customerDetailData;
 
   // Load existing protocol for editing or reset form
   useEffect(() => {
@@ -154,6 +160,17 @@ const CreateProtocolForm = ({
     setCustomerPhone(customer.phone);
     setCustomerEmail(customer.email || '');
     setCustomerNip(customer.nip || '');
+  };
+
+  const handleCustomerClick = async (clickedCustomerId: string) => {
+    const { data } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', clickedCustomerId)
+      .single();
+    if (data) {
+      setCustomerDetailData(data as Customer);
+    }
   };
 
   const handleClearCustomer = () => {
@@ -298,6 +315,7 @@ const CreateProtocolForm = ({
               }
               onSelect={handleSelectCustomer}
               onClear={handleClearCustomer}
+              onCustomerClick={handleCustomerClick}
             />
           </div>
 
@@ -476,22 +494,36 @@ const CreateProtocolForm = ({
 
   return (
     <>
-      <Sheet
-        open={open}
-        onOpenChange={(v) => {
-          if (!v) onClose();
-        }}
-      >
-        <SheetContent
-          side="right"
-          className="w-full sm:w-[550px] sm:max-w-[550px] p-0"
-          hideOverlay
-          hideCloseButton
-          onInteractOutside={(e) => e.preventDefault()}
+      {!customerDetailOpen && (
+        <Sheet
+          open={open}
+          onOpenChange={(v) => {
+            if (!v) onClose();
+          }}
         >
-          {formContent}
-        </SheetContent>
-      </Sheet>
+          <SheetContent
+            side="right"
+            className="w-full sm:w-[550px] sm:max-w-[550px] p-0"
+            hideOverlay
+            hideCloseButton
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onInteractOutside={(e) => e.preventDefault()}
+          >
+            {formContent}
+          </SheetContent>
+        </Sheet>
+      )}
+
+      {customerDetailOpen && (
+        <CustomerEditDrawer
+          customer={customerDetailData}
+          instanceId={instanceId}
+          open
+          onClose={() => {
+            setCustomerDetailData(null);
+          }}
+        />
+      )}
 
       <SignatureDialog
         open={signatureOpen}

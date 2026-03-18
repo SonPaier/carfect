@@ -198,24 +198,7 @@ const SalesDashboard = () => {
             })}
           </nav>
 
-          {/* Panel Studio switch - above collapse toggle */}
-          {hasStudioAccess && (
-            <div className={cn(sidebarCollapsed ? 'px-1 pb-1' : 'px-3 pb-1')}>
-              <Separator className="mb-2" />
-              <Button
-                variant="outline"
-                className={cn(
-                  'w-full gap-3',
-                  sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
-                )}
-                onClick={() => navigate(studioBasePath)}
-                title="Przejdź do Panelu Studio"
-              >
-                <ArrowLeftRight className="w-4 h-4 shrink-0" />
-                {!sidebarCollapsed && 'Panel Studio'}
-              </Button>
-            </div>
-          )}
+          {/* Panel Studio switch - hidden until role-based access is implemented */}
 
           {/* Footer: collapse + user */}
           <div className={cn(sidebarCollapsed ? 'p-2 space-y-2' : 'p-4 space-y-3')}>
