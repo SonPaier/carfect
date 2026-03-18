@@ -1,21 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Palmtree, Trash2 } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isSameDay, getDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { useTimeEntries, useTimeEntriesForDateRange, useCreateTimeEntry, useUpdateTimeEntry, TimeEntry } from '@/hooks/useTimeEntries';
+import { useTimeEntries, useCreateTimeEntry, useUpdateTimeEntry, getEffectiveMinutes, TimeEntry } from '@/hooks/useTimeEntries';
 import { useEmployeeDaysOff, useCreateEmployeeDayOff, useDeleteEmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
-import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { Employee } from '@/hooks/useEmployees';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-const WEEKDAY_TO_KEY: Record<number, string> = {
-  0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
-  4: 'thursday', 5: 'friday', 6: 'saturday',
-};
 
 interface WeeklyScheduleProps {
   employee: Employee;
@@ -30,17 +24,12 @@ interface EditingCell {
   endTime: string;
 }
 
+const SAVE_DEBOUNCE_MS = 400;
+
 const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [editingCell, setEditingCell] = useState<EditingCell | null>(() => ({
-    date: format(new Date(), 'yyyy-MM-dd'),
-    hours: '0',
-    minutes: '0',
-    startTime: '',
-    endTime: '',
-  }));
-  const [isSaving, setIsSaving] = useState(false);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
 
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
@@ -51,10 +40,13 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   const monthFrom = format(monthStartDate, 'yyyy-MM-dd');
   const monthTo = format(monthEndDate, 'yyyy-MM-dd');
 
-  const { data: timeEntries = [] } = useTimeEntries(instanceId, employee.id, dateFrom, dateTo);
-  const { data: monthTimeEntries = [] } = useTimeEntriesForDateRange(instanceId, monthFrom, monthTo);
+  // Single query for the whole month — week data is derived by filtering
+  const { data: monthTimeEntries = [] } = useTimeEntries(instanceId, employee.id, monthFrom, monthTo);
+  const timeEntries = useMemo(
+    () => monthTimeEntries.filter(e => e.entry_date >= dateFrom && e.entry_date <= dateTo),
+    [monthTimeEntries, dateFrom, dateTo],
+  );
   const { data: daysOff = [] } = useEmployeeDaysOff(instanceId, employee.id);
-  const { data: workingHours } = useWorkingHours(instanceId);
   const { data: workersSettings } = useWorkersSettings(instanceId);
   const timeInputMode = workersSettings?.time_input_mode ?? 'total';
   const createTimeEntry = useCreateTimeEntry(instanceId);
@@ -62,165 +54,255 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   const createDayOff = useCreateEmployeeDayOff(instanceId);
   const deleteDayOff = useDeleteEmployeeDayOff(instanceId);
 
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
+  const pendingSaveRef = useRef<{ date: string; hours: string; minutes: string; startTime: string; endTime: string } | null>(null);
+  const executeSaveRef = useRef<(data: { date: string; hours: string; minutes: string; startTime: string; endTime: string }) => Promise<void>>();
+
   const minutesByDate = useMemo(() => {
     const map = new Map<string, { totalMinutes: number; entries: TimeEntry[] }>();
     timeEntries.forEach(entry => {
       const existing = map.get(entry.entry_date) || { totalMinutes: 0, entries: [] };
-      existing.totalMinutes += entry.total_minutes || 0;
+      existing.totalMinutes += getEffectiveMinutes(entry);
       existing.entries.push(entry);
       map.set(entry.entry_date, existing);
     });
     return map;
   }, [timeEntries]);
 
+  const buildEditingCellFromServer = (date: string) => {
+    const existing = minutesByDate.get(date);
+    const totalMinutes = existing?.totalMinutes || 0;
+    const firstEntry = existing?.entries[0];
+    const startT = firstEntry?.start_time ? firstEntry.start_time.slice(11, 16) : '';
+    const endT = firstEntry?.end_time ? firstEntry.end_time.slice(11, 16) : '';
+    return {
+      date,
+      hours: Math.floor(totalMinutes / 60).toString(),
+      minutes: (totalMinutes % 60).toString(),
+      startTime: startT,
+      endTime: endT,
+    };
+  };
+
+  // Sync editingCell from server ONLY when selectedDate changes.
+  // While on the same day, editingCell is the local source of truth — never overwritten by query refetch.
   useEffect(() => {
-    if (!initialLoadDone && editingCell && timeEntries.length > 0) {
-      const existing = minutesByDate.get(editingCell.date);
-      const totalMinutes = existing?.totalMinutes || 0;
-      const firstEntry = existing?.entries[0];
-      const startT = firstEntry?.start_time ? firstEntry.start_time.slice(11, 16) : '';
-      const endT = firstEntry?.end_time ? firstEntry.end_time.slice(11, 16) : '';
-      setEditingCell(prev => prev ? { ...prev, hours: Math.floor(totalMinutes / 60).toString(), minutes: (totalMinutes % 60).toString(), startTime: startT, endTime: endT } : null);
-      setInitialLoadDone(true);
-    }
-  }, [timeEntries, initialLoadDone]);
+    setEditingCell(buildEditingCellFromServer(selectedDate));
+  }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getDayOffRecord = (dateStr: string) => daysOff.find(d => dateStr >= d.date_from && dateStr <= d.date_to);
 
   const handleCellClick = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const existing = minutesByDate.get(dateStr);
-    const totalMinutes = existing?.totalMinutes || 0;
-    const firstEntry = existing?.entries[0];
-    const startT = firstEntry?.start_time ? firstEntry.start_time.slice(11, 16) : '';
-    const endT = firstEntry?.end_time ? firstEntry.end_time.slice(11, 16) : '';
-    setEditingCell({ date: dateStr, hours: Math.floor(totalMinutes / 60).toString(), minutes: (totalMinutes % 60).toString(), startTime: startT, endTime: endT });
-  };
-
-  const saveEntry = async (hoursStr: string, minutesStr: string) => {
-    if (!editingCell || isSaving) return;
-    const hours = parseInt(hoursStr) || 0;
-    const minutes = parseInt(minutesStr) || 0;
-    const totalMinutes = hours * 60 + minutes;
-    const existing = minutesByDate.get(editingCell.date);
-    setIsSaving(true);
-    try {
-      if (existing && existing.entries.length > 0) {
-        const firstEntry = existing.entries[0];
-        const startTime = new Date(`${editingCell.date}T08:00:00`);
-        const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
-        await updateTimeEntry.mutateAsync({ id: firstEntry.id, start_time: startTime.toISOString(), end_time: endTime.toISOString() });
-        // Remove any duplicate entries for the same day
-        if (existing.entries.length > 1) {
-          const duplicateIds = existing.entries.slice(1).map(e => e.id);
-          await supabase.from('time_entries').delete().in('id', duplicateIds);
-        }
-      } else if (totalMinutes > 0) {
-        // Double-check DB to prevent duplicate creation (race condition)
-        const { data: dbCheck } = await supabase
-          .from('time_entries')
-          .select('id')
-          .eq('instance_id', instanceId)
-          .eq('employee_id', employee.id)
-          .eq('entry_date', editingCell.date)
-          .limit(1);
-        
-        const startTime = new Date(`${editingCell.date}T08:00:00`);
-        const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
-        
-        if (dbCheck && dbCheck.length > 0) {
-          await updateTimeEntry.mutateAsync({ id: dbCheck[0].id, start_time: startTime.toISOString(), end_time: endTime.toISOString() });
-        } else {
-          await createTimeEntry.mutateAsync({ employee_id: employee.id, entry_date: editingCell.date, start_time: startTime.toISOString(), end_time: endTime.toISOString(), entry_type: 'manual' });
-        }
+    // Flush any pending debounced save before switching days
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      const toSave = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      if (toSave) {
+        executeSaveRef.current?.(toSave);
       }
-      
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Błąd podczas zapisywania');
-    } finally {
-      setIsSaving(false);
     }
+    setSelectedDate(dateStr);
   };
 
-  const handleHoursChange = async (value: string) => {
-    if (!editingCell) return;
-    setEditingCell({ ...editingCell, hours: value });
-    await saveEntry(value, editingCell.minutes);
-  };
+  // Actual save logic — always reads latest minutesByDate via ref to avoid stale closures
+  const minutesByDateRef = useRef(minutesByDate);
+  minutesByDateRef.current = minutesByDate;
 
-  const handleMinutesChange = async (value: string) => {
-    if (!editingCell) return;
-    setEditingCell({ ...editingCell, minutes: value });
-    await saveEntry(editingCell.hours, value);
-  };
+  const executeSave = useCallback(async (saveData: { date: string; hours: string; minutes: string; startTime: string; endTime: string }) => {
+    if (savingRef.current) {
+      // Queue this save for after the current one finishes
+      pendingSaveRef.current = saveData;
+      return;
+    }
+    savingRef.current = true;
 
-  const saveStartEndEntry = async (start: string, end: string) => {
-    if (!editingCell || isSaving || !start || !end || start.length < 5 || end.length < 5 || start >= end) return;
-    const existing = minutesByDate.get(editingCell.date);
-    const startTimestamp = `${editingCell.date}T${start}:00`;
-    const endTimestamp = `${editingCell.date}T${end}:00`;
-    setIsSaving(true);
     try {
-      if (existing && existing.entries.length > 0) {
-        const firstEntry = existing.entries[0];
-        await updateTimeEntry.mutateAsync({ id: firstEntry.id, start_time: startTimestamp, end_time: endTimestamp });
-        if (existing.entries.length > 1) {
-          const duplicateIds = existing.entries.slice(1).map(e => e.id);
-          await supabase.from('time_entries').delete().in('id', duplicateIds);
+      // Always read the latest minutesByDate from ref
+      const currentMinutesByDate = minutesByDateRef.current;
+      const existing = currentMinutesByDate.get(saveData.date);
+
+      if (timeInputMode === 'start_end') {
+        const { startTime: start, endTime: end } = saveData;
+        if (!start || !end || start.length < 5 || end.length < 5 || start >= end) return;
+        const startTimestamp = `${saveData.date}T${start}:00`;
+        const endTimestamp = `${saveData.date}T${end}:00`;
+
+        if (existing && existing.entries.length > 0) {
+          const firstEntry = existing.entries[0];
+          await updateTimeEntry.mutateAsync({ id: firstEntry.id, start_time: startTimestamp, end_time: endTimestamp });
+          if (existing.entries.length > 1) {
+            const duplicateIds = existing.entries.slice(1).map(e => e.id);
+            await supabase.from('time_entries').delete().in('id', duplicateIds);
+          }
+        } else {
+          const { data: dbCheck } = await supabase
+            .from('time_entries')
+            .select('id')
+            .eq('instance_id', instanceId)
+            .eq('employee_id', employee.id)
+            .eq('entry_date', saveData.date)
+            .limit(1);
+          if (dbCheck && dbCheck.length > 0) {
+            await updateTimeEntry.mutateAsync({ id: dbCheck[0].id, start_time: startTimestamp, end_time: endTimestamp });
+          } else {
+            await createTimeEntry.mutateAsync({ employee_id: employee.id, entry_date: saveData.date, start_time: startTimestamp, end_time: endTimestamp, entry_type: 'manual' });
+          }
         }
       } else {
-        const { data: dbCheck } = await supabase
-          .from('time_entries')
-          .select('id')
-          .eq('instance_id', instanceId)
-          .eq('employee_id', employee.id)
-          .eq('entry_date', editingCell.date)
-          .limit(1);
-        if (dbCheck && dbCheck.length > 0) {
-          await updateTimeEntry.mutateAsync({ id: dbCheck[0].id, start_time: startTimestamp, end_time: endTimestamp });
-        } else {
-          await createTimeEntry.mutateAsync({ employee_id: employee.id, entry_date: editingCell.date, start_time: startTimestamp, end_time: endTimestamp, entry_type: 'manual' });
+        const hours = parseInt(saveData.hours) || 0;
+        const minutes = parseInt(saveData.minutes) || 0;
+        const totalMinutes = hours * 60 + minutes;
+
+        if (existing && existing.entries.length > 0) {
+          const firstEntry = existing.entries[0];
+          const startTime = new Date(`${saveData.date}T08:00:00`);
+          const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+          await updateTimeEntry.mutateAsync({ id: firstEntry.id, start_time: startTime.toISOString(), end_time: endTime.toISOString() });
+          if (existing.entries.length > 1) {
+            const duplicateIds = existing.entries.slice(1).map(e => e.id);
+            await supabase.from('time_entries').delete().in('id', duplicateIds);
+          }
+        } else if (totalMinutes > 0) {
+          const { data: dbCheck } = await supabase
+            .from('time_entries')
+            .select('id')
+            .eq('instance_id', instanceId)
+            .eq('employee_id', employee.id)
+            .eq('entry_date', saveData.date)
+            .limit(1);
+
+          const startTime = new Date(`${saveData.date}T08:00:00`);
+          const endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+
+          if (dbCheck && dbCheck.length > 0) {
+            await updateTimeEntry.mutateAsync({ id: dbCheck[0].id, start_time: startTime.toISOString(), end_time: endTime.toISOString() });
+          } else {
+            await createTimeEntry.mutateAsync({ employee_id: employee.id, entry_date: saveData.date, start_time: startTime.toISOString(), end_time: endTime.toISOString(), entry_type: 'manual' });
+          }
         }
       }
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Błąd podczas zapisywania');
     } finally {
-      setIsSaving(false);
+      savingRef.current = false;
+      // If another save was queued while we were saving, execute it with latest ref
+      if (pendingSaveRef.current) {
+        const next = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        executeSaveRef.current?.(next);
+      }
     }
+  }, [instanceId, employee.id, timeInputMode, createTimeEntry, updateTimeEntry]);
+
+  // Keep ref in sync so debounce timer always calls the latest version
+  executeSaveRef.current = executeSave;
+
+  const scheduleSave = useCallback((data: { date: string; hours: string; minutes: string; startTime: string; endTime: string }) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    pendingSaveRef.current = data;
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      const toSave = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      if (toSave) {
+        executeSaveRef.current?.(toSave);
+      }
+    }, SAVE_DEBOUNCE_MS);
+  }, []);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const handleHoursChange = (value: string) => {
+    if (!editingCell) return;
+
+    const updated = { ...editingCell, hours: value };
+    setEditingCell(updated);
+    scheduleSave(updated);
   };
 
-  const handleStartTimeChange = async (value: string) => {
+  const handleMinutesChange = (value: string) => {
     if (!editingCell) return;
-    setEditingCell({ ...editingCell, startTime: value });
-    await saveStartEndEntry(value, editingCell.endTime);
+
+    const updated = { ...editingCell, minutes: value };
+    setEditingCell(updated);
+    scheduleSave(updated);
   };
 
-  const handleEndTimeChange = async (value: string) => {
+  const handleStartTimeChange = (value: string) => {
     if (!editingCell) return;
-    setEditingCell({ ...editingCell, endTime: value });
-    await saveStartEndEntry(editingCell.startTime, value);
+
+    const updated = { ...editingCell, startTime: value };
+    setEditingCell(updated);
+    scheduleSave(updated);
   };
+
+  const handleEndTimeChange = (value: string) => {
+    if (!editingCell) return;
+
+    const updated = { ...editingCell, endTime: value };
+    setEditingCell(updated);
+    scheduleSave(updated);
+  };
+
+  // Optimistic local day-off overrides: 'add' = locally marked as day off, 'remove' = locally unmarked
+  const [localDayOffOverrides, setLocalDayOffOverrides] = useState<Map<string, 'add' | 'remove'>>(new Map());
+
+  // Clear all overrides when fresh daysOff data arrives from the server
+  const prevDaysOffRef = useRef(daysOff);
+  useEffect(() => {
+    if (prevDaysOffRef.current !== daysOff && localDayOffOverrides.size > 0) {
+      setLocalDayOffOverrides(new Map());
+    }
+    prevDaysOffRef.current = daysOff;
+  }, [daysOff, localDayOffOverrides.size]);
+
+  const isDayOff = useCallback((dateStr: string) => {
+    const override = localDayOffOverrides.get(dateStr);
+    if (override === 'add') return true;
+    if (override === 'remove') return false;
+    return !!getDayOffRecord(dateStr);
+  }, [localDayOffOverrides, daysOff]);
 
   const handleMarkDayOff = async () => {
     if (!editingCell) return;
+    // Optimistic: show as day off immediately
+    setLocalDayOffOverrides(prev => new Map(prev).set(editingCell.date, 'add'));
     try {
       await createDayOff.mutateAsync({ employee_id: employee.id, date_from: editingCell.date, date_to: editingCell.date, day_off_type: 'vacation' });
       toast.success('Zapisano jako wolne');
-      setEditingCell(null);
-    } catch (error) { toast.error('Błąd podczas zapisywania'); }
+    } catch (error) {
+      toast.error('Błąd podczas zapisywania');
+      // Revert optimistic update on error
+      setLocalDayOffOverrides(prev => { const m = new Map(prev); m.delete(editingCell!.date); return m; });
+    }
   };
 
   const handleRemoveDayOff = async () => {
     if (!editingCell) return;
     const dayOffRecord = getDayOffRecord(editingCell.date);
     if (!dayOffRecord) return;
+    // Optimistic: remove day off immediately
+    setLocalDayOffOverrides(prev => new Map(prev).set(editingCell.date, 'remove'));
     try {
       await deleteDayOff.mutateAsync(dayOffRecord.id);
       toast.success('Usunięto wolne');
-      setEditingCell({ ...editingCell, hours: '0', minutes: '0' });
-    } catch (error) { toast.error('Błąd podczas usuwania'); }
+    } catch (error) {
+      toast.error('Błąd podczas usuwania');
+      // Revert optimistic update on error
+      setLocalDayOffOverrides(prev => { const m = new Map(prev); m.delete(editingCell!.date); return m; });
+    }
   };
 
   const weekTotal = useMemo(() => {
@@ -230,8 +312,8 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   }, [minutesByDate]);
 
   const monthTotal = useMemo(() => {
-    return monthTimeEntries.filter(e => e.employee_id === employee.id).reduce((sum, e) => sum + (e.total_minutes || 0), 0);
-  }, [monthTimeEntries, employee.id]);
+    return monthTimeEntries.reduce((sum, e) => sum + (e.total_minutes || 0), 0);
+  }, [monthTimeEntries]);
 
   const formatMinutes = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -241,11 +323,19 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
     return `${h} h ${m} min`;
   };
 
-  const editingDayLabel = editingCell ? format(new Date(editingCell.date), 'EEEE, d MMM', { locale: pl }) : '';
+  const editingDayLabel = editingCell ? format(new Date(editingCell.date + 'T12:00:00'), 'EEEE, d MMM', { locale: pl }) : '';
   const monthName = format(monthStartDate, 'LLLL', { locale: pl });
-  const editingCellIsDayOff = editingCell ? !!getDayOffRecord(editingCell.date) : false;
+  const editingCellIsDayOff = editingCell ? isDayOff(editingCell.date) : false;
   const hourOptions = Array.from({ length: 25 }, (_, i) => i);
   const minuteOptions = Array.from({ length: 12 }, (_, i) => i * 5);
+
+  // For the currently editing day, show the local editingCell value instead of query data
+  const getDisplayMinutes = (dateStr: string) => {
+    if (editingCell?.date === dateStr) {
+      return (parseInt(editingCell.hours) || 0) * 60 + (parseInt(editingCell.minutes) || 0);
+    }
+    return minutesByDate.get(dateStr)?.totalMinutes || 0;
+  };
 
   return (
     <div className="w-full space-y-2">
@@ -264,12 +354,11 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
       <div className="grid grid-cols-7 gap-1">
         {weekDays.map((day) => {
           const dateStr = format(day, 'yyyy-MM-dd');
-          const isSelected = editingCell?.date === dateStr;
-          const dayData = minutesByDate.get(dateStr);
-          const totalMinutes = dayData?.totalMinutes || 0;
+          const isSelected = selectedDate === dateStr;
+          const totalMinutes = getDisplayMinutes(dateStr);
           const isToday = isSameDay(day, new Date());
-          const isOff = !!getDayOffRecord(dateStr);
-          
+          const isOff = isDayOff(dateStr);
+
           return (
             <div key={dateStr} className="flex flex-col">
               <div className={`text-center text-xs py-1 rounded-t ${isToday ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>

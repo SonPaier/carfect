@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, X, Loader2, MapPin } from 'lucide-react';
+import { Search, X, Loader2, MapPin, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -205,23 +205,37 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <Input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-            setSelectedIndex(-1);
-          }}
-          onFocus={() => { if (query.length >= 2) setOpen(true); }}
-          onKeyDown={handleKeyDown}
-          placeholder=""
-          className="pl-9 pr-9"
-        />
-        {searching && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+              setSelectedIndex(-1);
+            }}
+            onFocus={() => { if (query.length >= 2) setOpen(true); }}
+            onKeyDown={handleKeyDown}
+            placeholder=""
+            className="pl-9 pr-9"
+          />
+          {searching && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
+        {onAddNew && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => onAddNew(query)}
+            title="Dodaj nowego klienta"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
         )}
       </div>
 
