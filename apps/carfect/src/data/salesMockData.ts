@@ -3,6 +3,13 @@ export interface SalesOrderProduct {
   quantity: number;
   priceNet: number;
   priceGross: number;
+  unit?: string;
+  discountPercent?: number;
+}
+
+export interface SalesOrderPackage {
+  shippingMethod: string;
+  shippingCost?: number;
 }
 
 export interface SalesOrder {
@@ -18,6 +25,7 @@ export interface SalesOrder {
   totalGross: number;
   currency: 'PLN' | 'EUR';
   products: SalesOrderProduct[];
+  packages?: SalesOrderPackage[];
   comment?: string;
   status: 'nowy' | 'wysłany' | 'anulowany';
   trackingNumber?: string;
@@ -27,6 +35,7 @@ export interface SalesOrder {
   invoiceNumber?: string;
   invoiceStatus?: string; // 'draft' | 'issued' | 'sent' | 'paid'
   invoicePdfUrl?: string;
+  customerDiscount?: number;
 }
 
 export const mockSalesOrders: SalesOrder[] = [];

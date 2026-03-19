@@ -153,7 +153,7 @@ export function InvoiceForm({
           <SelectTrigger className="bg-white h-9">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[1100]">
             {DOCUMENT_KINDS.map((d) => (
               <SelectItem key={d.value} value={d.value}>
                 {d.label}
@@ -201,7 +201,7 @@ export function InvoiceForm({
             <SelectTrigger className="bg-white h-9">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[1100]">
               {PAYMENT_TYPES.map((pt) => (
                 <SelectItem key={pt.value} value={pt.value}>
                   {pt.label}
@@ -219,7 +219,7 @@ export function InvoiceForm({
             <SelectTrigger className="bg-white h-9">
               <SelectValue placeholder="Wybierz konto" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[1100]">
               {bankAccounts.map((acc) => (
                 <SelectItem key={acc.number} value={acc.number}>
                   {acc.name ? `${acc.name} — ${acc.number}` : acc.number}
@@ -349,7 +349,7 @@ export function InvoiceForm({
                     <SelectTrigger className="bg-white h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[1100]">
                       <SelectItem value="szt.">szt.</SelectItem>
                       <SelectItem value="m2">m2</SelectItem>
                     </SelectContent>
@@ -392,7 +392,7 @@ export function InvoiceForm({
                       onUpdatePosition(idx, 'unit_price_gross', parseFloat(unitPrice.toFixed(6)));
                       e.target.value = '';
                     }}
-                    className="bg-white h-8 text-sm"
+                    className="bg-white h-8 text-sm placeholder:text-foreground"
                   />
                 </div>
                 <div className="space-y-1">
@@ -408,7 +408,7 @@ export function InvoiceForm({
                       onUpdatePosition(idx, 'discount', val === '' ? 0 : Number(val));
                     }}
                     placeholder="0"
-                    className="bg-white h-8 text-sm"
+                    className="bg-white h-8 text-sm placeholder:text-foreground"
                   />
                 </div>
               </div>

@@ -131,6 +131,25 @@ function EmbedLeadFormContent() {
     fetchConfig();
   }, [t]);
 
+  // Communicate iframe height to parent for auto-resize
+  useEffect(() => {
+    const sendHeight = () => {
+      window.parent.postMessage(
+        { type: 'carfect-resize', height: document.body.scrollHeight },
+        '*'
+      );
+    };
+    window.addEventListener('load', sendHeight);
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+    // Send initial height
+    sendHeight();
+    return () => {
+      window.removeEventListener('load', sendHeight);
+      observer.disconnect();
+    };
+  }, []);
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 

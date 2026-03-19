@@ -295,21 +295,25 @@ describe('RollSelectDrawer', () => {
     });
   });
 
-  describe('Selected rolls appear first', () => {
-    it('sorts selected rolls to the top of the list', async () => {
+  describe('Roll order stability', () => {
+    it('does not reorder rolls when selecting — order stays by remaining m² descending', async () => {
       render(<RollSelectDrawer {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('Roll A')).toBeInTheDocument();
       });
 
-      // Select Roll C (lowest remaining, would normally be last)
+      // Initial order: A (30mb), B (20mb), C (10mb) — by remaining m² desc
+      const buttonsBefore = screen.getAllByRole('button', { name: /Roll/ });
+      const namesBefore = buttonsBefore.map((btn) => btn.textContent?.match(/Roll [ABC]/)?.[0]);
+      expect(namesBefore).toEqual(['Roll A', 'Roll B', 'Roll C']);
+
+      // Select Roll C (lowest remaining) — order must NOT change
       await user.click(screen.getByText('Roll C').closest('button')!);
 
-      // Roll C should now appear before Roll A and Roll B
-      const buttons = screen.getAllByRole('button', { name: /Roll/ });
-      const names = buttons.map((btn) => btn.textContent?.match(/Roll [ABC]/)?.[0]);
-      expect(names[0]).toBe('Roll C');
+      const buttonsAfter = screen.getAllByRole('button', { name: /Roll/ });
+      const namesAfter = buttonsAfter.map((btn) => btn.textContent?.match(/Roll [ABC]/)?.[0]);
+      expect(namesAfter).toEqual(['Roll A', 'Roll B', 'Roll C']);
     });
   });
 });

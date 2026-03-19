@@ -1,22 +1,36 @@
 import { Label } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { formatCurrency } from '../constants';
+import { VAT_RATE } from '../constants';
+import type { OrderProduct } from '../hooks/useOrderPackages';
 
 interface OrderSummarySectionProps {
+  products: OrderProduct[];
   subtotalNet: number;
   discountAmount: number;
   customerDiscount: number;
+  /** Shipping costs in brutto (from Apaczka) */
+  shippingCosts?: number[];
   totalNet: number;
   totalGross: number;
 }
 
 export const OrderSummarySection = ({
-  subtotalNet,
-  discountAmount,
+  products,
   customerDiscount,
+  shippingCosts = [],
   totalNet,
   totalGross,
 }: OrderSummarySectionProps) => {
+  const vatAmount = totalNet * VAT_RATE;
+
+  const getEffectiveQty = (p: OrderProduct) => {
+    if (p.priceUnit === 'meter' && p.rollAssignments?.length) {
+      return p.rollAssignments.reduce((sum, a) => sum + a.usageM2, 0);
+    }
+    return p.quantity;
+  };
+
   return (
     <>
       <Separator />
@@ -24,25 +38,55 @@ export const OrderSummarySection = ({
         <Label>Podsumowanie</Label>
 
         <div className="bg-card border border-border rounded-md p-3 space-y-1.5 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Suma netto</span>
-            <span className="tabular-nums">{formatCurrency(subtotalNet)}</span>
-          </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-destructive">
-              <span>Rabat ({customerDiscount}%)</span>
-              <span className="tabular-nums">-{formatCurrency(discountAmount)}</span>
+          {/* Individual products with their discounts */}
+          {products.map((p, i) => {
+            const qty = getEffectiveQty(p);
+            const lineNet = p.priceNet * qty;
+            const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount ?? 0);
+            const lineNetAfterDiscount = lineNet * (1 - discount / 100);
+            const unit = p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.';
+            return (
+              <div key={i}>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground truncate">
+                    {p.name} ({qty} {unit} × {formatCurrency(p.priceNet)})
+                  </span>
+                  <span className="tabular-nums shrink-0">{formatCurrency(lineNet)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between gap-2 text-destructive">
+                    <span className="text-xs pl-2">Rabat {discount}%</span>
+                    <span className="tabular-nums text-xs shrink-0">-{formatCurrency(lineNet - lineNetAfterDiscount)}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Shipping */}
+          {shippingCosts.map((cost, i) => (
+            <div key={`ship-${i}`} className="flex justify-between">
+              <span className="text-muted-foreground">
+                {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`} (netto)
+              </span>
+              <span className="tabular-nums">{formatCurrency(cost / (1 + VAT_RATE))}</span>
             </div>
-          )}
-          {discountAmount > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Netto po rabacie</span>
-              <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
-            </div>
-          )}
+          ))}
+
           <Separator className="my-1" />
-          <div className="flex justify-between font-semibold">
-            <span>Brutto (23% VAT)</span>
+
+          {/* Totals */}
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Razem netto</span>
+            <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">VAT (23%)</span>
+            <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
+          </div>
+          <Separator className="my-1" />
+          <div className="flex justify-between font-semibold text-base">
+            <span>Razem brutto</span>
             <span className="tabular-nums">{formatCurrency(totalGross)}</span>
           </div>
         </div>

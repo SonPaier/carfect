@@ -11,6 +11,8 @@ interface MultiRollAssignmentProps {
   instanceId: string | null;
   assignments: RollAssignment[];
   onChange: (assignments: RollAssignment[]) => void;
+  requiredM2?: number;
+  customerName?: string;
 }
 
 interface RollInfo {
@@ -18,7 +20,7 @@ interface RollInfo {
   remainingM2: number;
 }
 
-const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAssignmentProps) => {
+const MultiRollAssignment = ({ instanceId, assignments, onChange, requiredM2, customerName }: MultiRollAssignmentProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
 
@@ -98,7 +100,6 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAss
       <>
         <Button
           type="button"
-          variant="outline"
           size="sm"
           className="mt-1 h-7 text-xs gap-1"
           onClick={() => setDrawerOpen(true)}
@@ -112,6 +113,8 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAss
           instanceId={instanceId}
           selectedRollIds={[]}
           onConfirm={handleRollsSelected}
+          requiredM2={requiredM2}
+          customerName={customerName}
         />
       </>
     );
@@ -119,7 +122,7 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAss
 
   return (
     <div className="mt-2 space-y-2">
-      <Label className="text-xs text-muted-foreground">Przypisane rolki</Label>
+      <Label className="text-xs text-foreground">Przypisane rolki</Label>
 
       {assignments.map((a) => {
         const info = rollInfoMap[a.rollId];
@@ -130,13 +133,13 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAss
         return (
           <div
             key={a.rollId}
-            className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm"
+            className="flex items-center gap-2 p-2 rounded-md bg-white border border-border text-sm"
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs truncate">{rollName}</span>
+                <span className="font-mono text-xs text-foreground truncate">{rollName}</span>
                 {info && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-foreground">
                     ({remaining.toFixed(1)} m² dost.)
                   </span>
                 )}
@@ -161,7 +164,7 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAss
               className={`h-7 text-xs w-20 ${shortage > 0 ? 'border-destructive' : ''}`}
               placeholder="m²"
             />
-            <span className="text-xs text-muted-foreground">m²</span>
+            <span className="text-xs text-foreground">m²</span>
             <button
               type="button"
               onClick={() => handleRemove(a.rollId)}
@@ -175,7 +178,6 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange }: MultiRollAss
 
       <Button
         type="button"
-        variant="outline"
         size="sm"
         className="h-7 text-xs gap-1"
         onClick={() => setDrawerOpen(true)}
