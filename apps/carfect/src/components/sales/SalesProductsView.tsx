@@ -240,7 +240,14 @@ const SalesProductsView = () => {
               </TableRow>
             ) : (
               paginatedProducts.map((product) => (
-                <TableRow key={product.id} className="hover:bg-hover-strong">
+                <TableRow
+                  key={product.id}
+                  className="hover:bg-hover-strong cursor-pointer"
+                  onClick={() => {
+                    setEditProduct(product);
+                    setDrawerOpen(true);
+                  }}
+                >
                   <TableCell className="font-medium">{product.shortName}</TableCell>
                   <TableCell className="text-sm">{product.fullName}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -249,7 +256,7 @@ const SalesProductsView = () => {
                   <TableCell className="text-right text-sm tabular-nums">
                     {formatCurrency(product.priceNet)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">

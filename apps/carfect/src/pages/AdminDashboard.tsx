@@ -2915,8 +2915,11 @@ const AdminDashboard = () => {
                 <>
                   {/* Halls - always visible for hall role */}
                   <Button
-                    variant={currentView === 'halls' ? 'secondary' : 'ghost'}
-                    className="w-full justify-center px-2"
+                    variant="ghost"
+                    className={cn(
+                      'w-full justify-center px-2',
+                      currentView === 'halls' && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                    )}
                     onClick={() => {
                       setSidebarOpen(false);
                       navigate(adminBasePath ? '/admin/halls/1' : '/halls/1');
@@ -2928,8 +2931,12 @@ const AdminDashboard = () => {
                   {/* Protocols */}
                   {hasFeature('vehicle_reception_protocol') && (
                     <Button
-                      variant={currentView === 'protocols' ? 'secondary' : 'ghost'}
-                      className="w-full justify-center px-2"
+                      variant="ghost"
+                      className={cn(
+                        'w-full justify-center px-2',
+                        currentView === 'protocols' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
+                      )}
                       onClick={() => {
                         setSidebarOpen(false);
                         setCurrentView('protocols');
@@ -2945,10 +2952,12 @@ const AdminDashboard = () => {
                   {/* Full navigation for admin/employee */}
                   {/* 1. Kalendarz */}
                   <Button
-                    variant={currentView === 'calendar' ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     className={cn(
                       'w-full gap-3',
                       sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      currentView === 'calendar' &&
+                        'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                     onClick={() => {
                       setSidebarOpen(false);
@@ -2961,10 +2970,12 @@ const AdminDashboard = () => {
                   </Button>
                   {/* 2. Rezerwacje */}
                   <Button
-                    variant={currentView === 'reservations' ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     className={cn(
                       'w-full gap-3',
                       sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      currentView === 'reservations' &&
+                        'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                     onClick={() => {
                       setSidebarOpen(false);
@@ -2994,10 +3005,12 @@ const AdminDashboard = () => {
                   {/* 3. Oferty */}
                   {hasFeature('offers') && (
                     <Button
-                      variant={currentView === 'offers' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       className={cn(
                         'w-full gap-3',
                         sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'offers' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                       onClick={() => {
                         setSidebarOpen(false);
@@ -3012,10 +3025,12 @@ const AdminDashboard = () => {
                   {/* 4. Protokoły */}
                   {hasFeature('vehicle_reception_protocol') && (
                     <Button
-                      variant={currentView === 'protocols' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       className={cn(
                         'w-full gap-3',
                         sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'protocols' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                       onClick={() => {
                         setSidebarOpen(false);
@@ -3029,10 +3044,12 @@ const AdminDashboard = () => {
                   )}
                   {/* 5. Klienci */}
                   <Button
-                    variant={currentView === 'customers' ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     className={cn(
                       'w-full gap-3',
                       sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      currentView === 'customers' &&
+                        'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                     onClick={() => {
                       setSidebarOpen(false);
@@ -3046,10 +3063,12 @@ const AdminDashboard = () => {
                   {/* 6. Pracownicy - admin only */}
                   {userRole !== 'employee' && (
                     <Button
-                      variant={currentView === 'employees' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       className={cn(
                         'w-full gap-3',
                         sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'employees' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                       onClick={() => {
                         setSidebarOpen(false);
@@ -3064,10 +3083,12 @@ const AdminDashboard = () => {
                   {/* 7. Usługi - admin only */}
                   {userRole !== 'employee' && (
                     <Button
-                      variant={currentView === 'pricelist' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       className={cn(
                         'w-full gap-3',
                         sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'pricelist' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                       onClick={() => {
                         setSidebarOpen(false);
@@ -3083,10 +3104,12 @@ const AdminDashboard = () => {
                   {/* 9. Ustawienia - admin only, always last */}
                   {userRole !== 'employee' && (
                     <Button
-                      variant={currentView === 'settings' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       className={cn(
                         'w-full gap-3',
                         sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'settings' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
                       )}
                       onClick={() => {
                         setSidebarOpen(false);
