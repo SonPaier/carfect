@@ -129,9 +129,9 @@ describe('AddEditSalesCustomerDrawer', () => {
       expect(screen.getByText('Adres firmy')).toBeInTheDocument();
     });
 
-    it('renders Adres nadawcy section with checkbox', () => {
+    it('renders Adres dostawy section with checkbox', () => {
       render(<AddEditSalesCustomerDrawer {...defaultProps} />);
-      expect(screen.getByText('Adres nadawcy')).toBeInTheDocument();
+      expect(screen.getByText('Adres dostawy')).toBeInTheDocument();
       expect(screen.getByLabelText('Taki sam jak adres firmy')).toBeInTheDocument();
     });
 

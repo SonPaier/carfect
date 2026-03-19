@@ -41,10 +41,7 @@ function mapUsageRow(row: any): SalesRollUsage {
 
 const SOLD_THRESHOLD_MB = 1.5;
 
-export async function fetchRolls(
-  instanceId: string,
-  tab: 'active' | 'sold'
-): Promise<SalesRoll[]> {
+export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Promise<SalesRoll[]> {
   // For 'sold' tab we need all rolls that have usages and remaining < threshold
   // For 'active' we fetch only active-status rolls
   let query = supabase
@@ -107,7 +104,11 @@ export async function fetchRolls(
     const widthM = roll.widthMm / 1000;
     const orderIds = rollOrderIds.get(roll.id);
     const customerNames = orderIds
-      ? [...new Set([...orderIds].map(oid => orderCustomerMap.get(oid)).filter(Boolean) as string[])]
+      ? [
+          ...new Set(
+            [...orderIds].map((oid) => orderCustomerMap.get(oid)).filter(Boolean) as string[],
+          ),
+        ]
       : [];
     return {
       ...roll,
@@ -119,10 +120,7 @@ export async function fetchRolls(
   });
 
   if (tab === 'sold') {
-    // Sold = has usages AND remaining < threshold
-    return enriched.filter(
-      (r) => (r.currentUsageMb || 0) > 0 && (r.remainingMb || 0) < SOLD_THRESHOLD_MB
-    );
+    return enriched.filter((r) => r.status === 'archived');
   }
 
   return enriched;
@@ -167,7 +165,7 @@ export async function createRoll(data: {
 }
 
 export async function createRollsBatch(
-  rolls: Parameters<typeof createRoll>[0][]
+  rolls: Parameters<typeof createRoll>[0][],
 ): Promise<string[]> {
   const rows = rolls.map((data) => ({
     instance_id: data.instanceId,
@@ -207,7 +205,7 @@ export async function updateRoll(
     deliveryDate: string;
     photoUrl: string;
     status: 'active' | 'archived';
-  }>
+  }>,
 ): Promise<void> {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.brand !== undefined) update.brand = data.brand;
@@ -222,10 +220,7 @@ export async function updateRoll(
   if (data.photoUrl !== undefined) update.photo_url = data.photoUrl;
   if (data.status !== undefined) update.status = data.status;
 
-  const { error } = await (supabase
-    .from('sales_rolls')
-    .update(update)
-    .eq('id', id) as any);
+  const { error } = await (supabase.from('sales_rolls').update(update).eq('id', id) as any);
 
   if (error) throw new Error(error.message);
 }
@@ -248,13 +243,12 @@ export async function deleteRoll(id: string): Promise<void> {
 
   if (checkErr) throw new Error(checkErr.message);
   if (usages && usages.length > 0) {
-    throw new Error('Nie można usunąć rolki, która ma przypisane zużycie. Zarchiwizuj ją zamiast tego.');
+    throw new Error(
+      'Nie można usunąć rolki, która ma przypisane zużycie. Zarchiwizuj ją zamiast tego.',
+    );
   }
 
-  const { error } = await (supabase
-    .from('sales_rolls')
-    .delete()
-    .eq('id', id) as any);
+  const { error } = await (supabase.from('sales_rolls').delete().eq('id', id) as any);
 
   if (error) throw new Error(error.message);
 }
@@ -317,7 +311,7 @@ export async function deleteRollUsagesByOrder(orderId: string): Promise<void> {
 
 export async function fetchRollRemainingMb(
   rollId: string,
-  excludeOrderId?: string
+  excludeOrderId?: string,
 ): Promise<{ lengthM: number; widthMm: number; usedMb: number; remainingMb: number }> {
   const { data: roll, error: rollErr } = await (supabase
     .from('sales_rolls')
@@ -327,10 +321,7 @@ export async function fetchRollRemainingMb(
 
   if (rollErr || !roll) throw new Error(rollErr?.message || 'Roll not found');
 
-  let query = supabase
-    .from('sales_roll_usages')
-    .select('used_mb')
-    .eq('roll_id', rollId);
+  let query = supabase.from('sales_roll_usages').select('used_mb').eq('roll_id', rollId);
 
   if (excludeOrderId) {
     query = query.neq('order_id', excludeOrderId);
@@ -385,12 +376,10 @@ export async function fetchRollById(rollId: string): Promise<SalesRoll | null> {
 
 export async function fetchActiveRollsByProductName(
   instanceId: string,
-  productName: string
+  productName: string,
 ): Promise<SalesRoll[]> {
   return fetchRolls(instanceId, 'active').then((rolls) =>
-    rolls.filter(
-      (r) => r.productName.toLowerCase() === productName.toLowerCase()
-    )
+    rolls.filter((r) => r.productName.toLowerCase() === productName.toLowerCase()),
   );
 }
 
@@ -420,26 +409,19 @@ export async function extractRollData(imageBase64: string, mediaType?: string) {
 
 // ─── Photo Upload ───────────────────────────────────────────
 
-export async function uploadRollPhoto(
-  file: File,
-  instanceId: string
-): Promise<string> {
+export async function uploadRollPhoto(file: File, instanceId: string): Promise<string> {
   const blob = await compressImage(file, 1200, 0.8);
   const uuid = crypto.randomUUID();
   const fileName = `${instanceId}/${uuid}.jpg`;
 
-  const { error } = await supabase.storage
-    .from('roll-photos')
-    .upload(fileName, blob, {
-      contentType: 'image/jpeg',
-      cacheControl: '31536000',
-    });
+  const { error } = await supabase.storage.from('roll-photos').upload(fileName, blob, {
+    contentType: 'image/jpeg',
+    cacheControl: '31536000',
+  });
 
   if (error) throw new Error(error.message);
 
-  const { data: urlData } = supabase.storage
-    .from('roll-photos')
-    .getPublicUrl(fileName);
+  const { data: urlData } = supabase.storage.from('roll-photos').getPublicUrl(fileName);
 
   return urlData.publicUrl;
 }

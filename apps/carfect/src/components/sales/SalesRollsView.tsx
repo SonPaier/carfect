@@ -34,7 +34,7 @@ import { ConfirmDialog } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
 import { formatRollSize, formatMbM2Lines } from './types/rolls';
-import { fetchRolls, deleteRoll } from './services/rollService';
+import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
 import RollDetailsDrawer from './rolls/RollDetailsDrawer';
@@ -192,6 +192,26 @@ const SalesRollsView = () => {
     setEditDrawerOpen(true);
   };
 
+  const handleArchive = async (roll: SalesRoll) => {
+    try {
+      await archiveRoll(roll.id);
+      toast.success('Rolka oznaczona jako wykorzystana');
+      loadRolls();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleRestore = async (roll: SalesRoll) => {
+    try {
+      await restoreRoll(roll.id);
+      toast.success('Rolka przywrócona na stan');
+      loadRolls();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   const handleAddManual = () => {
     setEditRoll(null);
     setEditDrawerOpen(true);
@@ -234,7 +254,7 @@ const SalesRollsView = () => {
               Na stanie
               {rolls.length > 0 && activeTab === 'active' ? ` (${filteredRolls.length})` : ''}
             </SelectItem>
-            <SelectItem value="sold">Sprzedane</SelectItem>
+            <SelectItem value="sold">Wykorzystane</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -296,7 +316,7 @@ const SalesRollsView = () => {
                         ? 'Brak wyników wyszukiwania'
                         : activeTab === 'active'
                           ? 'Brak rolek na stanie'
-                          : 'Brak sprzedanych rolek'
+                          : 'Brak wykorzystanych rolek'
                     }
                     description={
                       searchQuery
@@ -364,6 +384,16 @@ const SalesRollsView = () => {
                         >
                           Szczegóły
                         </DropdownMenuItem>
+                        {activeTab === 'active' && (
+                          <DropdownMenuItem onClick={() => handleArchive(roll)}>
+                            Oznacz jako Wykorzystana
+                          </DropdownMenuItem>
+                        )}
+                        {activeTab === 'sold' && (
+                          <DropdownMenuItem onClick={() => handleRestore(roll)}>
+                            Przywróć
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() =>

@@ -6,7 +6,17 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Building2, FileText, Truck, Loader2, Save, ChevronDown, Trash2, RefreshCw, Check } from 'lucide-react';
+import {
+  Building2,
+  FileText,
+  Truck,
+  Loader2,
+  Save,
+  ChevronDown,
+  Trash2,
+  RefreshCw,
+  Check,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SalesSettingsView from './SalesSettingsView';
@@ -31,7 +41,9 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
   // Apaczka settings state
   const [apaczkaAppId, setApaczkaAppId] = useState('');
   const [apaczkaAppSecret, setApaczkaAppSecret] = useState('');
-  const [apaczkaServices, setApaczkaServices] = useState<{ name: string; serviceId: number | '' }[]>([]);
+  const [apaczkaServices, setApaczkaServices] = useState<
+    { name: string; serviceId: number | '' }[]
+  >([]);
   const [senderAddress, setSenderAddress] = useState({
     name: '',
     contact_person: '',
@@ -44,7 +56,9 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
   });
   const [savingApaczka, setSavingApaczka] = useState(false);
   const [fetchingServices, setFetchingServices] = useState(false);
-  const [availableServices, setAvailableServices] = useState<{ id: number; name: string; supplier: string; domestic: boolean }[]>([]);
+  const [availableServices, setAvailableServices] = useState<
+    { id: number; name: string; supplier: string; domestic: boolean }[]
+  >([]);
 
   // Populate from instanceData
   useEffect(() => {
@@ -123,7 +137,9 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         try {
           const errBody = await (error as any).context?.json?.();
           errDetail = errBody?.error || '';
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
         throw new Error(errDetail || 'Nie udało się pobrać serwisów');
       }
       if (data?.error) {
@@ -143,7 +159,10 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
     if (exists) {
       setApaczkaServices(apaczkaServices.filter((s) => s.serviceId !== service.id));
     } else {
-      setApaczkaServices([...apaczkaServices, { name: service.supplier || service.name, serviceId: service.id }]);
+      setApaczkaServices([
+        ...apaczkaServices,
+        { name: service.supplier || service.name, serviceId: service.id },
+      ]);
     }
   };
 
@@ -230,17 +249,25 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                               isSelected && 'bg-primary/5',
                             )}
                           >
-                            <div className={cn(
-                              'w-4 h-4 rounded border flex items-center justify-center shrink-0',
-                              isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input',
-                            )}>
+                            <div
+                              className={cn(
+                                'w-4 h-4 rounded border flex items-center justify-center shrink-0',
+                                isSelected
+                                  ? 'bg-primary border-primary text-primary-foreground'
+                                  : 'border-input',
+                              )}
+                            >
                               {isSelected && <Check className="w-3 h-3" />}
                             </div>
                             <div className="flex-1 min-w-0">
                               <span className="font-medium">{service.name}</span>
-                              <span className="text-muted-foreground ml-2">({service.supplier})</span>
+                              <span className="text-muted-foreground ml-2">
+                                ({service.supplier})
+                              </span>
                             </div>
-                            <span className="text-xs text-muted-foreground shrink-0">ID: {service.id}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              ID: {service.id}
+                            </span>
                           </button>
                         );
                       })}
@@ -249,7 +276,8 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
 
                   {availableServices.length === 0 && apaczkaServices.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Brak skonfigurowanych serwisów. Kliknij "Pobierz z Apaczka" aby załadować dostępne serwisy.
+                      Brak skonfigurowanych serwisów. Kliknij "Pobierz z Apaczka" aby załadować
+                      dostępne serwisy.
                     </p>
                   )}
 
@@ -266,7 +294,11 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                             {service.name} (#{service.serviceId})
                             <button
                               type="button"
-                              onClick={() => setApaczkaServices(apaczkaServices.filter((s) => s.serviceId !== service.serviceId))}
+                              onClick={() =>
+                                setApaczkaServices(
+                                  apaczkaServices.filter((s) => s.serviceId !== service.serviceId),
+                                )
+                              }
                               className="ml-0.5 hover:text-destructive"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -279,7 +311,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                 </div>
 
                 <Separator />
-                <h4 className="text-sm font-medium">Adres nadawcy</h4>
+                <h4 className="text-sm font-medium">Adres dostawy</h4>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">

@@ -182,10 +182,10 @@ describe('SalesRollsView', () => {
     await user.click(selectTrigger);
 
     await waitFor(() => {
-      expect(screen.getByText('Sprzedane')).toBeInTheDocument();
+      expect(screen.getByText('Wykorzystane')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Sprzedane'));
+    await user.click(screen.getByText('Wykorzystane'));
 
     // After switching tab, fetchRolls should be called again
     await waitFor(() => {
@@ -244,14 +244,13 @@ describe('SalesRollsView', () => {
       methods.forEach((method) => {
         chain[method] = vi.fn(() => chain);
       });
-      chain.then = vi.fn(
-        (resolve: (v: unknown) => void) =>
-          new Promise((res) =>
-            setTimeout(
-              () => res({ data: table === 'sales_rolls' ? mockRolls : [], error: null }),
-              200,
-            ),
-          ).then(resolve),
+      chain.then = vi.fn((resolve: (v: unknown) => void) =>
+        new Promise((res) =>
+          setTimeout(
+            () => res({ data: table === 'sales_rolls' ? mockRolls : [], error: null }),
+            200,
+          ),
+        ).then(resolve),
       );
       return chain;
     });
