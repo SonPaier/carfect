@@ -1,19 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@shared/ui';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import type { SalesRoll } from '../types/rolls';
 import { formatRollSize, formatMbM2 } from '../types/rolls';
@@ -38,7 +26,13 @@ interface RollDetailsDrawerProps {
   onViewOrder?: (orderId: string) => void;
 }
 
-const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: RollDetailsDrawerProps) => {
+const RollDetailsDrawer = ({
+  open,
+  onOpenChange,
+  roll,
+  onEdit,
+  onViewOrder,
+}: RollDetailsDrawerProps) => {
   const [tab, setTab] = useState<Tab>('dane');
   const [usages, setUsages] = useState<RollUsage[]>([]);
   const [loadingUsages, setLoadingUsages] = useState(false);
@@ -75,7 +69,11 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
             .in('id', orderIds) as any);
 
           if (orders) {
-            for (const o of orders as { id: string; order_number: string; customer_name: string }[]) {
+            for (const o of orders as {
+              id: string;
+              order_number: string;
+              customer_name: string;
+            }[]) {
               orderMap[o.id] = { orderNumber: o.order_number, customerName: o.customer_name };
             }
           }
@@ -91,7 +89,7 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
               usedM2: Number(u.used_m2),
               usedMb: Number(u.used_mb),
               createdAt: u.created_at,
-            }))
+            })),
           );
         }
       } catch {
@@ -101,7 +99,9 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, roll, tab]);
 
   if (!roll) return null;
@@ -110,7 +110,7 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-lg">
+      <SheetContent side="right" className="sm:max-w-lg" hideOverlay>
         <SheetHeader>
           <SheetTitle>{roll.productName}</SheetTitle>
           <p className="text-sm text-muted-foreground">
@@ -189,20 +189,24 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
                 </div>
                 <div>
                   <span className="text-muted-foreground">Pozostało</span>
-                  <p className={`font-medium ${
-                    (roll.remainingMb || 0) <= 0
-                      ? 'text-destructive'
-                      : (roll.remainingMb || 0) < roll.initialLengthM * 0.2
-                      ? 'text-orange-500'
-                      : 'text-green-600'
-                  }`}>
+                  <p
+                    className={`font-medium ${
+                      (roll.remainingMb || 0) <= 0
+                        ? 'text-destructive'
+                        : (roll.remainingMb || 0) < roll.initialLengthM * 0.2
+                          ? 'text-orange-500'
+                          : 'text-green-600'
+                    }`}
+                  >
                     {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
                   </p>
                 </div>
                 {roll.deliveryDate && (
                   <div>
                     <span className="text-muted-foreground">Data dostawy</span>
-                    <p className="font-medium">{format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')}</p>
+                    <p className="font-medium">
+                      {format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')}
+                    </p>
                   </div>
                 )}
                 <div>
@@ -226,9 +230,9 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
             <div>
               {roll && (
                 <p className="text-sm text-muted-foreground mb-4">
-                  Stan początkowy: {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot;{' '}
-                  Zużyto: {formatMbM2(totalUsedMb, roll.widthMm)} &middot;{' '}
-                  Pozostało: {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
+                  Stan początkowy: {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot; Zużyto:{' '}
+                  {formatMbM2(totalUsedMb, roll.widthMm)} &middot; Pozostało:{' '}
+                  {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
                 </p>
               )}
 
@@ -255,12 +259,8 @@ const RollDetailsDrawer = ({ open, onOpenChange, roll, onEdit, onViewOrder }: Ro
                         className={onViewOrder ? 'cursor-pointer hover:bg-hover-strong' : ''}
                         onClick={() => onViewOrder?.(u.orderId)}
                       >
-                        <TableCell className="font-medium text-sm">
-                          {u.orderNumber}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {u.customerName}
-                        </TableCell>
+                        <TableCell className="font-medium text-sm">{u.orderNumber}</TableCell>
+                        <TableCell className="text-sm">{u.customerName}</TableCell>
                         <TableCell className="text-right text-sm tabular-nums">
                           {u.usedM2.toFixed(2)} m²
                         </TableCell>

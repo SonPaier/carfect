@@ -197,10 +197,11 @@ const SalesDashboard = () => {
               return (
                 <Button
                   key={item.key}
-                  variant={currentView === item.key ? 'secondary' : 'ghost'}
+                  variant="ghost"
                   className={cn(
                     'w-full gap-3',
                     sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                    currentView === item.key && 'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   onClick={() => setCurrentView(item.key)}
                   title={item.label}
