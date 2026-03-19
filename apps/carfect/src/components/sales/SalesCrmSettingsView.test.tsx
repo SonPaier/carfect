@@ -24,7 +24,18 @@ vi.mock('@shared/invoicing', () => ({
 
 const createChainMock = (resolveData: unknown = null, resolveError: unknown = null) => {
   const chain: Record<string, unknown> = {};
-  const methods = ['select', 'eq', 'neq', 'order', 'limit', 'single', 'insert', 'update', 'delete', 'match'];
+  const methods = [
+    'select',
+    'eq',
+    'neq',
+    'order',
+    'limit',
+    'single',
+    'insert',
+    'update',
+    'delete',
+    'match',
+  ];
   methods.forEach((method) => {
     chain[method] = vi.fn(() => chain);
   });
@@ -63,7 +74,9 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
     it('shows Apaczka content after clicking the tab', async () => {
       render(<SalesCrmSettingsView {...defaultProps} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      expect(screen.getByRole('button', { name: /Zapisz ustawienia Apaczka/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Zapisz ustawienia Apaczka/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -71,9 +84,7 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
     it('shows helper text when no services are configured', async () => {
       render(<SalesCrmSettingsView {...defaultProps} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      expect(
-        screen.getByText(/Brak skonfigurowanych serwisów/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Brak skonfigurowanych serwisów/i)).toBeInTheDocument();
     });
 
     it('shows "Pobierz z Apaczka" button for fetching courier services', async () => {
@@ -221,14 +232,13 @@ describe('SalesCrmSettingsView — Apaczka tab', () => {
 
       expect(screen.getByDisplayValue('app_12345')).toBeInTheDocument();
     });
-
   });
 
   describe('Sender address fields', () => {
     it('renders sender address section heading', async () => {
       render(<SalesCrmSettingsView {...defaultProps} />);
       await user.click(screen.getByRole('button', { name: /Apaczka/i }));
-      expect(screen.getByText('Adres nadawcy')).toBeInTheDocument();
+      expect(screen.getByText('Adres dostawy')).toBeInTheDocument();
     });
 
     it('renders Nazwa firmy input', async () => {

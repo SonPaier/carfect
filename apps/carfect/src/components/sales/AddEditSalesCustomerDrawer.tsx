@@ -340,7 +340,7 @@ const AddEditSalesCustomerDrawer = ({
         <Separator />
         <div className="space-y-3 text-sm">
           <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Adres nadawcy
+            Adres dostawy
           </h4>
           {form.shippingSameAsBilling ? (
             <p className="text-sm text-muted-foreground italic">Taki sam jak adres firmy</p>
@@ -427,7 +427,11 @@ const AddEditSalesCustomerDrawer = ({
                     )}
                     {o.payment_method && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {o.payment_method === 'cod' ? 'Pobranie' : o.payment_method === 'transfer' ? 'Przelew' : o.payment_method}
+                        {o.payment_method === 'cod'
+                          ? 'Pobranie'
+                          : o.payment_method === 'transfer'
+                            ? 'Przelew'
+                            : o.payment_method}
                       </Badge>
                     )}
                   </div>
@@ -447,7 +451,10 @@ const AddEditSalesCustomerDrawer = ({
                           {item.name}
                         </span>
                         <span className="shrink-0">
-                          {(Number(item.price_net) * item.quantity).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł
+                          {(Number(item.price_net) * item.quantity).toLocaleString('pl-PL', {
+                            minimumFractionDigits: 2,
+                          })}{' '}
+                          zł
                         </span>
                       </div>
                     ))}
@@ -459,8 +466,13 @@ const AddEditSalesCustomerDrawer = ({
                   <div className="text-xs mt-1">
                     {o.rolls.map((r: any, idx: number) => (
                       <div key={idx} className="flex justify-between">
-                        <span>{r.sales_rolls?.product_name || r.sales_rolls?.product_code || 'Rolka'}</span>
-                        <span>{r.used_m2 ? `${r.used_m2} m²` : ''}{r.sales_rolls?.width_mm ? ` / ${r.sales_rolls.width_mm} mm` : ''}</span>
+                        <span>
+                          {r.sales_rolls?.product_name || r.sales_rolls?.product_code || 'Rolka'}
+                        </span>
+                        <span>
+                          {r.used_m2 ? `${r.used_m2} m²` : ''}
+                          {r.sales_rolls?.width_mm ? ` / ${r.sales_rolls.width_mm} mm` : ''}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -691,10 +703,10 @@ const AddEditSalesCustomerDrawer = ({
 
       <Separator />
 
-      {/* Section 4: Adres nadawcy */}
+      {/* Section 4: Adres dostawy */}
       <div className="space-y-3">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Adres nadawcy
+          Adres dostawy
         </h4>
         <div className="flex items-center gap-2">
           <Checkbox
