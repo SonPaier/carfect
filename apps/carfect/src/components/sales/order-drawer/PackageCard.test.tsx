@@ -13,8 +13,9 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock('../rolls/MultiRollAssignment', () => ({ default: () => null }));
 
+const mockFetchValuation = vi.fn().mockResolvedValue(null);
 vi.mock('../hooks/useApaczkaValuation', () => ({
-  useApaczkaValuation: () => ({ price: null, loading: false, error: null }),
+  useApaczkaValuation: () => ({ loading: false, error: null, fetchValuation: mockFetchValuation }),
 }));
 
 const basePackage: OrderPackage = {
@@ -44,6 +45,7 @@ const defaultProps = {
   onContentsChange: vi.fn(),
   onDeclaredValueChange: vi.fn(),
   onOversizedChange: vi.fn(),
+  onShippingCostChange: vi.fn(),
   onAddProduct: vi.fn(),
   onRemoveProduct: vi.fn(),
   onUpdateQuantity: vi.fn(),
@@ -192,6 +194,72 @@ describe('PackageCard', () => {
       expect(screen.queryByText('Dł. (cm)')).not.toBeInTheDocument();
       expect(screen.queryByText('Szer. (cm)')).not.toBeInTheDocument();
       expect(screen.queryByText('Długość (cm)')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('shipping cost valuation', () => {
+    it('renders "Sprawdź wycenę" button for shipping packages', () => {
+      render(<PackageCard {...defaultProps} />);
+
+      expect(screen.getByRole('button', { name: /Sprawdź wycenę/ })).toBeInTheDocument();
+    });
+
+    it('does not render valuation button for pickup packages', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={{ ...basePackage, shippingMethod: 'pickup', packagingType: undefined }}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /Sprawdź wycenę/ })).not.toBeInTheDocument();
+    });
+
+    it('calls onShippingCostChange with price when valuation succeeds', async () => {
+      const user = userEvent.setup();
+      const onShippingCostChange = vi.fn();
+      mockFetchValuation.mockResolvedValueOnce(12.40);
+
+      render(
+        <PackageCard {...defaultProps} onShippingCostChange={onShippingCostChange} />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /Sprawdź wycenę/ }));
+
+      expect(mockFetchValuation).toHaveBeenCalled();
+      expect(onShippingCostChange).toHaveBeenCalledWith(12.40);
+    });
+
+    it('calls onShippingCostChange with undefined when valuation returns null', async () => {
+      const user = userEvent.setup();
+      const onShippingCostChange = vi.fn();
+      mockFetchValuation.mockResolvedValueOnce(null);
+
+      render(
+        <PackageCard {...defaultProps} onShippingCostChange={onShippingCostChange} />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /Sprawdź wycenę/ }));
+
+      expect(onShippingCostChange).toHaveBeenCalledWith(undefined);
+    });
+
+    it('displays shipping cost when shippingCost is set on package', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={{ ...basePackage, shippingCost: 12.40 }}
+        />,
+      );
+
+      expect(screen.getByText(/Cena wysyłki:/)).toBeInTheDocument();
+      expect(screen.getByText(/12,40 zł/)).toBeInTheDocument();
+    });
+
+    it('does not display shipping cost when shippingCost is not set', () => {
+      render(<PackageCard {...defaultProps} />);
+
+      expect(screen.queryByText(/Cena wysyłki:/)).not.toBeInTheDocument();
     });
   });
 

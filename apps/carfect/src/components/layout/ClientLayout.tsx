@@ -1,5 +1,5 @@
 import { ReactNode, forwardRef, useEffect, useState } from 'react';
-import { Car, Phone } from 'lucide-react';
+import { Car, Phone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 interface Instance {
   id: string;
@@ -61,21 +61,74 @@ const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-x-hidden">{children}</main>
 
-        {/* Fixed Footer - always at bottom of viewport */}
+        {/* Footer */}
         {!hideFooter && (
-          <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background shrink-0">
-            <div className="container py-3">
-              <p className="text-sm text-muted-foreground text-center">
-                <a
-                  href="https://carfect.pl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors inline-flex items-center gap-2"
-                >
-                  <img src="/carfect-logo.svg" alt="Carfect" className="h-4 opacity-60" />
-                </a>{' '}
-                - System rezerwacji online
-              </p>
+          <footer className="border-t border-border/50 bg-muted/30 shrink-0 mt-auto">
+            <div className="container py-8">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm text-muted-foreground">
+                {/* Brand & company info */}
+                <div className="flex flex-col gap-2">
+                  <a
+                    href="https://carfect.pl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity inline-flex items-center gap-2"
+                  >
+                    <img src="/carfect-logo.svg" alt="Carfect" className="h-5" />
+                  </a>
+                  <p>System rezerwacji online</p>
+                  <p className="text-xs">VAT EU: PL 585 147 45 97</p>
+                </div>
+
+                {/* Navigation links */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-foreground font-medium text-xs uppercase tracking-wider">
+                    Nawigacja
+                  </span>
+                  <a href="/" className="hover:text-foreground transition-colors w-fit">
+                    Rezerwacja
+                  </a>
+                  <a href="/res" className="hover:text-foreground transition-colors w-fit">
+                    Moja rezerwacja
+                  </a>
+                  <a
+                    href="https://carfect.pl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors w-fit"
+                  >
+                    O Carfect
+                  </a>
+                </div>
+
+                {/* Contact */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-foreground font-medium text-xs uppercase tracking-wider">
+                    Kontakt
+                  </span>
+                  {instance?.phone && (
+                    <a
+                      href={`tel:${instance.phone}`}
+                      className="hover:text-foreground transition-colors inline-flex items-center gap-1.5 w-fit"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      {instance.phone}
+                    </a>
+                  )}
+                  <a
+                    href="mailto:kontakt@carfect.pl"
+                    className="hover:text-foreground transition-colors inline-flex items-center gap-1.5 w-fit"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    kontakt@carfect.pl
+                  </a>
+                </div>
+              </div>
+
+              {/* Bottom bar */}
+              <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground text-center">
+                © {new Date().getFullYear()} Carfect. Wszelkie prawa zastrzeżone.
+              </div>
             </div>
           </footer>
         )}

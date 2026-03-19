@@ -79,8 +79,8 @@ describe('useOrderPackages', () => {
       expect(result.current.packages).toHaveLength(1);
       const pkg = result.current.packages[0];
       expect(pkg.shippingMethod).toBe('shipping');
-      expect(pkg.packagingType).toBe('karton');
-      expect(pkg.dimensions).toEqual({ length: 0, width: 0, height: 0 });
+      expect(pkg.packagingType).toBe('tuba');
+      expect(pkg.dimensions).toEqual({ length: 0, diameter: 0 });
       expect(pkg.courier).toBeUndefined();
       expect(pkg.courierServiceId).toBeUndefined();
       expect(pkg.weight).toBe(1);

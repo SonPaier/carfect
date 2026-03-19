@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { OrderPackage } from './useOrderPackages';
 
 interface ValuationResult {
-  price: number | null;
   loading: boolean;
   error: string | null;
+  fetchValuation: () => Promise<number | null>;
 }
 
 export function useApaczkaValuation(
@@ -13,88 +13,66 @@ export function useApaczkaValuation(
   pkg: OrderPackage,
   customerPostalCode?: string,
   customerCity?: string,
+  paymentMethod?: string,
+  totalGross?: number,
+  bankAccountNumber?: string,
 ): ValuationResult {
-  const [price, setPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => {
-    // Only run for shipping packages with dimensions
-    if (pkg.shippingMethod !== 'shipping' || !instanceId) {
-      setPrice(null);
-      setError(null);
-      return;
-    }
+  const fetchValuation = useCallback(async (): Promise<number | null> => {
+    if (pkg.shippingMethod !== 'shipping' || !instanceId) return null;
 
-    const dims = pkg.dimensions;
-    if (!dims) {
-      setPrice(null);
-      return;
-    }
-
-    // Check if dimensions are complete
-    const hasCompleteDimensions =
-      pkg.packagingType === 'tuba'
-        ? (dims as any).length > 0 && (dims as any).diameter > 0
-        : pkg.packagingType === 'koperta'
-          ? true // koperta doesn't need dimensions
-          : (dims as any).length > 0 && (dims as any).width > 0 && (dims as any).height > 0;
-
-    if (!hasCompleteDimensions) {
-      setPrice(null);
-      return;
-    }
-
-    // Debounce the API call
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error: fnError } = await supabase.functions.invoke('apaczka-valuation', {
-          body: {
-            instanceId,
-            packages: [pkg],
-            customerAddress: {
-              postal_code: customerPostalCode || '00-001',
-              city: customerCity || 'Warszawa',
-            },
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('apaczka-valuation', {
+        body: {
+          instanceId,
+          packages: [pkg],
+          customerAddress: {
+            postal_code: customerPostalCode || '00-001',
+            city: customerCity || 'Warszawa',
           },
-        });
+          paymentMethod: paymentMethod || 'transfer',
+          totalGross: totalGross || 0,
+          bankAccountNumber: bankAccountNumber || '',
+        },
+      });
 
-        if (fnError) throw fnError;
-        if (data?.error) {
-          setError(data.error);
-          setPrice(null);
-        } else if (data?.valuation) {
-          // Extract price from valuation response
-          const val = data.valuation;
-          const priceValue = val?.price?.gross?.amount || val?.price?.net?.amount || null;
-          setPrice(priceValue ? Number(priceValue) : null);
-        } else {
-          setPrice(null);
-        }
-      } catch (err: any) {
-        setError(null); // Don't show errors for valuation - it's informational
-        setPrice(null);
-      } finally {
-        setLoading(false);
+      if (fnError) throw fnError;
+      if (data?.error) {
+        setError(data.error);
+        return null;
       }
-    }, 800); // 800ms debounce
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+      if (data?.valuation) {
+        const val = data.valuation;
+        // Try price_table format: { "serviceId": { price_gross: 2134 } } (value in grosze)
+        if (val?.price_table) {
+          const firstEntry = Object.values(val.price_table)[0] as any;
+          const grossGrosze = firstEntry?.price_gross ?? firstEntry?.price ?? null;
+          return grossGrosze != null ? Number(grossGrosze) / 100 : null;
+        }
+        // Fallback: price.gross.amount format
+        const priceValue = val?.price?.gross?.amount || val?.price?.net?.amount || null;
+        return priceValue ? Number(priceValue) : null;
+      }
+      return null;
+    } catch {
+      setError('Nie udało się pobrać wyceny');
+      return null;
+    } finally {
+      setLoading(false);
+    }
   }, [
     instanceId,
-    pkg.shippingMethod,
-    pkg.packagingType,
-    JSON.stringify(pkg.dimensions),
+    pkg,
     customerPostalCode,
     customerCity,
+    paymentMethod,
+    totalGross,
+    bankAccountNumber,
   ]);
 
-  return { price, loading, error };
+  return { loading, error, fetchValuation };
 }

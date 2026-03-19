@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { X, Plus, Minus, Loader2 } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -42,6 +43,7 @@ interface PackageCardProps {
   onContentsChange: (contents: string) => void;
   onDeclaredValueChange: (value: number) => void;
   onOversizedChange: (oversized: boolean) => void;
+  onShippingCostChange: (cost: number | undefined) => void;
   onAddProduct: () => void;
   onRemoveProduct: (productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
@@ -53,10 +55,16 @@ interface PackageCardProps {
     widthMm?: number,
   ) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
+  onUpdateRequiredM2?: (productKey: string, requiredM2: number) => void;
+  onUpdateProductDiscount?: (productKey: string, discountPercent: number) => void;
   onToggleDiscount?: (productKey: string) => void;
   customerDiscount?: number;
+  customerName?: string;
   customerPostalCode?: string;
   customerCity?: string;
+  paymentMethod?: string;
+  totalGross?: number;
+  bankAccountNumber?: string;
 }
 
 const PackageCard = ({
@@ -74,18 +82,38 @@ const PackageCard = ({
   onContentsChange,
   onDeclaredValueChange,
   onOversizedChange,
+  onShippingCostChange,
   onAddProduct,
   onRemoveProduct,
   onUpdateQuantity,
   onUpdateVehicle,
   onUpdateRollAssignment,
   onSetRollAssignments,
+  onUpdateRequiredM2,
+  onUpdateProductDiscount,
   onToggleDiscount,
   customerDiscount,
+  customerName,
   customerPostalCode,
   customerCity,
+  paymentMethod,
+  totalGross,
+  bankAccountNumber,
 }: PackageCardProps) => {
-  const valuation = useApaczkaValuation(instanceId, pkg, customerPostalCode, customerCity);
+  const valuation = useApaczkaValuation(instanceId, pkg, customerPostalCode, customerCity, paymentMethod, totalGross, bankAccountNumber);
+
+  // Auto-select first available courier if none selected
+  useEffect(() => {
+    if (pkg.shippingMethod === 'shipping' && !pkg.courierServiceId && availableCouriers.length > 0) {
+      onCourierChange(availableCouriers[0].serviceId, availableCouriers[0].name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onCourierChange is stable, guard prevents loops
+  }, [pkg.shippingMethod, pkg.courierServiceId, availableCouriers]);
+
+  const handleCheckValuation = async () => {
+    const price = await valuation.fetchValuation();
+    onShippingCostChange(price ?? undefined);
+  };
 
   return (
     <div className="bg-card border border-border rounded-md p-3 space-y-3">
@@ -104,14 +132,14 @@ const PackageCard = ({
       {/* Two-column layout: products (left) | separator | shipping (right) */}
       <div className="grid grid-cols-1 sm:grid-cols-[600px_1px_1fr] gap-0">
         {/* Left: Products */}
-        <div className="space-y-1.5 sm:pr-4">
+        <div className="space-y-2 sm:pr-4">
           <Label className="text-sm">Produkty</Label>
           {packageProducts.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               {packageProducts.map((p) => {
                 const itemKey = getItemKey(p);
                 return (
-                  <div key={itemKey} className="bg-amber-50 rounded px-2.5 py-2 space-y-1.5">
+                  <div key={itemKey} className="bg-white rounded-md border border-border p-3 space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -164,7 +192,7 @@ const PackageCard = ({
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-6 w-6"
+                            className="h-7 w-7"
                             onClick={() => onUpdateQuantity(itemKey, p.quantity - 1)}
                             disabled={p.quantity <= 1}
                           >
@@ -177,24 +205,57 @@ const PackageCard = ({
                             onChange={(e) =>
                               onUpdateQuantity(itemKey, parseInt(e.target.value) || 1)
                             }
-                            className="w-12 h-6 text-center text-sm px-1"
+                            className="w-12 h-7 text-center text-sm px-1"
                           />
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-6 w-6"
+                            className="h-7 w-7"
                             onClick={() => onUpdateQuantity(itemKey, p.quantity + 1)}
                           >
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
-                      <Input
-                        placeholder="Pojazd"
-                        value={p.vehicle}
-                        onChange={(e) => onUpdateVehicle(itemKey, e.target.value)}
-                        className="h-6 text-sm flex-1"
-                      />
+                    </div>
+                    {/* Vehicle + Required m2 + Discount */}
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Pojazd</Label>
+                        <Input
+                          value={p.vehicle}
+                          onChange={(e) => onUpdateVehicle(itemKey, e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1 w-20">
+                        <Label className="text-xs">m² wymag.</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.1}
+                          value={p.requiredM2 || ''}
+                          onChange={(e) => onUpdateRequiredM2?.(itemKey, parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1 w-16">
+                        <Label className="text-xs">Rabat %</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={p.discountPercent != null ? p.discountPercent : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            onUpdateProductDiscount?.(itemKey, val === '' ? 0 : Number(val));
+                          }}
+                          placeholder={String(customerDiscount ?? 0)}
+                          className="h-8 text-sm placeholder:text-foreground"
+                        />
+                      </div>
                     </div>
                     {/* Roll assignment for meter-based products */}
                     {p.priceUnit === 'meter' && onSetRollAssignments && (
@@ -202,6 +263,8 @@ const PackageCard = ({
                         instanceId={instanceId}
                         assignments={p.rollAssignments || []}
                         onChange={(assignments) => onSetRollAssignments(itemKey, assignments)}
+                        requiredM2={p.requiredM2}
+                        customerName={customerName}
                       />
                     )}
                   </div>
@@ -252,69 +315,72 @@ const PackageCard = ({
           {/* Conditional: packaging fields (only for "shipping") */}
           {pkg.shippingMethod === 'shipping' && (
             <div className="space-y-2">
-              {/* Courier select */}
-              <div className="space-y-1">
-                <Label className="text-xs">Kurier</Label>
-                <Select
-                  value={pkg.courierServiceId ? String(pkg.courierServiceId) : ''}
-                  onValueChange={(v) => {
-                    const id = Number(v);
-                    const service = availableCouriers.find((c) => c.serviceId === id);
-                    onCourierChange(id, service?.name || '');
-                  }}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Wybierz kuriera" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCouriers.map((c) => (
-                      <SelectItem key={c.serviceId} value={String(c.serviceId)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                    {availableCouriers.length === 0 && (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        Skonfiguruj serwisy w Ustawieniach → Apaczka
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Courier + Packaging type */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                {/* Courier select */}
+                <div className="space-y-1 flex-1 min-w-0">
+                  <Label className="text-xs">Kurier</Label>
+                  <Select
+                    value={pkg.courierServiceId ? String(pkg.courierServiceId) : ''}
+                    onValueChange={(v) => {
+                      const id = Number(v);
+                      const service = availableCouriers.find((c) => c.serviceId === id);
+                      onCourierChange(id, service?.name || '');
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-sm w-full">
+                      <SelectValue placeholder="Wybierz kuriera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCouriers.map((c) => (
+                        <SelectItem key={c.serviceId} value={String(c.serviceId)}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                      {availableCouriers.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          Skonfiguruj serwisy w Ustawieniach → Apaczka
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Packaging type */}
-              <RadioGroup
-                value={pkg.packagingType || 'karton'}
-                onValueChange={(v) => onPackagingTypeChange(v as PackagingType)}
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="karton" id={`pkg-${pkg.id}-karton`} />
-                  <Label
-                    htmlFor={`pkg-${pkg.id}-karton`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Karton
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="tuba" id={`pkg-${pkg.id}-tuba`} />
-                  <Label
-                    htmlFor={`pkg-${pkg.id}-tuba`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Tuba
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="koperta" id={`pkg-${pkg.id}-koperta`} />
-                  <Label
-                    htmlFor={`pkg-${pkg.id}-koperta`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Koperta
-                  </Label>
-                </div>
-              </RadioGroup>
+                {/* Packaging type */}
+                <RadioGroup
+                  value={pkg.packagingType || 'karton'}
+                  onValueChange={(v) => onPackagingTypeChange(v as PackagingType)}
+                  className="flex gap-3 pb-0.5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem value="karton" id={`pkg-${pkg.id}-karton`} />
+                    <Label
+                      htmlFor={`pkg-${pkg.id}-karton`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Karton
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem value="tuba" id={`pkg-${pkg.id}-tuba`} />
+                    <Label
+                      htmlFor={`pkg-${pkg.id}-tuba`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Tuba
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <RadioGroupItem value="koperta" id={`pkg-${pkg.id}-koperta`} />
+                    <Label
+                      htmlFor={`pkg-${pkg.id}-koperta`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Koperta
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
 
               {/* Dimensions + Weight */}
               {pkg.packagingType === 'koperta' ? (
@@ -428,45 +494,53 @@ const PackageCard = ({
                 </Label>
               </div>
 
-              {/* Contents */}
-              <div className="space-y-1">
-                <Label className="text-xs">Zawartość przesyłki</Label>
-                <Input
-                  type="text"
-                  value={pkg.contents || ''}
-                  onChange={(e) => onContentsChange(e.target.value)}
-                  placeholder=""
-                  className="h-8 text-sm"
-                />
-              </div>
-
-              {/* Declared value */}
-              <div className="space-y-1">
-                <Label className="text-xs">Deklarowana wartość (zł)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={pkg.declaredValue || ''}
-                  onChange={(e) => onDeclaredValueChange(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  className="h-8 text-sm"
-                />
-              </div>
-
-              {/* Apaczka valuation */}
-              {valuation.loading && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Wycena przesyłki...
+              {/* Contents + Declared value — same line */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Zawartość przesyłki</Label>
+                  <Input
+                    type="text"
+                    value={pkg.contents || ''}
+                    onChange={(e) => onContentsChange(e.target.value)}
+                    placeholder=""
+                    className="h-8 text-sm"
+                  />
                 </div>
-              )}
-              {valuation.price != null && !valuation.loading && (
-                <div className="flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded bg-sky-50 border border-sky-200">
-                  <span className="text-xs text-sky-700">
-                    Szacunkowy koszt wysyłki: <strong>{valuation.price.toFixed(2)} zł</strong>
+                <div className="space-y-1">
+                  <Label className="text-xs">Deklarowana wartość (zł)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={pkg.declaredValue || ''}
+                    onChange={(e) => onDeclaredValueChange(parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Shipping cost valuation */}
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs shrink-0"
+                  onClick={handleCheckValuation}
+                  disabled={valuation.loading}
+                >
+                  {valuation.loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                  Sprawdź wycenę
+                </Button>
+                {pkg.shippingCost != null && (
+                  <span className="text-sm font-medium text-foreground">
+                    Cena wysyłki: {formatCurrency(pkg.shippingCost)}
                   </span>
-                </div>
-              )}
+                )}
+                {valuation.error && (
+                  <span className="text-xs text-destructive">{valuation.error}</span>
+                )}
+              </div>
             </div>
           )}
         </div>

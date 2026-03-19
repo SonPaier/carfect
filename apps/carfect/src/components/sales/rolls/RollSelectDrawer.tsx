@@ -27,6 +27,10 @@ interface RollSelectDrawerProps {
   onConfirm: (rolls: SalesRoll[]) => void;
   /** Multi-select mode (default true) */
   multiSelect?: boolean;
+  /** Required m² — used for smart sorting (closest match first) */
+  requiredM2?: number;
+  /** Customer name — rolls used by this customer sort first */
+  customerName?: string;
 }
 
 const RollSelectDrawer = ({
@@ -36,6 +40,8 @@ const RollSelectDrawer = ({
   selectedRollIds = [],
   onConfirm,
   multiSelect = true,
+  requiredM2,
+  customerName,
 }: RollSelectDrawerProps) => {
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,18 +93,41 @@ const RollSelectDrawer = ({
       );
     }
 
-    // Sort: selected first (in selection order), then by remaining m² descending
-    const selectedSet = new Set(selected);
+    // Smart sort:
+    // 1. Rolls used by this customer first
+    // 2. Closest remaining m² to requiredM2 (if set), otherwise by remaining desc
+    const customerLower = customerName?.toLowerCase();
+    const target = requiredM2 && requiredM2 > 0 ? requiredM2 : null;
+
     return [...result].sort((a, b) => {
-      const aSelected = selectedSet.has(a.id) ? 1 : 0;
-      const bSelected = selectedSet.has(b.id) ? 1 : 0;
-      if (aSelected !== bSelected) return bSelected - aSelected;
-      if (aSelected && bSelected) {
-        return selected.indexOf(a.id) - selected.indexOf(b.id);
+      // Customer match priority
+      const aCustomer = customerLower
+        ? (a.customerNames || []).some((n) => n.toLowerCase().includes(customerLower)) ? 1 : 0
+        : 0;
+      const bCustomer = customerLower
+        ? (b.customerNames || []).some((n) => n.toLowerCase().includes(customerLower)) ? 1 : 0
+        : 0;
+      if (aCustomer !== bCustomer) return bCustomer - aCustomer;
+
+      // Closest to required m² (only rolls with enough remaining)
+      if (target) {
+        const aM2 = mbToM2(a.remainingMb || 0, a.widthMm);
+        const bM2 = mbToM2(b.remainingMb || 0, b.widthMm);
+        const aHasEnough = aM2 >= target ? 1 : 0;
+        const bHasEnough = bM2 >= target ? 1 : 0;
+        if (aHasEnough !== bHasEnough) return bHasEnough - aHasEnough;
+        // Among those with enough: closest to target first (least waste)
+        if (aHasEnough && bHasEnough) {
+          return (aM2 - target) - (bM2 - target);
+        }
+        // Among those without enough: most remaining first
+        return bM2 - aM2;
       }
+
+      // Default: remaining m² descending
       return (b.remainingMb || 0) - (a.remainingMb || 0);
     });
-  }, [rolls, search, selected]);
+  }, [rolls, search, requiredM2, customerName]);
 
   const toggleRoll = (roll: SalesRoll) => {
     if (multiSelect) {
