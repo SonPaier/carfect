@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Loader2, Info } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -110,6 +110,8 @@ const AddSalesOrderDrawer = ({
     postalCode: '',
     city: '',
   });
+  // When loading an edited order with a saved address, skip the next customer-fetch override
+  const skipAddressOverrideRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const [customerAddress, setCustomerAddress] = useState<{ postalCode: string; city: string }>({
     postalCode: '',
@@ -143,6 +145,7 @@ const AddSalesOrderDrawer = ({
       setAttachments(editOrder.attachments || []);
       if (editOrder.shippingAddress) {
         setShippingAddress(editOrder.shippingAddress);
+        skipAddressOverrideRef.current = true;
       }
     } else if (open && !editOrder) {
       if (orderPackages.packages.length === 0) {
@@ -188,13 +191,17 @@ const AddSalesOrderDrawer = ({
             postalCode: data.shipping_postal_code || '',
             city: data.shipping_city || '',
           });
-          setShippingAddress({
-            country: data.shipping_country_code || 'PL',
-            street: data.shipping_street || '',
-            streetLine2: data.shipping_street_line2 || '',
-            postalCode: data.shipping_postal_code || '',
-            city: data.shipping_city || '',
-          });
+          if (skipAddressOverrideRef.current) {
+            skipAddressOverrideRef.current = false;
+          } else {
+            setShippingAddress({
+              country: data.shipping_country_code || 'PL',
+              street: data.shipping_street || '',
+              streetLine2: data.shipping_street_line2 || '',
+              postalCode: data.shipping_postal_code || '',
+              city: data.shipping_city || '',
+            });
+          }
         }
       });
   }, [customerSearch.selectedCustomer?.id]);
