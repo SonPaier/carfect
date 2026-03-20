@@ -31,7 +31,7 @@
 
 @layer base {
   :root {
-    --background: 209 40% 96%;
+    --background: 30 40% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -59,7 +59,7 @@
     --input: 0 0% 100%;
     --ring: 216 19% 26%;
 
-    --radius: 0.25rem;
+    --radius: 0.5rem;
     --drawer-width: 550px;
     --sales-content-max-width: 1200px;
 
@@ -150,7 +150,7 @@
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --radius: 0.25rem;
+    --radius: 0.5rem;
   }
 }
 

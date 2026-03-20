@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
-import { useCreateEmployeeDayOff, DayOffType, DAY_OFF_TYPE_LABELS } from '@/hooks/useEmployeeDaysOff';
+import {
+  useCreateEmployeeDayOff,
+  DayOffType,
+  DAY_OFF_TYPE_LABELS,
+} from '@/hooks/useEmployeeDaysOff';
 import { Employee } from '@/hooks/useEmployees';
 import { toast } from 'sonner';
 import { Loader2, CalendarIcon } from 'lucide-react';
@@ -97,7 +95,7 @@ const AddEmployeeDayOffDialog = ({
                   variant="outline"
                   className={cn(
                     'w-full justify-start text-left font-normal bg-white',
-                    !dateRange?.from && 'text-muted-foreground'
+                    !dateRange?.from && 'text-muted-foreground',
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -124,8 +122,10 @@ const AddEmployeeDayOffDialog = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(DAY_OFF_TYPE_LABELS) as DayOffType[]).map(type => (
-                  <SelectItem key={type} value={type}>{DAY_OFF_TYPE_LABELS[type]}</SelectItem>
+                {(Object.keys(DAY_OFF_TYPE_LABELS) as DayOffType[]).map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {DAY_OFF_TYPE_LABELS[type]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -139,8 +139,10 @@ const AddEmployeeDayOffDialog = ({
                 <SelectValue placeholder="Wybierz pracownika" />
               </SelectTrigger>
               <SelectContent>
-                {employees.map(emp => (
-                  <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                {employees.map((emp) => (
+                  <SelectItem key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -148,10 +150,10 @@ const AddEmployeeDayOffDialog = ({
         </div>
 
         <DialogFooter className="flex flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 bg-white">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-white">
             Anuluj
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Dodaj
           </Button>

@@ -520,7 +520,7 @@ const SettingsView = ({
             </div>
 
             {/* Save Button */}
-            <Button onClick={handleSaveCompany} disabled={loading} className="w-full">
+            <Button onClick={handleSaveCompany} disabled={loading}>
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (

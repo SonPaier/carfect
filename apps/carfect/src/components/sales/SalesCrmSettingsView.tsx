@@ -373,7 +373,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                   </div>
                 </div>
 
-                <Button onClick={handleSaveApaczka} disabled={savingApaczka} className="w-full">
+                <Button onClick={handleSaveApaczka} disabled={savingApaczka}>
                   {savingApaczka ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (

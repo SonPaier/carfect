@@ -59,7 +59,10 @@ export const CustomerSearchSection = ({
               placeholder="Wyszukaj klienta..."
               value={customerSearch}
               onChange={(e) => setCustomerSearch(e.target.value)}
-              onFocus={() => { if (customerSearch.length >= CUSTOMER_SEARCH_MIN_LENGTH && searchResults.length > 0) setDropdownOpen(true); }}
+              onFocus={() => {
+                if (customerSearch.length >= CUSTOMER_SEARCH_MIN_LENGTH && searchResults.length > 0)
+                  setDropdownOpen(true);
+              }}
               onKeyDown={handleCustomerKeyDown}
               className="pl-9 pr-9"
             />
@@ -86,7 +89,7 @@ export const CustomerSearchSection = ({
               ) : !searching ? (
                 <div className="p-4 text-center space-y-3">
                   <p className="text-sm text-muted-foreground">Nie znaleziono klientów</p>
-                  <Button type="button" className="w-full" onClick={onAddNewCustomer}>
+                  <Button type="button" onClick={onAddNewCustomer}>
                     <Plus className="w-4 h-4 mr-1" />
                     Dodaj klienta
                   </Button>

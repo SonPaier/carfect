@@ -15,11 +15,7 @@ interface WorkersSettingsDrawerProps {
   instanceId: string | null;
 }
 
-const WorkersSettingsDrawer = ({
-  open,
-  onOpenChange,
-  instanceId,
-}: WorkersSettingsDrawerProps) => {
+const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettingsDrawerProps) => {
   const { data: settings, isLoading } = useWorkersSettings(instanceId);
   const updateSettings = useUpdateWorkersSettings(instanceId);
 
@@ -27,7 +23,9 @@ const WorkersSettingsDrawer = ({
   const [overtimeEnabled, setOvertimeEnabled] = useState(false);
   const [standardHours, setStandardHours] = useState('8');
   const [reportFrequency, setReportFrequency] = useState<'monthly' | 'weekly'>('monthly');
-  const [timeCalculationMode, setTimeCalculationMode] = useState<'start_to_stop' | 'opening_to_stop'>('start_to_stop');
+  const [timeCalculationMode, setTimeCalculationMode] = useState<
+    'start_to_stop' | 'opening_to_stop'
+  >('start_to_stop');
 
   // Sync form state with fetched settings
   useEffect(() => {
@@ -70,10 +68,7 @@ const WorkersSettingsDrawer = ({
         <div className="sticky top-0 z-10 bg-background border-b p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Ustawienia czasu pracy</h2>
-            <button 
-              onClick={handleClose}
-              className="p-2 rounded-full hover:bg-hover"
-            >
+            <button onClick={handleClose} className="p-2 rounded-full hover:bg-hover">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -91,14 +86,15 @@ const WorkersSettingsDrawer = ({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="start-stop">Włączona rejestracja Start/Stop</Label>
-                  <Switch 
+                  <Switch
                     id="start-stop"
-                    checked={startStopEnabled} 
-                    onCheckedChange={setStartStopEnabled} 
+                    checked={startStopEnabled}
+                    onCheckedChange={setStartStopEnabled}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Pracownik "odbija się" na wejściu i wyjściu z pracy. Gdy wyłączone, podaje liczbę godzin i minut w danym dniu.
+                  Pracownik "odbija się" na wejściu i wyjściu z pracy. Gdy wyłączone, podaje liczbę
+                  godzin i minut w danym dniu.
                 </p>
               </div>
 
@@ -106,9 +102,11 @@ const WorkersSettingsDrawer = ({
               {startStopEnabled && (
                 <div className="space-y-3">
                   <Label>Jak liczyć czas?</Label>
-                  <RadioGroup 
-                    value={timeCalculationMode} 
-                    onValueChange={(v) => setTimeCalculationMode(v as 'start_to_stop' | 'opening_to_stop')}
+                  <RadioGroup
+                    value={timeCalculationMode}
+                    onValueChange={(v) =>
+                      setTimeCalculationMode(v as 'start_to_stop' | 'opening_to_stop')
+                    }
                   >
                     <div className="space-y-0.5">
                       <div className="flex items-center space-x-2">
@@ -140,10 +138,10 @@ const WorkersSettingsDrawer = ({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="overtime">Naliczanie nadgodzin</Label>
-                  <Switch 
+                  <Switch
                     id="overtime"
-                    checked={overtimeEnabled} 
-                    onCheckedChange={setOvertimeEnabled} 
+                    checked={overtimeEnabled}
+                    onCheckedChange={setOvertimeEnabled}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -155,12 +153,12 @@ const WorkersSettingsDrawer = ({
               {overtimeEnabled && (
                 <div className="space-y-2">
                   <Label htmlFor="standard-hours">Norma dzienna (godziny)</Label>
-                  <Input 
+                  <Input
                     id="standard-hours"
-                    type="number" 
-                    min="1" 
-                    max="24" 
-                    value={standardHours} 
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={standardHours}
                     onChange={(e) => setStandardHours(e.target.value)}
                     className="w-24"
                   />
@@ -170,8 +168,8 @@ const WorkersSettingsDrawer = ({
               {/* RadioGroup: Okres rozliczeniowy */}
               <div className="space-y-3">
                 <Label>Okres rozliczeniowy</Label>
-                <RadioGroup 
-                  value={reportFrequency} 
+                <RadioGroup
+                  value={reportFrequency}
                   onValueChange={(v) => setReportFrequency(v as 'monthly' | 'weekly')}
                 >
                   <div className="space-y-0.5">
@@ -192,9 +190,7 @@ const WorkersSettingsDrawer = ({
                         Tygodniowo
                       </Label>
                     </div>
-                    <p className="text-xs text-muted-foreground ml-6">
-                      Podsumowanie co tydzień
-                    </p>
+                    <p className="text-xs text-muted-foreground ml-6">Podsumowanie co tydzień</p>
                   </div>
                 </RadioGroup>
               </div>
@@ -203,11 +199,11 @@ const WorkersSettingsDrawer = ({
         </div>
 
         {/* Sticky white footer */}
-        <div className="sticky bottom-0 bg-background border-t p-4 flex gap-3">
-          <Button variant="outline" onClick={handleClose} className="flex-1 bg-white">
+        <div className="sticky bottom-0 bg-background border-t p-4 flex gap-3 justify-end">
+          <Button variant="outline" onClick={handleClose} className="bg-white">
             Anuluj
           </Button>
-          <Button onClick={handleSave} disabled={saving || isLoading} className="flex-1">
+          <Button onClick={handleSave} disabled={saving || isLoading}>
             {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             Zapisz
           </Button>

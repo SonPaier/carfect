@@ -3,7 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
 import { Badge } from '@shared/ui';
-import { Trash2, Check, CalendarPlus, XCircle, Ban, Pencil, FileEdit, CircleCheck, FileText, Bell, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import {
+  Trash2,
+  Check,
+  CalendarPlus,
+  XCircle,
+  Ban,
+  Pencil,
+  FileEdit,
+  CircleCheck,
+  FileText,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from 'lucide-react';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -30,13 +44,13 @@ interface NotificationsViewProps {
 
 const ITEMS_PER_PAGE = 20;
 
-export default function NotificationsView({ 
-  instanceId, 
+export default function NotificationsView({
+  instanceId,
   onNavigateBack,
   onNavigateToOffers,
   onNavigateToReservations,
   onReservationClick,
-  onNotificationsChange
+  onNotificationsChange,
 }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +58,7 @@ export default function NotificationsView({
 
   useEffect(() => {
     if (!instanceId) return;
-    
+
     const fetchNotifications = async () => {
       setLoading(true);
       const { data, error } = await supabase
@@ -65,25 +79,28 @@ export default function NotificationsView({
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read
     if (!notification.read) {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notification.id);
-      
-      setNotifications(prev => 
-        prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+      await supabase.from('notifications').update({ read: true }).eq('id', notification.id);
+
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)),
       );
       onNotificationsChange?.();
     }
 
     // Open drawer for reservation notifications
-    if (notification.entity_type === 'reservation' && notification.entity_id && onReservationClick) {
+    if (
+      notification.entity_type === 'reservation' &&
+      notification.entity_id &&
+      onReservationClick
+    ) {
       const { data: reservationData } = await supabase
         .from('reservations')
-        .select(`
+        .select(
+          `
           *,
           station:stations(name, type)
-        `)
+        `,
+        )
         .eq('id', notification.entity_id)
         .single();
 
@@ -92,7 +109,7 @@ export default function NotificationsView({
         let servicesData: any[] | null = null;
         const serviceItems = reservationData.service_items as any[] | null;
         const serviceIds = reservationData.service_ids as string[] | null;
-        
+
         if (serviceItems && Array.isArray(serviceItems) && serviceItems.length > 0) {
           // Use embedded names from service_items
           servicesData = serviceItems.map((item: any) => ({
@@ -104,7 +121,7 @@ export default function NotificationsView({
             .from('unified_services')
             .select('id, name, short_name')
             .in('id', serviceIds);
-          servicesData = (services || []).map(s => ({
+          servicesData = (services || []).map((s) => ({
             id: s.id,
             name: s.name,
             shortcut: s.short_name,
@@ -113,7 +130,7 @@ export default function NotificationsView({
 
         onReservationClick({
           ...reservationData,
-          services_data: servicesData
+          services_data: servicesData,
         });
       }
       return;
@@ -131,70 +148,132 @@ export default function NotificationsView({
       .update({ read: true })
       .eq('instance_id', instanceId)
       .eq('read', false);
-    
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     onNotificationsChange?.();
   };
 
   const handleDeleteAll = async () => {
-    await supabase
-      .from('notifications')
-      .delete()
-      .eq('instance_id', instanceId);
-    
+    await supabase.from('notifications').delete().eq('instance_id', instanceId);
+
     setNotifications([]);
     onNotificationsChange?.();
   };
 
   const getNotificationIcon = (type: string) => {
-    const iconClass = "w-5 h-5";
+    const iconClass = 'w-5 h-5';
     switch (type) {
       case 'reservation_new':
-        return { icon: <CalendarPlus className={cn(iconClass, "text-green-600")} />, bg: "bg-green-50" };
+        return {
+          icon: <CalendarPlus className={cn(iconClass, 'text-green-600')} />,
+          bg: 'bg-green-50',
+        };
       case 'reservation_cancelled':
-        return { icon: <XCircle className={cn(iconClass, "text-red-600")} />, bg: "bg-red-50" };
+        return { icon: <XCircle className={cn(iconClass, 'text-red-600')} />, bg: 'bg-red-50' };
       case 'reservation_cancelled_by_customer':
-        return { icon: <Ban className={cn(iconClass, "text-red-600")} />, bg: "bg-red-50" };
+        return { icon: <Ban className={cn(iconClass, 'text-red-600')} />, bg: 'bg-red-50' };
       case 'reservation_edited':
-        return { icon: <Pencil className={cn(iconClass, "text-amber-600")} />, bg: "bg-amber-50" };
+        return { icon: <Pencil className={cn(iconClass, 'text-amber-600')} />, bg: 'bg-amber-50' };
       case 'reservation_edited_by_customer':
-        return { icon: <FileEdit className={cn(iconClass, "text-purple-600")} />, bg: "bg-purple-50" };
+        return {
+          icon: <FileEdit className={cn(iconClass, 'text-purple-600')} />,
+          bg: 'bg-purple-50',
+        };
       case 'change_request':
-        return { icon: <RefreshCw className={cn(iconClass, "text-orange-600")} />, bg: "bg-orange-50" };
+        return {
+          icon: <RefreshCw className={cn(iconClass, 'text-orange-600')} />,
+          bg: 'bg-orange-50',
+        };
       case 'offer_approved':
-        return { icon: <CircleCheck className={cn(iconClass, "text-emerald-600")} />, bg: "bg-emerald-50" };
+        return {
+          icon: <CircleCheck className={cn(iconClass, 'text-emerald-600')} />,
+          bg: 'bg-emerald-50',
+        };
       case 'offer_modified':
-        return { icon: <FileText className={cn(iconClass, "text-blue-600")} />, bg: "bg-blue-50" };
+        return { icon: <FileText className={cn(iconClass, 'text-blue-600')} />, bg: 'bg-blue-50' };
       default:
-        return { icon: <Bell className={cn(iconClass, "text-muted-foreground")} />, bg: "bg-muted/50" };
+        return {
+          icon: <Bell className={cn(iconClass, 'text-muted-foreground')} />,
+          bg: 'bg-muted/50',
+        };
     }
   };
 
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'reservation_new':
-        return <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/30">Nowa rezerwacja</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-green-500/10 text-green-500 border-green-500/30"
+          >
+            Nowa rezerwacja
+          </Badge>
+        );
       case 'reservation_cancelled':
-        return <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/30">Anulowana</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/30">
+            Anulowana
+          </Badge>
+        );
       case 'reservation_cancelled_by_customer':
-        return <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/30">Anulowana przez klienta</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/30">
+            Anulowana przez klienta
+          </Badge>
+        );
       case 'reservation_edited':
-        return <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/30">Edytowana</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/30"
+          >
+            Edytowana
+          </Badge>
+        );
       case 'reservation_edited_by_customer':
-        return <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-500 border-purple-500/30">Zmieniona przez klienta</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-purple-500/10 text-purple-500 border-purple-500/30"
+          >
+            Zmieniona przez klienta
+          </Badge>
+        );
       case 'change_request':
-        return <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-500 border-orange-500/30">Prośba o zmianę</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-orange-500/10 text-orange-500 border-orange-500/30"
+          >
+            Prośba o zmianę
+          </Badge>
+        );
       case 'offer_approved':
-        return <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/30">Oferta zaakceptowana</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+          >
+            Oferta zaakceptowana
+          </Badge>
+        );
       case 'offer_modified':
-        return <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/30">Oferta zmieniona</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/30"
+          >
+            Oferta zmieniona
+          </Badge>
+        );
       default:
         return null;
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   // Pagination
   const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -223,13 +302,13 @@ export default function NotificationsView({
         {/* Mobile buttons */}
         <div className="flex gap-2 sm:hidden">
           {unreadCount > 0 && (
-            <Button variant="outline" size="sm" className="flex-1" onClick={handleMarkAllRead}>
+            <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
               <Check className="w-4 h-4 mr-1" />
               Oznacz wszystkie
             </Button>
           )}
           {notifications.length > 0 && (
-            <Button variant="outline" size="sm" className="flex-1" onClick={handleDeleteAll}>
+            <Button variant="outline" size="sm" onClick={handleDeleteAll}>
               <Trash2 className="w-4 h-4 mr-1" />
               Usuń wszystkie
             </Button>
@@ -248,12 +327,12 @@ export default function NotificationsView({
       ) : (
         <>
           <div className="space-y-2">
-            {paginatedNotifications.map(notification => (
+            {paginatedNotifications.map((notification) => (
               <Card
                 key={notification.id}
                 className={cn(
-                  "cursor-pointer hover:bg-accent/50 transition-colors",
-                  !notification.read && "bg-primary/5 border-primary/20"
+                  'cursor-pointer hover:bg-accent/50 transition-colors',
+                  !notification.read && 'bg-primary/5 border-primary/20',
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -261,17 +340,21 @@ export default function NotificationsView({
                   {(() => {
                     const { icon, bg } = getNotificationIcon(notification.type);
                     return (
-                      <div className={cn("shrink-0 w-10 h-10 rounded-lg flex items-center justify-center", bg)}>
+                      <div
+                        className={cn(
+                          'shrink-0 w-10 h-10 rounded-lg flex items-center justify-center',
+                          bg,
+                        )}
+                      >
                         {icon}
                       </div>
                     );
                   })()}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className={cn(
-                        "font-medium",
-                        notification.read && "text-muted-foreground"
-                      )}>
+                      <p
+                        className={cn('font-medium', notification.read && 'text-muted-foreground')}
+                      >
                         {notification.title}
                       </p>
                       {!notification.read && (
@@ -310,7 +393,7 @@ export default function NotificationsView({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -321,7 +404,7 @@ export default function NotificationsView({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               >
                 <ChevronRight className="w-4 h-4" />

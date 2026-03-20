@@ -5,7 +5,16 @@ import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
-import { Loader2, Plus, Trash2, ExternalLink, Copy, Check, GripVertical, ChevronDown } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Copy,
+  Check,
+  GripVertical,
+  ChevronDown,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ScrollArea } from '@shared/ui';
@@ -91,7 +100,13 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   } | null>(null);
 
   // Update preview branding in real-time from child component state
-  const handleBrandingChange = (widgetBranding?: { enabled: boolean; bgColor: string; sectionBgColor: string; sectionTextColor: string; primaryColor: string }) => {
+  const handleBrandingChange = (widgetBranding?: {
+    enabled: boolean;
+    bgColor: string;
+    sectionBgColor: string;
+    sectionTextColor: string;
+    primaryColor: string;
+  }) => {
     if (!widgetBranding) return;
     onChange();
 
@@ -116,7 +131,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         // Fetch instance with widget_config and branding colors
         const { data: instance } = await supabase
           .from('instances')
-          .select('slug, widget_config, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color, widget_branding_enabled, widget_bg_color, widget_section_bg_color, widget_section_text_color, widget_primary_color')
+          .select(
+            'slug, widget_config, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color, widget_branding_enabled, widget_bg_color, widget_section_bg_color, widget_section_text_color, widget_primary_color',
+          )
           .eq('id', instanceId)
           .single();
 
@@ -140,21 +157,29 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
           });
 
           // Store offer branding for toggle-off fallback
-          const offerBrand = instance.offer_branding_enabled ? {
-            bgColor: instance.offer_bg_color || DEFAULT_BRANDING.offer_bg_color,
-            sectionBgColor: instance.offer_section_bg_color || DEFAULT_BRANDING.offer_section_bg_color,
-            sectionTextColor: instance.offer_section_text_color || DEFAULT_BRANDING.offer_section_text_color,
-            primaryColor: instance.offer_primary_color || DEFAULT_BRANDING.offer_primary_color,
-          } : null;
+          const offerBrand = instance.offer_branding_enabled
+            ? {
+                bgColor: instance.offer_bg_color || DEFAULT_BRANDING.offer_bg_color,
+                sectionBgColor:
+                  instance.offer_section_bg_color || DEFAULT_BRANDING.offer_section_bg_color,
+                sectionTextColor:
+                  instance.offer_section_text_color || DEFAULT_BRANDING.offer_section_text_color,
+                primaryColor: instance.offer_primary_color || DEFAULT_BRANDING.offer_primary_color,
+              }
+            : null;
           setOfferBranding(offerBrand);
 
           // Set branding with fallback: widget -> offer -> defaults
           if (instance.widget_branding_enabled) {
             setBranding({
               bgColor: instance.widget_bg_color || DEFAULT_WIDGET_BRANDING.widget_bg_color,
-              sectionBgColor: instance.widget_section_bg_color || DEFAULT_WIDGET_BRANDING.widget_section_bg_color,
-              sectionTextColor: instance.widget_section_text_color || DEFAULT_WIDGET_BRANDING.widget_section_text_color,
-              primaryColor: instance.widget_primary_color || DEFAULT_WIDGET_BRANDING.widget_primary_color,
+              sectionBgColor:
+                instance.widget_section_bg_color || DEFAULT_WIDGET_BRANDING.widget_section_bg_color,
+              sectionTextColor:
+                instance.widget_section_text_color ||
+                DEFAULT_WIDGET_BRANDING.widget_section_text_color,
+              primaryColor:
+                instance.widget_primary_color || DEFAULT_WIDGET_BRANDING.widget_primary_color,
             });
           } else {
             setBranding(offerBrand);
@@ -175,8 +200,8 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
 
         // Fetch available durations for each template from products metadata
         if (templatesData && templatesData.length > 0) {
-          const templateIds = templatesData.map(t => t.id);
-          
+          const templateIds = templatesData.map((t) => t.id);
+
           // Fetch scope products
           const { data: scopeProducts } = await supabase
             .from('offer_scope_products')
@@ -184,8 +209,8 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
             .in('scope_id', templateIds);
 
           if (scopeProducts && scopeProducts.length > 0) {
-            const productIds = [...new Set(scopeProducts.map(sp => sp.product_id))];
-            
+            const productIds = [...new Set(scopeProducts.map((sp) => sp.product_id))];
+
             // Fetch product metadata
             const { data: products } = await supabase
               .from('unified_services')
@@ -222,7 +247,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
               }
 
               // Merge durations into templates
-              templatesWithDurations = templatesData.map(t => ({
+              templatesWithDurations = templatesData.map((t) => ({
                 ...t,
                 available_durations: templateDurations[t.id] || [],
               }));
@@ -235,7 +260,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         // Fetch services for extras selection
         const { data: servicesData } = await supabase
           .from('unified_services')
-          .select('id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id')
+          .select(
+            'id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id',
+          )
           .eq('instance_id', instanceId)
           .eq('service_type', 'both')
           .eq('active', true)
@@ -269,36 +296,33 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   }, [instanceId]);
 
   const handleTemplateToggle = (templateId: string, checked: boolean) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       visible_templates: checked
         ? [...prev.visible_templates, templateId]
-        : prev.visible_templates.filter(id => id !== templateId),
+        : prev.visible_templates.filter((id) => id !== templateId),
     }));
     onChange();
   };
 
   const handlePriceFromChange = async (templateId: string, value: string) => {
     const numValue = value ? parseFloat(value) : null;
-    
+
     // Update local state
-    setTemplates(prev => prev.map(t => 
-      t.id === templateId ? { ...t, price_from: numValue } : t
-    ));
+    setTemplates((prev) =>
+      prev.map((t) => (t.id === templateId ? { ...t, price_from: numValue } : t)),
+    );
 
     // Save to database
-    await supabase
-      .from('offer_scopes')
-      .update({ price_from: numValue })
-      .eq('id', templateId);
-    
+    await supabase.from('offer_scopes').update({ price_from: numValue }).eq('id', templateId);
+
     onChange();
   };
 
   const handleAddExtra = (serviceId: string) => {
-    if (config.extras.some(e => e.service_id === serviceId)) return;
-    
-    setConfig(prev => ({
+    if (config.extras.some((e) => e.service_id === serviceId)) return;
+
+    setConfig((prev) => ({
       ...prev,
       extras: [...prev.extras, { service_id: serviceId, custom_label: null }],
     }));
@@ -306,36 +330,36 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   };
 
   const handleRemoveExtra = (serviceId: string) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      extras: prev.extras.filter(e => e.service_id !== serviceId),
+      extras: prev.extras.filter((e) => e.service_id !== serviceId),
     }));
     onChange();
   };
 
   const handleExtraLabelChange = (serviceId: string, label: string) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      extras: prev.extras.map(e => 
-        e.service_id === serviceId ? { ...e, custom_label: label || null } : e
+      extras: prev.extras.map((e) =>
+        e.service_id === serviceId ? { ...e, custom_label: label || null } : e,
       ),
     }));
     onChange();
   };
 
   const getServiceName = (serviceId: string): string => {
-    return services.find(s => s.id === serviceId)?.name || 'Nieznana usługa';
+    return services.find((s) => s.id === serviceId)?.name || 'Nieznana usługa';
   };
 
   // Build products for drawer (use service ID as the main ID)
   const drawerProducts = useMemo(() => {
     // Build category name map
     const categoryNameMap: Record<string, string> = {};
-    categories.forEach(c => {
+    categories.forEach((c) => {
       categoryNameMap[c.id] = c.name;
     });
 
-    return services.map(s => ({
+    return services.map((s) => ({
       id: s.id,
       productId: s.id,
       productName: s.name,
@@ -343,7 +367,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
       variantName: null,
       price: (() => {
         if (s.price_from != null && s.price_from > 0) return s.price_from;
-        const sizes = [s.price_small, s.price_medium, s.price_large].filter((p): p is number => p != null && p > 0);
+        const sizes = [s.price_small, s.price_medium, s.price_large].filter(
+          (p): p is number => p != null && p > 0,
+        );
         if (sizes.length > 0) return Math.min(...sizes);
         return s.default_price ?? 0;
       })(),
@@ -354,28 +380,30 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   // Build category order map
   const categoryOrder = useMemo(() => {
     const order: Record<string, number> = {};
-    categories.forEach(c => {
+    categories.forEach((c) => {
       order[c.name] = c.sort_order ?? 999;
     });
     return order;
   }, [categories]);
 
   // Handle extras selection from drawer
-  const handleExtrasSelected = (products: { id: string; productId: string; productName: string }[]) => {
+  const handleExtrasSelected = (
+    products: { id: string; productId: string; productName: string }[],
+  ) => {
     // Keep existing custom labels where possible
-    const existingLabels = new Map(config.extras.map(e => [e.service_id, e.custom_label]));
-    
-    const newExtras = products.map(p => ({
+    const existingLabels = new Map(config.extras.map((e) => [e.service_id, e.custom_label]));
+
+    const newExtras = products.map((p) => ({
       service_id: p.id,
       custom_label: existingLabels.get(p.id) || null,
     }));
-    
-    setConfig(prev => ({ ...prev, extras: newExtras }));
+
+    setConfig((prev) => ({ ...prev, extras: newExtras }));
     onChange();
   };
 
   // Get already selected service IDs for drawer
-  const selectedExtrasIds = config.extras.map(e => e.service_id);
+  const selectedExtrasIds = config.extras.map((e) => e.service_id);
 
   const embedUrl = `https://${instanceSlug}.carfect.pl/embed`;
   const iframeCode = `<iframe 
@@ -398,10 +426,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
     try {
       // Convert to JSON-compatible format
       const jsonConfig = JSON.parse(JSON.stringify(config));
-      await supabase
-        .from('instances')
-        .update({ widget_config: jsonConfig })
-        .eq('id', instanceId);
+      await supabase.from('instances').update({ widget_config: jsonConfig }).eq('id', instanceId);
     } catch (error) {
       console.error('Error saving widget config:', error);
     }
@@ -428,7 +453,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
       <div className="space-y-6">
         {/* Templates visibility and pricing */}
         <div className="space-y-4">
-        <div>
+          <div>
             <h3 className="font-medium">Szablony w formularzu</h3>
             <p className="text-sm text-muted-foreground">
               Wybierz które szablony będą widoczne i ustaw ceny "od"
@@ -436,10 +461,10 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
           </div>
 
           <div className="space-y-3">
-            {templates.map(template => {
+            {templates.map((template) => {
               const isVisible = config.visible_templates.includes(template.id);
               return (
-                <div 
+                <div
                   key={template.id}
                   className="flex items-center gap-3 p-3 rounded-lg border bg-card"
                 >
@@ -488,8 +513,8 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
           </div>
 
           <div className="space-y-2">
-            {config.extras.map(extra => (
-              <div 
+            {config.extras.map((extra) => (
+              <div
                 key={extra.service_id}
                 className="flex items-center gap-2 p-3 rounded-lg border bg-card"
               >
@@ -544,7 +569,8 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
           <div>
             <h3 className="font-medium">Udostępnij wtyczkę</h3>
             <p className="text-sm text-muted-foreground">
-              Przekieruj klientów bezpośrednio do formularza, lub skopiuj kod iframe i wklej na swojej stronie
+              Przekieruj klientów bezpośrednio do formularza, lub skopiuj kod iframe i wklej na
+              swojej stronie
             </p>
           </div>
 
@@ -563,8 +589,8 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
               readOnly
               className="w-full h-24 font-mono text-xs bg-muted p-3 rounded-md border resize-none"
             />
-            
-            <Button onClick={handleCopyCode} variant="outline" className="w-full">
+
+            <Button onClick={handleCopyCode} variant="outline">
               {copied ? (
                 <>
                   <Check className="w-4 h-4 mr-2" />
@@ -604,9 +630,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
           <p className="text-xs text-center text-muted-foreground">Podgląd widgetu</p>
         </div>
         <ScrollArea className="h-[600px]">
-          <EmbedLeadFormPreview 
-            templates={templates.filter(t => config.visible_templates.includes(t.id))}
-            extras={config.extras.map(e => ({
+          <EmbedLeadFormPreview
+            templates={templates.filter((t) => config.visible_templates.includes(t.id))}
+            extras={config.extras.map((e) => ({
               id: e.service_id,
               name: e.custom_label || getServiceName(e.service_id),
             }))}

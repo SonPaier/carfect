@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -34,7 +29,12 @@ interface SendProtocolEmailDialogProps {
   onSent?: () => void;
 }
 
-const getDefaultMessage = (customerName: string, vehicleInfo: string | undefined, protocolType: ProtocolType, template?: string | null) => {
+const getDefaultMessage = (
+  customerName: string,
+  vehicleInfo: string | undefined,
+  protocolType: ProtocolType,
+  template?: string | null,
+) => {
   if (template) {
     const typeLabel = PROTOCOL_TYPE_LABELS[protocolType];
     return template
@@ -73,7 +73,7 @@ export const SendProtocolEmailDialog = ({
     if (open) {
       setEmail(customerEmail || '');
       setSubject(getDefaultSubject(vehicleInfo, protocolType));
-      
+
       // Fetch email template if instanceId is provided
       if (instanceId) {
         supabase
@@ -147,11 +147,7 @@ export const SendProtocolEmailDialog = ({
 
       <div className="space-y-2">
         <Label htmlFor="subject">Temat</Label>
-        <Input
-          id="subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-        />
+        <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
       </div>
 
       <div className="space-y-2 flex-1 flex flex-col">
@@ -168,11 +164,11 @@ export const SendProtocolEmailDialog = ({
   );
 
   const footerContent = (
-    <div className="flex gap-2 w-full">
-      <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 bg-white">
+    <div className="flex gap-2 justify-end">
+      <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-white">
         Anuluj
       </Button>
-      <Button onClick={handleSend} disabled={sending || !email} className="flex-1">
+      <Button onClick={handleSend} disabled={sending || !email}>
         {sending ? (
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
         ) : (
@@ -191,9 +187,7 @@ export const SendProtocolEmailDialog = ({
             <DrawerTitle>Wyślij protokół emailem</DrawerTitle>
           </DrawerHeader>
           {formContent}
-          <div className="border-t p-4 mt-auto">
-            {footerContent}
-          </div>
+          <div className="border-t p-4 mt-auto">{footerContent}</div>
         </DrawerContent>
       </Drawer>
     );
@@ -206,9 +200,7 @@ export const SendProtocolEmailDialog = ({
           <DialogTitle>Wyślij protokół emailem</DialogTitle>
         </DialogHeader>
         {formContent}
-        <div className="border-t pt-4">
-          {footerContent}
-        </div>
+        <div className="border-t pt-4">{footerContent}</div>
       </DialogContent>
     </Dialog>
   );

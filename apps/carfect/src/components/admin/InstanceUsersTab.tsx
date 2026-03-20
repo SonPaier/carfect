@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Loader2, UserPlus, MoreVertical, Shield, User, Lock, Unlock, Trash2, KeyRound } from 'lucide-react';
+import {
+  Loader2,
+  UserPlus,
+  MoreVertical,
+  Shield,
+  User,
+  Lock,
+  Unlock,
+  Trash2,
+  KeyRound,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
@@ -47,7 +57,9 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error(t('instanceUsers.sessionExpired'));
         return;
@@ -70,7 +82,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
 
       const fetchedUsers = (response.data?.users || []) as InstanceUser[];
       setUsers(
-        fetchedUsers.map(u => ({
+        fetchedUsers.map((u) => ({
           ...u,
           username: u.username || t('common.noName', 'Brak nazwy'),
         })),
@@ -92,7 +104,9 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
   const handleBlockUnblock = async (user: InstanceUser) => {
     setActionLoading(user.id);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error(t('instanceUsers.sessionExpired'));
         return;
@@ -114,7 +128,9 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
         throw new Error(response.data.error);
       }
 
-      toast.success(user.is_blocked ? t('instanceUsers.userUnblocked') : t('instanceUsers.userBlocked'));
+      toast.success(
+        user.is_blocked ? t('instanceUsers.userUnblocked') : t('instanceUsers.userBlocked'),
+      );
       fetchUsers();
     } catch (error: any) {
       console.error('Error blocking/unblocking user:', error);
@@ -176,7 +192,11 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
     if (isBlocked) {
       return <Badge variant="destructive">{t('instanceUsers.blocked')}</Badge>;
     }
-    return <Badge variant="outline" className="border-green-500 text-green-700">{t('instanceUsers.active')}</Badge>;
+    return (
+      <Badge variant="outline" className="border-green-500 text-green-700">
+        {t('instanceUsers.active')}
+      </Badge>
+    );
   };
 
   if (loading) {
@@ -192,7 +212,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
       {/* Header */}
       <div className="space-y-3">
         <h3 className="text-lg font-medium">{t('instanceUsers.title')}</h3>
-        <Button onClick={() => setAddDialogOpen(true)} className="gap-2 w-full sm:w-auto">
+        <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
           <UserPlus className="w-4 h-4" />
           {t('instanceUsers.addUser')}
         </Button>
@@ -202,11 +222,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
         <div className="text-center py-8 text-muted-foreground">
           <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>{t('instanceUsers.noUsers')}</p>
-          <Button 
-            variant="link" 
-            onClick={() => setAddDialogOpen(true)}
-            className="mt-2"
-          >
+          <Button variant="link" onClick={() => setAddDialogOpen(true)} className="mt-2">
             {t('instanceUsers.addFirstUser')}
           </Button>
         </div>
@@ -229,15 +245,11 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
                       {format(new Date(user.created_at), 'd MMM yyyy', { locale: pl })}
                     </div>
                   </div>
-                  
+
                   {/* Actions */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        disabled={actionLoading === user.id}
-                      >
+                      <Button variant="ghost" size="icon" disabled={actionLoading === user.id}>
                         {actionLoading === user.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
@@ -269,7 +281,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
                         )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleDelete(user)}
                         className="text-destructive focus:text-destructive"
                       >

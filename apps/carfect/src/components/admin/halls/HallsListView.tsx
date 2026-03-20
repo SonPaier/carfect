@@ -39,7 +39,7 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
       if (error) throw error;
 
       // Map database response to Hall type
-      const mappedHalls: Hall[] = (data || []).map(h => ({
+      const mappedHalls: Hall[] = (data || []).map((h) => ({
         id: h.id,
         instance_id: h.instance_id,
         name: h.name,
@@ -73,12 +73,8 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
   };
 
   const fetchInstanceSlug = async () => {
-    const { data } = await supabase
-      .from('instances')
-      .select('slug')
-      .eq('id', instanceId)
-      .single();
-    
+    const { data } = await supabase.from('instances').select('slug').eq('id', instanceId).single();
+
     if (data) {
       setInstanceSlug(data.slug);
     }
@@ -91,7 +87,7 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
       .eq('instance_id', instanceId)
       .eq('active', true)
       .order('sort_order');
-    
+
     if (data) {
       setStations(data);
     }
@@ -110,14 +106,11 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
 
   const handleDelete = async (hallId: string) => {
     try {
-      const { error } = await supabase
-        .from('halls')
-        .update({ active: false })
-        .eq('id', hallId);
+      const { error } = await supabase.from('halls').update({ active: false }).eq('id', hallId);
 
       if (error) throw error;
 
-      setHalls(prev => prev.filter(h => h.id !== hallId));
+      setHalls((prev) => prev.filter((h) => h.id !== hallId));
       toast.success(t('halls.deleted'));
     } catch (error) {
       console.error('Error deleting hall:', error);
@@ -147,13 +140,9 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t('halls.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {t('halls.description')}
-          </p>
+          <p className="text-muted-foreground text-sm mt-1">{t('halls.description')}</p>
         </div>
-        <Button onClick={handleAddNew} className="w-full sm:w-auto">
-          {t('halls.add')}
-        </Button>
+        <Button onClick={handleAddNew}>{t('halls.add')}</Button>
       </div>
 
       {halls.length === 0 ? (
