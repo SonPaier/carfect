@@ -150,7 +150,14 @@ const AddEditRollDrawer = ({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          handleClose();
+        }
+      }}
+    >
       <SheetContent
         side="right"
         className="w-full sm:max-w-lg flex flex-col bg-white"

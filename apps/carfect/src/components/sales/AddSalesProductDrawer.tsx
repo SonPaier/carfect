@@ -222,8 +222,7 @@ const AddSalesProductDrawer = ({
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) {
-          resetForm();
-          onOpenChange(false);
+          handleClose();
         }
       }}
       modal={false}
