@@ -5,6 +5,7 @@ import { Input, Button, Label, Textarea } from '@shared/ui';
 import { toast } from 'sonner';
 import type { SalesRoll } from '../types/rolls';
 import { createRoll, updateRoll, uploadRollPhoto } from '../services/rollService';
+import { useUnsavedChanges, UnsavedChangesDialog } from '../hooks/useUnsavedChanges';
 
 interface AddEditRollDrawerProps {
   open: boolean;
@@ -35,6 +36,12 @@ const AddEditRollDrawer = ({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const {
+    markDirty,
+    resetDirty,
+    handleClose: handleUnsavedClose,
+    dialogProps,
+  } = useUnsavedChanges();
 
   useEffect(() => {
     if (open && roll) {
@@ -69,6 +76,7 @@ const AddEditRollDrawer = ({
     if (!file) return;
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
+    markDirty();
   };
 
   const handleSave = async () => {
@@ -124,6 +132,7 @@ const AddEditRollDrawer = ({
         toast.success('Rolka dodana');
       }
 
+      resetDirty();
       onOpenChange(false);
       onSaved?.();
     } catch (err: any) {
@@ -133,19 +142,33 @@ const AddEditRollDrawer = ({
     }
   };
 
+  const handleClose = () => {
+    handleUnsavedClose(handleSave, () => {
+      resetDirty();
+      onOpenChange(false);
+    });
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="w-full sm:max-w-lg flex flex-col bg-white"
         hideCloseButton
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          handleClose();
+        }}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleClose();
+        }}
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <SheetTitle>{isEdit ? 'Edytuj rolkę' : 'Dodaj rolkę'}</SheetTitle>
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onClick={handleClose}
             className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
           >
             <X className="w-5 h-5" />
@@ -158,7 +181,10 @@ const AddEditRollDrawer = ({
             <Label>Marka / Producent</Label>
             <Input
               value={brand}
-              onChange={(e) => setBrand(e.target.value)}
+              onChange={(e) => {
+                setBrand(e.target.value);
+                markDirty();
+              }}
               placeholder="np. ULTRAFIT"
             />
           </div>
@@ -168,7 +194,10 @@ const AddEditRollDrawer = ({
             <Label>Nazwa produktu *</Label>
             <Input
               value={productName}
-              onChange={(e) => setProductName(e.target.value)}
+              onChange={(e) => {
+                setProductName(e.target.value);
+                markDirty();
+              }}
               placeholder="np. XP CRYSTAL"
             />
             <p className="text-xs text-muted-foreground">
@@ -181,7 +210,10 @@ const AddEditRollDrawer = ({
             <Label>Opis</Label>
             <Textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                markDirty();
+              }}
               placeholder="np. Paint Protection Film"
               rows={2}
             />
@@ -192,7 +224,10 @@ const AddEditRollDrawer = ({
             <Label>Kod produktu</Label>
             <Input
               value={productCode}
-              onChange={(e) => setProductCode(e.target.value)}
+              onChange={(e) => {
+                setProductCode(e.target.value);
+                markDirty();
+              }}
               placeholder="np. PXCR-6015-UH44-6709"
               className="font-mono"
             />
@@ -203,7 +238,10 @@ const AddEditRollDrawer = ({
             <Label>Kod kreskowy</Label>
             <Input
               value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
+              onChange={(e) => {
+                setBarcode(e.target.value);
+                markDirty();
+              }}
               placeholder="np. 8801990000153"
               className="font-mono"
             />
@@ -216,7 +254,10 @@ const AddEditRollDrawer = ({
               <Input
                 type="number"
                 value={widthMm}
-                onChange={(e) => setWidthMm(e.target.value ? Number(e.target.value) : '')}
+                onChange={(e) => {
+                  setWidthMm(e.target.value ? Number(e.target.value) : '');
+                  markDirty();
+                }}
                 placeholder="np. 1524"
                 min={0}
               />
@@ -226,7 +267,10 @@ const AddEditRollDrawer = ({
               <Input
                 type="number"
                 value={lengthM}
-                onChange={(e) => setLengthM(e.target.value ? Number(e.target.value) : '')}
+                onChange={(e) => {
+                  setLengthM(e.target.value ? Number(e.target.value) : '');
+                  markDirty();
+                }}
                 placeholder="np. 15"
                 min={0}
                 step={0.1}
@@ -240,7 +284,10 @@ const AddEditRollDrawer = ({
             <Input
               type="date"
               value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
+              onChange={(e) => {
+                setDeliveryDate(e.target.value);
+                markDirty();
+              }}
             />
           </div>
 
@@ -277,7 +324,7 @@ const AddEditRollDrawer = ({
         </div>
 
         <SheetFooter className="border-t pt-4 gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button variant="outline" onClick={handleClose} disabled={saving}>
             Anuluj
           </Button>
           <Button onClick={handleSave} disabled={saving}>
@@ -286,6 +333,7 @@ const AddEditRollDrawer = ({
           </Button>
         </SheetFooter>
       </SheetContent>
+      <UnsavedChangesDialog {...dialogProps} />
     </Sheet>
   );
 };
