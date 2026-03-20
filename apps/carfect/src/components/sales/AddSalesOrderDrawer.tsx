@@ -590,11 +590,15 @@ const AddSalesOrderDrawer = ({
           hideCloseButton
           onInteractOutside={(e) => {
             e.preventDefault();
-            handleClose();
+            if (!orderPackages.productDrawerOpen && !addCustomerOpen) {
+              handleClose();
+            }
           }}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
-            handleClose();
+            if (!orderPackages.productDrawerOpen && !addCustomerOpen) {
+              handleClose();
+            }
           }}
         >
           {/* Fixed Header */}
