@@ -23,7 +23,15 @@ interface SmsMessageSettingsProps {
   instanceName?: string;
 }
 
-type SmsMessageType = 'verification_code' | 'reservation_confirmed' | 'reservation_pending' | 'reservation_confirmed_by_admin' | 'reservation_edited' | 'reminder_1day' | 'reminder_1hour' | 'vehicle_ready';
+type SmsMessageType =
+  | 'verification_code'
+  | 'reservation_confirmed'
+  | 'reservation_pending'
+  | 'reservation_confirmed_by_admin'
+  | 'reservation_edited'
+  | 'reminder_1day'
+  | 'reminder_1hour'
+  | 'vehicle_ready';
 
 interface MessageSetting {
   type: SmsMessageType;
@@ -39,7 +47,7 @@ const SMS_MESSAGE_TYPES: SmsMessageType[] = [
   'reservation_edited',
   'reminder_1day',
   'reminder_1hour',
-  'vehicle_ready'
+  'vehicle_ready',
 ];
 
 const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProps) => {
@@ -64,13 +72,13 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
   const fetchInstanceName = async () => {
     if (!instanceId) return;
-    
+
     const { data } = await supabase
       .from('instances')
       .select('name, short_name, phone, reservation_phone')
       .eq('id', instanceId)
       .single();
-    
+
     if (data) {
       // Prefer short_name for SMS examples
       setCurrentInstanceName(data.short_name || data.name);
@@ -81,7 +89,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
   const fetchSettings = async () => {
     if (!instanceId) return;
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -93,39 +101,42 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
       // Create settings with defaults for missing types
       const existingSettings = new Map(
-        data?.map(s => [s.message_type, { enabled: s.enabled, sendAtTime: s.send_at_time }]) || []
+        data?.map((s) => [s.message_type, { enabled: s.enabled, sendAtTime: s.send_at_time }]) ||
+          [],
       );
-      
-      const allSettings: MessageSetting[] = SMS_MESSAGE_TYPES.map(type => ({
+
+      const allSettings: MessageSetting[] = SMS_MESSAGE_TYPES.map((type) => ({
         type,
         enabled: existingSettings.has(type) ? existingSettings.get(type)!.enabled : true,
-        sendAtTime: existingSettings.has(type) ? existingSettings.get(type)!.sendAtTime : (type === 'reminder_1day' ? '19:00' : null)
+        sendAtTime: existingSettings.has(type)
+          ? existingSettings.get(type)!.sendAtTime
+          : type === 'reminder_1day'
+            ? '19:00'
+            : null,
       }));
 
       setSettings(allSettings);
     } catch (error) {
       console.error('Error fetching SMS settings:', error);
       // Set defaults
-      setSettings(SMS_MESSAGE_TYPES.map(type => ({ 
-        type, 
-        enabled: true,
-        sendAtTime: type === 'reminder_1day' ? '19:00' : null
-      })));
+      setSettings(
+        SMS_MESSAGE_TYPES.map((type) => ({
+          type,
+          enabled: true,
+          sendAtTime: type === 'reminder_1day' ? '19:00' : null,
+        })),
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleToggle = (type: SmsMessageType, enabled: boolean) => {
-    setSettings(prev => 
-      prev.map(s => s.type === type ? { ...s, enabled } : s)
-    );
+    setSettings((prev) => prev.map((s) => (s.type === type ? { ...s, enabled } : s)));
   };
 
   const handleTimeChange = (type: SmsMessageType, time: string) => {
-    setSettings(prev => 
-      prev.map(s => s.type === type ? { ...s, sendAtTime: time } : s)
-    );
+    setSettings((prev) => prev.map((s) => (s.type === type ? { ...s, sendAtTime: time } : s)));
   };
 
   const handleSave = async () => {
@@ -135,16 +146,17 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
     try {
       // Upsert all settings
       for (const setting of settings) {
-        const { error } = await supabase
-          .from('sms_message_settings')
-          .upsert({
+        const { error } = await supabase.from('sms_message_settings').upsert(
+          {
             instance_id: instanceId,
             message_type: setting.type,
             enabled: setting.enabled,
-            send_at_time: setting.sendAtTime || null
-          }, {
-            onConflict: 'instance_id,message_type'
-          });
+            send_at_time: setting.sendAtTime || null,
+          },
+          {
+            onConflict: 'instance_id,message_type',
+          },
+        );
 
         if (error) throw error;
       }
@@ -160,7 +172,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
   const fetchSmsLogs = async () => {
     if (!instanceId) return;
-    
+
     setLoadingLogs(true);
     try {
       const { data, error } = await supabase
@@ -218,11 +230,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       {instanceId && <SmsUsageCard instanceId={instanceId} />}
 
       {/* SMS History Button */}
-      <Button 
-        variant="outline" 
-        onClick={handleShowHistory}
-        className="w-full"
-      >
+      <Button variant="outline" onClick={handleShowHistory} className="w-full">
         {loadingLogs ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         ) : (
@@ -242,13 +250,17 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
               <p className="text-sm text-muted-foreground">Brak wiadomości SMS</p>
             ) : (
               <pre className="text-xs bg-slate-900 text-slate-100 p-4 rounded-lg overflow-auto max-h-96">
-{JSON.stringify(smsLogs.map(log => ({
-  phone: log.phone,
-  date: new Date(log.created_at).toLocaleString('pl-PL'),
-  type: log.message_type,
-  status: log.status,
-  message: log.message
-})), null, 2)}
+                {JSON.stringify(
+                  smsLogs.map((log) => ({
+                    phone: log.phone,
+                    date: new Date(log.created_at).toLocaleString('pl-PL'),
+                    type: log.message_type,
+                    status: log.status,
+                    message: log.message,
+                  })),
+                  null,
+                  2,
+                )}
               </pre>
             )}
           </CardContent>
@@ -268,9 +280,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
                   <CardTitle className="text-base font-medium">
                     {getMessageTypeLabel(setting.type)}
                   </CardTitle>
-                  <CardDescription>
-                    {getMessageTypeDescription(setting.type)}
-                  </CardDescription>
+                  <CardDescription>{getMessageTypeDescription(setting.type)}</CardDescription>
                 </div>
                 <Switch
                   checked={setting.enabled}
@@ -287,9 +297,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
                     <Label className="text-sm font-medium text-blue-900">
                       {t('sms.sendAtTime')}
                     </Label>
-                    <p className="text-xs text-blue-700 mt-0.5">
-                      {t('sms.sendAtTimeDescription')}
-                    </p>
+                    <p className="text-xs text-blue-700 mt-0.5">{t('sms.sendAtTimeDescription')}</p>
                   </div>
                   <Input
                     type="time"
@@ -299,7 +307,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
                   />
                 </div>
               )}
-              
+
               <div className="bg-slate-100 rounded-lg p-3 border border-slate-200">
                 <div className="flex items-start gap-2">
                   <MessageSquare className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" />
@@ -319,8 +327,12 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       </div>
 
       {/* Save Button */}
-      <Button onClick={handleSave} disabled={saving || loading || settings.length === 0} className="w-full">
-        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+      <Button onClick={handleSave} disabled={saving || loading || settings.length === 0}>
+        {saving ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <Save className="w-4 h-4 mr-2" />
+        )}
         {t('common.save')}
       </Button>
     </div>

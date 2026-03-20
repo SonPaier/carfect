@@ -802,9 +802,7 @@ const CustomerEditDrawer = ({
                 </Button>
               </div>
             ) : (
-              <Button onClick={() => setIsEditing(true)} className="w-full">
-                {t('common.edit')}
-              </Button>
+              <Button onClick={() => setIsEditing(true)}>{t('common.edit')}</Button>
             )}
           </div>
         </SheetContent>

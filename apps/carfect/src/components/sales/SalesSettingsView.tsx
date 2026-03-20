@@ -398,7 +398,7 @@ const SalesSettingsView = () => {
       </div>
 
       {/* Save Button */}
-      <Button onClick={handleSave} disabled={saveMutation.isPending} className="w-full">
+      <Button onClick={handleSave} disabled={saveMutation.isPending}>
         {saveMutation.isPending ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         ) : (

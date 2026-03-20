@@ -365,7 +365,7 @@ export default function ReminderTemplateEditPage() {
                 </div>
               ))}
 
-              <Button variant="outline" onClick={addItem} className="w-full gap-2 bg-white">
+              <Button variant="outline" onClick={addItem} className="gap-2 bg-white">
                 <Plus className="h-4 w-4" />
                 {items.length > 0 ? t('reminders.addAnotherReminder') : t('reminders.addReminder')}
               </Button>

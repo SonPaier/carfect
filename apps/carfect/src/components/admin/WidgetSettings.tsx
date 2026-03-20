@@ -16,7 +16,7 @@ export default function WidgetSettings({ instanceSlug }: WidgetSettingsProps) {
 
   const slug = instanceSlug || 'your-instance';
   const embedUrl = `https://${slug}.carfect.pl/embed`;
-  
+
   const iframeCode = `<iframe 
   src="${embedUrl}" 
   width="100%" 
@@ -59,12 +59,8 @@ export default function WidgetSettings({ instanceSlug }: WidgetSettingsProps) {
       {/* Iframe Code */}
       <div className="space-y-2">
         <Label>{t('widget.iframeCode')}</Label>
-        <Textarea
-          value={iframeCode}
-          readOnly
-          className="font-mono text-sm h-32 bg-muted"
-        />
-        <Button onClick={handleCopyCode} className="w-full">
+        <Textarea value={iframeCode} readOnly className="font-mono text-sm h-32 bg-muted" />
+        <Button onClick={handleCopyCode}>
           {copied ? (
             <>
               <Check className="w-4 h-4 mr-2" />
