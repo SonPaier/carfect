@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@shared/ui';
 import { useGusLookup } from './hooks/useGusLookup';
+import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChanges';
 import { COUNTRIES } from './constants';
 
 interface SalesCustomer {
@@ -97,6 +98,8 @@ const AddEditSalesCustomerDrawer = ({
   const isEdit = !!customer;
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { markDirty, resetDirty, handleClose: guardedClose, dialogProps } = useUnsavedChanges();
+
   const [form, setForm] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState<any[]>([]);
@@ -193,6 +196,7 @@ const AddEditSalesCustomerDrawer = ({
       });
     } else {
       setForm(emptyForm);
+      resetDirty();
       setEditMode(true);
     }
   }, [open, customer]);
@@ -207,6 +211,7 @@ const AddEditSalesCustomerDrawer = ({
         billingPostalCode: result.postalCode,
         billingCity: result.city,
       });
+      markDirty();
     }
   };
 
@@ -274,6 +279,7 @@ const AddEditSalesCustomerDrawer = ({
       }
 
       onSaved();
+      resetDirty();
       onOpenChange(false);
     } catch (err: any) {
       console.error(err);
@@ -281,6 +287,13 @@ const AddEditSalesCustomerDrawer = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCloseDrawer = () => {
+    guardedClose(handleSave, () => {
+      resetDirty();
+      onOpenChange(false);
+    });
   };
 
   const renderViewMode = () => (
@@ -562,7 +575,10 @@ const AddEditSalesCustomerDrawer = ({
           <Input
             id="name"
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value });
+              markDirty();
+            }}
           />
         </div>
         <div>
@@ -571,7 +587,10 @@ const AddEditSalesCustomerDrawer = ({
             <Input
               id="nip"
               value={form.nip}
-              onChange={(e) => setForm({ ...form, nip: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, nip: e.target.value });
+                markDirty();
+              }}
               className="flex-1"
             />
             <Button
@@ -602,7 +621,10 @@ const AddEditSalesCustomerDrawer = ({
           <Input
             id="phone"
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, phone: e.target.value });
+              markDirty();
+            }}
           />
         </div>
         <div>
@@ -611,7 +633,10 @@ const AddEditSalesCustomerDrawer = ({
             id="email"
             type="email"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, email: e.target.value });
+              markDirty();
+            }}
           />
         </div>
         <div>
@@ -619,14 +644,20 @@ const AddEditSalesCustomerDrawer = ({
           <Input
             id="contact-person"
             value={form.contactPerson}
-            onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, contactPerson: e.target.value });
+              markDirty();
+            }}
           />
         </div>
         <div>
           <Label htmlFor="currency">Waluta</Label>
           <Select
             value={form.currency}
-            onValueChange={(value) => setForm({ ...form, currency: value })}
+            onValueChange={(value) => {
+              setForm({ ...form, currency: value });
+              markDirty();
+            }}
           >
             <SelectTrigger id="currency">
               <SelectValue />
@@ -646,7 +677,10 @@ const AddEditSalesCustomerDrawer = ({
           <Switch
             id="discount-toggle"
             checked={form.discountEnabled}
-            onCheckedChange={(checked) => setForm({ ...form, discountEnabled: checked })}
+            onCheckedChange={(checked) => {
+              setForm({ ...form, discountEnabled: checked });
+              markDirty();
+            }}
           />
         </div>
         {form.discountEnabled && (
@@ -657,7 +691,10 @@ const AddEditSalesCustomerDrawer = ({
               max={100}
               className="w-24"
               value={form.discountPercent}
-              onChange={(e) => setForm({ ...form, discountPercent: Number(e.target.value) })}
+              onChange={(e) => {
+                setForm({ ...form, discountPercent: Number(e.target.value) });
+                markDirty();
+              }}
             />
             <span className="text-sm text-muted-foreground">%</span>
           </div>
@@ -668,7 +705,10 @@ const AddEditSalesCustomerDrawer = ({
           <Switch
             id="net-payer-toggle"
             checked={form.isNetPayer}
-            onCheckedChange={(checked) => setForm({ ...form, isNetPayer: checked })}
+            onCheckedChange={(checked) => {
+              setForm({ ...form, isNetPayer: checked });
+              markDirty();
+            }}
           />
         </div>
       </div>
@@ -687,17 +727,30 @@ const AddEditSalesCustomerDrawer = ({
           streetLine2={form.billingStreetLine2}
           postalCode={form.billingPostalCode}
           city={form.billingCity}
-          onCountryChange={(value) =>
+          onCountryChange={(value) => {
             setForm({
               ...form,
               billingCountry: value,
               ...(value === 'PL' ? { billingStreetLine2: '' } : {}),
-            })
-          }
-          onStreetChange={(value) => setForm({ ...form, billingStreet: value })}
-          onStreetLine2Change={(value) => setForm({ ...form, billingStreetLine2: value })}
-          onPostalCodeChange={(value) => setForm({ ...form, billingPostalCode: value })}
-          onCityChange={(value) => setForm({ ...form, billingCity: value })}
+            });
+            markDirty();
+          }}
+          onStreetChange={(value) => {
+            setForm({ ...form, billingStreet: value });
+            markDirty();
+          }}
+          onStreetLine2Change={(value) => {
+            setForm({ ...form, billingStreetLine2: value });
+            markDirty();
+          }}
+          onPostalCodeChange={(value) => {
+            setForm({ ...form, billingPostalCode: value });
+            markDirty();
+          }}
+          onCityChange={(value) => {
+            setForm({ ...form, billingCity: value });
+            markDirty();
+          }}
         />
       </div>
 
@@ -712,7 +765,10 @@ const AddEditSalesCustomerDrawer = ({
           <Checkbox
             id="same-as-billing"
             checked={form.shippingSameAsBilling}
-            onCheckedChange={(checked) => setForm({ ...form, shippingSameAsBilling: !!checked })}
+            onCheckedChange={(checked) => {
+              setForm({ ...form, shippingSameAsBilling: !!checked });
+              markDirty();
+            }}
           />
           <Label htmlFor="same-as-billing" className="text-sm font-normal cursor-pointer">
             Taki sam jak adres firmy
@@ -725,7 +781,10 @@ const AddEditSalesCustomerDrawer = ({
               <Input
                 id="ship-addressee"
                 value={form.shippingAddressee}
-                onChange={(e) => setForm({ ...form, shippingAddressee: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, shippingAddressee: e.target.value });
+                  markDirty();
+                }}
               />
             </div>
             <AddressFields
@@ -735,17 +794,30 @@ const AddEditSalesCustomerDrawer = ({
               streetLine2={form.shippingStreetLine2}
               postalCode={form.shippingPostalCode}
               city={form.shippingCity}
-              onCountryChange={(value) =>
+              onCountryChange={(value) => {
                 setForm({
                   ...form,
                   shippingCountry: value,
                   ...(value === 'PL' ? { shippingStreetLine2: '' } : {}),
-                })
-              }
-              onStreetChange={(value) => setForm({ ...form, shippingStreet: value })}
-              onStreetLine2Change={(value) => setForm({ ...form, shippingStreetLine2: value })}
-              onPostalCodeChange={(value) => setForm({ ...form, shippingPostalCode: value })}
-              onCityChange={(value) => setForm({ ...form, shippingCity: value })}
+                });
+                markDirty();
+              }}
+              onStreetChange={(value) => {
+                setForm({ ...form, shippingStreet: value });
+                markDirty();
+              }}
+              onStreetLine2Change={(value) => {
+                setForm({ ...form, shippingStreetLine2: value });
+                markDirty();
+              }}
+              onPostalCodeChange={(value) => {
+                setForm({ ...form, shippingPostalCode: value });
+                markDirty();
+              }}
+              onCityChange={(value) => {
+                setForm({ ...form, shippingCity: value });
+                markDirty();
+              }}
             />
           </CollapsibleContent>
         </Collapsible>
@@ -758,7 +830,10 @@ const AddEditSalesCustomerDrawer = ({
           id="notes"
           rows={3}
           value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          onChange={(e) => {
+            setForm({ ...form, notes: e.target.value });
+            markDirty();
+          }}
         />
       </div>
     </div>
@@ -771,8 +846,22 @@ const AddEditSalesCustomerDrawer = ({
         className="w-full sm:max-w-[var(--drawer-width)] flex flex-col p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
         hideCloseButton
         hideOverlay
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          if (editMode) {
+            handleCloseDrawer();
+          } else {
+            onOpenChange(false);
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          if (editMode) {
+            handleCloseDrawer();
+          } else {
+            onOpenChange(false);
+          }
+        }}
       >
         {/* Sticky header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
@@ -785,7 +874,11 @@ const AddEditSalesCustomerDrawer = ({
                 <Pencil className="w-4 h-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => (editMode ? handleCloseDrawer() : onOpenChange(false))}
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -830,8 +923,10 @@ const AddEditSalesCustomerDrawer = ({
                       notes: customer.sales_notes || '',
                     });
                   }
+                  resetDirty();
                   setEditMode(false);
                 } else {
+                  resetDirty();
                   onOpenChange(false);
                 }
               }}
@@ -844,6 +939,7 @@ const AddEditSalesCustomerDrawer = ({
           </div>
         )}
       </SheetContent>
+      <UnsavedChangesDialog {...dialogProps} />
     </Sheet>
   );
 };
