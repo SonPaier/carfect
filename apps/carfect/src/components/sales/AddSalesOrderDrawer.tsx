@@ -35,6 +35,8 @@ import { CustomerSearchSection } from './order-drawer/CustomerSearchSection';
 import { PackagesSection } from './order-drawer/PackagesSection';
 import { OrderSummarySection } from './order-drawer/OrderSummarySection';
 import { PaymentSection } from './order-drawer/PaymentSection';
+import { ShippingAddressSection } from './order-drawer/ShippingAddressSection';
+import { type AddressData } from './order-drawer/AddressFields';
 
 // Re-export types used externally
 export type { OrderPackage, OrderProduct, DeliveryType };
@@ -55,6 +57,7 @@ export interface EditOrderData {
   comment: string;
   sendEmail: boolean;
   attachments?: string[];
+  shippingAddress?: AddressData;
 }
 
 interface AddSalesOrderDrawerProps {
@@ -100,6 +103,13 @@ const AddSalesOrderDrawer = ({
   const [sendEmail, setSendEmail] = useState(false);
   const [comment, setComment] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
+  const [shippingAddress, setShippingAddress] = useState<AddressData>({
+    country: 'PL',
+    street: '',
+    streetLine2: '',
+    postalCode: '',
+    city: '',
+  });
   const [saving, setSaving] = useState(false);
   const [customerAddress, setCustomerAddress] = useState<{ postalCode: string; city: string }>({
     postalCode: '',
@@ -131,6 +141,9 @@ const AddSalesOrderDrawer = ({
       setComment(editOrder.comment);
       setSendEmail(editOrder.sendEmail);
       setAttachments(editOrder.attachments || []);
+      if (editOrder.shippingAddress) {
+        setShippingAddress(editOrder.shippingAddress);
+      }
     } else if (open && !editOrder) {
       if (orderPackages.packages.length === 0) {
         orderPackages.setPackages([createDefaultPackage()]);
@@ -159,16 +172,26 @@ const AddSalesOrderDrawer = ({
   useEffect(() => {
     if (!customerSearch.selectedCustomer?.id) {
       setCustomerAddress({ postalCode: '', city: '' });
+      setShippingAddress({ country: 'PL', street: '', streetLine2: '', postalCode: '', city: '' });
       return;
     }
     supabase
       .from('sales_customers')
-      .select('shipping_postal_code, shipping_city')
+      .select(
+        'shipping_postal_code, shipping_city, shipping_country_code, shipping_street, shipping_street_line2',
+      )
       .eq('id', customerSearch.selectedCustomer.id)
       .single()
       .then(({ data }: any) => {
         if (data) {
           setCustomerAddress({
+            postalCode: data.shipping_postal_code || '',
+            city: data.shipping_city || '',
+          });
+          setShippingAddress({
+            country: data.shipping_country_code || 'PL',
+            street: data.shipping_street || '',
+            streetLine2: data.shipping_street_line2 || '',
             postalCode: data.shipping_postal_code || '',
             city: data.shipping_city || '',
           });
@@ -182,6 +205,8 @@ const AddSalesOrderDrawer = ({
       getNextOrderNumber(instanceId).then(setNextOrderNumber);
     }
   }, [open, isEdit, instanceId]);
+
+  const hasShipping = orderPackages.packages.some((p) => p.shippingMethod === 'shipping');
 
   /* ── Totals ── */
 
@@ -241,6 +266,7 @@ const AddSalesOrderDrawer = ({
     setSendEmail(false);
     setComment('');
     setAttachments([]);
+    setShippingAddress({ country: 'PL', street: '', streetLine2: '', postalCode: '', city: '' });
   };
 
   const handleSubmit = async () => {
@@ -312,12 +338,13 @@ const AddSalesOrderDrawer = ({
 
       // Convert productKeys from UI UUIDs to sort_order indices for stable DB storage
       const keyToIndex = new Map(products.map((p, idx) => [getItemKey(p), String(idx)]));
-      const packagesPayload = orderPackages.packages.length > 0
-        ? orderPackages.packages.map((pkg) => ({
-            ...pkg,
-            productKeys: pkg.productKeys.map((k) => keyToIndex.get(k) ?? k),
-          }))
-        : null;
+      const packagesPayload =
+        orderPackages.packages.length > 0
+          ? orderPackages.packages.map((pkg) => ({
+              ...pkg,
+              productKeys: pkg.productKeys.map((k) => keyToIndex.get(k) ?? k),
+            }))
+          : null;
       const effectiveDeliveryType =
         orderPackages.packages.length > 0
           ? orderPackages.packages[0].shippingMethod
@@ -341,6 +368,7 @@ const AddSalesOrderDrawer = ({
               name: `formatka-${i + 1}`,
               uploadedAt: new Date().toISOString(),
             })),
+            shipping_address: hasShipping ? shippingAddress : null,
           })
           .eq('id', editOrder.id) as any);
 
@@ -422,6 +450,7 @@ const AddSalesOrderDrawer = ({
               name: `formatka-${i + 1}`,
               uploadedAt: new Date().toISOString(),
             })),
+            shipping_address: hasShipping ? shippingAddress : null,
           })
           .select('id')
           .single() as any);
@@ -587,6 +616,10 @@ const AddSalesOrderDrawer = ({
                 customerCity={customerAddress.city}
                 availableCouriers={instanceData?.apaczka_services || []}
               />
+
+              {hasShipping && (
+                <ShippingAddressSection address={shippingAddress} onChange={setShippingAddress} />
+              )}
 
               <PaymentSection
                 paymentMethod={paymentMethod}
