@@ -27,6 +27,7 @@ export interface OrderPackage {
   contents?: string;
   declaredValue?: number;
   oversized?: boolean;
+  shippingCost?: number;
   productKeys: string[];
 }
 
@@ -55,6 +56,9 @@ export interface OrderProduct {
   /** @deprecated Use rollAssignments instead */
   rollWidthMm?: number;
   rollAssignments?: RollAssignment[];
+  requiredM2?: number;
+  /** Per-product discount percentage (overrides customer discount) */
+  discountPercent?: number;
 }
 
 export const getItemKey = (p: OrderProduct) => p.instanceKey;
@@ -62,8 +66,8 @@ export const getItemKey = (p: OrderProduct) => p.instanceKey;
 export const createDefaultPackage = (): OrderPackage => ({
   id: crypto.randomUUID(),
   shippingMethod: 'shipping',
-  packagingType: 'karton',
-  dimensions: { length: 0, width: 0, height: 0 },
+  packagingType: 'tuba',
+  dimensions: { length: 0, diameter: 0 },
   courier: undefined,
   courierServiceId: undefined,
   weight: 1,
@@ -232,6 +236,18 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
+  const updateRequiredM2 = (key: string, requiredM2: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (getItemKey(p) === key ? { ...p, requiredM2 } : p)),
+    );
+  };
+
+  const updateProductDiscount = (key: string, discountPercent: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (getItemKey(p) === key ? { ...p, discountPercent } : p)),
+    );
+  };
+
   const addPackage = () => {
     setPackages((prev) => [...prev, createDefaultPackage()]);
   };
@@ -335,6 +351,10 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, oversized } : pkg)));
   };
 
+  const updatePackageShippingCost = (packageId: string, shippingCost: number | undefined) => {
+    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, shippingCost } : pkg)));
+  };
+
   return {
     packages,
     setPackages,
@@ -359,5 +379,8 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updatePackageContents,
     updatePackageDeclaredValue,
     updatePackageOversized,
+    updatePackageShippingCost,
+    updateRequiredM2,
+    updateProductDiscount,
   };
 }

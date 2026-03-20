@@ -31,6 +31,7 @@ import { CreateInvoiceDrawer } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { type SalesOrder } from '@/data/salesMockData';
+import { VAT_RATE } from './constants';
 
 const formatCurrency = (value: number, currency: 'PLN' | 'EUR') => {
   if (currency === 'EUR') {
@@ -203,6 +204,11 @@ const SalesOrdersView = () => {
           priceNet: Number(item.price_net),
           priceGross: Number(item.price_net) * 1.23,
           unit: item.price_unit || 'szt.',
+          discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
+        })),
+        packages: (o.packages || []).map((pkg: any) => ({
+          shippingMethod: pkg.shippingMethod || 'shipping',
+          shippingCost: pkg.shippingCost ?? undefined,
         })),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
@@ -306,7 +312,7 @@ const SalesOrdersView = () => {
     const { data: items } = await (supabase
       .from('sales_order_items')
       .select(
-        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order',
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent',
       )
       .eq('order_id', order.id)
       .order('sort_order') as any);
@@ -397,6 +403,7 @@ const SalesOrdersView = () => {
         quantity: item.quantity,
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
+        discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
         rollAssignments: usages.map((u) => ({
           rollId: u.rollId,
           usageM2: u.usedM2,
@@ -965,14 +972,29 @@ const SalesOrdersView = () => {
           salesOrderId={invoiceDrawerState.order.id}
           customerId={invoiceDrawerState.order.customerId}
           customerName={invoiceDrawerState.order.customerName}
-          positions={invoiceDrawerState.order.products.map((p) => ({
-            name: p.name,
-            quantity: p.quantity,
-            unit_price_gross: p.priceNet,
-            vat_rate: 23,
-            unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
-            discount: invoiceDrawerState.order!.customerDiscount ?? 0,
-          }))}
+          positions={[
+            ...invoiceDrawerState.order.products.map((p) => ({
+              name: p.name,
+              quantity: p.quantity,
+              unit_price_gross: p.priceNet,
+              vat_rate: 23,
+              unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
+              discount: p.discountPercent ?? invoiceDrawerState.order!.customerDiscount ?? 0,
+            })),
+            ...(() => {
+              const shippingPkgs = (invoiceDrawerState.order!.packages || [])
+                .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null);
+              return shippingPkgs.map((pkg, i) => ({
+                name: shippingPkgs.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`,
+                quantity: 1,
+                // shippingCost is brutto from Apaczka — convert to netto to match product positions
+                unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
+                vat_rate: 23,
+                unit: 'szt.',
+                discount: 0,
+              }));
+            })(),
+          ]}
           onSuccess={fetchOrders}
           supabaseClient={supabase}
           customerTable="sales_customers"

@@ -230,18 +230,28 @@ const AddSalesOrderDrawer = ({
     [products],
   );
 
-  const discountableNet = useMemo(
-    () =>
-      products
-        .filter((p) => !p.excludeFromDiscount)
-        .reduce((sum, p) => sum + getProductTotal(p), 0),
-    [products],
+  const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
+
+  // Per-product discount: each product uses its own discountPercent (or customerDiscount fallback).
+  // Products flagged excludeFromDiscount with no explicit per-product override get 0%.
+  const discountAmount = useMemo(
+    () => products.reduce((sum, p) => {
+      const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount);
+      return sum + getProductTotal(p) * (discount / 100);
+    }, 0),
+    [products, customerDiscount],
   );
 
-  const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
-  const discountAmount = customerDiscount > 0 ? discountableNet * (customerDiscount / 100) : 0;
+  // Shipping costs from Apaczka (brutto) — convert to netto for summary
+  const shippingCosts = useMemo(
+    () => orderPackages.packages
+      .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
+      .map((pkg) => pkg.shippingCost!),
+    [orderPackages.packages],
+  );
+  const shippingNetTotal = shippingCosts.reduce((sum, cost) => sum + cost / (1 + VAT_RATE), 0);
 
-  const totalNet = Math.max(0, subtotalNet - discountAmount);
+  const totalNet = Math.max(0, subtotalNet - discountAmount) + shippingNetTotal;
   const totalGross = totalNet * (1 + VAT_RATE);
 
   /* ── Handlers ── */
@@ -397,6 +407,7 @@ const AddSalesOrderDrawer = ({
               price_unit: p.priceUnit || 'szt.',
               vehicle: p.vehicle || null,
               sort_order: idx,
+              discount_percent: p.discountPercent ?? customerDiscount ?? 0,
             };
           });
           const { data: insertedItems } = await (supabase
@@ -478,6 +489,7 @@ const AddSalesOrderDrawer = ({
               price_unit: p.priceUnit || 'szt.',
               vehicle: p.vehicle || null,
               sort_order: idx,
+              discount_percent: p.discountPercent ?? customerDiscount ?? 0,
             };
           });
           const { data: insertedItems } = await (supabase
@@ -607,6 +619,7 @@ const AddSalesOrderDrawer = ({
                 onContentsChange={orderPackages.updatePackageContents}
                 onDeclaredValueChange={orderPackages.updatePackageDeclaredValue}
                 onOversizedChange={orderPackages.updatePackageOversized}
+                onShippingCostChange={orderPackages.updatePackageShippingCost}
                 onAddProduct={(packageId) => {
                   orderPackages.setActivePackageId(packageId);
                   orderPackages.setProductDrawerOpen(true);
@@ -616,11 +629,17 @@ const AddSalesOrderDrawer = ({
                 onUpdateVehicle={orderPackages.updateVehicle}
                 onUpdateRollAssignment={orderPackages.updateRollAssignment}
                 onSetRollAssignments={orderPackages.setRollAssignments}
+                onUpdateRequiredM2={orderPackages.updateRequiredM2}
+                onUpdateProductDiscount={orderPackages.updateProductDiscount}
                 onToggleDiscount={orderPackages.toggleExcludeFromDiscount}
                 customerDiscount={customerDiscount}
+                customerName={customerSearch.selectedCustomer?.name}
                 onAddPackage={orderPackages.addPackage}
                 customerPostalCode={customerAddress.postalCode}
                 customerCity={customerAddress.city}
+                paymentMethod={paymentMethod}
+                totalGross={totalGross}
+                bankAccountNumber={bankAccountNumber}
                 availableCouriers={instanceData?.apaczka_services || []}
               />
 
@@ -635,16 +654,6 @@ const AddSalesOrderDrawer = ({
                 setBankAccountNumber={setBankAccountNumber}
                 bankAccounts={bankAccounts}
               />
-
-              {products.length > 0 && (
-                <OrderSummarySection
-                  subtotalNet={subtotalNet}
-                  discountAmount={discountAmount}
-                  customerDiscount={customerDiscount}
-                  totalNet={totalNet}
-                  totalGross={totalGross}
-                />
-              )}
 
               {/* Email checkbox */}
               <div className="flex items-center gap-2">
@@ -677,6 +686,19 @@ const AddSalesOrderDrawer = ({
                 maxImages={10}
                 disabled={saving}
               />
+
+              {/* Summary — at the end */}
+              {products.length > 0 && (
+                <OrderSummarySection
+                  products={products}
+                  subtotalNet={subtotalNet}
+                  discountAmount={discountAmount}
+                  customerDiscount={customerDiscount}
+                  shippingCosts={shippingCosts}
+                  totalNet={totalNet}
+                  totalGross={totalGross}
+                />
+              )}
             </div>
           </div>
 

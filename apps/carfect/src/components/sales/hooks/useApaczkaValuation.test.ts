@@ -1,5 +1,5 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useApaczkaValuation } from './useApaczkaValuation';
 import type { OrderPackage } from './useOrderPackages';
 
@@ -19,76 +19,65 @@ const kartonPkg = (overrides: Partial<OrderPackage> = {}): OrderPackage => ({
 
 describe('useApaczkaValuation', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     mockInvoke.mockReset();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('returns null price initially when no instanceId provided', () => {
+  it('returns null when no instanceId provided', async () => {
     const { result } = renderHook(() =>
       useApaczkaValuation(null, kartonPkg()),
     );
 
-    expect(result.current.price).toBeNull();
-    expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBeNull();
+    let price: number | null = null;
+    await act(async () => {
+      price = await result.current.fetchValuation();
+    });
+
+    expect(price).toBeNull();
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 
-  it('returns null price initially when package is not shipping method', () => {
+  it('returns null when package is not shipping method', async () => {
     const { result } = renderHook(() =>
       useApaczkaValuation('instance-1', kartonPkg({ shippingMethod: 'pickup' })),
     );
 
-    expect(result.current.price).toBeNull();
-    expect(result.current.loading).toBe(false);
-  });
-
-  it('calls edge function after 800ms debounce with complete karton dimensions', async () => {
-    mockInvoke.mockResolvedValue({
-      data: { valuation: { price: { gross: { amount: '49.99' } } } },
-      error: null,
-    });
-
-    const pkg = kartonPkg();
-    renderHook(() =>
-      useApaczkaValuation('instance-1', pkg, '00-001', 'Warszawa'),
-    );
-
-    expect(mockInvoke).not.toHaveBeenCalled();
-
+    let price: number | null = null;
     await act(async () => {
-      await vi.runAllTimersAsync();
+      price = await result.current.fetchValuation();
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith('apaczka-valuation', {
-      body: {
-        instanceId: 'instance-1',
-        packages: [pkg],
-        customerAddress: { postal_code: '00-001', city: 'Warszawa' },
-      },
-    });
+    expect(price).toBeNull();
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 
-  it('returns gross price from valuation response', async () => {
+  it('calls edge function and returns gross price', async () => {
     mockInvoke.mockResolvedValue({
       data: { valuation: { price: { gross: { amount: '49.99' }, net: { amount: '40.00' } } } },
       error: null,
     });
 
+    const pkg = kartonPkg();
     const { result } = renderHook(() =>
-      useApaczkaValuation('instance-1', kartonPkg()),
+      useApaczkaValuation('instance-1', pkg, '00-001', 'Warszawa'),
     );
 
+    let price: number | null = null;
     await act(async () => {
-      await vi.runAllTimersAsync();
+      price = await result.current.fetchValuation();
     });
 
-    expect(result.current.price).toBe(49.99);
+    expect(price).toBe(49.99);
     expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBeNull();
+    expect(mockInvoke).toHaveBeenCalledWith('apaczka-valuation', {
+      body: {
+        instanceId: 'instance-1',
+        packages: [pkg],
+        customerAddress: { postal_code: '00-001', city: 'Warszawa' },
+        paymentMethod: 'transfer',
+        totalGross: 0,
+        bankAccountNumber: '',
+      },
+    });
   });
 
   it('falls back to net price when gross is not available', async () => {
@@ -101,83 +90,32 @@ describe('useApaczkaValuation', () => {
       useApaczkaValuation('instance-1', kartonPkg()),
     );
 
+    let price: number | null = null;
     await act(async () => {
-      await vi.runAllTimersAsync();
+      price = await result.current.fetchValuation();
     });
 
-    expect(result.current.price).toBe(40);
+    expect(price).toBe(40);
   });
 
-  it('does not call edge function when karton dimensions are incomplete', async () => {
-    const pkg = kartonPkg({
-      dimensions: { length: 0, width: 20, height: 10 },
-    });
-
-    renderHook(() => useApaczkaValuation('instance-1', pkg));
-
-    await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    expect(mockInvoke).not.toHaveBeenCalled();
-  });
-
-  it('does not call edge function when tuba dimensions are incomplete', async () => {
-    const pkg = kartonPkg({
-      packagingType: 'tuba',
-      dimensions: { length: 50, diameter: 0 } as any,
-    });
-
-    renderHook(() => useApaczkaValuation('instance-1', pkg));
-
-    await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    expect(mockInvoke).not.toHaveBeenCalled();
-  });
-
-  it('calls edge function for koperta — any truthy dimensions value passes', async () => {
-    mockInvoke.mockResolvedValue({
-      data: { valuation: { price: { gross: { amount: '12.00' } } } },
-      error: null,
-    });
-
-    // koperta with a truthy (but empty) dimensions object — hook skips dimension check for koperta
-    const pkg = kartonPkg({
-      packagingType: 'koperta',
-      dimensions: {} as any,
-    });
-
-    const { result } = renderHook(() =>
-      useApaczkaValuation('instance-1', pkg),
-    );
-
-    await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    expect(mockInvoke).toHaveBeenCalled();
-    expect(result.current.price).toBe(12);
-  });
-
-  it('handles edge function error gracefully — returns null, no crash', async () => {
+  it('handles edge function error gracefully — returns null', async () => {
     mockInvoke.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() =>
       useApaczkaValuation('instance-1', kartonPkg()),
     );
 
+    let price: number | null = null;
     await act(async () => {
-      await vi.runAllTimersAsync();
+      price = await result.current.fetchValuation();
     });
 
-    expect(result.current.price).toBeNull();
-    expect(result.current.error).toBeNull(); // errors are silently swallowed
+    expect(price).toBeNull();
+    expect(result.current.error).toBe('Nie udało się pobrać wyceny');
     expect(result.current.loading).toBe(false);
   });
 
-  it('handles data.error in response gracefully', async () => {
+  it('handles data.error in response', async () => {
     mockInvoke.mockResolvedValue({
       data: { error: 'Service unavailable' },
       error: null,
@@ -187,48 +125,40 @@ describe('useApaczkaValuation', () => {
       useApaczkaValuation('instance-1', kartonPkg()),
     );
 
+    let price: number | null = null;
     await act(async () => {
-      await vi.runAllTimersAsync();
+      price = await result.current.fetchValuation();
     });
 
-    expect(result.current.price).toBeNull();
+    expect(price).toBeNull();
     expect(result.current.error).toBe('Service unavailable');
   });
 
-  it('debounces rapid changes — calls edge function only once', async () => {
-    mockInvoke.mockResolvedValue({
-      data: { valuation: { price: { gross: { amount: '25.00' } } } },
-      error: null,
-    });
+  it('sets loading state during fetch', async () => {
+    let resolvePromise: (v: any) => void;
+    mockInvoke.mockReturnValue(new Promise((resolve) => { resolvePromise = resolve; }));
 
-    const { rerender } = renderHook(
-      ({ dims }) =>
-        useApaczkaValuation(
-          'instance-1',
-          kartonPkg({ dimensions: dims }),
-        ),
-      { initialProps: { dims: { length: 30, width: 20, height: 10 } } },
+    const { result } = renderHook(() =>
+      useApaczkaValuation('instance-1', kartonPkg()),
     );
 
-    // Advance partially through debounce window and rerender to reset timer
-    await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    rerender({ dims: { length: 31, width: 20, height: 10 } });
+    expect(result.current.loading).toBe(false);
 
-    await act(async () => {
-      vi.advanceTimersByTime(400);
-    });
-    rerender({ dims: { length: 32, width: 20, height: 10 } });
-
-    // Still before debounce completes — no call yet
-    expect(mockInvoke).not.toHaveBeenCalled();
-
-    // Complete debounce and flush promises
-    await act(async () => {
-      await vi.runAllTimersAsync();
+    let fetchPromise: Promise<number | null>;
+    act(() => {
+      fetchPromise = result.current.fetchValuation();
     });
 
-    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => {
+      resolvePromise!({
+        data: { valuation: { price: { gross: { amount: '25.00' } } } },
+        error: null,
+      });
+      await fetchPromise!;
+    });
+
+    expect(result.current.loading).toBe(false);
   });
 });

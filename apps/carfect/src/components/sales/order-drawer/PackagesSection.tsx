@@ -26,6 +26,7 @@ interface PackagesSectionProps {
   onContentsChange: (packageId: string, contents: string) => void;
   onDeclaredValueChange: (packageId: string, value: number) => void;
   onOversizedChange: (packageId: string, oversized: boolean) => void;
+  onShippingCostChange: (packageId: string, cost: number | undefined) => void;
   onAddProduct: (packageId: string) => void;
   onRemoveProduct: (packageId: string, productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
@@ -37,11 +38,17 @@ interface PackagesSectionProps {
     widthMm?: number,
   ) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
+  onUpdateRequiredM2?: (productKey: string, requiredM2: number) => void;
+  onUpdateProductDiscount?: (productKey: string, discountPercent: number) => void;
   onToggleDiscount?: (productKey: string) => void;
   customerDiscount?: number;
+  customerName?: string;
   onAddPackage: () => void;
   customerPostalCode?: string;
   customerCity?: string;
+  paymentMethod?: string;
+  totalGross?: number;
+  bankAccountNumber?: string;
 }
 
 export const PackagesSection = ({
@@ -57,17 +64,24 @@ export const PackagesSection = ({
   onContentsChange,
   onDeclaredValueChange,
   onOversizedChange,
+  onShippingCostChange,
   onAddProduct,
   onRemoveProduct,
   onUpdateQuantity,
   onUpdateVehicle,
   onUpdateRollAssignment,
   onSetRollAssignments,
+  onUpdateRequiredM2,
+  onUpdateProductDiscount,
   onToggleDiscount,
   customerDiscount,
+  customerName,
   onAddPackage,
   customerPostalCode,
   customerCity,
+  paymentMethod,
+  totalGross,
+  bankAccountNumber,
   availableCouriers,
 }: PackagesSectionProps) => {
   return (
@@ -91,6 +105,7 @@ export const PackagesSection = ({
               onContentsChange={(contents) => onContentsChange(pkg.id, contents)}
               onDeclaredValueChange={(value) => onDeclaredValueChange(pkg.id, value)}
               onOversizedChange={(oversized) => onOversizedChange(pkg.id, oversized)}
+              onShippingCostChange={(cost) => onShippingCostChange(pkg.id, cost)}
               onAddProduct={() => onAddProduct(pkg.id)}
               onRemoveProduct={(productKey) => onRemoveProduct(pkg.id, productKey)}
               onUpdateQuantity={(productKey, qty) => onUpdateQuantity(productKey, qty)}
@@ -104,10 +119,16 @@ export const PackagesSection = ({
                   : undefined
               }
               onSetRollAssignments={onSetRollAssignments}
+              onUpdateRequiredM2={onUpdateRequiredM2}
+              onUpdateProductDiscount={onUpdateProductDiscount}
               onToggleDiscount={onToggleDiscount}
               customerDiscount={customerDiscount}
+              customerName={customerName}
               customerPostalCode={customerPostalCode}
               customerCity={customerCity}
+              paymentMethod={paymentMethod}
+              totalGross={totalGross}
+              bankAccountNumber={bankAccountNumber}
             />
           ))}
         </div>
