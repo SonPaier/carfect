@@ -230,7 +230,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       {instanceId && <SmsUsageCard instanceId={instanceId} />}
 
       {/* SMS History Button */}
-      <Button variant="outline" onClick={handleShowHistory} className="w-full">
+      <Button variant="outline" onClick={handleShowHistory}>
         {loadingLogs ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         ) : (
