@@ -903,10 +903,9 @@ const AddEditSalesCustomerDrawer = ({
 
         {/* Sticky footer */}
         {isFormMode && (
-          <div className="flex items-center gap-2 px-5 py-3 border-t shrink-0 bg-white">
+          <div className="flex items-center gap-2 px-5 py-3 border-t shrink-0 bg-white justify-end">
             <Button
               variant="outline"
-              className="flex-1"
               onClick={() => {
                 if (isEdit) {
                   if (customer) {
@@ -945,7 +944,7 @@ const AddEditSalesCustomerDrawer = ({
             >
               Anuluj
             </Button>
-            <Button className="flex-1" onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Zapisywanie...' : 'Zapisz'}
             </Button>
           </div>

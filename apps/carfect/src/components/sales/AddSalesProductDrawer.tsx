@@ -426,11 +426,11 @@ const AddSalesProductDrawer = ({
         </div>
 
         <SheetFooter className="px-6 py-4 border-t shrink-0">
-          <div className="flex gap-3 w-full">
-            <Button variant="outline" className="flex-1" onClick={handleClose}>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={handleClose}>
               Anuluj
             </Button>
-            <Button className="flex-1" onClick={handleSubmit} disabled={saving}>
+            <Button onClick={handleSubmit} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />

@@ -242,18 +242,20 @@ const AddSalesOrderDrawer = ({
   // Per-product discount: each product uses its own discountPercent (or customerDiscount fallback).
   // Products flagged excludeFromDiscount with no explicit per-product override get 0%.
   const discountAmount = useMemo(
-    () => products.reduce((sum, p) => {
-      const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount);
-      return sum + getProductTotal(p) * (discount / 100);
-    }, 0),
+    () =>
+      products.reduce((sum, p) => {
+        const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount);
+        return sum + getProductTotal(p) * (discount / 100);
+      }, 0),
     [products, customerDiscount],
   );
 
   // Shipping costs from Apaczka (brutto) — convert to netto for summary
   const shippingCosts = useMemo(
-    () => orderPackages.packages
-      .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
-      .map((pkg) => pkg.shippingCost!),
+    () =>
+      orderPackages.packages
+        .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
+        .map((pkg) => pkg.shippingCost!),
     [orderPackages.packages],
   );
   const shippingNetTotal = shippingCosts.reduce((sum, cost) => sum + cost / (1 + VAT_RATE), 0);
@@ -813,11 +815,11 @@ const AddSalesOrderDrawer = ({
 
           {/* Fixed Footer */}
           <SheetFooter className="px-6 py-4 border-t shrink-0">
-            <div className="flex gap-3 w-full">
-              <Button variant="outline" className="flex-1" onClick={handleClose}>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={handleClose}>
                 Anuluj
               </Button>
-              <Button className="flex-1" onClick={handleSubmit} disabled={saving}>
+              <Button onClick={handleSubmit} disabled={saving}>
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />

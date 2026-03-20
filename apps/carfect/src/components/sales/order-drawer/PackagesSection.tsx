@@ -134,7 +134,7 @@ export const PackagesSection = ({
         </div>
       )}
 
-      <Button variant="outline" size="sm" className="w-full gap-2" onClick={onAddPackage}>
+      <Button variant="outline" size="sm" className="gap-2" onClick={onAddPackage}>
         <Plus className="w-4 h-4" />
         {packages.length > 0 ? 'Dodaj kolejną paczkę' : 'Dodaj paczkę'}
       </Button>

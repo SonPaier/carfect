@@ -11,11 +11,14 @@ import { PhotoUploader } from '@/components/ui/photo-uploader';
 interface DamagePointDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  point: {
-    view: VehicleView;
-    x_percent: number;
-    y_percent: number;
-  } | DamagePoint | null;
+  point:
+    | {
+        view: VehicleView;
+        x_percent: number;
+        y_percent: number;
+      }
+    | DamagePoint
+    | null;
   onSave: (data: {
     damage_type: string;
     custom_note: string;
@@ -39,7 +42,7 @@ export const DamagePointDrawer = ({
   onPhotoUploaded,
 }: DamagePointDrawerProps) => {
   const existingPoint = point && 'id' in point ? point : null;
-  
+
   const [customNote, setCustomNote] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
@@ -62,7 +65,7 @@ export const DamagePointDrawer = ({
   }, [open, existingPoint?.id]);
 
   const handleVoiceTranscript = (text: string) => {
-    setCustomNote(prev => prev ? `${prev} ${text}` : text);
+    setCustomNote((prev) => (prev ? `${prev} ${text}` : text));
   };
 
   const handleSave = () => {
@@ -84,9 +87,7 @@ export const DamagePointDrawer = ({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="h-[95vh] max-h-[95vh] mx-auto max-w-[768px]">
         <DrawerHeader className="flex items-center justify-between pb-2">
-          <DrawerTitle>
-            {isEditing ? 'Edytuj uszkodzenie' : 'Dodaj uszkodzenie'}
-          </DrawerTitle>
+          <DrawerTitle>{isEditing ? 'Edytuj uszkodzenie' : 'Dodaj uszkodzenie'}</DrawerTitle>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -103,7 +104,7 @@ export const DamagePointDrawer = ({
               bucketName="protocol-photos"
               filePrefix="protokol-szkoda"
               onAnnotate={(oldUrl, newUrl) => {
-                setPhotoUrls(prev => prev.map(u => u === oldUrl ? newUrl : u));
+                setPhotoUrls((prev) => prev.map((u) => (u === oldUrl ? newUrl : u)));
               }}
             />
           </div>
@@ -124,18 +125,20 @@ export const DamagePointDrawer = ({
           </div>
         </div>
 
-        <DrawerFooter className="flex-row gap-2 pt-2">
-          <Button variant="outline" onClick={handleClose} className="flex-1 bg-white">
+        <DrawerFooter className="flex-row gap-2 pt-2 justify-end">
+          <Button variant="outline" onClick={handleClose} className="bg-white">
             Anuluj
           </Button>
           {isEditing && onDelete && (
-            <Button variant="outline" onClick={onDelete} className="flex-1 bg-white text-destructive hover:text-destructive hover:bg-destructive/10">
+            <Button
+              variant="outline"
+              onClick={onDelete}
+              className="bg-white text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
               Usuń
             </Button>
           )}
-          <Button onClick={handleSave} className="flex-1">
-            {isEditing ? 'Zapisz' : 'Dodaj'}
-          </Button>
+          <Button onClick={handleSave}>{isEditing ? 'Zapisz' : 'Dodaj'}</Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

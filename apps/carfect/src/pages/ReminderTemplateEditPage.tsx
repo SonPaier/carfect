@@ -8,13 +8,7 @@ import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { Tabs, TabsContent } from '@shared/ui';
 import { AdminTabsList, AdminTabsTrigger } from '@/components/admin/AdminTabsList';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -44,10 +38,14 @@ const SERVICE_TYPES = [
 // TODO: Superadmin będzie mógł edytować szablony SMS w panelu superadmina
 // Na razie hardcoded templates - admin widzi readonly
 const SMS_TEMPLATES: Record<string, string> = {
-  serwis: '{short_name}: Zapraszamy na serwis folii PPF pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
-  kontrola: '{short_name}: Zapraszamy na bezplatna kontrole folii PPF pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
-  serwis_gwarancyjny: '{short_name}: Zapraszamy na serwis gwarancyjny pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
-  odswiezenie_powloki: '{short_name}: Zapraszamy na odswiezenie powloki pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
+  serwis:
+    '{short_name}: Zapraszamy na serwis folii PPF pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
+  kontrola:
+    '{short_name}: Zapraszamy na bezplatna kontrole folii PPF pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
+  serwis_gwarancyjny:
+    '{short_name}: Zapraszamy na serwis gwarancyjny pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
+  odswiezenie_powloki:
+    '{short_name}: Zapraszamy na odswiezenie powloki pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
 };
 
 export default function ReminderTemplateEditPage() {
@@ -57,26 +55,26 @@ export default function ReminderTemplateEditPage() {
   const { shortId } = useParams<{ shortId: string }>();
   const [searchParams] = useSearchParams();
   const { user, roles, loading: authLoading } = useAuth();
-  
+
   // Get instanceId directly from roles (already fetched by useAuth)
-  const instanceId = roles.find(r => r.instance_id)?.instance_id || null;
-  
+  const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
+
   // Check if we came from ServiceFormDialog (to return and assign template)
   const returnToService = searchParams.get('returnToService');
   const serviceId = searchParams.get('serviceId');
-  
+
   // In some routes we use explicit "/reminders/new" path. Treat it as shortId="new".
   const isNew = shortId === 'new' || location.pathname.endsWith('/reminders/new');
-  
+
   // Detect if we're on admin path (for subdomain navigation)
   const isAdminPath = location.pathname.startsWith('/admin');
   const remindersBasePath = isAdminPath ? '/admin/reminders' : '/reminders';
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'template' | 'customers'>('template');
-  
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [items, setItems] = useState<ReminderItem[]>([{ months: 12, service_type: 'serwis' }]);
@@ -96,7 +94,7 @@ export default function ReminderTemplateEditPage() {
 
   const fetchTemplate = async () => {
     if (!instanceId || !shortId) return;
-    
+
     setLoading(true);
     try {
       // Find template by short ID prefix - fetch all and filter client-side
@@ -107,21 +105,21 @@ export default function ReminderTemplateEditPage() {
         .eq('instance_id', instanceId);
 
       if (error) throw error;
-      
+
       // Find template where ID starts with shortId
-      const template = data?.find(t => t.id.startsWith(shortId));
-      
+      const template = data?.find((t) => t.id.startsWith(shortId));
+
       if (template) {
         setTemplateId(template.id);
         setName(template.name);
         setDescription(template.description || '');
         // Safely parse items from JSONB
-        const parsedItems = Array.isArray(template.items) 
+        const parsedItems = Array.isArray(template.items)
           ? (template.items as unknown as ReminderItem[])
           : [];
         setItems(parsedItems.length > 0 ? parsedItems : [{ months: 12, service_type: 'serwis' }]);
       } else {
-      toast.error(t('reminderTemplates.notFound'));
+        toast.error(t('reminderTemplates.notFound'));
         navigate(remindersBasePath);
       }
     } catch (error) {
@@ -135,7 +133,7 @@ export default function ReminderTemplateEditPage() {
 
   const handleSave = async () => {
     if (!instanceId) return;
-    
+
     if (!name.trim()) {
       toast.error(t('reminderTemplates.nameRequired'));
       return;
@@ -150,12 +148,12 @@ export default function ReminderTemplateEditPage() {
     try {
       // Use the first item's service_type for SMS template
       const smsTemplate = SMS_TEMPLATES[items[0]?.service_type] || SMS_TEMPLATES.serwis;
-      
+
       // Convert items to Json compatible format
       const itemsJson = items as unknown as Json;
-      
+
       let newTemplateId: string | null = null;
-      
+
       if (isNew) {
         const { data, error } = await supabase
           .from('reminder_templates')
@@ -214,9 +212,7 @@ export default function ReminderTemplateEditPage() {
   };
 
   const updateItem = (index: number, field: keyof ReminderItem, value: number | string) => {
-    setItems(items.map((item, i) => 
-      i === index ? { ...item, [field]: value } : item
-    ));
+    setItems(items.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
   // Get SMS template example based on first item's service type
@@ -253,12 +249,7 @@ export default function ReminderTemplateEditPage() {
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              className="shrink-0"
-            >
+            <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-semibold">
@@ -271,11 +262,12 @@ export default function ReminderTemplateEditPage() {
       {/* Tabs - only for existing templates */}
       {!isNew && (
         <div className="container max-w-2xl mx-auto px-4 pt-4">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'template' | 'customers')}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as 'template' | 'customers')}
+          >
             <AdminTabsList columns={2}>
-              <AdminTabsTrigger value="template">
-                {t('reminders.tabs.template')}
-              </AdminTabsTrigger>
+              <AdminTabsTrigger value="template">{t('reminders.tabs.template')}</AdminTabsTrigger>
               <AdminTabsTrigger value="customers">
                 {t('reminders.tabs.assignedCustomers')}
               </AdminTabsTrigger>
@@ -315,12 +307,13 @@ export default function ReminderTemplateEditPage() {
             {/* Reminder Schedule */}
             <div className="space-y-3">
               <Label>{t('reminders.schedule')}</Label>
-              
+
               {items.map((item, index) => (
                 <div key={index} className="flex items-center gap-3 p-4 border rounded-lg bg-card">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-muted-foreground mb-2">
-                      {t('reminders.reminderNumber')} #{index + 1} {t('reminders.reminderNumberSms')}
+                      {t('reminders.reminderNumber')} #{index + 1}{' '}
+                      {t('reminders.reminderNumberSms')}
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {/* Months input */}
@@ -330,12 +323,16 @@ export default function ReminderTemplateEditPage() {
                           min={1}
                           max={120}
                           value={item.months}
-                          onChange={(e) => updateItem(index, 'months', parseInt(e.target.value) || 1)}
+                          onChange={(e) =>
+                            updateItem(index, 'months', parseInt(e.target.value) || 1)
+                          }
                           className="w-20"
                         />
-                        <span className="text-sm text-muted-foreground">{t('reminders.monthsAfter')}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {t('reminders.monthsAfter')}
+                        </span>
                       </div>
-                      
+
                       {/* Service type dropdown */}
                       <Select
                         value={item.service_type}
@@ -354,7 +351,7 @@ export default function ReminderTemplateEditPage() {
                       </Select>
                     </div>
                   </div>
-                  
+
                   {items.length > 1 && (
                     <Button
                       variant="ghost"
@@ -368,11 +365,7 @@ export default function ReminderTemplateEditPage() {
                 </div>
               ))}
 
-              <Button
-                variant="outline"
-                onClick={addItem}
-                className="w-full gap-2 bg-white"
-              >
+              <Button variant="outline" onClick={addItem} className="w-full gap-2 bg-white">
                 <Plus className="h-4 w-4" />
                 {items.length > 0 ? t('reminders.addAnotherReminder') : t('reminders.addReminder')}
               </Button>
@@ -380,16 +373,12 @@ export default function ReminderTemplateEditPage() {
 
             {/* SMS Template Preview (readonly for admin) */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                {t('reminders.smsTemplate')}
-              </Label>
+              <Label className="flex items-center gap-2">{t('reminders.smsTemplate')}</Label>
               <div className="p-3 bg-card rounded-lg border">
                 <p className="text-sm text-muted-foreground mb-1">{t('reminders.smsExample')}:</p>
                 <p className="text-sm font-mono">{getSmsExample()}</p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t('reminders.smsTemplateReadonly')}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('reminders.smsTemplateReadonly')}</p>
             </div>
           </div>
         </TabsContent>
@@ -397,10 +386,7 @@ export default function ReminderTemplateEditPage() {
         {/* Assigned Customers Tab */}
         <TabsContent value="customers" className="mt-0">
           <div className="container max-w-2xl mx-auto px-4 py-6">
-            <TemplateAssignedCustomers
-              templateId={templateId}
-              instanceId={instanceId}
-            />
+            <TemplateAssignedCustomers templateId={templateId} instanceId={instanceId} />
           </div>
         </TabsContent>
       </Tabs>
@@ -408,20 +394,11 @@ export default function ReminderTemplateEditPage() {
       {/* Sticky Footer Buttons - only show in template tab */}
       {activeTab === 'template' && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-20">
-          <div className="container max-w-2xl mx-auto flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="flex-1"
-              disabled={saving}
-            >
+          <div className="container max-w-2xl mx-auto flex gap-3 justify-end">
+            <Button variant="outline" onClick={handleBack} disabled={saving}>
               {t('common.cancel')}
             </Button>
-            <Button
-              onClick={handleSave}
-              className="flex-1"
-              disabled={saving}
-            >
+            <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {t('common.save')}
             </Button>

@@ -1,7 +1,7 @@
-import * as Sentry from "@sentry/react";
-import { Button } from "@shared/ui";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@shared/ui";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import * as Sentry from '@sentry/react';
+import { Button } from '@shared/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface FallbackProps {
   error: Error;
@@ -24,26 +24,15 @@ const ErrorFallback = ({ error, resetError }: FallbackProps) => {
         <CardContent className="space-y-4">
           {import.meta.env.DEV && (
             <div className="p-3 bg-muted rounded-md">
-              <p className="text-xs font-mono text-muted-foreground break-all">
-                {error.message}
-              </p>
+              <p className="text-xs font-mono text-muted-foreground break-all">{error.message}</p>
             </div>
           )}
-          <div className="flex gap-2">
-            <Button 
-              onClick={resetError} 
-              className="flex-1"
-              variant="outline"
-            >
+          <div className="flex gap-2 justify-end">
+            <Button onClick={resetError} variant="outline">
               <RefreshCw className="w-4 h-4 mr-2" />
               Spróbuj ponownie
             </Button>
-            <Button 
-              onClick={() => window.location.href = '/'}
-              className="flex-1"
-            >
-              Strona główna
-            </Button>
+            <Button onClick={() => (window.location.href = '/')}>Strona główna</Button>
           </div>
         </CardContent>
       </Card>
@@ -59,9 +48,9 @@ export const ErrorBoundary = ({ children }: ErrorBoundaryProps) => {
   return (
     <Sentry.ErrorBoundary
       fallback={({ error, resetError }) => (
-        <ErrorFallback 
-          error={error instanceof Error ? error : new Error(String(error))} 
-          resetError={resetError} 
+        <ErrorFallback
+          error={error instanceof Error ? error : new Error(String(error))}
+          resetError={resetError}
         />
       )}
       onError={(error, componentStack) => {
