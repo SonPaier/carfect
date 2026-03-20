@@ -37,6 +37,7 @@ import { OrderSummarySection } from './order-drawer/OrderSummarySection';
 import { PaymentSection } from './order-drawer/PaymentSection';
 import { ShippingAddressSection } from './order-drawer/ShippingAddressSection';
 import { type AddressData } from './order-drawer/AddressFields';
+import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChanges';
 
 // Re-export types used externally
 export type { OrderPackage, OrderProduct, DeliveryType };
@@ -96,6 +97,12 @@ const AddSalesOrderDrawer = ({
   const customerSearch = useCustomerSearch(instanceId);
   const [products, setProducts] = useState<OrderProduct[]>([]);
   const orderPackages = useOrderPackages({ products, setProducts });
+  const {
+    markDirty,
+    resetDirty,
+    handleClose: handleUnsavedClose,
+    dialogProps,
+  } = useUnsavedChanges();
 
   // Local state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
@@ -269,7 +276,11 @@ const AddSalesOrderDrawer = ({
   };
 
   const handleClose = () => {
-    onOpenChange(false);
+    handleUnsavedClose(handleSubmit, () => {
+      resetDirty();
+      resetForm();
+      onOpenChange(false);
+    });
   };
 
   const resetForm = () => {
@@ -549,6 +560,7 @@ const AddSalesOrderDrawer = ({
         }
       }
 
+      resetDirty();
       resetForm();
       onOpenChange(false);
       onOrderCreated?.();
@@ -565,8 +577,7 @@ const AddSalesOrderDrawer = ({
         open={open}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
-            resetForm();
-            onOpenChange(false);
+            handleClose();
           }
         }}
       >
@@ -575,6 +586,14 @@ const AddSalesOrderDrawer = ({
           className="w-full flex flex-col h-full p-0 gap-0 bg-white text-foreground [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60 [&_label]:text-foreground sm:max-w-[80vw]"
           hasDarkOverlay
           hideCloseButton
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            handleClose();
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            handleClose();
+          }}
         >
           {/* Fixed Header */}
           <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
@@ -597,7 +616,18 @@ const AddSalesOrderDrawer = ({
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-4">
-              <CustomerSearchSection {...customerSearch} onAddNewCustomer={handleAddNewCustomer} />
+              <CustomerSearchSection
+                {...customerSearch}
+                handleSelectCustomer={(c) => {
+                  customerSearch.handleSelectCustomer(c);
+                  markDirty();
+                }}
+                setSelectedCustomer={(c) => {
+                  customerSearch.setSelectedCustomer(c);
+                  if (c) markDirty();
+                }}
+                onAddNewCustomer={handleAddNewCustomer}
+              />
 
               {customerSearch.selectedCustomer && customerDiscount > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sky-50 border border-sky-200 text-sky-700">
@@ -610,31 +640,89 @@ const AddSalesOrderDrawer = ({
                 packages={orderPackages.packages}
                 products={products}
                 instanceId={instanceId}
-                onRemovePackage={orderPackages.removePackage}
-                onShippingMethodChange={orderPackages.updatePackageShippingMethod}
-                onPackagingTypeChange={orderPackages.updatePackagePackagingType}
-                onDimensionChange={orderPackages.updatePackageDimension}
-                onCourierChange={orderPackages.updatePackageCourier}
-                onWeightChange={orderPackages.updatePackageWeight}
-                onContentsChange={orderPackages.updatePackageContents}
-                onDeclaredValueChange={orderPackages.updatePackageDeclaredValue}
-                onOversizedChange={orderPackages.updatePackageOversized}
-                onShippingCostChange={orderPackages.updatePackageShippingCost}
+                onRemovePackage={(...args) => {
+                  markDirty();
+                  orderPackages.removePackage(...args);
+                }}
+                onShippingMethodChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageShippingMethod(...args);
+                }}
+                onPackagingTypeChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackagePackagingType(...args);
+                }}
+                onDimensionChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageDimension(...args);
+                }}
+                onCourierChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageCourier(...args);
+                }}
+                onWeightChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageWeight(...args);
+                }}
+                onContentsChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageContents(...args);
+                }}
+                onDeclaredValueChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageDeclaredValue(...args);
+                }}
+                onOversizedChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageOversized(...args);
+                }}
+                onShippingCostChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageShippingCost(...args);
+                }}
                 onAddProduct={(packageId) => {
+                  markDirty();
                   orderPackages.setActivePackageId(packageId);
                   orderPackages.setProductDrawerOpen(true);
                 }}
-                onRemoveProduct={orderPackages.removeProductFromPackage}
-                onUpdateQuantity={orderPackages.updateQuantity}
-                onUpdateVehicle={orderPackages.updateVehicle}
-                onUpdateRollAssignment={orderPackages.updateRollAssignment}
-                onSetRollAssignments={orderPackages.setRollAssignments}
-                onUpdateRequiredM2={orderPackages.updateRequiredM2}
-                onUpdateProductDiscount={orderPackages.updateProductDiscount}
-                onToggleDiscount={orderPackages.toggleExcludeFromDiscount}
+                onRemoveProduct={(pkgId, itemKey) => {
+                  markDirty();
+                  orderPackages.removeProductFromPackage(pkgId, itemKey);
+                }}
+                onUpdateQuantity={(...args) => {
+                  markDirty();
+                  orderPackages.updateQuantity(...args);
+                }}
+                onUpdateVehicle={(...args) => {
+                  markDirty();
+                  orderPackages.updateVehicle(...args);
+                }}
+                onUpdateRollAssignment={(...args) => {
+                  markDirty();
+                  orderPackages.updateRollAssignment(...args);
+                }}
+                onSetRollAssignments={(...args) => {
+                  markDirty();
+                  orderPackages.setRollAssignments(...args);
+                }}
+                onUpdateRequiredM2={(...args) => {
+                  markDirty();
+                  orderPackages.updateRequiredM2(...args);
+                }}
+                onUpdateProductDiscount={(...args) => {
+                  markDirty();
+                  orderPackages.updateProductDiscount(...args);
+                }}
+                onToggleDiscount={(...args) => {
+                  markDirty();
+                  orderPackages.toggleExcludeFromDiscount(...args);
+                }}
                 customerDiscount={customerDiscount}
                 customerName={customerSearch.selectedCustomer?.name}
-                onAddPackage={orderPackages.addPackage}
+                onAddPackage={(...args) => {
+                  markDirty();
+                  orderPackages.addPackage(...args);
+                }}
                 customerPostalCode={customerAddress.postalCode}
                 customerCity={customerAddress.city}
                 paymentMethod={paymentMethod}
@@ -644,14 +732,26 @@ const AddSalesOrderDrawer = ({
               />
 
               {hasShipping && (
-                <ShippingAddressSection address={shippingAddress} onChange={setShippingAddress} />
+                <ShippingAddressSection
+                  address={shippingAddress}
+                  onChange={(v) => {
+                    setShippingAddress(v);
+                    markDirty();
+                  }}
+                />
               )}
 
               <PaymentSection
                 paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
+                setPaymentMethod={(v) => {
+                  setPaymentMethod(v);
+                  markDirty();
+                }}
                 bankAccountNumber={bankAccountNumber}
-                setBankAccountNumber={setBankAccountNumber}
+                setBankAccountNumber={(v) => {
+                  setBankAccountNumber(v);
+                  markDirty();
+                }}
                 bankAccounts={bankAccounts}
               />
 
@@ -660,7 +760,10 @@ const AddSalesOrderDrawer = ({
                 <Checkbox
                   id="send-email"
                   checked={sendEmail}
-                  onCheckedChange={(v) => setSendEmail(v === true)}
+                  onCheckedChange={(v) => {
+                    setSendEmail(v === true);
+                    markDirty();
+                  }}
                 />
                 <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer">
                   Wyślij email z potwierdzeniem zamówienia
@@ -673,7 +776,10 @@ const AddSalesOrderDrawer = ({
                 <Textarea
                   id="order-comment"
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  onChange={(e) => {
+                    setComment(e.target.value);
+                    markDirty();
+                  }}
                   rows={3}
                 />
               </div>
@@ -681,7 +787,10 @@ const AddSalesOrderDrawer = ({
               {/* Formatki (paste images) */}
               <ImagePasteZone
                 images={attachments}
-                onImagesChange={setAttachments}
+                onImagesChange={(v) => {
+                  setAttachments(v);
+                  markDirty();
+                }}
                 pathPrefix={instanceId || 'unknown'}
                 maxImages={10}
                 disabled={saving}
@@ -743,10 +852,14 @@ const AddSalesOrderDrawer = ({
             instanceId={instanceId}
             selectedProductIds={[]}
             selectedVariantIds={[]}
-            onConfirm={orderPackages.handleProductsConfirm}
+            onConfirm={(...args) => {
+              markDirty();
+              orderPackages.handleProductsConfirm(...args);
+            }}
           />
         </>
       )}
+      <UnsavedChangesDialog {...dialogProps} />
     </>
   );
 };
