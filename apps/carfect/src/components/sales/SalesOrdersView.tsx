@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { type AddressData } from './order-drawer/AddressFields';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
 import {
@@ -314,7 +315,7 @@ const SalesOrdersView = () => {
     const { data: orderData } = await (supabase
       .from('sales_orders')
       .select(
-        'delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments',
+        'delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments, shipping_address',
       )
       .eq('id', order.id)
       .single() as any);
@@ -433,6 +434,9 @@ const SalesOrdersView = () => {
       comment: orderData?.comment || '',
       sendEmail: false,
       attachments: ((orderData?.attachments as any[]) || []).map((a: any) => a.url),
+      shippingAddress: orderData?.shipping_address
+        ? (orderData.shipping_address as AddressData)
+        : undefined,
     });
     setDrawerOpen(true);
   };
@@ -483,7 +487,12 @@ const SalesOrdersView = () => {
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId
-            ? { ...o, status: 'anulowany' as const, trackingNumber: undefined, trackingUrl: undefined }
+            ? {
+                ...o,
+                status: 'anulowany' as const,
+                trackingNumber: undefined,
+                trackingUrl: undefined,
+              }
             : o,
         ),
       );
