@@ -9,8 +9,8 @@
 
 Zmiana zachowania drawerów panelu sprzedaży:
 
-- Kliknięcie poza drawerem (lub przycisk X) **bez zmian** → zamknięcie natychmiastowe
-- Kliknięcie poza drawerem (lub przycisk X) **z niezapisanymi zmianami** → popup z pytaniem
+- Kliknięcie poza drawerem / Escape / przycisk X **bez zmian** → zamknięcie natychmiastowe
+- Kliknięcie poza drawerem / Escape / przycisk X **z niezapisanymi zmianami** → popup z pytaniem
 
 ---
 
@@ -54,17 +54,69 @@ interface UseUnsavedChangesReturn {
 - `markDirty()` — ustawia `isDirty = true`
 - `resetDirty()` — ustawia `isDirty = false`
 - `handleClose(onSave, onDiscard)`:
-  - jeśli `!isDirty` → wywołuje `onDiscard()` bezpośrednio
-  - jeśli `isDirty` → otwiera dialog, zapamiętuje callbacks
+  - jeśli `!isDirty` → wywołuje `onDiscard()` bezpośrednio (natychmiastowe zamknięcie)
+  - jeśli `isDirty` → otwiera dialog, zapamiętuje oba callbacki w `useRef`
 - `ConfirmDialog` — renderuje `AlertDialog` z 3 przyciskami
+
+**Ważne:** `handleClose` zawsze wywołuje `e.preventDefault()` poza hookiem — hook sam nie zapobiega zamknięciu Sheet, tylko zarządza stanem dialogu. `ConfirmDialog` jest kontrolowany przez stan `dialogOpen` wewnątrz hooka (nie ref). Jeśli `handleClose` jest wywołane ponownie gdy dialog jest już otwarty — ignoruje wywołanie (guard przed rapid clicks).
 
 ### AlertDialog — przyciski
 
-| Przycisk             | Akcja                                                       |
-| -------------------- | ----------------------------------------------------------- |
-| **Zapisz**           | wywołuje `onSave()` (submit formularza), dialog znika       |
-| **Odrzuć zmiany**    | wywołuje `onDiscard()` (zamknięcie drawera), `resetDirty()` |
-| **Kontynuuj edycję** | zamknięcie dialogu, drawer pozostaje otwarty                |
+| Przycisk             | Akcja                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Zapisz**           | wywołuje `onSave()` (submit formularza); po pomyślnym zapisie drawer zamknie się przez własną logikę |
+| **Odrzuć zmiany**    | wywołuje `onDiscard()` → resetuje form + zamyka drawer; wywołuje `resetDirty()`                      |
+| **Kontynuuj edycję** | zamknięcie dialogu, drawer pozostaje otwarty, `isDirty` bez zmian                                    |
+
+**Obsługa błędu `onSave`:** jeśli `onSave()` jest async i rzuci błąd — drawer obsługuje błąd wewnętrznie (toast), dialog znika, drawer pozostaje otwarty.
+
+---
+
+## Strategia przechwytywania zamknięcia
+
+Aby uniknąć nieskończonej pętli, **nie używamy `onOpenChange` Sheet do guardu**. Zamiast tego przechwytujemy zdarzenia bezpośrednio:
+
+### `onInteractOutside` (klik poza drawer)
+
+```tsx
+onInteractOutside={(e) => {
+  e.preventDefault(); // zawsze blokuj naturalne zamknięcie
+  handleClose(handleSubmit, () => {
+    resetDirty();
+    resetForm();
+    onOpenChange(false); // prop z rodzica — bezpośrednie zamknięcie
+  });
+}}
+```
+
+### `onEscapeKeyDown` (klawisz Escape)
+
+```tsx
+onEscapeKeyDown={(e) => {
+  e.preventDefault(); // zawsze blokuj naturalne zamknięcie
+  handleClose(handleSubmit, () => {
+    resetDirty();
+    resetForm();
+    onOpenChange(false);
+  });
+}}
+```
+
+### Przycisk X / Anuluj
+
+```tsx
+onClick={() =>
+  handleClose(handleSubmit, () => {
+    resetDirty();
+    resetForm();
+    onOpenChange(false);
+  })
+}
+```
+
+### `onOpenChange` Sheet
+
+Zostawiamy istniejącą logikę **bez zmian** w tych drawerach, gdzie Sheet używa `onOpenChange`. Ponieważ `onInteractOutside` i `onEscapeKeyDown` blokują naturalne zamknięcie przez `e.preventDefault()`, `onOpenChange(false)` będzie wywoływane **tylko** przez nasze własne callbacki (kontrolowane).
 
 ---
 
@@ -76,7 +128,7 @@ Każdy z 4 drawerów wymaga identycznych zmian:
 
 ```ts
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges';
-// lub odpowiednia ścieżka relative
+// lub odpowiednia ścieżka relative do lokalizacji pliku
 ```
 
 ### 2. Inicjalizacja
@@ -87,58 +139,37 @@ const { isDirty, markDirty, resetDirty, handleClose, ConfirmDialog } = useUnsave
 
 ### 3. Oznaczanie zmian
 
-Każdy `onChange` handler / setter formularza dostaje wywołanie `markDirty()`. Przykład:
+Każdy setter stanu formularza dostaje wywołanie `markDirty()`. Przykład:
 
 ```ts
-const handleFieldChange = (value: string) => {
-  setField(value);
+onChange={(e) => {
+  setField(e.target.value);
   markDirty();
-};
+}}
 ```
 
 ### 4. Intercept zamknięcia
 
-**`onInteractOutside`** — zamiast `e.preventDefault()`:
-
-```tsx
-onInteractOutside={(e) => {
-  e.preventDefault();
-  handleClose(handleSubmit, () => {
-    resetDirty();
-    onOpenChange(false);
-  });
-}}
-```
-
-**`onOpenChange`** / przycisk X:
-
-```tsx
-onOpenChange={(isOpen) => {
-  if (!isOpen) {
-    handleClose(handleSubmit, () => {
-      resetDirty();
-      resetForm();
-      onOpenChange(false);
-    });
-  }
-}}
-```
+Dodaj `onInteractOutside` i `onEscapeKeyDown` do `SheetContent` (patrz wzorzec wyżej).
+Zmień przycisk X / Anuluj na wzorzec z `handleClose` (patrz wyżej).
 
 ### 5. Reset po zapisie
 
-W `resetForm()` i po pomyślnym zapisie:
-
-```ts
-resetDirty();
-```
+W każdym miejscu gdzie drawer się zamyka po pomyślnym zapisie, wywołaj `resetDirty()` przed `onOpenChange(false)`.
 
 ### 6. Render dialogu
 
-Na końcu JSX drawera:
+Na końcu JSX drawera (przed zamknięciem `<>` lub `<Sheet>`):
 
 ```tsx
 <ConfirmDialog />
 ```
+
+---
+
+## Zagnieżdżone drawery
+
+`AddSalesOrderDrawer` zawiera zagnieżdżone drawery (`AddEditSalesCustomerDrawer`, `SalesProductSelectionDrawer`). Te drawery mają własny `onInteractOutside={(e) => e.preventDefault()}` — kliknięcie poza nimi **nie propaguje** do rodzica. Zagnieżdżone drawery nie potrzebują własnego `useUnsavedChanges` w tym zakresie.
 
 ---
 
@@ -148,3 +179,4 @@ Na końcu JSX drawera:
 - Głębokie porównanie stanu (deep diff)
 - Automatyczny zapis (autosave)
 - Zachowanie przy nawigacji przeglądarki (beforeunload)
+- Dodawanie `useUnsavedChanges` do zagnieżdżonych drawerów (SalesProductSelectionDrawer)
