@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@shared/ui';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChanges';
 
 interface SalesProductVariant {
   id?: string;
@@ -53,6 +54,12 @@ const AddSalesProductDrawer = ({
   const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('piece');
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const {
+    markDirty,
+    resetDirty,
+    handleClose: handleUnsavedClose,
+    dialogProps,
+  } = useUnsavedChanges();
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [excludeFromDiscount, setExcludeFromDiscount] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
@@ -117,15 +124,21 @@ const AddSalesProductDrawer = ({
   }, [open, product]);
 
   const handleClose = () => {
-    onOpenChange(false);
+    handleUnsavedClose(handleSubmit, () => {
+      resetDirty();
+      resetForm();
+      onOpenChange(false);
+    });
   };
 
   const addVariant = () => {
     setVariants((prev) => [...prev, { name: '', sortOrder: prev.length }]);
+    markDirty();
   };
 
   const removeVariant = (index: number) => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
+    markDirty();
   };
 
   const updateVariantName = (index: number, value: string) => {
@@ -193,8 +206,9 @@ const AddSalesProductDrawer = ({
       }
 
       toast.success(isEdit ? 'Produkt zaktualizowany' : 'Produkt został dodany');
+      resetDirty();
       resetForm();
-      handleClose();
+      onOpenChange(false);
       onSaved?.();
     } catch (err: any) {
       toast.error('Błąd: ' + (err.message || ''));
@@ -219,8 +233,14 @@ const AddSalesProductDrawer = ({
         className="w-full sm:max-w-[var(--drawer-width)] flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
         hideOverlay
         hideCloseButton
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          handleClose();
+        }}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleClose();
+        }}
       >
         <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <div className="flex items-center justify-between">
@@ -242,7 +262,10 @@ const AddSalesProductDrawer = ({
               <Input
                 id="product-full-name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  markDirty();
+                }}
               />
             </div>
 
@@ -251,13 +274,22 @@ const AddSalesProductDrawer = ({
               <Input
                 id="product-short-name"
                 value={shortName}
-                onChange={(e) => setShortName(e.target.value)}
+                onChange={(e) => {
+                  setShortName(e.target.value);
+                  markDirty();
+                }}
               />
             </div>
 
             <div className="space-y-2">
               <Label>Kategoria</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select
+                value={categoryId}
+                onValueChange={(v) => {
+                  setCategoryId(v);
+                  markDirty();
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Wybierz kategorię" />
                 </SelectTrigger>
@@ -276,7 +308,10 @@ const AddSalesProductDrawer = ({
               <Textarea
                 id="product-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  markDirty();
+                }}
                 rows={3}
               />
             </div>
@@ -290,7 +325,10 @@ const AddSalesProductDrawer = ({
                 step="0.01"
                 placeholder="0.00"
                 value={priceNet}
-                onChange={(e) => setPriceNet(e.target.value)}
+                onChange={(e) => {
+                  setPriceNet(e.target.value);
+                  markDirty();
+                }}
               />
             </div>
 
@@ -298,7 +336,10 @@ const AddSalesProductDrawer = ({
               <Label>Cena za</Label>
               <RadioGroup
                 value={priceUnit}
-                onValueChange={(v) => setPriceUnit(v as 'piece' | 'meter')}
+                onValueChange={(v) => {
+                  setPriceUnit(v as 'piece' | 'meter');
+                  markDirty();
+                }}
                 className="flex gap-4"
               >
                 <div className="flex items-center gap-2">
@@ -320,7 +361,10 @@ const AddSalesProductDrawer = ({
               <Checkbox
                 id="exclude-from-discount"
                 checked={excludeFromDiscount}
-                onCheckedChange={(v) => setExcludeFromDiscount(v === true)}
+                onCheckedChange={(v) => {
+                  setExcludeFromDiscount(v === true);
+                  markDirty();
+                }}
               />
               <Label htmlFor="exclude-from-discount" className="text-sm font-normal cursor-pointer">
                 Wykluczaj ten produkt z rabatów
@@ -331,7 +375,10 @@ const AddSalesProductDrawer = ({
               <Checkbox
                 id="has-variants"
                 checked={hasVariants}
-                onCheckedChange={(v) => setHasVariants(v === true)}
+                onCheckedChange={(v) => {
+                  setHasVariants(v === true);
+                  markDirty();
+                }}
               />
               <Label htmlFor="has-variants" className="text-sm font-normal cursor-pointer">
                 Produkt posiada warianty
@@ -349,7 +396,10 @@ const AddSalesProductDrawer = ({
                     <Input
                       placeholder="Nazwa wariantu"
                       value={variant.name}
-                      onChange={(e) => updateVariantName(index, e.target.value)}
+                      onChange={(e) => {
+                        updateVariantName(index, e.target.value);
+                        markDirty();
+                      }}
                       className="h-8 text-sm flex-1"
                     />
                     <button
@@ -396,6 +446,7 @@ const AddSalesProductDrawer = ({
           </div>
         </SheetFooter>
       </SheetContent>
+      <UnsavedChangesDialog {...dialogProps} />
     </Sheet>
   );
 };
