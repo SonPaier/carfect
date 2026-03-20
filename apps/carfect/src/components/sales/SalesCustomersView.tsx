@@ -76,7 +76,11 @@ const SalesCustomersView = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<SalesCustomer | null>(null);
   const [initialEditMode, setInitialEditMode] = useState(false);
 
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; name: string }>({ open: false, id: '', name: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; name: string }>({
+    open: false,
+    id: '',
+    name: '',
+  });
 
   // Order drawer state
   const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
@@ -374,7 +378,9 @@ const SalesCustomersView = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => setDeleteConfirm({ open: true, id: c.id, name: c.name })}
+                              onClick={() =>
+                                setDeleteConfirm({ open: true, id: c.id, name: c.name })
+                              }
                             >
                               Usuń
                             </DropdownMenuItem>
@@ -388,7 +394,7 @@ const SalesCustomersView = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <TableCell colSpan={7} className="p-0">
-                          <div className="bg-muted/30 px-8 py-4 grid grid-cols-3 gap-6 text-sm border-t">
+                          <div className="px-8 py-4 grid grid-cols-3 gap-6 text-sm border-t">
                             <div>
                               <p className="text-muted-foreground text-xs font-medium mb-1">NIP</p>
                               <p>{c.nip || '—'}</p>
