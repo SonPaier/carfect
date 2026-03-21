@@ -5,31 +5,14 @@ import { pl } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone } from '@shared/utils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
 
 interface ReminderTemplateItem {
   months: number;
@@ -69,7 +52,7 @@ export function AddCustomerReminderDialog({
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
-  
+
   const [serviceDate, setServiceDate] = useState<Date | undefined>(undefined);
   const [reminderTemplateId, setReminderTemplateId] = useState<string>('');
   const [templates, setTemplates] = useState<ReminderTemplate[]>([]);
@@ -92,18 +75,18 @@ export function AddCustomerReminderDialog({
         .select('id, name, items')
         .eq('instance_id', instanceId)
         .order('name');
-      
+
       if (error) throw error;
-      
+
       // Cast items from Json to proper type
-      const typedTemplates: ReminderTemplate[] = (data || []).map(t => ({
+      const typedTemplates: ReminderTemplate[] = (data || []).map((t) => ({
         id: t.id,
         name: t.name,
-        items: (t.items as unknown) as ReminderTemplateItem[] | null,
+        items: t.items as unknown as ReminderTemplateItem[] | null,
       }));
-      
+
       setTemplates(typedTemplates);
-      
+
       // Auto-select first template if available
       if (typedTemplates.length > 0 && !reminderTemplateId) {
         setReminderTemplateId(typedTemplates[0].id);
@@ -119,17 +102,16 @@ export function AddCustomerReminderDialog({
     setLoadingVehicles(true);
     try {
       const normalizedPhone = normalizePhone(customerPhone);
-      const strippedPhone = normalizedPhone.replace(/^\+/, '');
       const { data, error } = await supabase
         .from('customer_vehicles')
         .select('id, model, plate')
         .eq('instance_id', instanceId)
-        .or(`phone.eq.${normalizedPhone},phone.eq.${strippedPhone}`)
+        .eq('phone', normalizedPhone)
         .order('last_used_at', { ascending: false });
-      
+
       if (error) throw error;
       setCustomerVehicles(data || []);
-      
+
       // Auto-select first vehicle if available
       if (data && data.length > 0) {
         setSelectedVehicleId(data[0].id);
@@ -154,8 +136,8 @@ export function AddCustomerReminderDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const selectedVehicle = customerVehicles.find(v => v.id === selectedVehicleId);
+
+    const selectedVehicle = customerVehicles.find((v) => v.id === selectedVehicleId);
     if (!selectedVehicle) {
       toast.error(t('customers.vehicleRequired'));
       return;
@@ -171,7 +153,7 @@ export function AddCustomerReminderDialog({
       return;
     }
 
-    const selectedTemplate = templates.find(t => t.id === reminderTemplateId);
+    const selectedTemplate = templates.find((t) => t.id === reminderTemplateId);
     if (!selectedTemplate || !selectedTemplate.items || selectedTemplate.items.length === 0) {
       toast.error(t('customers.templateHasNoItems'));
       return;
@@ -181,7 +163,7 @@ export function AddCustomerReminderDialog({
 
     try {
       // Create a reminder for each item in the template
-      const remindersToInsert = selectedTemplate.items.map(item => {
+      const remindersToInsert = selectedTemplate.items.map((item) => {
         const scheduledDate = addMonths(serviceDate, item.months);
         return {
           instance_id: instanceId,
@@ -196,15 +178,13 @@ export function AddCustomerReminderDialog({
         };
       });
 
-      const { error } = await supabase
-        .from('customer_reminders')
-        .insert(remindersToInsert);
+      const { error } = await supabase.from('customer_reminders').insert(remindersToInsert);
 
       if (error) throw error;
-      
+
       toast.success(t('customers.reminderAdded'));
-      handleClose();
       onReminderAdded();
+      handleClose();
     } catch (error) {
       console.error('Error adding reminder:', error);
       toast.error(t('customers.addReminderError'));
@@ -213,7 +193,7 @@ export function AddCustomerReminderDialog({
     }
   };
 
-  const selectedVehicle = customerVehicles.find(v => v.id === selectedVehicleId);
+  const selectedVehicle = customerVehicles.find((v) => v.id === selectedVehicleId);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -226,8 +206,8 @@ export function AddCustomerReminderDialog({
           {/* Reminder Template */}
           <div className="space-y-2">
             <Label>{t('customers.reminderTemplate')} *</Label>
-            <Select 
-              value={reminderTemplateId} 
+            <Select
+              value={reminderTemplateId}
               onValueChange={setReminderTemplateId}
               disabled={loadingTemplates}
             >
@@ -235,7 +215,7 @@ export function AddCustomerReminderDialog({
                 <SelectValue placeholder={t('customers.selectTemplate')} />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                {templates.map(template => (
+                {templates.map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name}
                   </SelectItem>
@@ -266,7 +246,7 @@ export function AddCustomerReminderDialog({
                       'px-3 py-1.5 text-sm rounded-full transition-colors font-medium',
                       selectedVehicleId === vehicle.id
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-white hover:bg-hover-strong text-foreground border border-border'
+                        : 'bg-white hover:bg-hover-strong text-foreground border border-border',
                     )}
                   >
                     {vehicle.plate ? `${vehicle.model} (${vehicle.plate})` : vehicle.model}
@@ -278,7 +258,6 @@ export function AddCustomerReminderDialog({
             )}
           </div>
 
-
           {/* Service Date - base date for reminder calculation */}
           <div className="space-y-2">
             <Label>{t('customers.serviceDate')} *</Label>
@@ -288,16 +267,14 @@ export function AddCustomerReminderDialog({
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal bg-white",
-                    !serviceDate && "text-muted-foreground"
+                    'w-full justify-start text-left font-normal bg-white',
+                    !serviceDate && 'text-muted-foreground',
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {serviceDate ? (
-                    format(serviceDate, 'd MMMM yyyy', { locale: pl })
-                  ) : (
-                    t('common.selectDate')
-                  )}
+                  {serviceDate
+                    ? format(serviceDate, 'd MMMM yyyy', { locale: pl })
+                    : t('common.selectDate')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-white" align="start">
@@ -317,7 +294,10 @@ export function AddCustomerReminderDialog({
             <Button type="button" variant="outline" onClick={handleClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={saving || templates.length === 0 || customerVehicles.length === 0}>
+            <Button
+              type="submit"
+              disabled={saving || templates.length === 0 || customerVehicles.length === 0}
+            >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('common.add')}
             </Button>
