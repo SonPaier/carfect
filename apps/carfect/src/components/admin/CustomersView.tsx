@@ -222,7 +222,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
   const renderCustomerList = () => (
     <>
       {/* Customers list */}
-      <div className="bg-white border border-border overflow-hidden">
+      <div>
         {paginatedCustomers.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -230,7 +230,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
             description={searchQuery ? undefined : 'Dodaj pierwszego klienta, aby rozpocząć'}
           />
         ) : (
-          <div className="divide-y divide-border/50">
+          <div className="grid gap-3">
             {paginatedCustomers.map((customer) => {
               const customerVehicles = getVehiclesForCustomer(customer.phone);
               return (
@@ -240,7 +240,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
                     setIsAddMode(false);
                     setSelectedCustomer(customer);
                   }}
-                  className="p-4 flex items-center justify-between gap-4 transition-colors cursor-pointer bg-primary-foreground hover:bg-accent/30"
+                  className="p-4 flex items-center justify-between gap-4 transition-shadow cursor-pointer bg-white border border-border rounded-lg hover:shadow-md"
                 >
                   <div className="min-w-0 flex-1 space-y-0.5">
                     {/* Line 1: Name */}
