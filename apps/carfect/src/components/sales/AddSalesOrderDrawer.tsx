@@ -642,6 +642,20 @@ const AddSalesOrderDrawer = ({
                 </div>
               )}
 
+              <PaymentSection
+                paymentMethod={paymentMethod}
+                setPaymentMethod={(v) => {
+                  setPaymentMethod(v);
+                  markDirty();
+                }}
+                bankAccountNumber={bankAccountNumber}
+                setBankAccountNumber={(v) => {
+                  setBankAccountNumber(v);
+                  markDirty();
+                }}
+                bankAccounts={bankAccounts}
+              />
+
               <PackagesSection
                 packages={orderPackages.packages}
                 products={products}
@@ -747,19 +761,19 @@ const AddSalesOrderDrawer = ({
                 />
               )}
 
-              <PaymentSection
-                paymentMethod={paymentMethod}
-                setPaymentMethod={(v) => {
-                  setPaymentMethod(v);
-                  markDirty();
-                }}
-                bankAccountNumber={bankAccountNumber}
-                setBankAccountNumber={(v) => {
-                  setBankAccountNumber(v);
-                  markDirty();
-                }}
-                bankAccounts={bankAccounts}
-              />
+              {/* Comment */}
+              <div className="space-y-2">
+                <Label htmlFor="order-comment">Uwagi do zamówienia</Label>
+                <Textarea
+                  id="order-comment"
+                  value={comment}
+                  onChange={(e) => {
+                    setComment(e.target.value);
+                    markDirty();
+                  }}
+                  rows={3}
+                />
+              </div>
 
               {/* Email checkbox */}
               <div className="flex items-center gap-2">
@@ -774,20 +788,6 @@ const AddSalesOrderDrawer = ({
                 <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer">
                   Wyślij email z potwierdzeniem zamówienia
                 </Label>
-              </div>
-
-              {/* Comment */}
-              <div className="space-y-2">
-                <Label htmlFor="order-comment">Uwagi do zamówienia</Label>
-                <Textarea
-                  id="order-comment"
-                  value={comment}
-                  onChange={(e) => {
-                    setComment(e.target.value);
-                    markDirty();
-                  }}
-                  rows={3}
-                />
               </div>
 
               {/* Formatki (paste images) */}
