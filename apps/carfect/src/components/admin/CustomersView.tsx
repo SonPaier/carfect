@@ -9,8 +9,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import { normalizeSearchQuery } from '@shared/utils';
-import { formatPhoneDisplay } from '@shared/utils';
+import { normalizeSearchQuery, normalizePhone, formatPhoneDisplay } from '@shared/utils';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import {
@@ -51,6 +50,7 @@ interface CustomerVehicle {
 
 interface CustomersViewProps {
   instanceId: string | null;
+  onOpenReservation?: (reservationId: string) => void;
 }
 
 type SortField = 'name' | 'phone' | 'created_at';
@@ -58,7 +58,7 @@ type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
 
-const CustomersView = ({ instanceId }: CustomersViewProps) => {
+const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -100,12 +100,10 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     fetchCustomers();
   }, [instanceId]);
 
-  // Get vehicles for a customer by phone (normalize: strip leading '+')
+  // Get vehicles for a customer by phone (E.164 format in DB)
   const getVehiclesForCustomer = (phone: string) => {
-    const normalized = phone.replace(/^\+/, '');
-    return vehicles.filter(
-      (v) => v.phone === phone || v.phone === normalized || v.phone === `+${normalized}`,
-    );
+    const normalized = normalizePhone(phone);
+    return vehicles.filter((v) => v.phone === normalized);
   };
 
   // Filtered and sorted customers
@@ -372,6 +370,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
         open={!!selectedCustomer || isAddMode}
         onClose={handleCloseDrawer}
         onCustomerUpdated={fetchCustomers}
+        onOpenReservation={onOpenReservation}
         isAddMode={isAddMode}
       />
 

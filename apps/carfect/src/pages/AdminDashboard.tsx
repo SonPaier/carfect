@@ -1600,6 +1600,39 @@ const AdminDashboard = () => {
     setSelectedReservation(reservation);
   };
 
+  const handleOpenReservationById = async (reservationId: string) => {
+    // Check if already loaded in state
+    const existing = reservations.find((r) => r.id === reservationId);
+    if (existing) {
+      handleReservationClick(existing);
+      return;
+    }
+    // Fetch from DB
+    const { data } = await supabase
+      .from('reservations')
+      .select(`*, stations:station_id(name, type)`)
+      .eq('id', reservationId)
+      .single();
+    if (data) {
+      const mapped: Reservation = {
+        ...data,
+        status: data.status || 'pending',
+        service_ids: Array.isArray(data.service_ids) ? (data.service_ids as string[]) : undefined,
+        service_items: Array.isArray(data.service_items)
+          ? (data.service_items as unknown as ServiceItem[])
+          : undefined,
+        assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+          ? (data.assigned_employee_ids as string[])
+          : undefined,
+        service: undefined,
+        station: data.stations
+          ? { name: (data.stations as any).name, type: (data.stations as any).type }
+          : undefined,
+      };
+      handleReservationClick(mapped);
+    }
+  };
+
   const handleTrainingClick = (training: Training) => {
     setSelectedReservation(null);
     setAddReservationOpen(false);
@@ -3349,10 +3382,16 @@ const AdminDashboard = () => {
                   }
                 }}
                 employees={cachedEmployees}
+                onOpenReservation={handleOpenReservationById}
               />
             )}
 
-            {currentView === 'customers' && <CustomersView instanceId={instanceId} />}
+            {currentView === 'customers' && (
+              <CustomersView
+                instanceId={instanceId}
+                onOpenReservation={handleOpenReservationById}
+              />
+            )}
 
             {currentView === 'pricelist' && instanceId && (
               <div className="max-w-3xl mx-auto">
