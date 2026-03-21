@@ -178,7 +178,10 @@ export function AddCustomerReminderDialog({
         };
       });
 
-      const { error } = await supabase.from('customer_reminders').insert(remindersToInsert);
+      const { error } = await supabase.from('customer_reminders').upsert(remindersToInsert, {
+        onConflict: 'instance_id,customer_phone,vehicle_plate,reminder_template_id,months_after',
+        ignoreDuplicates: true,
+      });
 
       if (error) throw error;
 
