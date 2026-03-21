@@ -1,3 +1,7 @@
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import DOMPurify from 'dompurify';
+
 /**
  * Normalizes a search query by removing all whitespace characters.
  * Used for space-agnostic searching of phone numbers, offer numbers, etc.
@@ -14,8 +18,11 @@ export const normalizeSearchQuery = (query: string): string => {
   return query.replace(/\s/g, '');
 };
 
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+/**
+ * Capitalizes the first letter of each word in a string.
+ */
+export const autoCapitalizeWords = (text: string): string =>
+  text.replace(/(?:^|\s)\S/g, (ch) => ch.toUpperCase());
 
 /**
  * Formats a viewed_at date with relative formatting (today, yesterday, or full date).
@@ -38,8 +45,6 @@ export const formatViewedDate = (dateString: string): string => {
     return `${time}, ${format(date, 'd MMMM', { locale: pl })}`;
   }
 };
-
-import DOMPurify from 'dompurify';
 
 /** Escape HTML special characters to prevent XSS in text content. */
 const escapeHtml = (str: string): string =>
