@@ -28,8 +28,7 @@ interface CustomerSearchInputProps {
   onAddNew?: (query: string) => void;
 }
 
-const sanitizeForPostgrest = (value: string): string =>
-  value.replace(/[%_(),.]/g, '');
+import { sanitizeForPostgrest } from '@/lib/textUtils';
 
 const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, onCustomerClick, onAddNew }: CustomerSearchInputProps) => {
   const [query, setQuery] = useState('');

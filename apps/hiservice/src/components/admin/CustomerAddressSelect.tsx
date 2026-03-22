@@ -44,8 +44,7 @@ interface CustomerAddressSelectProps {
   showLabel?: boolean;
 }
 
-const sanitizeForPostgrest = (value: string): string =>
-  value.replace(/[%_(),.]/g, '');
+import { sanitizeForPostgrest } from '@/lib/textUtils';
 
 const CustomerAddressSelect = ({
   instanceId,
