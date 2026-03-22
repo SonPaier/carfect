@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Search, Phone, MessageSquare, Plus, Trash2, MapPin, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,6 +6,7 @@ import { normalizeSearchQuery } from '@/lib/textUtils';
 import { formatPhoneDisplay } from '@/lib/phoneUtils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -96,26 +97,29 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const fetchCustomers = async () => {
     if (!instanceId) return;
     setLoading(true);
-    
-    const [customersRes, addressesRes] = await Promise.all([
-      supabase.from('customers').select('*').eq('instance_id', instanceId).order('name'),
-      supabase.from('customer_addresses').select('id, customer_id, name, city, street, lat, lng').eq('instance_id', instanceId),
-    ]);
+    try {
+      const [customersRes, addressesRes] = await Promise.all([
+        supabase.from('customers').select('*').eq('instance_id', instanceId).order('name'),
+        supabase.from('customer_addresses').select('id, customer_id, name, city, street, lat, lng').eq('instance_id', instanceId),
+      ]);
 
-    if (!customersRes.error && customersRes.data) {
-      setCustomers(customersRes.data as Customer[]);
-    }
+      if (customersRes.error) throw customersRes.error;
+      setCustomers((customersRes.data || []) as Customer[]);
 
-    const map = new Map<string, AddressInfo[]>();
-    if (!addressesRes.error && addressesRes.data) {
-      for (const addr of addressesRes.data) {
-        const list = map.get(addr.customer_id) || [];
-        list.push({ id: addr.id, name: addr.name, city: addr.city, street: addr.street, lat: addr.lat, lng: addr.lng });
-        map.set(addr.customer_id, list);
+      const map = new Map<string, AddressInfo[]>();
+      if (!addressesRes.error && addressesRes.data) {
+        for (const addr of addressesRes.data) {
+          const list = map.get(addr.customer_id) || [];
+          list.push({ id: addr.id, name: addr.name, city: addr.city, street: addr.street, lat: addr.lat, lng: addr.lng });
+          map.set(addr.customer_id, list);
+        }
       }
+      setAddressMap(map);
+    } catch {
+      toast.error('Błąd ładowania klientów');
+    } finally {
+      setLoading(false);
     }
-    setAddressMap(map);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -228,7 +232,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCategoryIds]);
 
   // All map addresses
   const allMapAddresses = useMemo<CustomerMapAddress[]>(() => {
@@ -299,6 +303,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const handleCloseDrawer = () => {
     setSelectedCustomer(null);
     setIsAddMode(false);
+    setClickedAddressId(null);
   };
 
   const handleDeleteClick = (customer: Customer, e: React.MouseEvent) => {
@@ -315,7 +320,8 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       const { error } = await supabase
         .from('customers')
         .delete()
-        .eq('id', customerToDelete.id);
+        .eq('id', customerToDelete.id)
+        .eq('instance_id', instanceId!);
       
       if (error) throw error;
       
@@ -362,8 +368,10 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-muted-foreground">
-        Ładowanie...
+      <div className="space-y-2 p-4">
+        {Array.from({ length: 8 }, (_, i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+        ))}
       </div>
     );
   }

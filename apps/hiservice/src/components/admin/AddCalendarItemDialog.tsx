@@ -976,6 +976,23 @@ const AddCalendarItemDialog = ({
               />
             </div>
 
+            {/* Customer Address — first, so worker can start by selecting location */}
+            {!followUpSourceItem && (
+              <CustomerAddressSelect
+                instanceId={instanceId}
+                customerId={customerId}
+                value={customerAddressId}
+                onChange={setCustomerAddressId}
+                onCustomerResolved={(customer, addressId) => {
+                  setCustomerId(customer.id);
+                  setCustomerName(customer.name || '');
+                  setCustomerPhone(customer.phone || '');
+                  setCustomerEmail(customer.email || '');
+                  setCustomerAddressId(addressId);
+                }}
+              />
+            )}
+
             {/* Customer Search */}
             {!followUpSourceItem && (
               <div className="space-y-2">
@@ -1002,23 +1019,6 @@ const AddCalendarItemDialog = ({
                   }}
                 />
               </div>
-            )}
-
-            {/* Customer Address */}
-            {!followUpSourceItem && (
-              <CustomerAddressSelect
-                instanceId={instanceId}
-                customerId={customerId}
-                value={customerAddressId}
-                onChange={setCustomerAddressId}
-                onCustomerResolved={(customer, addressId) => {
-                  setCustomerId(customer.id);
-                  setCustomerName(customer.name || '');
-                  setCustomerPhone(customer.phone || '');
-                  setCustomerEmail(customer.email || '');
-                  setCustomerAddressId(addressId);
-                }}
-              />
             )}
 
             {/* Services Selection */}
