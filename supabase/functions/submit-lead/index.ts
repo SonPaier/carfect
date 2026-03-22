@@ -1,5 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import {
+  escapeHtml,
+  sanitizeUrl,
+  truncate,
+  isValidUuid,
+  formatDuration,
+} from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +19,6 @@ const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
 
 // --- Validation & Sanitization ---
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LEN = {
   name: 200,
@@ -23,35 +29,6 @@ const MAX_LEN = {
   color: 100,
   timeframe: 50,
 };
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function sanitizeUrl(url: string | null): string | null {
-  if (!url) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return url;
-  } catch {
-    /* invalid URL */
-  }
-  return null;
-}
-
-function truncate(s: string | undefined | null, max: number): string {
-  if (!s) return '';
-  return s.slice(0, max);
-}
-
-function isValidUuid(s: string): boolean {
-  return UUID_RE.test(s);
-}
 
 // --- Types ---
 
@@ -397,13 +374,6 @@ Deno.serve(async (req) => {
 });
 
 // --- Helpers ---
-
-function formatDuration(months: number): string {
-  const years = months / 12;
-  if (years === 1) return '1 rok';
-  if (years < 5) return `${years} lata`;
-  return `${years} lat`;
-}
 
 function buildServicesHtml(
   templates: { id: string; name: string }[],
