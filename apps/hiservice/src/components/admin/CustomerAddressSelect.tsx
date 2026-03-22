@@ -228,7 +228,7 @@ const CustomerAddressSelect = ({
           <SelectContent className="z-[1200]">
             {addresses.map((addr) => (
               <SelectItem key={addr.id} value={addr.id}>
-                {formatAddress(addr.street, addr.city) || 'Adres'}
+                {addr.name ? `${addr.name} — ${formatAddress(addr.street, addr.city)}` : formatAddress(addr.street, addr.city) || 'Adres'}
               </SelectItem>
             ))}
           </SelectContent>
@@ -265,7 +265,9 @@ const CustomerAddressSelect = ({
         )}
         <div className="flex items-center gap-2 p-2 rounded-md border border-input bg-white">
           <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm flex-1">{formatAddress(selectedAddress.street, selectedAddress.city)}</span>
+          <span className="text-sm flex-1 text-foreground">
+            {selectedAddress.name ? `${selectedAddress.name} — ${formatAddress(selectedAddress.street, selectedAddress.city)}` : formatAddress(selectedAddress.street, selectedAddress.city)}
+          </span>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleClearGlobalAddress}>
             <X className="w-3 h-3" />
           </Button>
@@ -317,8 +319,9 @@ const CustomerAddressSelect = ({
                   onClick={() => handleSelectGlobalAddress(addr)}
                   onMouseEnter={() => setSelectedIndex(i)}
                 >
-                  <span className="font-semibold text-base text-foreground">{formatAddress(addr.street, addr.city)}</span>
-                  <span className="text-foreground text-sm">{addr.customer_name}</span>
+                  {addr.name && <span className="font-semibold text-sm text-foreground">{addr.name}</span>}
+                  <span className="text-sm text-foreground">{formatAddress(addr.street, addr.city)}</span>
+                  <span className="text-sm text-foreground">{addr.customer_name}</span>
                 </button>
               ))
             ) : (
