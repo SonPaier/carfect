@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { toast } from 'sonner';
 import {
   Search,
@@ -19,7 +18,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import { validateSameCustomer, buildInvoicePositions } from '@/lib/bulkInvoiceUtils';
+import { validateSameCustomer, buildInvoicePositions, type InvoicePosition, type CalendarItemForInvoice } from '@/lib/bulkInvoiceUtils';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -170,12 +169,22 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const handleBulkInvoice = () => {
     const selectedItems = items.filter((i) => bulk.isSelected(i.id));
     if (selectedItems.length === 0) return;
-    const error = validateSameCustomer(selectedItems as any);
+    const itemsForInvoice: CalendarItemForInvoice[] = selectedItems.map((i) => ({
+      id: i.id,
+      title: i.title,
+      item_date: i.item_date || '',
+      end_date: i.end_date,
+      price: i.price,
+      customer_id: i.customer_id,
+      customer_name: i.customer_name,
+      customer_email: i.customer_email,
+    }));
+    const error = validateSameCustomer(itemsForInvoice);
     if (error) {
       toast.error(error);
       return;
     }
-    const positions = buildInvoicePositions(selectedItems as any);
+    const positions = buildInvoicePositions(itemsForInvoice);
     const customer = selectedItems.find((i) => i.customer_id);
     setBulkInvoicePositions(positions);
     setBulkInvoiceCustomer(customer || null);
@@ -183,8 +192,8 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   };
 
   const [bulkInvoiceOpen, setBulkInvoiceOpen] = useState(false);
-  const [bulkInvoicePositions, setBulkInvoicePositions] = useState<any[]>([]);
-  const [bulkInvoiceCustomer, setBulkInvoiceCustomer] = useState<any>(null);
+  const [bulkInvoicePositions, setBulkInvoicePositions] = useState<InvoicePosition[]>([]);
+  const [bulkInvoiceCustomer, setBulkInvoiceCustomer] = useState<CalendarItemRow | null>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -359,6 +368,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
+    bulk.clear();
   };
 
   const invalidateSettlements = async () => {
@@ -393,6 +403,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
     );
     onItemDeleted?.(itemId);
+    if (bulk.isSelected(itemId)) bulk.toggle(itemId);
     toast.success('Zlecenie usunięte');
 
     // Delete from DB in background
@@ -743,10 +754,16 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[40px] px-2">
-                  <Checkbox
-                    checked={bulk.selectionState(paginatedItems.map((i) => i.id)) === 'all' ? true : bulk.selectionState(paginatedItems.map((i) => i.id)) === 'some' ? 'indeterminate' : false}
-                    onCheckedChange={() => bulk.toggleAll(paginatedItems.map((i) => i.id))}
-                  />
+                  {(() => {
+                    const pageIds = paginatedOrders.map((i) => i.id);
+                    const state = bulk.selectionState(pageIds);
+                    return (
+                      <Checkbox
+                        checked={state === 'all' ? true : state === 'some' ? 'indeterminate' : false}
+                        onCheckedChange={() => bulk.toggleAll(pageIds)}
+                      />
+                    );
+                  })()}
                 </TableHead>
                 <TableHead
                   className="w-[8%] cursor-pointer select-none"
@@ -1105,28 +1122,32 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
           setBulkInvoiceCustomer(null);
         }}
         instanceId={instanceId}
+        calendarItemId={bulkInvoiceCustomer?.id}
         customerId={bulkInvoiceCustomer?.customer_id}
         customerName={bulkInvoiceCustomer?.customer_name}
         customerEmail={bulkInvoiceCustomer?.customer_email}
         positions={bulkInvoicePositions}
         supabaseClient={supabase}
         onSuccess={async () => {
-          // Link invoice to all selected items + update payment status
-          // The invoice was just created — we need to find it and link to all selected items
           const selectedItems = items.filter((i) => bulk.isSelected(i.id));
           // Update payment_status on all selected items
-          await Promise.all(
+          const results = await Promise.all(
             selectedItems.map((item) =>
               supabase
                 .from('calendar_items')
-                .update({ payment_status: 'invoiced' } as any)
+                .update({ payment_status: 'invoiced' } as Record<string, unknown>)
                 .eq('id', item.id),
             ),
           );
+          const failures = results.filter((r) => r.error);
+          if (failures.length > 0) {
+            toast.error(`Nie udało się zaktualizować statusu dla ${failures.length} zleceń`);
+          } else {
+            toast.success(`Faktura wystawiona dla ${selectedItems.length} zleceń`);
+          }
           bulk.clear();
           queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
           queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
-          toast.success(`Faktura wystawiona dla ${selectedItems.length} zleceń`);
         }}
       />
 
