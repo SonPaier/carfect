@@ -46,6 +46,14 @@ export const formatViewedDate = (dateString: string): string => {
   }
 };
 
+/** Formats a duration given in months into Polish: "1 rok", "2 lata", "5 lat". */
+export const formatDurationMonths = (months: number): string => {
+  const years = months / 12;
+  if (years === 1) return '1 rok';
+  if (years < 5) return `${years} lata`;
+  return `${years} lat`;
+};
+
 /** Escape HTML special characters to prevent XSS in text content. */
 const escapeHtml = (str: string): string =>
   str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

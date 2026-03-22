@@ -32,10 +32,6 @@ export default function WidgetSettings({ instanceSlug }: WidgetSettingsProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePreview = () => {
-    window.open(embedUrl, '_blank');
-  };
-
   return (
     <div className="space-y-6">
       <div>
