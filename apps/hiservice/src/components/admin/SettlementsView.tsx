@@ -936,6 +936,16 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                                 Wyślij SMS z nr konta
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setDeleteTargetId(order.id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Usuń
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
