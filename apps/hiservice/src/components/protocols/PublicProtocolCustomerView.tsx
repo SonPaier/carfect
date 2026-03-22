@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Loader2, MapPin, Phone, Mail, FileText } from 'lucide-react';
+import { Loader2, MapPin, Phone, Mail, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProtocolHeader from './ProtocolHeader';
 import {
@@ -135,9 +135,11 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
     );
   }
 
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-2xl mx-auto min-h-screen bg-white shadow-[0_0_30px_rgba(0,0,0,0.08)] px-8 py-10 space-y-8">
         <ProtocolHeader
           instanceName={instance?.name || ''}
           logoUrl={instance?.logo_url || null}
@@ -146,7 +148,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           email={instance?.email}
         />
 
-        <div className="bg-card rounded-lg border border-border p-6 space-y-6">
+        <div className="space-y-6">
           {/* Type + Date + Visits inline */}
           <div className="text-center">
             <h2 className="text-xl font-bold text-foreground">
@@ -209,7 +211,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </div>
           )}
 
-          {/* Photos */}
+          {/* Photos with lightbox */}
           {protocol.photo_urls.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Zdjęcia</h3>
@@ -219,8 +221,8 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                     key={i}
                     src={url}
                     alt={`Zdjęcie ${i + 1}`}
-                    className="w-full aspect-square object-cover rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => window.open(url, '_blank')}
+                    className="w-full aspect-square object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxIndex(i)}
                   />
                 ))}
               </div>
@@ -244,7 +246,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
               <h3 className="font-semibold text-foreground">
                 Podpis osoby upoważnionej do odbioru
               </h3>
-              <div className="border border-border rounded-md p-2 bg-background">
+              <div className="border border-border rounded-md p-2">
                 <img src={protocol.customer_signature} alt="Podpis" className="max-h-32 mx-auto" />
               </div>
             </div>
@@ -252,7 +254,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
         </div>
 
         {/* Footer — hiservice.pl branding */}
-        <div className="text-center text-xs text-foreground pt-4">
+        <div className="text-center text-xs text-muted-foreground py-6 border-t border-border mt-8">
           <p>
             Wygenerowano przy użyciu systemu dla serwisów —{' '}
             <a
@@ -266,6 +268,54 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           </p>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white p-2"
+            onClick={() => setLightboxIndex(null)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {protocol.photo_urls.length > 1 && (
+            <>
+              <button
+                className="absolute left-4 text-white p-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex(
+                    (lightboxIndex - 1 + protocol.photo_urls.length) % protocol.photo_urls.length,
+                  );
+                }}
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+              <button
+                className="absolute right-4 text-white p-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex((lightboxIndex + 1) % protocol.photo_urls.length);
+                }}
+              >
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            </>
+          )}
+          <img
+            src={protocol.photo_urls[lightboxIndex]}
+            alt={`Zdjęcie ${lightboxIndex + 1}`}
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span className="absolute bottom-4 text-white text-sm">
+            {lightboxIndex + 1} / {protocol.photo_urls.length}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
