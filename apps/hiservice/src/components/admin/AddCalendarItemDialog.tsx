@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChecklistSection, type ChecklistItem } from '@shared/ui';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { type DateRange } from 'react-day-picker';
@@ -59,6 +60,7 @@ export interface EditingCalendarItem {
   photo_urls?: string[] | null;
   priority?: number | null;
   status?: string | null;
+  checklist_items?: ChecklistItem[] | null;
 }
 
 interface AddCalendarItemDialogProps {
@@ -89,8 +91,16 @@ interface AddCalendarItemDialogProps {
     customer_address_id?: string | null;
     project_id?: string | null;
     parent_item_id?: string | null;
+    checklist_items?: ChecklistItem[] | null;
   } | null;
 }
+
+const generateId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
 
 const generateTimeOptions = () => {
   const options: string[] = [];
@@ -163,6 +173,7 @@ const AddCalendarItemDialog = ({
     setEndTime(closestOption);
   };
   const [adminNotes, setAdminNotes] = useState('');
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [price, setPrice] = useState('');
   const [priority, setPriority] = useState<number>(DEFAULT_PRIORITY);
 
@@ -263,6 +274,10 @@ const AddCalendarItemDialog = ({
       setPrice(editingItem.price?.toString() || '');
       setPriority(editingItem.priority ?? DEFAULT_PRIORITY);
       setAssignedEmployeeIds(editingItem.assigned_employee_ids || []);
+      // Load checklist_items from editingItem (already fetched)
+      setChecklistItems(
+        Array.isArray(editingItem.checklist_items) ? editingItem.checklist_items : [],
+      );
       // Load project_id in edit mode
       const loadProjectId = async () => {
         const { data } = await (supabase.from('calendar_items') as any)
@@ -331,6 +346,13 @@ const AddCalendarItemDialog = ({
       setStartTime('');
       setEndTime('');
       setAdminNotes('');
+      // Copy unchecked checklist items from parent to follow-up
+      const parentChecklist = followUpSourceItem.checklist_items || [];
+      setChecklistItems(
+        parentChecklist
+          .filter((item) => !item.checked)
+          .map((item) => ({ ...item, id: generateId(), checked: false })),
+      );
       setPrice('');
       setPriority(DEFAULT_PRIORITY);
       setAssignedEmployeeIds([]);
@@ -361,6 +383,7 @@ const AddCalendarItemDialog = ({
         TIME_OPTIONS.find((t) => t >= halfEndStr) || TIME_OPTIONS[TIME_OPTIONS.length - 1];
       setEndTime(halfClosest);
       setAdminNotes('');
+      setChecklistItems([]);
       setPrice('');
       setPriority(DEFAULT_PRIORITY);
       setAssignedEmployeeIds([]);
@@ -737,6 +760,7 @@ const AddCalendarItemDialog = ({
         start_time: startTime || null,
         end_time: endTime || null,
         admin_notes: adminNotes.trim() || null,
+        checklist_items: checklistItems,
         price: price ? parseFloat(price) : null,
         priority: priority,
         assigned_employee_ids: assignedEmployeeIds.length > 0 ? assignedEmployeeIds : null,
@@ -1206,6 +1230,12 @@ const AddCalendarItemDialog = ({
                 )}
               </div>
             )}
+
+            {/* Checklist */}
+            <div className="space-y-2">
+              <Label>Lista zadań</Label>
+              <ChecklistSection items={checklistItems} mode="edit" onChange={setChecklistItems} />
+            </div>
 
             {/* Notes */}
             <div className="space-y-2">
