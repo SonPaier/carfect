@@ -58,6 +58,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visits, setVisits] = useState<VisitInfo[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -134,8 +135,6 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
       </div>
     );
   }
-
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-gray-100">
