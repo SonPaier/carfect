@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EmptyState } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 
 interface FollowUpItem {
   id: string;
@@ -42,24 +41,26 @@ const UnscheduledFollowUpsDrawer = ({
     if (open) setOpenCount((c) => c + 1);
   }, [open]);
 
-  const { data: items = [] } = useQuery({
-    queryKey: ['unscheduled_follow_ups', instanceId, openCount],
-    queryFn: async (): Promise<FollowUpItem[]> => {
-      const { data, error } = await supabase
-        .from('calendar_items')
-        .select(
-          'id, title, customer_name, customer_phone, admin_notes, created_at, parent_item_id, customer_addresses(city, street, name)',
-        )
-        .eq('instance_id', instanceId)
-        .eq('status', 'follow_up')
-        .is('item_date', null)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data || []) as FollowUpItem[];
-    },
-    enabled: open,
-    staleTime: 0,
-  });
+  const [items, setItems] = useState<FollowUpItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    supabase
+      .from('calendar_items')
+      .select(
+        'id, title, customer_name, customer_phone, admin_notes, created_at, parent_item_id, customer_addresses(city, street, name)',
+      )
+      .eq('instance_id', instanceId)
+      .eq('status', 'follow_up')
+      .is('item_date', null)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error) setItems((data || []) as FollowUpItem[]);
+        setLoading(false);
+      });
+  }, [open, openCount, instanceId]);
 
   return (
     <Sheet
