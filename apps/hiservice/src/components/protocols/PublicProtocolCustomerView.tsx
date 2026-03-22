@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Loader2, MapPin, Phone, Mail, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProtocolHeader from './ProtocolHeader';
 import {
@@ -103,12 +103,17 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           .eq('id', proto.calendar_item_id)
           .single();
         if (currentItem) {
-          const rootId = (currentItem as any).parent_item_id || currentItem.id;
+          const rootId = (currentItem as Record<string, unknown>).parent_item_id || currentItem.id;
           const { data: chainData } = await supabase
             .from('calendar_items')
             .select('id, item_date, work_started_at, work_ended_at')
             .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
-          setVisits(getVisitsFromChain((chainData || []) as any[]));
+          const typedChain = (chainData || []) as Array<{
+            item_date?: string | null;
+            work_started_at?: string | null;
+            work_ended_at?: string | null;
+          }>;
+          setVisits(getVisitsFromChain(typedChain));
         }
       }
 
@@ -195,7 +200,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                   <span>Łącznie</span>
                   <span>
                     {formatDuration(
-                      roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0)),
+                      visits.reduce((sum, v) => sum + roundUpTo30(v.durationMinutes), 0),
                     )}
                   </span>
                 </div>

@@ -6,6 +6,7 @@ import {
   roundUpTo30,
   type VisitInfo,
 } from '@/lib/protocolUtils';
+import type { ChecklistItem } from '@shared/ui';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Loader2, CalendarIcon, Pen, X } from 'lucide-react';
@@ -33,9 +34,7 @@ import CustomerEditDrawer from '@/components/admin/CustomerEditDrawer';
 import type { Customer } from '@/components/admin/CustomersView';
 import { ProtocolPhotosUploader } from './ProtocolPhotosUploader';
 import SignatureDialog from './SignatureDialog';
-import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CreateProtocolFormProps {
   open: boolean;
@@ -64,7 +63,6 @@ const CreateProtocolForm = ({
   prefillCustomerAddressId,
   prefillCalendarItemId,
 }: CreateProtocolFormProps) => {
-  const isMobile = useIsMobile();
   const { user } = useAuth();
   const isEditMode = !!editingProtocolId;
   const [loading, setLoading] = useState(false);
@@ -88,8 +86,6 @@ const CreateProtocolForm = ({
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [customerDetailData, setCustomerDetailData] = useState<Customer | null>(null);
-  // Delayed mount: protocol Sheet must fully unmount before CustomerEditDrawer mounts
-  const [customerDrawerMounted, setCustomerDrawerMounted] = useState(false);
   const customerDetailOpen = !!customerDetailData;
 
   // Load existing protocol for editing or reset form
@@ -150,12 +146,18 @@ const CreateProtocolForm = ({
               .eq('id', prefillCalendarItemId)
               .single();
             if (!currentItem || !currentItem.id) return;
-            const rootId = (currentItem as any).parent_item_id || currentItem.id;
+            const rootId =
+              (currentItem as Record<string, unknown>).parent_item_id || currentItem.id;
             const { data: chainData } = await supabase
               .from('calendar_items')
               .select('id, checklist_items, item_date, work_started_at, work_ended_at')
               .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
-            const chain = (chainData || []) as any[];
+            const chain = (chainData || []) as Array<{
+              checklist_items?: ChecklistItem[] | null;
+              item_date?: string | null;
+              work_started_at?: string | null;
+              work_ended_at?: string | null;
+            }>;
             const generatedNotes = buildProtocolNotes(chain);
             if (generatedNotes) setNotes(generatedNotes);
             setVisits(getVisitsFromChain(chain));
@@ -189,6 +191,7 @@ const CreateProtocolForm = ({
     prefillCustomerPhone,
     prefillCustomerEmail,
     prefillCustomerAddressId,
+    prefillCalendarItemId,
     instanceId,
     user?.id,
   ]);
@@ -497,7 +500,7 @@ const CreateProtocolForm = ({
                     </span>
                     <span className="w-20 text-right">
                       {formatDuration(
-                        roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0)),
+                        visits.reduce((sum, v) => sum + roundUpTo30(v.durationMinutes), 0),
                       )}
                     </span>
                   </div>

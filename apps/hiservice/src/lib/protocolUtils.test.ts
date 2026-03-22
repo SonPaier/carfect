@@ -143,3 +143,53 @@ describe('getVisitsFromChain', () => {
     expect(getVisitsFromChain([{ item_date: '2026-03-19' }])).toEqual([]);
   });
 });
+
+describe('client total rounding', () => {
+  it('sums rounded per-visit values (not rounds the raw sum)', () => {
+    // Two visits of 31min each → per-visit rounded: 60 + 60 = 120min
+    // Wrong approach: roundUpTo30(31+31=62) = 90min — contradicts per-row values
+    const visits = [
+      { itemDate: '2026-03-19', durationMinutes: 31 },
+      { itemDate: '2026-03-20', durationMinutes: 31 },
+    ];
+
+    const correctTotal = visits.reduce((sum, v) => sum + roundUpTo30(v.durationMinutes), 0);
+    const wrongTotal = roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0));
+
+    expect(correctTotal).toBe(120); // 60 + 60
+    expect(wrongTotal).toBe(90); // roundUpTo30(62)
+    expect(correctTotal).not.toBe(wrongTotal);
+  });
+});
+
+describe('visits total rounding', () => {
+  // Regression: the total "for client" duration must be the SUM of per-visit rounded
+  // values, NOT roundUpTo30 applied to the raw sum.
+  // Example: two 31-min visits → each rounds to 60min → total must be 120min.
+  // roundUpTo30(31+31=62) would wrongly give 90min.
+  it('summing rounded per-visit values differs from rounding the raw sum', () => {
+    const visits = getVisitsFromChain([
+      {
+        item_date: '2026-03-01',
+        work_started_at: '2026-03-01T08:00:00Z',
+        work_ended_at: '2026-03-01T08:31:00Z', // 31 min → rounds to 60
+      },
+      {
+        item_date: '2026-03-02',
+        work_started_at: '2026-03-02T08:00:00Z',
+        work_ended_at: '2026-03-02T08:31:00Z', // 31 min → rounds to 60
+      },
+    ]);
+
+    expect(visits).toHaveLength(2);
+    const sumOfRounded = visits.reduce((sum, v) => sum + roundUpTo30(v.durationMinutes), 0);
+    const roundedSum = roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0));
+
+    // Correct: sum of rounded per-visit values = 60 + 60 = 120
+    expect(sumOfRounded).toBe(120);
+    // Wrong approach: rounding the raw total = roundUpTo30(62) = 90 — inconsistent with per-row display
+    expect(roundedSum).toBe(90);
+    // They must not be equal in this case, confirming the distinction matters
+    expect(sumOfRounded).not.toBe(roundedSum);
+  });
+});
