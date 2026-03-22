@@ -426,7 +426,7 @@ const CreateProtocolForm = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Dodatkowe uwagi..."
-              rows={3}
+              rows={Math.max(3, (notes.match(/\n/g) || []).length + 2)}
             />
           </div>
 
