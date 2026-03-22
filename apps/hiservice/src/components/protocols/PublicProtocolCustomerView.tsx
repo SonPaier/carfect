@@ -187,18 +187,32 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           )}
 
           {/* Address only — no client personal data in public view */}
-          {address && (
-            <div className="space-y-2">
-              <h3 className="font-semibold text-foreground flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                Adres
-              </h3>
-              <p className="text-sm text-foreground">
-                {address.name}
-                {address.street && `, ${address.street}`}
-                {address.postal_code && `, ${address.postal_code}`}
-                {address.city && ` ${address.city}`}
-              </p>
+          {/* Address + Prepared by — side by side on desktop, stacked on mobile */}
+          {(address || protocol.prepared_by) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {address && (
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    Adres
+                  </h3>
+                  <p className="text-sm text-foreground">
+                    {address.name}
+                    {address.street && `, ${address.street}`}
+                    {address.postal_code && `, ${address.postal_code}`}
+                    {address.city && ` ${address.city}`}
+                  </p>
+                </div>
+              )}
+              {protocol.prepared_by && (
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground">Sporządził</h3>
+                  <p className="text-sm text-foreground">
+                    {protocol.prepared_by},{' '}
+                    {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -207,17 +221,6 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Uwagi</h3>
               <p className="text-sm text-foreground whitespace-pre-wrap">{protocol.notes}</p>
-            </div>
-          )}
-
-          {/* Prepared by + date — above photos */}
-          {protocol.prepared_by && (
-            <div className="space-y-1">
-              <h3 className="font-semibold text-foreground">Sporządził</h3>
-              <p className="text-sm text-foreground">
-                {protocol.prepared_by},{' '}
-                {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
-              </p>
             </div>
           )}
 
