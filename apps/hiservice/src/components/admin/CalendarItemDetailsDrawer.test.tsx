@@ -187,4 +187,36 @@ describe('CalendarItemDetailsDrawer — admin status controls', () => {
       expect(screen.getByRole('button', { name: /Zakończone/i })).toBeInTheDocument();
     });
   });
+
+  it('renders checklist items when item has checklist_items', async () => {
+    renderDrawer({
+      item: makeItem({
+        checklist_items: [
+          { id: '1', text: 'Sprawdź ciśnienie', checked: true },
+          { id: '2', text: 'Wymień filtr', checked: false },
+        ],
+      }),
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sprawdź ciśnienie')).toBeInTheDocument();
+      expect(screen.getByText('Wymień filtr')).toBeInTheDocument();
+    });
+  });
+
+  it('shows "Dodaj zadanie" button when checklist is empty', async () => {
+    renderDrawer({ item: makeItem({ checklist_items: [] }) });
+
+    await waitFor(() => {
+      expect(screen.getByText('Dodaj zadanie')).toBeInTheDocument();
+    });
+  });
+
+  it('shows "Dodaj zadanie" button when checklist_items is null', async () => {
+    renderDrawer({ item: makeItem({ checklist_items: null }) });
+
+    await waitFor(() => {
+      expect(screen.getByText('Dodaj zadanie')).toBeInTheDocument();
+    });
+  });
 });
