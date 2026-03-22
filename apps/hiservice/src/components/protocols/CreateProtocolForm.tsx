@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react';
+import {
+  buildProtocolNotes,
+  getVisitsFromChain,
+  formatDuration,
+  type VisitInfo,
+} from '@/lib/protocolUtils';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Loader2, CalendarIcon, Pen, X } from 'lucide-react';
@@ -72,6 +78,7 @@ const CreateProtocolForm = ({
   const [customerAddressId, setCustomerAddressId] = useState<string | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
+  const [visits, setVisits] = useState<VisitInfo[]>([]);
   const [protocolDate, setProtocolDate] = useState<Date>(new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [preparedBy, setPreparedBy] = useState('');
@@ -123,8 +130,36 @@ const CreateProtocolForm = ({
       setCustomerAddressId(prefillCustomerAddressId || null);
       setPhotoUrls([]);
       setNotes('');
+      setVisits([]);
       setProtocolDate(new Date());
       setCustomerSignature(null);
+
+      // Prefill notes from checklist chain + load visits
+      if (prefillCalendarItemId) {
+        (async () => {
+          try {
+            const { data: currentItem } = await supabase
+              .from('calendar_items')
+              .select(
+                'id, parent_item_id, checklist_items, item_date, work_started_at, work_ended_at',
+              )
+              .eq('id', prefillCalendarItemId)
+              .single();
+            if (!currentItem || !currentItem.id) return;
+            const rootId = (currentItem as any).parent_item_id || currentItem.id;
+            const { data: chainData } = await supabase
+              .from('calendar_items')
+              .select('id, checklist_items, item_date, work_started_at, work_ended_at')
+              .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
+            const chain = (chainData || []) as any[];
+            const generatedNotes = buildProtocolNotes(chain);
+            if (generatedNotes) setNotes(generatedNotes);
+            setVisits(getVisitsFromChain(chain));
+          } catch {
+            // Chain fetch is best-effort — don't block protocol creation
+          }
+        })();
+      }
 
       // Auto-fill prepared_by from linked employee name
       if (user?.id && instanceId) {
@@ -425,6 +460,29 @@ const CreateProtocolForm = ({
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Visits */}
+          {visits.length > 0 && (
+            <div className="space-y-2">
+              <Label>Wizyty serwisowe</Label>
+              <div className="space-y-1 text-sm">
+                {visits.map((v, i) => (
+                  <div key={i} className="flex justify-between">
+                    <span>{format(new Date(v.itemDate + 'T00:00:00'), 'd.MM.yyyy')}</span>
+                    <span className="font-medium">{formatDuration(v.durationMinutes)}</span>
+                  </div>
+                ))}
+                {visits.length > 1 && (
+                  <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                    <span>Łącznie</span>
+                    <span>
+                      {formatDuration(visits.reduce((sum, v) => sum + v.durationMinutes, 0))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Prepared By */}
           <div className="space-y-2">

@@ -4,6 +4,12 @@ import { pl } from 'date-fns/locale';
 import { Loader2, MapPin, Phone, Mail, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProtocolHeader from './ProtocolHeader';
+import {
+  getVisitsFromChain,
+  roundUpTo30,
+  formatDuration,
+  type VisitInfo,
+} from '@/lib/protocolUtils';
 
 interface ProtocolData {
   id: string;
@@ -50,6 +56,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   const [instance, setInstance] = useState<InstanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visits, setVisits] = useState<VisitInfo[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,6 +93,23 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
         setAddress(addr);
       }
 
+      // Fetch visit chain for time display
+      if (proto.calendar_item_id) {
+        const { data: currentItem } = await supabase
+          .from('calendar_items')
+          .select('id, parent_item_id, item_date, work_started_at, work_ended_at')
+          .eq('id', proto.calendar_item_id)
+          .single();
+        if (currentItem) {
+          const rootId = (currentItem as any).parent_item_id || currentItem.id;
+          const { data: chainData } = await supabase
+            .from('calendar_items')
+            .select('id, item_date, work_started_at, work_ended_at')
+            .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
+          setVisits(getVisitsFromChain((chainData || []) as any[]));
+        }
+      }
+
       setLoading(false);
     };
     fetchData();
@@ -113,10 +137,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto p-6 space-y-6">
-        <ProtocolHeader
-          instanceName={instance?.name || ''}
-          logoUrl={instance?.logo_url || null}
-        />
+        <ProtocolHeader instanceName={instance?.name || ''} logoUrl={instance?.logo_url || null} />
 
         <div className="bg-card rounded-lg border border-border p-6 space-y-6">
           {/* Type */}
@@ -129,18 +150,47 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </p>
           </div>
 
+          {/* Visits */}
+          {visits.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">Wizyty serwisowe</h3>
+              <div className="space-y-1 text-sm">
+                {visits.map((v, i) => (
+                  <div key={i} className="flex justify-between">
+                    <span>{format(new Date(v.itemDate + 'T00:00:00'), 'd.MM.yyyy')}</span>
+                    <span className="font-medium">
+                      {formatDuration(roundUpTo30(v.durationMinutes))}
+                    </span>
+                  </div>
+                ))}
+                {visits.length > 1 && (
+                  <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                    <span>Łącznie</span>
+                    <span>
+                      {formatDuration(
+                        roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0)),
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Customer info */}
           <div className="space-y-2">
             <h3 className="font-semibold text-foreground">Dane klienta</h3>
             <p className="text-foreground">{protocol.customer_name}</p>
             {protocol.customer_phone && (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5" />{protocol.customer_phone}
+                <Phone className="w-3.5 h-3.5" />
+                {protocol.customer_phone}
               </p>
             )}
             {protocol.customer_email && (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5" />{protocol.customer_email}
+                <Mail className="w-3.5 h-3.5" />
+                {protocol.customer_email}
               </p>
             )}
             {protocol.customer_nip && (
@@ -152,7 +202,8 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           {address && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground flex items-center gap-1">
-                <MapPin className="w-4 h-4" />Adres
+                <MapPin className="w-4 h-4" />
+                Adres
               </h3>
               <p className="text-sm text-muted-foreground">
                 {address.name}
@@ -199,7 +250,9 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           {/* Signature */}
           {protocol.customer_signature && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">Podpis osoby upoważnionej do odbioru</h3>
+              <h3 className="font-semibold text-foreground">
+                Podpis osoby upoważnionej do odbioru
+              </h3>
               <div className="border border-border rounded-md p-2 bg-background">
                 <img src={protocol.customer_signature} alt="Podpis" className="max-h-32 mx-auto" />
               </div>
