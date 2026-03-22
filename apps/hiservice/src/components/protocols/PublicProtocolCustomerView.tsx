@@ -148,17 +148,34 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
         />
 
         <div className="space-y-6">
-          {/* Type + Date + Visits inline */}
-          <div className="text-center">
-            <h2 className="text-xl font-bold text-foreground">
-              {protocolTypeLabels[protocol.protocol_type] || 'Protokół'}
-            </h2>
-            <p className="text-sm text-foreground mt-1">
-              Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
-              {protocol.show_visits &&
-                visits.length === 1 &&
-                ` · ${formatDuration(roundUpTo30(visits[0].durationMinutes))}`}
-            </p>
+          {/* Title + date (left) + address (right) */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                {protocolTypeLabels[protocol.protocol_type] || 'Protokół'}
+              </h2>
+              <p className="text-sm text-foreground mt-1">
+                Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+                {protocol.show_visits &&
+                  visits.length === 1 &&
+                  ` · ${formatDuration(roundUpTo30(visits[0].durationMinutes))}`}
+              </p>
+            </div>
+            {address && (
+              <div className="text-sm text-foreground sm:text-right">
+                <p className="font-semibold">Adres serwisowy</p>
+                <p>
+                  {address.name}
+                  {address.street && `, ${address.street}`}
+                </p>
+                {(address.postal_code || address.city) && (
+                  <p>
+                    {address.postal_code && `${address.postal_code} `}
+                    {address.city}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Visits (only when more than 1 and show_visits enabled) */}
@@ -186,33 +203,14 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </div>
           )}
 
-          {/* Address only — no client personal data in public view */}
-          {/* Address + Prepared by — side by side on desktop, stacked on mobile */}
-          {(address || protocol.prepared_by) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {address && (
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    Adres
-                  </h3>
-                  <p className="text-sm text-foreground">
-                    {address.name}
-                    {address.street && `, ${address.street}`}
-                    {address.postal_code && `, ${address.postal_code}`}
-                    {address.city && ` ${address.city}`}
-                  </p>
-                </div>
-              )}
-              {protocol.prepared_by && (
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground">Sporządził</h3>
-                  <p className="text-sm text-foreground">
-                    {protocol.prepared_by},{' '}
-                    {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
-                  </p>
-                </div>
-              )}
+          {/* Prepared by + date */}
+          {protocol.prepared_by && (
+            <div className="space-y-1">
+              <h3 className="font-semibold text-foreground">Sporządził</h3>
+              <p className="text-sm text-foreground">
+                {protocol.prepared_by},{' '}
+                {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+              </p>
             </div>
           )}
 
