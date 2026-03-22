@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   Search,
@@ -6,6 +6,7 @@ import {
   ChevronRight as ChevronRightIcon,
   MoreHorizontal,
   FileText,
+  Trash2,
   RefreshCw,
   MessageSquare,
   Plus,
@@ -14,6 +15,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -152,6 +154,9 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   const isMobile = useIsMobile();
   const [addOrderOpen, setAddOrderOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -346,6 +351,15 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     invalidateSettlements();
     toast.success('Status zmieniony');
   };
+
+  const confirmDeleteItem = useCallback(async () => {
+    if (!deleteTargetId) return;
+    setDeleting(true);
+    await handleDeleteItem(deleteTargetId);
+    setDeleting(false);
+    setDeleteDialogOpen(false);
+    setDeleteTargetId(null);
+  }, [deleteTargetId]);
 
   const handleDeleteItem = async (itemId: string) => {
     // Delete related records first to avoid FK constraint violations
@@ -652,6 +666,16 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                               Wyślij SMS z nr konta
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setDeleteTargetId(order.id);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Usuń
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -1031,6 +1055,17 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
           setEditingItem(null);
           invalidateSettlements();
         }}
+      />
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Usuń zlecenie"
+        description="Czy na pewno chcesz usunąć to zlecenie? Tej operacji nie można cofnąć."
+        confirmLabel={deleting ? 'Usuwanie...' : 'Usuń'}
+        cancelLabel="Anuluj"
+        onConfirm={confirmDeleteItem}
+        variant="destructive"
+        loading={deleting}
       />
     </div>
   );
