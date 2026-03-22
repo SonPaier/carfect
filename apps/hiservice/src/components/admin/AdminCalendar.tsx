@@ -99,6 +99,7 @@ export interface CalendarItem {
   priority?: number | null;
   project_id?: string | null;
   project_name?: string | null;
+  checklist_items?: Array<{ id: string; text: string; checked: boolean }> | null;
 }
 
 export interface Break {
