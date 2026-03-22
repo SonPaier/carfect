@@ -58,6 +58,7 @@ export interface EditingCalendarItem {
   price?: number | null;
   photo_urls?: string[] | null;
   priority?: number | null;
+  status?: string | null;
 }
 
 interface AddCalendarItemDialogProps {
@@ -78,6 +79,17 @@ interface AddCalendarItemDialogProps {
   initialServiceIds?: string[];
   initialProjectId?: string;
   onCustomerClick?: (customerId: string) => void;
+  followUpSourceItem?: {
+    id: string;
+    title: string;
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    customer_email?: string | null;
+    customer_id?: string | null;
+    customer_address_id?: string | null;
+    project_id?: string | null;
+    parent_item_id?: string | null;
+  } | null;
 }
 
 const generateTimeOptions = () => {
@@ -111,6 +123,7 @@ const AddCalendarItemDialog = ({
   initialServiceIds,
   initialProjectId,
   onCustomerClick,
+  followUpSourceItem,
 }: AddCalendarItemDialogProps) => {
   const isEditMode = !!editingItem?.id;
   const isMobile = useIsMobile();
@@ -301,6 +314,32 @@ const AddCalendarItemDialog = ({
         }
       };
       loadServices();
+    } else if (followUpSourceItem) {
+      setTitle(`Ponowna wizyta — ${followUpSourceItem.title}`);
+      setCustomerName(followUpSourceItem.customer_name || '');
+      setCustomerPhone(followUpSourceItem.customer_phone || '');
+      setCustomerEmail(followUpSourceItem.customer_email || '');
+      setCustomerId(followUpSourceItem.customer_id || null);
+      setCustomerAddressId(followUpSourceItem.customer_address_id || null);
+      setColumnId(columns[0]?.id || '');
+      if (followUpSourceItem.project_id) {
+        setProjectId(followUpSourceItem.project_id);
+      } else {
+        setProjectId(null);
+      }
+      setDateRange(undefined);
+      setStartTime('');
+      setEndTime('');
+      setAdminNotes('');
+      setPrice('');
+      setPriority(DEFAULT_PRIORITY);
+      setAssignedEmployeeIds([]);
+      setSelectedServiceIds([]);
+      setAllServices([]);
+      setServiceItems([]);
+      setSendImmediateSms(false);
+      setImmediateSmsTemplate(null);
+      setImmediateSmsTemplateId(null);
     } else {
       setTitle('');
       setCustomerName(initialCustomerName || '');
@@ -425,6 +464,7 @@ const AddCalendarItemDialog = ({
     initialServiceIds,
     initialProjectId,
     availableProjects,
+    followUpSourceItem,
   ]);
 
   const handleSelectProject = async (selectedProjectId: string | null) => {
@@ -662,8 +702,8 @@ const AddCalendarItemDialog = ({
       toast.error('Data zakończenia nie może być wcześniejsza niż data rozpoczęcia');
       return;
     }
-    // If dates are provided, validate times
-    if (hasDate) {
+    // If dates are provided, validate times (skip if times are empty — e.g. follow-up mode)
+    if (hasDate && startTime && endTime) {
       if (startTime >= endTime) {
         toast.error('Godzina końca musi być późniejsza niż początku');
         return;
@@ -710,18 +750,43 @@ const AddCalendarItemDialog = ({
         calendarItemId = editingItem!.id;
         const { error } = await supabase
           .from('calendar_items')
-          .update(data)
+          .update({
+            ...data,
+            ...(editingItem?.status === 'follow_up' && dateRange?.from
+              ? { status: 'confirmed' }
+              : {}),
+          })
           .eq('id', calendarItemId);
         if (error) throw error;
         toast.success('Zlecenie zaktualizowane');
       } else {
         const { data: inserted, error } = await supabase
           .from('calendar_items')
-          .insert({ ...data, status: 'confirmed' })
+          .insert({
+            ...data,
+            status: followUpSourceItem
+              ? dateRange?.from
+                ? 'confirmed'
+                : 'follow_up'
+              : 'confirmed',
+            ...(followUpSourceItem && {
+              parent_item_id: followUpSourceItem.parent_item_id || followUpSourceItem.id,
+            }),
+          })
           .select('id')
           .single();
         if (error) throw error;
         calendarItemId = inserted!.id;
+
+        // Mark original as unfinished after follow-up is saved
+        if (followUpSourceItem) {
+          const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
+          await supabase
+            .from('calendar_items')
+            .update({ status: 'unfinished', work_ended_at: new Date().toISOString() })
+            .eq('id', parentId);
+        }
+
         toast.success('Zlecenie dodane');
       }
 
@@ -816,7 +881,11 @@ const AddCalendarItemDialog = ({
           <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-lg font-semibold">
-                {isEditMode ? 'Edytuj zlecenie' : 'Nowe zlecenie'}
+                {followUpSourceItem
+                  ? 'Ponowna wizyta'
+                  : isEditMode
+                    ? 'Edytuj zlecenie'
+                    : 'Nowe zlecenie'}
               </SheetTitle>
               <button
                 onClick={onClose}
@@ -830,7 +899,7 @@ const AddCalendarItemDialog = ({
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             {/* Project selector */}
-            {projectsEnabled && (
+            {projectsEnabled && !followUpSourceItem && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
                   <FolderKanban className="w-3.5 h-3.5" />
@@ -856,7 +925,7 @@ const AddCalendarItemDialog = ({
             )}
 
             {/* Column (Typ) selector */}
-            {columns.length > 0 && (
+            {columns.length > 0 && !followUpSourceItem && (
               <div className="space-y-2">
                 <Label>Typ</Label>
                 <Select value={columnId} onValueChange={setColumnId}>
@@ -884,45 +953,49 @@ const AddCalendarItemDialog = ({
             </div>
 
             {/* Customer Search */}
-            <div className="space-y-2">
-              <Label>Klient</Label>
-              <CustomerSearchInput
-                instanceId={instanceId}
-                selectedCustomer={
-                  customerId
-                    ? {
-                        id: customerId,
-                        name: customerName,
-                        phone: customerPhone,
-                        email: customerEmail || null,
-                        company: null,
-                      }
-                    : null
-                }
-                onSelect={handleSelectCustomer}
-                onClear={handleClearCustomer}
-                onCustomerClick={handleCustomerClick}
-                onAddNew={(q) => {
-                  setAddCustomerPrefilledName(q);
-                  setAddCustomerOpen(true);
-                }}
-              />
-            </div>
+            {!followUpSourceItem && (
+              <div className="space-y-2">
+                <Label>Klient</Label>
+                <CustomerSearchInput
+                  instanceId={instanceId}
+                  selectedCustomer={
+                    customerId
+                      ? {
+                          id: customerId,
+                          name: customerName,
+                          phone: customerPhone,
+                          email: customerEmail || null,
+                          company: null,
+                        }
+                      : null
+                  }
+                  onSelect={handleSelectCustomer}
+                  onClear={handleClearCustomer}
+                  onCustomerClick={handleCustomerClick}
+                  onAddNew={(q) => {
+                    setAddCustomerPrefilledName(q);
+                    setAddCustomerOpen(true);
+                  }}
+                />
+              </div>
+            )}
 
             {/* Customer Address */}
-            <CustomerAddressSelect
-              instanceId={instanceId}
-              customerId={customerId}
-              value={customerAddressId}
-              onChange={setCustomerAddressId}
-              onCustomerResolved={(customer, addressId) => {
-                setCustomerId(customer.id);
-                setCustomerName(customer.name || '');
-                setCustomerPhone(customer.phone || '');
-                setCustomerEmail(customer.email || '');
-                setCustomerAddressId(addressId);
-              }}
-            />
+            {!followUpSourceItem && (
+              <CustomerAddressSelect
+                instanceId={instanceId}
+                customerId={customerId}
+                value={customerAddressId}
+                onChange={setCustomerAddressId}
+                onCustomerResolved={(customer, addressId) => {
+                  setCustomerId(customer.id);
+                  setCustomerName(customer.name || '');
+                  setCustomerPhone(customer.phone || '');
+                  setCustomerEmail(customer.email || '');
+                  setCustomerAddressId(addressId);
+                }}
+              />
+            )}
 
             {/* Services Selection */}
             <div className="space-y-2">
@@ -1001,7 +1074,7 @@ const AddCalendarItemDialog = ({
                     <Calendar
                       mode="single"
                       selected={dateRange?.to}
-                      disabled={(date) => dateRange?.from ? date < dateRange.from : false}
+                      disabled={(date) => (dateRange?.from ? date < dateRange.from : false)}
                       onSelect={(date) => {
                         if (date) {
                           setDateRange({ from: dateRange?.from || date, to: date });
@@ -1101,36 +1174,38 @@ const AddCalendarItemDialog = ({
             )}
 
             {/* Price + Priority */}
-            <div className="flex gap-3">
-              <div className="space-y-2 w-1/3">
-                <Label>Cena netto</Label>
-                <Input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  min="0"
-                  step="0.01"
-                  className="bg-white"
-                />
-              </div>
-              {prioritiesEnabled && (
+            {!followUpSourceItem && (
+              <div className="flex gap-3">
                 <div className="space-y-2 w-1/3">
-                  <Label>Priorytet</Label>
-                  <Select value={String(priority)} onValueChange={(v) => setPriority(Number(v))}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[1200]">
-                      {PRIORITY_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Cena netto</Label>
+                  <Input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    min="0"
+                    step="0.01"
+                    className="bg-white"
+                  />
                 </div>
-              )}
-            </div>
+                {prioritiesEnabled && (
+                  <div className="space-y-2 w-1/3">
+                    <Label>Priorytet</Label>
+                    <Select value={String(priority)} onValueChange={(v) => setPriority(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-[1200]">
+                        {PRIORITY_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={String(opt.value)}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Notes */}
             <div className="space-y-2">

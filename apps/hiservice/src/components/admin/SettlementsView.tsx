@@ -124,6 +124,11 @@ const STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
   in_progress: { label: 'W realizacji', badgeClass: 'bg-blue-600 hover:bg-blue-700 text-white' },
   completed: { label: 'Zakończony', badgeClass: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
   cancelled: { label: 'Anulowany', badgeClass: 'bg-red-600 hover:bg-red-700 text-white' },
+  unfinished: { label: 'Nieukończone', badgeClass: 'bg-purple-600 hover:bg-purple-700 text-white' },
+  follow_up: {
+    label: 'Ponowna wizyta',
+    badgeClass: 'bg-purple-400 hover:bg-purple-500 text-white',
+  },
 };
 
 const ITEMS_PER_PAGE = 10;

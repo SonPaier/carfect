@@ -113,7 +113,7 @@ const EmployeeSelectionDrawer = ({
         .not('assigned_employee_ids', 'is', null)
         .not('status', 'eq', 'cancelled')
         .lte('item_date', dateTo)
-        .or(`end_date.gte.${orderDateFrom},end_date.is.null,item_date.gte.${orderDateFrom}`);
+        .or(`end_date.gte.${orderDateFrom},and(end_date.is.null,item_date.gte.${orderDateFrom})`);
       if (editingItemId) {
         query = query.neq('id', editingItemId);
       }
@@ -232,7 +232,9 @@ const EmployeeSelectionDrawer = ({
                 ))}
                 {busyItems?.map((item) => (
                   <span key={item.id} className="text-[11px] text-orange-500 block">
-                    Zajęty {item.start_time && item.end_time ? `${item.start_time}–${item.end_time}` : ''}{item.title ? ` · ${item.title}` : ''}
+                    Zajęty{' '}
+                    {item.start_time && item.end_time ? `${item.start_time}–${item.end_time}` : ''}
+                    {item.title ? ` · ${item.title}` : ''}
                   </span>
                 ))}
               </div>
