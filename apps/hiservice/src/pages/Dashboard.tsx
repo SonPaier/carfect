@@ -743,6 +743,11 @@ const Dashboard = () => {
     });
 
     // Delete from DB in background
+    // Clear parent_item_id on child follow-ups first (FK constraint)
+    await supabase
+      .from('calendar_items')
+      .update({ parent_item_id: null } as any)
+      .eq('parent_item_id', itemId);
     await Promise.all([
       supabase.from('invoices').delete().eq('calendar_item_id', itemId),
       supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId),
