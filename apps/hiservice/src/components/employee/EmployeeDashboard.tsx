@@ -165,7 +165,9 @@ const EmployeeDashboard = ({
       .eq('instance_id', instanceId)
       .in('column_id', columnIds)
       .lt('item_date', dateStart)
-      .in('status', ['in_progress', 'unfinished', 'follow_up']);
+      .in('status', ['in_progress', 'unfinished', 'follow_up'])
+      .order('item_date', { ascending: false })
+      .limit(50);
 
     if (linkedEmployeeId) {
       scheduledQuery = scheduledQuery.contains('assigned_employee_ids', [linkedEmployeeId]);
@@ -276,10 +278,10 @@ const EmployeeDashboard = ({
       return notifyDate <= today;
     });
 
+    const todayStr = format(today, 'yyyy-MM-dd');
     setItems(
       calItems.sort((a, b) => {
         // Pending items (in_progress/unfinished/follow_up from past) float to top
-        const todayStr = format(today, 'yyyy-MM-dd');
         const aIsPending =
           a.item_date < todayStr && ['in_progress', 'unfinished', 'follow_up'].includes(a.status);
         const bIsPending =

@@ -147,7 +147,9 @@ const DashboardOverview = ({
           .select(selectFields)
           .eq('instance_id', instanceId)
           .lt('item_date', fetchDateStart)
-          .in('status', ['in_progress', 'unfinished', 'follow_up']),
+          .in('status', ['in_progress', 'unfinished', 'follow_up'])
+          .order('item_date', { ascending: false })
+          .limit(50),
         supabase
           .from('calendar_items')
           .select(selectFields)
@@ -348,17 +350,24 @@ const DashboardOverview = ({
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
-  const workingDays = useMemo(
-    () => getNextWorkingDays(daysCount, workingHours ?? null),
-    [workingHours, daysCount],
-  );
+  const todayStr = format(todayDate, 'yyyy-MM-dd');
   const dashboardItems = items
     .filter((i) => {
+      // Pending past items (in_progress/unfinished/follow_up) always show regardless of date range
+      const isPendingPast =
+        i.item_date < todayStr && ['in_progress', 'unfinished', 'follow_up'].includes(i.status);
+      if (isPendingPast) return true;
       const endDate = (i as any).end_date || i.item_date;
-      return workingDays.some((day) => i.item_date <= day && endDate >= day);
+      return workingDaysForFetch.some((day) => i.item_date <= day && endDate >= day);
     })
     .sort((a, b) => {
-      // Sort by date first (today first), then by priority (lower number = higher priority)
+      // Pending past items float to top
+      const aIsPending =
+        a.item_date < todayStr && ['in_progress', 'unfinished', 'follow_up'].includes(a.status);
+      const bIsPending =
+        b.item_date < todayStr && ['in_progress', 'unfinished', 'follow_up'].includes(b.status);
+      if (aIsPending && !bIsPending) return -1;
+      if (!aIsPending && bIsPending) return 1;
       const dateCmp = a.item_date.localeCompare(b.item_date);
       if (dateCmp !== 0) return dateCmp;
       const aPri = a.priority ?? DEFAULT_PRIORITY;
