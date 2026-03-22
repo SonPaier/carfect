@@ -7,6 +7,28 @@ on:
     branches: [main]
 
 jobs:
+  # Detect which apps were changed
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      carfect: ${{ steps.filter.outputs.carfect }}
+      hiservice: ${{ steps.filter.outputs.hiservice }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            carfect:
+              - 'apps/carfect/**'
+            hiservice:
+              - 'apps/hiservice/**'
+            shared:
+              - 'libs/**'
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -70,8 +92,10 @@ jobs:
           fi
           echo "✅ All images under 300KB"
 
-  test:
-    name: Unit Tests
+  test-carfect:
+    name: Tests — Carfect
+    needs: changes
+    if: needs.changes.outputs.carfect == 'true' || needs.changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -83,4 +107,21 @@ jobs:
         with:
           version: 10
       - run: pnpm install --frozen-lockfile
-      - run: npx vitest run --reporter=default --reporter=github-actions
+      - run: pnpm --filter carfect test -- --run --reporter=default --reporter=github-actions
+
+  test-hiservice:
+    name: Tests — HiService
+    needs: changes
+    if: needs.changes.outputs.hiservice == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter hiservice test -- --run --reporter=default --reporter=github-actions
