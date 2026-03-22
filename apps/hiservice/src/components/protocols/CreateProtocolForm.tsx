@@ -1,4 +1,12 @@
 import { useState, useEffect } from 'react';
+import {
+  buildProtocolNotes,
+  getVisitsFromChain,
+  formatDuration,
+  roundUpTo30,
+  type VisitInfo,
+} from '@/lib/protocolUtils';
+import type { ChecklistItem } from '@shared/ui';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Loader2, CalendarIcon, Pen, X } from 'lucide-react';
@@ -6,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -25,9 +34,7 @@ import CustomerEditDrawer from '@/components/admin/CustomerEditDrawer';
 import type { Customer } from '@/components/admin/CustomersView';
 import { ProtocolPhotosUploader } from './ProtocolPhotosUploader';
 import SignatureDialog from './SignatureDialog';
-import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CreateProtocolFormProps {
   open: boolean;
@@ -56,7 +63,6 @@ const CreateProtocolForm = ({
   prefillCustomerAddressId,
   prefillCalendarItemId,
 }: CreateProtocolFormProps) => {
-  const isMobile = useIsMobile();
   const { user } = useAuth();
   const isEditMode = !!editingProtocolId;
   const [loading, setLoading] = useState(false);
@@ -72,14 +78,14 @@ const CreateProtocolForm = ({
   const [customerAddressId, setCustomerAddressId] = useState<string | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
+  const [visits, setVisits] = useState<VisitInfo[]>([]);
+  const [showVisits, setShowVisits] = useState(true);
   const [protocolDate, setProtocolDate] = useState<Date>(new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [preparedBy, setPreparedBy] = useState('');
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [customerDetailData, setCustomerDetailData] = useState<Customer | null>(null);
-  // Delayed mount: protocol Sheet must fully unmount before CustomerEditDrawer mounts
-  const [customerDrawerMounted, setCustomerDrawerMounted] = useState(false);
   const customerDetailOpen = !!customerDetailData;
 
   // Load existing protocol for editing or reset form
@@ -107,6 +113,7 @@ const CreateProtocolForm = ({
           setCustomerAddressId(data.customer_address_id);
           setPhotoUrls(Array.isArray(data.photo_urls) ? (data.photo_urls as string[]) : []);
           setNotes(data.notes || '');
+          setShowVisits((data as Record<string, unknown>).show_visits !== false);
           setProtocolDate(new Date(data.protocol_date));
           setPreparedBy(data.prepared_by || '');
           setCustomerSignature(data.customer_signature || null);
@@ -123,8 +130,42 @@ const CreateProtocolForm = ({
       setCustomerAddressId(prefillCustomerAddressId || null);
       setPhotoUrls([]);
       setNotes('');
+      setVisits([]);
       setProtocolDate(new Date());
       setCustomerSignature(null);
+
+      // Prefill notes from checklist chain + load visits
+      if (prefillCalendarItemId) {
+        (async () => {
+          try {
+            const { data: currentItem } = await supabase
+              .from('calendar_items')
+              .select(
+                'id, parent_item_id, checklist_items, item_date, work_started_at, work_ended_at',
+              )
+              .eq('id', prefillCalendarItemId)
+              .single();
+            if (!currentItem || !currentItem.id) return;
+            const rootId =
+              (currentItem as Record<string, unknown>).parent_item_id || currentItem.id;
+            const { data: chainData } = await supabase
+              .from('calendar_items')
+              .select('id, checklist_items, item_date, work_started_at, work_ended_at')
+              .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
+            const chain = (chainData || []) as Array<{
+              checklist_items?: ChecklistItem[] | null;
+              item_date?: string | null;
+              work_started_at?: string | null;
+              work_ended_at?: string | null;
+            }>;
+            const generatedNotes = buildProtocolNotes(chain);
+            if (generatedNotes) setNotes(generatedNotes);
+            setVisits(getVisitsFromChain(chain));
+          } catch {
+            // Chain fetch is best-effort — don't block protocol creation
+          }
+        })();
+      }
 
       // Auto-fill prepared_by from linked employee name
       if (user?.id && instanceId) {
@@ -150,6 +191,7 @@ const CreateProtocolForm = ({
     prefillCustomerPhone,
     prefillCustomerEmail,
     prefillCustomerAddressId,
+    prefillCalendarItemId,
     instanceId,
     user?.id,
   ]);
@@ -202,6 +244,7 @@ const CreateProtocolForm = ({
       protocol_type: protocolType,
       prepared_by: preparedBy.trim() || null,
       notes: notes.trim() || null,
+      show_visits: showVisits,
       customer_signature: customerSignature,
       photo_urls: photoUrls,
     };
@@ -391,7 +434,7 @@ const CreateProtocolForm = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Dodatkowe uwagi..."
-              rows={3}
+              rows={Math.max(3, (notes.match(/\n/g) || []).length + 2)}
             />
           </div>
 
@@ -425,6 +468,60 @@ const CreateProtocolForm = ({
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Visits */}
+          {visits.length > 0 && (
+            <div className="space-y-2">
+              <Label>Wizyty serwisowe</Label>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between text-xs text-muted-foreground pb-1">
+                  <span>Data</span>
+                  <div className="flex gap-6">
+                    <span className="w-20 text-right">Rzeczywisty</span>
+                    <span className="w-20 text-right">Dla klienta</span>
+                  </div>
+                </div>
+                {visits.map((v, i) => (
+                  <div key={i} className="flex justify-between">
+                    <span>{format(new Date(v.itemDate + 'T00:00:00'), 'd.MM.yyyy')}</span>
+                    <div className="flex gap-6">
+                      <span className="w-20 text-right">{formatDuration(v.durationMinutes)}</span>
+                      <span className="w-20 text-right font-medium">
+                        {formatDuration(roundUpTo30(v.durationMinutes))}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                  <span>Łącznie</span>
+                  <div className="flex gap-6">
+                    <span className="w-20 text-right">
+                      {formatDuration(visits.reduce((sum, v) => sum + v.durationMinutes, 0))}
+                    </span>
+                    <span className="w-20 text-right">
+                      {formatDuration(
+                        visits.reduce((sum, v) => sum + roundUpTo30(v.durationMinutes), 0),
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Show visits on protocol toggle */}
+          {visits.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-visits"
+                checked={showVisits}
+                onCheckedChange={(checked) => setShowVisits(checked === true)}
+              />
+              <label htmlFor="show-visits" className="text-sm cursor-pointer">
+                Pokaż czasy wizyt na protokole
+              </label>
+            </div>
+          )}
 
           {/* Prepared By */}
           <div className="space-y-2">
