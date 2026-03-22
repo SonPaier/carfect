@@ -3,6 +3,7 @@ import {
   buildProtocolNotes,
   getVisitsFromChain,
   formatDuration,
+  roundUpTo30,
   type VisitInfo,
 } from '@/lib/protocolUtils';
 import { format } from 'date-fns';
@@ -466,20 +467,37 @@ const CreateProtocolForm = ({
             <div className="space-y-2">
               <Label>Wizyty serwisowe</Label>
               <div className="space-y-1 text-sm">
+                <div className="flex justify-between text-xs text-muted-foreground pb-1">
+                  <span>Data</span>
+                  <div className="flex gap-6">
+                    <span className="w-20 text-right">Rzeczywisty</span>
+                    <span className="w-20 text-right">Dla klienta</span>
+                  </div>
+                </div>
                 {visits.map((v, i) => (
                   <div key={i} className="flex justify-between">
                     <span>{format(new Date(v.itemDate + 'T00:00:00'), 'd.MM.yyyy')}</span>
-                    <span className="font-medium">{formatDuration(v.durationMinutes)}</span>
+                    <div className="flex gap-6">
+                      <span className="w-20 text-right">{formatDuration(v.durationMinutes)}</span>
+                      <span className="w-20 text-right font-medium">
+                        {formatDuration(roundUpTo30(v.durationMinutes))}
+                      </span>
+                    </div>
                   </div>
                 ))}
-                {visits.length > 1 && (
-                  <div className="flex justify-between border-t border-border pt-1 font-semibold">
-                    <span>Łącznie</span>
-                    <span>
+                <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                  <span>Łącznie</span>
+                  <div className="flex gap-6">
+                    <span className="w-20 text-right">
                       {formatDuration(visits.reduce((sum, v) => sum + v.durationMinutes, 0))}
                     </span>
+                    <span className="w-20 text-right">
+                      {formatDuration(
+                        roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0)),
+                      )}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
