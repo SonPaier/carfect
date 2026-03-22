@@ -521,6 +521,8 @@ const Dashboard = () => {
       queryKey: ['projects-orders', instanceId],
       refetchType: 'none',
     });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups', instanceId] });
   }, [queryClient, instanceId]);
 
   const handleRealtimeInsert = useCallback(
@@ -856,7 +858,8 @@ const Dashboard = () => {
   };
 
   const handleItemSuccess = () => {
-    fetchItems();
+    // Small delay to ensure DB replication catches up before refetch
+    setTimeout(() => fetchItems(), 200);
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
@@ -1262,6 +1265,13 @@ const Dashboard = () => {
           instanceId={instanceId}
           columns={calendarColumns}
           onSuccess={() => {
+            // Optimistically update parent status if follow-up was created
+            if (followUpSourceItem) {
+              const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
+              setCalendarItems((prev) =>
+                prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
+              );
+            }
             handleItemSuccess();
             setFollowUpSourceItem(null);
           }}

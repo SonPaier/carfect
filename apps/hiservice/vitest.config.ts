@@ -15,6 +15,9 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@shared/invoicing': path.resolve(__dirname, '../../libs/shared-invoicing/src/index.ts'),
+    },
   },
 });
