@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { format, subDays, addDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -214,6 +214,9 @@ const Dashboard = () => {
   );
   const [followUpSourceItem, setFollowUpSourceItem] = useState<CalendarItem | null>(null);
   const [followUpsDrawerOpen, setFollowUpsDrawerOpen] = useState(false);
+
+  // Track locally-updated item IDs so fetchItems preserves optimistic status
+  const locallyUpdatedItemsRef = useRef<Set<string>>(new Set());
   const [mapOrderPrefill, setMapOrderPrefill] = useState<{
     customerId?: string;
     customerName?: string;
@@ -375,7 +378,21 @@ const Dashboard = () => {
       }
     }
 
-    setCalendarItems(items as CalendarItem[]);
+    // Preserve optimistic status for locally-updated items (prevents refetch from
+    // overwriting optimistic changes before DB replication catches up)
+    setCalendarItems((prev) => {
+      const locallyUpdated = new Map<string, string>();
+      for (const p of prev) {
+        if (locallyUpdatedItemsRef.current.has(p.id)) {
+          locallyUpdated.set(p.id, p.status);
+        }
+      }
+      if (locallyUpdated.size === 0) return items as CalendarItem[];
+      return (items as CalendarItem[]).map((item) => {
+        const optimisticStatus = locallyUpdated.get(item.id);
+        return optimisticStatus ? { ...item, status: optimisticStatus } : item;
+      });
+    });
   }, [instanceId, currentCalendarDate, mapOpen, calendarViewMode]);
 
   // Fetch breaks
@@ -666,6 +683,8 @@ const Dashboard = () => {
 
     // Optimistic update + debounce realtime
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...updateData } : i)));
 
     const { error } = await supabase.from('calendar_items').update(updateData).eq('id', itemId);
@@ -699,6 +718,8 @@ const Dashboard = () => {
 
     // Optimistic update — remove from UI immediately (calendar + lista zleceń)
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
     queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
@@ -752,6 +773,8 @@ const Dashboard = () => {
   const handleStatusChange = async (itemId: string, newStatus: string) => {
     // Optimistic update + debounce realtime
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) =>
       prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)),
     );
@@ -1258,6 +1281,7 @@ const Dashboard = () => {
             setMapOrderPrefill({});
             setInitialProjectId(undefined);
             setFollowUpSourceItem(null);
+            fetchItems();
           }}
           instanceId={instanceId}
           columns={calendarColumns}
@@ -1265,6 +1289,9 @@ const Dashboard = () => {
             // Optimistically update parent status if follow-up was created
             if (followUpSourceItem) {
               const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
+              markAsLocallyUpdated(parentId);
+              locallyUpdatedItemsRef.current.add(parentId);
+              setTimeout(() => locallyUpdatedItemsRef.current.delete(parentId), 5000);
               setCalendarItems((prev) =>
                 prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
               );

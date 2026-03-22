@@ -193,5 +193,10 @@ export function useCalendarItemsRealtime({
     };
   }, [instanceId, onInsert, onUpdate, onDelete, onBreakChange, rateLimitedRefetch]);
 
-  return { isConnected, markAsLocallyUpdated };
+  const isLocallyUpdated = useCallback((itemId: string) => {
+    const ts = recentlyUpdatedRef.current.get(itemId);
+    return !!ts && Date.now() - ts < LOCAL_UPDATE_DEBOUNCE;
+  }, []);
+
+  return { isConnected, markAsLocallyUpdated, isLocallyUpdated };
 }
