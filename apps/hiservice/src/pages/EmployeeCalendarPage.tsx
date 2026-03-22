@@ -919,6 +919,12 @@ const EmployeeCalendarPage = () => {
           instanceId={instanceId}
           columns={calendarColumns}
           onSuccess={() => {
+            if (followUpSourceItem) {
+              const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
+              setItems((prev) =>
+                prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
+              );
+            }
             fetchItems();
             setEditingItem(null);
             setFollowUpSourceItem(null);

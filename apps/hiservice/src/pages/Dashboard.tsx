@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { format, subDays, addDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -214,6 +214,12 @@ const Dashboard = () => {
   );
   const [followUpSourceItem, setFollowUpSourceItem] = useState<CalendarItem | null>(null);
   const [followUpsDrawerOpen, setFollowUpsDrawerOpen] = useState(false);
+  const [followUpsRefreshKey, setFollowUpsRefreshKey] = useState(0);
+
+  // Track locally-updated item IDs so fetchItems preserves optimistic status
+  const locallyUpdatedItemsRef = useRef<Set<string>>(new Set());
+  // Track deleted item IDs so fetchItems/realtime never brings them back
+  const deletedItemIdsRef = useRef<Set<string>>(new Set());
   const [mapOrderPrefill, setMapOrderPrefill] = useState<{
     customerId?: string;
     customerName?: string;
@@ -375,7 +381,23 @@ const Dashboard = () => {
       }
     }
 
-    setCalendarItems(items as CalendarItem[]);
+    // Filter out deleted items and preserve optimistic status for locally-updated items
+    setCalendarItems((prev) => {
+      const filtered = (items as CalendarItem[]).filter(
+        (item) => !deletedItemIdsRef.current.has(item.id),
+      );
+      const locallyUpdated = new Map<string, string>();
+      for (const p of prev) {
+        if (locallyUpdatedItemsRef.current.has(p.id)) {
+          locallyUpdated.set(p.id, p.status);
+        }
+      }
+      if (locallyUpdated.size === 0) return filtered;
+      return filtered.map((item) => {
+        const optimisticStatus = locallyUpdated.get(item.id);
+        return optimisticStatus ? { ...item, status: optimisticStatus } : item;
+      });
+    });
   }, [instanceId, currentCalendarDate, mapOpen, calendarViewMode]);
 
   // Fetch breaks
@@ -521,10 +543,13 @@ const Dashboard = () => {
       queryKey: ['projects-orders', instanceId],
       refetchType: 'none',
     });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups', instanceId] });
   }, [queryClient, instanceId]);
 
   const handleRealtimeInsert = useCallback(
     (item: CalendarItem) => {
+      if (deletedItemIdsRef.current.has(item.id)) return;
       setCalendarItems((prev) => {
         if (prev.some((i) => i.id === item.id)) return prev;
         return [...prev, item];
@@ -664,6 +689,8 @@ const Dashboard = () => {
 
     // Optimistic update + debounce realtime
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...updateData } : i)));
 
     const { error } = await supabase.from('calendar_items').update(updateData).eq('id', itemId);
@@ -697,7 +724,11 @@ const Dashboard = () => {
 
     // Optimistic update — remove from UI immediately (calendar + lista zleceń)
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
+    deletedItemIdsRef.current.add(itemId);
     setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+    setFollowUpsRefreshKey((k) => k + 1);
     queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
     );
@@ -712,6 +743,11 @@ const Dashboard = () => {
     });
 
     // Delete from DB in background
+    // Clear parent_item_id on child follow-ups first (FK constraint)
+    await supabase
+      .from('calendar_items')
+      .update({ parent_item_id: null } as any)
+      .eq('parent_item_id', itemId);
     await Promise.all([
       supabase.from('invoices').delete().eq('calendar_item_id', itemId),
       supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId),
@@ -722,6 +758,7 @@ const Dashboard = () => {
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
     if (error) {
       toast.error('Błąd usuwania — przywracam');
+      deletedItemIdsRef.current.delete(itemId);
       fetchItems(); // rollback
       return;
     }
@@ -750,6 +787,8 @@ const Dashboard = () => {
   const handleStatusChange = async (itemId: string, newStatus: string) => {
     // Optimistic update + debounce realtime
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) =>
       prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)),
     );
@@ -774,7 +813,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
       queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
       queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
-      queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups', instanceId] });
+      setFollowUpsRefreshKey((k) => k + 1);
 
       // Auto-complete original when last follow-up is completed
       if (newStatus === 'completed') {
@@ -856,7 +895,8 @@ const Dashboard = () => {
   };
 
   const handleItemSuccess = () => {
-    fetchItems();
+    // Small delay to ensure DB replication catches up before refetch
+    setTimeout(() => fetchItems(), 200);
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
@@ -984,7 +1024,14 @@ const Dashboard = () => {
     if (currentView === 'rozliczenia' && instanceId) {
       return (
         <div className="max-w-[1000px] mx-auto">
-          <SettlementsView instanceId={instanceId} />
+          <SettlementsView
+            instanceId={instanceId}
+            onItemDeleted={(itemId) => {
+              deletedItemIdsRef.current.add(itemId);
+              setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+              setFollowUpsRefreshKey((k) => k + 1);
+            }}
+          />
         </div>
       );
     }
@@ -1024,7 +1071,6 @@ const Dashboard = () => {
             onClose={() => {
               setDetailsOpen(false);
               setSelectedItem(null);
-              fetchItems();
             }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
@@ -1133,7 +1179,6 @@ const Dashboard = () => {
             onClose={() => {
               setDetailsOpen(false);
               setSelectedItem(null);
-              fetchItems();
             }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
@@ -1262,6 +1307,18 @@ const Dashboard = () => {
           instanceId={instanceId}
           columns={calendarColumns}
           onSuccess={() => {
+            // Optimistically update parent status if follow-up was created
+            if (followUpSourceItem) {
+              const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
+              markAsLocallyUpdated(parentId);
+              locallyUpdatedItemsRef.current.add(parentId);
+              setTimeout(() => locallyUpdatedItemsRef.current.delete(parentId), 5000);
+              setCalendarItems((prev) =>
+                prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
+              );
+            }
+            // Refresh follow-ups drawer data
+            setFollowUpsRefreshKey((k) => k + 1);
             handleItemSuccess();
             setFollowUpSourceItem(null);
           }}
@@ -1285,6 +1342,7 @@ const Dashboard = () => {
           onClose={() => setFollowUpsDrawerOpen(false)}
           instanceId={instanceId}
           onItemClick={handleFollowUpItemClick}
+          refreshKey={followUpsRefreshKey}
         />
       )}
 
@@ -1295,7 +1353,6 @@ const Dashboard = () => {
         onClose={() => {
           setDashboardDetailsOpen(false);
           setDashboardSelectedItem(null);
-          fetchItems();
         }}
         columns={calendarColumns}
         onDelete={handleDeleteItem}
