@@ -90,6 +90,7 @@ interface AddCalendarItemDialogProps {
     customer_address_id?: string | null;
     project_id?: string | null;
     parent_item_id?: string | null;
+    checklist_items?: ChecklistItem[] | null;
   } | null;
 }
 
@@ -343,7 +344,13 @@ const AddCalendarItemDialog = ({
       setStartTime('');
       setEndTime('');
       setAdminNotes('');
-      setChecklistItems([]);
+      // Copy unchecked checklist items from parent to follow-up
+      const parentChecklist = followUpSourceItem.checklist_items || [];
+      setChecklistItems(
+        parentChecklist
+          .filter((item) => !item.checked)
+          .map((item) => ({ ...item, id: crypto.randomUUID(), checked: false })),
+      );
       setPrice('');
       setPriority(DEFAULT_PRIORITY);
       setAssignedEmployeeIds([]);
@@ -1222,6 +1229,12 @@ const AddCalendarItemDialog = ({
               </div>
             )}
 
+            {/* Checklist */}
+            <div className="space-y-2">
+              <Label>Lista zadań</Label>
+              <ChecklistSection items={checklistItems} mode="edit" onChange={setChecklistItems} />
+            </div>
+
             {/* Notes */}
             <div className="space-y-2">
               <Label>Notatki</Label>
@@ -1231,12 +1244,6 @@ const AddCalendarItemDialog = ({
                 rows={3}
                 className="bg-white"
               />
-            </div>
-
-            {/* Checklist */}
-            <div className="space-y-2">
-              <Label>Lista zadań</Label>
-              <ChecklistSection items={checklistItems} mode="edit" onChange={setChecklistItems} />
             </div>
 
             {/* SMS Notification */}

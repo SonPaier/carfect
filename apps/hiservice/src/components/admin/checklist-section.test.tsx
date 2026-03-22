@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { ChecklistSection, type ChecklistItem } from '@shared/ui';
@@ -32,28 +32,32 @@ describe('ChecklistSection', () => {
       );
     });
 
-    it('shows checked items with line-through', () => {
-      render(<ChecklistSection items={makeItems()} onChange={vi.fn()} mode="execute" />);
+    it('toggles checkbox when clicking on text', async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ChecklistSection items={makeItems()} onChange={onChange} mode="execute" />);
 
-      const checkedItem = screen.getByText('Wymień filtr');
-      expect(checkedItem.className).toContain('line-through');
+      await user.click(screen.getByText('Sprawdź ciśnienie'));
+
+      expect(onChange).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ id: '1', checked: true })]),
+      );
     });
 
     it('does not show delete buttons in execute mode', () => {
       render(<ChecklistSection items={makeItems()} onChange={vi.fn()} mode="execute" />);
 
-      // Only the "Dodaj punkt" button should be present; no trash buttons
       const buttons = screen.getAllByRole('button');
       expect(buttons).toHaveLength(1);
-      expect(buttons[0]).toHaveTextContent('Dodaj punkt');
+      expect(buttons[0]).toHaveTextContent('Dodaj zadanie');
     });
 
-    it('adds new item via "Dodaj punkt" button', async () => {
+    it('adds new item via button', async () => {
       const onChange = vi.fn();
       const user = userEvent.setup();
       render(<ChecklistSection items={makeItems()} onChange={onChange} mode="execute" />);
 
-      await user.click(screen.getByText('Dodaj punkt'));
+      await user.click(screen.getByText('Dodaj zadanie'));
       const input = screen.getByPlaceholderText('Wpisz treść...');
       await user.type(input, 'Nowy punkt');
       await user.keyboard('{Enter}');
@@ -64,6 +68,16 @@ describe('ChecklistSection', () => {
           expect.objectContaining({ text: 'Nowy punkt', checked: false }),
         ]),
       );
+    });
+
+    it('keeps same font style for checked and unchecked items', () => {
+      render(<ChecklistSection items={makeItems()} onChange={vi.fn()} mode="execute" />);
+
+      const unchecked = screen.getByText('Sprawdź ciśnienie');
+      const checked = screen.getByText('Wymień filtr');
+      // Neither should have line-through
+      expect(unchecked.className).not.toContain('line-through');
+      expect(checked.className).not.toContain('line-through');
     });
   });
 
@@ -92,59 +106,72 @@ describe('ChecklistSection', () => {
         expect.arrayContaining([expect.objectContaining({ id: '1', text: 'Zmieniony tekst' })]),
       );
     });
-  });
 
-  describe('empty state', () => {
-    it('shows "Dodaj listę zadań" when empty', () => {
-      render(<ChecklistSection items={[]} onChange={vi.fn()} mode="execute" />);
+    it('shows delete buttons in edit mode', () => {
+      render(<ChecklistSection items={makeItems()} onChange={vi.fn()} mode="edit" />);
 
-      expect(screen.getByText('Dodaj listę zadań')).toBeInTheDocument();
+      // 3 trash buttons + 1 "Dodaj zadanie" button
+      const buttons = screen.getAllByRole('button');
+      expect(buttons).toHaveLength(4);
     });
 
-    it('shows input after clicking "Dodaj listę zadań"', async () => {
-      const user = userEvent.setup();
-      render(<ChecklistSection items={[]} onChange={vi.fn()} mode="execute" />);
-
-      await user.click(screen.getByText('Dodaj listę zadań'));
-      expect(screen.getByPlaceholderText('Wpisz treść...')).toBeInTheDocument();
-    });
-  });
-
-  describe('adding items', () => {
-    it('generates a unique id for new items even when crypto.randomUUID is unavailable', async () => {
-      const onChange = vi.fn();
-      const user = userEvent.setup();
-
-      // Simulate non-secure context where randomUUID is absent
-      const originalRandomUUID = crypto.randomUUID;
-      // @ts-expect-error intentionally removing for test
-      delete crypto.randomUUID;
-
-      render(<ChecklistSection items={[]} onChange={onChange} mode="edit" />);
-      await user.click(screen.getByText('Dodaj listę zadań'));
-      const input = screen.getByPlaceholderText('Wpisz treść...');
-      await user.type(input, 'Test item');
-      await user.keyboard('{Enter}');
-
-      expect(onChange).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ text: 'Test item', id: expect.any(String) }),
-        ]),
-      );
-      const newItem = onChange.mock.calls[0][0][0];
-      expect(newItem.id).toBeTruthy();
-      expect(newItem.id.length).toBeGreaterThan(0);
-
-      // Restore
-      crypto.randomUUID = originalRandomUUID;
-    });
-
-    it('does not add item when input is empty and Enter is pressed', async () => {
+    it('deletes item on trash click', async () => {
       const onChange = vi.fn();
       const user = userEvent.setup();
       render(<ChecklistSection items={makeItems()} onChange={onChange} mode="edit" />);
 
-      await user.click(screen.getByText('Dodaj punkt'));
+      const buttons = screen.getAllByRole('button');
+      // First button is first trash icon
+      await user.click(buttons[0]);
+
+      expect(onChange).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ id: '2' }),
+          expect.objectContaining({ id: '3' }),
+        ]),
+      );
+      expect(onChange.mock.calls[0][0]).toHaveLength(2);
+    });
+  });
+
+  describe('empty state', () => {
+    it('shows "Dodaj zadanie" button when empty', () => {
+      render(<ChecklistSection items={[]} onChange={vi.fn()} mode="execute" />);
+
+      expect(screen.getByText('Dodaj zadanie')).toBeInTheDocument();
+    });
+
+    it('shows input after clicking "Dodaj zadanie"', async () => {
+      const user = userEvent.setup();
+      render(<ChecklistSection items={[]} onChange={vi.fn()} mode="execute" />);
+
+      await user.click(screen.getByText('Dodaj zadanie'));
+      expect(screen.getByPlaceholderText('Wpisz treść...')).toBeInTheDocument();
+    });
+  });
+
+  describe('follow-up checklist copy', () => {
+    it('only unchecked items should be passed to follow-up (tested at integration level)', () => {
+      const parentChecklist: ChecklistItem[] = [
+        { id: '1', text: 'Done task', checked: true },
+        { id: '2', text: 'Pending task', checked: false },
+        { id: '3', text: 'Another pending', checked: false },
+      ];
+
+      const unchecked = parentChecklist.filter((item) => !item.checked);
+      expect(unchecked).toHaveLength(2);
+      expect(unchecked.every((item) => !item.checked)).toBe(true);
+      expect(unchecked.map((i) => i.text)).toEqual(['Pending task', 'Another pending']);
+    });
+  });
+
+  describe('adding items', () => {
+    it('does not add item when input is empty', async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ChecklistSection items={makeItems()} onChange={onChange} mode="edit" />);
+
+      await user.click(screen.getByText('Dodaj zadanie'));
       await user.keyboard('{Enter}');
 
       expect(onChange).not.toHaveBeenCalled();

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Checkbox } from './checkbox';
+import { Button } from './button';
 import { cn } from '../lib/utils';
 import { Trash2, Plus } from 'lucide-react';
 
@@ -7,7 +8,6 @@ const generateId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  // Fallback for non-secure contexts (HTTP, older environments)
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
@@ -30,8 +30,8 @@ const ChecklistSection = ({
   items,
   onChange,
   mode,
-  addLabel = 'Dodaj punkt',
-  addListLabel = 'Dodaj listę zadań',
+  addLabel = 'Dodaj zadanie',
+  addListLabel = 'Dodaj zadanie',
   placeholder = 'Wpisz treść...',
 }: ChecklistSectionProps) => {
   const [addingNew, setAddingNew] = React.useState(false);
@@ -39,7 +39,6 @@ const ChecklistSection = ({
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editText, setEditText] = React.useState('');
   const newInputRef = React.useRef<HTMLInputElement>(null);
-  // Keep fresh ref to avoid stale closure on rapid clicks
   const itemsRef = React.useRef(items);
   itemsRef.current = items;
 
@@ -71,7 +70,7 @@ const ChecklistSection = ({
       text,
       checked: false,
     };
-    onChange([...items, newItem]);
+    onChange([...itemsRef.current, newItem]);
     setNewText('');
     setAddingNew(false);
   };
@@ -86,9 +85,9 @@ const ChecklistSection = ({
     if (!editingId) return;
     const text = editText.trim();
     if (text) {
-      onChange(items.map((item) => (item.id === editingId ? { ...item, text } : item)));
+      onChange(itemsRef.current.map((item) => (item.id === editingId ? { ...item, text } : item)));
     } else {
-      onChange(items.filter((item) => item.id !== editingId));
+      onChange(itemsRef.current.filter((item) => item.id !== editingId));
     }
     setEditingId(null);
     setEditText('');
@@ -96,26 +95,28 @@ const ChecklistSection = ({
 
   if (items.length === 0 && !addingNew) {
     return (
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={() => setAddingNew(true)}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="gap-1.5 bg-white"
       >
         <Plus className="w-4 h-4" />
         {addListLabel}
-      </button>
+      </Button>
     );
   }
 
   return (
     <div className="space-y-1.5">
       {items.map((item, index) => (
-        <div key={item.id} className="flex items-center gap-2 group">
+        <div key={item.id} className="flex items-start gap-2 group">
           {mode === 'execute' ? (
             <Checkbox
               checked={item.checked}
               onCheckedChange={() => handleToggle(item.id)}
-              className="shrink-0"
+              className="shrink-0 mt-0.5"
             />
           ) : (
             <span className="text-sm text-muted-foreground w-5 shrink-0 text-right">
@@ -141,11 +142,10 @@ const ChecklistSection = ({
             />
           ) : (
             <span
-              onClick={() => handleEditStart(item)}
+              onClick={() => (mode === 'execute' ? handleToggle(item.id) : handleEditStart(item))}
               className={cn(
-                'flex-1 text-sm py-0.5',
-                item.checked && mode === 'execute' && 'line-through text-muted-foreground',
-                mode === 'edit' && 'cursor-pointer hover:bg-primary/5 rounded px-1 -mx-1',
+                'flex-1 text-sm py-0.5 cursor-pointer break-words',
+                mode === 'edit' && 'hover:bg-primary/5 rounded px-1 -mx-1',
               )}
             >
               {item.text}
@@ -191,14 +191,16 @@ const ChecklistSection = ({
           />
         </div>
       ) : (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => setAddingNew(true)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
+          className="gap-1.5 mt-1 bg-white"
         >
           <Plus className="w-4 h-4" />
           {addLabel}
-        </button>
+        </Button>
       )}
     </div>
   );

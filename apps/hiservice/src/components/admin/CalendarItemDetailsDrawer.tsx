@@ -1215,6 +1215,28 @@ const CalendarItemDetailsDrawer = ({
                 </div>
               )}
 
+              {/* Checklist */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">Lista zadań</div>
+                <ChecklistSection
+                  items={checklistItems}
+                  mode="execute"
+                  onChange={(newItems) => {
+                    setChecklistItems(newItems);
+                    supabase
+                      .from('calendar_items')
+                      .update({ checklist_items: newItems } as any)
+                      .eq('id', item.id)
+                      .then(({ error }) => {
+                        if (error) {
+                          console.error('Error saving checklist:', error);
+                          setChecklistItems(checklistItems);
+                        }
+                      });
+                  }}
+                />
+              </div>
+
               {/* Notes */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm font-medium">Notatki</div>
@@ -1236,29 +1258,6 @@ const CalendarItemDetailsDrawer = ({
                     {notesValue || 'Kliknij, aby dodać notatkę...'}
                   </p>
                 )}
-              </div>
-
-              {/* Checklist */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium">Lista zadań</div>
-                <ChecklistSection
-                  items={checklistItems}
-                  mode="execute"
-                  onChange={(newItems) => {
-                    setChecklistItems(newItems);
-                    supabase
-                      .from('calendar_items')
-                      .update({ checklist_items: newItems } as any)
-                      .eq('id', item.id)
-                      .then(({ error }) => {
-                        if (error) {
-                          console.error('Error saving checklist:', error);
-                          // Roll back optimistic update on failure
-                          setChecklistItems(checklistItems);
-                        }
-                      });
-                  }}
-                />
               </div>
 
               {/* Services & Products */}
