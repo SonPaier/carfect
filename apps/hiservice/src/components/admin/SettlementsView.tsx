@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { toast } from 'sonner';
 import {
   Search,
@@ -16,6 +17,9 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { validateSameCustomer, buildInvoicePositions } from '@/lib/bulkInvoiceUtils';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -161,6 +165,26 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const [deleting, setDeleting] = useState(false);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const bulk = useBulkSelection();
+
+  const handleBulkInvoice = () => {
+    const selectedItems = items.filter((i) => bulk.isSelected(i.id));
+    if (selectedItems.length === 0) return;
+    const error = validateSameCustomer(selectedItems as any);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    const positions = buildInvoicePositions(selectedItems as any);
+    const customer = selectedItems.find((i) => i.customer_id);
+    setBulkInvoicePositions(positions);
+    setBulkInvoiceCustomer(customer || null);
+    setBulkInvoiceOpen(true);
+  };
+
+  const [bulkInvoiceOpen, setBulkInvoiceOpen] = useState(false);
+  const [bulkInvoicePositions, setBulkInvoicePositions] = useState<any[]>([]);
+  const [bulkInvoiceCustomer, setBulkInvoiceCustomer] = useState<any>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -509,6 +533,12 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
             <Plus className="w-4 h-4 mr-2" />
             Dodaj zlecenie
           </Button>
+          {bulk.count > 0 && (
+            <Button size="sm" onClick={handleBulkInvoice} variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              Wystaw fakturę ({bulk.count})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -545,8 +575,14 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                   className="rounded-lg border border-border bg-card p-3 space-y-2 cursor-pointer active:bg-primary/5"
                   onClick={() => openDetailsDrawer(order)}
                 >
-                  {/* Top row: title + amount */}
+                  {/* Top row: checkbox + title + amount */}
                   <div className="flex items-start justify-between gap-2">
+                    <div className="pt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={bulk.isSelected(order.id)}
+                        onCheckedChange={() => bulk.toggle(order.id)}
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{order.title || '—'}</p>
                       <p className="text-xs text-muted-foreground">{order.customer_name || '—'}</p>
@@ -706,6 +742,12 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
           <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[40px] px-2">
+                  <Checkbox
+                    checked={bulk.selectionState(paginatedItems.map((i) => i.id)) === 'all' ? true : bulk.selectionState(paginatedItems.map((i) => i.id)) === 'some' ? 'indeterminate' : false}
+                    onCheckedChange={() => bulk.toggleAll(paginatedItems.map((i) => i.id))}
+                  />
+                </TableHead>
                 <TableHead
                   className="w-[8%] cursor-pointer select-none"
                   onClick={() => handleSort('order_number')}
@@ -802,6 +844,12 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                       className="group cursor-pointer"
                       onClick={() => openDetailsDrawer(order)}
                     >
+                      <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={bulk.isSelected(order.id)}
+                          onCheckedChange={() => bulk.toggle(order.id)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm">{formatOrderNumber(order)}</TableCell>
                       <TableCell className="text-sm">
                         <div className="line-clamp-2">{order.title || '—'}</div>
@@ -1045,6 +1093,40 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
         onSuccess={() => {
           queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
           queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
+        }}
+      />
+
+      {/* Bulk Invoice Drawer */}
+      <CreateInvoiceDrawer
+        open={bulkInvoiceOpen}
+        onClose={() => {
+          setBulkInvoiceOpen(false);
+          setBulkInvoicePositions([]);
+          setBulkInvoiceCustomer(null);
+        }}
+        instanceId={instanceId}
+        customerId={bulkInvoiceCustomer?.customer_id}
+        customerName={bulkInvoiceCustomer?.customer_name}
+        customerEmail={bulkInvoiceCustomer?.customer_email}
+        positions={bulkInvoicePositions}
+        supabaseClient={supabase}
+        onSuccess={async () => {
+          // Link invoice to all selected items + update payment status
+          // The invoice was just created — we need to find it and link to all selected items
+          const selectedItems = items.filter((i) => bulk.isSelected(i.id));
+          // Update payment_status on all selected items
+          await Promise.all(
+            selectedItems.map((item) =>
+              supabase
+                .from('calendar_items')
+                .update({ payment_status: 'invoiced' } as any)
+                .eq('id', item.id),
+            ),
+          );
+          bulk.clear();
+          queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+          queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
+          toast.success(`Faktura wystawiona dla ${selectedItems.length} zleceń`);
         }}
       />
 
