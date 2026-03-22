@@ -123,7 +123,7 @@ const EmployeeOrdersDrawer = ({ open, onOpenChange, employeeId, employeeName, in
         customer_name: data.customer_name, customer_phone: data.customer_phone,
         customer_email: data.customer_email,
         photo_urls: Array.isArray(data.photo_urls) ? data.photo_urls as string[] : [],
-        checklist_items: (data as any).checklist_items || [],
+        checklist_items: (data as Record<string, unknown>).checklist_items as CalendarItem['checklist_items'] || [],
       };
       setDetailItem(calendarItem);
       setDetailOpen(true);

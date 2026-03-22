@@ -64,6 +64,7 @@ interface CalendarItemRow {
   photo_urls: unknown;
   end_date: string | null;
   order_number: string | null;
+  checklist_items?: Array<{ id: string; text: string; checked: boolean }> | null;
 }
 
 interface InvoiceRow {
@@ -488,7 +489,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       payment_status: order.payment_status,
       photo_urls: Array.isArray(order.photo_urls) ? (order.photo_urls as string[]) : [],
       end_date: order.end_date,
-      checklist_items: (order as any).checklist_items || [],
+      checklist_items: order.checklist_items || [],
     };
     setDetailsItem(calendarItem);
     setDetailsDrawerOpen(true);
