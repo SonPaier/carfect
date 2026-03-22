@@ -1027,7 +1027,6 @@ const Dashboard = () => {
             onClose={() => {
               setDetailsOpen(false);
               setSelectedItem(null);
-              fetchItems();
             }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
@@ -1136,7 +1135,6 @@ const Dashboard = () => {
             onClose={() => {
               setDetailsOpen(false);
               setSelectedItem(null);
-              fetchItems();
             }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
@@ -1260,7 +1258,6 @@ const Dashboard = () => {
             setMapOrderPrefill({});
             setInitialProjectId(undefined);
             setFollowUpSourceItem(null);
-            fetchItems();
           }}
           instanceId={instanceId}
           columns={calendarColumns}
@@ -1305,7 +1302,6 @@ const Dashboard = () => {
         onClose={() => {
           setDashboardDetailsOpen(false);
           setDashboardSelectedItem(null);
-          fetchItems();
         }}
         columns={calendarColumns}
         onDelete={handleDeleteItem}
