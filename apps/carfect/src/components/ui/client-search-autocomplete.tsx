@@ -18,6 +18,7 @@ export interface ClientSearchValue {
   id: string;
   name: string;
   phone: string;
+  email?: string | null;
   has_no_show?: boolean;
 }
 
@@ -169,6 +170,7 @@ const ClientSearchAutocomplete = ({
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
+      email: customer.email,
       has_no_show: customer.has_no_show,
     });
 

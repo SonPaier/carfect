@@ -147,13 +147,20 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
     }));
 
     // Phone search: debounced lookup in customers table
+    const suppressPhoneSearchRef = useRef(false);
+
     useEffect(() => {
+      if (suppressPhoneSearchRef.current) {
+        suppressPhoneSearchRef.current = false;
+        return;
+      }
       const digits = customerData.phone.replace(/\D/g, '');
       if (digits.length < 3) {
         setPhoneResults([]);
         setShowPhoneDropdown(false);
         return;
       }
+      let cancelled = false;
       const timer = setTimeout(async () => {
         const { data } = await supabase
           .from('customers')
@@ -162,6 +169,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
           .or(`phone.ilike.%${digits}%`)
           .order('updated_at', { ascending: false })
           .limit(5);
+        if (cancelled) return;
         if (data && data.length > 0) {
           setPhoneResults(data);
           setShowPhoneDropdown(true);
@@ -170,7 +178,10 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
           setShowPhoneDropdown(false);
         }
       }, 300);
-      return () => clearTimeout(timer);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
     }, [customerData.phone, instanceId]);
 
     // Close phone dropdown on outside click
@@ -328,12 +339,14 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                 value={customerData.name}
                 onChange={(val) => onCustomerChange({ name: val })}
                 onSelect={(customer: ClientSearchValue) => {
+                  suppressPhoneSearchRef.current = true;
                   onCustomerChange({
                     name: customer.name,
                     phone: customer.phone,
+                    email: customer.email || '',
                   });
                 }}
-                onClear={() => onCustomerChange({ name: '', phone: '', email: '' })}
+                onClear={() => onCustomerChange({ name: '', phone: '' })}
                 className={hasNameError ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
               {validationErrors?.name && (
