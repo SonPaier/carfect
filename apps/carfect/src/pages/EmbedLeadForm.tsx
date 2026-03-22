@@ -11,6 +11,7 @@ import { CarSearchAutocomplete, CarSearchValue } from '@/components/ui/car-searc
 import { CarModelsProvider } from '@/contexts/CarModelsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { formatDurationMonths } from '@shared/utils';
 
 interface EmbedConfig {
   branding: {
@@ -61,14 +62,6 @@ interface FormData {
   gdprAccepted: boolean;
 }
 
-// Helper to format duration in Polish
-const formatDuration = (months: number): string => {
-  const years = months / 12;
-  if (years === 1) return '1 rok';
-  if (years < 5) return `${years} lata`;
-  return `${years} lat`;
-};
-
 function EmbedLeadFormContent() {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
@@ -78,7 +71,7 @@ function EmbedLeadFormContent() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
-  
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -136,7 +129,7 @@ function EmbedLeadFormContent() {
     const sendHeight = () => {
       window.parent.postMessage(
         { type: 'carfect-resize', height: document.body.scrollHeight },
-        '*'
+        '*',
       );
     };
     window.addEventListener('load', sendHeight);
@@ -156,13 +149,13 @@ function EmbedLeadFormContent() {
     if (!formData.name.trim()) {
       errors.name = t('embed.validation.nameRequired');
     }
-    
+
     if (!formData.email.trim()) {
       errors.email = t('embed.validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = t('embed.validation.emailInvalid');
     }
-    
+
     // Phone validation - minimum 9 digits
     const phoneDigits = formData.phone.replace(/\D/g, '');
     if (!formData.phone.trim()) {
@@ -170,40 +163,40 @@ function EmbedLeadFormContent() {
     } else if (phoneDigits.length < 9) {
       errors.phone = 'Numer telefonu musi mieć minimum 9 cyfr';
     }
-    
+
     if (!formData.vehicleModel.trim()) {
       errors.vehicle = t('embed.validation.vehicleRequired');
     }
-    
+
     if (!formData.paintColor.trim()) {
       errors.paintColor = 'Kolor lakieru jest wymagany';
     }
-    
+
     if (!formData.paintFinish) {
       errors.paintFinish = 'Wybierz rodzaj lakieru';
     }
-    
+
     if (formData.selectedTemplates.length === 0) {
       errors.templates = t('embed.validation.packageRequired');
     }
-    
+
     if (!formData.gdprAccepted) {
       errors.gdpr = t('embed.gdprRequired');
     }
 
     setValidationErrors(errors);
-    
+
     // Scroll to top if there are errors
     if (Object.keys(errors).length > 0) {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
+
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setSubmitting(true);
@@ -252,18 +245,18 @@ function EmbedLeadFormContent() {
   };
 
   const toggleTemplate = (templateId: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const isCurrentlySelected = prev.selectedTemplates.includes(templateId);
       const newSelectedTemplates = isCurrentlySelected
-        ? prev.selectedTemplates.filter(id => id !== templateId)
+        ? prev.selectedTemplates.filter((id) => id !== templateId)
         : [...prev.selectedTemplates, templateId];
-      
+
       // Clear duration selection if template is deselected
       const newDurationSelections = { ...prev.durationSelections };
       if (isCurrentlySelected) {
         delete newDurationSelections[templateId];
       }
-      
+
       return {
         ...prev,
         selectedTemplates: newSelectedTemplates,
@@ -271,12 +264,12 @@ function EmbedLeadFormContent() {
       };
     });
     if (validationErrors.templates) {
-      setValidationErrors(prev => ({ ...prev, templates: '' }));
+      setValidationErrors((prev) => ({ ...prev, templates: '' }));
     }
   };
 
   const setDurationSelection = (templateId: string, duration: number | null) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       durationSelections: {
         ...prev.durationSelections,
@@ -286,16 +279,16 @@ function EmbedLeadFormContent() {
   };
 
   const toggleExtra = (extraId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       selectedExtras: prev.selectedExtras.includes(extraId)
-        ? prev.selectedExtras.filter(id => id !== extraId)
+        ? prev.selectedExtras.filter((id) => id !== extraId)
         : [...prev.selectedExtras, extraId],
     }));
   };
 
   const toggleDescription = (templateId: string) => {
-    setExpandedDescriptions(prev => {
+    setExpandedDescriptions((prev) => {
       const next = new Set(prev);
       if (next.has(templateId)) {
         next.delete(templateId);
@@ -308,20 +301,20 @@ function EmbedLeadFormContent() {
 
   const handleCarSelect = (value: CarSearchValue) => {
     if (!value) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         vehicleModel: '',
         vehicleModelId: null,
         carSize: '',
       }));
     } else if ('type' in value && value.type === 'custom') {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         vehicleModel: value.label,
         vehicleModelId: null,
       }));
     } else if ('id' in value) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         vehicleModel: value.label,
         vehicleModelId: value.id,
@@ -329,7 +322,7 @@ function EmbedLeadFormContent() {
       }));
     }
     if (validationErrors.vehicle) {
-      setValidationErrors(prev => ({ ...prev, vehicle: '' }));
+      setValidationErrors((prev) => ({ ...prev, vehicle: '' }));
     }
   };
 
@@ -353,13 +346,13 @@ function EmbedLeadFormContent() {
 
   if (submitted) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center p-4"
         style={{ backgroundColor: config?.branding.bg_color || '#f8fafc' }}
       >
         <div className="text-center space-y-4">
-          <CheckCircle2 
-            className="w-16 h-16 mx-auto" 
+          <CheckCircle2
+            className="w-16 h-16 mx-auto"
             style={{ color: config?.branding.primary_color || '#2563eb' }}
           />
           <h2 className="text-2xl font-bold">{t('embed.successTitle')}</h2>
@@ -375,7 +368,7 @@ function EmbedLeadFormContent() {
   const sectionStyle = { backgroundColor: sectionBgColor, color: sectionTextColor };
 
   return (
-    <div 
+    <div
       className="min-h-screen p-4 md:p-6"
       style={{ backgroundColor: config?.branding.bg_color || '#f8fafc' }}
     >
@@ -402,13 +395,13 @@ function EmbedLeadFormContent() {
           {/* Customer Data Section */}
           <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <h2 className="font-semibold text-lg">{t('embed.customerSection')}</h2>
-            
+
             <div className="space-y-2">
               <Label htmlFor="name">{t('common.name')} *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="Jan Kowalski"
                 className={validationErrors.name ? 'border-destructive' : ''}
               />
@@ -424,9 +417,9 @@ function EmbedLeadFormContent() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, email: e.target.value }));
+                  setFormData((prev) => ({ ...prev, email: e.target.value }));
                   if (validationErrors.email) {
-                    setValidationErrors(prev => ({ ...prev, email: '' }));
+                    setValidationErrors((prev) => ({ ...prev, email: '' }));
                   }
                 }}
                 placeholder="jan@example.com"
@@ -444,9 +437,9 @@ function EmbedLeadFormContent() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, phone: e.target.value }));
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }));
                   if (validationErrors.phone) {
-                    setValidationErrors(prev => ({ ...prev, phone: '' }));
+                    setValidationErrors((prev) => ({ ...prev, phone: '' }));
                   }
                 }}
                 placeholder="+48 123 456 789"
@@ -461,7 +454,7 @@ function EmbedLeadFormContent() {
           {/* Vehicle Section */}
           <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <h2 className="font-semibold text-lg">{t('embed.vehicleSection')}</h2>
-            
+
             <div className="space-y-2">
               <Label>{t('reservations.carModel')} *</Label>
               <CarSearchAutocomplete
@@ -480,9 +473,9 @@ function EmbedLeadFormContent() {
                 id="paintColor"
                 value={formData.paintColor}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, paintColor: e.target.value }));
+                  setFormData((prev) => ({ ...prev, paintColor: e.target.value }));
                   if (validationErrors.paintColor) {
-                    setValidationErrors(prev => ({ ...prev, paintColor: '' }));
+                    setValidationErrors((prev) => ({ ...prev, paintColor: '' }));
                   }
                 }}
                 placeholder="np. Czarny metalik, Biały perłowy"
@@ -502,9 +495,9 @@ function EmbedLeadFormContent() {
                   className="flex-1"
                   style={formData.paintFinish === 'gloss' ? { backgroundColor: primaryColor } : {}}
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, paintFinish: 'gloss' }));
+                    setFormData((prev) => ({ ...prev, paintFinish: 'gloss' }));
                     if (validationErrors.paintFinish) {
-                      setValidationErrors(prev => ({ ...prev, paintFinish: '' }));
+                      setValidationErrors((prev) => ({ ...prev, paintFinish: '' }));
                     }
                   }}
                 >
@@ -516,9 +509,9 @@ function EmbedLeadFormContent() {
                   className="flex-1"
                   style={formData.paintFinish === 'matte' ? { backgroundColor: primaryColor } : {}}
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, paintFinish: 'matte' }));
+                    setFormData((prev) => ({ ...prev, paintFinish: 'matte' }));
                     if (validationErrors.paintFinish) {
-                      setValidationErrors(prev => ({ ...prev, paintFinish: '' }));
+                      setValidationErrors((prev) => ({ ...prev, paintFinish: '' }));
                     }
                   }}
                 >
@@ -536,7 +529,7 @@ function EmbedLeadFormContent() {
                 id="mileage"
                 type="number"
                 value={formData.mileage}
-                onChange={(e) => setFormData(prev => ({ ...prev, mileage: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, mileage: e.target.value }))}
                 placeholder={t('embed.mileagePlaceholder')}
               />
             </div>
@@ -548,7 +541,7 @@ function EmbedLeadFormContent() {
               <h2 className="font-semibold text-lg">{t('embed.packagesSection')}</h2>
               <p className="text-sm opacity-70">{t('embed.packagesHint')}</p>
             </div>
-            
+
             <div className="grid gap-3">
               {config?.templates.map((template) => {
                 const isSelected = formData.selectedTemplates.includes(template.id);
@@ -559,20 +552,28 @@ function EmbedLeadFormContent() {
                       type="button"
                       onClick={() => toggleTemplate(template.id)}
                       className={cn(
-                        "w-full text-left p-4 rounded-lg border-2 transition-all",
-                        isSelected 
-                          ? "border-primary bg-primary/5" 
-                          : "border-border hover:border-primary/50"
+                        'w-full text-left p-4 rounded-lg border-2 transition-all',
+                        isSelected
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50',
                       )}
-                      style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` } : {}}
+                      style={
+                        isSelected
+                          ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` }
+                          : {}
+                      }
                     >
                       <div className="flex items-start gap-3">
-                        <div 
+                        <div
                           className={cn(
-                            "w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
-                            isSelected ? "border-primary bg-primary" : "border-muted-foreground"
+                            'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
+                            isSelected ? 'border-primary bg-primary' : 'border-muted-foreground',
                           )}
-                          style={isSelected ? { borderColor: primaryColor, backgroundColor: primaryColor } : {}}
+                          style={
+                            isSelected
+                              ? { borderColor: primaryColor, backgroundColor: primaryColor }
+                              : {}
+                          }
                         >
                           {isSelected && <Check className="w-3 h-3 text-white" />}
                         </div>
@@ -580,7 +581,10 @@ function EmbedLeadFormContent() {
                           <div className="flex items-center justify-between gap-2">
                             <p className="font-medium">{template.name}</p>
                             {template.price_from && (
-                              <span className="text-sm font-medium whitespace-nowrap" style={{ color: primaryColor }}>
+                              <span
+                                className="text-sm font-medium whitespace-nowrap"
+                                style={{ color: primaryColor }}
+                              >
                                 od {template.price_from} zł
                               </span>
                             )}
@@ -588,90 +592,116 @@ function EmbedLeadFormContent() {
                         </div>
                       </div>
                     </button>
-                    
+
                     {/* Duration selection - only show if template is selected and has durations */}
-                    {isSelected && template.available_durations && template.available_durations.length > 0 && (
-                      <div className="ml-8 p-3 bg-muted/30 rounded-lg space-y-2">
-                        <p className="text-sm font-medium">Pakiet powłoki:</p>
-                        <div className="grid gap-1.5">
-                          {template.available_durations.map((months) => (
+                    {isSelected &&
+                      template.available_durations &&
+                      template.available_durations.length > 0 && (
+                        <div className="ml-8 p-3 bg-muted/30 rounded-lg space-y-2">
+                          <p className="text-sm font-medium">Pakiet powłoki:</p>
+                          <div className="grid gap-1.5">
+                            {template.available_durations.map((months) => (
+                              <label
+                                key={months}
+                                className={cn(
+                                  'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors',
+                                  formData.durationSelections[template.id] === months
+                                    ? 'bg-primary/10'
+                                    : 'hover:bg-hover-strong',
+                                )}
+                                style={
+                                  formData.durationSelections[template.id] === months
+                                    ? { backgroundColor: `${primaryColor}15` }
+                                    : {}
+                                }
+                              >
+                                <div
+                                  className={cn(
+                                    'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                                    formData.durationSelections[template.id] === months
+                                      ? 'border-primary'
+                                      : 'border-muted-foreground',
+                                  )}
+                                  style={
+                                    formData.durationSelections[template.id] === months
+                                      ? { borderColor: primaryColor }
+                                      : {}
+                                  }
+                                >
+                                  {formData.durationSelections[template.id] === months && (
+                                    <div
+                                      className="w-2 h-2 rounded-full bg-primary"
+                                      style={{ backgroundColor: primaryColor }}
+                                    />
+                                  )}
+                                </div>
+                                <span className="text-sm">{formatDurationMonths(months)}</span>
+                                <input
+                                  type="radio"
+                                  name={`duration-${template.id}`}
+                                  value={months}
+                                  checked={formData.durationSelections[template.id] === months}
+                                  onChange={() => setDurationSelection(template.id, months)}
+                                  className="sr-only"
+                                />
+                              </label>
+                            ))}
+                            {/* "Nie wiem" option */}
                             <label
-                              key={months}
                               className={cn(
-                                "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                formData.durationSelections[template.id] === months
-                                  ? "bg-primary/10"
-                                   : "hover:bg-hover-strong"
+                                'flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors',
+                                formData.durationSelections[template.id] === null &&
+                                  template.id in formData.durationSelections
+                                  ? 'bg-primary/10'
+                                  : 'hover:bg-hover-strong',
                               )}
-                              style={formData.durationSelections[template.id] === months ? { backgroundColor: `${primaryColor}15` } : {}}
+                              style={
+                                formData.durationSelections[template.id] === null &&
+                                template.id in formData.durationSelections
+                                  ? { backgroundColor: `${primaryColor}15` }
+                                  : {}
+                              }
                             >
                               <div
                                 className={cn(
-                                  "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                                  formData.durationSelections[template.id] === months
-                                    ? "border-primary"
-                                    : "border-muted-foreground"
+                                  'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                                  formData.durationSelections[template.id] === null &&
+                                    template.id in formData.durationSelections
+                                    ? 'border-primary'
+                                    : 'border-muted-foreground',
                                 )}
-                                style={formData.durationSelections[template.id] === months ? { borderColor: primaryColor } : {}}
+                                style={
+                                  formData.durationSelections[template.id] === null &&
+                                  template.id in formData.durationSelections
+                                    ? { borderColor: primaryColor }
+                                    : {}
+                                }
                               >
-                                {formData.durationSelections[template.id] === months && (
-                                  <div
-                                    className="w-2 h-2 rounded-full bg-primary"
-                                    style={{ backgroundColor: primaryColor }}
-                                  />
-                                )}
+                                {formData.durationSelections[template.id] === null &&
+                                  template.id in formData.durationSelections && (
+                                    <div
+                                      className="w-2 h-2 rounded-full bg-primary"
+                                      style={{ backgroundColor: primaryColor }}
+                                    />
+                                  )}
                               </div>
-                              <span className="text-sm">{formatDuration(months)}</span>
+                              <span className="text-sm">Nie wiem, proszę o propozycję</span>
                               <input
                                 type="radio"
                                 name={`duration-${template.id}`}
-                                value={months}
-                                checked={formData.durationSelections[template.id] === months}
-                                onChange={() => setDurationSelection(template.id, months)}
+                                value="null"
+                                checked={
+                                  formData.durationSelections[template.id] === null &&
+                                  template.id in formData.durationSelections
+                                }
+                                onChange={() => setDurationSelection(template.id, null)}
                                 className="sr-only"
                               />
                             </label>
-                          ))}
-                          {/* "Nie wiem" option */}
-                          <label
-                            className={cn(
-                              "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                              formData.durationSelections[template.id] === null && template.id in formData.durationSelections
-                                ? "bg-primary/10"
-                                : "hover:bg-hover-strong"
-                            )}
-                            style={formData.durationSelections[template.id] === null && template.id in formData.durationSelections ? { backgroundColor: `${primaryColor}15` } : {}}
-                          >
-                            <div
-                              className={cn(
-                                "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                                formData.durationSelections[template.id] === null && template.id in formData.durationSelections
-                                  ? "border-primary"
-                                  : "border-muted-foreground"
-                              )}
-                              style={formData.durationSelections[template.id] === null && template.id in formData.durationSelections ? { borderColor: primaryColor } : {}}
-                            >
-                              {formData.durationSelections[template.id] === null && template.id in formData.durationSelections && (
-                                <div
-                                  className="w-2 h-2 rounded-full bg-primary"
-                                  style={{ backgroundColor: primaryColor }}
-                                />
-                              )}
-                            </div>
-                            <span className="text-sm">Nie wiem, proszę o propozycję</span>
-                            <input
-                              type="radio"
-                              name={`duration-${template.id}`}
-                              value="null"
-                              checked={formData.durationSelections[template.id] === null && template.id in formData.durationSelections}
-                              onChange={() => setDurationSelection(template.id, null)}
-                              className="sr-only"
-                            />
-                          </label>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
+                      )}
+
                     {template.description && (
                       <div className="mt-1 ml-8">
                         <button
@@ -710,7 +740,7 @@ function EmbedLeadFormContent() {
                 <h2 className="font-semibold text-lg">Dodatki</h2>
                 <p className="text-sm opacity-70">Opcjonalne usługi dodatkowe</p>
               </div>
-              
+
               <div className="grid gap-2">
                 {config.extras.map((extra) => {
                   const isSelected = formData.selectedExtras.includes(extra.id);
@@ -720,19 +750,27 @@ function EmbedLeadFormContent() {
                       type="button"
                       onClick={() => toggleExtra(extra.id)}
                       className={cn(
-                        "w-full text-left p-3 rounded-lg border transition-all flex items-center gap-3",
-                        isSelected 
-                          ? "border-primary bg-primary/5" 
-                          : "border-border hover:border-primary/50"
+                        'w-full text-left p-3 rounded-lg border transition-all flex items-center gap-3',
+                        isSelected
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50',
                       )}
-                      style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` } : {}}
+                      style={
+                        isSelected
+                          ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` }
+                          : {}
+                      }
                     >
-                      <div 
+                      <div
                         className={cn(
-                          "w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0",
-                          isSelected ? "border-primary bg-primary" : "border-muted-foreground"
+                          'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                          isSelected ? 'border-primary bg-primary' : 'border-muted-foreground',
                         )}
-                        style={isSelected ? { borderColor: primaryColor, backgroundColor: primaryColor } : {}}
+                        style={
+                          isSelected
+                            ? { borderColor: primaryColor, backgroundColor: primaryColor }
+                            : {}
+                        }
                       >
                         {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
@@ -750,10 +788,12 @@ function EmbedLeadFormContent() {
               <h2 className="font-semibold text-lg">Planowany termin realizacji</h2>
               <p className="text-sm opacity-70">Kiedy chciałbyś zrealizować usługę?</p>
             </div>
-            
-            <Select 
-              value={formData.plannedTimeframe} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, plannedTimeframe: value }))}
+
+            <Select
+              value={formData.plannedTimeframe}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, plannedTimeframe: value }))
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Wybierz (opcjonalne)" />
@@ -773,14 +813,14 @@ function EmbedLeadFormContent() {
               <h2 className="font-semibold text-lg">{t('embed.budgetSection')}</h2>
               <p className="text-sm opacity-70">{t('embed.budgetHint')}</p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="budget">{t('embed.budgetLabel')}</Label>
               <Input
                 id="budget"
                 type="number"
                 value={formData.budget}
-                onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, budget: e.target.value }))}
                 placeholder={t('embed.budgetPlaceholder')}
               />
             </div>
@@ -790,7 +830,7 @@ function EmbedLeadFormContent() {
               <Textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder={t('embed.notesPlaceholder')}
                 rows={3}
               />
@@ -804,17 +844,14 @@ function EmbedLeadFormContent() {
                 id="gdpr"
                 checked={formData.gdprAccepted}
                 onCheckedChange={(checked) => {
-                  setFormData(prev => ({ ...prev, gdprAccepted: !!checked }));
+                  setFormData((prev) => ({ ...prev, gdprAccepted: !!checked }));
                   if (validationErrors.gdpr) {
-                    setValidationErrors(prev => ({ ...prev, gdpr: '' }));
+                    setValidationErrors((prev) => ({ ...prev, gdpr: '' }));
                   }
                 }}
                 className="mt-1"
               />
-              <Label 
-                htmlFor="gdpr" 
-                className="text-sm opacity-70 font-normal cursor-pointer"
-              >
+              <Label htmlFor="gdpr" className="text-sm opacity-70 font-normal cursor-pointer">
                 <span className="text-red-500 font-medium">*</span>{' '}
                 {t('embed.gdprLabel', {
                   companyName: config?.instance_info.name || '',

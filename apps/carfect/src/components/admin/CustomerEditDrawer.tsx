@@ -10,7 +10,7 @@ import { Checkbox } from '@shared/ui';
 import { Tabs, TabsContent } from '@shared/ui';
 import { AdminTabsList, AdminTabsTrigger } from './AdminTabsList';
 import { supabase } from '@/integrations/supabase/client';
-import { useIsMobile } from '@shared/ui';
+import { useIsMobile, EmptyState } from '@shared/ui';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { normalizePhone } from '@shared/utils';
@@ -45,6 +45,7 @@ interface CustomerEditDrawerProps {
   open: boolean;
   onClose: () => void;
   onCustomerUpdated?: () => void;
+  onOpenReservation?: (reservationId: string) => void;
   isAddMode?: boolean;
 }
 
@@ -54,6 +55,7 @@ const CustomerEditDrawer = ({
   open,
   onClose,
   onCustomerUpdated,
+  onOpenReservation,
   isAddMode = false,
 }: CustomerEditDrawerProps) => {
   const { t } = useTranslation();
@@ -268,6 +270,7 @@ const CustomerEditDrawer = ({
     if (vehicle.id) {
       try {
         await supabase.from('customer_vehicles').delete().eq('id', vehicle.id);
+        onCustomerUpdated?.();
       } catch (err) {
         console.error('Error deleting vehicle:', err);
         toast.error('Błąd usuwania pojazdu');
@@ -354,12 +357,32 @@ const CustomerEditDrawer = ({
           customerId = newCustomer?.id;
         }
       } else if (customer) {
+        const newPhone = normalizePhone(editPhone.trim());
+        const oldPhone = normalizePhone(customer.phone);
+
+        // Check uniqueness if phone changed
+        if (newPhone !== oldPhone) {
+          const { data: phoneTaken } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('instance_id', instanceId)
+            .eq('phone', newPhone)
+            .neq('id', customer.id)
+            .maybeSingle();
+
+          if (phoneTaken) {
+            toast.error(t('customers.phoneAlreadyExists'));
+            setSaving(false);
+            return;
+          }
+        }
+
         // Update existing customer
         const { error } = await supabase
           .from('customers')
           .update({
             name: editName.trim(),
-            phone: normalizePhone(editPhone.trim()),
+            phone: newPhone,
             email: editEmail.trim() || null,
             notes: editNotes.trim() || null,
             company: editCompany.trim() || null,
@@ -370,6 +393,16 @@ const CustomerEditDrawer = ({
           .eq('id', customer.id);
 
         if (error) throw error;
+
+        // Cascade phone change to vehicles
+        if (newPhone !== oldPhone) {
+          await supabase
+            .from('customer_vehicles')
+            .update({ phone: newPhone })
+            .eq('customer_id', customer.id)
+            .eq('instance_id', instanceId);
+        }
+
         customerId = customer.id;
       }
 
@@ -492,7 +525,7 @@ const CustomerEditDrawer = ({
     <>
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent
-          className="w-full sm:max-w-md p-0 flex flex-col"
+          className="w-full sm:max-w-md p-0 flex flex-col bg-white"
           hideCloseButton
           onFocusOutside={(e) => e.preventDefault()}
         >
@@ -735,15 +768,20 @@ const CustomerEditDrawer = ({
                         {t('common.loading')}
                       </div>
                     ) : visits.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
-                        {t('customers.noVisitHistory')}
-                      </div>
+                      <EmptyState icon={Clock} title={t('customers.noVisitHistory')} />
                     ) : (
                       <div className="space-y-2">
                         {visits.map((visit) => (
-                          <div
+                          <button
+                            type="button"
                             key={visit.id}
-                            className="p-3 bg-white dark:bg-card rounded-lg border border-border shadow-sm"
+                            onClick={() => {
+                              if (onOpenReservation) {
+                                onClose();
+                                onOpenReservation(visit.id);
+                              }
+                            }}
+                            className="w-full text-left p-3 bg-white dark:bg-card rounded-lg border border-border shadow-sm hover:bg-hover transition-colors cursor-pointer"
                           >
                             <div className="flex items-center justify-between mb-1">
                               <div className="font-medium text-sm">
@@ -771,7 +809,7 @@ const CustomerEditDrawer = ({
                                 {getStatusLabel(visit.status)}
                               </span>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     )}

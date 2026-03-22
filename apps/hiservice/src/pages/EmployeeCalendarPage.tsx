@@ -68,6 +68,7 @@ const EmployeeCalendarPage = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditingCalendarItem | null>(null);
+  const [followUpSourceItem, setFollowUpSourceItem] = useState<CalendarItem | null>(null);
   const [addBreakOpen, setAddBreakOpen] = useState(false);
   const [newItemData, setNewItemData] = useState({ columnId: '', date: '', time: '' });
   const [newBreakData, setNewBreakData] = useState({ columnId: '', date: '', time: '' });
@@ -425,6 +426,7 @@ const EmployeeCalendarPage = () => {
     const updatePayload: Record<string, any> = { status: newStatus };
     if (newStatus === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
     if (newStatus === 'completed') updatePayload.work_ended_at = new Date().toISOString();
+    if (newStatus === 'unfinished') updatePayload.work_ended_at = new Date().toISOString();
     const { error } = await supabase
       .from('calendar_items')
       .update(updatePayload as any)
@@ -487,6 +489,13 @@ const EmployeeCalendarPage = () => {
     }
   };
 
+  const handleFollowUpRequest = (item: CalendarItem) => {
+    // Don't change status yet — only after follow-up is saved
+    setDetailsOpen(false);
+    setSelectedItem(null);
+    setTimeout(() => setFollowUpSourceItem(item), 300);
+  };
+
   const handleEditItem = (item: CalendarItem) => {
     if (!allowedActions.edit_item) return;
     setEditingItem({
@@ -506,6 +515,7 @@ const EmployeeCalendarPage = () => {
       admin_notes: item.admin_notes,
       price: item.price,
       priority: (item as any).priority,
+      status: item.status,
     });
     setDetailsOpen(false);
     setAddItemOpen(true);
@@ -641,6 +651,7 @@ const EmployeeCalendarPage = () => {
                 onStatusChange={handleStatusChange}
                 onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
                 onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
+                onFollowUpRequest={handleFollowUpRequest}
                 canEditServices={!!allowedActions.edit_services}
                 hidePrices={
                   config?.visible_fields && (config.visible_fields as any).price === false
@@ -787,6 +798,7 @@ const EmployeeCalendarPage = () => {
                     onStatusChange={handleStatusChange}
                     onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
                     onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
+                    onFollowUpRequest={handleFollowUpRequest}
                     canEditServices={!!allowedActions.edit_services}
                     hidePrices={
                       config?.visible_fields && (config.visible_fields as any).price === false
@@ -898,21 +910,24 @@ const EmployeeCalendarPage = () => {
       {/* Add/Edit order dialog - global so it works also from "Mój dzień" */}
       {instanceId && (
         <AddCalendarItemDialog
-          open={addItemOpen}
+          open={addItemOpen || !!followUpSourceItem}
           onClose={() => {
             setAddItemOpen(false);
             setEditingItem(null);
+            setFollowUpSourceItem(null);
           }}
           instanceId={instanceId}
           columns={calendarColumns}
           onSuccess={() => {
             fetchItems();
             setEditingItem(null);
+            setFollowUpSourceItem(null);
           }}
           editingItem={editingItem}
           initialDate={newItemData.date}
           initialTime={newItemData.time}
           initialColumnId={newItemData.columnId}
+          followUpSourceItem={followUpSourceItem}
         />
       )}
 
@@ -956,6 +971,7 @@ const EmployeeCalendarPage = () => {
           onStatusChange={handleStatusChange}
           onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
           onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
+          onFollowUpRequest={handleFollowUpRequest}
           canEditServices={!!allowedActions.edit_services}
           hidePrices={config?.visible_fields && (config.visible_fields as any).price === false}
           hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}

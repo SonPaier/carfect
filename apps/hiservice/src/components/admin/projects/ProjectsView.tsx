@@ -86,6 +86,8 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; dotClass: string }> =
   in_progress: { label: 'W realizacji', dotClass: 'bg-blue-500' },
   completed: { label: 'Zakończony', dotClass: 'bg-emerald-500' },
   cancelled: { label: 'Anulowany', dotClass: 'bg-red-400' },
+  unfinished: { label: 'Nieukończone', dotClass: 'bg-purple-500' },
+  follow_up: { label: 'Ponowna wizyta', dotClass: 'bg-purple-400' },
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -406,9 +408,8 @@ const ProjectsView = ({
     queryClient.setQueryData(['projects', instanceId], (old: ProjectRow[] | undefined) =>
       old ? old.filter((p) => p.id !== id) : old,
     );
-    queryClient.setQueryData(
-      ['projects-orders', instanceId],
-      (old: ProjectOrder[] | undefined) => (old ? old.filter((o) => o.project_id !== id) : old),
+    queryClient.setQueryData(['projects-orders', instanceId], (old: ProjectOrder[] | undefined) =>
+      old ? old.filter((o) => o.project_id !== id) : old,
     );
 
     try {
@@ -419,9 +420,7 @@ const ProjectsView = ({
         .eq('project_id', id);
       if (detachError) throw detachError;
 
-      const { error } = await (supabase.from('projects' as any) as any)
-        .delete()
-        .eq('id', id);
+      const { error } = await (supabase.from('projects' as any) as any).delete().eq('id', id);
       if (error) throw error;
 
       toast.success('Projekt usunięty');
@@ -452,7 +451,10 @@ const ProjectsView = ({
 
   const invalidateNoRefetch = () => {
     queryClient.invalidateQueries({ queryKey: ['projects', instanceId], refetchType: 'none' });
-    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId], refetchType: 'none' });
+    queryClient.invalidateQueries({
+      queryKey: ['projects-orders', instanceId],
+      refetchType: 'none',
+    });
   };
 
   const handleOrderClick = (orderId: string) => {
@@ -524,7 +526,9 @@ const ProjectsView = ({
             (supabase.from('calendar_items') as any)
               .update({ stage_number: u.stage_number })
               .eq('id', u.id)
-              .then(({ error }: any) => { if (error) throw error; }),
+              .then(({ error }: any) => {
+                if (error) throw error;
+              }),
           ),
         );
       } catch (error) {

@@ -18,7 +18,7 @@ export default function FooterServer({ settings }: FooterServerProps) {
   return (
     <footer id="contact" className="bg-black text-background py-12 md:py-16">
       <div className="container px-4">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           {/* Brand */}
           <div>
             <CarfectLogo className="h-5 w-auto mb-4 text-white" />
@@ -32,14 +32,20 @@ export default function FooterServer({ settings }: FooterServerProps) {
             <h4 className="font-semibold mb-4">Kontakt</h4>
             <ul className="space-y-3">
               <li>
-                <a href={`mailto:${email}`} className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm">
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm"
+                >
                   <Mail className="w-4 h-4" />
                   {email}
                 </a>
               </li>
               {phone1 && (
                 <li>
-                  <a href={`tel:${phone1.replace(/\s/g, '')}`} className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm">
+                  <a
+                    href={`tel:${phone1.replace(/\s/g, '')}`}
+                    className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm"
+                  >
                     <Phone className="w-4 h-4" />
                     {phone1}
                   </a>
@@ -47,17 +53,80 @@ export default function FooterServer({ settings }: FooterServerProps) {
               )}
               {phone2 && (
                 <li>
-                  <a href={`tel:${phone2.replace(/\s/g, '')}`} className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm">
+                  <a
+                    href={`tel:${phone2.replace(/\s/g, '')}`}
+                    className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm"
+                  >
                     <Phone className="w-4 h-4" />
                     {phone2}
                   </a>
                 </li>
               )}
               <li>
-                <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm">
+                <a
+                  href="https://carfect.pl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm"
+                >
                   <Globe className="w-4 h-4" />
                   carfect.pl
                 </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Navigation */}
+          <div>
+            <h4 className="font-semibold mb-4">Nawigacja</h4>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  href="/funkcje"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
+                  Funkcje
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/cennik-crm-myjnia-detailing"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
+                  Cennik
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/opinie"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
+                  Opinie
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dlaczego-carfect"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
+                  Dlaczego Carfect?
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/umow-prezentacje"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
+                  Umów prezentację
+                </Link>
               </li>
             </ul>
           </div>
@@ -67,15 +136,22 @@ export default function FooterServer({ settings }: FooterServerProps) {
             <h4 className="font-semibold mb-4">Informacje</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/polityka-prywatnosci" className="text-background/70 hover:text-background transition-colors text-sm">
+                <Link
+                  href="/polityka-prywatnosci"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
                   Polityka Prywatności
                 </Link>
               </li>
               <li>
-                <Link href="/regulamin" className="text-background/70 hover:text-background transition-colors text-sm">
+                <Link
+                  href="/regulamin"
+                  className="text-background/70 hover:text-background transition-colors text-sm"
+                >
                   Regulamin
                 </Link>
               </li>
+              <li className="pt-2 text-background/50 text-xs">VAT EU: PL 585 147 45 97</li>
             </ul>
           </div>
         </div>
