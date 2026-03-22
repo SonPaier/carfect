@@ -60,6 +60,7 @@ export interface EditingCalendarItem {
   photo_urls?: string[] | null;
   priority?: number | null;
   status?: string | null;
+  checklist_items?: ChecklistItem[] | null;
 }
 
 interface AddCalendarItemDialogProps {
@@ -93,6 +94,13 @@ interface AddCalendarItemDialogProps {
     checklist_items?: ChecklistItem[] | null;
   } | null;
 }
+
+const generateId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
 
 const generateTimeOptions = () => {
   const options: string[] = [];
@@ -266,16 +274,10 @@ const AddCalendarItemDialog = ({
       setPrice(editingItem.price?.toString() || '');
       setPriority(editingItem.priority ?? DEFAULT_PRIORITY);
       setAssignedEmployeeIds(editingItem.assigned_employee_ids || []);
-      // Load checklist_items from DB
-      supabase
-        .from('calendar_items')
-        .select('checklist_items')
-        .eq('id', editingItem.id)
-        .single()
-        .then(({ data }) => {
-          const raw = (data as any)?.checklist_items;
-          setChecklistItems(Array.isArray(raw) ? raw : []);
-        });
+      // Load checklist_items from editingItem (already fetched)
+      setChecklistItems(
+        Array.isArray(editingItem.checklist_items) ? editingItem.checklist_items : [],
+      );
       // Load project_id in edit mode
       const loadProjectId = async () => {
         const { data } = await (supabase.from('calendar_items') as any)
@@ -349,7 +351,7 @@ const AddCalendarItemDialog = ({
       setChecklistItems(
         parentChecklist
           .filter((item) => !item.checked)
-          .map((item) => ({ ...item, id: crypto.randomUUID(), checked: false })),
+          .map((item) => ({ ...item, id: generateId(), checked: false })),
       );
       setPrice('');
       setPriority(DEFAULT_PRIORITY);

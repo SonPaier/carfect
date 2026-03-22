@@ -4,13 +4,6 @@ import { Button } from './button';
 import { cn } from '../lib/utils';
 import { Trash2, Plus } from 'lucide-react';
 
-const generateId = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-};
-
 export interface ChecklistItem {
   id: string;
   text: string;
@@ -22,7 +15,6 @@ interface ChecklistSectionProps {
   onChange: (items: ChecklistItem[]) => void;
   mode: 'edit' | 'execute';
   addLabel?: string;
-  addListLabel?: string;
   placeholder?: string;
 }
 
@@ -31,7 +23,6 @@ const ChecklistSection = ({
   onChange,
   mode,
   addLabel = 'Dodaj zadanie',
-  addListLabel = 'Dodaj zadanie',
   placeholder = 'Wpisz treść...',
 }: ChecklistSectionProps) => {
   const [addingNew, setAddingNew] = React.useState(false);
@@ -39,8 +30,6 @@ const ChecklistSection = ({
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editText, setEditText] = React.useState('');
   const newInputRef = React.useRef<HTMLInputElement>(null);
-  const itemsRef = React.useRef(items);
-  itemsRef.current = items;
 
   React.useEffect(() => {
     if (addingNew && newInputRef.current) {
@@ -49,13 +38,11 @@ const ChecklistSection = ({
   }, [addingNew]);
 
   const handleToggle = (id: string) => {
-    onChange(
-      itemsRef.current.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)),
-    );
+    onChange(items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)));
   };
 
   const handleDelete = (id: string) => {
-    onChange(itemsRef.current.filter((item) => item.id !== id));
+    onChange(items.filter((item) => item.id !== id));
   };
 
   const handleAddNew = () => {
@@ -66,11 +53,11 @@ const ChecklistSection = ({
       return;
     }
     const newItem: ChecklistItem = {
-      id: generateId(),
+      id: crypto.randomUUID(),
       text,
       checked: false,
     };
-    onChange([...itemsRef.current, newItem]);
+    onChange([...items, newItem]);
     setNewText('');
     setAddingNew(false);
   };
@@ -85,9 +72,9 @@ const ChecklistSection = ({
     if (!editingId) return;
     const text = editText.trim();
     if (text) {
-      onChange(itemsRef.current.map((item) => (item.id === editingId ? { ...item, text } : item)));
+      onChange(items.map((item) => (item.id === editingId ? { ...item, text } : item)));
     } else {
-      onChange(itemsRef.current.filter((item) => item.id !== editingId));
+      onChange(items.filter((item) => item.id !== editingId));
     }
     setEditingId(null);
     setEditText('');
@@ -103,7 +90,7 @@ const ChecklistSection = ({
         className="gap-1.5 bg-white"
       >
         <Plus className="w-4 h-4" />
-        {addListLabel}
+        {addLabel}
       </Button>
     );
   }

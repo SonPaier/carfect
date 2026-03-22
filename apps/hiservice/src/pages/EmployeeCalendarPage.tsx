@@ -516,6 +516,7 @@ const EmployeeCalendarPage = () => {
       price: item.price,
       priority: (item as any).priority,
       status: item.status,
+      checklist_items: (item as any).checklist_items || [],
     });
     setDetailsOpen(false);
     setAddItemOpen(true);
