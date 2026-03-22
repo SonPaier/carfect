@@ -218,6 +218,8 @@ const Dashboard = () => {
 
   // Track locally-updated item IDs so fetchItems preserves optimistic status
   const locallyUpdatedItemsRef = useRef<Set<string>>(new Set());
+  // Track deleted item IDs so fetchItems/realtime never brings them back
+  const deletedItemIdsRef = useRef<Set<string>>(new Set());
   const [mapOrderPrefill, setMapOrderPrefill] = useState<{
     customerId?: string;
     customerName?: string;
@@ -379,17 +381,19 @@ const Dashboard = () => {
       }
     }
 
-    // Preserve optimistic status for locally-updated items (prevents refetch from
-    // overwriting optimistic changes before DB replication catches up)
+    // Filter out deleted items and preserve optimistic status for locally-updated items
     setCalendarItems((prev) => {
+      const filtered = (items as CalendarItem[]).filter(
+        (item) => !deletedItemIdsRef.current.has(item.id),
+      );
       const locallyUpdated = new Map<string, string>();
       for (const p of prev) {
         if (locallyUpdatedItemsRef.current.has(p.id)) {
           locallyUpdated.set(p.id, p.status);
         }
       }
-      if (locallyUpdated.size === 0) return items as CalendarItem[];
-      return (items as CalendarItem[]).map((item) => {
+      if (locallyUpdated.size === 0) return filtered;
+      return filtered.map((item) => {
         const optimisticStatus = locallyUpdated.get(item.id);
         return optimisticStatus ? { ...item, status: optimisticStatus } : item;
       });
@@ -545,6 +549,7 @@ const Dashboard = () => {
 
   const handleRealtimeInsert = useCallback(
     (item: CalendarItem) => {
+      if (deletedItemIdsRef.current.has(item.id)) return;
       setCalendarItems((prev) => {
         if (prev.some((i) => i.id === item.id)) return prev;
         return [...prev, item];
@@ -721,6 +726,7 @@ const Dashboard = () => {
     markAsLocallyUpdated(itemId);
     locallyUpdatedItemsRef.current.add(itemId);
     setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
+    deletedItemIdsRef.current.add(itemId);
     setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
     queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
@@ -746,6 +752,7 @@ const Dashboard = () => {
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
     if (error) {
       toast.error('Błąd usuwania — przywracam');
+      deletedItemIdsRef.current.delete(itemId);
       fetchItems(); // rollback
       return;
     }
