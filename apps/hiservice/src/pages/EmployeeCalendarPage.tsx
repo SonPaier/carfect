@@ -922,7 +922,7 @@ const EmployeeCalendarPage = () => {
           onSuccess={() => {
             if (followUpSourceItem) {
               const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
-              setItems((prev) =>
+              setCalendarItems((prev) =>
                 prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
               );
             }
