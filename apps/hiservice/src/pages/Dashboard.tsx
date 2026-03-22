@@ -1018,7 +1018,13 @@ const Dashboard = () => {
     if (currentView === 'rozliczenia' && instanceId) {
       return (
         <div className="max-w-[1000px] mx-auto">
-          <SettlementsView instanceId={instanceId} />
+          <SettlementsView
+            instanceId={instanceId}
+            onItemDeleted={(itemId) => {
+              deletedItemIdsRef.current.add(itemId);
+              setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+            }}
+          />
         </div>
       );
     }

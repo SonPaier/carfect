@@ -137,9 +137,10 @@ const ITEMS_PER_PAGE = 10;
 
 interface SettlementsViewProps {
   instanceId: string;
+  onItemDeleted?: (itemId: string) => void;
 }
 
-const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
+const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
@@ -362,10 +363,11 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   }, [deleteTargetId]);
 
   const handleDeleteItem = async (itemId: string) => {
-    // Optimistic removal from cache
+    // Optimistic removal from cache + notify parent
     queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
     );
+    onItemDeleted?.(itemId);
     toast.success('Zlecenie usunięte');
 
     // Delete from DB in background
