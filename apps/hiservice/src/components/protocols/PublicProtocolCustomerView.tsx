@@ -137,21 +137,29 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto p-6 space-y-6">
-        <ProtocolHeader instanceName={instance?.name || ''} logoUrl={instance?.logo_url || null} />
+        <ProtocolHeader
+          instanceName={instance?.name || ''}
+          logoUrl={instance?.logo_url || null}
+          address={instance?.address}
+          phone={instance?.phone}
+          email={instance?.email}
+        />
 
         <div className="bg-card rounded-lg border border-border p-6 space-y-6">
-          {/* Type */}
+          {/* Type + Date + Visits inline */}
           <div className="text-center">
             <h2 className="text-xl font-bold text-foreground">
               {protocolTypeLabels[protocol.protocol_type] || 'Protokół'}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+              {visits.length === 1 &&
+                ` · ${formatDuration(roundUpTo30(visits[0].durationMinutes))}`}
             </p>
           </div>
 
-          {/* Visits */}
-          {visits.length > 0 && (
+          {/* Visits (only when more than 1) */}
+          {visits.length > 1 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Wizyty serwisowe</h3>
               <div className="space-y-1 text-sm">
@@ -163,16 +171,14 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                     </span>
                   </div>
                 ))}
-                {visits.length > 1 && (
-                  <div className="flex justify-between border-t border-border pt-1 font-semibold">
-                    <span>Łącznie</span>
-                    <span>
-                      {formatDuration(
-                        roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0)),
-                      )}
-                    </span>
-                  </div>
-                )}
+                <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                  <span>Łącznie</span>
+                  <span>
+                    {formatDuration(
+                      roundUpTo30(visits.reduce((sum, v) => sum + v.durationMinutes, 0)),
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -214,6 +220,14 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </div>
           )}
 
+          {/* Notes — above photos */}
+          {protocol.notes && (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">Uwagi</h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{protocol.notes}</p>
+            </div>
+          )}
+
           {/* Photos */}
           {protocol.photo_urls.length > 0 && (
             <div className="space-y-2">
@@ -224,26 +238,22 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                     key={i}
                     src={url}
                     alt={`Zdjęcie ${i + 1}`}
-                    className="w-full aspect-square object-cover rounded-md border border-border"
+                    className="w-full aspect-square object-cover rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => window.open(url, '_blank')}
                   />
                 ))}
               </div>
             </div>
           )}
 
-          {/* Notes */}
-          {protocol.notes && (
-            <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">Uwagi</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{protocol.notes}</p>
-            </div>
-          )}
-
-          {/* Prepared by */}
+          {/* Prepared by + date */}
           {protocol.prepared_by && (
             <div className="space-y-1">
               <h3 className="font-semibold text-foreground">Sporządził</h3>
-              <p className="text-sm text-muted-foreground">{protocol.prepared_by}</p>
+              <p className="text-sm text-muted-foreground">
+                {protocol.prepared_by},{' '}
+                {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+              </p>
             </div>
           )}
 
@@ -260,14 +270,20 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           )}
         </div>
 
-        {/* Footer */}
-        {instance && (
-          <div className="text-center text-xs text-muted-foreground space-y-1">
-            <p>{instance.name}</p>
-            {instance.address && <p>{instance.address}</p>}
-            {instance.phone && <p>Tel: {instance.phone}</p>}
-          </div>
-        )}
+        {/* Footer — hiservice.pl branding */}
+        <div className="text-center text-xs text-muted-foreground pt-4">
+          <p>
+            Wygenerowano przy użyciu systemu dla serwisów —{' '}
+            <a
+              href="https://hiservice.pl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              hiservice.pl
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
