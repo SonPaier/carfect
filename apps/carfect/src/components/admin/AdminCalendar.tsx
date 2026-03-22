@@ -1353,11 +1353,11 @@ const AdminCalendar = ({
             {/* Station selector removed - week tile view shows all stations via color */}
             
             {/* View mode toggle - icons only */}
-            {!isMobile && <div className="flex border border-border rounded-lg overflow-hidden">
+            <div className="flex border border-border rounded-lg overflow-hidden">
                 {allowedViews.includes('day') && <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('day')} className="rounded-none border-0 px-2.5" title="Dzień">
                     <CalendarIcon className="w-4 h-4" />
                   </Button>}
-                {allowedViews.includes('two-days') && <Button variant={viewMode === 'two-days' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('two-days')} className="rounded-none border-0 px-2.5" title="2 dni">
+                {allowedViews.includes('two-days') && !isMobile && <Button variant={viewMode === 'two-days' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('two-days')} className="rounded-none border-0 px-2.5" title="2 dni">
                     <Columns2 className="w-4 h-4" />
                   </Button>}
                 {allowedViews.includes('week') && showWeekView && <Button variant={viewMode === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('week')} className="rounded-none border-0 px-2.5" title="Tydzień">
@@ -1366,7 +1366,7 @@ const AdminCalendar = ({
                 {allowedViews.includes('month') && <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('month')} className="rounded-none border-0 px-2.5" title="Miesiąc">
                     <CalendarRange className="w-4 h-4" />
                   </Button>}
-              </div>}
+              </div>
             
             {/* Column visibility settings - only show if not read only */}
             {showStationFilter && <Popover>
@@ -1515,7 +1515,8 @@ const AdminCalendar = ({
               <button
                 onClick={() => setDatePickerOpen(true)}
                 className={cn("text-lg font-semibold cursor-pointer hover:opacity-80 transition-opacity text-center w-full", isToday && "text-primary", currentDateClosed && viewMode === 'day' && "text-red-500")}>
-                {viewMode === 'week' ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}` :
+                {viewMode === 'month' ? format(currentDate, 'LLLL yyyy', { locale: pl }) :
+            viewMode === 'week' ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}` :
             viewMode === 'two-days' ? `${format(currentDate, 'd MMM', { locale: pl })} - ${format(addDays(currentDate, 1), 'd MMM', { locale: pl })}` :
             format(currentDate, 'EEEE, d MMMM', { locale: pl })}
               </button>
