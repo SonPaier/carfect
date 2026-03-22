@@ -5,12 +5,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const RoleBasedRedirect = () => {
-  const { user, roles, loading } = useAuth();
+  const { user, roles, loading, signOut } = useAuth();
   const [employeeConfigId, setEmployeeConfigId] = useState<string | null>(null);
   const [configResolved, setConfigResolved] = useState(false);
 
-  const isEmployeeOnly = roles.some(r => r.role === 'employee') &&
-    !roles.some(r => r.role === 'admin' || r.role === 'super_admin');
+  const isEmployeeOnly =
+    roles.some((r) => r.role === 'employee') &&
+    !roles.some((r) => r.role === 'admin' || r.role === 'super_admin');
 
   useEffect(() => {
     if (!user) return; // don't touch configResolved until we have a user
@@ -50,8 +51,22 @@ const RoleBasedRedirect = () => {
     return <Navigate to={`/employee-calendars/${employeeConfigId}`} replace />;
   }
 
+  // Employee without calendar config — show message instead of redirect loop
+  if (isEmployeeOnly && configResolved && !employeeConfigId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-4 text-center">
+        <p className="text-muted-foreground">
+          Brak przypisanego kalendarza. Skontaktuj się z administratorem.
+        </p>
+        <button onClick={() => signOut()} className="text-sm text-primary hover:underline">
+          Wyloguj
+        </button>
+      </div>
+    );
+  }
+
   // Hall role -> halls view
-  const hallRole = roles.find(r => r.role === 'hall');
+  const hallRole = roles.find((r) => r.role === 'hall');
   if (hallRole) {
     if (hallRole.hall_id) {
       return <Navigate to={`/halls/${hallRole.hall_id}`} replace />;
@@ -60,13 +75,13 @@ const RoleBasedRedirect = () => {
   }
 
   // Super admin
-  if (roles.some(r => r.role === 'super_admin')) {
+  if (roles.some((r) => r.role === 'super_admin')) {
     return <Navigate to="/super-admin" replace />;
   }
 
   // Sales-only
-  const hasSalesRole = roles.some(r => r.role === 'sales');
-  const hasStudioAccess = roles.some(r => r.role === 'admin' || r.role === 'employee');
+  const hasSalesRole = roles.some((r) => r.role === 'sales');
+  const hasStudioAccess = roles.some((r) => r.role === 'admin' || r.role === 'employee');
 
   if (hasSalesRole && !hasStudioAccess) {
     return <Navigate to="/sales" replace />;
@@ -76,7 +91,7 @@ const RoleBasedRedirect = () => {
   if (hasStudioAccess) {
     const hostname = window.location.hostname;
     const isSubdomain = hostname.endsWith('.hiservice.pl');
-    return <Navigate to={isSubdomain ? "/" : "/admin"} replace />;
+    return <Navigate to={isSubdomain ? '/' : '/admin'} replace />;
   }
 
   return <Navigate to="/login" replace />;
