@@ -183,28 +183,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </div>
           )}
 
-          {/* Customer info */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">Dane klienta</h3>
-            <p className="text-foreground">{protocol.customer_name}</p>
-            {protocol.customer_phone && (
-              <p className="text-sm text-foreground flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5" />
-                {protocol.customer_phone}
-              </p>
-            )}
-            {protocol.customer_email && (
-              <p className="text-sm text-foreground flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5" />
-                {protocol.customer_email}
-              </p>
-            )}
-            {protocol.customer_nip && (
-              <p className="text-sm text-foreground">NIP: {protocol.customer_nip}</p>
-            )}
-          </div>
-
-          {/* Address */}
+          {/* Address only — no client personal data in public view */}
           {address && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground flex items-center gap-1">
