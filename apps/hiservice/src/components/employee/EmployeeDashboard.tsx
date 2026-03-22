@@ -142,7 +142,8 @@ const EmployeeDashboard = ({
     }
     setLoading(true);
 
-    let itemsQuery = supabase
+    // Query 1: scheduled items in date range (today + future)
+    let scheduledQuery = supabase
       .from('calendar_items')
       .select(
         'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, payment_status, priority',
@@ -155,12 +156,25 @@ const EmployeeDashboard = ({
       .order('item_date')
       .order('start_time');
 
+    // Query 2: unfinished items from the past (in_progress, unfinished, follow_up)
+    let pendingQuery = supabase
+      .from('calendar_items')
+      .select(
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, payment_status, priority',
+      )
+      .eq('instance_id', instanceId)
+      .in('column_id', columnIds)
+      .lt('item_date', dateStart)
+      .in('status', ['in_progress', 'unfinished', 'follow_up']);
+
     if (linkedEmployeeId) {
-      itemsQuery = itemsQuery.contains('assigned_employee_ids', [linkedEmployeeId]);
+      scheduledQuery = scheduledQuery.contains('assigned_employee_ids', [linkedEmployeeId]);
+      pendingQuery = pendingQuery.contains('assigned_employee_ids', [linkedEmployeeId]);
     }
 
-    const [itemsRes, remindersRes] = await Promise.all([
-      itemsQuery,
+    const [itemsRes, pendingRes, remindersRes] = await Promise.all([
+      scheduledQuery,
+      pendingQuery,
       (
         supabase
           .from('reminders')
@@ -172,7 +186,11 @@ const EmployeeDashboard = ({
         .order('deadline'),
     ]);
 
-    const calItems = (itemsRes.data as CalendarItemRow[]) || [];
+    // Merge scheduled + pending items, deduplicate by id
+    const scheduledItems = (itemsRes.data as CalendarItemRow[]) || [];
+    const pendingItems = (pendingRes.data as CalendarItemRow[]) || [];
+    const seenIds = new Set(scheduledItems.map((i) => i.id));
+    const calItems = [...pendingItems.filter((i) => !seenIds.has(i.id)), ...scheduledItems];
     const remItems = (remindersRes.data as ReminderRow[]) || [];
 
     // Fetch addresses (including lat, lng for map)
@@ -260,6 +278,14 @@ const EmployeeDashboard = ({
 
     setItems(
       calItems.sort((a, b) => {
+        // Pending items (in_progress/unfinished/follow_up from past) float to top
+        const todayStr = format(today, 'yyyy-MM-dd');
+        const aIsPending =
+          a.item_date < todayStr && ['in_progress', 'unfinished', 'follow_up'].includes(a.status);
+        const bIsPending =
+          b.item_date < todayStr && ['in_progress', 'unfinished', 'follow_up'].includes(b.status);
+        if (aIsPending && !bIsPending) return -1;
+        if (!aIsPending && bIsPending) return 1;
         const dateCmp = a.item_date.localeCompare(b.item_date);
         if (dateCmp !== 0) return dateCmp;
         const aPri = a.priority ?? DEFAULT_PRIORITY;
