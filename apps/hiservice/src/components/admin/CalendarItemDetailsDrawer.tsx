@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { ChecklistSection, type ChecklistItem } from '@shared/ui';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
@@ -387,6 +388,7 @@ const CalendarItemDetailsDrawer = ({
   // Inline notes editing
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [savingNotes, setSavingNotes] = useState(false);
 
   // SMS templates & sending
@@ -504,6 +506,8 @@ const CalendarItemDetailsDrawer = ({
     if (item) {
       setNotesValue(item.admin_notes || '');
       setEditingNotes(false);
+      // Load checklist_items
+      setChecklistItems(Array.isArray(item.checklist_items) ? item.checklist_items : []);
       // Load media_items with fallback from photo_urls
       const raw = (item as any).media_items;
       if (Array.isArray(raw) && raw.length > 0) {
@@ -513,7 +517,8 @@ const CalendarItemDetailsDrawer = ({
         setMediaItems(photos.map((url: string) => ({ type: 'image' as const, url })));
       }
     }
-  }, [item?.id, item?.admin_notes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id, item?.admin_notes, item?.checklist_items]);
 
   // Fetch address
   useEffect(() => {
@@ -1231,6 +1236,29 @@ const CalendarItemDetailsDrawer = ({
                     {notesValue || 'Kliknij, aby dodać notatkę...'}
                   </p>
                 )}
+              </div>
+
+              {/* Checklist */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">Lista zadań</div>
+                <ChecklistSection
+                  items={checklistItems}
+                  mode="execute"
+                  onChange={(newItems) => {
+                    setChecklistItems(newItems);
+                    supabase
+                      .from('calendar_items')
+                      .update({ checklist_items: newItems } as any)
+                      .eq('id', item.id)
+                      .then(({ error }) => {
+                        if (error) {
+                          console.error('Error saving checklist:', error);
+                          // Roll back optimistic update on failure
+                          setChecklistItems(checklistItems);
+                        }
+                      });
+                  }}
+                />
               </div>
 
               {/* Services & Products */}

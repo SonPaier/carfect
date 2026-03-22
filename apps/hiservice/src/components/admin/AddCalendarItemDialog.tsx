@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChecklistSection, type ChecklistItem } from '@shared/ui';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { type DateRange } from 'react-day-picker';
@@ -163,6 +164,7 @@ const AddCalendarItemDialog = ({
     setEndTime(closestOption);
   };
   const [adminNotes, setAdminNotes] = useState('');
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [price, setPrice] = useState('');
   const [priority, setPriority] = useState<number>(DEFAULT_PRIORITY);
 
@@ -263,6 +265,16 @@ const AddCalendarItemDialog = ({
       setPrice(editingItem.price?.toString() || '');
       setPriority(editingItem.priority ?? DEFAULT_PRIORITY);
       setAssignedEmployeeIds(editingItem.assigned_employee_ids || []);
+      // Load checklist_items from DB
+      supabase
+        .from('calendar_items')
+        .select('checklist_items')
+        .eq('id', editingItem.id)
+        .single()
+        .then(({ data }) => {
+          const raw = (data as any)?.checklist_items;
+          setChecklistItems(Array.isArray(raw) ? raw : []);
+        });
       // Load project_id in edit mode
       const loadProjectId = async () => {
         const { data } = await (supabase.from('calendar_items') as any)
@@ -331,6 +343,7 @@ const AddCalendarItemDialog = ({
       setStartTime('');
       setEndTime('');
       setAdminNotes('');
+      setChecklistItems([]);
       setPrice('');
       setPriority(DEFAULT_PRIORITY);
       setAssignedEmployeeIds([]);
@@ -361,6 +374,7 @@ const AddCalendarItemDialog = ({
         TIME_OPTIONS.find((t) => t >= halfEndStr) || TIME_OPTIONS[TIME_OPTIONS.length - 1];
       setEndTime(halfClosest);
       setAdminNotes('');
+      setChecklistItems([]);
       setPrice('');
       setPriority(DEFAULT_PRIORITY);
       setAssignedEmployeeIds([]);
@@ -737,6 +751,7 @@ const AddCalendarItemDialog = ({
         start_time: startTime || null,
         end_time: endTime || null,
         admin_notes: adminNotes.trim() || null,
+        checklist_items: checklistItems,
         price: price ? parseFloat(price) : null,
         priority: priority,
         assigned_employee_ids: assignedEmployeeIds.length > 0 ? assignedEmployeeIds : null,
@@ -1216,6 +1231,12 @@ const AddCalendarItemDialog = ({
                 rows={3}
                 className="bg-white"
               />
+            </div>
+
+            {/* Checklist */}
+            <div className="space-y-2">
+              <Label>Lista zadań</Label>
+              <ChecklistSection items={checklistItems} mode="edit" onChange={setChecklistItems} />
             </div>
 
             {/* SMS Notification */}
