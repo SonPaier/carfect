@@ -200,7 +200,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       const { data, error } = await supabase
         .from('calendar_items')
         .select(
-          'id, title, item_date, customer_name, customer_id, customer_email, customer_phone, customer_address_id, created_at, status, payment_status, price, admin_notes, start_time, end_time, column_id, assigned_employee_ids, photo_urls, end_date, order_number',
+          'id, title, item_date, customer_name, customer_id, customer_email, customer_phone, customer_address_id, created_at, status, payment_status, price, admin_notes, start_time, end_time, column_id, assigned_employee_ids, photo_urls, end_date, order_number, checklist_items',
         )
         .eq('instance_id', instanceId)
         .order('item_date', { ascending: false });

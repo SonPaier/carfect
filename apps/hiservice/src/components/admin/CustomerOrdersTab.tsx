@@ -111,7 +111,7 @@ const CustomerOrdersTab = ({ customerId, instanceId, hidePrices }: CustomerOrder
     const { data } = await supabase
       .from('calendar_items')
       .select(
-        'id, title, item_date, end_date, start_time, end_time, column_id, status, admin_notes, price, customer_id, customer_address_id, assigned_employee_ids, customer_name, customer_phone, customer_email, photo_urls',
+        'id, title, item_date, end_date, start_time, end_time, column_id, status, admin_notes, price, customer_id, customer_address_id, assigned_employee_ids, customer_name, customer_phone, customer_email, photo_urls, checklist_items',
       )
       .eq('id', orderId)
       .single();
