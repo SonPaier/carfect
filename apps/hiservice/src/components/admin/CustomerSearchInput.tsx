@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay } from '@/lib/phoneUtils';
+import { formatAddress } from '@/lib/utils';
 
 export interface SelectedCustomer {
   id: string;
@@ -27,6 +28,9 @@ interface CustomerSearchInputProps {
   onAddNew?: (query: string) => void;
 }
 
+const sanitizeForPostgrest = (value: string): string =>
+  value.replace(/[%_(),.]/g, '');
+
 const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, onCustomerClick, onAddNew }: CustomerSearchInputProps) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CustomerWithAddresses[]>([]);
@@ -37,6 +41,7 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const noResultsForQueryRef = useRef<string | null>(null);
+  const searchGenRef = useRef(0);
 
   const search = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -56,14 +61,19 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
     // Reset ref if user changed prefix (e.g. backspace)
     noResultsForQueryRef.current = null;
 
+    // Increment generation so stale in-flight responses are discarded
+    const gen = ++searchGenRef.current;
+
     setSearching(true);
+
+    const safeQ = sanitizeForPostgrest(q);
 
     // Search customers by name, phone, company
     const { data: directMatches } = await supabase
       .from('customers')
       .select('id, name, phone, email, company, nip')
       .eq('instance_id', instanceId)
-      .or(`name.ilike.%${q}%,phone.ilike.%${q}%,company.ilike.%${q}%`)
+      .or(`name.ilike.%${safeQ}%,phone.ilike.%${safeQ}%,company.ilike.%${safeQ}%`)
       .limit(10);
 
     // Search by address street/city
@@ -71,7 +81,7 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
       .from('customer_addresses')
       .select('customer_id')
       .eq('instance_id', instanceId)
-      .or(`street.ilike.%${q}%,city.ilike.%${q}%`)
+      .or(`street.ilike.%${safeQ}%,city.ilike.%${safeQ}%`)
       .limit(20);
 
     const addrCustomerIds = new Set(addrMatches?.map(a => a.customer_id) || []);
@@ -115,6 +125,9 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
       ...c,
       addresses: addressesMap[c.id] || [],
     }));
+
+    // Discard response if a newer search was already started
+    if (gen !== searchGenRef.current) return;
 
     if (resultsWithAddresses.length === 0) {
       noResultsForQueryRef.current = q;
@@ -178,10 +191,6 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
     setSelectedIndex(-1);
   };
 
-  const formatAddress = (street: string | null, city: string | null) => {
-    return [street, city].filter(Boolean).join(', ');
-  };
-
   if (selectedCustomer) {
     return (
       <div className="flex items-center gap-2 p-2 rounded-md border border-input bg-white">
@@ -218,7 +227,7 @@ const CustomerSearchInput = ({ instanceId, selectedCustomer, onSelect, onClear, 
             }}
             onFocus={() => { if (query.length >= 2) setOpen(true); }}
             onKeyDown={handleKeyDown}
-            placeholder=""
+            placeholder="Szukaj klienta..."
             className="pl-9 pr-9"
           />
           {searching && (

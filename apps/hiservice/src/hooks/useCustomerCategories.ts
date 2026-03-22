@@ -76,7 +76,8 @@ export async function syncCustomerCategoryAssignments(
   const { data: current } = await (supabase as any)
     .from('customer_category_assignments')
     .select('id, category_id')
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .eq('instance_id', instanceId);
 
   const currentIds = new Set((current || []).map((a: any) => a.category_id));
   const selectedSet = new Set(selectedCategoryIds);

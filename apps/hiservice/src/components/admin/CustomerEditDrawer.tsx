@@ -325,7 +325,11 @@ const CustomerEditDrawer = ({
 
     const deletedIds = addresses.filter((a) => a._deleted && a.id).map((a) => a.id!);
     if (deletedIds.length > 0) {
-      await supabase.from('customer_addresses').delete().in('id', deletedIds);
+      await supabase
+        .from('customer_addresses')
+        .delete()
+        .in('id', deletedIds)
+        .eq('instance_id', instanceId);
     }
 
     const activeAddresses = addresses.filter((a) => !a._deleted);

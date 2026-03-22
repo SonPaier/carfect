@@ -33,7 +33,8 @@ const CustomerOrdersTab = ({ customerId, instanceId, hidePrices }: CustomerOrder
   useEffect(() => {
     fetchOrders();
     fetchColumns();
-  }, [customerId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId, instanceId]);
 
   const fetchColumns = async () => {
     const { data } = await supabase

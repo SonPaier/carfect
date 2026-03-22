@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { formatAddress } from '@/lib/utils';
 
 interface CustomerAddress {
   id: string;
@@ -42,6 +43,9 @@ interface CustomerAddressSelectProps {
   label?: string;
   showLabel?: boolean;
 }
+
+const sanitizeForPostgrest = (value: string): string =>
+  value.replace(/[%_(),.]/g, '');
 
 const CustomerAddressSelect = ({
   instanceId,
@@ -113,11 +117,13 @@ const CustomerAddressSelect = ({
     noResultsForQueryRef.current = null;
     setSearching(true);
 
+    const safeQ = sanitizeForPostgrest(q);
+
     const { data } = await supabase
       .from('customer_addresses')
       .select('id, name, street, city, customer_id, customers!inner(id, name, phone, email)')
       .eq('instance_id', instanceId)
-      .or(`street.ilike.%${q}%,city.ilike.%${q}%,name.ilike.%${q}%`)
+      .or(`street.ilike.%${safeQ}%,city.ilike.%${safeQ}%,name.ilike.%${safeQ}%`)
       .limit(10);
 
     if (data && data.length > 0) {
@@ -206,10 +212,6 @@ const CustomerAddressSelect = ({
     onChange(null);
   };
 
-  const formatAddress = (street: string | null, city: string | null) => {
-    return [street, city].filter(Boolean).join(', ') || 'Adres';
-  };
-
   // --- RENDER ---
 
   // When customer is selected: show Select with their addresses
@@ -227,7 +229,7 @@ const CustomerAddressSelect = ({
           <SelectContent className="z-[1200]">
             {addresses.map((addr) => (
               <SelectItem key={addr.id} value={addr.id}>
-                {formatAddress(addr.street, addr.city)}
+                {formatAddress(addr.street, addr.city) || 'Adres'}
               </SelectItem>
             ))}
           </SelectContent>
