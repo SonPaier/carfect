@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { X, MapPin, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ interface UnscheduledFollowUpsDrawerProps {
   onClose: () => void;
   instanceId: string;
   onItemClick: (itemId: string) => void;
+  refreshKey?: number;
 }
 
 const UnscheduledFollowUpsDrawer = ({
@@ -33,6 +34,7 @@ const UnscheduledFollowUpsDrawer = ({
   onClose,
   instanceId,
   onItemClick,
+  refreshKey = 0,
 }: UnscheduledFollowUpsDrawerProps) => {
   const isMobile = useIsMobile();
   // Increment key each time drawer opens to force fresh fetch
@@ -44,8 +46,7 @@ const UnscheduledFollowUpsDrawer = ({
   const [items, setItems] = useState<FollowUpItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
+  const fetchFollowUps = useCallback(() => {
     setLoading(true);
     supabase
       .from('calendar_items')
@@ -60,7 +61,12 @@ const UnscheduledFollowUpsDrawer = ({
         if (!error) setItems((data || []) as FollowUpItem[]);
         setLoading(false);
       });
-  }, [open, openCount, instanceId]);
+  }, [instanceId]);
+
+  // Fetch on every open and when refreshKey changes (even if closed — pre-fetch for next open)
+  useEffect(() => {
+    if (open || refreshKey > 0) fetchFollowUps();
+  }, [open, openCount, refreshKey, fetchFollowUps]);
 
   return (
     <Sheet

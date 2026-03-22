@@ -1,6 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import UnscheduledFollowUpsDrawer from './UnscheduledFollowUpsDrawer';
 import { mockSupabaseQuery, resetSupabaseMocks } from '@/test/mocks/supabase';
@@ -16,21 +15,16 @@ vi.mock('@/hooks/use-mobile', () => ({
 
 function renderDrawer(props = {}) {
   const user = userEvent.setup();
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
   return {
     user,
     ...render(
-      <QueryClientProvider client={queryClient}>
-        <UnscheduledFollowUpsDrawer
-          open={true}
-          onClose={vi.fn()}
-          instanceId="test-instance-id"
-          onItemClick={vi.fn()}
-          {...props}
-        />
-      </QueryClientProvider>,
+      <UnscheduledFollowUpsDrawer
+        open={true}
+        onClose={vi.fn()}
+        instanceId="test-instance-id"
+        onItemClick={vi.fn()}
+        {...props}
+      />,
     ),
   };
 }

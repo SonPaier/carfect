@@ -170,9 +170,9 @@ const createQueryBuilder = (table: string) => {
       const key = `${table}:${currentMethod}`;
       return Promise.resolve(queryMocks[key] || { data: null, error: null });
     }),
-    then: (resolve: (value: MockResponse) => void) => {
+    then: (resolve: (value: MockResponse) => void, reject?: (error: any) => void) => {
       const key = `${table}:${currentMethod}`;
-      resolve(queryMocks[key] || { data: [], error: null });
+      return Promise.resolve(queryMocks[key] || { data: [], error: null }).then(resolve, reject);
     },
   };
 

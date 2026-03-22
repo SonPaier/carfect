@@ -214,6 +214,7 @@ const Dashboard = () => {
   );
   const [followUpSourceItem, setFollowUpSourceItem] = useState<CalendarItem | null>(null);
   const [followUpsDrawerOpen, setFollowUpsDrawerOpen] = useState(false);
+  const [followUpsRefreshKey, setFollowUpsRefreshKey] = useState(0);
 
   // Track locally-updated item IDs so fetchItems preserves optimistic status
   const locallyUpdatedItemsRef = useRef<Set<string>>(new Set());
@@ -799,7 +800,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
       queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
       queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
-      queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups', instanceId] });
+      setFollowUpsRefreshKey((k) => k + 1);
 
       // Auto-complete original when last follow-up is completed
       if (newStatus === 'completed') {
@@ -1296,6 +1297,8 @@ const Dashboard = () => {
                 prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
               );
             }
+            // Refresh follow-ups drawer data
+            setFollowUpsRefreshKey((k) => k + 1);
             handleItemSuccess();
             setFollowUpSourceItem(null);
           }}
@@ -1319,6 +1322,7 @@ const Dashboard = () => {
           onClose={() => setFollowUpsDrawerOpen(false)}
           instanceId={instanceId}
           onItemClick={handleFollowUpItemClick}
+          refreshKey={followUpsRefreshKey}
         />
       )}
 
