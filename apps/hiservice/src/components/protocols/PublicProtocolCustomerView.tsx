@@ -118,7 +118,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <Loader2 className="w-8 h-8 animate-spin text-foreground" />
       </div>
     );
   }
@@ -127,8 +127,8 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-2">
-          <FileText className="w-12 h-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground">{error || 'Nie znaleziono protokołu'}</p>
+          <FileText className="w-12 h-12 mx-auto text-foreground/50" />
+          <p className="text-foreground">{error || 'Nie znaleziono protokołu'}</p>
         </div>
       </div>
     );
@@ -151,7 +151,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             <h2 className="text-xl font-bold text-foreground">
               {protocolTypeLabels[protocol.protocol_type] || 'Protokół'}
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-foreground mt-1">
               Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
               {visits.length === 1 &&
                 ` · ${formatDuration(roundUpTo30(visits[0].durationMinutes))}`}
@@ -188,19 +188,19 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             <h3 className="font-semibold text-foreground">Dane klienta</h3>
             <p className="text-foreground">{protocol.customer_name}</p>
             {protocol.customer_phone && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <p className="text-sm text-foreground flex items-center gap-1">
                 <Phone className="w-3.5 h-3.5" />
                 {protocol.customer_phone}
               </p>
             )}
             {protocol.customer_email && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <p className="text-sm text-foreground flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5" />
                 {protocol.customer_email}
               </p>
             )}
             {protocol.customer_nip && (
-              <p className="text-sm text-muted-foreground">NIP: {protocol.customer_nip}</p>
+              <p className="text-sm text-foreground">NIP: {protocol.customer_nip}</p>
             )}
           </div>
 
@@ -211,7 +211,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                 <MapPin className="w-4 h-4" />
                 Adres
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 {address.name}
                 {address.street && `, ${address.street}`}
                 {address.postal_code && `, ${address.postal_code}`}
@@ -224,7 +224,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           {protocol.notes && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Uwagi</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{protocol.notes}</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{protocol.notes}</p>
             </div>
           )}
 
@@ -250,7 +250,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           {protocol.prepared_by && (
             <div className="space-y-1">
               <h3 className="font-semibold text-foreground">Sporządził</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 {protocol.prepared_by},{' '}
                 {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
               </p>
@@ -271,7 +271,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
         </div>
 
         {/* Footer — hiservice.pl branding */}
-        <div className="text-center text-xs text-muted-foreground pt-4">
+        <div className="text-center text-xs text-foreground pt-4">
           <p>
             Wygenerowano przy użyciu systemu dla serwisów —{' '}
             <a
