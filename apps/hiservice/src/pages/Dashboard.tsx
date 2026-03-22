@@ -728,6 +728,7 @@ const Dashboard = () => {
     setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     deletedItemIdsRef.current.add(itemId);
     setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+    setFollowUpsRefreshKey((k) => k + 1);
     queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
     );
@@ -1023,6 +1024,7 @@ const Dashboard = () => {
             onItemDeleted={(itemId) => {
               deletedItemIdsRef.current.add(itemId);
               setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+              setFollowUpsRefreshKey((k) => k + 1);
             }}
           />
         </div>
