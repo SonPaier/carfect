@@ -16,6 +16,10 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { validateSameCustomer, buildInvoicePositions, type InvoicePosition, type CalendarItemForInvoice } from '@/lib/bulkInvoiceUtils';
+import { matchesSearchQuery } from '@/lib/settlementSearchUtils';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -161,6 +165,36 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const [deleting, setDeleting] = useState(false);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const bulk = useBulkSelection();
+
+  const handleBulkInvoice = () => {
+    const selectedItems = items.filter((i) => bulk.isSelected(i.id));
+    if (selectedItems.length === 0) return;
+    const itemsForInvoice: CalendarItemForInvoice[] = selectedItems.map((i) => ({
+      id: i.id,
+      title: i.title,
+      item_date: i.item_date || '',
+      end_date: i.end_date,
+      price: i.price,
+      customer_id: i.customer_id,
+      customer_name: i.customer_name,
+      customer_email: i.customer_email,
+    }));
+    const error = validateSameCustomer(itemsForInvoice);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    const positions = buildInvoicePositions(itemsForInvoice);
+    const customer = selectedItems.find((i) => i.customer_id);
+    setBulkInvoicePositions(positions);
+    setBulkInvoiceCustomer(customer || null);
+    setBulkInvoiceOpen(true);
+  };
+
+  const [bulkInvoiceOpen, setBulkInvoiceOpen] = useState(false);
+  const [bulkInvoicePositions, setBulkInvoicePositions] = useState<InvoicePosition[]>([]);
+  const [bulkInvoiceCustomer, setBulkInvoiceCustomer] = useState<CalendarItemRow | null>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -272,15 +306,13 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const filteredOrders = useMemo(() => {
     let result = items;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (o) =>
-          (o.customer_name || '').toLowerCase().includes(q) ||
-          (o.title || '').toLowerCase().includes(q) ||
-          (o.item_date || '').includes(q) ||
-          (o.customer_address_id &&
-            addressMap[o.customer_address_id] &&
-            addressMap[o.customer_address_id].toLowerCase().includes(q)),
+      result = result.filter((o) =>
+        matchesSearchQuery(searchQuery, [
+          o.customer_name,
+          o.title,
+          o.item_date,
+          o.customer_address_id ? addressMap[o.customer_address_id] : null,
+        ]),
       );
     }
     if (sortColumn) {
@@ -335,6 +367,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
+    bulk.clear();
   };
 
   const invalidateSettlements = async () => {
@@ -369,6 +402,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
     );
     onItemDeleted?.(itemId);
+    if (bulk.isSelected(itemId)) bulk.toggle(itemId);
     toast.success('Zlecenie usunięte');
 
     // Delete from DB in background
@@ -509,6 +543,12 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
             <Plus className="w-4 h-4 mr-2" />
             Dodaj zlecenie
           </Button>
+          {!isMobile && bulk.count > 0 && (
+            <Button size="sm" onClick={handleBulkInvoice} variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              Wystaw fakturę ({bulk.count})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -524,6 +564,24 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
           />
         </div>
       </div>
+
+      {/* Mobile Bulk Action Bar */}
+      {isMobile && bulk.count > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+          <span className="text-sm font-medium">
+            Zaznaczono: {bulk.count}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={bulk.clear}>
+              Anuluj
+            </Button>
+            <Button size="sm" onClick={handleBulkInvoice}>
+              <FileText className="w-4 h-4 mr-1" />
+              Wystaw fakturę
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Cards */}
       {isMobile ? (
@@ -543,10 +601,20 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                 <div
                   key={order.id}
                   className="rounded-lg border border-border bg-card p-3 space-y-2 cursor-pointer active:bg-primary/5"
-                  onClick={() => openDetailsDrawer(order)}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('[role="checkbox"]') || target.closest('[data-bulk-checkbox]')) return;
+                    openDetailsDrawer(order);
+                  }}
                 >
-                  {/* Top row: title + amount */}
+                  {/* Top row: checkbox + title + amount */}
                   <div className="flex items-start justify-between gap-2">
+                    <div data-bulk-checkbox className="pt-0.5 shrink-0 p-1 -m-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={bulk.isSelected(order.id)}
+                        onCheckedChange={() => bulk.toggle(order.id)}
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{order.title || '—'}</p>
                       <p className="text-xs text-muted-foreground">{order.customer_name || '—'}</p>
@@ -706,6 +774,18 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
           <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[40px] px-2">
+                  {(() => {
+                    const pageIds = paginatedOrders.map((i) => i.id);
+                    const state = bulk.selectionState(pageIds);
+                    return (
+                      <Checkbox
+                        checked={state === 'all' ? true : state === 'some' ? 'indeterminate' : false}
+                        onCheckedChange={() => bulk.toggleAll(pageIds)}
+                      />
+                    );
+                  })()}
+                </TableHead>
                 <TableHead
                   className="w-[8%] cursor-pointer select-none"
                   onClick={() => handleSort('order_number')}
@@ -802,6 +882,12 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                       className="group cursor-pointer"
                       onClick={() => openDetailsDrawer(order)}
                     >
+                      <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={bulk.isSelected(order.id)}
+                          onCheckedChange={() => bulk.toggle(order.id)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm">{formatOrderNumber(order)}</TableCell>
                       <TableCell className="text-sm">
                         <div className="line-clamp-2">{order.title || '—'}</div>
@@ -1043,6 +1129,44 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
         customerEmail={invoiceTarget?.customer_email}
         supabaseClient={supabase}
         onSuccess={() => {
+          queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+          queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
+        }}
+      />
+
+      {/* Bulk Invoice Drawer */}
+      <CreateInvoiceDrawer
+        open={bulkInvoiceOpen}
+        onClose={() => {
+          setBulkInvoiceOpen(false);
+          setBulkInvoicePositions([]);
+          setBulkInvoiceCustomer(null);
+        }}
+        instanceId={instanceId}
+        calendarItemId={bulkInvoiceCustomer?.id}
+        customerId={bulkInvoiceCustomer?.customer_id}
+        customerName={bulkInvoiceCustomer?.customer_name}
+        customerEmail={bulkInvoiceCustomer?.customer_email}
+        positions={bulkInvoicePositions}
+        supabaseClient={supabase}
+        onSuccess={async () => {
+          const selectedItems = items.filter((i) => bulk.isSelected(i.id));
+          // Update payment_status on all selected items
+          const results = await Promise.all(
+            selectedItems.map((item) =>
+              supabase
+                .from('calendar_items')
+                .update({ payment_status: 'invoiced' } as Record<string, unknown>)
+                .eq('id', item.id),
+            ),
+          );
+          const failures = results.filter((r) => r.error);
+          if (failures.length > 0) {
+            toast.error(`Nie udało się zaktualizować statusu dla ${failures.length} zleceń`);
+          } else {
+            toast.success(`Faktura wystawiona dla ${selectedItems.length} zleceń`);
+          }
+          bulk.clear();
           queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
           queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
         }}
