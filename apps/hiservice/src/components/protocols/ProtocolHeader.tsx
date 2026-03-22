@@ -14,8 +14,21 @@ const ProtocolHeader = ({ instanceName, logoUrl, address, phone, email }: Protoc
       </div>
       <div className="text-right text-xs text-foreground space-y-0.5">
         {address && <p>{address}</p>}
-        {phone && <p>Tel: {phone}</p>}
-        {email && <p>{email}</p>}
+        {phone && (
+          <p>
+            Tel:{' '}
+            <a href={`tel:${phone}`} className="hover:underline">
+              {phone}
+            </a>
+          </p>
+        )}
+        {email && (
+          <p>
+            <a href={`mailto:${email}`} className="hover:underline">
+              {email}
+            </a>
+          </p>
+        )}
       </div>
     </div>
   );

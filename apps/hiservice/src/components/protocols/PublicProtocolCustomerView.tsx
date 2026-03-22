@@ -202,7 +202,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </div>
           )}
 
-          {/* Notes — above photos */}
+          {/* Notes */}
           {protocol.notes && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Uwagi</h3>
@@ -210,7 +210,18 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </div>
           )}
 
-          {/* Photos with lightbox */}
+          {/* Prepared by + date — above photos */}
+          {protocol.prepared_by && (
+            <div className="space-y-1">
+              <h3 className="font-semibold text-foreground">Sporządził</h3>
+              <p className="text-sm text-foreground">
+                {protocol.prepared_by},{' '}
+                {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+              </p>
+            </div>
+          )}
+
+          {/* Photos with lightbox — only if any */}
           {protocol.photo_urls.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Zdjęcia</h3>
@@ -225,17 +236,6 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                   />
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Prepared by + date */}
-          {protocol.prepared_by && (
-            <div className="space-y-1">
-              <h3 className="font-semibold text-foreground">Sporządził</h3>
-              <p className="text-sm text-foreground">
-                {protocol.prepared_by},{' '}
-                {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
-              </p>
             </div>
           )}
 
