@@ -362,7 +362,13 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   }, [deleteTargetId]);
 
   const handleDeleteItem = async (itemId: string) => {
-    // Delete related records first to avoid FK constraint violations
+    // Optimistic removal from cache
+    queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
+      old ? old.filter((i: any) => i.id !== itemId) : [],
+    );
+    toast.success('Zlecenie usunięte');
+
+    // Delete from DB in background
     await Promise.all([
       supabase.from('invoices').delete().eq('calendar_item_id', itemId),
       supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId),
@@ -372,11 +378,11 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     ]);
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
     if (error) {
-      toast.error('Błąd usuwania');
+      toast.error('Błąd usuwania — przywracam');
+      invalidateSettlements(); // rollback
       return;
     }
     invalidateSettlements();
-    toast.success('Zlecenie usunięte');
   };
 
   const handleEditItem = (calItem: CalendarItem) => {
