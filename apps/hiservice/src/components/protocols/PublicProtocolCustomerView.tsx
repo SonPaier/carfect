@@ -255,7 +255,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
         {/* Footer — hiservice.pl branding */}
         <div className="text-center text-xs text-muted-foreground py-6 border-t border-border mt-8">
           <p>
-            Wygenerowano przy użyciu systemu dla serwisów —{' '}
+            Wygenerowano przy użyciu aplikacji dla serwisantów —{' '}
             <a
               href="https://hiservice.pl"
               target="_blank"
