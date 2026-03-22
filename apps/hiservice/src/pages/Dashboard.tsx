@@ -920,7 +920,7 @@ const Dashboard = () => {
     const { data } = await supabase
       .from('calendar_items')
       .select(
-        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority',
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, checklist_items',
       )
       .eq('id', itemId)
       .single();

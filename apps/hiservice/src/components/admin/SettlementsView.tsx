@@ -488,6 +488,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       payment_status: order.payment_status,
       photo_urls: Array.isArray(order.photo_urls) ? (order.photo_urls as string[]) : [],
       end_date: order.end_date,
+      checklist_items: (order as any).checklist_items || [],
     };
     setDetailsItem(calendarItem);
     setDetailsDrawerOpen(true);
