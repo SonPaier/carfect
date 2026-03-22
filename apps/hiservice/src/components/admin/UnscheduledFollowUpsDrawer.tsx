@@ -52,7 +52,7 @@ const UnscheduledFollowUpsDrawer = ({
       return (data || []) as FollowUpItem[];
     },
     enabled: open,
-    staleTime: 30 * 1000,
+    staleTime: 0,
   });
 
   return (
