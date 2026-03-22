@@ -82,16 +82,18 @@ const ChecklistSection = ({
 
   if (items.length === 0 && !addingNew) {
     return (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setAddingNew(true)}
-        className="gap-1.5 bg-white"
-      >
-        <Plus className="w-4 h-4" />
-        {addLabel}
-      </Button>
+      <div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setAddingNew(true)}
+          className="gap-1.5 bg-white"
+        >
+          <Plus className="w-4 h-4" />
+          {addLabel}
+        </Button>
+      </div>
     );
   }
 
