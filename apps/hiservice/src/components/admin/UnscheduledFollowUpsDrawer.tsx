@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { X, MapPin, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,9 +36,14 @@ const UnscheduledFollowUpsDrawer = ({
   onItemClick,
 }: UnscheduledFollowUpsDrawerProps) => {
   const isMobile = useIsMobile();
+  // Increment key each time drawer opens to force fresh fetch
+  const [openCount, setOpenCount] = useState(0);
+  useEffect(() => {
+    if (open) setOpenCount((c) => c + 1);
+  }, [open]);
 
   const { data: items = [] } = useQuery({
-    queryKey: ['unscheduled_follow_ups', instanceId],
+    queryKey: ['unscheduled_follow_ups', instanceId, openCount],
     queryFn: async (): Promise<FollowUpItem[]> => {
       const { data, error } = await supabase
         .from('calendar_items')
