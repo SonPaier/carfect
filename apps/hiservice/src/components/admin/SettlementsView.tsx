@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { validateSameCustomer, buildInvoicePositions, type InvoicePosition, type CalendarItemForInvoice } from '@/lib/bulkInvoiceUtils';
+import { matchesSearchQuery } from '@/lib/settlementSearchUtils';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -305,15 +306,13 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const filteredOrders = useMemo(() => {
     let result = items;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (o) =>
-          (o.customer_name || '').toLowerCase().includes(q) ||
-          (o.title || '').toLowerCase().includes(q) ||
-          (o.item_date || '').includes(q) ||
-          (o.customer_address_id &&
-            addressMap[o.customer_address_id] &&
-            addressMap[o.customer_address_id].toLowerCase().includes(q)),
+      result = result.filter((o) =>
+        matchesSearchQuery(searchQuery, [
+          o.customer_name,
+          o.title,
+          o.item_date,
+          o.customer_address_id ? addressMap[o.customer_address_id] : null,
+        ]),
       );
     }
     if (sortColumn) {
@@ -544,7 +543,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
             <Plus className="w-4 h-4 mr-2" />
             Dodaj zlecenie
           </Button>
-          {bulk.count > 0 && (
+          {!isMobile && bulk.count > 0 && (
             <Button size="sm" onClick={handleBulkInvoice} variant="outline">
               <FileText className="w-4 h-4 mr-2" />
               Wystaw fakturę ({bulk.count})
@@ -566,6 +565,24 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
         </div>
       </div>
 
+      {/* Mobile Bulk Action Bar */}
+      {isMobile && bulk.count > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+          <span className="text-sm font-medium">
+            Zaznaczono: {bulk.count}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={bulk.clear}>
+              Anuluj
+            </Button>
+            <Button size="sm" onClick={handleBulkInvoice}>
+              <FileText className="w-4 h-4 mr-1" />
+              Wystaw fakturę
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Cards */}
       {isMobile ? (
         <div className="space-y-2">
@@ -584,11 +601,15 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                 <div
                   key={order.id}
                   className="rounded-lg border border-border bg-card p-3 space-y-2 cursor-pointer active:bg-primary/5"
-                  onClick={() => openDetailsDrawer(order)}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('[role="checkbox"]') || target.closest('[data-bulk-checkbox]')) return;
+                    openDetailsDrawer(order);
+                  }}
                 >
                   {/* Top row: checkbox + title + amount */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="pt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div data-bulk-checkbox className="pt-0.5 shrink-0 p-1 -m-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={bulk.isSelected(order.id)}
                         onCheckedChange={() => bulk.toggle(order.id)}

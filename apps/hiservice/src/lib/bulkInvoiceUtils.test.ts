@@ -58,6 +58,14 @@ describe('Bulk Invoice — position name format', () => {
     expect(buildPositionName('Test', '2026-03-19', null))
       .toBe('Test, 19.03.2026');
   });
+
+  it('returns title only when item_date is empty string', () => {
+    expect(buildPositionName('Montaż rury', '')).toBe('Montaż rury');
+  });
+
+  it('returns title only when item_date is empty string with end_date', () => {
+    expect(buildPositionName('Montaż rury', '', '2026-03-21')).toBe('Montaż rury');
+  });
 });
 
 describe('Bulk Invoice — positions building', () => {

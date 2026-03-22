@@ -34,6 +34,7 @@ export function validateSameCustomer(items: CalendarItemForInvoice[]): string | 
  * Formats invoice position name: "Title, DD.MM.YYYY" or "Title, DD.MM.YYYY – DD.MM.YYYY"
  */
 export function buildPositionName(title: string, itemDate: string, endDate?: string | null): string {
+  if (!itemDate) return title;
   const startFormatted = format(new Date(itemDate + 'T00:00:00'), 'd.MM.yyyy');
   if (endDate && endDate !== itemDate) {
     const endFormatted = format(new Date(endDate + 'T00:00:00'), 'd.MM.yyyy');
