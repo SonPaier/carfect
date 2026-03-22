@@ -25,6 +25,7 @@ interface ProtocolData {
   photo_urls: string[];
   customer_address_id: string | null;
   instance_id: string;
+  show_visits: boolean;
 }
 
 interface AddressData {
@@ -43,7 +44,7 @@ interface InstanceData {
 }
 
 const protocolTypeLabels: Record<string, string> = {
-  completion: 'Protokół zakończenia prac',
+  completion: 'Protokół serwisowy',
 };
 
 interface PublicProtocolCustomerViewProps {
@@ -73,7 +74,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
       }
 
       const photoUrls = Array.isArray(proto.photo_urls) ? (proto.photo_urls as string[]) : [];
-      setProtocol({ ...proto, photo_urls: photoUrls });
+      setProtocol({ ...proto, photo_urls: photoUrls, show_visits: proto.show_visits !== false });
 
       // Fetch instance
       const { data: inst } = await supabase
@@ -153,13 +154,14 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
             </h2>
             <p className="text-sm text-foreground mt-1">
               Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
-              {visits.length === 1 &&
+              {protocol.show_visits &&
+                visits.length === 1 &&
                 ` · ${formatDuration(roundUpTo30(visits[0].durationMinutes))}`}
             </p>
           </div>
 
-          {/* Visits (only when more than 1) */}
-          {visits.length > 1 && (
+          {/* Visits (only when more than 1 and show_visits enabled) */}
+          {protocol.show_visits && visits.length > 1 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Wizyty serwisowe</h3>
               <div className="space-y-1 text-sm">

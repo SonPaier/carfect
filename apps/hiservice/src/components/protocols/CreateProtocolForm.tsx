@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -80,6 +81,7 @@ const CreateProtocolForm = ({
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [visits, setVisits] = useState<VisitInfo[]>([]);
+  const [showVisits, setShowVisits] = useState(true);
   const [protocolDate, setProtocolDate] = useState<Date>(new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [preparedBy, setPreparedBy] = useState('');
@@ -115,6 +117,7 @@ const CreateProtocolForm = ({
           setCustomerAddressId(data.customer_address_id);
           setPhotoUrls(Array.isArray(data.photo_urls) ? (data.photo_urls as string[]) : []);
           setNotes(data.notes || '');
+          setShowVisits((data as Record<string, unknown>).show_visits !== false);
           setProtocolDate(new Date(data.protocol_date));
           setPreparedBy(data.prepared_by || '');
           setCustomerSignature(data.customer_signature || null);
@@ -238,6 +241,7 @@ const CreateProtocolForm = ({
       protocol_type: protocolType,
       prepared_by: preparedBy.trim() || null,
       notes: notes.trim() || null,
+      show_visits: showVisits,
       customer_signature: customerSignature,
       photo_urls: photoUrls,
     };
@@ -499,6 +503,20 @@ const CreateProtocolForm = ({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Show visits on protocol toggle */}
+          {visits.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-visits"
+                checked={showVisits}
+                onCheckedChange={(checked) => setShowVisits(checked === true)}
+              />
+              <label htmlFor="show-visits" className="text-sm cursor-pointer">
+                Pokaż czasy wizyt na protokole
+              </label>
             </div>
           )}
 
