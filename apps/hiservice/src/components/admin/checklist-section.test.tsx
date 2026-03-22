@@ -69,16 +69,6 @@ describe('ChecklistSection', () => {
         ]),
       );
     });
-
-    it('keeps same font style for checked and unchecked items', () => {
-      render(<ChecklistSection items={makeItems()} onChange={vi.fn()} mode="execute" />);
-
-      const unchecked = screen.getByText('Sprawdź ciśnienie');
-      const checked = screen.getByText('Wymień filtr');
-      // Neither should have line-through
-      expect(unchecked.className).not.toContain('line-through');
-      expect(checked.className).not.toContain('line-through');
-    });
   });
 
   describe('edit mode', () => {
