@@ -487,6 +487,33 @@ const EmployeeCalendarPage = () => {
         });
       }
     }
+
+    // Auto-complete original when last follow-up is completed
+    if (newStatus === 'completed') {
+      const { data: completedItem } = await supabase
+        .from('calendar_items')
+        .select('parent_item_id')
+        .eq('id', itemId)
+        .single();
+
+      if (completedItem?.parent_item_id) {
+        const { count } = await supabase
+          .from('calendar_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('parent_item_id', completedItem.parent_item_id)
+          .not('status', 'in', '(completed,cancelled)')
+          .neq('id', itemId);
+
+        if (count === 0) {
+          await supabase
+            .from('calendar_items')
+            .update({ status: 'completed', work_ended_at: new Date().toISOString() })
+            .eq('id', completedItem.parent_item_id);
+          toast.success('Oryginalne zlecenie zostało automatycznie zakończone');
+          fetchItems();
+        }
+      }
+    }
   };
 
   const handleFollowUpRequest = (item: CalendarItem) => {

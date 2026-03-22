@@ -109,7 +109,7 @@ const EmployeeOrdersDrawer = ({ open, onOpenChange, employeeId, employeeName, in
   const handleCardClick = async (orderId: string) => {
     const { data } = await supabase
       .from('calendar_items')
-      .select('id, title, item_date, end_date, start_time, end_time, column_id, status, admin_notes, price, customer_id, customer_address_id, assigned_employee_ids, customer_name, customer_phone, customer_email, photo_urls')
+      .select('id, title, item_date, end_date, start_time, end_time, column_id, status, admin_notes, price, customer_id, customer_address_id, assigned_employee_ids, customer_name, customer_phone, customer_email, photo_urls, checklist_items')
       .eq('id', orderId)
       .single();
 
@@ -123,6 +123,7 @@ const EmployeeOrdersDrawer = ({ open, onOpenChange, employeeId, employeeName, in
         customer_name: data.customer_name, customer_phone: data.customer_phone,
         customer_email: data.customer_email,
         photo_urls: Array.isArray(data.photo_urls) ? data.photo_urls as string[] : [],
+        checklist_items: (data as Record<string, unknown>).checklist_items as CalendarItem['checklist_items'] || [],
       };
       setDetailItem(calendarItem);
       setDetailOpen(true);
