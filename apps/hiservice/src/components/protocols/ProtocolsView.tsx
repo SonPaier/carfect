@@ -32,6 +32,7 @@ interface Protocol {
   prepared_by: string | null;
   public_token: string;
   created_at: string;
+  viewed_at: string | null;
 }
 
 interface ProtocolsViewProps {
@@ -128,7 +129,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
     setLoading(true);
     let query = supabase
       .from('protocols')
-      .select('id, customer_name, customer_phone, customer_email, protocol_date, protocol_type, status, prepared_by, public_token, created_at')
+      .select('id, customer_name, customer_phone, customer_email, protocol_date, protocol_type, status, prepared_by, public_token, created_at, viewed_at')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false });
 
@@ -259,25 +260,32 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     {p.prepared_by || '—'}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${getStatusConfig(p.status).className}`}
-                        >
-                          {getStatusConfig(p.status).label}
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        {Object.entries(protocolStatusConfig)
-                          .filter(([key]) => key !== p.status && key !== 'viewed')
-                          .map(([key, cfg]) => (
-                            <DropdownMenuItem key={key} onClick={() => handleStatusChange(p.id, key)}>
-                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
-                            </DropdownMenuItem>
-                          ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="space-y-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${getStatusConfig(p.status).className}`}
+                          >
+                            {getStatusConfig(p.status).label}
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {Object.entries(protocolStatusConfig)
+                            .filter(([key]) => key !== p.status && key !== 'viewed')
+                            .map(([key, cfg]) => (
+                              <DropdownMenuItem key={key} onClick={() => handleStatusChange(p.id, key)}>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
+                              </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      {p.viewed_at && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(new Date(p.viewed_at), 'd MMM, HH:mm', { locale: pl })}
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -359,7 +367,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                   </>
                 )}
               </div>
-              <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -379,6 +387,11 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                       ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                {p.viewed_at && (
+                  <span className="text-[11px] text-muted-foreground">
+                    {format(new Date(p.viewed_at), 'd MMM, HH:mm', { locale: pl })}
+                  </span>
+                )}
               </div>
             </div>
           ))
