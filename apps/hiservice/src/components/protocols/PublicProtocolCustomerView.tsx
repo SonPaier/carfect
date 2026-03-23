@@ -4,6 +4,7 @@ import { pl } from 'date-fns/locale';
 import { Loader2, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProtocolHeader from './ProtocolHeader';
+import { useProtocolViewTracking } from '@/hooks/useProtocolViewTracking';
 import {
   getVisitsFromChain,
   roundUpTo30,
@@ -49,9 +50,10 @@ const protocolTypeLabels: Record<string, string> = {
 
 interface PublicProtocolCustomerViewProps {
   token: string;
+  isPreview?: boolean;
 }
 
-const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) => {
+const PublicProtocolCustomerView = ({ token, isPreview = false }: PublicProtocolCustomerViewProps) => {
   const [protocol, setProtocol] = useState<ProtocolData | null>(null);
   const [address, setAddress] = useState<AddressData | null>(null);
   const [instance, setInstance] = useState<InstanceData | null>(null);
@@ -59,6 +61,12 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   const [error, setError] = useState<string | null>(null);
   const [visits, setVisits] = useState<VisitInfo[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useProtocolViewTracking(
+    isPreview ? undefined : protocol?.id,
+    isPreview ? undefined : protocol?.instance_id,
+    isPreview ? undefined : token,
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,8 +150,8 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-2xl mx-auto min-h-screen bg-white shadow-[0_0_30px_rgba(0,0,0,0.08)] px-8 py-10 space-y-8">
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="max-w-2xl mx-auto w-full flex-1 px-8 py-10 space-y-8">
         <ProtocolHeader
           instanceName={instance?.name || ''}
           logoUrl={instance?.logo_url || null}
@@ -258,27 +266,28 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
           )}
         </div>
 
-        {/* Footer — hiservice.pl branding */}
-        <div className="text-center text-xs text-muted-foreground py-6 border-t border-border mt-8">
-          <p>
-            Wygenerowano przy użyciu aplikacji dla serwisantów —{' '}
-            <a
-              href="https://hiservice.pl"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              hiservice.pl
-            </a>
-          </p>
-        </div>
+      </div>
+
+      {/* Footer — hiservice.pl branding, always at bottom */}
+      <div className="text-center text-xs text-muted-foreground py-6 border-t border-border mt-auto">
+        <p>
+          Wygenerowano przy użyciu aplikacji dla serwisantów —{' '}
+          <a
+            href="https://hiservice.pl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            hiservice.pl
+          </a>
+        </p>
       </div>
 
       {/* Lightbox */}
       {lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
-          onClick={() => setLightboxIndex(null)}
+          onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}
         >
           <button
             className="absolute top-4 right-4 text-white p-2"

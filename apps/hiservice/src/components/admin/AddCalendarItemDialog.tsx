@@ -346,12 +346,10 @@ const AddCalendarItemDialog = ({
       setStartTime('');
       setEndTime('');
       setAdminNotes('');
-      // Copy unchecked checklist items from parent to follow-up
+      // Copy all checklist items from parent to follow-up with original checked state
       const parentChecklist = followUpSourceItem.checklist_items || [];
       setChecklistItems(
-        parentChecklist
-          .filter((item) => !item.checked)
-          .map((item) => ({ ...item, id: generateId(), checked: false })),
+        parentChecklist.map((item) => ({ ...item, id: generateId() })),
       );
       setPrice('');
       setPriority(DEFAULT_PRIORITY);
@@ -370,8 +368,12 @@ const AddCalendarItemDialog = ({
       setCustomerId(initialCustomerId || null);
       setCustomerAddressId(initialCustomerAddressId || null);
       setColumnId(initialColumnId || columns[0]?.id || '');
-      const initDate = initialDate ? parseISO(initialDate) : new Date();
-      setDateRange({ from: initDate, to: initDate });
+      if (initialDate) {
+        const initDate = parseISO(initialDate);
+        setDateRange({ from: initDate, to: initDate });
+      } else {
+        setDateRange(undefined);
+      }
       const initStart = initialTime || '08:00';
       setStartTime(initStart);
       // Default to "Pół dnia" (4.5h)
@@ -665,7 +667,7 @@ const AddCalendarItemDialog = ({
           customer_phone: customerPhone.trim(),
           service_type: serviceType,
           months_after: 0,
-          scheduled_date: format(dateRange!.from!, 'yyyy-MM-dd'),
+          scheduled_date: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
           status: 'pending',
           calendar_item_id: calendarItemId,
         })
@@ -713,6 +715,8 @@ const AddCalendarItemDialog = ({
       }
     }
 
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = authData?.user ?? null;
     const hasDate = !!dateRange?.from;
     // Require column when columns exist, unless it's a project item without date
     const isProjectWithoutDate = !!projectId && !hasDate;
@@ -788,11 +792,8 @@ const AddCalendarItemDialog = ({
           .from('calendar_items')
           .insert({
             ...data,
-            status: followUpSourceItem
-              ? dateRange?.from
-                ? 'confirmed'
-                : 'follow_up'
-              : 'confirmed',
+            created_by: currentUser?.id || null,
+            status: dateRange?.from ? 'confirmed' : 'follow_up',
             ...(followUpSourceItem && {
               parent_item_id: followUpSourceItem.parent_item_id || followUpSourceItem.id,
             }),
@@ -892,6 +893,7 @@ const AddCalendarItemDialog = ({
         onOpenChange={(v) => {
           if (!v) onClose();
         }}
+        modal={false}
       >
         <SheetContent
           side="right"

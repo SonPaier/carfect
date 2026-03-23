@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, Eye, FileSearch, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -17,6 +17,9 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import CreateProtocolForm from './CreateProtocolForm';
 import SendProtocolEmailDialog from './SendProtocolEmailDialog';
 import ProtocolSettingsDialog from './ProtocolSettingsDialog';
+import ProtocolViewsDialog from './ProtocolViewsDialog';
+import PublicProtocolCustomerView from './PublicProtocolCustomerView';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Protocol {
   id: string;
@@ -29,6 +32,7 @@ interface Protocol {
   prepared_by: string | null;
   public_token: string;
   created_at: string;
+  viewed_at: string | null;
 }
 
 interface ProtocolsViewProps {
@@ -39,6 +43,16 @@ interface ProtocolsViewProps {
 const protocolTypeLabels: Record<string, string> = {
   completion: 'Zakończenie prac',
 };
+
+const protocolStatusConfig: Record<string, { label: string; className: string }> = {
+  draft:    { label: 'Do zaakceptowania', className: 'bg-yellow-100 text-yellow-700' },
+  accepted: { label: 'Zaakceptowany',     className: 'bg-green-100 text-green-700' },
+  sent:     { label: 'Wysłany',           className: 'bg-blue-100 text-blue-700' },
+  viewed:   { label: 'Obejrzany',         className: 'bg-amber-100 text-amber-700' },
+};
+
+const getStatusConfig = (status: string) =>
+  protocolStatusConfig[status] || protocolStatusConfig.draft;
 
 const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
@@ -52,6 +66,8 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [viewsDialogProtocol, setViewsDialogProtocol] = useState<Protocol | null>(null);
+  const [previewToken, setPreviewToken] = useState<string | null>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -66,6 +82,31 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
     if (sortColumn !== column) return null;
     return sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
   };
+
+  const ProtocolMenuItems = ({ p }: { p: Protocol }) => (
+    <>
+      <DropdownMenuItem onClick={() => setPreviewToken(p.public_token)}>
+        <FileSearch className="w-4 h-4 mr-2" />Podgląd
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleEdit(p)}>
+        <Edit className="w-4 h-4 mr-2" />Edytuj
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleCopyLink(p.public_token)}>
+        <Link2 className="w-4 h-4 mr-2" />Kopiuj link
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
+        <Mail className="w-4 h-4 mr-2" />Wyślij emailem
+      </DropdownMenuItem>
+      {p.status === 'viewed' && (
+        <DropdownMenuItem onClick={() => setViewsDialogProtocol(p)}>
+          <Eye className="w-4 h-4 mr-2" />Historia oglądania
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
+        <Trash2 className="w-4 h-4 mr-2" />Usuń
+      </DropdownMenuItem>
+    </>
+  );
 
   const sortedProtocols = useMemo(() => {
     if (!sortColumn) return protocols;
@@ -88,7 +129,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
     setLoading(true);
     let query = supabase
       .from('protocols')
-      .select('id, customer_name, customer_phone, customer_email, protocol_date, protocol_type, status, prepared_by, public_token, created_at')
+      .select('id, customer_name, customer_phone, customer_email, protocol_date, protocol_type, status, prepared_by, public_token, created_at, viewed_at')
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false });
 
@@ -131,6 +172,15 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const handleEdit = (protocol: Protocol) => {
     setEditingProtocol(protocol);
     setFormOpen(true);
+  };
+
+  const handleStatusChange = async (protocolId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('protocols')
+      .update({ status: newStatus })
+      .eq('id', protocolId);
+    if (error) { toast.error('Błąd zmiany statusu'); return; }
+    setProtocols((prev) => prev.map((p) => p.id === protocolId ? { ...p, status: newStatus } : p));
   };
 
   return (
@@ -179,19 +229,20 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
               <TableHead className="cursor-pointer select-none" onClick={() => handleSort('prepared_by')}>
                 <span className="flex items-center">Sporządził<SortIcon column="prepared_by" /></span>
               </TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   Ładowanie...
                 </TableCell>
               </TableRow>
             ) : protocols.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak protokołów'}
                 </TableCell>
               </TableRow>
@@ -208,6 +259,34 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                   <TableCell className="text-sm">
                     {p.prepared_by || '—'}
                   </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${getStatusConfig(p.status).className}`}
+                          >
+                            {getStatusConfig(p.status).label}
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {Object.entries(protocolStatusConfig)
+                            .filter(([key]) => key !== p.status && key !== 'viewed')
+                            .map(([key, cfg]) => (
+                              <DropdownMenuItem key={key} onClick={() => handleStatusChange(p.id, key)}>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
+                              </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      {p.viewed_at && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(new Date(p.viewed_at), 'd MMM, HH:mm', { locale: pl })}
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -216,18 +295,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => handleEdit(p)}>
-                          <Edit className="w-4 h-4 mr-2" />Edytuj
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleCopyLink(p.public_token)}>
-                          <Link2 className="w-4 h-4 mr-2" />Kopiuj link
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
-                          <Mail className="w-4 h-4 mr-2" />Wyślij emailem
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />Usuń
-                        </DropdownMenuItem>
+                        <ProtocolMenuItems p={p} />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -267,6 +335,9 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => setPreviewToken(p.public_token)}>
+                      <FileSearch className="w-4 h-4 mr-2" />Podgląd
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleEdit(p)}>
                       <Edit className="w-4 h-4 mr-2" />Edytuj
                     </DropdownMenuItem>
@@ -276,6 +347,11 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
                       <Mail className="w-4 h-4 mr-2" />Wyślij emailem
                     </DropdownMenuItem>
+                    {p.status === 'viewed' && (
+                      <DropdownMenuItem onClick={() => setViewsDialogProtocol(p)}>
+                        <Eye className="w-4 h-4 mr-2" />Historia oglądania
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
                       <Trash2 className="w-4 h-4 mr-2" />Usuń
                     </DropdownMenuItem>
@@ -289,6 +365,32 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     <span>·</span>
                     <span>{p.prepared_by}</span>
                   </>
+                )}
+              </div>
+              <div className="mt-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${getStatusConfig(p.status).className}`}
+                    >
+                      {getStatusConfig(p.status).label}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {Object.entries(protocolStatusConfig)
+                      .filter(([key]) => key !== p.status && key !== 'viewed')
+                      .map(([key, cfg]) => (
+                        <DropdownMenuItem key={key} onClick={() => handleStatusChange(p.id, key)}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {p.viewed_at && (
+                  <span className="text-[11px] text-muted-foreground">
+                    {format(new Date(p.viewed_at), 'd MMM, HH:mm', { locale: pl })}
+                  </span>
                 )}
               </div>
             </div>
@@ -308,10 +410,11 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
       {/* Send Email Dialog */}
       {emailDialogProtocol && (
         <SendProtocolEmailDialog
-          open={!!emailDialogProtocol}
+          open
           onClose={() => setEmailDialogProtocol(null)}
           protocol={emailDialogProtocol}
           instanceId={instanceId}
+          onStatusChange={handleStatusChange}
         />
       )}
 
@@ -331,6 +434,28 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
         variant="destructive"
         onConfirm={handleDeleteConfirm}
       />
+
+      {viewsDialogProtocol && (
+        <ProtocolViewsDialog
+          protocolId={viewsDialogProtocol.id}
+          open
+          onOpenChange={(v) => { if (!v) setViewsDialogProtocol(null); }}
+        />
+      )}
+
+      {/* Protocol Preview Dialog */}
+      <Dialog open={!!previewToken} onOpenChange={(v) => { if (!v) setPreviewToken(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 [&>button]:hidden">
+          <button
+            type="button"
+            onClick={() => setPreviewToken(null)}
+            className="absolute top-3 right-3 z-50 p-2 rounded-full bg-white hover:bg-hover transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {previewToken && <PublicProtocolCustomerView token={previewToken} isPreview />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
