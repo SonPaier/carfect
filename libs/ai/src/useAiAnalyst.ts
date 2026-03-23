@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { AiAnalystResponse, AiAnalystHistoryEntry } from './types';
+import { useMemo } from 'react';
 
 interface UseAiAnalystOptions {
   instanceId: string;
@@ -9,46 +10,23 @@ interface UseAiAnalystOptions {
 }
 
 export function useAiAnalyst({ instanceId, schemaContext, supabaseClient }: UseAiAnalystOptions) {
-  const [history, setHistory] = useState<AiAnalystHistoryEntry[]>([]);
+  const transport = useMemo(() => {
+    // Access internal properties for URL and key
+    const supabaseUrl = (supabaseClient as any).supabaseUrl as string;
+    const supabaseKey = (supabaseClient as any).supabaseKey as string;
 
-  const ask = useCallback(
-    async (prompt: string) => {
-      const entryId = crypto.randomUUID();
-      const entry: AiAnalystHistoryEntry = {
-        id: entryId,
-        prompt,
-        response: null,
-        loading: true,
-      };
+    return new DefaultChatTransport({
+      api: `${supabaseUrl}/functions/v1/ai-analyst`,
+      headers: async () => {
+        const { data } = await supabaseClient.auth.getSession();
+        return {
+          Authorization: `Bearer ${data.session?.access_token || ''}`,
+          apikey: supabaseKey,
+        };
+      },
+      body: { instanceId, schemaContext },
+    });
+  }, [instanceId, schemaContext, supabaseClient]);
 
-      setHistory((prev) => [...prev, entry]);
-
-      try {
-        const { data, error } = await supabaseClient.functions.invoke('ai-analyst', {
-          body: { prompt, instanceId, schemaContext },
-        });
-
-        if (error) throw error;
-
-        setHistory((prev) =>
-          prev.map((e) =>
-            e.id === entryId ? { ...e, loading: false, response: data as AiAnalystResponse } : e,
-          ),
-        );
-      } catch (err: any) {
-        setHistory((prev) =>
-          prev.map((e) =>
-            e.id === entryId
-              ? { ...e, loading: false, error: err?.message || 'Nie udało się przetworzyć zapytania' }
-              : e,
-          ),
-        );
-      }
-    },
-    [instanceId, schemaContext, supabaseClient],
-  );
-
-  const clear = useCallback(() => setHistory([]), []);
-
-  return { history, ask, clear };
+  return useChat({ transport });
 }
