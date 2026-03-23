@@ -13,6 +13,9 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
     storage: { from: vi.fn() },
     functions: { invoke: vi.fn() },
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-test-id' } }, error: null }),
+    },
   },
 }));
 
@@ -85,7 +88,18 @@ function makeResult(overrides: Partial<RollScanResult> = {}): RollScanResult {
 
 const createChainMock = (resolveData: unknown = null, resolveError: unknown = null) => {
   const chain: Record<string, unknown> = {};
-  const methods = ['select', 'eq', 'neq', 'order', 'limit', 'single', 'insert', 'update', 'delete', 'in'];
+  const methods = [
+    'select',
+    'eq',
+    'neq',
+    'order',
+    'limit',
+    'single',
+    'insert',
+    'update',
+    'delete',
+    'in',
+  ];
   methods.forEach((method) => {
     chain[method] = vi.fn(() => chain);
   });
@@ -128,9 +142,7 @@ describe('RollScanDrawer — handleSave validation', () => {
       const saveBtn = screen.getByRole('button', { name: /zapisz/i });
       await user.click(saveBtn);
 
-      expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining('nie ma wymaganych danych'),
-      );
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('nie ma wymaganych danych'));
     });
 
     it('shows toast.error when a roll is missing widthMm', async () => {
@@ -146,9 +158,7 @@ describe('RollScanDrawer — handleSave validation', () => {
       const saveBtn = screen.getByRole('button', { name: /zapisz/i });
       await user.click(saveBtn);
 
-      expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining('nie ma wymaganych danych'),
-      );
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('nie ma wymaganych danych'));
     });
 
     it('shows toast.error when a roll is missing lengthM', async () => {
@@ -164,9 +174,7 @@ describe('RollScanDrawer — handleSave validation', () => {
       const saveBtn = screen.getByRole('button', { name: /zapisz/i });
       await user.click(saveBtn);
 
-      expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining('nie ma wymaganych danych'),
-      );
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('nie ma wymaganych danych'));
     });
 
     it('does not call createRollsBatch when required fields are missing', async () => {
@@ -189,8 +197,22 @@ describe('RollScanDrawer — handleSave validation', () => {
   describe('Within-batch duplicate productCode check', () => {
     it('shows toast.error for duplicate codes in the same batch', async () => {
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: 'DUPE-001' } }),
-        makeResult({ extractedData: { productName: 'Roll B', widthMm: 152, lengthM: 25, productCode: 'DUPE-001' } }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll A',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'DUPE-001',
+          },
+        }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll B',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'DUPE-001',
+          },
+        }),
       ];
       const { toast } = await import('sonner');
 
@@ -199,15 +221,17 @@ describe('RollScanDrawer — handleSave validation', () => {
       const saveBtn = screen.getByRole('button', { name: /zapisz/i });
       await user.click(saveBtn);
 
-      expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining('DUPE-001'),
-      );
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('DUPE-001'));
     });
 
     it('does not call createRollsBatch when batch has duplicate codes', async () => {
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: 'DUP' } }),
-        makeResult({ extractedData: { productName: 'Roll B', widthMm: 100, lengthM: 50, productCode: 'DUP' } }),
+        makeResult({
+          extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: 'DUP' },
+        }),
+        makeResult({
+          extractedData: { productName: 'Roll B', widthMm: 100, lengthM: 50, productCode: 'DUP' },
+        }),
       ];
       const { createRollsBatch } = await import('../services/rollService');
 
@@ -224,8 +248,22 @@ describe('RollScanDrawer — handleSave validation', () => {
       mockFrom.mockReturnValue(dbChain);
 
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: 'CODE-001' } }),
-        makeResult({ extractedData: { productName: 'Roll B', widthMm: 100, lengthM: 50, productCode: 'CODE-002' } }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll A',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'CODE-001',
+          },
+        }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll B',
+            widthMm: 100,
+            lengthM: 50,
+            productCode: 'CODE-002',
+          },
+        }),
       ];
       const { createRollsBatch } = await import('../services/rollService');
 
@@ -246,7 +284,14 @@ describe('RollScanDrawer — handleSave validation', () => {
       mockFrom.mockReturnValue(dbChain);
 
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: 'EXIST-001' } }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll A',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'EXIST-001',
+          },
+        }),
       ];
       const { toast } = await import('sonner');
 
@@ -256,9 +301,7 @@ describe('RollScanDrawer — handleSave validation', () => {
       await user.click(saveBtn);
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining('EXIST-001'),
-        );
+        expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('EXIST-001'));
       });
     });
 
@@ -267,7 +310,14 @@ describe('RollScanDrawer — handleSave validation', () => {
       mockFrom.mockReturnValue(dbChain);
 
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll X', widthMm: 152, lengthM: 25, productCode: 'EXIST-002' } }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll X',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'EXIST-002',
+          },
+        }),
       ];
       const { createRollsBatch } = await import('../services/rollService');
 
@@ -287,7 +337,14 @@ describe('RollScanDrawer — handleSave validation', () => {
       mockFrom.mockReturnValue(dbChain);
 
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll Archived', widthMm: 152, lengthM: 25, productCode: 'ARCH-001' } }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll Archived',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'ARCH-001',
+          },
+        }),
       ];
       const { createRollsBatch } = await import('../services/rollService');
 
@@ -306,7 +363,9 @@ describe('RollScanDrawer — handleSave validation', () => {
       mockFrom.mockReturnValue(dbChain);
 
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll', widthMm: 152, lengthM: 25, productCode: 'CODE-X' } }),
+        makeResult({
+          extractedData: { productName: 'Roll', widthMm: 152, lengthM: 25, productCode: 'CODE-X' },
+        }),
       ];
 
       render(<RollScanDrawer {...defaultProps} />);
@@ -326,8 +385,23 @@ describe('RollScanDrawer — handleSave validation', () => {
       mockFrom.mockReturnValue(dbChain);
 
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: 'OK-001' } }),
-        makeResult({ extractedData: { productName: 'Roll B', widthMm: 100, lengthM: 50, productCode: 'OK-002' }, status: 'review' }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll A',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: 'OK-001',
+          },
+        }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll B',
+            widthMm: 100,
+            lengthM: 50,
+            productCode: 'OK-002',
+          },
+          status: 'review',
+        }),
       ];
       const { createRollsBatch } = await import('../services/rollService');
 
@@ -386,7 +460,14 @@ describe('RollScanDrawer — handleSave validation', () => {
 
     it('skips DB check when no rolls have product codes', async () => {
       mockResults = [
-        makeResult({ extractedData: { productName: 'Roll A', widthMm: 152, lengthM: 25, productCode: undefined } }),
+        makeResult({
+          extractedData: {
+            productName: 'Roll A',
+            widthMm: 152,
+            lengthM: 25,
+            productCode: undefined,
+          },
+        }),
       ];
       const { createRollsBatch } = await import('../services/rollService');
 
