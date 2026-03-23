@@ -340,7 +340,11 @@ function parseRollLabel(rawText: string) {
     if (DESCRIPTION_PATTERNS.some((p) => p.test(line))) continue;
 
     // Skip lines that contain the brand name (e.g. "ULTRAFIT™", "G ULTRAFIT™")
-    const cleanLine = line.replace(/[™®©]/g, '').trim();
+    const cleanLine = line
+      .replace(/[™®©]/g, '')
+      .replace(/\s*\bTm\b/g, '')
+      .replace(/\s*\bTM\b/g, '')
+      .trim();
     const containsBrand = KNOWN_BRANDS.some((kb) => kb.pattern.test(cleanLine));
     if (containsBrand) {
       consumed.add(i);
@@ -368,7 +372,13 @@ function parseRollLabel(rawText: string) {
     if (/^\d+$/.test(line.replace(/\s/g, ''))) continue;
 
     // This is likely a product name part
-    nameCandidates.push(line.replace(/[™®©]/g, '').trim());
+    nameCandidates.push(
+      line
+        .replace(/[™®©]/g, '')
+        .replace(/\s*\bTm\b/g, '')
+        .replace(/\s*\bTM\b/g, '')
+        .trim(),
+    );
     consumed.add(i);
 
     // Stop after collecting enough (product names are usually 1-3 lines)
