@@ -24,6 +24,7 @@ import {
   BadgeDollarSign,
   GraduationCap,
   ArrowLeftRight,
+  Sparkles,
 } from 'lucide-react';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useStations } from '@/hooks/useStations';
@@ -69,6 +70,7 @@ import SettingsView from '@/components/admin/SettingsView';
 import PriceListSettings from '@/components/admin/PriceListSettings';
 import { ProtocolsView } from '@/components/protocols/ProtocolsView';
 import RemindersView from '@/components/admin/RemindersView';
+import AiAnalystTab from '@/components/admin/AiAnalystTab';
 import { EmployeesView } from '@/components/admin/employees';
 import { AddTrainingDrawer } from '@/components/admin/AddTrainingDrawer';
 import { TrainingDetailsDrawer } from '@/components/admin/TrainingDetailsDrawer';
@@ -171,7 +173,8 @@ type ViewType =
   | 'halls'
   | 'protocols'
   | 'reminders'
-  | 'employees';
+  | 'employees'
+  | 'ai_analyst';
 const validViews: ViewType[] = [
   'calendar',
   'reservations',
@@ -186,6 +189,7 @@ const validViews: ViewType[] = [
   'protocols',
   'reminders',
   'employees',
+  'ai_analyst',
 ];
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -3134,6 +3138,26 @@ const AdminDashboard = () => {
                     </Button>
                   )}
                   {/* 8. Powiadomienia - ukryte */}
+                  {/* AI Analyst */}
+                  {hasFeature('ai_analyst') && (
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'ai_analyst' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('ai_analyst');
+                      }}
+                      title="Asystent AI"
+                    >
+                      <Sparkles className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Asystent AI'}
+                    </Button>
+                  )}
                   {/* 9. Ustawienia - admin only, always last */}
                   {userRole !== 'employee' && (
                     <Button
@@ -3250,8 +3274,13 @@ const AdminDashboard = () => {
           {/* Content */}
           <div
             className={cn(
-              'flex-1 space-y-6 overflow-auto pb-28 lg:pb-8',
-              currentView === 'calendar' ? 'p-0 lg:p-4 lg:pt-0' : 'p-4',
+              'flex-1 overflow-auto',
+              currentView === 'ai_analyst'
+                ? 'flex flex-col p-0'
+                : cn(
+                    'space-y-6 pb-28 lg:pb-8',
+                    currentView === 'calendar' ? 'p-0 lg:p-4 lg:pt-0' : 'p-4',
+                  ),
             )}
           >
             {/* Header - only shown for settings view */}
@@ -3453,6 +3482,8 @@ const AdminDashboard = () => {
                 onNavigateBack={() => setCurrentView('pricelist')}
               />
             )}
+
+            {currentView === 'ai_analyst' && instanceId && <AiAnalystTab instanceId={instanceId} />}
 
             {currentView === 'employees' && instanceId && <EmployeesView instanceId={instanceId} />}
           </div>

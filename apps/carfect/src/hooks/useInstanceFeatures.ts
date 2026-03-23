@@ -12,6 +12,7 @@ interface InstanceFeatures {
   reminders: boolean;
   trainings: boolean;
   sales_crm: boolean;
+  ai_analyst: boolean;
 }
 
 const defaultFeatures: InstanceFeatures = {
@@ -24,6 +25,7 @@ const defaultFeatures: InstanceFeatures = {
   reminders: false,
   trainings: false,
   sales_crm: false,
+  ai_analyst: false,
 };
 
 export const useInstanceFeatures = (instanceId: string | null) => {
