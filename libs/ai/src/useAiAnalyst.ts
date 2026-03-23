@@ -11,17 +11,12 @@ interface UseAiAnalystOptions {
 
 export function useAiAnalyst({ instanceId, schemaContext, supabaseClient }: UseAiAnalystOptions) {
   const transport = useMemo(() => {
-    // Access internal properties for URL and key
-    const supabaseUrl = (supabaseClient as any).supabaseUrl as string;
-    const supabaseKey = (supabaseClient as any).supabaseKey as string;
-
     return new DefaultChatTransport({
-      api: `${supabaseUrl}/functions/v1/ai-analyst`,
+      api: '/api/ai-analyst',
       headers: async () => {
         const { data } = await supabaseClient.auth.getSession();
         return {
           Authorization: `Bearer ${data.session?.access_token || ''}`,
-          apikey: supabaseKey,
         };
       },
       body: { instanceId, schemaContext },

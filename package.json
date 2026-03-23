@@ -30,6 +30,10 @@
     }
   },
   "dependencies": {
-    "dompurify": "^3.3.3"
+    "@ai-sdk/openai": "^3.0.47",
+    "@supabase/supabase-js": "^2.99.3",
+    "ai": "^6.0.134",
+    "dompurify": "^3.3.3",
+    "zod": "^3.25.76"
   }
 }
