@@ -172,7 +172,7 @@ const UnscheduledFollowUpsDrawer = ({
                         <div className="text-xs text-foreground">{addressText}</div>
                       )}
                       {item.admin_notes && (
-                        <div className="text-xs text-foreground bg-white rounded p-2 mt-1 whitespace-pre-line line-clamp-3 border border-border/50">
+                        <div className="text-xs text-foreground mt-1 whitespace-pre-line line-clamp-3">
                           {item.admin_notes}
                         </div>
                       )}
