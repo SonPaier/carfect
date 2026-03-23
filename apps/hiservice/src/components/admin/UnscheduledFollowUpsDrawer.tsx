@@ -109,7 +109,8 @@ const UnscheduledFollowUpsDrawer = ({
     const { error } = await supabase
       .from('calendar_items')
       .delete()
-      .eq('id', deleteItemId);
+      .eq('id', deleteItemId)
+      .eq('instance_id', instanceId);
     if (error) {
       toast.error('Błąd usuwania zlecenia');
     } else {
