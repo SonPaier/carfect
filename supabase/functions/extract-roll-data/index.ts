@@ -392,12 +392,13 @@ function parseRollLabel(rawText: string) {
     const raw = nameCandidates.join(' ').replace(/\s+/g, ' ').trim();
 
     // Title case normalization (but preserve known casing)
-    const preserveCase = ['XP', 'EVO', 'PPF', 'WPF'];
+    const preserveExact = ['XP', 'EVO', 'PPF', 'WPF'];
     const words = raw.split(' ');
     const normalized = words.map((w) => {
       const upper = w.toUpperCase();
-      if (preserveCase.includes(upper)) return upper;
-      // Title case
+      if (preserveExact.includes(upper)) return upper;
+      // If word has mixed case already (e.g. WinCrest), preserve it
+      if (w !== w.toLowerCase() && w !== w.toUpperCase() && w.length > 2) return w;
       return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
     });
 
