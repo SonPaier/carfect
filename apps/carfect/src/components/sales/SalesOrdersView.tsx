@@ -685,13 +685,13 @@ const SalesOrdersView = () => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               {order.paymentStatus === 'paid' ? (
-                                <Badge className="bg-emerald-600 text-white text-xs">
+                                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
                                   Opłacone
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="border-amber-500 text-amber-600 text-xs"
+                                  className="border-amber-500 text-amber-600 cursor-pointer"
                                 >
                                   Do opłacenia
                                 </Badge>
@@ -705,7 +705,9 @@ const SalesOrdersView = () => {
                                 changePaymentStatus(order.id, 'unpaid');
                               }}
                             >
-                              Do opłacenia
+                              <Badge variant="outline" className="border-amber-500 text-amber-600">
+                                Do opłacenia
+                              </Badge>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={(e) => {
@@ -713,7 +715,7 @@ const SalesOrdersView = () => {
                                 changePaymentStatus(order.id, 'paid');
                               }}
                             >
-                              Opłacone
+                              <Badge className="bg-emerald-600 text-white">Opłacone</Badge>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
