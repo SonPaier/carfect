@@ -1,12 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { streamText, jsonSchema } from 'npm:ai@5';
-import { createOpenAI } from 'npm:@ai-sdk/openai@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -64,6 +63,25 @@ OTHER:
 - car_models: id, brand, name, size, active (NO instance_id — global table)`,
 };
 
+const RUN_SQL_TOOL = {
+  type: 'function' as const,
+  function: {
+    name: 'run_sql',
+    description:
+      'Execute a read-only SELECT SQL query against the database. Always include WHERE instance_id clause.',
+    parameters: {
+      type: 'object',
+      properties: {
+        sql: {
+          type: 'string',
+          description: 'The SELECT SQL query to execute.',
+        },
+      },
+      required: ['sql'],
+    },
+  },
+};
+
 function validateSql(sql: string): string | null {
   const trimmed = sql.trim();
   const upper = trimmed.toUpperCase();
@@ -75,6 +93,33 @@ function validateSql(sql: string): string | null {
   if (/\bCREATE\s+(TABLE|INDEX|VIEW|FUNCTION)/i.test(trimmed)) return 'Forbidden: CREATE statement';
   if (trimmed.includes(';')) return 'Multi-statement queries not allowed';
   return null;
+}
+
+async function callOpenAI(
+  messages: Array<{ role: string; content: string; tool_call_id?: string }>,
+  systemPrompt: string,
+  tools?: any[],
+) {
+  const body: any = {
+    model: 'gpt-4.1-mini',
+    messages: [{ role: 'system', content: systemPrompt }, ...messages],
+    temperature: 0,
+  };
+  if (tools) body.tools = tools;
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenAI error ${res.status}: ${errText}`);
+  }
+  return await res.json();
 }
 
 Deno.serve(async (req) => {
@@ -92,8 +137,6 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Verify user
     const token = authHeader.replace('Bearer ', '');
     const {
       data: { user },
@@ -106,22 +149,39 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { messages, instanceId, schemaContext } = await req.json();
+    const body = await req.json();
+    const instanceId = body.instanceId;
+    const schemaContext = body.schemaContext;
+    // Support both useChat format (messages with parts) and simple format (prompt)
+    let chatMessages: Array<{ role: string; content: string }> = [];
 
-    if (!messages || !instanceId || !schemaContext) {
+    if (body.messages) {
+      chatMessages = body.messages.map((m: any) => ({
+        role: m.role,
+        content: m.parts
+          ? m.parts
+              .filter((p: any) => p.type === 'text')
+              .map((p: any) => p.text)
+              .join('')
+          : m.content || '',
+      }));
+    } else if (body.prompt) {
+      chatMessages = [{ role: 'user', content: body.prompt }];
+    }
+
+    if (chatMessages.length === 0 || !instanceId || !schemaContext) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Verify user has access to this instance
+    // Verify access
     const { data: roles } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .eq('instance_id', instanceId);
-
     if (!roles || roles.length === 0) {
       return new Response(JSON.stringify({ error: 'No access to this instance' }), {
         status: 403,
@@ -137,13 +197,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const openai = createOpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY')!,
-    });
-
-    const result = streamText({
-      model: openai('gpt-4.1-mini'),
-      system: `Jesteś asystentem biznesowym studia detailingowego / PPF. Odpowiadasz po polsku.
+    const systemPrompt = `Jesteś asystentem biznesowym studia detailingowego / PPF. Odpowiadasz po polsku.
 
 ${schemaDesc}
 
@@ -157,53 +211,59 @@ Zasady:
 - Używaj ILIKE do fuzzy matchowania nazw usług.
 - Formatuj kwoty jako X XXX,XX zł.
 - W odpowiedzi podawaj: wynik, zakres dat, główne wnioski.
-- Bądź zwięzły — 2-4 zdania, potem opcjonalnie tabela.
-- Możesz wywołać run_sql wielokrotnie jeśli potrzebujesz danych z różnych tabel.`,
-      messages: messages.map((m: any) => ({
-        role: m.role,
-        content: m.parts
-          ? m.parts
-              .filter((p: any) => p.type === 'text')
-              .map((p: any) => p.text)
-              .join('')
-          : m.content || '',
-      })),
-      tools: {
-        run_sql: {
-          description:
-            'Execute a read-only SQL query against the database. Use this to fetch any data needed to answer the user question. Always include WHERE instance_id clause.',
-          parameters: jsonSchema<{ sql: string }>({
-            type: 'object',
-            properties: {
-              sql: {
-                type: 'string',
-                description:
-                  'The SELECT SQL query to execute. Must be a single SELECT statement with instance_id filter.',
-              },
-            },
-            required: ['sql'],
-            additionalProperties: false,
-          }),
-          execute: async ({ sql }: { sql: string }) => {
-            // Clean up SQL
-            const cleanSql = sql.trim().replace(/;+$/, '').trim();
+- Bądź zwięzły — 2-4 zdania, potem opcjonalnie tabela w markdown.
+- Możesz wywołać run_sql wielokrotnie jeśli potrzebujesz danych z różnych tabel.
+- Jeśli SQL zwraca error, popraw zapytanie i spróbuj ponownie.`;
+
+    // Tool calling loop — max 5 iterations
+    let openaiMessages = [...chatMessages];
+    let finalAnswer = '';
+
+    for (let step = 0; step < 5; step++) {
+      const response = await callOpenAI(openaiMessages, systemPrompt, [RUN_SQL_TOOL]);
+      const choice = response.choices[0];
+      const message = choice.message;
+
+      // If model wants to call a tool
+      if (message.tool_calls && message.tool_calls.length > 0) {
+        // Add assistant message with tool calls
+        openaiMessages.push(message);
+
+        // Execute each tool call
+        for (const toolCall of message.tool_calls) {
+          if (toolCall.function.name === 'run_sql') {
+            const args = JSON.parse(toolCall.function.arguments);
+            const cleanSql = (args.sql || '').trim().replace(/;+$/, '').trim();
 
             // Validate
             const validationError = validateSql(cleanSql);
             if (validationError) {
-              return { error: validationError };
+              openaiMessages.push({
+                role: 'tool',
+                content: JSON.stringify({ error: validationError }),
+                tool_call_id: toolCall.id,
+              });
+              continue;
             }
 
             // Check instance_id safety
             const instanceIdPattern = /instance_id\s*=\s*'([^']+)'/gi;
             let match;
+            let blocked = false;
             while ((match = instanceIdPattern.exec(cleanSql)) !== null) {
               if (match[1] !== instanceId) {
-                return { error: 'Unauthorized instance_id reference' };
+                openaiMessages.push({
+                  role: 'tool',
+                  content: JSON.stringify({ error: 'Unauthorized instance_id' }),
+                  tool_call_id: toolCall.id,
+                });
+                blocked = true;
+                break;
               }
             }
+            if (blocked) continue;
 
-            // Execute
+            // Execute SQL
             const { data, error } = await supabase.rpc('execute_readonly_query', {
               query_text: cleanSql,
               target_instance_id: instanceId,
@@ -211,18 +271,42 @@ Zasady:
 
             if (error) {
               console.error('SQL error:', error.message, 'SQL:', cleanSql);
-              return { error: `SQL error: ${error.message}. Fix the query and try again.` };
+              openaiMessages.push({
+                role: 'tool',
+                content: JSON.stringify({
+                  error: `SQL error: ${error.message}. Fix the query and try again.`,
+                }),
+                tool_call_id: toolCall.id,
+              });
+            } else {
+              openaiMessages.push({
+                role: 'tool',
+                content: JSON.stringify({
+                  rows: data,
+                  rowCount: Array.isArray(data) ? data.length : 0,
+                }),
+                tool_call_id: toolCall.id,
+              });
             }
+          }
+        }
+        // Continue loop — model will process tool results
+        continue;
+      }
 
-            return { rows: data, rowCount: Array.isArray(data) ? data.length : 0 };
-          },
-        },
+      // Model returned final text answer
+      finalAnswer = message.content || '';
+      break;
+    }
+
+    // Stream-like response compatible with useChat text protocol
+    return new Response(finalAnswer, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/plain; charset=utf-8',
       },
-      maxSteps: 5,
     });
-
-    return result.toUIMessageStreamResponse({ headers: corsHeaders });
-  } catch (err) {
+  } catch (err: any) {
     console.error('AI Analyst error:', err);
     return new Response(JSON.stringify({ error: err.message || 'Internal server error' }), {
       status: 500,
