@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, Eye } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, Eye, FileSearch, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -18,6 +18,8 @@ import CreateProtocolForm from './CreateProtocolForm';
 import SendProtocolEmailDialog from './SendProtocolEmailDialog';
 import ProtocolSettingsDialog from './ProtocolSettingsDialog';
 import ProtocolViewsDialog from './ProtocolViewsDialog';
+import PublicProtocolCustomerView from './PublicProtocolCustomerView';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Protocol {
   id: string;
@@ -64,6 +66,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewsDialogProtocol, setViewsDialogProtocol] = useState<Protocol | null>(null);
+  const [previewToken, setPreviewToken] = useState<string | null>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -81,6 +84,9 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
 
   const ProtocolMenuItems = ({ p }: { p: Protocol }) => (
     <>
+      <DropdownMenuItem onClick={() => setPreviewToken(p.public_token)}>
+        <FileSearch className="w-4 h-4 mr-2" />Podgląd
+      </DropdownMenuItem>
       <DropdownMenuItem onClick={() => handleEdit(p)}>
         <Edit className="w-4 h-4 mr-2" />Edytuj
       </DropdownMenuItem>
@@ -321,6 +327,9 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => setPreviewToken(p.public_token)}>
+                      <FileSearch className="w-4 h-4 mr-2" />Podgląd
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleEdit(p)}>
                       <Edit className="w-4 h-4 mr-2" />Edytuj
                     </DropdownMenuItem>
@@ -420,6 +429,20 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
           onOpenChange={(v) => { if (!v) setViewsDialogProtocol(null); }}
         />
       )}
+
+      {/* Protocol Preview Dialog */}
+      <Dialog open={!!previewToken} onOpenChange={(v) => { if (!v) setPreviewToken(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 [&>button]:hidden">
+          <button
+            type="button"
+            onClick={() => setPreviewToken(null)}
+            className="absolute top-3 right-3 z-50 p-2 rounded-full bg-white hover:bg-hover transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {previewToken && <PublicProtocolCustomerView token={previewToken} isPreview />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

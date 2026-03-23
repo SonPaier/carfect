@@ -50,9 +50,10 @@ const protocolTypeLabels: Record<string, string> = {
 
 interface PublicProtocolCustomerViewProps {
   token: string;
+  isPreview?: boolean;
 }
 
-const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) => {
+const PublicProtocolCustomerView = ({ token, isPreview = false }: PublicProtocolCustomerViewProps) => {
   const [protocol, setProtocol] = useState<ProtocolData | null>(null);
   const [address, setAddress] = useState<AddressData | null>(null);
   const [instance, setInstance] = useState<InstanceData | null>(null);
@@ -61,7 +62,11 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   const [visits, setVisits] = useState<VisitInfo[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  useProtocolViewTracking(protocol?.id, protocol?.instance_id, token);
+  useProtocolViewTracking(
+    isPreview ? undefined : protocol?.id,
+    isPreview ? undefined : protocol?.instance_id,
+    isPreview ? undefined : token,
+  );
 
   useEffect(() => {
     const fetchData = async () => {
