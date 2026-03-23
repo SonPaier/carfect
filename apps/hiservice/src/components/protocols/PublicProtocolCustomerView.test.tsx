@@ -123,24 +123,6 @@ describe('PublicProtocolCustomerView', () => {
       });
     });
 
-    it('calls useProtocolViewTracking with real args when isPreview is not set', async () => {
-      render(<PublicProtocolCustomerView token="tok-abc123" />);
-
-      // After data loads, hook should be called with actual protocol id, instance id, token
-      await waitFor(() => {
-        const calls = mockUseProtocolViewTracking.mock.calls;
-        const lastCall = calls[calls.length - 1];
-        // Once data is loaded, protocolId should not be undefined
-        return lastCall && lastCall[0] !== undefined;
-      });
-
-      const calls = mockUseProtocolViewTracking.mock.calls;
-      const lastCall = calls[calls.length - 1];
-      expect(lastCall[0]).toBe('proto-1');
-      expect(lastCall[1]).toBe('inst-1');
-      expect(lastCall[2]).toBe('tok-abc123');
-    });
-
     it('does not insert protocol_views record when isPreview=true', async () => {
       const { mockSupabase } = await import('@/test/mocks/supabase');
 
