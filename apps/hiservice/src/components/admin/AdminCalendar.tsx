@@ -257,7 +257,8 @@ const AdminCalendar = ({
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCompact, setIsCompact] = useState(() => {
-    return localStorage.getItem('calendar-compact-mode') === 'true';
+    const stored = localStorage.getItem('calendar-compact-mode');
+    return stored === null ? true : stored === 'true';
   });
   const isMobile = useIsMobile();
 

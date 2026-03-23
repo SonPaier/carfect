@@ -667,7 +667,7 @@ const AddCalendarItemDialog = ({
           customer_phone: customerPhone.trim(),
           service_type: serviceType,
           months_after: 0,
-          scheduled_date: format(dateRange!.from!, 'yyyy-MM-dd'),
+          scheduled_date: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
           status: 'pending',
           calendar_item_id: calendarItemId,
         })
@@ -715,7 +715,8 @@ const AddCalendarItemDialog = ({
       }
     }
 
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = authData?.user ?? null;
     const hasDate = !!dateRange?.from;
     // Require column when columns exist, unless it's a project item without date
     const isProjectWithoutDate = !!projectId && !hasDate;
@@ -892,6 +893,7 @@ const AddCalendarItemDialog = ({
         onOpenChange={(v) => {
           if (!v) onClose();
         }}
+        modal={false}
       >
         <SheetContent
           side="right"

@@ -127,6 +127,7 @@ const UnscheduledFollowUpsDrawer = ({
         onOpenChange={(v) => {
           if (!v) onClose();
         }}
+        modal={false}
       >
         <SheetContent
           side="right"

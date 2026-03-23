@@ -953,6 +953,7 @@ const CalendarItemDetailsDrawer = ({
         onOpenChange={(v) => {
           if (!v) onClose();
         }}
+        modal={false}
       >
         <SheetContent
           side="right"
@@ -974,6 +975,7 @@ const CalendarItemDetailsDrawer = ({
         onOpenChange={(v) => {
           if (!v) onClose();
         }}
+        modal={false}
       >
         <SheetContent
           side="right"
