@@ -26,14 +26,13 @@ interface FollowUpItem {
   admin_notes: string | null;
   created_at: string;
   parent_item_id: string | null;
+  created_by: string | null;
   customer_addresses: {
     city: string | null;
     street: string | null;
     name: string | null;
   } | null;
-  profiles: {
-    full_name: string | null;
-  } | null;
+  creator_name?: string | null;
 }
 
 interface UnscheduledFollowUpsDrawerProps {
@@ -63,21 +62,42 @@ const UnscheduledFollowUpsDrawer = ({
   const [loading, setLoading] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
-  const fetchFollowUps = useCallback(() => {
+  const fetchFollowUps = useCallback(async () => {
     setLoading(true);
-    supabase
+    const { data, error } = await supabase
       .from('calendar_items')
       .select(
-        'id, title, customer_name, customer_phone, admin_notes, created_at, parent_item_id, customer_addresses(city, street, name), profiles:created_by(full_name)',
+        'id, title, customer_name, customer_phone, admin_notes, created_at, created_by, parent_item_id, customer_addresses(city, street, name)',
       )
       .eq('instance_id', instanceId)
       .eq('status', 'follow_up')
       .is('item_date', null)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (!error) setItems((data || []) as FollowUpItem[]);
-        setLoading(false);
-      });
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      setLoading(false);
+      return;
+    }
+
+    const creatorIds = [...new Set(data.map((i: any) => i.created_by).filter(Boolean))];
+    let profileMap: Record<string, string> = {};
+    if (creatorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', creatorIds);
+      if (profiles) {
+        profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name]));
+      }
+    }
+
+    setItems(
+      data.map((item: any) => ({
+        ...item,
+        creator_name: item.created_by ? profileMap[item.created_by] || null : null,
+      })) as FollowUpItem[],
+    );
+    setLoading(false);
   }, [instanceId]);
 
   useEffect(() => {
@@ -179,9 +199,9 @@ const UnscheduledFollowUpsDrawer = ({
                           {item.admin_notes}
                         </div>
                       )}
-                      {item.profiles?.full_name && (
+                      {item.creator_name && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          Utworzył: {item.profiles.full_name}
+                          Utworzył: {item.creator_name}
                         </div>
                       )}
                     </div>
