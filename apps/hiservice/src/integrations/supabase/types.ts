@@ -2059,6 +2059,10 @@ export type Database = {
       }
       is_user_blocked: { Args: { _user_id: string }; Returns: boolean }
       mark_protocol_viewed: { Args: { p_token: string }; Returns: undefined }
+      update_protocol_view_duration: {
+        Args: { p_view_id: string; p_duration_seconds: number }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "user" | "employee" | "hall" | "sales"

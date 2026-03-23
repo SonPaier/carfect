@@ -39,7 +39,13 @@ const SendProtocolEmailDialog = ({ open, onClose, protocol, instanceId, onStatus
       .select('protocol_email_template, name')
       .eq('id', instanceId)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        const fallback = `Dzień dobry,\n\nW załączeniu przesyłamy link do protokołu zakończenia prac:\n${link}\n\nZ poważaniem`;
+        if (error) {
+          console.error('Failed to fetch email template:', error.message);
+          setMessage(fallback);
+          return;
+        }
         const template = (data as any)?.protocol_email_template;
         const instanceName = (data as any)?.name || '';
         const firstName = protocol.customer_name.split(' ')[0];
@@ -53,7 +59,7 @@ const SendProtocolEmailDialog = ({ open, onClose, protocol, instanceId, onStatus
               .replace(/{data_protokolu}/g, dateStr)
           );
         } else {
-          setMessage(`Dzień dobry,\n\nW załączeniu przesyłamy link do protokołu zakończenia prac:\n${link}\n\nZ poważaniem`);
+          setMessage(fallback);
         }
       });
   }, [open, protocol, instanceId]);

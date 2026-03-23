@@ -7,6 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/** Escape HTML special characters to prevent XSS in email templates. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Basic email format validation. */
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -40,9 +55,44 @@ Deno.serve(async (req) => {
   try {
     const { protocolId, recipientEmail, subject, message, instanceId, publicUrl } = await req.json();
 
-    if (!protocolId || !recipientEmail || !subject || !message) {
+    if (!protocolId || !recipientEmail || !subject || !message || !instanceId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate recipient email format to block header injection / multi-recipient abuse
+    if (!isValidEmail(recipientEmail.trim())) {
+      return new Response(JSON.stringify({ error: 'Invalid recipient email' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify the authenticated user belongs to the requested instance
+    const { data: roleCheck, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('instance_id', instanceId)
+      .maybeSingle();
+
+    if (roleError || !roleCheck) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify the protocol belongs to the requested instance
+    const { data: protocolCheck, error: protocolCheckError } = await supabaseClient
+      .from('protocols')
+      .select('id')
+      .eq('id', protocolId)
+      .eq('instance_id', instanceId)
+      .maybeSingle();
+
+    if (protocolCheckError || !protocolCheck) {
+      return new Response(JSON.stringify({ error: 'Protocol not found or access denied' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -55,17 +105,21 @@ Deno.serve(async (req) => {
 
     if (instanceError || !instance) throw new Error('Instance not found');
 
-    const logoHtml = instance.logo_url
-      ? `<div style="text-align:center;padding:30px 0 20px;"><img src="${instance.logo_url}" alt="${instance.name || ''}" style="max-height:60px;max-width:200px;" /></div>`
-      : `<div style="text-align:center;padding:30px 0 20px;"><h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${instance.name || ''}</h1></div>`;
+    const safeInstanceName = escapeHtml(instance.name || '');
+    const safeLogoUrl = instance.logo_url ? escapeHtml(instance.logo_url) : '';
+
+    const logoHtml = safeLogoUrl
+      ? `<div style="text-align:center;padding:30px 0 20px;"><img src="${safeLogoUrl}" alt="${safeInstanceName}" style="max-height:60px;max-width:200px;" /></div>`
+      : `<div style="text-align:center;padding:30px 0 20px;"><h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${safeInstanceName}</h1></div>`;
 
     const footerParts: string[] = [];
-    if (instance.phone) footerParts.push(`<span style="margin:0 8px;"><a href="tel:${instance.phone}" style="color:#555;text-decoration:none;">${instance.phone}</a></span>`);
-    if (instance.address) footerParts.push(`<span style="margin:0 8px;">${instance.address}</span>`);
-    if (instance.website) footerParts.push(`<span style="margin:0 8px;"><a href="${instance.website}" style="color:#555;text-decoration:underline;">${instance.website}</a></span>`);
-    if (instance.email) footerParts.push(`<span style="margin:0 8px;">${instance.email}</span>`);
+    if (instance.phone) footerParts.push(`<span style="margin:0 8px;"><a href="tel:${escapeHtml(instance.phone)}" style="color:#555;text-decoration:none;">${escapeHtml(instance.phone)}</a></span>`);
+    if (instance.address) footerParts.push(`<span style="margin:0 8px;">${escapeHtml(instance.address)}</span>`);
+    if (instance.website) footerParts.push(`<span style="margin:0 8px;"><a href="${escapeHtml(instance.website)}" style="color:#555;text-decoration:underline;">${escapeHtml(instance.website)}</a></span>`);
+    if (instance.email) footerParts.push(`<span style="margin:0 8px;">${escapeHtml(instance.email)}</span>`);
 
-    const messageHtml = message.replace(/\n/g, '<br>');
+    // Escape message text then convert newlines to <br> — order matters: escape first
+    const messageHtml = escapeHtml(message).replace(/\n/g, '<br>');
 
     const htmlContent = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -83,15 +137,15 @@ Deno.serve(async (req) => {
     </div>
     ${publicUrl ? `
     <div style="text-align:center;margin:28px 0 12px;">
-      <a href="${publicUrl}" style="display:inline-block;background-color:#111;color:#ffffff;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;font-family:'Inter',Arial,sans-serif;">Zobacz protokół</a>
+      <a href="${escapeHtml(publicUrl)}" style="display:inline-block;background-color:#111;color:#ffffff;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;font-family:'Inter',Arial,sans-serif;">Zobacz protokół</a>
     </div>
-    <p style="font-size:12px;color:#999;text-align:center;margin-top:16px;">Lub skopiuj link: <a href="${publicUrl}" style="color:#666;">${publicUrl}</a></p>
+    <p style="font-size:12px;color:#999;text-align:center;margin-top:16px;">Lub skopiuj link: <a href="${escapeHtml(publicUrl)}" style="color:#666;">${escapeHtml(publicUrl)}</a></p>
     ` : ''}
   </div>
 </td></tr>
 <tr><td style="padding:24px 12px 8px;text-align:center;">
-  <p style="margin:0 0 6px;font-size:14px;color:#555;font-weight:600;">${instance.name || ''}</p>
-  ${instance.contact_person ? `<p style="margin:0 0 10px;font-size:13px;color:#777;">${instance.contact_person}</p>` : ''}
+  <p style="margin:0 0 6px;font-size:14px;color:#555;font-weight:600;">${safeInstanceName}</p>
+  ${instance.contact_person ? `<p style="margin:0 0 10px;font-size:13px;color:#777;">${escapeHtml(instance.contact_person)}</p>` : ''}
   <div style="font-size:12px;color:#888;line-height:1.8;">${footerParts.join('<br>')}</div>
 </td></tr>
 <tr><td style="padding:20px 12px 30px;text-align:center;border-top:1px solid #e0e0e0;">
@@ -114,7 +168,8 @@ Deno.serve(async (req) => {
     });
 
     const replyTo = instance.email || smtpUser;
-    const fromName = instance.name || 'Protokoły';
+    // fromName used in SMTP header — strip special chars that could break RFC 5321 formatting
+    const fromName = (instance.name || 'Protokoły').replace(/[<>"]/g, '');
 
     await client.send({
       from: `${fromName} <${smtpUser}>`,
@@ -135,9 +190,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
+    // Log full error server-side but never expose internal details (SMTP config, DB errors) to client
     console.error('[send-protocol-email]', error);
-    return new Response(JSON.stringify({ error: msg }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

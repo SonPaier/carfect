@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, ArrowUpDown, Eye } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -48,6 +48,9 @@ const protocolStatusConfig: Record<string, { label: string; className: string }>
   viewed:   { label: 'Obejrzany',         className: 'bg-amber-100 text-amber-700' },
 };
 
+const getStatusConfig = (status: string) =>
+  protocolStatusConfig[status] || protocolStatusConfig.draft;
+
 const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +78,28 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
     if (sortColumn !== column) return null;
     return sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
   };
+
+  const ProtocolMenuItems = ({ p }: { p: Protocol }) => (
+    <>
+      <DropdownMenuItem onClick={() => handleEdit(p)}>
+        <Edit className="w-4 h-4 mr-2" />Edytuj
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleCopyLink(p.public_token)}>
+        <Link2 className="w-4 h-4 mr-2" />Kopiuj link
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
+        <Mail className="w-4 h-4 mr-2" />Wyślij emailem
+      </DropdownMenuItem>
+      {p.status === 'viewed' && (
+        <DropdownMenuItem onClick={() => setViewsDialogProtocol(p)}>
+          <Eye className="w-4 h-4 mr-2" />Historia oglądania
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
+        <Trash2 className="w-4 h-4 mr-2" />Usuń
+      </DropdownMenuItem>
+    </>
+  );
 
   const sortedProtocols = useMemo(() => {
     if (!sortColumn) return protocols;
@@ -232,9 +257,9 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${(protocolStatusConfig[p.status] || protocolStatusConfig.draft).className}`}
+                          className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${getStatusConfig(p.status).className}`}
                         >
-                          {(protocolStatusConfig[p.status] || protocolStatusConfig.draft).label}
+                          {getStatusConfig(p.status).label}
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
@@ -256,23 +281,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => handleEdit(p)}>
-                          <Edit className="w-4 h-4 mr-2" />Edytuj
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleCopyLink(p.public_token)}>
-                          <Link2 className="w-4 h-4 mr-2" />Kopiuj link
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
-                          <Mail className="w-4 h-4 mr-2" />Wyślij emailem
-                        </DropdownMenuItem>
-                        {p.status === 'viewed' && (
-                          <DropdownMenuItem onClick={() => setViewsDialogProtocol(p)}>
-                            <Eye className="w-4 h-4 mr-2" />Historia oglądania
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />Usuń
-                        </DropdownMenuItem>
+                        <ProtocolMenuItems p={p} />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -342,8 +351,8 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                 )}
               </div>
               <div className="mt-2">
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${(protocolStatusConfig[p.status] || protocolStatusConfig.draft).className}`}>
-                  {(protocolStatusConfig[p.status] || protocolStatusConfig.draft).label}
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusConfig(p.status).className}`}>
+                  {getStatusConfig(p.status).label}
                 </span>
               </div>
             </div>
@@ -363,7 +372,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
       {/* Send Email Dialog */}
       {emailDialogProtocol && (
         <SendProtocolEmailDialog
-          open={!!emailDialogProtocol}
+          open
           onClose={() => setEmailDialogProtocol(null)}
           protocol={emailDialogProtocol}
           instanceId={instanceId}
@@ -391,7 +400,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
       {viewsDialogProtocol && (
         <ProtocolViewsDialog
           protocolId={viewsDialogProtocol.id}
-          open={!!viewsDialogProtocol}
+          open
           onOpenChange={(v) => { if (!v) setViewsDialogProtocol(null); }}
         />
       )}

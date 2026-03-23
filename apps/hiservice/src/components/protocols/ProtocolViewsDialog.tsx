@@ -28,17 +28,24 @@ const formatDuration = (seconds: number): string => {
 const ProtocolViewsDialog = ({ protocolId, open, onOpenChange }: ProtocolViewsDialogProps) => {
   const [views, setViews] = useState<ProtocolView[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    setFetchError(false);
     supabase
       .from('protocol_views')
       .select('id, started_at, duration_seconds')
       .eq('protocol_id', protocolId)
       .order('started_at', { ascending: false })
-      .then(({ data }) => {
-        setViews((data as ProtocolView[]) || []);
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Failed to fetch protocol views:', error.message);
+          setFetchError(true);
+        } else {
+          setViews((data as ProtocolView[]) || []);
+        }
         setLoading(false);
       });
   }, [open, protocolId]);
@@ -60,6 +67,8 @@ const ProtocolViewsDialog = ({ protocolId, open, onOpenChange }: ProtocolViewsDi
           <div className="flex justify-center py-6">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
+        ) : fetchError ? (
+          <p className="text-sm text-destructive py-4">Błąd ładowania historii oglądania</p>
         ) : views.length > 0 ? (
           <div className="space-y-4">
             <div className="flex gap-4 text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">

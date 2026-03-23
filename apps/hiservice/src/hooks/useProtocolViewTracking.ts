@@ -26,11 +26,11 @@ export function useProtocolViewTracking(
       if (!error) {
         viewIdRef.current = clientId;
         startTimeRef.current = Date.now();
+        // Only mark as viewed once the view record is successfully created
+        await supabase.rpc('mark_protocol_viewed', { p_token: token });
       } else {
         console.error('protocol_views insert failed:', error.message);
       }
-
-      await supabase.rpc('mark_protocol_viewed', { p_token: token });
     };
 
     init();
@@ -38,10 +38,12 @@ export function useProtocolViewTracking(
     const updateDuration = () => {
       if (!viewIdRef.current) return;
       const seconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      // Use SECURITY DEFINER RPC — anon has no UPDATE policy on protocol_views
       supabase
-        .from('protocol_views')
-        .update({ duration_seconds: seconds })
-        .eq('id', viewIdRef.current)
+        .rpc('update_protocol_view_duration', {
+          p_view_id: viewIdRef.current,
+          p_duration_seconds: seconds,
+        })
         .then(() => {});
     };
 
