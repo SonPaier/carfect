@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { streamText } from 'npm:ai@5';
+import { streamText, jsonSchema } from 'npm:ai@5';
 import { createOpenAI } from 'npm:@ai-sdk/openai@2';
 
 const corsHeaders = {
@@ -172,17 +172,18 @@ Zasady:
         run_sql: {
           description:
             'Execute a read-only SQL query against the database. Use this to fetch any data needed to answer the user question. Always include WHERE instance_id clause.',
-          parameters: {
-            type: 'object' as const,
+          parameters: jsonSchema<{ sql: string }>({
+            type: 'object',
             properties: {
               sql: {
-                type: 'string' as const,
+                type: 'string',
                 description:
                   'The SELECT SQL query to execute. Must be a single SELECT statement with instance_id filter.',
               },
             },
             required: ['sql'],
-          },
+            additionalProperties: false,
+          }),
           execute: async ({ sql }: { sql: string }) => {
             // Clean up SQL
             const cleanSql = sql.trim().replace(/;+$/, '').trim();
