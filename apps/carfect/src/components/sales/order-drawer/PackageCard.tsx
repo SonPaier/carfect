@@ -100,11 +100,23 @@ const PackageCard = ({
   totalGross,
   bankAccountNumber,
 }: PackageCardProps) => {
-  const valuation = useApaczkaValuation(instanceId, pkg, customerPostalCode, customerCity, paymentMethod, totalGross, bankAccountNumber);
+  const valuation = useApaczkaValuation(
+    instanceId,
+    pkg,
+    customerPostalCode,
+    customerCity,
+    paymentMethod,
+    totalGross,
+    bankAccountNumber,
+  );
 
   // Auto-select first available courier if none selected
   useEffect(() => {
-    if (pkg.shippingMethod === 'shipping' && !pkg.courierServiceId && availableCouriers.length > 0) {
+    if (
+      pkg.shippingMethod === 'shipping' &&
+      !pkg.courierServiceId &&
+      availableCouriers.length > 0
+    ) {
       onCourierChange(availableCouriers[0].serviceId, availableCouriers[0].name);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onCourierChange is stable, guard prevents loops
@@ -139,7 +151,10 @@ const PackageCard = ({
               {packageProducts.map((p) => {
                 const itemKey = getItemKey(p);
                 return (
-                  <div key={itemKey} className="bg-white rounded-md border border-border p-3 space-y-2.5">
+                  <div
+                    key={itemKey}
+                    className="bg-white rounded-md border border-border p-3 space-y-2.5"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -235,7 +250,9 @@ const PackageCard = ({
                           min={0}
                           step={0.1}
                           value={p.requiredM2 || ''}
-                          onChange={(e) => onUpdateRequiredM2?.(itemKey, parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            onUpdateRequiredM2?.(itemKey, parseFloat(e.target.value) || 0)
+                          }
                           placeholder="0"
                           className="h-8 text-sm"
                         />
@@ -265,6 +282,7 @@ const PackageCard = ({
                         onChange={(assignments) => onSetRollAssignments(itemKey, assignments)}
                         requiredM2={p.requiredM2}
                         customerName={customerName}
+                        productName={p.name}
                       />
                     )}
                   </div>

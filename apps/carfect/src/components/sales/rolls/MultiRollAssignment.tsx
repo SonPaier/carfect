@@ -13,6 +13,7 @@ interface MultiRollAssignmentProps {
   onChange: (assignments: RollAssignment[]) => void;
   requiredM2?: number;
   customerName?: string;
+  productName?: string;
 }
 
 interface RollInfo {
@@ -20,7 +21,14 @@ interface RollInfo {
   remainingM2: number;
 }
 
-const MultiRollAssignment = ({ instanceId, assignments, onChange, requiredM2, customerName }: MultiRollAssignmentProps) => {
+const MultiRollAssignment = ({
+  instanceId,
+  assignments,
+  onChange,
+  requiredM2,
+  customerName,
+  productName,
+}: MultiRollAssignmentProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
 
@@ -115,6 +123,7 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange, requiredM2, cu
           onConfirm={handleRollsSelected}
           requiredM2={requiredM2}
           customerName={customerName}
+          filterProductName={productName}
         />
       </>
     );
@@ -139,9 +148,7 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange, requiredM2, cu
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-foreground truncate">{rollName}</span>
                 {info && (
-                  <span className="text-xs text-foreground">
-                    ({remaining.toFixed(1)} m² dost.)
-                  </span>
+                  <span className="text-xs text-foreground">({remaining.toFixed(1)} m² dost.)</span>
                 )}
               </div>
               {shortage > 0 && (
@@ -192,6 +199,7 @@ const MultiRollAssignment = ({ instanceId, assignments, onChange, requiredM2, cu
         instanceId={instanceId}
         selectedRollIds={assignments.map((a) => a.rollId)}
         onConfirm={handleRollsSelected}
+        filterProductName={productName}
       />
     </div>
   );

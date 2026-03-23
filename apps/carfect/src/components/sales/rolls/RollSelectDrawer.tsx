@@ -1,11 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Check } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Input, Button } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
 import { formatRollSize, mbToM2 } from '../types/rolls';
@@ -31,6 +26,8 @@ interface RollSelectDrawerProps {
   requiredM2?: number;
   /** Customer name — rolls used by this customer sort first */
   customerName?: string;
+  /** Filter rolls by product name (only show rolls matching this product) */
+  filterProductName?: string;
 }
 
 const RollSelectDrawer = ({
@@ -42,6 +39,7 @@ const RollSelectDrawer = ({
   multiSelect = true,
   requiredM2,
   customerName,
+  filterProductName,
 }: RollSelectDrawerProps) => {
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(false);
@@ -74,12 +72,30 @@ const RollSelectDrawer = ({
         if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, instanceId]);
 
   // Filter and sort: by search, then by remaining m² desc
   const filteredRolls = useMemo(() => {
     let result = rolls;
+
+    // Filter by product name if specified
+    if (filterProductName) {
+      const filterLower = filterProductName.toLowerCase();
+      result = result.filter((r) => {
+        const rollName = r.productName.toLowerCase();
+        // Match if roll product name contains filter or vice versa
+        // e.g. "XP Crystal" matches roll "XP Crystal", "XP Crystal 1220mm" etc.
+        // Strip variant info like "- 1220mm x 30m" from the comparison
+        const rollBase = rollName.replace(/\s*-\s*\d+mm.*$/, '').replace(/\s*\d+mm.*$/, '');
+        const filterBase = filterLower.replace(/\s*-\s*\d+mm.*$/, '').replace(/\s*\d+mm.*$/, '');
+        return (
+          rollBase === filterBase || rollBase.includes(filterBase) || filterBase.includes(rollBase)
+        );
+      });
+    }
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -89,7 +105,7 @@ const RollSelectDrawer = ({
           r.productName.toLowerCase().includes(q) ||
           (r.productCode || '').toLowerCase().includes(q) ||
           (r.barcode || '').includes(q) ||
-          (r.customerNames || []).some(name => name.toLowerCase().includes(q))
+          (r.customerNames || []).some((name) => name.toLowerCase().includes(q)),
       );
     }
 
@@ -102,10 +118,14 @@ const RollSelectDrawer = ({
     return [...result].sort((a, b) => {
       // Customer match priority
       const aCustomer = customerLower
-        ? (a.customerNames || []).some((n) => n.toLowerCase().includes(customerLower)) ? 1 : 0
+        ? (a.customerNames || []).some((n) => n.toLowerCase().includes(customerLower))
+          ? 1
+          : 0
         : 0;
       const bCustomer = customerLower
-        ? (b.customerNames || []).some((n) => n.toLowerCase().includes(customerLower)) ? 1 : 0
+        ? (b.customerNames || []).some((n) => n.toLowerCase().includes(customerLower))
+          ? 1
+          : 0
         : 0;
       if (aCustomer !== bCustomer) return bCustomer - aCustomer;
 
@@ -118,7 +138,7 @@ const RollSelectDrawer = ({
         if (aHasEnough !== bHasEnough) return bHasEnough - aHasEnough;
         // Among those with enough: closest to target first (least waste)
         if (aHasEnough && bHasEnough) {
-          return (aM2 - target) - (bM2 - target);
+          return aM2 - target - (bM2 - target);
         }
         // Among those without enough: most remaining first
         return bM2 - aM2;
@@ -127,7 +147,7 @@ const RollSelectDrawer = ({
       // Default: remaining m² descending
       return (b.remainingMb || 0) - (a.remainingMb || 0);
     });
-  }, [rolls, search, requiredM2, customerName]);
+  }, [rolls, search, requiredM2, customerName, filterProductName]);
 
   const toggleRoll = (roll: SalesRoll) => {
     if (multiSelect) {
@@ -190,14 +210,14 @@ const RollSelectDrawer = ({
                   type="button"
                   onClick={() => toggleRoll(roll)}
                   className={`w-full text-left rounded-lg border p-3 transition-colors bg-white ${
-                    isSelected
-                      ? 'border-primary'
-                      : 'border-border hover:border-foreground/20'
+                    isSelected ? 'border-primary' : 'border-border hover:border-foreground/20'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <span className="font-medium text-sm truncate text-foreground">{roll.productName}</span>
+                      <span className="font-medium text-sm truncate text-foreground">
+                        {roll.productName}
+                      </span>
                       <div className="flex items-center gap-3 mt-1 text-xs text-foreground/70">
                         <span className="font-mono">{roll.productCode || roll.barcode || '—'}</span>
                         <span>{formatRollSize(roll.widthMm, roll.initialLengthM)}</span>
@@ -211,7 +231,11 @@ const RollSelectDrawer = ({
                     <div className="flex items-center gap-2 shrink-0">
                       <span
                         className={`text-sm font-medium tabular-nums ${
-                          isEmpty ? 'text-destructive' : isLow ? 'text-orange-500' : 'text-foreground'
+                          isEmpty
+                            ? 'text-destructive'
+                            : isLow
+                              ? 'text-orange-500'
+                              : 'text-foreground'
                         }`}
                       >
                         {remainingM2.toFixed(1)} m²
@@ -233,14 +257,9 @@ const RollSelectDrawer = ({
         {multiSelect && (
           <div className="mt-4 pt-4 border-t flex items-center justify-between">
             <span className="text-sm text-foreground/60">
-              {selected.length > 0
-                ? `Wybrano: ${selected.length}`
-                : '\u00A0'}
+              {selected.length > 0 ? `Wybrano: ${selected.length}` : '\u00A0'}
             </span>
-            <Button
-              onClick={handleConfirm}
-              disabled={selected.length === 0}
-            >
+            <Button onClick={handleConfirm} disabled={selected.length === 0}>
               Potwierdź wybór
             </Button>
           </div>
