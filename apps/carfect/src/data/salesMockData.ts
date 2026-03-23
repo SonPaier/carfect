@@ -28,6 +28,7 @@ export interface SalesOrder {
   packages?: SalesOrderPackage[];
   comment?: string;
   status: 'nowy' | 'wysłany' | 'anulowany';
+  paymentStatus: 'unpaid' | 'paid';
   trackingNumber?: string;
   trackingUrl?: string;
   /** Invoice data if exists */

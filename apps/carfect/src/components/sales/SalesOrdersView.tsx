@@ -204,7 +204,8 @@ const SalesOrdersView = () => {
           priceNet: Number(item.price_net),
           priceGross: Number(item.price_net) * 1.23,
           unit: item.price_unit || 'szt.',
-          discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
+          discountPercent:
+            item.discount_percent != null ? Number(item.discount_percent) : undefined,
         })),
         packages: (o.packages || []).map((pkg: any) => ({
           shippingMethod: pkg.shippingMethod || 'shipping',
@@ -212,6 +213,8 @@ const SalesOrdersView = () => {
         })),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
+        paymentStatus:
+          inv?.status === 'paid' ? 'paid' : ((o.payment_status || 'unpaid') as 'unpaid' | 'paid'),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
         invoiceId: inv?.id || undefined,
@@ -276,6 +279,7 @@ const SalesOrdersView = () => {
               shippedAt: newStatus === 'wysłany' ? new Date().toISOString() : undefined,
               trackingNumber: newStatus === 'wysłany' ? o.trackingNumber : undefined,
               trackingUrl: newStatus === 'wysłany' ? o.trackingUrl : undefined,
+              paymentStatus: o.paymentStatus,
             }
           : o,
       ),
@@ -982,8 +986,9 @@ const SalesOrdersView = () => {
               discount: p.discountPercent ?? invoiceDrawerState.order!.customerDiscount ?? 0,
             })),
             ...(() => {
-              const shippingPkgs = (invoiceDrawerState.order!.packages || [])
-                .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null);
+              const shippingPkgs = (invoiceDrawerState.order!.packages || []).filter(
+                (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
+              );
               return shippingPkgs.map((pkg, i) => ({
                 name: shippingPkgs.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`,
                 quantity: 1,
