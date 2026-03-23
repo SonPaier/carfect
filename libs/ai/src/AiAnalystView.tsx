@@ -61,7 +61,7 @@ export function AiAnalystView({
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-3xl mx-auto w-full">
+    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-3xl mx-auto w-full">
       {/* Scrollable messages area */}
       <div className="flex-1 overflow-y-auto px-1">
         {/* Empty state with centered suggestions */}
@@ -153,7 +153,7 @@ export function AiAnalystView({
       </div>
 
       {/* Fixed bottom input + suggestions */}
-      <div className="shrink-0 border-t bg-background pt-3 pb-2 space-y-2">
+      <div className="shrink-0 border-t bg-background pt-3 pb-4 space-y-2">
         {/* Suggestions after messages */}
         {hasMessages && !isLoading && (
           <div className="flex flex-wrap gap-1.5 px-1">
@@ -187,7 +187,7 @@ export function AiAnalystView({
             placeholder="Zapytaj o swój biznes..."
             disabled={isLoading}
             rows={1}
-            className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="flex-1 resize-none rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             style={{ maxHeight: 200 }}
           />
           <button
