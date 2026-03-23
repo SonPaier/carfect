@@ -39,42 +39,18 @@ export const AddressFields = ({
   onCityChange,
 }: AddressFieldsProps) => (
   <>
-    <div>
-      <Label htmlFor={`${prefix}-country`}>Kraj</Label>
-      <Select value={country} onValueChange={onCountryChange}>
-        <SelectTrigger id={`${prefix}-country`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {COUNTRIES.map((c) => (
-            <SelectItem key={c.code} value={c.code}>
-              {c.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-    <div>
-      <Label htmlFor={`${prefix}-street`}>Ulica</Label>
-      <Input
-        id={`${prefix}-street`}
-        placeholder="Linia 1"
-        value={street}
-        onChange={(e) => onStreetChange(e.target.value)}
-      />
-      {country !== 'PL' && (
+    <div className="flex gap-2 items-end">
+      <div className="flex-1">
+        <Label htmlFor={`${prefix}-street`}>Ulica</Label>
         <Input
-          id={`${prefix}-street-line2`}
-          className="mt-1"
-          placeholder="Linia 2"
-          value={streetLine2}
-          onChange={(e) => onStreetLine2Change(e.target.value)}
+          id={`${prefix}-street`}
+          placeholder="Ulica i numer"
+          value={street}
+          onChange={(e) => onStreetChange(e.target.value)}
         />
-      )}
-    </div>
-    <div className="grid grid-cols-[120px_1fr] gap-2">
-      <div>
-        <Label htmlFor={`${prefix}-postal`}>Kod pocztowy</Label>
+      </div>
+      <div className="w-24 shrink-0">
+        <Label htmlFor={`${prefix}-postal`}>Kod</Label>
         <Input
           id={`${prefix}-postal`}
           placeholder="00-000"
@@ -82,10 +58,36 @@ export const AddressFields = ({
           onChange={(e) => onPostalCodeChange(e.target.value)}
         />
       </div>
-      <div>
+      <div className="flex-1">
         <Label htmlFor={`${prefix}-city`}>Miasto</Label>
         <Input id={`${prefix}-city`} value={city} onChange={(e) => onCityChange(e.target.value)} />
       </div>
+      <div className="flex-1">
+        <Label htmlFor={`${prefix}-country`}>Kraj</Label>
+        <Select value={country} onValueChange={onCountryChange}>
+          <SelectTrigger id={`${prefix}-country`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {COUNTRIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
+    {country !== 'PL' && (
+      <div>
+        <Label htmlFor={`${prefix}-street-line2`}>Linia 2</Label>
+        <Input
+          id={`${prefix}-street-line2`}
+          placeholder="Linia 2"
+          value={streetLine2}
+          onChange={(e) => onStreetLine2Change(e.target.value)}
+        />
+      </div>
+    )}
   </>
 );
