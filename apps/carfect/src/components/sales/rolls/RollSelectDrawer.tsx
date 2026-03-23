@@ -28,6 +28,8 @@ interface RollSelectDrawerProps {
   customerName?: string;
   /** Filter rolls by product name (only show rolls matching this product) */
   filterProductName?: string;
+  /** Filter rolls by width in mm (only show rolls with this exact width) */
+  filterWidthMm?: number;
 }
 
 const RollSelectDrawer = ({
@@ -40,6 +42,7 @@ const RollSelectDrawer = ({
   requiredM2,
   customerName,
   filterProductName,
+  filterWidthMm,
 }: RollSelectDrawerProps) => {
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,15 +89,17 @@ const RollSelectDrawer = ({
       const filterLower = filterProductName.toLowerCase();
       result = result.filter((r) => {
         const rollName = r.productName.toLowerCase();
-        // Match if roll product name contains filter or vice versa
-        // e.g. "XP Crystal" matches roll "XP Crystal", "XP Crystal 1220mm" etc.
-        // Strip variant info like "- 1220mm x 30m" from the comparison
         const rollBase = rollName.replace(/\s*-\s*\d+mm.*$/, '').replace(/\s*\d+mm.*$/, '');
         const filterBase = filterLower.replace(/\s*-\s*\d+mm.*$/, '').replace(/\s*\d+mm.*$/, '');
         return (
           rollBase === filterBase || rollBase.includes(filterBase) || filterBase.includes(rollBase)
         );
       });
+    }
+
+    // Filter by width if specified (exact match)
+    if (filterWidthMm && filterWidthMm > 0) {
+      result = result.filter((r) => r.widthMm === filterWidthMm);
     }
 
     if (search.trim()) {
@@ -147,7 +152,7 @@ const RollSelectDrawer = ({
       // Default: remaining m² descending
       return (b.remainingMb || 0) - (a.remainingMb || 0);
     });
-  }, [rolls, search, requiredM2, customerName, filterProductName]);
+  }, [rolls, search, requiredM2, customerName, filterProductName, filterWidthMm]);
 
   const toggleRoll = (roll: SalesRoll) => {
     if (multiSelect) {

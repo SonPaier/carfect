@@ -14,6 +14,7 @@ interface MultiRollAssignmentProps {
   requiredM2?: number;
   customerName?: string;
   productName?: string;
+  filterWidthMm?: number;
 }
 
 interface RollInfo {
@@ -28,6 +29,7 @@ const MultiRollAssignment = ({
   requiredM2,
   customerName,
   productName,
+  filterWidthMm,
 }: MultiRollAssignmentProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
@@ -124,6 +126,7 @@ const MultiRollAssignment = ({
           requiredM2={requiredM2}
           customerName={customerName}
           filterProductName={productName}
+          filterWidthMm={filterWidthMm}
         />
       </>
     );
