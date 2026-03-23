@@ -329,6 +329,73 @@ describe('ProtocolsView', () => {
     });
   });
 
+  describe('"Podgląd" menu item in protocol actions', () => {
+    it('shows "Podgląd" menu item in the actions dropdown', async () => {
+      mockSupabaseQuery('protocols', {
+        data: [makeProtocol({ status: 'draft' })],
+        error: null,
+      });
+
+      const { user } = renderView();
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Do zaakceptowania').length).toBeGreaterThan(0);
+      });
+
+      // Open action menu (MoreHorizontal button)
+      const menuButtons = screen.getAllByRole('button').filter(
+        (btn) => btn.querySelector('svg') !== null && btn.className.includes('h-8'),
+      );
+      expect(menuButtons.length).toBeGreaterThan(0);
+      await user.click(menuButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Podgląd')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('viewed_at timestamp display', () => {
+    it('shows viewed_at timestamp under status badge when viewed_at is present', async () => {
+      mockSupabaseQuery('protocols', {
+        data: [makeProtocol({ status: 'viewed', viewed_at: '2026-03-21T14:30:00Z' })],
+        error: null,
+      });
+
+      renderView();
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Obejrzany').length).toBeGreaterThan(0);
+      });
+
+      // The component renders viewed_at using format(new Date(p.viewed_at), 'd MMM, HH:mm', { locale: pl })
+      // We verify a timestamp element exists somewhere in the document with time digits
+      // Use a broad regex that matches "21 mar" or similar Polish short month abbreviation
+      const allText = document.body.textContent || '';
+      // The viewed_at date (March 21) should appear as Polish short month "mar"
+      expect(allText).toMatch(/21 mar/i);
+    });
+
+    it('does NOT show viewed_at timestamp when viewed_at is null', async () => {
+      mockSupabaseQuery('protocols', {
+        data: [makeProtocol({ status: 'sent', viewed_at: null })],
+        error: null,
+      });
+
+      renderView();
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Wysłany').length).toBeGreaterThan(0);
+      });
+
+      // No timestamp text should appear beneath the badge
+      // Check that no element matching a date/time pattern exists in the status area
+      const allText = document.body.textContent || '';
+      // "14:30" or similar timestamps should not appear
+      expect(allText).not.toMatch(/\d{2}:\d{2}/);
+    });
+  });
+
   describe('empty and loading states', () => {
     it('shows "Brak protokołów" when list is empty', async () => {
       mockSupabaseQuery('protocols', { data: [], error: null });

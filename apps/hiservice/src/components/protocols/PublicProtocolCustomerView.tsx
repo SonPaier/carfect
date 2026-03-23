@@ -287,7 +287,7 @@ const PublicProtocolCustomerView = ({ token, isPreview = false }: PublicProtocol
       {lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
-          onClick={() => setLightboxIndex(null)}
+          onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}
         >
           <button
             className="absolute top-4 right-4 text-white p-2"

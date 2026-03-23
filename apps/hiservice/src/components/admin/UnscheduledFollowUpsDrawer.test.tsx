@@ -36,6 +36,25 @@ describe('UnscheduledFollowUpsDrawer', () => {
     vi.clearAllMocks();
   });
 
+  it('renders without a modal overlay (non-modal sheet)', async () => {
+    // Sheet has modal={false} — this means no overlay is rendered and user can
+    // interact with content behind the drawer. Verify: no role="dialog" with
+    // aria-modal="true", and the drawer content is accessible.
+    mockSupabaseQuery('calendar_items', { data: [], error: null });
+    renderDrawer();
+
+    await waitFor(() => {
+      expect(screen.getByText('Do wykonania')).toBeInTheDocument();
+    });
+
+    // When modal=false, shadcn Sheet does not render an overlay element
+    // The dialog/region should exist but must NOT have aria-modal="true"
+    const dialogs = document.querySelectorAll('[role="dialog"]');
+    dialogs.forEach((dialog) => {
+      expect(dialog.getAttribute('aria-modal')).not.toBe('true');
+    });
+  });
+
   it('shows title "Do wykonania"', async () => {
     mockSupabaseQuery('calendar_items', { data: [], error: null });
     renderDrawer();
