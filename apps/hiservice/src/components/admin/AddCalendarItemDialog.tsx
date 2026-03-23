@@ -790,11 +790,7 @@ const AddCalendarItemDialog = ({
           .from('calendar_items')
           .insert({
             ...data,
-            status: followUpSourceItem
-              ? dateRange?.from
-                ? 'confirmed'
-                : 'follow_up'
-              : 'confirmed',
+            status: dateRange?.from ? 'confirmed' : 'follow_up',
             ...(followUpSourceItem && {
               parent_item_id: followUpSourceItem.parent_item_id || followUpSourceItem.id,
             }),
