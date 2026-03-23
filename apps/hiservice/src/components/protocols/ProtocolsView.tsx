@@ -350,10 +350,26 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                   </>
                 )}
               </div>
-              <div className="mt-2">
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusConfig(p.status).className}`}>
-                  {getStatusConfig(p.status).label}
-                </span>
+              <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${getStatusConfig(p.status).className}`}
+                    >
+                      {getStatusConfig(p.status).label}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {Object.entries(protocolStatusConfig)
+                      .filter(([key]) => key !== p.status && key !== 'viewed')
+                      .map(([key, cfg]) => (
+                        <DropdownMenuItem key={key} onClick={() => handleStatusChange(p.id, key)}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           ))
