@@ -1285,6 +1285,7 @@ export type Database = {
           public_token: string
           status: string
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           calendar_item_id?: string | null
@@ -1308,6 +1309,7 @@ export type Database = {
           public_token?: string
           status?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           calendar_item_id?: string | null
@@ -1331,6 +1333,7 @@ export type Database = {
           public_token?: string
           status?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -1356,6 +1359,45 @@ export type Database = {
           },
           {
             foreignKeyName: "protocols_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocol_views: {
+        Row: {
+          duration_seconds: number
+          id: string
+          instance_id: string
+          protocol_id: string
+          started_at: string
+        }
+        Insert: {
+          duration_seconds?: number
+          id?: string
+          instance_id: string
+          protocol_id: string
+          started_at?: string
+        }
+        Update: {
+          duration_seconds?: number
+          id?: string
+          instance_id?: string
+          protocol_id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocol_views_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocol_views_instance_id_fkey"
             columns: ["instance_id"]
             isOneToOne: false
             referencedRelation: "instances"
@@ -2016,6 +2058,11 @@ export type Database = {
         Returns: boolean
       }
       is_user_blocked: { Args: { _user_id: string }; Returns: boolean }
+      mark_protocol_viewed: { Args: { p_token: string }; Returns: undefined }
+      update_protocol_view_duration: {
+        Args: { p_view_id: string; p_duration_seconds: number }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "user" | "employee" | "hall" | "sales"

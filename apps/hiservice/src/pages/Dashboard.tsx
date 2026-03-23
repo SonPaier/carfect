@@ -1344,6 +1344,13 @@ const Dashboard = () => {
           instanceId={instanceId}
           onItemClick={handleFollowUpItemClick}
           refreshKey={followUpsRefreshKey}
+          onAddClick={() => {
+            setFollowUpsDrawerOpen(false);
+            setEditingItem(null);
+            setFollowUpSourceItem(null);
+            setNewItemData({ columnId: '', date: '', time: '' });
+            setAddItemOpen(true);
+          }}
         />
       )}
 

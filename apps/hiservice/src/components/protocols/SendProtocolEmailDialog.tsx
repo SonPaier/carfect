@@ -16,11 +16,13 @@ interface SendProtocolEmailDialogProps {
     customer_name: string;
     customer_email: string | null;
     public_token: string;
+    protocol_date: string;
   };
   instanceId: string;
+  onStatusChange?: (protocolId: string, newStatus: string) => void;
 }
 
-const SendProtocolEmailDialog = ({ open, onClose, protocol, instanceId }: SendProtocolEmailDialogProps) => {
+const SendProtocolEmailDialog = ({ open, onClose, protocol, instanceId, onStatusChange }: SendProtocolEmailDialogProps) => {
   const [sending, setSending] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -31,13 +33,42 @@ const SendProtocolEmailDialog = ({ open, onClose, protocol, instanceId }: SendPr
     setRecipientEmail(protocol.customer_email || '');
     setSubject(`Protokół zakończenia prac – ${protocol.customer_name}`);
     const link = `${window.location.origin}/protocols/${protocol.public_token}`;
-    setMessage(`Dzień dobry,\n\nW załączeniu przesyłamy link do protokołu zakończenia prac:\n${link}\n\nZ poważaniem`);
-  }, [open, protocol]);
+
+    supabase
+      .from('instances')
+      .select('protocol_email_template, name')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data, error }) => {
+        const fallback = `Dzień dobry,\n\nW załączeniu przesyłamy link do protokołu zakończenia prac:\n${link}\n\nZ poważaniem`;
+        if (error) {
+          console.error('Failed to fetch email template:', error.message);
+          setMessage(fallback);
+          return;
+        }
+        const template = (data as any)?.protocol_email_template;
+        const instanceName = (data as any)?.name || '';
+        const firstName = protocol.customer_name.split(' ')[0];
+        const dateStr = protocol.protocol_date || '';
+        if (template) {
+          setMessage(
+            template
+              .replace(/{imie_klienta}/g, firstName)
+              .replace(/{link_protokolu}/g, link)
+              .replace(/{nazwa_firmy}/g, instanceName)
+              .replace(/{data_protokolu}/g, dateStr)
+          );
+        } else {
+          setMessage(fallback);
+        }
+      });
+  }, [open, protocol, instanceId]);
 
   const handleSend = async () => {
     if (!recipientEmail.trim()) { toast.error('Podaj adres email'); return; }
     setSending(true);
     try {
+      const publicUrl = `${window.location.origin}/protocols/${protocol.public_token}`;
       const { error } = await supabase.functions.invoke('send-protocol-email', {
         body: {
           protocolId: protocol.id,
@@ -45,9 +76,11 @@ const SendProtocolEmailDialog = ({ open, onClose, protocol, instanceId }: SendPr
           subject: subject.trim(),
           message: message.trim(),
           instanceId,
+          publicUrl,
         },
       });
       if (error) throw error;
+      onStatusChange?.(protocol.id, 'sent');
       toast.success('Email wysłany');
       onClose();
     } catch (err: any) {
