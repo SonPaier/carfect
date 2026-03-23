@@ -1,11 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { X, MapPin, FileText, Plus } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EmptyState } from '@shared/ui';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface FollowUpItem {
   id: string;
@@ -40,7 +51,6 @@ const UnscheduledFollowUpsDrawer = ({
   refreshKey = 0,
 }: UnscheduledFollowUpsDrawerProps) => {
   const isMobile = useIsMobile();
-  // Increment key each time drawer opens to force fresh fetch
   const [openCount, setOpenCount] = useState(0);
   useEffect(() => {
     if (open) setOpenCount((c) => c + 1);
@@ -48,6 +58,7 @@ const UnscheduledFollowUpsDrawer = ({
 
   const [items, setItems] = useState<FollowUpItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
   const fetchFollowUps = useCallback(() => {
     setLoading(true);
@@ -66,90 +77,134 @@ const UnscheduledFollowUpsDrawer = ({
       });
   }, [instanceId]);
 
-  // Fetch on every open and when refreshKey changes (even if closed — pre-fetch for next open)
   useEffect(() => {
     if (open || refreshKey > 0) fetchFollowUps();
   }, [open, openCount, refreshKey, fetchFollowUps]);
 
+  const handleDelete = async () => {
+    if (!deleteItemId) return;
+    const { error } = await supabase
+      .from('calendar_items')
+      .delete()
+      .eq('id', deleteItemId);
+    if (error) {
+      toast.error('Błąd usuwania zlecenia');
+    } else {
+      setItems((prev) => prev.filter((i) => i.id !== deleteItemId));
+      toast.success('Zlecenie usunięte');
+    }
+    setDeleteItemId(null);
+  };
+
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
-    >
-      <SheetContent
-        side="right"
-        className={cn(
-          'z-[1400] h-full p-0 flex flex-col',
-          isMobile ? 'w-full' : 'w-full sm:w-[550px] sm:max-w-[550px]',
-        )}
-        hideCloseButton
-        hideOverlay
+    <>
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
       >
-        <div className="flex flex-col h-full">
-          <div className="px-6 py-4 border-b border-border shrink-0 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Do wykonania</h2>
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={onAddClick}>
-                <Plus className="w-4 h-4 mr-1" />
-                Dodaj
-              </Button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <SheetContent
+          side="right"
+          className={cn(
+            'z-[1400] h-full p-0 flex flex-col',
+            isMobile ? 'w-full' : 'w-full sm:w-[550px] sm:max-w-[550px]',
+          )}
+          hideCloseButton
+          hideOverlay
+        >
+          <div className="flex flex-col h-full">
+            <div className="px-6 py-4 border-b border-border shrink-0 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Do wykonania</h2>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={onAddClick}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Dodaj
+                </Button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {items.length === 0 && (
+                <EmptyState
+                  title="Brak zleceń do wykonania"
+                  description="Wszystkie ponowne wizyty zostały zaplanowane"
+                />
+              )}
+              {items.map((item) => {
+                const addr = item.customer_addresses;
+                const addrParts = [addr?.name, [addr?.street, addr?.city].filter(Boolean).join(', ')].filter(Boolean);
+                const addressText = addrParts.join(' — ');
+
+                return (
+                  <div
+                    key={item.id}
+                    className="relative w-full text-left p-3 rounded-lg border border-border bg-white hover:bg-purple-50 hover:border-purple-300 transition-colors cursor-pointer"
+                    onClick={() => {
+                      onItemClick(item.id);
+                      onClose();
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteItemId(item.id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+
+                    <div className="pr-8 space-y-1">
+                      <div className="font-medium text-sm text-foreground">{item.title}</div>
+                      {item.customer_name && (
+                        <div className="text-xs text-foreground">{item.customer_name}</div>
+                      )}
+                      {addressText && (
+                        <div className="text-xs text-foreground">{addressText}</div>
+                      )}
+                      {item.admin_notes && (
+                        <div className="text-xs text-foreground bg-white rounded p-2 mt-1 whitespace-pre-line line-clamp-3 border border-border/50">
+                          {item.admin_notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+        </SheetContent>
+      </Sheet>
 
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-            {items.length === 0 && (
-              <EmptyState
-                title="Brak zleceń do wykonania"
-                description="Wszystkie ponowne wizyty zostały zaplanowane"
-              />
-            )}
-            {items.map((item) => {
-              const addr = item.customer_addresses;
-              const addressText =
-                [addr?.city, addr?.street].filter(Boolean).join(', ') || addr?.name;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    onItemClick(item.id);
-                    onClose();
-                  }}
-                  className="w-full text-left p-3 rounded-lg border border-border bg-white hover:bg-purple-50 hover:border-purple-300 transition-colors space-y-1"
-                >
-                  <div className="font-medium text-sm text-foreground">{item.title}</div>
-                  {item.customer_name && (
-                    <div className="text-xs text-muted-foreground">{item.customer_name}</div>
-                  )}
-                  {addressText && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{addressText}</span>
-                    </div>
-                  )}
-                  {item.admin_notes && (
-                    <div className="flex items-start gap-1 text-xs text-foreground/80 bg-muted/50 rounded p-2 mt-1">
-                      <FileText className="w-3 h-3 shrink-0 mt-0.5" />
-                      <span className="whitespace-pre-line line-clamp-3">{item.admin_notes}</span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+      <AlertDialog open={!!deleteItemId} onOpenChange={(v) => { if (!v) setDeleteItemId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć zlecenie?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tej operacji nie można cofnąć. Zlecenie zostanie trwale usunięte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
