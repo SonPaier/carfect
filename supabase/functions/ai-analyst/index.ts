@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { streamText, tool, jsonSchema } from 'npm:ai';
-import { createOpenAI } from 'npm:@ai-sdk/openai';
+import { streamText } from 'npm:ai@4.3';
+import { createOpenAI } from 'npm:@ai-sdk/openai@1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -169,20 +169,20 @@ Zasady:
           : m.content || '',
       })),
       tools: {
-        run_sql: tool({
+        run_sql: {
           description:
             'Execute a read-only SQL query against the database. Use this to fetch any data needed to answer the user question. Always include WHERE instance_id clause.',
-          parameters: jsonSchema({
-            type: 'object',
+          parameters: {
+            type: 'object' as const,
             properties: {
               sql: {
-                type: 'string',
+                type: 'string' as const,
                 description:
                   'The SELECT SQL query to execute. Must be a single SELECT statement with instance_id filter.',
               },
             },
             required: ['sql'],
-          }),
+          },
           execute: async ({ sql }: { sql: string }) => {
             // Clean up SQL
             const cleanSql = sql.trim().replace(/;+$/, '').trim();
@@ -215,7 +215,7 @@ Zasady:
 
             return { rows: data, rowCount: Array.isArray(data) ? data.length : 0 };
           },
-        }),
+        },
       },
       maxSteps: 5,
     });
