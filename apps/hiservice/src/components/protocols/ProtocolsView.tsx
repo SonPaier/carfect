@@ -355,6 +355,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
           onClose={() => setEmailDialogProtocol(null)}
           protocol={emailDialogProtocol}
           instanceId={instanceId}
+          onStatusChange={handleStatusChange}
         />
       )}
 
