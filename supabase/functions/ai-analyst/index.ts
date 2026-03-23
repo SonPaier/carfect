@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { streamText, tool } from 'npm:ai';
+import { streamText, tool, jsonSchema } from 'npm:ai';
 import { createOpenAI } from 'npm:@ai-sdk/openai';
-import { z } from 'npm:zod@3.24.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,12 +172,16 @@ Zasady:
         run_sql: tool({
           description:
             'Execute a read-only SQL query against the database. Use this to fetch any data needed to answer the user question. Always include WHERE instance_id clause.',
-          parameters: z.object({
-            sql: z
-              .string()
-              .describe(
-                'The SELECT SQL query to execute. Must be a single SELECT statement with instance_id filter.',
-              ),
+          parameters: jsonSchema({
+            type: 'object',
+            properties: {
+              sql: {
+                type: 'string',
+                description:
+                  'The SELECT SQL query to execute. Must be a single SELECT statement with instance_id filter.',
+              },
+            },
+            required: ['sql'],
           }),
           execute: async ({ sql }: { sql: string }) => {
             // Clean up SQL
