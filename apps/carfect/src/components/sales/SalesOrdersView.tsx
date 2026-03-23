@@ -677,28 +677,46 @@ const SalesOrdersView = () => {
                       <TableCell className="text-right text-sm tabular-nums">
                         {formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            changePaymentStatus(
-                              order.id,
-                              order.paymentStatus === 'paid' ? 'unpaid' : 'paid',
-                            )
-                          }
-                          className="cursor-pointer"
-                        >
-                          {order.paymentStatus === 'paid' ? (
-                            <Badge className="bg-emerald-600 text-white text-xs">Opłacone</Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="border-amber-500 text-amber-600 text-xs"
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="focus:outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {order.paymentStatus === 'paid' ? (
+                                <Badge className="bg-emerald-600 text-white text-xs">
+                                  Opłacone
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="border-amber-500 text-amber-600 text-xs"
+                                >
+                                  Do opłacenia
+                                </Badge>
+                              )}
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-0">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changePaymentStatus(order.id, 'unpaid');
+                              }}
                             >
                               Do opłacenia
-                            </Badge>
-                          )}
-                        </button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changePaymentStatus(order.id, 'paid');
+                              }}
+                            >
+                              Opłacone
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
