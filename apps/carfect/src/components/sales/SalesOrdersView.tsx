@@ -748,15 +748,30 @@ const SalesOrdersView = () => {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-0">
-                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'nowy')}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeStatus(order.id, 'nowy');
+                              }}
+                            >
                               <Badge variant="outline" className="border-amber-500 text-amber-600">
                                 Nowy
                               </Badge>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'wysłany')}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeStatus(order.id, 'wysłany');
+                              }}
+                            >
                               <Badge className="bg-emerald-600 text-white">Wysłany</Badge>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'anulowany')}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeStatus(order.id, 'anulowany');
+                              }}
+                            >
                               <Badge variant="outline" className="border-red-500 text-red-600">
                                 Anulowany
                               </Badge>
