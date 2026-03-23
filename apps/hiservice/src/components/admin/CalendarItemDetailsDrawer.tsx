@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { ChecklistSection, type ChecklistItem } from '@shared/ui';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
@@ -92,6 +94,7 @@ interface CalendarItemDetailsDrawerProps {
   onStatusChange?: (itemId: string, newStatus: string) => void;
   onStartWork?: (itemId: string) => void;
   onEndWork?: (itemId: string) => void;
+  onFollowUpRequest?: (item: CalendarItem) => void;
   onAddProtocol?: (item: CalendarItem) => void;
   instanceId?: string;
   hidePrices?: boolean;
@@ -107,6 +110,8 @@ const statusLabels: Record<string, string> = {
   completed: 'Zakończone',
   cancelled: 'Anulowane',
   change_requested: 'Prośba o zmianę',
+  unfinished: 'Nieukończone',
+  follow_up: 'Ponowna wizyta',
 };
 
 const statusColors: Record<string, string> = {
@@ -115,6 +120,8 @@ const statusColors: Record<string, string> = {
   completed: 'bg-slate-100 text-slate-700 border-slate-300',
   cancelled: 'bg-red-100 text-red-700 border-red-300',
   change_requested: 'bg-red-100 text-red-800 border-red-300',
+  unfinished: 'bg-purple-100 text-purple-800 border-purple-400',
+  follow_up: 'bg-purple-50 text-purple-700 border-purple-300',
 };
 
 // Inline editable quantity cell
@@ -358,6 +365,7 @@ const CalendarItemDetailsDrawer = ({
   onStatusChange,
   onStartWork,
   onEndWork,
+  onFollowUpRequest,
   onAddProtocol,
   instanceId,
   hidePrices,
@@ -370,6 +378,7 @@ const CalendarItemDetailsDrawer = ({
   // All drawers now open from the right
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [endWorkDialogOpen, setEndWorkDialogOpen] = useState(false);
   const [addressLabel, setAddressLabel] = useState<string | null>(null);
   const [addressStreet, setAddressStreet] = useState<string>('');
   const [addressCoords, setAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -379,6 +388,7 @@ const CalendarItemDetailsDrawer = ({
   // Inline notes editing
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [savingNotes, setSavingNotes] = useState(false);
 
   // SMS templates & sending
@@ -496,6 +506,8 @@ const CalendarItemDetailsDrawer = ({
     if (item) {
       setNotesValue(item.admin_notes || '');
       setEditingNotes(false);
+      // Load checklist_items
+      setChecklistItems(Array.isArray(item.checklist_items) ? item.checklist_items : []);
       // Load media_items with fallback from photo_urls
       const raw = (item as any).media_items;
       if (Array.isArray(raw) && raw.length > 0) {
@@ -505,7 +517,8 @@ const CalendarItemDetailsDrawer = ({
         setMediaItems(photos.map((url: string) => ({ type: 'image' as const, url })));
       }
     }
-  }, [item?.id, item?.admin_notes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id, item?.admin_notes, item?.checklist_items]);
 
   // Fetch address
   useEffect(() => {
@@ -792,39 +805,94 @@ const CalendarItemDetailsDrawer = ({
       </DropdownMenu>
     );
 
-    const statusDropdown = (
-      mainLabel: string,
-      mainAction: () => void,
-      mainColor: string,
-      otherStatuses: { label: string; status: string; icon: React.ReactNode }[],
-    ) => (
-      <div className="flex flex-1">
-        <Button className={`${mainColor} flex-1 rounded-r-none`} onClick={mainAction}>
-          {mainLabel}
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className={`${mainColor} rounded-l-none border-l border-white/20 px-2`}>
-              <ChevronDown className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {otherStatuses.map((s) => (
-              <DropdownMenuItem key={s.status} onClick={() => onStatusChange?.(item.id, s.status)}>
-                {s.icon}
-                {s.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    );
-
     return (
       <div className="flex-shrink-0 border-t border-border px-4 py-3 flex items-center gap-1.5">
         {!isEmployee && item.status !== 'completed' && moreMenu}
         {protocolBtn}
         {editBtn}
+        {!isEmployee &&
+          onStatusChange &&
+          (() => {
+            const primaryAction =
+              item.status === 'confirmed' && onStartWork
+                ? {
+                    label: 'Rozpocznij pracę',
+                    onClick: () => onStartWork(item.id),
+                    color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                  }
+                : item.status === 'in_progress' && onEndWork
+                  ? {
+                      label: 'Zakończ pracę',
+                      onClick: () => setEndWorkDialogOpen(true),
+                      color: 'bg-sky-500 hover:bg-sky-600 text-white',
+                    }
+                  : null;
+
+            const allStatuses = [
+              {
+                key: 'confirmed',
+                label: 'Do wykonania',
+                icon: <RotateCcw className="w-4 h-4 mr-2" />,
+              },
+              { key: 'in_progress', label: 'W trakcie', icon: <Clock className="w-4 h-4 mr-2" /> },
+              { key: 'completed', label: 'Zakończone', icon: <Check className="w-4 h-4 mr-2" /> },
+              { key: 'cancelled', label: 'Anulowane', icon: <X className="w-4 h-4 mr-2" /> },
+            ].filter((s) => s.key !== item.status);
+
+            return primaryAction ? (
+              <div className="flex flex-1">
+                <Button
+                  className={`${primaryAction.color} flex-1 rounded-r-none`}
+                  onClick={primaryAction.onClick}
+                >
+                  {primaryAction.label}
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      className={`${primaryAction.color} rounded-l-none border-l border-white/20 px-2`}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {allStatuses.map((s) => (
+                      <DropdownMenuItem key={s.key} onClick={() => onStatusChange(item.id, s.key)}>
+                        {s.icon}
+                        {s.label}
+                      </DropdownMenuItem>
+                    ))}
+                    {item.status === 'in_progress' && onFollowUpRequest && (
+                      <DropdownMenuItem onClick={() => onFollowUpRequest(item)}>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Potrzebny dodatkowy przyjazd
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn('flex-1', statusColors[item.status] || '')}
+                  >
+                    {statusLabels[item.status] || item.status}
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {allStatuses.map((s) => (
+                    <DropdownMenuItem key={s.key} onClick={() => onStatusChange(item.id, s.key)}>
+                      {s.icon}
+                      {s.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
 
         {isEmployee ? (
           <>
@@ -839,7 +907,7 @@ const CalendarItemDetailsDrawer = ({
             {item.status === 'in_progress' && onEndWork && (
               <Button
                 className="bg-sky-500 hover:bg-sky-600 text-white flex-1"
-                onClick={() => onEndWork(item.id)}
+                onClick={() => setEndWorkDialogOpen(true)}
               >
                 Zakończ pracę
               </Button>
@@ -854,90 +922,26 @@ const CalendarItemDetailsDrawer = ({
                 Anulowane
               </Button>
             )}
-          </>
-        ) : (
-          <>
-            {item.status === 'confirmed' &&
-              onStartWork &&
-              statusDropdown(
-                'Rozpocznij pracę',
-                () => onStartWork(item.id),
-                'bg-emerald-600 hover:bg-emerald-700 text-white',
-                [
-                  {
-                    label: 'Zakończone',
-                    status: 'completed',
-                    icon: <Check className="w-4 h-4 mr-2" />,
-                  },
-                  { label: 'Anuluj', status: 'cancelled', icon: <X className="w-4 h-4 mr-2" /> },
-                ],
-              )}
-
-            {item.status === 'in_progress' &&
-              onEndWork &&
-              statusDropdown(
-                'Zakończ pracę',
-                () => onEndWork(item.id),
-                'bg-sky-500 hover:bg-sky-600 text-white',
-                [
-                  {
-                    label: 'Do wykonania',
-                    status: 'confirmed',
-                    icon: <RotateCcw className="w-4 h-4 mr-2" />,
-                  },
-                  { label: 'Anuluj', status: 'cancelled', icon: <X className="w-4 h-4 mr-2" /> },
-                ],
-              )}
-
-            {item.status === 'completed' && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex-1 bg-white">
-                    Zakończone
-                    <ChevronDown className="w-4 h-4 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'confirmed')}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Do wykonania
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'in_progress')}>
-                    <RotateCcw className="w-4 h-4 mr-2" />W trakcie
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'cancelled')}>
-                    <X className="w-4 h-4 mr-2" />
-                    Anulowane
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {item.status === 'unfinished' && (
+              <Button
+                variant="outline"
+                className="flex-1 bg-purple-50 text-purple-800 border-purple-300"
+                disabled
+              >
+                Nieukończone
+              </Button>
             )}
-
-            {item.status === 'cancelled' && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex-1 bg-white">
-                    Anulowane
-                    <ChevronDown className="w-4 h-4 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'confirmed')}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Do wykonania
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'in_progress')}>
-                    <Clock className="w-4 h-4 mr-2" />W trakcie
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onStatusChange?.(item.id, 'completed')}>
-                    <Check className="w-4 h-4 mr-2" />
-                    Zakończone
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {item.status === 'follow_up' && (
+              <Button
+                variant="outline"
+                className="flex-1 bg-purple-50 text-purple-700 border-purple-300"
+                disabled
+              >
+                Ponowna wizyta
+              </Button>
             )}
           </>
-        )}
+        ) : null}
       </div>
     );
   };
@@ -1210,6 +1214,28 @@ const CalendarItemDetailsDrawer = ({
                   </div>
                 </div>
               )}
+
+              {/* Checklist */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">Lista zadań</div>
+                <ChecklistSection
+                  items={checklistItems}
+                  mode="execute"
+                  onChange={(newItems) => {
+                    setChecklistItems(newItems);
+                    supabase
+                      .from('calendar_items')
+                      .update({ checklist_items: newItems } as any)
+                      .eq('id', item.id)
+                      .then(({ error }) => {
+                        if (error) {
+                          console.error('Error saving checklist:', error);
+                          setChecklistItems(checklistItems);
+                        }
+                      });
+                  }}
+                />
+              </div>
 
               {/* Notes */}
               <div className="space-y-1">
@@ -1531,6 +1557,33 @@ const CalendarItemDetailsDrawer = ({
             >
               {deleting ? 'Usuwanie...' : 'Usuń'}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* End Work Dialog */}
+      <AlertDialog open={endWorkDialogOpen} onOpenChange={setEndWorkDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Zakończ pracę</AlertDialogTitle>
+            <AlertDialogDescription>Co chcesz zrobić z tym zleceniem?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="!flex-col !space-x-0 gap-2">
+            <AlertDialogAction
+              className="w-full bg-sky-500 hover:bg-sky-600 text-white"
+              onClick={() => onEndWork?.(item.id)}
+            >
+              <Check className="w-4 h-4 mr-2" />
+              Zakończyłem pracę
+            </AlertDialogAction>
+            <AlertDialogAction
+              className="w-full bg-white border border-purple-300 text-purple-800 hover:bg-purple-50"
+              onClick={() => onFollowUpRequest?.(item)}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Potrzebny dodatkowy przyjazd
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full mt-0">Anuluj</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

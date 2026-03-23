@@ -26,7 +26,7 @@ async function fetchFullItem(itemId: string): Promise<CalendarItem | null> {
   const { data } = await supabase
     .from('calendar_items')
     .select(
-      'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, project_id',
+      'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, project_id, checklist_items',
     )
     .eq('id', itemId)
     .maybeSingle();
@@ -193,5 +193,10 @@ export function useCalendarItemsRealtime({
     };
   }, [instanceId, onInsert, onUpdate, onDelete, onBreakChange, rateLimitedRefetch]);
 
-  return { isConnected, markAsLocallyUpdated };
+  const isLocallyUpdated = useCallback((itemId: string) => {
+    const ts = recentlyUpdatedRef.current.get(itemId);
+    return !!ts && Date.now() - ts < LOCAL_UPDATE_DEBOUNCE;
+  }, []);
+
+  return { isConnected, markAsLocallyUpdated, isLocallyUpdated };
 }

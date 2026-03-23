@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Loader2, MapPin, Phone, Mail, FileText } from 'lucide-react';
+import { Loader2, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProtocolHeader from './ProtocolHeader';
+import {
+  getVisitsFromChain,
+  roundUpTo30,
+  formatDuration,
+  type VisitInfo,
+} from '@/lib/protocolUtils';
 
 interface ProtocolData {
   id: string;
@@ -19,6 +25,7 @@ interface ProtocolData {
   photo_urls: string[];
   customer_address_id: string | null;
   instance_id: string;
+  show_visits: boolean;
 }
 
 interface AddressData {
@@ -37,7 +44,7 @@ interface InstanceData {
 }
 
 const protocolTypeLabels: Record<string, string> = {
-  completion: 'Protokół zakończenia prac',
+  completion: 'Protokół serwisowy',
 };
 
 interface PublicProtocolCustomerViewProps {
@@ -50,6 +57,8 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   const [instance, setInstance] = useState<InstanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visits, setVisits] = useState<VisitInfo[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +75,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
       }
 
       const photoUrls = Array.isArray(proto.photo_urls) ? (proto.photo_urls as string[]) : [];
-      setProtocol({ ...proto, photo_urls: photoUrls });
+      setProtocol({ ...proto, photo_urls: photoUrls, show_visits: proto.show_visits !== false });
 
       // Fetch instance
       const { data: inst } = await supabase
@@ -86,6 +95,28 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
         setAddress(addr);
       }
 
+      // Fetch visit chain for time display
+      if (proto.calendar_item_id) {
+        const { data: currentItem } = await supabase
+          .from('calendar_items')
+          .select('id, parent_item_id, item_date, work_started_at, work_ended_at')
+          .eq('id', proto.calendar_item_id)
+          .single();
+        if (currentItem) {
+          const rootId = (currentItem as Record<string, unknown>).parent_item_id || currentItem.id;
+          const { data: chainData } = await supabase
+            .from('calendar_items')
+            .select('id, item_date, work_started_at, work_ended_at')
+            .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
+          const typedChain = (chainData || []) as Array<{
+            item_date?: string | null;
+            work_started_at?: string | null;
+            work_ended_at?: string | null;
+          }>;
+          setVisits(getVisitsFromChain(typedChain));
+        }
+      }
+
       setLoading(false);
     };
     fetchData();
@@ -94,7 +125,7 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <Loader2 className="w-8 h-8 animate-spin text-foreground" />
       </div>
     );
   }
@@ -103,67 +134,100 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-2">
-          <FileText className="w-12 h-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground">{error || 'Nie znaleziono protokołu'}</p>
+          <FileText className="w-12 h-12 mx-auto text-foreground/50" />
+          <p className="text-foreground">{error || 'Nie znaleziono protokołu'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-2xl mx-auto min-h-screen bg-white shadow-[0_0_30px_rgba(0,0,0,0.08)] px-8 py-10 space-y-8">
         <ProtocolHeader
           instanceName={instance?.name || ''}
           logoUrl={instance?.logo_url || null}
+          address={instance?.address}
+          phone={instance?.phone}
+          email={instance?.email}
         />
 
-        <div className="bg-card rounded-lg border border-border p-6 space-y-6">
-          {/* Type */}
-          <div className="text-center">
-            <h2 className="text-xl font-bold text-foreground">
-              {protocolTypeLabels[protocol.protocol_type] || 'Protokół'}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
-            </p>
+        <div className="space-y-6">
+          {/* Title + date (left) + address (right) */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                {protocolTypeLabels[protocol.protocol_type] || 'Protokół'}
+              </h2>
+              <p className="text-sm text-foreground mt-1">
+                Data: {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
+                {protocol.show_visits &&
+                  visits.length === 1 &&
+                  ` · ${formatDuration(roundUpTo30(visits[0].durationMinutes))}`}
+              </p>
+            </div>
+            {address && (
+              <div className="text-sm text-foreground sm:text-right">
+                <p className="font-semibold">Adres serwisowy</p>
+                <p>
+                  {address.name}
+                  {address.street && `, ${address.street}`}
+                </p>
+                {(address.postal_code || address.city) && (
+                  <p>
+                    {address.postal_code && `${address.postal_code} `}
+                    {address.city}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Customer info */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">Dane klienta</h3>
-            <p className="text-foreground">{protocol.customer_name}</p>
-            {protocol.customer_phone && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5" />{protocol.customer_phone}
-              </p>
-            )}
-            {protocol.customer_email && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5" />{protocol.customer_email}
-              </p>
-            )}
-            {protocol.customer_nip && (
-              <p className="text-sm text-muted-foreground">NIP: {protocol.customer_nip}</p>
-            )}
-          </div>
-
-          {/* Address */}
-          {address && (
+          {/* Visits (only when more than 1 and show_visits enabled) */}
+          {protocol.show_visits && visits.length > 1 && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-foreground flex items-center gap-1">
-                <MapPin className="w-4 h-4" />Adres
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {address.name}
-                {address.street && `, ${address.street}`}
-                {address.postal_code && `, ${address.postal_code}`}
-                {address.city && ` ${address.city}`}
+              <h3 className="font-semibold text-foreground">Wizyty serwisowe</h3>
+              <div className="space-y-1 text-sm">
+                {visits.map((v, i) => (
+                  <div key={i} className="flex justify-between">
+                    <span>{format(new Date(v.itemDate + 'T00:00:00'), 'd.MM.yyyy')}</span>
+                    <span className="font-medium">
+                      {formatDuration(roundUpTo30(v.durationMinutes))}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                  <span>Łącznie</span>
+                  <span>
+                    {formatDuration(
+                      visits.reduce((sum, v) => sum + roundUpTo30(v.durationMinutes), 0),
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Prepared by + date */}
+          {protocol.prepared_by && (
+            <div className="space-y-1">
+              <h3 className="font-semibold text-foreground">Sporządził</h3>
+              <p className="text-sm text-foreground">
+                {protocol.prepared_by},{' '}
+                {format(new Date(protocol.protocol_date), 'd MMMM yyyy', { locale: pl })}
               </p>
             </div>
           )}
 
-          {/* Photos */}
+          {/* Notes */}
+          {protocol.notes && (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">Uwagi</h3>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{protocol.notes}</p>
+            </div>
+          )}
+
+          {/* Photos with lightbox — only if any */}
           {protocol.photo_urls.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-foreground">Zdjęcia</h3>
@@ -173,49 +237,90 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
                     key={i}
                     src={url}
                     alt={`Zdjęcie ${i + 1}`}
-                    className="w-full aspect-square object-cover rounded-md border border-border"
+                    className="w-full aspect-square object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxIndex(i)}
                   />
                 ))}
               </div>
             </div>
           )}
 
-          {/* Notes */}
-          {protocol.notes && (
-            <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">Uwagi</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{protocol.notes}</p>
-            </div>
-          )}
-
-          {/* Prepared by */}
-          {protocol.prepared_by && (
-            <div className="space-y-1">
-              <h3 className="font-semibold text-foreground">Sporządził</h3>
-              <p className="text-sm text-muted-foreground">{protocol.prepared_by}</p>
-            </div>
-          )}
-
           {/* Signature */}
           {protocol.customer_signature && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">Podpis osoby upoważnionej do odbioru</h3>
-              <div className="border border-border rounded-md p-2 bg-background">
+              <h3 className="font-semibold text-foreground">
+                Podpis osoby upoważnionej do odbioru
+              </h3>
+              <div className="border border-border rounded-md p-2">
                 <img src={protocol.customer_signature} alt="Podpis" className="max-h-32 mx-auto" />
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        {instance && (
-          <div className="text-center text-xs text-muted-foreground space-y-1">
-            <p>{instance.name}</p>
-            {instance.address && <p>{instance.address}</p>}
-            {instance.phone && <p>Tel: {instance.phone}</p>}
-          </div>
-        )}
+        {/* Footer — hiservice.pl branding */}
+        <div className="text-center text-xs text-muted-foreground py-6 border-t border-border mt-8">
+          <p>
+            Wygenerowano przy użyciu aplikacji dla serwisantów —{' '}
+            <a
+              href="https://hiservice.pl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              hiservice.pl
+            </a>
+          </p>
+        </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white p-2"
+            onClick={() => setLightboxIndex(null)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {protocol.photo_urls.length > 1 && (
+            <>
+              <button
+                className="absolute left-4 text-white p-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex(
+                    (lightboxIndex - 1 + protocol.photo_urls.length) % protocol.photo_urls.length,
+                  );
+                }}
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+              <button
+                className="absolute right-4 text-white p-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex((lightboxIndex + 1) % protocol.photo_urls.length);
+                }}
+              >
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            </>
+          )}
+          <img
+            src={protocol.photo_urls[lightboxIndex]}
+            alt={`Zdjęcie ${lightboxIndex + 1}`}
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span className="absolute bottom-4 text-white text-sm">
+            {lightboxIndex + 1} / {protocol.photo_urls.length}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,19 +1,42 @@
-import { useState, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/ui";
-import { Button } from "@shared/ui";
-import { Input } from "@shared/ui";
-import { Label } from "@shared/ui";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/ui";
-import { Checkbox } from "@shared/ui";
-import { Alert, AlertDescription } from "@shared/ui";
-import { ScrollArea } from "@shared/ui";
-import { Separator } from "@shared/ui";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { 
-  Building2, Globe, Phone, Mail, MapPin, Hash, User, Lock, 
-  Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, Info
-} from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Separator,
+} from '@shared/ui';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import {
+  Building2,
+  Globe,
+  Phone,
+  Mail,
+  MapPin,
+  Hash,
+  User,
+  Lock,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Eye,
+  EyeOff,
+  Info,
+} from 'lucide-react';
 
 interface AddInstanceDialogProps {
   open: boolean;
@@ -40,23 +63,23 @@ type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
 export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstanceDialogProps) {
   // Form state
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [shortName, setShortName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [nip, setNip] = useState("");
-  
-  const [planId, setPlanId] = useState("");
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [shortName, setShortName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [nip, setNip] = useState('');
+
+  const [planId, setPlanId] = useState('');
   const [stationLimit, setStationLimit] = useState(1);
   const [trialDays, setTrialDays] = useState<number | null>(null);
-  
-  const [adminUsername, setAdminUsername] = useState("admin");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
+
+  const [adminUsername, setAdminUsername] = useState('admin');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // UI state
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [slugStatus, setSlugStatus] = useState<SlugStatus>('idle');
@@ -71,7 +94,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
         .select('id, name, base_price, price_per_station')
         .eq('active', true)
         .order('sort_order');
-      
+
       if (!error && data) {
         setPlans(data);
         if (data.length > 0) {
@@ -80,7 +103,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
       }
       setLoadingPlans(false);
     };
-    
+
     if (open) {
       fetchPlans();
     }
@@ -92,21 +115,21 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
       setSlugStatus('idle');
       return;
     }
-    
+
     const slugRegex = /^[a-z0-9-]+$/;
     if (!slugRegex.test(slugValue)) {
       setSlugStatus('invalid');
       return;
     }
-    
+
     setSlugStatus('checking');
-    
+
     const { data } = await supabase
       .from('instances')
       .select('id')
       .eq('slug', slugValue)
       .maybeSingle();
-    
+
     setSlugStatus(data ? 'taken' : 'available');
   }, []);
 
@@ -114,7 +137,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
     const timer = setTimeout(() => {
       checkSlugAvailability(slug);
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, [slug, checkSlugAvailability]);
 
@@ -149,9 +172,9 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
 
   const handleSubmit = async () => {
     if (!isFormValid()) return;
-    
+
     setLoading(true);
-    
+
     try {
       // 1. Create instance
       const { data: instance, error: instanceError } = await supabase
@@ -173,32 +196,28 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
 
       // 2. Create subscription
       const isTrial = trialDays !== null && trialDays > 0;
-      const trialExpiresAt = isTrial 
+      const trialExpiresAt = isTrial
         ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
         : null;
 
-      const { error: subError } = await supabase
-        .from('instance_subscriptions')
-        .insert({
-          instance_id: instance.id,
-          plan_id: planId,
-          station_limit: stationLimit,
-          is_trial: isTrial,
-          trial_expires_at: trialExpiresAt,
-          status: 'active',
-        });
+      const { error: subError } = await supabase.from('instance_subscriptions').insert({
+        instance_id: instance.id,
+        plan_id: planId,
+        station_limit: stationLimit,
+        is_trial: isTrial,
+        trial_expires_at: trialExpiresAt,
+        status: 'active',
+      });
 
       if (subError) throw subError;
 
       // 3. Create default station
-      const { error: stationError } = await supabase
-        .from('stations')
-        .insert({
-          instance_id: instance.id,
-          name: 'Stanowisko 1',
-          type: 'universal',
-          active: true,
-        });
+      const { error: stationError } = await supabase.from('stations').insert({
+        instance_id: instance.id,
+        name: 'Stanowisko 1',
+        type: 'universal',
+        active: true,
+      });
 
       if (stationError) throw stationError;
 
@@ -210,7 +229,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
           username: adminUsername.trim(),
           role: 'admin',
           instanceId: instance.id,
-        }
+        },
       });
 
       if (userError) throw userError;
@@ -223,21 +242,20 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
         adminEmail: adminEmail,
         adminPassword: adminPassword,
       });
-      
+
       // Reset form
       resetForm();
       onOpenChange(false);
-      
     } catch (error: any) {
       console.error('Error creating instance:', error);
-      
+
       // Handle specific error for duplicate slug
       if (error.code === '23505' && error.message?.includes('instances_slug_key')) {
         setSlugStatus('taken');
         toast.error('Ten slug jest już zajęty. Wybierz inny.');
         return;
       }
-      
+
       toast.error(`Błąd: ${error.message || 'Nie udało się utworzyć instancji'}`);
     } finally {
       setLoading(false);
@@ -245,27 +263,27 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
   };
 
   const resetForm = () => {
-    setName("");
-    setSlug("");
-    setShortName("");
-    setPhone("");
-    setEmail("");
-    setAddress("");
-    setNip("");
-    setPlanId(plans[0]?.id || "");
+    setName('');
+    setSlug('');
+    setShortName('');
+    setPhone('');
+    setEmail('');
+    setAddress('');
+    setNip('');
+    setPlanId(plans[0]?.id || '');
     setStationLimit(1);
     setTrialDays(null);
-    setAdminUsername("admin");
-    setAdminEmail("");
-    setAdminPassword("");
+    setAdminUsername('admin');
+    setAdminEmail('');
+    setAdminPassword('');
     setSlugStatus('idle');
   };
 
-  const selectedPlan = plans.find(p => p.id === planId);
+  const selectedPlan = plans.find((p) => p.id === planId);
   // base_price includes 1 station, so we only add price for extra stations
   const extraStations = Math.max(0, stationLimit - 1);
-  const monthlyPrice = selectedPlan 
-    ? selectedPlan.base_price + (extraStations * selectedPlan.price_per_station)
+  const monthlyPrice = selectedPlan
+    ? selectedPlan.base_price + extraStations * selectedPlan.price_per_station
     : 0;
 
   const SlugStatusIcon = () => {
@@ -275,7 +293,6 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
       case 'available':
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case 'taken':
-        return <XCircle className="h-4 w-4 text-destructive" />;
       case 'invalid':
         return <XCircle className="h-4 w-4 text-destructive" />;
       default:
@@ -292,7 +309,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
             Nowa instancja
           </DialogTitle>
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[calc(90vh-140px)] px-6">
           <div className="space-y-6 pb-6">
             {/* Section 1: Company Data */}
@@ -302,7 +319,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                 <span className="font-medium">Dane firmy</span>
               </div>
               <Separator />
-              
+
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nazwa firmy *</Label>
@@ -313,7 +330,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     placeholder="np. Auto Spa Gdańsk"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug (URL) *</Label>
                   <div className="relative">
@@ -322,7 +339,11 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                       value={slug}
                       onChange={(e) => setSlug(e.target.value.toLowerCase())}
                       placeholder="np. auto-spa-gdansk"
-                      className={slugStatus === 'taken' || slugStatus === 'invalid' ? 'border-destructive' : ''}
+                      className={
+                        slugStatus === 'taken' || slugStatus === 'invalid'
+                          ? 'border-destructive'
+                          : ''
+                      }
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <SlugStatusIcon />
@@ -335,7 +356,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     <p className="text-xs text-destructive">Ten slug jest już zajęty</p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="shortName">Skrócona nazwa (dla SMS)</Label>
                   <Input
@@ -345,17 +366,13 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     placeholder="np. Auto Spa"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-1">
                       <Phone className="h-3 w-3" /> Telefon
                     </Label>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
+                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-1">
@@ -369,7 +386,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="address" className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" /> Adres
@@ -380,16 +397,12 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="nip" className="flex items-center gap-1">
                     <Hash className="h-3 w-3" /> NIP
                   </Label>
-                  <Input
-                    id="nip"
-                    value={nip}
-                    onChange={(e) => setNip(e.target.value)}
-                  />
+                  <Input id="nip" value={nip} onChange={(e) => setNip(e.target.value)} />
                 </div>
               </div>
             </div>
@@ -401,24 +414,25 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                 <span className="font-medium">Plan i subskrypcja</span>
               </div>
               <Separator />
-              
+
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Wybierz plan *</Label>
                   <Select value={planId} onValueChange={setPlanId} disabled={loadingPlans}>
                     <SelectTrigger>
-                      <SelectValue placeholder={loadingPlans ? "Ładowanie..." : "Wybierz plan"} />
+                      <SelectValue placeholder={loadingPlans ? 'Ładowanie...' : 'Wybierz plan'} />
                     </SelectTrigger>
                     <SelectContent>
                       {plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} ({plan.base_price} zł z 1 stanowiskiem, +{plan.price_per_station} zł/dodatkowe)
+                          {plan.name} ({plan.base_price} zł z 1 stanowiskiem, +
+                          {plan.price_per_station} zł/dodatkowe)
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="stationLimit">Limit stanowisk *</Label>
                   <Input
@@ -430,13 +444,14 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     onChange={(e) => setStationLimit(Math.max(1, parseInt(e.target.value) || 1))}
                   />
                 </div>
-                
+
                 {selectedPlan && (
                   <div className="text-sm text-muted-foreground">
-                    Szacunkowa cena miesięczna: <span className="font-medium text-foreground">{monthlyPrice} zł</span>
+                    Szacunkowa cena miesięczna:{' '}
+                    <span className="font-medium text-foreground">{monthlyPrice} zł</span>
                   </div>
                 )}
-                
+
                 <div className="flex items-center gap-3">
                   <Checkbox
                     id="trial"
@@ -470,7 +485,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                 <span className="font-medium">Konto administratora</span>
               </div>
               <Separator />
-              
+
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="adminUsername">Nazwa użytkownika *</Label>
@@ -481,7 +496,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     placeholder="np. admin"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="adminEmail">Email administratora *</Label>
                   <Input
@@ -496,7 +511,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     <p className="text-xs text-destructive">Nieprawidłowy format adresu email</p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="adminPassword" className="flex items-center gap-1">
                     <Lock className="h-3 w-3" /> Hasło *
@@ -504,11 +519,13 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                   <div className="relative">
                     <Input
                       id="adminPassword"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       placeholder="Min. 6 znaków"
-                      className={adminPassword && adminPassword.length < 6 ? 'border-destructive' : ''}
+                      className={
+                        adminPassword && adminPassword.length < 6 ? 'border-destructive' : ''
+                      }
                     />
                     <Button
                       type="button"
@@ -542,13 +559,13 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
             )}
           </div>
         </ScrollArea>
-        
+
         <div className="flex justify-end gap-2 p-6 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Anuluj
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={!isFormValid() || loading}
             className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
           >

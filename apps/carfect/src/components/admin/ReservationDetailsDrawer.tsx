@@ -3,7 +3,32 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { User, Phone, Car, Clock, Loader2, Trash2, Pencil, MessageSquare, PhoneCall, Check, CheckCircle2, ChevronDown, ChevronUp, RotateCcw, X, Receipt, History, FileText, ExternalLink, MoreVertical, Camera, Plus, Users, UserX } from 'lucide-react';
+import {
+  User,
+  Phone,
+  Car,
+  Clock,
+  Loader2,
+  Trash2,
+  Pencil,
+  MessageSquare,
+  PhoneCall,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  X,
+  Receipt,
+  History,
+  FileText,
+  ExternalLink,
+  MoreVertical,
+  Camera,
+  Plus,
+  Users,
+  UserX,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
 import { useIsMobile } from '@shared/ui';
@@ -20,18 +45,8 @@ import { AssignedEmployeesChips } from './AssignedEmployeesChips';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { toast } from 'sonner';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@shared/ui';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@shared/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@shared/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,7 +147,10 @@ interface ReservationDetailsDrawerProps {
   reservation: Reservation | null;
   open: boolean;
   onClose: () => void;
-  onDelete?: (reservationId: string, customerData: { name: string; phone: string; email?: string; instance_id: string }) => void;
+  onDelete?: (
+    reservationId: string,
+    customerData: { name: string; phone: string; email?: string; instance_id: string },
+  ) => void;
   onEdit?: (reservation: Reservation) => void;
   onNoShow?: (reservationId: string) => void;
   onConfirm?: (reservationId: string) => void;
@@ -151,18 +169,18 @@ interface ReservationDetailsDrawerProps {
   hallConfig?: HallConfig;
 }
 
-const ReservationDetailsDrawer = ({ 
-  reservation, 
-  open, 
-  onClose, 
-  onDelete, 
-  onEdit, 
+const ReservationDetailsDrawer = ({
+  reservation,
+  open,
+  onClose,
+  onDelete,
+  onEdit,
   onNoShow,
-  onConfirm, 
-  onStartWork, 
-  onEndWork, 
-  onRelease, 
-  onRevertToConfirmed, 
+  onConfirm,
+  onStartWork,
+  onEndWork,
+  onRelease,
+  onRevertToConfirmed,
   onRevertToInProgress,
   onApproveChangeRequest,
   onRejectChangeRequest,
@@ -170,18 +188,18 @@ const ReservationDetailsDrawer = ({
   onSendConfirmationSms,
   onStatusChange,
   mode = 'admin',
-  hallConfig
+  hallConfig,
 }: ReservationDetailsDrawerProps) => {
   const isHallMode = mode === 'hall';
   const visibleFields = hallConfig?.visible_fields;
   const allowedActions = hallConfig?.allowed_actions;
-  
+
   // In hall mode, check allowed_actions for edit/delete visibility
   const canEditInHallMode = isHallMode && allowedActions?.edit_reservation;
   const canDeleteInHallMode = isHallMode && allowedActions?.delete_reservation;
   const showEdit = !isHallMode || canEditInHallMode;
   const showDelete = !isHallMode || canDeleteInHallMode;
-  
+
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
@@ -227,7 +245,7 @@ const ReservationDetailsDrawer = ({
   const navigate = useNavigate();
   const location = useLocation();
   const adminBasePath = location.pathname.startsWith('/admin') ? '/admin' : '';
-  
+
   // Employee assignment feature
   const { data: instanceSettings } = useInstanceSettings(reservation?.instance_id ?? null);
   const showEmployeeAssignment = instanceSettings?.assign_employees_to_reservations ?? false;
@@ -235,7 +253,7 @@ const ReservationDetailsDrawer = ({
   const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
   const [savingEmployees, setSavingEmployees] = useState(false);
   const [localAssignedEmployeeIds, setLocalAssignedEmployeeIds] = useState<string[]>([]);
-  
+
   // Sync local employee IDs when reservation changes
   useEffect(() => {
     setLocalAssignedEmployeeIds(reservation?.assigned_employee_ids || []);
@@ -264,7 +282,7 @@ const ReservationDetailsDrawer = ({
       setStartTime(reservation.start_time || '');
       setEndTime(reservation.end_time || '');
       setReservationPhotos(reservation.photo_urls || []);
-      
+
       // Fetch offer public_token if offer_number exists
       if (reservation.offer_number) {
         supabase
@@ -285,7 +303,7 @@ const ReservationDetailsDrawer = ({
   // Find customer email for protocol navigation
   const findCustomerEmail = async (phone: string, instanceId: string): Promise<string | null> => {
     const normalizedPhone = normalizePhone(phone);
-    
+
     // 1. Check customers table
     const { data: customer } = await supabase
       .from('customers')
@@ -293,9 +311,9 @@ const ReservationDetailsDrawer = ({
       .eq('instance_id', instanceId)
       .or(`phone.eq.${normalizedPhone},phone.eq.+48${normalizedPhone}`)
       .maybeSingle();
-    
+
     if (customer?.email) return customer.email;
-    
+
     // 2. Check offers table
     const { data: offers } = await supabase
       .from('offers')
@@ -303,14 +321,14 @@ const ReservationDetailsDrawer = ({
       .eq('instance_id', instanceId)
       .not('customer_data', 'is', null)
       .limit(10);
-    
+
     for (const offer of offers || []) {
       const customerData = offer.customer_data as any;
       if (normalizePhone(customerData?.phone) === normalizedPhone && customerData?.email) {
         return customerData.email;
       }
     }
-    
+
     return null;
   };
 
@@ -369,25 +387,25 @@ const ReservationDetailsDrawer = ({
 
   // Quick add services to reservation
   const handleAddServices = async (
-    newServiceIds: string[], 
-    servicesData: ServiceWithCategory[]
+    newServiceIds: string[],
+    servicesData: ServiceWithCategory[],
   ) => {
     if (!reservation) return;
     setSavingService(true);
-    
+
     try {
       // Merge existing + new service IDs (deduplicate)
       const currentIds = reservation.service_ids || [];
       const mergedIds = [...new Set([...currentIds, ...newServiceIds])];
-      
+
       // Build service_items with full service data (including names for display)
       const existingItems = reservation.service_items || [];
-      const existingServiceIds = new Set(existingItems.map(item => item.service_id));
-      
+      const existingServiceIds = new Set(existingItems.map((item) => item.service_id));
+
       const newItems = newServiceIds
-        .filter(id => !existingServiceIds.has(id))
-        .map(id => {
-          const svc = servicesData.find(s => s.id === id);
+        .filter((id) => !existingServiceIds.has(id))
+        .map((id) => {
+          const svc = servicesData.find((s) => s.id === id);
           return {
             service_id: id,
             id: id,
@@ -400,9 +418,9 @@ const ReservationDetailsDrawer = ({
             price_from: svc?.price_from ?? null,
           };
         });
-      
+
       const mergedItems = [...existingItems, ...newItems];
-      
+
       // Update database
       const { error } = await supabase
         .from('reservations')
@@ -411,10 +429,9 @@ const ReservationDetailsDrawer = ({
           service_items: mergedItems,
         })
         .eq('id', reservation.id);
-      
+
       if (error) throw error;
       toast.success(t('common.saved'));
-      
     } catch (error) {
       console.error('Error adding services:', error);
       toast.error(t('common.error'));
@@ -427,13 +444,14 @@ const ReservationDetailsDrawer = ({
   const handleRemoveService = async (serviceId: string) => {
     if (!reservation) return;
     setSavingService(true);
-    
+
     try {
       const currentIds = reservation.service_ids || [];
-      const updatedIds = currentIds.filter(id => id !== serviceId);
-      const updatedItems = (reservation.service_items || [])
-        .filter(item => item.service_id !== serviceId);
-      
+      const updatedIds = currentIds.filter((id) => id !== serviceId);
+      const updatedItems = (reservation.service_items || []).filter(
+        (item) => item.service_id !== serviceId,
+      );
+
       const { error } = await supabase
         .from('reservations')
         .update({
@@ -441,10 +459,9 @@ const ReservationDetailsDrawer = ({
           service_items: updatedItems.length > 0 ? updatedItems : null,
         })
         .eq('id', reservation.id);
-      
+
       if (error) throw error;
       toast.success(t('common.saved'));
-      
     } catch (error) {
       console.error('Error removing service:', error);
       toast.error(t('common.error'));
@@ -457,13 +474,13 @@ const ReservationDetailsDrawer = ({
   const handleSaveAdminNotes = async () => {
     if (!reservation) return;
     setSavingNotes(true);
-    
+
     try {
       const { error } = await supabase
         .from('reservations')
         .update({ admin_notes: adminNotes || null })
         .eq('id', reservation.id);
-      
+
       if (error) throw error;
       setEditingNotes(false);
       toast.success(t('common.saved'));
@@ -494,7 +511,7 @@ const ReservationDetailsDrawer = ({
         .from('reservations')
         .update({ assigned_employee_ids: employeeIds })
         .eq('id', reservation.id);
-      
+
       if (error) throw error;
       setLocalAssignedEmployeeIds(employeeIds);
       toast.success(t('common.saved'));
@@ -507,7 +524,7 @@ const ReservationDetailsDrawer = ({
   };
 
   const handleRemoveEmployee = async (employeeId: string) => {
-    const updatedIds = localAssignedEmployeeIds.filter(id => id !== employeeId);
+    const updatedIds = localAssignedEmployeeIds.filter((id) => id !== employeeId);
     await handleEmployeeSelect(updatedIds);
   };
 
@@ -523,35 +540,89 @@ const ReservationDetailsDrawer = ({
   const getSourceLabel = (source?: string | null, createdByUsername?: string | null) => {
     if (!source || source === 'admin') {
       const displayName = createdByUsername || t('reservations.sources.employee');
-      return <Badge variant="outline" className="text-xs font-normal">{t('reservations.addedBy')}: {displayName}</Badge>;
+      return (
+        <Badge variant="outline" className="text-xs font-normal">
+          {t('reservations.addedBy')}: {displayName}
+        </Badge>
+      );
     }
     if (source === 'customer' || source === 'calendar' || source === 'online') {
-      return <Badge variant="outline" className="text-xs font-normal border-muted-foreground/30 text-muted-foreground">{t('reservations.addedBy')}: {t('reservations.sources.system')}</Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="text-xs font-normal border-muted-foreground/30 text-muted-foreground"
+        >
+          {t('reservations.addedBy')}: {t('reservations.sources.system')}
+        </Badge>
+      );
     }
     if (source === 'booksy') {
-      return <Badge variant="outline" className="text-xs font-normal border-purple-500/30 text-purple-600">{t('reservations.addedBy')}: {t('reservations.sources.booksy')}</Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="text-xs font-normal border-purple-500/30 text-purple-600"
+        >
+          {t('reservations.addedBy')}: {t('reservations.sources.booksy')}
+        </Badge>
+      );
     }
-    return <Badge variant="outline" className="text-xs font-normal">{t('reservations.addedBy')}: {source}</Badge>;
+    return (
+      <Badge variant="outline" className="text-xs font-normal">
+        {t('reservations.addedBy')}: {source}
+      </Badge>
+    );
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge className="bg-success/20 text-success border-success/30">{t('reservations.statuses.confirmed')}</Badge>;
+        return (
+          <Badge className="bg-success/20 text-success border-success/30">
+            {t('reservations.statuses.confirmed')}
+          </Badge>
+        );
       case 'pending':
-        return <Badge className="bg-warning/20 text-warning border-warning/30">{t('reservations.statuses.pending')}</Badge>;
+        return (
+          <Badge className="bg-warning/20 text-warning border-warning/30">
+            {t('reservations.statuses.pending')}
+          </Badge>
+        );
       case 'in_progress':
-        return <Badge className="bg-primary/20 text-primary border-primary/30">{t('reservations.statuses.inProgress')}</Badge>;
+        return (
+          <Badge className="bg-primary/20 text-primary border-primary/30">
+            {t('reservations.statuses.inProgress')}
+          </Badge>
+        );
       case 'completed':
-        return <Badge className="bg-muted text-muted-foreground">{t('reservations.statuses.completed')}</Badge>;
+        return (
+          <Badge className="bg-muted text-muted-foreground">
+            {t('reservations.statuses.completed')}
+          </Badge>
+        );
       case 'released':
-        return <Badge className="bg-muted text-muted-foreground">{t('reservations.statuses.released')}</Badge>;
+        return (
+          <Badge className="bg-muted text-muted-foreground">
+            {t('reservations.statuses.released')}
+          </Badge>
+        );
       case 'cancelled':
-        return <Badge className="bg-destructive/20 text-destructive border-destructive/30">{t('reservations.statuses.cancelled')}</Badge>;
+        return (
+          <Badge className="bg-destructive/20 text-destructive border-destructive/30">
+            {t('reservations.statuses.cancelled')}
+          </Badge>
+        );
       case 'no_show':
-        return <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30">{t('reservations.statuses.noShow')}</Badge>;
+        return (
+          <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30">
+            {t('reservations.statuses.noShow')}
+          </Badge>
+        );
       case 'change_requested':
-        return <Badge className="bg-orange-200 text-orange-800 border-orange-400">{t('reservations.statuses.changeRequested')}</Badge>;
+        return (
+          <Badge className="bg-orange-200 text-orange-800 border-orange-400">
+            {t('reservations.statuses.changeRequested')}
+          </Badge>
+        );
       default:
         return <Badge>{status}</Badge>;
     }
@@ -571,7 +642,7 @@ const ReservationDetailsDrawer = ({
 
   const handleDelete = async () => {
     if (!reservation || !onDelete) return;
-    
+
     setDeleting(true);
     try {
       await onDelete(reservation.id, {
@@ -589,7 +660,7 @@ const ReservationDetailsDrawer = ({
 
   const handleNoShow = async () => {
     if (!reservation || !onNoShow) return;
-    
+
     setMarkingNoShow(true);
     try {
       await onNoShow(reservation.id);
@@ -619,9 +690,9 @@ const ReservationDetailsDrawer = ({
 
   const handleOpenCustomerDrawer = async () => {
     if (!reservation?.instance_id || !customerPhone) return;
-    
+
     const normalizedPhone = normalizePhone(customerPhone);
-    
+
     // Search for customer by phone
     const { data: customer } = await supabase
       .from('customers')
@@ -629,7 +700,7 @@ const ReservationDetailsDrawer = ({
       .eq('instance_id', reservation.instance_id)
       .or(`phone.eq.${normalizedPhone},phone.eq.+48${normalizedPhone}`)
       .maybeSingle();
-    
+
     if (customer) {
       setSelectedCustomer(customer);
     } else {
@@ -657,8 +728,8 @@ const ReservationDetailsDrawer = ({
   return (
     <>
       <Sheet open={open} onOpenChange={onClose} modal={false}>
-        <SheetContent 
-          side="right" 
+        <SheetContent
+          side="right"
           className="w-full sm:max-w-[27rem] flex flex-col shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.2)] bg-white"
           hideCloseButton
           hideOverlay
@@ -671,12 +742,16 @@ const ReservationDetailsDrawer = ({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <SheetTitle className="text-base sm:text-lg flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold whitespace-nowrap">{formatTime(startTime)} - {formatTime(endTime)}</span>
+                  <span className="font-semibold whitespace-nowrap">
+                    {formatTime(startTime)} - {formatTime(endTime)}
+                  </span>
                   <span className="text-muted-foreground font-normal hidden sm:inline">•</span>
                   <span className="font-normal text-muted-foreground sm:text-foreground">
                     {reservation.end_date && reservation.end_date !== reservation.reservation_date
                       ? `${format(new Date(reservation.reservation_date), 'd MMM', { locale: pl })} - ${format(new Date(reservation.end_date), 'd MMM yyyy', { locale: pl })}`
-                      : format(new Date(reservation.reservation_date), 'd MMMM yyyy', { locale: pl })}
+                      : format(new Date(reservation.reservation_date), 'd MMMM yyyy', {
+                          locale: pl,
+                        })}
                   </span>
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-2 mt-2 flex-wrap">
@@ -689,7 +764,7 @@ const ReservationDetailsDrawer = ({
                   )}
                 </SheetDescription>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-hover transition-colors shrink-0"
@@ -700,7 +775,7 @@ const ReservationDetailsDrawer = ({
           </SheetHeader>
 
           {/* Content area - scrollable */}
-          <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-4">
             {/* Customer info row - hide in hall mode if not configured */}
             {(!isHallMode || visibleFields?.customer_name) && (
               <div className="flex items-center justify-between">
@@ -752,7 +827,6 @@ const ReservationDetailsDrawer = ({
               </div>
             )}
 
-
             {/* Car model - vehicle_plate is always visible */}
             {carModel && (
               <div>
@@ -802,7 +876,7 @@ const ReservationDetailsDrawer = ({
                         {reservation.service.name}
                       </span>
                     ) : null}
-                    
+
                     {/* Add button - same style as employee Add */}
                     <Button
                       type="button"
@@ -830,8 +904,8 @@ const ReservationDetailsDrawer = ({
                   <div className="text-xs text-foreground">Przypisani pracownicy</div>
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     {/* Employee chips - same style as services */}
-                    {localAssignedEmployeeIds.map(empId => {
-                      const emp = employees.find(e => e.id === empId);
+                    {localAssignedEmployeeIds.map((empId) => {
+                      const emp = employees.find((e) => e.id === empId);
                       const name = emp?.name || 'Usunięty';
                       return (
                         <span
@@ -850,7 +924,7 @@ const ReservationDetailsDrawer = ({
                         </span>
                       );
                     })}
-                    
+
                     {/* Add button - same style as services Add */}
                     <Button
                       type="button"
@@ -876,16 +950,22 @@ const ReservationDetailsDrawer = ({
               // Get custom price from service_items if available
               const getCustomPrice = (serviceId: string | undefined): number | null => {
                 if (!serviceId || !reservation.service_items) return null;
-                const item = reservation.service_items.find(si => si.service_id === serviceId);
+                const item = reservation.service_items.find((si) => si.service_id === serviceId);
                 return item?.custom_price ?? null;
               };
 
               // Calculate base price for a service based on car size
-              const getServicePrice = (svc: { id?: string; price_small?: number | null; price_medium?: number | null; price_large?: number | null; price_from?: number | null }) => {
+              const getServicePrice = (svc: {
+                id?: string;
+                price_small?: number | null;
+                price_medium?: number | null;
+                price_large?: number | null;
+                price_from?: number | null;
+              }) => {
                 // First check if there's a custom price
                 const customPrice = getCustomPrice(svc.id);
                 if (customPrice !== null) return customPrice;
-                
+
                 // Otherwise use base price by car size
                 if (carSize === 'small' && svc.price_small) return svc.price_small;
                 if (carSize === 'medium' && svc.price_medium) return svc.price_medium;
@@ -893,10 +973,11 @@ const ReservationDetailsDrawer = ({
                 return svc.price_from || 0;
               };
 
-              const servicesWithPrices = reservation.services_data?.map(svc => ({
-                name: svc.name,
-                price: getServicePrice(svc)
-              })) || [];
+              const servicesWithPrices =
+                reservation.services_data?.map((svc) => ({
+                  name: svc.name,
+                  price: getServicePrice(svc),
+                })) || [];
 
               const calculatedTotal = servicesWithPrices.reduce((sum, svc) => sum + svc.price, 0);
               const displayTotal = price ? parseFloat(price) : calculatedTotal;
@@ -910,17 +991,21 @@ const ReservationDetailsDrawer = ({
                   <div>
                     <div className="text-xs text-foreground">{t('addReservation.amount')}</div>
                     <div className="font-semibold text-lg">{displayTotal} zł</div>
-                    
+
                     {hasMultipleServices && (
-                      <button 
+                      <button
                         onClick={() => setPriceDetailsOpen(!priceDetailsOpen)}
                         className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
                       >
                         {priceDetailsOpen ? t('common.hide') : t('addReservation.seeDetails')}
-                        {priceDetailsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        {priceDetailsOpen ? (
+                          <ChevronUp className="w-3 h-3" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3" />
+                        )}
                       </button>
                     )}
-                    
+
                     {priceDetailsOpen && hasMultipleServices && (
                       <ul className="mt-3 space-y-1">
                         {servicesWithPrices.map((svc, idx) => (
@@ -945,7 +1030,7 @@ const ReservationDetailsDrawer = ({
               <div className="flex-1">
                 <div>
                   <div className="text-xs text-foreground">Oferta</div>
-                  <a 
+                  <a
                     href={`/offers/${offerPublicToken}?admin=true`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -961,8 +1046,12 @@ const ReservationDetailsDrawer = ({
             {/* Customer Notes - hide in hall mode if notes not configured */}
             {(!isHallMode || visibleFields?.admin_notes) && customerNotes && (
               <div className="border-t border-border/30 pt-3">
-                <div className="text-xs text-foreground mb-1">{t('reservations.customerNotes')}</div>
-                <div className="text-sm whitespace-pre-wrap bg-blue-50 dark:bg-blue-950/30 p-2 rounded">{customerNotes}</div>
+                <div className="text-xs text-foreground mb-1">
+                  {t('reservations.customerNotes')}
+                </div>
+                <div className="text-sm whitespace-pre-wrap bg-blue-50 dark:bg-blue-950/30 p-2 rounded">
+                  {customerNotes}
+                </div>
               </div>
             )}
 
@@ -989,11 +1078,15 @@ const ReservationDetailsDrawer = ({
                     )}
                   </div>
                 ) : (
-                  <div 
+                  <div
                     onClick={startEditingNotes}
                     className="text-sm whitespace-pre-wrap cursor-pointer hover:bg-hover-strong p-2 -mx-2 rounded transition-colors min-h-[2.5rem]"
                   >
-                    {adminNotes || <span className="text-muted-foreground italic">Brak notatek wewnętrznych</span>}
+                    {adminNotes || (
+                      <span className="text-muted-foreground italic">
+                        Brak notatek wewnętrznych
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -1011,7 +1104,11 @@ const ReservationDetailsDrawer = ({
                     <div className="flex justify-between">
                       <span>{t('common.date')}</span>
                       <span className="font-medium">
-                        {format(new Date(reservation.original_reservation.reservation_date), 'd MMMM yyyy', { locale: pl })}
+                        {format(
+                          new Date(reservation.original_reservation.reservation_date),
+                          'd MMMM yyyy',
+                          { locale: pl },
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -1038,8 +1135,8 @@ const ReservationDetailsDrawer = ({
             {reservation.status === 'change_requested' && (
               <div className="flex gap-2">
                 {onRejectChangeRequest && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
                     onClick={async () => {
                       setRejectingChange(true);
@@ -1060,9 +1157,9 @@ const ReservationDetailsDrawer = ({
                     {t('myReservation.rejectChange')}
                   </Button>
                 )}
-                
+
                 {onApproveChangeRequest && (
-                  <Button 
+                  <Button
                     className="flex-1 gap-2 bg-success hover:bg-success/90 text-success-foreground"
                     onClick={async () => {
                       setApprovingChange(true);
@@ -1091,7 +1188,13 @@ const ReservationDetailsDrawer = ({
                 {reservation.confirmation_sms_sent_at && (
                   <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-green-600" />
-                    {t('reservations.smsSentAt', { datetime: format(new Date(reservation.confirmation_sms_sent_at), 'dd.MM.yyyy HH:mm', { locale: pl }) })}
+                    {t('reservations.smsSentAt', {
+                      datetime: format(
+                        new Date(reservation.confirmation_sms_sent_at),
+                        'dd.MM.yyyy HH:mm',
+                        { locale: pl },
+                      ),
+                    })}
                   </div>
                 )}
                 <button
@@ -1111,20 +1214,28 @@ const ReservationDetailsDrawer = ({
                   ) : (
                     <MessageSquare className="w-4 h-4" />
                   )}
-                  {reservation.confirmation_sms_sent_at 
-                    ? t('reservations.sendConfirmationSmsAgain', { time: reservation.start_time.slice(0, 5) })
+                  {reservation.confirmation_sms_sent_at
+                    ? t('reservations.sendConfirmationSmsAgain', {
+                        time: reservation.start_time.slice(0, 5),
+                      })
                     : t('reservations.sendConfirmationSms')}
                 </button>
               </div>
             )}
-            
+
             {/* Link: Wyślij SMS o odbiorze - nad Edit dla in_progress, completed */}
             {['in_progress', 'completed'].includes(reservation.status) && onSendPickupSms && (
               <div className="mb-2">
                 {reservation.pickup_sms_sent_at && (
                   <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-green-600" />
-                    {t('reservations.smsSentAt', { datetime: format(new Date(reservation.pickup_sms_sent_at), 'dd.MM.yyyy HH:mm', { locale: pl }) })}
+                    {t('reservations.smsSentAt', {
+                      datetime: format(
+                        new Date(reservation.pickup_sms_sent_at),
+                        'dd.MM.yyyy HH:mm',
+                        { locale: pl },
+                      ),
+                    })}
                   </div>
                 )}
                 <button
@@ -1144,7 +1255,7 @@ const ReservationDetailsDrawer = ({
                   ) : (
                     <MessageSquare className="w-4 h-4" />
                   )}
-                  {reservation.pickup_sms_sent_at 
+                  {reservation.pickup_sms_sent_at
                     ? t('reservations.sendPickupSmsAgain')
                     : t('reservations.sendPickupSms')}
                 </button>
@@ -1161,150 +1272,169 @@ const ReservationDetailsDrawer = ({
             )}
 
             {/* Row 1: Edit and Actions Menu for confirmed, in_progress, completed */}
-            {(reservation.status === 'confirmed' || reservation.status === 'in_progress' || reservation.status === 'completed') && (showEdit || showDelete) && (
-              <div className="flex gap-2">
-                {showEdit && onEdit && (
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 gap-2 bg-white dark:bg-card"
-                    onClick={handleEdit}
-                  >
-                    <Pencil className="w-4 h-4" />
-                    {t('common.edit')}
-                  </Button>
-                )}
-                
-                {/* Actions dropdown menu - only in admin mode */}
-                {!isHallMode && (
-                  <DropdownMenu open={actionsMenuOpen} onOpenChange={setActionsMenuOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10 bg-white dark:bg-card">
-                        <MoreVertical className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48" sideOffset={5} collisionPadding={16} avoidCollisions>
-                      <DropdownMenuItem onClick={() => {
-                        setActionsMenuOpen(false);
-                        // Trigger file input directly instead of opening dialog
-                        const fileInput = document.createElement('input');
-                        fileInput.type = 'file';
-                        fileInput.accept = 'image/*';
-                        fileInput.multiple = true;
-                        fileInput.capture = 'environment';
-                        fileInput.onchange = async (e) => {
-                          const target = e.target as HTMLInputElement;
-                          const files = target.files;
-                          if (!files || files.length === 0 || !reservation) return;
-                          
-                          const maxPhotos = 8;
-                          const currentPhotos = reservationPhotos || [];
-                          const remainingSlots = maxPhotos - currentPhotos.length;
-                          
-                          if (remainingSlots <= 0) {
-                            toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
-                            return;
-                          }
-                          
-                          const filesToUpload = Array.from(files).slice(0, remainingSlots);
-                          
-                          try {
-                            const uploadedUrls: string[] = [];
-                            const { compressImage } = await import('@/lib/imageUtils');
-                            
-                            for (const file of filesToUpload) {
-                              const compressed = await compressImage(file, 1200, 0.8);
-                              const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-                              
-                              const { error: uploadError } = await supabase.storage
-                                .from('reservation-photos')
-                                .upload(fileName, compressed, {
-                                  contentType: 'image/jpeg',
-                                  cacheControl: '3600',
-                                });
-                              
-                              if (uploadError) throw uploadError;
-                              
-                              const { data: urlData } = supabase.storage
-                                .from('reservation-photos')
-                                .getPublicUrl(fileName);
-                              
-                              uploadedUrls.push(urlData.publicUrl);
-                            }
-                            
-                            const newPhotos = [...currentPhotos, ...uploadedUrls];
-                            
-                            const { error: updateError } = await supabase
-                              .from('reservations')
-                              .update({ photo_urls: newPhotos })
-                              .eq('id', reservation.id);
-                            
-                            if (updateError) throw updateError;
-                            
-                            setReservationPhotos(newPhotos);
-                            toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
-                          } catch (error) {
-                            console.error('Error uploading photos:', error);
-                            toast.error('Błąd podczas przesyłania zdjęć');
-                          }
-                        };
-                        fileInput.click();
-                      }}>
-                        <Camera className="w-4 h-4 mr-2" />
-                        Dodaj zdjęcia
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem onClick={() => {
-                        setActionsMenuOpen(false);
-                        if (existingProtocolId) {
-                          handleEditProtocol();
-                        } else {
-                          handleAddProtocol();
-                        }
-                      }}>
-                        <FileText className="w-4 h-4 mr-2" />
-                        {existingProtocolId ? 'Edytuj protokół' : 'Dodaj protokół'}
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem onClick={() => {
-                        setActionsMenuOpen(false);
-                        setHistoryDrawerOpen(true);
-                      }}>
-                        <History className="w-4 h-4 mr-2" />
-                        Zobacz historię
-                      </DropdownMenuItem>
-                      
-                      {onNoShow && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-warning-foreground focus:text-warning-foreground"
-                            onClick={() => {
-                              setActionsMenuOpen(false);
-                              setNoShowDialogOpen(true);
-                            }}
-                          >
-                            <UserX className="w-4 h-4 mr-2" />
-                            Oznacz jako nieobecny
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      {showDelete && onDelete && (
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
+            {(reservation.status === 'confirmed' ||
+              reservation.status === 'in_progress' ||
+              reservation.status === 'completed') &&
+              (showEdit || showDelete) && (
+                <div className="flex gap-2">
+                  {showEdit && onEdit && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2 bg-white dark:bg-card"
+                      onClick={handleEdit}
+                    >
+                      <Pencil className="w-4 h-4" />
+                      {t('common.edit')}
+                    </Button>
+                  )}
+
+                  {/* Actions dropdown menu - only in admin mode */}
+                  {!isHallMode && (
+                    <DropdownMenu open={actionsMenuOpen} onOpenChange={setActionsMenuOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 bg-white dark:bg-card"
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48"
+                        sideOffset={5}
+                        collisionPadding={16}
+                        avoidCollisions
+                      >
+                        <DropdownMenuItem
                           onClick={() => {
                             setActionsMenuOpen(false);
-                            setDeleteDialogOpen(true);
+                            // Trigger file input directly instead of opening dialog
+                            const fileInput = document.createElement('input');
+                            fileInput.type = 'file';
+                            fileInput.accept = 'image/*';
+                            fileInput.multiple = true;
+                            fileInput.capture = 'environment';
+                            fileInput.onchange = async (e) => {
+                              const target = e.target as HTMLInputElement;
+                              const files = target.files;
+                              if (!files || files.length === 0 || !reservation) return;
+
+                              const maxPhotos = 8;
+                              const currentPhotos = reservationPhotos || [];
+                              const remainingSlots = maxPhotos - currentPhotos.length;
+
+                              if (remainingSlots <= 0) {
+                                toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
+                                return;
+                              }
+
+                              const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+                              try {
+                                const uploadedUrls: string[] = [];
+                                const { compressImage } = await import('@/lib/imageUtils');
+
+                                for (const file of filesToUpload) {
+                                  const compressed = await compressImage(file, 1200, 0.8);
+                                  const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                                  const { error: uploadError } = await supabase.storage
+                                    .from('reservation-photos')
+                                    .upload(fileName, compressed, {
+                                      contentType: 'image/jpeg',
+                                      cacheControl: '3600',
+                                    });
+
+                                  if (uploadError) throw uploadError;
+
+                                  const { data: urlData } = supabase.storage
+                                    .from('reservation-photos')
+                                    .getPublicUrl(fileName);
+
+                                  uploadedUrls.push(urlData.publicUrl);
+                                }
+
+                                const newPhotos = [...currentPhotos, ...uploadedUrls];
+
+                                const { error: updateError } = await supabase
+                                  .from('reservations')
+                                  .update({ photo_urls: newPhotos })
+                                  .eq('id', reservation.id);
+
+                                if (updateError) throw updateError;
+
+                                setReservationPhotos(newPhotos);
+                                toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
+                              } catch (error) {
+                                console.error('Error uploading photos:', error);
+                                toast.error('Błąd podczas przesyłania zdjęć');
+                              }
+                            };
+                            fileInput.click();
                           }}
                         >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Usuń
+                          <Camera className="w-4 h-4 mr-2" />
+                          Dodaj zdjęcia
                         </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            )}
+
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActionsMenuOpen(false);
+                            if (existingProtocolId) {
+                              handleEditProtocol();
+                            } else {
+                              handleAddProtocol();
+                            }
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          {existingProtocolId ? 'Edytuj protokół' : 'Dodaj protokół'}
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setActionsMenuOpen(false);
+                            setHistoryDrawerOpen(true);
+                          }}
+                        >
+                          <History className="w-4 h-4 mr-2" />
+                          Zobacz historię
+                        </DropdownMenuItem>
+
+                        {onNoShow && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-warning-foreground focus:text-warning-foreground"
+                              onClick={() => {
+                                setActionsMenuOpen(false);
+                                setNoShowDialogOpen(true);
+                              }}
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Oznacz jako nieobecny
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {showDelete && onDelete && (
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setActionsMenuOpen(false);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Usuń
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              )}
 
             {/* Delete confirmation dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1312,19 +1442,20 @@ const ReservationDetailsDrawer = ({
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t('reservations.confirmDeleteTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('reservations.confirmDeleteDescription', { name: customerName, phone: customerPhone })}
+                    {t('reservations.confirmDeleteDescription', {
+                      name: customerName,
+                      phone: customerPhone,
+                    })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDelete} 
+                  <AlertDialogAction
+                    onClick={handleDelete}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     disabled={deleting}
                   >
-                    {deleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : null}
+                    {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     {t('reservations.yesDelete')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -1337,19 +1468,18 @@ const ReservationDetailsDrawer = ({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Oznacz jako nieobecny</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Czy na pewno chcesz oznaczyć klienta {customerName} ({customerPhone}) jako nieobecnego?
+                    Czy na pewno chcesz oznaczyć klienta {customerName} ({customerPhone}) jako
+                    nieobecnego?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                  <AlertDialogAction 
+                  <AlertDialogAction
                     onClick={handleNoShow}
                     className="bg-warning text-warning-foreground hover:bg-warning/90"
                     disabled={markingNoShow}
                   >
-                    {markingNoShow ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : null}
+                    {markingNoShow ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     {t('reservations.markAsNoShow')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -1360,8 +1490,8 @@ const ReservationDetailsDrawer = ({
             {reservation.status === 'pending' && showEdit && (
               <div className="flex gap-2">
                 {showEdit && onEdit && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 gap-2 bg-white dark:bg-card"
                     onClick={handleEdit}
                   >
@@ -1373,76 +1503,88 @@ const ReservationDetailsDrawer = ({
                 {!isHallMode && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10 bg-white dark:bg-card">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 bg-white dark:bg-card"
+                      >
                         <MoreVertical className="w-5 h-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48" sideOffset={5} collisionPadding={16} avoidCollisions>
-                      <DropdownMenuItem onClick={() => {
-                        // Trigger file input directly instead of opening dialog
-                        const fileInput = document.createElement('input');
-                        fileInput.type = 'file';
-                        fileInput.accept = 'image/*';
-                        fileInput.multiple = true;
-                        fileInput.capture = 'environment';
-                        fileInput.onchange = async (e) => {
-                          const target = e.target as HTMLInputElement;
-                          const files = target.files;
-                          if (!files || files.length === 0 || !reservation) return;
-                          
-                          const maxPhotos = 8;
-                          const currentPhotos = reservationPhotos || [];
-                          const remainingSlots = maxPhotos - currentPhotos.length;
-                          
-                          if (remainingSlots <= 0) {
-                            toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
-                            return;
-                          }
-                          
-                          const filesToUpload = Array.from(files).slice(0, remainingSlots);
-                          
-                          try {
-                            const uploadedUrls: string[] = [];
-                            const { compressImage } = await import('@/lib/imageUtils');
-                            
-                            for (const file of filesToUpload) {
-                              const compressed = await compressImage(file, 1200, 0.8);
-                              const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-                              
-                              const { error: uploadError } = await supabase.storage
-                                .from('reservation-photos')
-                                .upload(fileName, compressed, {
-                                  contentType: 'image/jpeg',
-                                  cacheControl: '3600',
-                                });
-                              
-                              if (uploadError) throw uploadError;
-                              
-                              const { data: urlData } = supabase.storage
-                                .from('reservation-photos')
-                                .getPublicUrl(fileName);
-                              
-                              uploadedUrls.push(urlData.publicUrl);
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48"
+                      sideOffset={5}
+                      collisionPadding={16}
+                      avoidCollisions
+                    >
+                      <DropdownMenuItem
+                        onClick={() => {
+                          // Trigger file input directly instead of opening dialog
+                          const fileInput = document.createElement('input');
+                          fileInput.type = 'file';
+                          fileInput.accept = 'image/*';
+                          fileInput.multiple = true;
+                          fileInput.capture = 'environment';
+                          fileInput.onchange = async (e) => {
+                            const target = e.target as HTMLInputElement;
+                            const files = target.files;
+                            if (!files || files.length === 0 || !reservation) return;
+
+                            const maxPhotos = 8;
+                            const currentPhotos = reservationPhotos || [];
+                            const remainingSlots = maxPhotos - currentPhotos.length;
+
+                            if (remainingSlots <= 0) {
+                              toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
+                              return;
                             }
-                            
-                            const newPhotos = [...currentPhotos, ...uploadedUrls];
-                            
-                            const { error: updateError } = await supabase
-                              .from('reservations')
-                              .update({ photo_urls: newPhotos })
-                              .eq('id', reservation.id);
-                            
-                            if (updateError) throw updateError;
-                            
-                            setReservationPhotos(newPhotos);
-                            toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
-                          } catch (error) {
-                            console.error('Error uploading photos:', error);
-                            toast.error('Błąd podczas przesyłania zdjęć');
-                          }
-                        };
-                        fileInput.click();
-                      }}>
+
+                            const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+                            try {
+                              const uploadedUrls: string[] = [];
+                              const { compressImage } = await import('@/lib/imageUtils');
+
+                              for (const file of filesToUpload) {
+                                const compressed = await compressImage(file, 1200, 0.8);
+                                const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                                const { error: uploadError } = await supabase.storage
+                                  .from('reservation-photos')
+                                  .upload(fileName, compressed, {
+                                    contentType: 'image/jpeg',
+                                    cacheControl: '3600',
+                                  });
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: urlData } = supabase.storage
+                                  .from('reservation-photos')
+                                  .getPublicUrl(fileName);
+
+                                uploadedUrls.push(urlData.publicUrl);
+                              }
+
+                              const newPhotos = [...currentPhotos, ...uploadedUrls];
+
+                              const { error: updateError } = await supabase
+                                .from('reservations')
+                                .update({ photo_urls: newPhotos })
+                                .eq('id', reservation.id);
+
+                              if (updateError) throw updateError;
+
+                              setReservationPhotos(newPhotos);
+                              toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
+                            } catch (error) {
+                              console.error('Error uploading photos:', error);
+                              toast.error('Błąd podczas przesyłania zdjęć');
+                            }
+                          };
+                          fileInput.click();
+                        }}
+                      >
                         <Camera className="w-4 h-4 mr-2" />
                         Dodaj zdjęcia
                       </DropdownMenuItem>
@@ -1453,7 +1595,7 @@ const ReservationDetailsDrawer = ({
                       {onNoShow && (
                         <>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-warning-foreground focus:text-warning-foreground"
                             onClick={() => setNoShowDialogOpen(true)}
                           >
@@ -1463,7 +1605,7 @@ const ReservationDetailsDrawer = ({
                         </>
                       )}
                       {showDelete && onDelete && (
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
                           onClick={() => setDeleteDialogOpen(true)}
                         >
@@ -1483,8 +1625,8 @@ const ReservationDetailsDrawer = ({
                 {showDelete && onDelete && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex-1 gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
                         disabled={deleting}
                       >
@@ -1500,21 +1642,27 @@ const ReservationDetailsDrawer = ({
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t('reservations.confirmRejectTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          {t('reservations.confirmRejectDescription', { name: customerName, phone: customerPhone })}
+                          {t('reservations.confirmRejectDescription', {
+                            name: customerName,
+                            phone: customerPhone,
+                          })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t('common.no')}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
                           {t('reservations.yesReject')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
-                
+
                 {onConfirm && (
-                  <Button 
+                  <Button
                     className="flex-1 gap-2 bg-success hover:bg-success/90 text-success-foreground"
                     onClick={async () => {
                       if (!carSize) {
@@ -1544,7 +1692,7 @@ const ReservationDetailsDrawer = ({
             {/* Confirmed: Start Work with dropdown for all statuses */}
             {reservation.status === 'confirmed' && onStartWork && (
               <div className="flex gap-0">
-                <Button 
+                <Button
                   className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-r-none"
                   onClick={async () => {
                     setStartingWork(true);
@@ -1563,18 +1711,21 @@ const ReservationDetailsDrawer = ({
                   )}
                   {t('reservations.startWork')}
                 </Button>
-                
+
                 {onStatusChange && (
                   <Popover open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
                     <PopoverTrigger asChild>
-                      <Button 
+                      <Button
                         className="px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-l-none border-l border-emerald-500"
                         disabled={startingWork || changingStatus}
                       >
                         <ChevronDown className="w-4 h-4" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56 p-1 bg-background border shadow-lg z-50" align="end">
+                    <PopoverContent
+                      className="w-56 p-1 bg-background border shadow-lg z-50"
+                      align="end"
+                    >
                       {['in_progress', 'completed'].map((status) => (
                         <Button
                           key={status}
@@ -1596,7 +1747,9 @@ const ReservationDetailsDrawer = ({
                           ) : (
                             <RotateCcw className="w-4 h-4" />
                           )}
-                          {t(`reservations.statuses.${status === 'in_progress' ? 'inProgress' : status}`)}
+                          {t(
+                            `reservations.statuses.${status === 'in_progress' ? 'inProgress' : status}`,
+                          )}
                         </Button>
                       ))}
                     </PopoverContent>
@@ -1605,11 +1758,10 @@ const ReservationDetailsDrawer = ({
               </div>
             )}
 
-
             {/* In Progress: End Work with dropdown for all statuses */}
             {reservation.status === 'in_progress' && onEndWork && (
               <div className="flex gap-0">
-                <Button 
+                <Button
                   className="flex-1 gap-2 bg-sky-500 hover:bg-sky-600 text-white rounded-r-none"
                   onClick={async () => {
                     setEndingWork(true);
@@ -1628,18 +1780,21 @@ const ReservationDetailsDrawer = ({
                   )}
                   {t('reservations.endWork')}
                 </Button>
-                
+
                 {onStatusChange && (
                   <Popover open={inProgressDropdownOpen} onOpenChange={setInProgressDropdownOpen}>
                     <PopoverTrigger asChild>
-                      <Button 
+                      <Button
                         className="px-2 bg-sky-500 hover:bg-sky-600 text-white rounded-l-none border-l border-sky-400"
                         disabled={endingWork || changingStatus}
                       >
                         <ChevronDown className="w-4 h-4" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56 p-1 bg-background border shadow-lg z-50" align="end">
+                    <PopoverContent
+                      className="w-56 p-1 bg-background border shadow-lg z-50"
+                      align="end"
+                    >
                       {['confirmed', 'completed'].map((status) => (
                         <Button
                           key={status}
@@ -1673,18 +1828,14 @@ const ReservationDetailsDrawer = ({
             {/* Completed: Status change dropdown only (completed is now final status) */}
             {reservation.status === 'completed' && onStatusChange && (
               <div className="flex gap-0">
-                <Button 
-                  variant="outline"
-                  className="flex-1 gap-2 rounded-r-none"
-                  disabled
-                >
+                <Button variant="outline" className="flex-1 gap-2 rounded-r-none" disabled>
                   <Check className="w-4 h-4" />
                   {t('reservations.statuses.completed')}
                 </Button>
-                
+
                 <Popover open={completedDropdownOpen} onOpenChange={setCompletedDropdownOpen}>
                   <PopoverTrigger asChild>
-                    <Button 
+                    <Button
                       variant="outline"
                       className="px-2 rounded-l-none border-l-0"
                       disabled={changingStatus}
@@ -1692,7 +1843,10 @@ const ReservationDetailsDrawer = ({
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-56 p-1 bg-background border shadow-lg z-50" align="end">
+                  <PopoverContent
+                    className="w-56 p-1 bg-background border shadow-lg z-50"
+                    align="end"
+                  >
                     {['confirmed', 'in_progress'].map((status) => (
                       <Button
                         key={status}
@@ -1714,18 +1868,19 @@ const ReservationDetailsDrawer = ({
                         ) : (
                           <RotateCcw className="w-4 h-4" />
                         )}
-                        {t(`reservations.statuses.${status === 'in_progress' ? 'inProgress' : status}`)}
+                        {t(
+                          `reservations.statuses.${status === 'in_progress' ? 'inProgress' : status}`,
+                        )}
                       </Button>
                     ))}
                   </PopoverContent>
                 </Popover>
               </div>
             )}
-
           </div>
         </SheetContent>
       </Sheet>
-      
+
       <SendSmsDialog
         phone={customerPhone}
         customerName={customerName}
@@ -1733,7 +1888,7 @@ const ReservationDetailsDrawer = ({
         open={smsDialogOpen}
         onClose={() => setSmsDialogOpen(false)}
       />
-      
+
       {/* Reservation History Drawer */}
       <ReservationHistoryDrawer
         reservationId={reservation?.id || null}
@@ -1742,7 +1897,7 @@ const ReservationDetailsDrawer = ({
         onClose={() => setHistoryDrawerOpen(false)}
         hasUnifiedServices={reservation?.has_unified_services ?? true}
       />
-      
+
       {/* Customer Details Drawer */}
       <CustomerEditDrawer
         customer={selectedCustomer}
@@ -1750,7 +1905,7 @@ const ReservationDetailsDrawer = ({
         open={customerDrawerOpen}
         onClose={() => setCustomerDrawerOpen(false)}
       />
-      
+
       {/* Reservation Photos Dialog */}
       {reservation && (
         <ReservationPhotosDialog
@@ -1761,7 +1916,7 @@ const ReservationDetailsDrawer = ({
           onPhotosUpdated={setReservationPhotos}
         />
       )}
-      
+
       {/* Quick Service Selection Drawer */}
       <ServiceSelectionDrawer
         open={serviceDrawerOpen}
@@ -1774,14 +1929,14 @@ const ReservationDetailsDrawer = ({
         onConfirm={(serviceIds, duration, servicesData) => {
           // Filter only NEW services (not already in reservation)
           const currentIds = reservation?.service_ids || [];
-          const newIds = serviceIds.filter(id => !currentIds.includes(id));
+          const newIds = serviceIds.filter((id) => !currentIds.includes(id));
           if (newIds.length > 0) {
             handleAddServices(newIds, servicesData);
           }
           setServiceDrawerOpen(false);
         }}
       />
-      
+
       {/* Employee Selection Drawer */}
       <EmployeeSelectionDrawer
         open={employeeDrawerOpen}

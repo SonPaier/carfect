@@ -314,7 +314,11 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
     );
 
     // Save to database
-    await supabase.from('offer_scopes').update({ price_from: numValue }).eq('id', templateId);
+    await supabase
+      .from('offer_scopes')
+      .update({ price_from: numValue })
+      .eq('id', templateId)
+      .eq('instance_id', instanceId);
 
     onChange();
   };
@@ -424,9 +428,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   // Save config to instance
   const saveConfig = async () => {
     try {
-      // Convert to JSON-compatible format
-      const jsonConfig = JSON.parse(JSON.stringify(config));
-      await supabase.from('instances').update({ widget_config: jsonConfig }).eq('id', instanceId);
+      await supabase.from('instances').update({ widget_config: config }).eq('id', instanceId);
     } catch (error) {
       console.error('Error saving widget config:', error);
     }

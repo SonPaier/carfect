@@ -492,6 +492,7 @@ export const OfferGenerator = ({
           <Card className="p-6">
             <CustomerDataStep
               ref={customerStepRef}
+              instanceId={instanceId}
               customerData={offer.customerData}
               vehicleData={offer.vehicleData}
               onCustomerChange={(data) => {

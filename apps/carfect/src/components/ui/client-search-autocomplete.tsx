@@ -4,7 +4,7 @@ import { Loader2, X, Search } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { normalizeSearchQuery } from '@shared/utils';
+import { normalizeSearchQuery, autoCapitalizeWords } from '@shared/utils';
 
 interface Customer {
   id: string;
@@ -18,6 +18,7 @@ export interface ClientSearchValue {
   id: string;
   name: string;
   phone: string;
+  email?: string | null;
   has_no_show?: boolean;
 }
 
@@ -82,35 +83,38 @@ const ClientSearchAutocomplete = ({
   }, [value, inputValue]);
 
   // Search customers with debounce
-  const searchCustomers = useCallback(async (searchValue: string) => {
-    if (searchValue.length < 2) {
-      setFoundCustomers([]);
-      setDropdownOpen(false);
-      return;
-    }
-
-    setSearching(true);
-    try {
-      // Normalize search value for space-agnostic phone matching
-      const normalizedSearch = normalizeSearchQuery(searchValue);
-      
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, phone, name, email, has_no_show')
-        .eq('instance_id', instanceId)
-        .or(`name.ilike.%${searchValue}%,phone.ilike.%${normalizedSearch}%`)
-        .order('updated_at', { ascending: false })
-        .limit(8);
-
-      if (!error && data) {
-        setFoundCustomers(data);
-        setDropdownOpen(data.length > 0);
-        setActiveIndex(-1);
+  const searchCustomers = useCallback(
+    async (searchValue: string) => {
+      if (searchValue.length < 2) {
+        setFoundCustomers([]);
+        setDropdownOpen(false);
+        return;
       }
-    } finally {
-      setSearching(false);
-    }
-  }, [instanceId]);
+
+      setSearching(true);
+      try {
+        // Normalize search value for space-agnostic phone matching
+        const normalizedSearch = normalizeSearchQuery(searchValue);
+
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, phone, name, email, has_no_show')
+          .eq('instance_id', instanceId)
+          .or(`name.ilike.%${searchValue}%,phone.ilike.%${normalizedSearch}%`)
+          .order('updated_at', { ascending: false })
+          .limit(8);
+
+        if (!error && data) {
+          setFoundCustomers(data);
+          setDropdownOpen(data.length > 0);
+          setActiveIndex(-1);
+        }
+      } finally {
+        setSearching(false);
+      }
+    },
+    [instanceId],
+  );
 
   // Debounced search - only if user has interacted or not suppressed
   useEffect(() => {
@@ -143,7 +147,7 @@ const ClientSearchAutocomplete = ({
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+    const newValue = autoCapitalizeWords(e.target.value);
     internalUpdateRef.current = true;
     setInputValue(newValue);
     setHasUserInteracted(true);
@@ -166,6 +170,7 @@ const ClientSearchAutocomplete = ({
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
+      email: customer.email,
       has_no_show: customer.has_no_show,
     });
 
@@ -193,11 +198,11 @@ const ClientSearchAutocomplete = ({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setActiveIndex(prev => Math.min(prev + 1, foundCustomers.length - 1));
+        setActiveIndex((prev) => Math.min(prev + 1, foundCustomers.length - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setActiveIndex(prev => Math.max(prev - 1, 0));
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
         break;
       case 'Enter':
         e.preventDefault();
@@ -220,10 +225,12 @@ const ClientSearchAutocomplete = ({
     const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
     return parts.map((part, i) =>
       part.toLowerCase() === query.toLowerCase() ? (
-        <span key={i} className="font-semibold text-primary">{part}</span>
+        <span key={i} className="font-semibold text-primary">
+          {part}
+        </span>
       ) : (
         part
-      )
+      ),
     );
   };
 
@@ -264,14 +271,12 @@ const ClientSearchAutocomplete = ({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={cn("pr-10", className)}
+          className={cn('pr-10', className)}
           autoComplete="off"
           disabled={disabled}
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {searching && (
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-          )}
+          {searching && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
           {inputValue && !searching && (
             <button
               type="button"
@@ -291,8 +296,8 @@ const ClientSearchAutocomplete = ({
               key={customer.id}
               type="button"
               className={cn(
-                "w-full p-4 text-left transition-colors flex flex-col border-b border-border last:border-0",
-                index === activeIndex ? "bg-accent" : "hover:bg-hover"
+                'w-full p-4 text-left transition-colors flex flex-col border-b border-border last:border-0',
+                index === activeIndex ? 'bg-accent' : 'hover:bg-hover',
               )}
               onClick={() => handleSelectCustomer(customer)}
               onMouseEnter={() => setActiveIndex(index)}
@@ -301,10 +306,10 @@ const ClientSearchAutocomplete = ({
                 {highlightMatch(customer.name, inputValue)}
               </div>
               <div className="text-sm">
-                <span className="text-primary font-medium">
-                  {formatPhone(customer.phone)}
-                </span>
-                {customer.email && <span className="text-muted-foreground"> • {customer.email}</span>}
+                <span className="text-primary font-medium">{formatPhone(customer.phone)}</span>
+                {customer.email && (
+                  <span className="text-muted-foreground"> • {customer.email}</span>
+                )}
               </div>
             </button>
           ))}

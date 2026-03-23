@@ -1,7 +1,41 @@
 import { useState, DragEvent, useRef, useCallback, useEffect } from 'react';
-import { format, addDays, subDays, isSameDay, startOfWeek, addWeeks, subWeeks, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
+import {
+  format,
+  addDays,
+  subDays,
+  isSameDay,
+  startOfWeek,
+  addWeeks,
+  subWeeks,
+  isBefore,
+  startOfDay,
+  addMonths,
+  subMonths,
+} from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Clock, Plus, Calendar as CalendarIcon, CalendarDays, Phone, Coffee, X, Settings2, Maximize2, Minimize2, ChevronsLeftRight, RefreshCw, FileText, User, MapPin, DollarSign, Users, FolderKanban } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Plus,
+  Calendar as CalendarIcon,
+  CalendarDays,
+  Phone,
+  Coffee,
+  X,
+  Settings2,
+  Maximize2,
+  Minimize2,
+  ChevronsLeftRight,
+  RefreshCw,
+  FileText,
+  User,
+  MapPin,
+  DollarSign,
+  Users,
+  FolderKanban,
+  RotateCcw,
+} from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { InvoiceStatusBadge } from '@/components/invoicing/InvoiceStatusBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -13,7 +47,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import MonthCalendarView from './MonthCalendarView';
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -59,6 +99,7 @@ export interface CalendarItem {
   priority?: number | null;
   project_id?: string | null;
   project_name?: string | null;
+  checklist_items?: Array<{ id: string; text: string; checked: boolean }> | null;
 }
 
 export interface Break {
@@ -93,6 +134,8 @@ interface AdminCalendarProps {
   employeeViewActive?: boolean;
   onToggleEmployeeView?: () => void;
   conflictItemIds?: Set<string>;
+  unscheduledFollowUpCount?: number;
+  onOpenFollowUps?: () => void;
 }
 
 const FALLBACK_START_HOUR = 6;
@@ -102,12 +145,18 @@ const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
 const SLOT_HEIGHT = 29;
 const HOUR_HEIGHT = SLOT_HEIGHT * SLOTS_PER_HOUR;
 
-const computeHourRange = (workingHours?: WorkingHoursMap): { startHour: number; endHour: number } => {
+const computeHourRange = (
+  workingHours?: WorkingHoursMap,
+): { startHour: number; endHour: number } => {
   if (!workingHours) return { startHour: FALLBACK_START_HOUR, endHour: FALLBACK_END_HOUR };
-  const activeDays = Object.values(workingHours).filter(Boolean) as { open: string; close: string }[];
-  if (activeDays.length === 0) return { startHour: FALLBACK_START_HOUR, endHour: FALLBACK_END_HOUR };
-  const starts = activeDays.map(d => parseInt(d.open.split(':')[0], 10));
-  const ends = activeDays.map(d => {
+  const activeDays = Object.values(workingHours).filter(Boolean) as {
+    open: string;
+    close: string;
+  }[];
+  if (activeDays.length === 0)
+    return { startHour: FALLBACK_START_HOUR, endHour: FALLBACK_END_HOUR };
+  const starts = activeDays.map((d) => parseInt(d.open.split(':')[0], 10));
+  const ends = activeDays.map((d) => {
     const [h, m] = d.close.split(':').map(Number);
     return m > 0 ? h + 1 : h;
   });
@@ -126,6 +175,10 @@ const getStatusColor = (status: string) => {
       return 'bg-red-100/60 border-red-300 text-red-700 line-through opacity-60';
     case 'change_requested':
       return 'bg-red-200 border-red-400 text-red-900';
+    case 'unfinished':
+      return 'bg-purple-200 border-purple-500 text-purple-900';
+    case 'follow_up':
+      return 'bg-purple-100 border-purple-300 text-purple-800';
     default:
       return 'bg-amber-100 border-amber-300 text-amber-900';
   }
@@ -169,9 +222,15 @@ const AdminCalendar = ({
   employeeViewActive,
   onToggleEmployeeView,
   conflictItemIds,
+  unscheduledFollowUpCount,
+  onOpenFollowUps,
 }: AdminCalendarProps) => {
-  const { startHour: DEFAULT_START_HOUR, endHour: DEFAULT_END_HOUR } = computeHourRange(workingHours);
-  const HOURS = Array.from({ length: DEFAULT_END_HOUR - DEFAULT_START_HOUR }, (_, i) => i + DEFAULT_START_HOUR);
+  const { startHour: DEFAULT_START_HOUR, endHour: DEFAULT_END_HOUR } =
+    computeHourRange(workingHours);
+  const HOURS = Array.from(
+    { length: DEFAULT_END_HOUR - DEFAULT_START_HOUR },
+    (_, i) => i + DEFAULT_START_HOUR,
+  );
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = localStorage.getItem('admin-calendar-date');
     if (saved) {
@@ -190,7 +249,9 @@ const AdminCalendar = ({
   const [draggedItem, setDraggedItem] = useState<CalendarItem | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
-  const [dragOverSlot, setDragOverSlot] = useState<{ hour: number; slotIndex: number } | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<{ hour: number; slotIndex: number } | null>(
+    null,
+  );
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [configPopoverOpen, setConfigPopoverOpen] = useState(false);
 
@@ -211,7 +272,7 @@ const AdminCalendar = ({
   };
 
   const toggleCompact = useCallback(() => {
-    setIsCompact(prev => {
+    setIsCompact((prev) => {
       const next = !prev;
       localStorage.setItem('calendar-compact-mode', String(next));
       return next;
@@ -256,7 +317,12 @@ const AdminCalendar = ({
   const gridScrollRef = useRef<HTMLDivElement>(null);
 
   // Touch handling for mobile - lock scroll to one axis
-  const scrollTouchStartRef = useRef<{x: number; y: number; scrollLeft: number; scrollTop: number} | null>(null);
+  const scrollTouchStartRef = useRef<{
+    x: number;
+    y: number;
+    scrollLeft: number;
+    scrollTop: number;
+  } | null>(null);
   const scrollDirectionRef = useRef<'horizontal' | 'vertical' | null>(null);
   const AXIS_LOCK_THRESHOLD = 8;
 
@@ -264,7 +330,7 @@ const AdminCalendar = ({
   // Re-attach when view/date changes since the DOM element may remount
   useEffect(() => {
     if (!isMobile) return;
-    
+
     const timerId = setTimeout(() => {
       const el = gridScrollRef.current;
       if (!el) return;
@@ -287,7 +353,10 @@ const AdminCalendar = ({
         const absDx = Math.abs(deltaX);
         const absDy = Math.abs(deltaY);
 
-        if (!scrollDirectionRef.current && (absDx > AXIS_LOCK_THRESHOLD || absDy > AXIS_LOCK_THRESHOLD)) {
+        if (
+          !scrollDirectionRef.current &&
+          (absDx > AXIS_LOCK_THRESHOLD || absDy > AXIS_LOCK_THRESHOLD)
+        ) {
           scrollDirectionRef.current = absDx > absDy ? 'horizontal' : 'vertical';
         }
 
@@ -342,7 +411,8 @@ const AdminCalendar = ({
   const getMobileColumnStyle = (columnCount: number): React.CSSProperties => {
     if (!isMobile) return {};
     if (columnCount === 1) return { width: 'calc(100vw - 48px)', minWidth: 'calc(100vw - 48px)' };
-    if (columnCount === 2) return { width: 'calc((100vw - 48px) / 2)', minWidth: 'calc((100vw - 48px) / 2)' };
+    if (columnCount === 2)
+      return { width: 'calc((100vw - 48px) / 2)', minWidth: 'calc((100vw - 48px) / 2)' };
     return { width: 'calc((100vw - 48px) * 0.4)', minWidth: 'calc((100vw - 48px) * 0.4)' };
   };
 
@@ -361,7 +431,7 @@ const AdminCalendar = ({
   }, [currentDate]);
 
   const toggleColumnVisibility = (columnId: string) => {
-    setHiddenColumnIds(prev => {
+    setHiddenColumnIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(columnId)) newSet.delete(columnId);
       else newSet.add(columnId);
@@ -375,15 +445,18 @@ const AdminCalendar = ({
   const longPressTriggered = useRef(false);
   const LONG_PRESS_DURATION = 500;
 
-  const handleTouchStart = useCallback((columnId: string, hour: number, slotIndex: number, dateStr?: string) => {
-    longPressTriggered.current = false;
-    longPressTimeout.current = setTimeout(() => {
-      longPressTriggered.current = true;
-      const time = formatTimeSlot(hour, slotIndex);
-      const targetDate = dateStr || format(currentDate, 'yyyy-MM-dd');
-      onAddBreak?.(columnId, targetDate, time);
-    }, LONG_PRESS_DURATION);
-  }, [currentDate, onAddBreak]);
+  const handleTouchStart = useCallback(
+    (columnId: string, hour: number, slotIndex: number, dateStr?: string) => {
+      longPressTriggered.current = false;
+      longPressTimeout.current = setTimeout(() => {
+        longPressTriggered.current = true;
+        const time = formatTimeSlot(hour, slotIndex);
+        const targetDate = dateStr || format(currentDate, 'yyyy-MM-dd');
+        onAddBreak?.(columnId, targetDate, time);
+      }, LONG_PRESS_DURATION);
+    },
+    [currentDate, onAddBreak],
+  );
 
   const handleTouchEnd = useCallback(() => {
     if (longPressTimeout.current) {
@@ -412,7 +485,6 @@ const AdminCalendar = ({
     else setCurrentDate(addDays(currentDate, 1));
   };
 
-
   const handleToday = () => {
     setCurrentDate(new Date());
     if (viewMode !== 'month') setViewMode('day');
@@ -423,11 +495,11 @@ const AdminCalendar = ({
   const currentDateStr = format(currentDate, 'yyyy-MM-dd');
   const isToday = isSameDay(currentDate, new Date());
 
-  const visibleColumns = columns.filter(col => !hiddenColumnIds.has(col.id));
+  const visibleColumns = columns.filter((col) => !hiddenColumnIds.has(col.id));
   const hasHiddenColumns = hiddenColumnIds.size > 0;
 
   const getItemsForColumnAndDate = (columnId: string, dateStr: string) => {
-    return items.filter(item => {
+    return items.filter((item) => {
       if (item.column_id !== columnId) return false;
       if (item.status === 'cancelled') return false;
       const startDate = item.item_date;
@@ -437,11 +509,13 @@ const AdminCalendar = ({
   };
 
   const getBreaksForColumnAndDate = (columnId: string, dateStr: string) => {
-    return breaks.filter(b => b.break_date === dateStr && b.column_id === columnId);
+    return breaks.filter((b) => b.break_date === dateStr && b.column_id === columnId);
   };
 
-  const getItemsForColumn = (columnId: string) => getItemsForColumnAndDate(columnId, currentDateStr);
-  const getBreaksForColumn = (columnId: string) => getBreaksForColumnAndDate(columnId, currentDateStr);
+  const getItemsForColumn = (columnId: string) =>
+    getItemsForColumnAndDate(columnId, currentDateStr);
+  const getBreaksForColumn = (columnId: string) =>
+    getBreaksForColumnAndDate(columnId, currentDateStr);
 
   // Display times for multi-day items
   const getDisplayTimesForDate = (item: CalendarItem, dateStr: string) => {
@@ -456,7 +530,7 @@ const AdminCalendar = ({
 
   // Overlap detection
   const getOverlapInfo = (item: CalendarItem, allItems: CalendarItem[], dateStr: string) => {
-    const activeItems = allItems.filter(i => i.status !== 'cancelled');
+    const activeItems = allItems.filter((i) => i.status !== 'cancelled');
     if (activeItems.length <= 1) return { hasOverlap: false, index: 0, total: 1 };
 
     const doOverlap = (a: CalendarItem, b: CalendarItem): boolean => {
@@ -507,7 +581,7 @@ const AdminCalendar = ({
       if (timeDiff !== 0) return timeDiff;
       return a.id.localeCompare(b.id);
     });
-    const index = group.findIndex(r => r.id === item.id);
+    const index = group.findIndex((r) => r.id === item.id);
     return { hasOverlap: true, index, total: group.length };
   };
 
@@ -531,7 +605,13 @@ const AdminCalendar = ({
   };
 
   // Context menu for break
-  const handleSlotContextMenu = (e: React.MouseEvent, columnId: string, hour: number, slotIndex: number, dateStr?: string) => {
+  const handleSlotContextMenu = (
+    e: React.MouseEvent,
+    columnId: string,
+    hour: number,
+    slotIndex: number,
+    dateStr?: string,
+  ) => {
     e.preventDefault();
     const time = formatTimeSlot(hour, slotIndex);
     const targetDate = dateStr || currentDateStr;
@@ -540,7 +620,10 @@ const AdminCalendar = ({
 
   // Drag handlers
   const handleDragStart = (e: DragEvent<HTMLDivElement>, item: CalendarItem) => {
-    if (isMobile) { e.preventDefault(); return; }
+    if (isMobile) {
+      e.preventDefault();
+      return;
+    }
     setDraggedItem(item);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', item.id);
@@ -560,7 +643,13 @@ const AdminCalendar = ({
     if (dateStr) setDragOverDate(dateStr);
   };
 
-  const handleSlotDragOver = (e: DragEvent<HTMLDivElement>, columnId: string, hour: number, slotIndex: number, dateStr?: string) => {
+  const handleSlotDragOver = (
+    e: DragEvent<HTMLDivElement>,
+    columnId: string,
+    hour: number,
+    slotIndex: number,
+    dateStr?: string,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
@@ -577,7 +666,13 @@ const AdminCalendar = ({
     }
   };
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>, columnId: string, dateStr: string, hour?: number, slotIndex?: number) => {
+  const handleDrop = (
+    e: DragEvent<HTMLDivElement>,
+    columnId: string,
+    dateStr: string,
+    hour?: number,
+    slotIndex?: number,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverColumn(null);
@@ -585,16 +680,23 @@ const AdminCalendar = ({
     setDragOverSlot(null);
 
     if (draggedItem) {
-      const newTime = hour !== undefined && slotIndex !== undefined ? formatTimeSlot(hour, slotIndex) : undefined;
+      const newTime =
+        hour !== undefined && slotIndex !== undefined ? formatTimeSlot(hour, slotIndex) : undefined;
 
       if (newTime) {
         const newStartNum = parseTime(newTime);
-        if (newStartNum < DEFAULT_START_HOUR) { setDraggedItem(null); return; }
+        if (newStartNum < DEFAULT_START_HOUR) {
+          setDraggedItem(null);
+          return;
+        }
         const originalStart = parseTime(draggedItem.start_time);
         const originalEnd = parseTime(draggedItem.end_time);
         const duration = originalEnd - originalStart;
         const newEndNum = newStartNum + duration;
-        if (newEndNum > DEFAULT_END_HOUR) { setDraggedItem(null); return; }
+        if (newEndNum > DEFAULT_END_HOUR) {
+          setDraggedItem(null);
+          return;
+        }
       }
 
       const columnChanged = draggedItem.column_id !== columnId;
@@ -613,38 +715,51 @@ const AdminCalendar = ({
     const start = parseTime(draggedItem.start_time);
     const end = parseTime(draggedItem.end_time);
     const duration = end - start;
-    const newStartTime = dragOverSlot.hour + dragOverSlot.slotIndex * SLOT_MINUTES / 60;
+    const newStartTime = dragOverSlot.hour + (dragOverSlot.slotIndex * SLOT_MINUTES) / 60;
     const top = (newStartTime - DEFAULT_START_HOUR) * HOUR_HEIGHT;
     const height = duration * HOUR_HEIGHT;
-    return { top: `${top}px`, height: `${Math.max(height, 30)}px`, time: formatTimeSlot(dragOverSlot.hour, dragOverSlot.slotIndex) };
+    return {
+      top: `${top}px`,
+      height: `${Math.max(height, 30)}px`,
+      time: formatTimeSlot(dragOverSlot.hour, dragOverSlot.slotIndex),
+    };
   };
 
   const dragPreviewStyle = getDragPreviewStyle();
 
   const now = new Date();
   const currentHour = now.getHours() + now.getMinutes() / 60;
-  const showCurrentTime = isToday && currentHour >= DEFAULT_START_HOUR && currentHour <= DEFAULT_END_HOUR;
+  const showCurrentTime =
+    isToday && currentHour >= DEFAULT_START_HOUR && currentHour <= DEFAULT_END_HOUR;
   const currentTimeTop = (currentHour - DEFAULT_START_HOUR) * HOUR_HEIGHT;
 
   // Render item tile
-  const renderItemTile = (item: CalendarItem, dateStr: string, allItems: CalendarItem[], displayStartTime?: number) => {
+  const renderItemTile = (
+    item: CalendarItem,
+    dateStr: string,
+    allItems: CalendarItem[],
+    displayStartTime?: number,
+  ) => {
     const { displayStart, displayEnd } = getDisplayTimesForDate(item, dateStr);
-    const style = displayStartTime !== undefined
-      ? (() => {
-          const start = parseTime(displayStart);
-          const end = parseTime(displayEnd);
-          const top = (start - displayStartTime) * HOUR_HEIGHT + 1;
-          const height = (end - start) * HOUR_HEIGHT - 2;
-          return { top: `${top}px`, height: `${Math.max(height, 28)}px` };
-        })()
-      : getItemStyle(displayStart, displayEnd);
+    const style =
+      displayStartTime !== undefined
+        ? (() => {
+            const start = parseTime(displayStart);
+            const end = parseTime(displayEnd);
+            const top = (start - displayStartTime) * HOUR_HEIGHT + 1;
+            const height = (end - start) * HOUR_HEIGHT - 2;
+            return { top: `${top}px`, height: `${Math.max(height, 28)}px` };
+          })()
+        : getItemStyle(displayStart, displayEnd);
     const isDragging = draggedItem?.id === item.id;
     const isMultiDay = item.end_date && item.end_date !== item.item_date;
     const isSelected = selectedItemId === item.id;
     const overlapInfo = getOverlapInfo(item, allItems, dateStr);
     const OVERLAP_OFFSET_PERCENT = 15;
     const leftOffset = overlapInfo.hasOverlap ? overlapInfo.index * OVERLAP_OFFSET_PERCENT : 0;
-    const rightOffset = overlapInfo.hasOverlap ? (overlapInfo.total - 1 - overlapInfo.index) * OVERLAP_OFFSET_PERCENT : 0;
+    const rightOffset = overlapInfo.hasOverlap
+      ? (overlapInfo.total - 1 - overlapInfo.index) * OVERLAP_OFFSET_PERCENT
+      : 0;
 
     const hasConflict = conflictItemIds?.has(item.id);
 
@@ -655,16 +770,16 @@ const AdminCalendar = ({
         onDragStart={(e) => !employeeViewActive && !isMultiDay && handleDragStart(e, item)}
         onDragEnd={handleDragEnd}
         className={cn(
-          "absolute rounded-lg border px-1 md:px-2 py-0 md:py-1 md:pb-1.5",
-          !isMobile && !employeeViewActive && !isMultiDay && "cursor-grab active:cursor-grabbing",
-          (isMobile || employeeViewActive || isMultiDay) && "cursor-pointer",
-          "transition-all duration-150 hover:shadow-lg hover:z-20",
-          "overflow-hidden select-none",
+          'absolute rounded-lg border px-1 md:px-2 py-0 md:py-1 md:pb-1.5',
+          !isMobile && !employeeViewActive && !isMultiDay && 'cursor-grab active:cursor-grabbing',
+          (isMobile || employeeViewActive || isMultiDay) && 'cursor-pointer',
+          'transition-all duration-150 hover:shadow-lg hover:z-20',
+          'overflow-hidden select-none',
           getStatusColor(item.status),
-          isDragging && "opacity-30 scale-95",
-          !isDragging && draggedItem && "pointer-events-none",
-          isSelected && "border-4 shadow-lg z-30",
-          hasConflict && "ring-2 ring-red-500 ring-offset-1"
+          isDragging && 'opacity-30 scale-95',
+          !isDragging && draggedItem && 'pointer-events-none',
+          isSelected && 'border-4 shadow-lg z-30',
+          hasConflict && 'ring-2 ring-red-500 ring-offset-1',
         )}
         style={{
           ...style,
@@ -672,7 +787,10 @@ const AdminCalendar = ({
           right: `calc(${rightOffset}% + 2px)`,
           zIndex: isSelected ? 30 : getTimeBasedZIndex(displayStart),
         }}
-        onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onItemClick?.(item);
+        }}
       >
         <div className="px-0.5 text-black space-y-[3px]">
           {/* Project tag */}
@@ -683,20 +801,22 @@ const AdminCalendar = ({
             </div>
           )}
           {/* Line 1: Title */}
-           <div className="flex items-center gap-1 text-[13px] md:text-[15px] min-w-0">
+          <div className="flex items-center gap-1 text-[13px] md:text-[15px] min-w-0">
             <span className="font-semibold truncate">{item.title}</span>
           </div>
           {/* Line 2: Time + notes indicator */}
           <div className="flex items-center justify-between gap-0.5">
             <span className="text-[13px] md:text-[15px] font-bold tabular-nums shrink-0 flex items-center gap-1 pb-0.5">
-              {isMultiDay && item.end_date ? (() => {
-                const dayNames = ['ND', 'PN', 'WT', 'ŚR', 'CZ', 'PT', 'SO'];
-                const startDay = dayNames[new Date(item.item_date + 'T00:00:00').getDay()];
-                const endDay = dayNames[new Date(item.end_date + 'T00:00:00').getDay()];
-                return hideHours
-                  ? `${startDay} - ${endDay}`
-                  : `${startDay} ${item.start_time.slice(0, 5)} - ${endDay} ${item.end_time.slice(0, 5)}`;
-              })() : (!hideHours && `${item.start_time.slice(0, 5)} - ${item.end_time.slice(0, 5)}`)}
+              {isMultiDay && item.end_date
+                ? (() => {
+                    const dayNames = ['ND', 'PN', 'WT', 'ŚR', 'CZ', 'PT', 'SO'];
+                    const startDay = dayNames[new Date(item.item_date + 'T00:00:00').getDay()];
+                    const endDay = dayNames[new Date(item.end_date + 'T00:00:00').getDay()];
+                    return hideHours
+                      ? `${startDay} - ${endDay}`
+                      : `${startDay} ${item.start_time.slice(0, 5)} - ${endDay} ${item.end_time.slice(0, 5)}`;
+                  })()
+                : !hideHours && `${item.start_time.slice(0, 5)} - ${item.end_time.slice(0, 5)}`}
               {item.status === 'change_requested' && <RefreshCw className="w-3 h-3 text-red-600" />}
             </span>
             <div className="flex items-center gap-0.5 shrink-0">
@@ -706,7 +826,12 @@ const AdminCalendar = ({
                 </div>
               )}
               {item.customer_phone && isMobile && (
-                <a href={`tel:${item.customer_phone}`} onClick={(e) => e.stopPropagation()} className="p-0.5 rounded hover:bg-white/20 transition-colors" title={item.customer_phone}>
+                <a
+                  href={`tel:${item.customer_phone}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-0.5 rounded hover:bg-white/20 transition-colors"
+                  title={item.customer_phone}
+                >
                   <Phone className="w-3.5 h-3.5" />
                 </a>
               )}
@@ -723,7 +848,9 @@ const AdminCalendar = ({
           {(item.address_city || item.address_street) && (
             <div className="flex items-center gap-0.5 text-[11px] md:text-[12px] truncate opacity-80">
               <MapPin className="w-2.5 h-2.5 shrink-0" />
-              <span className="truncate">{[item.address_city, item.address_street].filter(Boolean).join(', ')}</span>
+              <span className="truncate">
+                {[item.address_city, item.address_street].filter(Boolean).join(', ')}
+              </span>
             </div>
           )}
           {!item.address_city && !item.address_street && item.address_name && (
@@ -735,25 +862,37 @@ const AdminCalendar = ({
           {/* Line 5: Payment status + Assigned employees chips */}
           <div className="flex items-center gap-0.5 mt-[4px] flex-wrap">
             {prioritiesEnabled && item.priority != null && item.priority !== 3 && (
-              <span className={cn("inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold shrink-0", getPriorityConfig(item.priority).badgeCls)}>
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold shrink-0',
+                  getPriorityConfig(item.priority).badgeCls,
+                )}
+              >
                 {getPriorityConfig(item.priority).label}
               </span>
             )}
             {item.payment_status && item.payment_status !== 'not_invoiced' && (
               <InvoiceStatusBadge status={item.payment_status} size="sm" />
             )}
-            {!hideEmployeeChips && item.assigned_employees && item.assigned_employees.length > 0 && (
-              <>
-                {item.assigned_employees.slice(0, 3).map(emp => (
-                  <span key={emp.id} className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground">
-                    {emp.name.split(' ')[0]}
-                  </span>
-                ))}
-                {item.assigned_employees.length > 3 && (
-                  <span className="text-[10px] opacity-70">+{item.assigned_employees.length - 3}</span>
-                )}
-              </>
-            )}
+            {!hideEmployeeChips &&
+              item.assigned_employees &&
+              item.assigned_employees.length > 0 && (
+                <>
+                  {item.assigned_employees.slice(0, 3).map((emp) => (
+                    <span
+                      key={emp.id}
+                      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground"
+                    >
+                      {emp.name.split(' ')[0]}
+                    </span>
+                  ))}
+                  {item.assigned_employees.length > 3 && (
+                    <span className="text-[10px] opacity-70">
+                      +{item.assigned_employees.length - 3}
+                    </span>
+                  )}
+                </>
+              )}
           </div>
           {/* Line 6: Admin notes */}
           {item.admin_notes && (
@@ -776,14 +915,21 @@ const AdminCalendar = ({
     const style = { top: `${top}px`, height: `${Math.max(height, 28)}px` };
 
     return (
-      <div key={breakItem.id} className="absolute left-0.5 right-0.5 rounded-lg border-l-4 px-1 md:px-2 py-0.5 bg-slate-500/80 border-slate-600 text-white overflow-hidden group" style={style}>
+      <div
+        key={breakItem.id}
+        className="absolute left-0.5 right-0.5 rounded-lg border-l-4 px-1 md:px-2 py-0.5 bg-slate-500/80 border-slate-600 text-white overflow-hidden group"
+        style={style}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-[9px] md:text-[10px] font-semibold truncate">
             <Coffee className="w-2.5 h-2.5 shrink-0" />
             Przerwa
           </div>
           <button
-            onClick={(e) => { e.stopPropagation(); onDeleteBreak?.(breakItem.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteBreak?.(breakItem.id);
+            }}
             className="shrink-0 p-0.5 rounded hover:bg-white/20 transition-colors opacity-0 group-hover:opacity-100"
             title="Usuń przerwę"
           >
@@ -799,7 +945,7 @@ const AdminCalendar = ({
   };
 
   // Render time column slots
-  const renderTimeColumnSlots = () => (
+  const renderTimeColumnSlots = () =>
     HOURS.map((hour) => (
       <div key={hour} className="relative" style={{ height: HOUR_HEIGHT }}>
         {!hideHours && (
@@ -809,7 +955,14 @@ const AdminCalendar = ({
         )}
         <div className="absolute left-0 right-0 top-0 h-full">
           {Array.from({ length: SLOTS_PER_HOUR }, (_, i) => (
-            <div key={i} className={cn("border-b relative", i === SLOTS_PER_HOUR - 1 ? "border-border" : "border-border/30")} style={{ height: SLOT_HEIGHT }}>
+            <div
+              key={i}
+              className={cn(
+                'border-b relative',
+                i === SLOTS_PER_HOUR - 1 ? 'border-border' : 'border-border/30',
+              )}
+              style={{ height: SLOT_HEIGHT }}
+            >
               {!hideHours && i > 0 && (
                 <span className="absolute -top-1.5 right-1 md:right-2 text-[9px] md:text-[10px] text-muted-foreground/70 bg-background px-0.5">
                   {(i * SLOT_MINUTES).toString()}
@@ -819,8 +972,7 @@ const AdminCalendar = ({
           ))}
         </div>
       </div>
-    ))
-  );
+    ));
 
   // Render grid slots for a column on a date
   const renderGridSlots = (columnId: string, dateStr: string) => {
@@ -831,27 +983,41 @@ const AdminCalendar = ({
     return HOURS.map((hour) => (
       <div key={hour} style={{ height: HOUR_HEIGHT }}>
         {Array.from({ length: SLOTS_PER_HOUR }, (_, i) => {
-          const isDropTarget = dragOverColumn === columnId && dragOverDate === dateStr && dragOverSlot?.hour === hour && dragOverSlot?.slotIndex === i;
+          const isDropTarget =
+            dragOverColumn === columnId &&
+            dragOverDate === dateStr &&
+            dragOverSlot?.hour === hour &&
+            dragOverSlot?.slotIndex === i;
           const isDisabled = isPastDay || !!employeeViewActive;
 
           return (
             <div
               key={i}
               className={cn(
-                "border-b group transition-colors relative",
-                i === SLOTS_PER_HOUR - 1 ? "border-border" : "border-border/40",
-                isDropTarget && !isDisabled && "bg-primary/30 border-primary",
-                !isDropTarget && !isDisabled && "hover:bg-primary/10 hover:z-50 cursor-pointer",
-                isDisabled && !employeeViewActive && "cursor-not-allowed"
+                'border-b group transition-colors relative',
+                i === SLOTS_PER_HOUR - 1 ? 'border-border' : 'border-border/40',
+                isDropTarget && !isDisabled && 'bg-primary/30 border-primary',
+                !isDropTarget && !isDisabled && 'hover:bg-primary/10 hover:z-50 cursor-pointer',
+                isDisabled && !employeeViewActive && 'cursor-not-allowed',
               )}
               style={{ height: SLOT_HEIGHT }}
               onClick={() => !isDisabled && handleSlotClick(columnId, hour, i, dateStr)}
-              onContextMenu={(e) => !isDisabled && handleSlotContextMenu(e, columnId, hour, i, dateStr)}
+              onContextMenu={(e) =>
+                !isDisabled && handleSlotContextMenu(e, columnId, hour, i, dateStr)
+              }
               onTouchStart={() => !isDisabled && handleTouchStart(columnId, hour, i, dateStr)}
               onTouchEnd={handleTouchEnd}
               onTouchMove={handleTouchMove}
-              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!isDisabled) handleSlotDragOver(e, columnId, hour, i, dateStr); }}
-              onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (!isDisabled) handleDrop(e, columnId, dateStr, hour, i); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isDisabled) handleSlotDragOver(e, columnId, hour, i, dateStr);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isDisabled) handleDrop(e, columnId, dateStr, hour, i);
+              }}
             >
               {!isDisabled && (
                 <div className="h-full w-full flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -893,9 +1059,20 @@ const AdminCalendar = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-[1000]" align="start">
-                  <Calendar mode="single" selected={currentDate} onSelect={(date) => {
-                    if (date) { setCurrentDate(date); setViewMode('day'); setDatePickerOpen(false); }
-                  }} initialFocus className="pointer-events-auto" locale={pl} />
+                  <Calendar
+                    mode="single"
+                    selected={currentDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setCurrentDate(date);
+                        setViewMode('day');
+                        setDatePickerOpen(false);
+                      }
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                    locale={pl}
+                  />
                 </PopoverContent>
               </Popover>
             )}
@@ -903,16 +1080,34 @@ const AdminCalendar = ({
 
           {/* Day name */}
           {!isMobile && (
-            <h2 className={cn("text-lg font-semibold", isToday && "text-primary")}>
+            <h2 className={cn('text-lg font-semibold', isToday && 'text-primary')}>
               {viewMode === 'month'
                 ? format(currentDate, 'LLLL yyyy', { locale: pl })
                 : viewMode === 'week'
-                ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                  ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
+                  : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
             </h2>
           )}
 
           <div className="flex items-center gap-2">
+            {/* Follow-ups to schedule */}
+            {onOpenFollowUps && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onOpenFollowUps}
+                className="gap-1 relative"
+                title="Do dokończenia"
+              >
+                <RotateCcw className="w-4 h-4" />
+                {!isMobile && <span>Do dokończenia</span>}
+                {(unscheduledFollowUpCount ?? 0) > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-purple-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {unscheduledFollowUpCount}
+                  </span>
+                )}
+              </Button>
+            )}
             {/* Unified view settings popover */}
             <Popover open={configPopoverOpen} onOpenChange={setConfigPopoverOpen}>
               <PopoverTrigger asChild>
@@ -927,9 +1122,39 @@ const AdminCalendar = ({
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Pokaż</h4>
                       <div className="flex border border-border rounded-lg overflow-hidden">
-                        <Button variant={viewMode === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('day'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">Dzień</Button>
-                        <Button variant={viewMode === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('week'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">Tydzień</Button>
-                        <Button variant={viewMode === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => { setViewMode('month'); setConfigPopoverOpen(false); }} className="rounded-none border-0 flex-1 text-xs">Miesiąc</Button>
+                        <Button
+                          variant={viewMode === 'day' ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => {
+                            setViewMode('day');
+                            setConfigPopoverOpen(false);
+                          }}
+                          className="rounded-none border-0 flex-1 text-xs"
+                        >
+                          Dzień
+                        </Button>
+                        <Button
+                          variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => {
+                            setViewMode('week');
+                            setConfigPopoverOpen(false);
+                          }}
+                          className="rounded-none border-0 flex-1 text-xs"
+                        >
+                          Tydzień
+                        </Button>
+                        <Button
+                          variant={viewMode === 'month' ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => {
+                            setViewMode('month');
+                            setConfigPopoverOpen(false);
+                          }}
+                          className="rounded-none border-0 flex-1 text-xs"
+                        >
+                          Miesiąc
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -940,14 +1165,30 @@ const AdminCalendar = ({
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-sm">Kolumny</h4>
                         {hasHiddenColumns && (
-                          <Button variant="ghost" size="sm" onClick={showAllColumns} className="h-7 text-xs">Pokaż wszystkie</Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={showAllColumns}
+                            className="h-7 text-xs"
+                          >
+                            Pokaż wszystkie
+                          </Button>
                         )}
                       </div>
                       <div className="space-y-2">
                         {columns.map((col) => (
                           <div key={col.id} className="flex items-center gap-2">
-                            <Checkbox id={`col-${col.id}`} checked={!hiddenColumnIds.has(col.id)} onCheckedChange={() => toggleColumnVisibility(col.id)} />
-                            <Label htmlFor={`col-${col.id}`} className="text-sm cursor-pointer flex-1">{col.name}</Label>
+                            <Checkbox
+                              id={`col-${col.id}`}
+                              checked={!hiddenColumnIds.has(col.id)}
+                              onCheckedChange={() => toggleColumnVisibility(col.id)}
+                            />
+                            <Label
+                              htmlFor={`col-${col.id}`}
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {col.name}
+                            </Label>
                           </div>
                         ))}
                       </div>
@@ -957,8 +1198,17 @@ const AdminCalendar = ({
                   {/* Compact mode */}
                   {!isMobile && (
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="compact-toggle" className="text-sm font-medium cursor-pointer">Widok kompaktowy</Label>
-                      <Switch id="compact-toggle" checked={isCompact} onCheckedChange={toggleCompact} />
+                      <Label
+                        htmlFor="compact-toggle"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        Widok kompaktowy
+                      </Label>
+                      <Switch
+                        id="compact-toggle"
+                        checked={isCompact}
+                        onCheckedChange={toggleCompact}
+                      />
                     </div>
                   )}
                 </div>
@@ -994,7 +1244,13 @@ const AdminCalendar = ({
             )}
 
             {/* Fullscreen */}
-            <Button variant="outline" size="sm" onClick={toggleFullscreen} className="gap-1" title={isFullscreen ? 'Wyjdź z pełnego ekranu' : 'Pełny ekran'}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFullscreen}
+              className="gap-1"
+              title={isFullscreen ? 'Wyjdź z pełnego ekranu' : 'Pełny ekran'}
+            >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
           </div>
@@ -1002,7 +1258,7 @@ const AdminCalendar = ({
 
         {/* Mobile day name */}
         {isMobile && (
-          <h2 className={cn("text-center text-lg font-semibold", isToday && "text-primary")}>
+          <h2 className={cn('text-center text-lg font-semibold', isToday && 'text-primary')}>
             {viewMode === 'week'
               ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
               : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
@@ -1011,269 +1267,335 @@ const AdminCalendar = ({
       </div>
 
       {/* DAY VIEW */}
-      {viewMode === 'day' && <>
-        {/* Column headers */}
-        <div className="flex border-b border-border bg-muted/20">
-          <div className="w-12 md:w-16 shrink-0 border-r border-border/50" />
-          <div
-            ref={headerScrollRef}
-            onScroll={handleHeaderScroll}
-            className={cn("flex overflow-x-auto", !isMobile && "flex-1")}
-            style={{ ...getMobileColumnsContainerStyle(visibleColumns.length), scrollbarWidth: 'none' }}
-          >
-            {visibleColumns.map((col, idx) => (
-              <div
-                key={col.id}
-                className={cn(
-                  "p-2 md:p-3 text-center font-medium text-sm shrink-0",
-                  !isMobile && "flex-1",
-                  !isMobile && !isCompact && "min-w-[220px]",
-                  idx < visibleColumns.length - 1 && "border-r border-border"
-                )}
-                style={{ ...(isMobile ? getMobileColumnStyle(visibleColumns.length) : {}), ...(col.color ? { backgroundColor: col.color } : {}) }}
-              >
-                <div className="text-foreground truncate">{col.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Scrollable grid */}
-        <div ref={gridScrollRef} onScroll={handleGridScroll} className="flex-1 overflow-auto" style={{ scrollbarWidth: 'none' }}>
-          <div className="flex relative" style={{ minHeight: totalHeight }}>
-            {/* Time column */}
-            <div className="w-12 md:w-16 shrink-0 border-r border-border/50 sticky left-0 z-30 bg-card">
-              {renderTimeColumnSlots()}
-            </div>
-
-            {/* Column cells */}
-            <div className={cn("flex", !isMobile && "flex-1")} style={getMobileColumnsContainerStyle(visibleColumns.length)}>
-              {visibleColumns.map((col, idx) => {
-                const colItems = getItemsForColumn(col.id);
-                const colBreaks = getBreaksForColumn(col.id);
-                const nowDate = new Date();
-                const isPastDay = new Date(currentDateStr) < new Date(format(nowDate, 'yyyy-MM-dd'));
-                let pastHatchHeight = 0;
-                if (isPastDay) pastHatchHeight = totalHeight;
-
-                return (
-                  <div
-                    key={col.id}
-                    className={cn(
-                      "relative transition-colors duration-150 shrink-0",
-                      !isMobile && "flex-1",
-                      !isMobile && !isCompact && "min-w-[220px]",
-                      !isMobile && isCompact && "min-w-0",
-                      idx < visibleColumns.length - 1 && "border-r border-border",
-                      dragOverColumn === col.id && !dragOverSlot && "bg-primary/10"
-                    )}
-                    style={{
-                      ...(isMobile ? getMobileColumnStyle(visibleColumns.length) : {}),
-                      ...(col.color && !dragOverColumn ? { backgroundColor: getColumnCellBg(col.color) } : {}),
-                    }}
-                    onDragOver={(e) => handleDragOver(e, col.id, currentDateStr)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, col.id, currentDateStr)}
-                  >
-                    {pastHatchHeight > 0 && <div className="absolute left-0 right-0 top-0 hatched-pattern pointer-events-none z-10" style={{ height: pastHatchHeight }} />}
-                    {renderGridSlots(col.id, currentDateStr)}
-                    {draggedItem && dragOverColumn === col.id && dragPreviewStyle && (
-                      <div className="absolute left-1 right-1 rounded-lg border-2 border-dashed border-primary bg-primary/20 pointer-events-none flex items-center justify-center" style={{ top: dragPreviewStyle.top, height: dragPreviewStyle.height, zIndex: 10000 }}>
-                        <span className="text-sm font-bold text-foreground bg-background px-3 py-1.5 rounded-md shadow-lg border border-border">Przenieś na {dragPreviewStyle.time}</span>
-                      </div>
-                    )}
-                    {colItems.map((item) => renderItemTile(item, currentDateStr, colItems))}
-                    {colBreaks.map((b) => renderBreakTile(b))}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Current time */}
-            {showCurrentTime && (
-              <div className="absolute left-0 right-0 z-40 pointer-events-none" style={{ top: currentTimeTop }}>
-                <div className="flex items-center">
-                  <div className="w-12 md:w-16 flex justify-end pr-1"><div className="w-2 h-2 rounded-full bg-red-500" /></div>
-                  <div className="flex-1 h-0.5 bg-red-500" />
+      {viewMode === 'day' && (
+        <>
+          {/* Column headers */}
+          <div className="flex border-b border-border bg-muted/20">
+            <div className="w-12 md:w-16 shrink-0 border-r border-border/50" />
+            <div
+              ref={headerScrollRef}
+              onScroll={handleHeaderScroll}
+              className={cn('flex overflow-x-auto', !isMobile && 'flex-1')}
+              style={{
+                ...getMobileColumnsContainerStyle(visibleColumns.length),
+                scrollbarWidth: 'none',
+              }}
+            >
+              {visibleColumns.map((col, idx) => (
+                <div
+                  key={col.id}
+                  className={cn(
+                    'p-2 md:p-3 text-center font-medium text-sm shrink-0',
+                    !isMobile && 'flex-1',
+                    !isMobile && !isCompact && 'min-w-[220px]',
+                    idx < visibleColumns.length - 1 && 'border-r border-border',
+                  )}
+                  style={{
+                    ...(isMobile ? getMobileColumnStyle(visibleColumns.length) : {}),
+                    ...(col.color ? { backgroundColor: col.color } : {}),
+                  }}
+                >
+                  <div className="text-foreground truncate">{col.name}</div>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      </>}
+
+          {/* Scrollable grid */}
+          <div
+            ref={gridScrollRef}
+            onScroll={handleGridScroll}
+            className="flex-1 overflow-auto"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            <div className="flex relative" style={{ minHeight: totalHeight }}>
+              {/* Time column */}
+              <div className="w-12 md:w-16 shrink-0 border-r border-border/50 sticky left-0 z-30 bg-card">
+                {renderTimeColumnSlots()}
+              </div>
+
+              {/* Column cells */}
+              <div
+                className={cn('flex', !isMobile && 'flex-1')}
+                style={getMobileColumnsContainerStyle(visibleColumns.length)}
+              >
+                {visibleColumns.map((col, idx) => {
+                  const colItems = getItemsForColumn(col.id);
+                  const colBreaks = getBreaksForColumn(col.id);
+                  const nowDate = new Date();
+                  const isPastDay =
+                    new Date(currentDateStr) < new Date(format(nowDate, 'yyyy-MM-dd'));
+                  let pastHatchHeight = 0;
+                  if (isPastDay) pastHatchHeight = totalHeight;
+
+                  return (
+                    <div
+                      key={col.id}
+                      className={cn(
+                        'relative transition-colors duration-150 shrink-0',
+                        !isMobile && 'flex-1',
+                        !isMobile && !isCompact && 'min-w-[220px]',
+                        !isMobile && isCompact && 'min-w-0',
+                        idx < visibleColumns.length - 1 && 'border-r border-border',
+                        dragOverColumn === col.id && !dragOverSlot && 'bg-primary/10',
+                      )}
+                      style={{
+                        ...(isMobile ? getMobileColumnStyle(visibleColumns.length) : {}),
+                        ...(col.color && !dragOverColumn
+                          ? { backgroundColor: getColumnCellBg(col.color) }
+                          : {}),
+                      }}
+                      onDragOver={(e) => handleDragOver(e, col.id, currentDateStr)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, col.id, currentDateStr)}
+                    >
+                      {pastHatchHeight > 0 && (
+                        <div
+                          className="absolute left-0 right-0 top-0 hatched-pattern pointer-events-none z-10"
+                          style={{ height: pastHatchHeight }}
+                        />
+                      )}
+                      {renderGridSlots(col.id, currentDateStr)}
+                      {draggedItem && dragOverColumn === col.id && dragPreviewStyle && (
+                        <div
+                          className="absolute left-1 right-1 rounded-lg border-2 border-dashed border-primary bg-primary/20 pointer-events-none flex items-center justify-center"
+                          style={{
+                            top: dragPreviewStyle.top,
+                            height: dragPreviewStyle.height,
+                            zIndex: 10000,
+                          }}
+                        >
+                          <span className="text-sm font-bold text-foreground bg-background px-3 py-1.5 rounded-md shadow-lg border border-border">
+                            Przenieś na {dragPreviewStyle.time}
+                          </span>
+                        </div>
+                      )}
+                      {colItems.map((item) => renderItemTile(item, currentDateStr, colItems))}
+                      {colBreaks.map((b) => renderBreakTile(b))}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Current time */}
+              {showCurrentTime && (
+                <div
+                  className="absolute left-0 right-0 z-40 pointer-events-none"
+                  style={{ top: currentTimeTop }}
+                >
+                  <div className="flex items-center">
+                    <div className="w-12 md:w-16 flex justify-end pr-1">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                    </div>
+                    <div className="flex-1 h-0.5 bg-red-500" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* WEEK VIEW */}
-      {viewMode === 'week' && (() => {
-        const weekColumnColorMap = new Map<string, string>();
-        columns.forEach((col) => { if (col.color) weekColumnColorMap.set(col.id, col.color); });
+      {viewMode === 'week' &&
+        (() => {
+          const weekColumnColorMap = new Map<string, string>();
+          columns.forEach((col) => {
+            if (col.color) weekColumnColorMap.set(col.id, col.color);
+          });
 
-        const weekItemsByDate = new Map<string, CalendarItem[]>();
-        for (const item of items) {
-          if (item.status === 'cancelled') continue;
-          if (!item.item_date) continue;
-          const startDate = item.item_date;
-          const endDate = item.end_date || item.item_date;
-          let current = new Date(startDate + 'T00:00:00');
-          const end = new Date(endDate + 'T00:00:00');
-          while (current <= end) {
-            const dateStr = format(current, 'yyyy-MM-dd');
-            if (!weekItemsByDate.has(dateStr)) weekItemsByDate.set(dateStr, []);
-            weekItemsByDate.get(dateStr)!.push(item);
-            current = addDays(current, 1);
+          const weekItemsByDate = new Map<string, CalendarItem[]>();
+          for (const item of items) {
+            if (item.status === 'cancelled') continue;
+            if (!item.item_date) continue;
+            const startDate = item.item_date;
+            const endDate = item.end_date || item.item_date;
+            let current = new Date(startDate + 'T00:00:00');
+            const end = new Date(endDate + 'T00:00:00');
+            while (current <= end) {
+              const dateStr = format(current, 'yyyy-MM-dd');
+              if (!weekItemsByDate.has(dateStr)) weekItemsByDate.set(dateStr, []);
+              weekItemsByDate.get(dateStr)!.push(item);
+              current = addDays(current, 1);
+            }
           }
-        }
-        for (const [, dayItems] of weekItemsByDate) {
-          dayItems.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
-        }
+          for (const [, dayItems] of weekItemsByDate) {
+            dayItems.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+          }
 
-        const todayDate = new Date();
+          const todayDate = new Date();
 
-        return (
-          <div className="flex flex-col flex-1">
-            {/* Day names header */}
-            <div className="grid grid-cols-7 border-b border-border">
-              {weekDays.map((day, idx) => {
-                const isDayToday = isSameDay(day, todayDate);
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "text-center py-2 border-r border-border last:border-r-0 cursor-pointer hover:bg-primary/5 transition-colors",
-                      isDayToday && "bg-primary/10"
-                    )}
-                    onClick={() => { setCurrentDate(day); setViewMode('day'); }}
-                  >
-                    <div className={cn("text-xs font-medium text-muted-foreground", isDayToday && "text-primary font-bold")}>
-                      {format(day, 'EEEE', { locale: pl })}
+          return (
+            <div className="flex flex-col flex-1">
+              {/* Day names header */}
+              <div className="grid grid-cols-7 border-b border-border">
+                {weekDays.map((day, idx) => {
+                  const isDayToday = isSameDay(day, todayDate);
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        'text-center py-2 border-r border-border last:border-r-0 cursor-pointer hover:bg-primary/5 transition-colors',
+                        isDayToday && 'bg-primary/10',
+                      )}
+                      onClick={() => {
+                        setCurrentDate(day);
+                        setViewMode('day');
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          'text-xs font-medium text-muted-foreground',
+                          isDayToday && 'text-primary font-bold',
+                        )}
+                      >
+                        {format(day, 'EEEE', { locale: pl })}
+                      </div>
+                      <div
+                        className={cn(
+                          'text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center mx-auto',
+                          isDayToday && 'bg-primary text-primary-foreground',
+                        )}
+                      >
+                        {format(day, 'd')}
+                      </div>
                     </div>
-                    <div className={cn(
-                      "text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center mx-auto",
-                      isDayToday && "bg-primary text-primary-foreground"
-                    )}>
-                      {format(day, 'd')}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Single week grid */}
-            <div className="grid grid-cols-7 flex-1 min-h-[300px]">
-              {weekDays.map((day) => {
-                const dateStr = format(day, 'yyyy-MM-dd');
-                const isDayToday = isSameDay(day, todayDate);
-                const dayItems = weekItemsByDate.get(dateStr) || [];
-                const isDragOver = dragOverDate === dateStr;
+              {/* Single week grid */}
+              <div className="grid grid-cols-7 flex-1 min-h-[300px]">
+                {weekDays.map((day) => {
+                  const dateStr = format(day, 'yyyy-MM-dd');
+                  const isDayToday = isSameDay(day, todayDate);
+                  const dayItems = weekItemsByDate.get(dateStr) || [];
+                  const isDragOver = dragOverDate === dateStr;
 
-                return (
-                  <div
-                    key={dateStr}
-                    className={cn(
-                      'border-r border-border last:border-r-0 p-1 flex flex-col min-h-0 overflow-hidden overflow-y-auto transition-colors bg-white dark:bg-card',
-                      isDayToday && 'bg-primary/5',
-                      isDragOver && 'bg-primary/10 ring-1 ring-inset ring-primary/30'
-                    )}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                      setDragOverDate(dateStr);
-                    }}
-                    onDragLeave={(e) => {
-                      const relatedTarget = e.relatedTarget as HTMLElement;
-                      if (relatedTarget && (e.currentTarget as HTMLElement).contains(relatedTarget)) return;
-                      setDragOverDate(null);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDragOverDate(null);
-                      if (!draggedItem || !onItemMove) return;
-                      if (draggedItem.item_date === dateStr) return;
-                      onItemMove(draggedItem.id, draggedItem.column_id || '', dateStr);
-                      setDraggedItem(null);
-                    }}
-                  >
-                    {/* Item tiles */}
-                    <div className="flex flex-col gap-0.5 min-h-0 flex-1">
-                      {dayItems.map((item) => {
-                        const colColor = item.column_id ? weekColumnColorMap.get(item.column_id) : undefined;
-                        const address = [item.address_city, item.address_street].filter(Boolean).join(', ') || item.address_name || '';
-                        const employees = item.assigned_employees || [];
-                        const isMultiDay = item.end_date && item.end_date !== item.item_date;
+                  return (
+                    <div
+                      key={dateStr}
+                      className={cn(
+                        'border-r border-border last:border-r-0 p-1 flex flex-col min-h-0 overflow-hidden overflow-y-auto transition-colors bg-white dark:bg-card',
+                        isDayToday && 'bg-primary/5',
+                        isDragOver && 'bg-primary/10 ring-1 ring-inset ring-primary/30',
+                      )}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        setDragOverDate(dateStr);
+                      }}
+                      onDragLeave={(e) => {
+                        const relatedTarget = e.relatedTarget as HTMLElement;
+                        if (
+                          relatedTarget &&
+                          (e.currentTarget as HTMLElement).contains(relatedTarget)
+                        )
+                          return;
+                        setDragOverDate(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDragOverDate(null);
+                        if (!draggedItem || !onItemMove) return;
+                        if (draggedItem.item_date === dateStr) return;
+                        onItemMove(draggedItem.id, draggedItem.column_id || '', dateStr);
+                        setDraggedItem(null);
+                      }}
+                    >
+                      {/* Item tiles */}
+                      <div className="flex flex-col gap-0.5 min-h-0 flex-1">
+                        {dayItems.map((item) => {
+                          const colColor = item.column_id
+                            ? weekColumnColorMap.get(item.column_id)
+                            : undefined;
+                          const address =
+                            [item.address_city, item.address_street].filter(Boolean).join(', ') ||
+                            item.address_name ||
+                            '';
+                          const employees = item.assigned_employees || [];
+                          const isMultiDay = item.end_date && item.end_date !== item.item_date;
 
-                        const tileStyle = colColor ? {
-                          backgroundColor: colColor,
-                          borderLeft: `3px solid ${colColor}`,
-                        } : undefined;
+                          const tileStyle = colColor
+                            ? {
+                                backgroundColor: colColor,
+                                borderLeft: `3px solid ${colColor}`,
+                              }
+                            : undefined;
 
-                        return (
-                          <button
-                            key={`${item.id}-${dateStr}`}
-                            draggable={!isMobile && !isMultiDay}
-                            onDragStart={(e) => {
-                              if (isMultiDay) return;
-                              setDraggedItem(item);
-                              e.dataTransfer.effectAllowed = 'move';
-                              e.dataTransfer.setData('text/plain', item.id);
-                            }}
-                            onDragEnd={() => {
-                              setDraggedItem(null);
-                              setDragOverDate(null);
-                            }}
-                            onClick={(e) => { e.stopPropagation(); onItemClick?.(item); }}
-                            className={cn(
-                              'text-left rounded-sm px-1.5 py-0.5 hover:opacity-80 transition-opacity group shrink-0',
-                              !isMobile && !isMultiDay && 'cursor-grab active:cursor-grabbing',
-                              (isMobile || isMultiDay) && 'cursor-pointer',
-                              draggedItem?.id === item.id && 'opacity-40',
-                              !colColor && 'bg-muted/60 border-l-[3px] border-muted-foreground/30'
-                            )}
-                            style={tileStyle}
-                          >
-                            {isMobile ? (
-                              <div className="text-[10px] font-semibold text-foreground line-clamp-2">
-                                {item.title}
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-1 min-w-0">
-                                  <span className="text-[11px] font-bold tabular-nums shrink-0 text-foreground">
-                                    {item.start_time?.slice(0, 5)}
-                                  </span>
-                                  <span className="text-[11px] font-bold truncate text-foreground">
-                                    {item.title}
-                                  </span>
+                          return (
+                            <button
+                              key={`${item.id}-${dateStr}`}
+                              draggable={!isMobile && !isMultiDay}
+                              onDragStart={(e) => {
+                                if (isMultiDay) return;
+                                setDraggedItem(item);
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setData('text/plain', item.id);
+                              }}
+                              onDragEnd={() => {
+                                setDraggedItem(null);
+                                setDragOverDate(null);
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onItemClick?.(item);
+                              }}
+                              className={cn(
+                                'text-left rounded-sm px-1.5 py-0.5 hover:opacity-80 transition-opacity group shrink-0',
+                                !isMobile && !isMultiDay && 'cursor-grab active:cursor-grabbing',
+                                (isMobile || isMultiDay) && 'cursor-pointer',
+                                draggedItem?.id === item.id && 'opacity-40',
+                                !colColor &&
+                                  'bg-muted/60 border-l-[3px] border-muted-foreground/30',
+                              )}
+                              style={tileStyle}
+                            >
+                              {isMobile ? (
+                                <div className="text-[10px] font-semibold text-foreground line-clamp-2">
+                                  {item.title}
                                 </div>
-                                {address && (
-                                  <div className="text-[10px] text-foreground/70 truncate pl-0.5">
-                                    {address}
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <span className="text-[11px] font-bold tabular-nums shrink-0 text-foreground">
+                                      {item.start_time?.slice(0, 5)}
+                                    </span>
+                                    <span className="text-[11px] font-bold truncate text-foreground">
+                                      {item.title}
+                                    </span>
                                   </div>
-                                )}
-                                {employees.length > 0 && (
-                                  <div className="flex flex-wrap gap-0.5 mt-0.5">
-                                    {employees.map((emp) => (
-                                      <span
-                                        key={emp.id}
-                                        className="text-[9px] rounded px-1 py-px truncate max-w-[80px] font-medium bg-foreground/10 text-foreground/80"
-                                      >
-                                        {emp.name.split(' ')[0]}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </button>
-                        );
-                      })}
+                                  {address && (
+                                    <div className="text-[10px] text-foreground/70 truncate pl-0.5">
+                                      {address}
+                                    </div>
+                                  )}
+                                  {employees.length > 0 && (
+                                    <div className="flex flex-wrap gap-0.5 mt-0.5">
+                                      {employees.map((emp) => (
+                                        <span
+                                          key={emp.id}
+                                          className="text-[9px] rounded px-1 py-px truncate max-w-[80px] font-medium bg-foreground/10 text-foreground/80"
+                                        >
+                                          {emp.name.split(' ')[0]}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* MONTH VIEW */}
       {viewMode === 'month' && (
@@ -1282,9 +1604,14 @@ const AdminCalendar = ({
           columns={employeeViewActive ? [] : columns}
           currentDate={currentDate}
           onMonthChange={(date) => setCurrentDate(date)}
-          onDayClick={(date) => { setCurrentDate(date); setViewMode('day'); }}
+          onDayClick={(date) => {
+            setCurrentDate(date);
+            setViewMode('day');
+          }}
           onItemClick={(item) => onItemClick?.(item)}
-          onItemMove={onItemMove ? (itemId, colId, newDate) => onItemMove(itemId, colId, newDate) : undefined}
+          onItemMove={
+            onItemMove ? (itemId, colId, newDate) => onItemMove(itemId, colId, newDate) : undefined
+          }
         />
       )}
 

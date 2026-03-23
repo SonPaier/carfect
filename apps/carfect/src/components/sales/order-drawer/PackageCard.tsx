@@ -23,6 +23,42 @@ import { formatCurrency } from '../constants';
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
 import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
+/** Helper to extract product name and width from order product name */
+function RollAssignmentWrapper({
+  p,
+  itemKey,
+  instanceId,
+  onSetRollAssignments,
+  customerName,
+}: {
+  p: OrderProduct;
+  itemKey: string;
+  instanceId: string | null;
+  onSetRollAssignments: (productKey: string, assignments: RollAssignment[]) => void;
+  customerName?: string;
+}) {
+  // Extract widthMm from name like "Ultrafit XP Crystal - 1220mm x 30m"
+  const widthMatch = p.name.match(/(\d{3,4})\s*mm/);
+  const widthMm = widthMatch ? parseInt(widthMatch[1]) : undefined;
+  // Extract base product name (before " - " variant suffix, strip "Ultrafit " prefix)
+  const baseName = p.name
+    .split(' - ')[0]
+    .replace(/^Ultrafit\s+/i, '')
+    .trim();
+
+  return (
+    <MultiRollAssignment
+      instanceId={instanceId}
+      assignments={p.rollAssignments || []}
+      onChange={(assignments) => onSetRollAssignments(itemKey, assignments)}
+      requiredM2={p.requiredM2}
+      customerName={customerName}
+      productName={baseName}
+      filterWidthMm={widthMm}
+    />
+  );
+}
+
 export interface ApaczkaService {
   name: string;
   serviceId: number;
@@ -100,11 +136,23 @@ const PackageCard = ({
   totalGross,
   bankAccountNumber,
 }: PackageCardProps) => {
-  const valuation = useApaczkaValuation(instanceId, pkg, customerPostalCode, customerCity, paymentMethod, totalGross, bankAccountNumber);
+  const valuation = useApaczkaValuation(
+    instanceId,
+    pkg,
+    customerPostalCode,
+    customerCity,
+    paymentMethod,
+    totalGross,
+    bankAccountNumber,
+  );
 
   // Auto-select first available courier if none selected
   useEffect(() => {
-    if (pkg.shippingMethod === 'shipping' && !pkg.courierServiceId && availableCouriers.length > 0) {
+    if (
+      pkg.shippingMethod === 'shipping' &&
+      !pkg.courierServiceId &&
+      availableCouriers.length > 0
+    ) {
       onCourierChange(availableCouriers[0].serviceId, availableCouriers[0].name);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onCourierChange is stable, guard prevents loops
@@ -139,7 +187,10 @@ const PackageCard = ({
               {packageProducts.map((p) => {
                 const itemKey = getItemKey(p);
                 return (
-                  <div key={itemKey} className="bg-white rounded-md border border-border p-3 space-y-2.5">
+                  <div
+                    key={itemKey}
+                    className="bg-white rounded-md border border-border p-3 space-y-2.5"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -235,7 +286,9 @@ const PackageCard = ({
                           min={0}
                           step={0.1}
                           value={p.requiredM2 || ''}
-                          onChange={(e) => onUpdateRequiredM2?.(itemKey, parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            onUpdateRequiredM2?.(itemKey, parseFloat(e.target.value) || 0)
+                          }
                           placeholder="0"
                           className="h-8 text-sm"
                         />
@@ -259,11 +312,11 @@ const PackageCard = ({
                     </div>
                     {/* Roll assignment for meter-based products */}
                     {p.priceUnit === 'meter' && onSetRollAssignments && (
-                      <MultiRollAssignment
+                      <RollAssignmentWrapper
+                        p={p}
+                        itemKey={itemKey}
                         instanceId={instanceId}
-                        assignments={p.rollAssignments || []}
-                        onChange={(assignments) => onSetRollAssignments(itemKey, assignments)}
-                        requiredM2={p.requiredM2}
+                        onSetRollAssignments={onSetRollAssignments}
                         customerName={customerName}
                       />
                     )}

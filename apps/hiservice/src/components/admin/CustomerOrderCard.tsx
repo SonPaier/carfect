@@ -23,6 +23,14 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   completed: { label: 'Zakończone', className: 'bg-blue-100 text-blue-800 border-blue-200' },
   cancelled: { label: 'Anulowane', className: 'bg-red-100 text-red-800 border-red-200' },
   change_requested: { label: 'Zmiana', className: 'bg-red-100 text-red-800 border-red-200' },
+  unfinished: {
+    label: 'Nieukończone',
+    className: 'bg-purple-100 text-purple-800 border-purple-200',
+  },
+  follow_up: {
+    label: 'Ponowna wizyta',
+    className: 'bg-purple-50 text-purple-700 border-purple-200',
+  },
 };
 
 const CustomerOrderCard = ({
@@ -39,7 +47,10 @@ const CustomerOrderCard = ({
   addressCity,
   addressStreet,
 }: CustomerOrderCardProps) => {
-  const statusInfo = statusConfig[status] || { label: status, className: 'bg-muted text-muted-foreground' };
+  const statusInfo = statusConfig[status] || {
+    label: status,
+    className: 'bg-muted text-muted-foreground',
+  };
 
   let formattedDate = itemDate;
   try {
@@ -69,14 +80,10 @@ const CustomerOrderCard = ({
       <div className="text-xs font-medium text-foreground">{dateDisplay}</div>
 
       {/* Customer name */}
-      {customerName && (
-        <div className="text-xs text-muted-foreground truncate">{customerName}</div>
-      )}
+      {customerName && <div className="text-xs text-muted-foreground truncate">{customerName}</div>}
 
       {/* Service address */}
-      {addressParts && (
-        <div className="text-xs text-muted-foreground truncate">{addressParts}</div>
-      )}
+      {addressParts && <div className="text-xs text-muted-foreground truncate">{addressParts}</div>}
 
       {/* Price */}
       {!hidePrices && price != null && (
@@ -88,13 +95,16 @@ const CustomerOrderCard = ({
         <Badge variant="outline" className={statusInfo.className}>
           {statusInfo.label}
         </Badge>
-        {assignedEmployeeNames && assignedEmployeeNames.length > 0 && (
+        {assignedEmployeeNames &&
+          assignedEmployeeNames.length > 0 &&
           assignedEmployeeNames.map((name, i) => (
-            <span key={i} className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-primary text-primary-foreground">
+            <span
+              key={i}
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-primary text-primary-foreground"
+            >
               {name.split(' ')[0]}
             </span>
-          ))
-        )}
+          ))}
       </div>
     </div>
   );

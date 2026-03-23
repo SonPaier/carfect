@@ -418,6 +418,7 @@
     "notesPlaceholder": "Notatki o kliencie...",
     "saved": "Dane klienta zapisane",
     "updatedExisting": "Klient z tym numerem już istniał — dane zostały zaktualizowane",
+    "phoneAlreadyExists": "Klient z tym numerem telefonu już istnieje",
     "visitHistory": "Historia wizyt",
     "noVisitHistory": "Brak historii wizyt",
     "deleted": "Klient został usunięty",

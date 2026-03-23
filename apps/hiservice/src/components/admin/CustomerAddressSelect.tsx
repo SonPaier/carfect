@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { formatAddress } from '@/lib/utils';
 
 interface CustomerAddress {
   id: string;
@@ -42,6 +43,8 @@ interface CustomerAddressSelectProps {
   label?: string;
   showLabel?: boolean;
 }
+
+import { sanitizeForPostgrest } from '@/lib/textUtils';
 
 const CustomerAddressSelect = ({
   instanceId,
@@ -113,11 +116,13 @@ const CustomerAddressSelect = ({
     noResultsForQueryRef.current = null;
     setSearching(true);
 
+    const safeQ = sanitizeForPostgrest(q);
+
     const { data } = await supabase
       .from('customer_addresses')
       .select('id, name, street, city, customer_id, customers!inner(id, name, phone, email)')
       .eq('instance_id', instanceId)
-      .or(`street.ilike.%${q}%,city.ilike.%${q}%,name.ilike.%${q}%`)
+      .or(`street.ilike.%${safeQ}%,city.ilike.%${safeQ}%,name.ilike.%${safeQ}%`)
       .limit(10);
 
     if (data && data.length > 0) {
@@ -206,10 +211,6 @@ const CustomerAddressSelect = ({
     onChange(null);
   };
 
-  const formatAddress = (street: string | null, city: string | null) => {
-    return [street, city].filter(Boolean).join(', ') || 'Adres';
-  };
-
   // --- RENDER ---
 
   // When customer is selected: show Select with their addresses
@@ -227,7 +228,7 @@ const CustomerAddressSelect = ({
           <SelectContent className="z-[1200]">
             {addresses.map((addr) => (
               <SelectItem key={addr.id} value={addr.id}>
-                {formatAddress(addr.street, addr.city)}
+                {addr.name ? `${addr.name}, ${formatAddress(addr.street, addr.city)}` : formatAddress(addr.street, addr.city) || 'Adres'}
               </SelectItem>
             ))}
           </SelectContent>
@@ -264,7 +265,9 @@ const CustomerAddressSelect = ({
         )}
         <div className="flex items-center gap-2 p-2 rounded-md border border-input bg-white">
           <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm flex-1">{formatAddress(selectedAddress.street, selectedAddress.city)}</span>
+          <span className="text-sm flex-1 text-foreground">
+            {selectedAddress.name ? `${selectedAddress.name}, ${formatAddress(selectedAddress.street, selectedAddress.city)}` : formatAddress(selectedAddress.street, selectedAddress.city)}
+          </span>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleClearGlobalAddress}>
             <X className="w-3 h-3" />
           </Button>
@@ -316,8 +319,9 @@ const CustomerAddressSelect = ({
                   onClick={() => handleSelectGlobalAddress(addr)}
                   onMouseEnter={() => setSelectedIndex(i)}
                 >
-                  <span className="font-semibold text-base text-foreground">{formatAddress(addr.street, addr.city)}</span>
-                  <span className="text-foreground text-sm">{addr.customer_name}</span>
+                  {addr.name && <span className="font-semibold text-sm text-foreground">{addr.name}</span>}
+                  <span className="text-sm text-foreground">{formatAddress(addr.street, addr.city)}</span>
+                  <span className="text-sm text-foreground">{addr.customer_name}</span>
                 </button>
               ))
             ) : (

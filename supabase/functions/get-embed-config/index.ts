@@ -1,10 +1,32 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-instance-slug',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-instance-slug',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
+
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
+
+function isValidHexColor(c: string | null): boolean {
+  return !!c && HEX_COLOR_RE.test(c);
+}
+
+function safeColor(c: string | null, fallback: string): string {
+  return isValidHexColor(c) ? c! : fallback;
+}
+
+function safeUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return url;
+  } catch {
+    /* invalid */
+  }
+  return null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,7 +40,7 @@ Deno.serve(async (req) => {
 
     // Get instance slug from header or referer
     let instanceSlug = req.headers.get('x-instance-slug');
-    
+
     if (!instanceSlug) {
       // Try to extract from referer or origin
       const referer = req.headers.get('referer') || req.headers.get('origin');
@@ -27,39 +49,41 @@ Deno.serve(async (req) => {
         const hostname = url.hostname;
         // Extract subdomain: armcar.carfect.pl -> armcar
         if (hostname.endsWith('.carfect.pl')) {
-          instanceSlug = hostname.replace('.carfect.pl', '').replace('.admin', '');
+          instanceSlug = hostname.split('.')[0];
         }
       }
     }
 
     if (!instanceSlug) {
-      return new Response(
-        JSON.stringify({ error: 'Instance slug required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Instance slug required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Fetch instance data
     const { data: instance, error: instanceError } = await supabase
       .from('instances')
-      .select('id, name, short_name, address, nip, logo_url, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color, widget_branding_enabled, widget_bg_color, widget_section_bg_color, widget_section_text_color, widget_primary_color, contact_person, phone, widget_config')
+      .select(
+        'id, name, short_name, address, nip, logo_url, offer_branding_enabled, offer_bg_color, offer_section_bg_color, offer_section_text_color, offer_primary_color, widget_branding_enabled, widget_bg_color, widget_section_bg_color, widget_section_text_color, widget_primary_color, contact_person, phone, widget_config',
+      )
       .eq('slug', instanceSlug)
       .eq('active', true)
       .maybeSingle();
 
     if (instanceError) {
       console.error('Instance fetch error:', instanceError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch instance' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Failed to fetch instance' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!instance) {
-      return new Response(
-        JSON.stringify({ error: 'Instance not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Instance not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Parse widget config
@@ -81,25 +105,36 @@ Deno.serve(async (req) => {
       .eq('is_extras_scope', false)
       .order('sort_order', { ascending: true });
 
-    // If visible_templates is configured, filter by those IDs
-    if (visibleTemplateIds.length > 0) {
-      templatesQuery = templatesQuery.in('id', visibleTemplateIds);
+    // Only show explicitly selected templates (empty = none visible)
+    if (visibleTemplateIds.length === 0) {
+      // No templates configured — return empty form
+      const response = {
+        branding: buildBranding(instance),
+        instance_info: buildInstanceInfo(instance),
+        templates: [],
+        extras: [],
+      };
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    templatesQuery = templatesQuery.in('id', visibleTemplateIds);
 
     const { data: templates, error: templatesError } = await templatesQuery;
 
     if (templatesError) {
       console.error('Templates fetch error:', templatesError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch templates' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Failed to fetch templates' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // For each template, fetch products to find unique durability values
-    const templateIds = (templates || []).map(t => t.id);
+    const templateIds = (templates || []).map((t) => t.id);
     let templateDurations: Record<string, number[]> = {};
-    
+
     if (templateIds.length > 0) {
       // Fetch scope products to get product IDs
       const { data: scopeProducts } = await supabase
@@ -108,8 +143,8 @@ Deno.serve(async (req) => {
         .in('scope_id', templateIds);
 
       if (scopeProducts && scopeProducts.length > 0) {
-        const productIds = [...new Set(scopeProducts.map(sp => sp.product_id))];
-        
+        const productIds = [...new Set(scopeProducts.map((sp) => sp.product_id))];
+
         // Fetch product metadata to get durability
         const { data: products } = await supabase
           .from('unified_services')
@@ -150,8 +185,8 @@ Deno.serve(async (req) => {
     // Fetch extras (services with custom labels)
     let extras: { id: string; name: string }[] = [];
     if (widgetConfig?.extras && widgetConfig.extras.length > 0) {
-      const serviceIds = widgetConfig.extras.map(e => e.service_id);
-      
+      const serviceIds = widgetConfig.extras.map((e) => e.service_id);
+
       const { data: services } = await supabase
         .from('unified_services')
         .select('id, name')
@@ -160,60 +195,23 @@ Deno.serve(async (req) => {
         .is('deleted_at', null);
 
       if (services) {
-        // Map services with custom labels
-        extras = widgetConfig.extras.map(extra => {
-          const service = services.find(s => s.id === extra.service_id);
-          return {
-            id: extra.service_id,
-            name: extra.custom_label || service?.name || 'Usługa',
-          };
-        });
+        // Map services with custom labels, filter out deleted/inactive ones
+        extras = widgetConfig.extras
+          .filter((extra) => services.some((s) => s.id === extra.service_id))
+          .map((extra) => {
+            const service = services.find((s) => s.id === extra.service_id)!;
+            return {
+              id: extra.service_id,
+              name: extra.custom_label || service.name,
+            };
+          });
       }
     }
 
     const response = {
-      branding: (() => {
-        // Must match DEFAULT_WIDGET_BRANDING in libs/shared-utils/src/colorUtils.ts
-        const DEFAULT_BG = '#f8fafc';
-        const DEFAULT_SECTION_BG = '#ffffff';
-        const DEFAULT_SECTION_TEXT = '#1e293b';
-        const DEFAULT_PRIMARY = '#2563eb';
-
-        if (instance.widget_branding_enabled) {
-          return {
-            bg_color: instance.widget_bg_color || DEFAULT_BG,
-            section_bg_color: instance.widget_section_bg_color || DEFAULT_SECTION_BG,
-            section_text_color: instance.widget_section_text_color || DEFAULT_SECTION_TEXT,
-            primary_color: instance.widget_primary_color || DEFAULT_PRIMARY,
-            logo_url: instance.logo_url || null,
-          };
-        }
-        if (instance.offer_branding_enabled) {
-          return {
-            bg_color: instance.offer_bg_color || DEFAULT_BG,
-            section_bg_color: instance.offer_section_bg_color || DEFAULT_SECTION_BG,
-            section_text_color: instance.offer_section_text_color || DEFAULT_SECTION_TEXT,
-            primary_color: instance.offer_primary_color || DEFAULT_PRIMARY,
-            logo_url: instance.logo_url || null,
-          };
-        }
-        return {
-          bg_color: DEFAULT_BG,
-          section_bg_color: DEFAULT_SECTION_BG,
-          section_text_color: DEFAULT_SECTION_TEXT,
-          primary_color: DEFAULT_PRIMARY,
-          logo_url: instance.logo_url || null,
-        };
-      })(),
-      instance_info: {
-        name: instance.name,
-        short_name: instance.short_name,
-        address: instance.address,
-        nip: instance.nip,
-        contact_person: instance.contact_person,
-        phone: instance.phone,
-      },
-      templates: (templates || []).map(t => ({
+      branding: buildBranding(instance),
+      instance_info: buildInstanceInfo(instance),
+      templates: (templates || []).map((t) => ({
         id: t.id,
         name: t.name,
         short_name: t.short_name,
@@ -224,16 +222,62 @@ Deno.serve(async (req) => {
       extras,
     };
 
-    return new Response(
-      JSON.stringify(response),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Unexpected error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
+
+// deno-lint-ignore no-explicit-any
+function buildBranding(instance: any) {
+  const DEFAULT_BG = '#f8fafc';
+  const DEFAULT_SECTION_BG = '#ffffff';
+  const DEFAULT_SECTION_TEXT = '#1e293b';
+  const DEFAULT_PRIMARY = '#2563eb';
+
+  const logoUrl = safeUrl(instance.logo_url);
+
+  if (instance.widget_branding_enabled) {
+    return {
+      bg_color: safeColor(instance.widget_bg_color, DEFAULT_BG),
+      section_bg_color: safeColor(instance.widget_section_bg_color, DEFAULT_SECTION_BG),
+      section_text_color: safeColor(instance.widget_section_text_color, DEFAULT_SECTION_TEXT),
+      primary_color: safeColor(instance.widget_primary_color, DEFAULT_PRIMARY),
+      logo_url: logoUrl,
+    };
+  }
+  if (instance.offer_branding_enabled) {
+    return {
+      bg_color: safeColor(instance.offer_bg_color, DEFAULT_BG),
+      section_bg_color: safeColor(instance.offer_section_bg_color, DEFAULT_SECTION_BG),
+      section_text_color: safeColor(instance.offer_section_text_color, DEFAULT_SECTION_TEXT),
+      primary_color: safeColor(instance.offer_primary_color, DEFAULT_PRIMARY),
+      logo_url: logoUrl,
+    };
+  }
+  return {
+    bg_color: DEFAULT_BG,
+    section_bg_color: DEFAULT_SECTION_BG,
+    section_text_color: DEFAULT_SECTION_TEXT,
+    primary_color: DEFAULT_PRIMARY,
+    logo_url: logoUrl,
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+function buildInstanceInfo(instance: any) {
+  return {
+    name: instance.name,
+    short_name: instance.short_name,
+    address: instance.address,
+    nip: instance.nip,
+    contact_person: instance.contact_person,
+    phone: instance.phone,
+  };
+}

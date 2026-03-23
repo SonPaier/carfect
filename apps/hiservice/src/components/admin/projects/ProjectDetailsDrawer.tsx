@@ -17,14 +17,24 @@ interface ProjectDetailsDrawerProps {
   instanceId: string;
   onEdit: (project: any) => void;
   onOrdersChanged: () => void;
-  onAddOrder?: (projectId: string, customerId: string | null, customerAddressId: string | null) => void;
+  onAddOrder?: (
+    projectId: string,
+    customerId: string | null,
+    customerAddressId: string | null,
+  ) => void;
   onOrderClick?: (orderId: string) => void;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
-  not_started: { label: 'Nierozpoczęty', badgeClass: 'bg-slate-100 text-slate-600 border-slate-300' },
+  not_started: {
+    label: 'Nierozpoczęty',
+    badgeClass: 'bg-slate-100 text-slate-600 border-slate-300',
+  },
   in_progress: { label: 'W trakcie', badgeClass: 'bg-blue-100 text-blue-700 border-blue-300' },
-  completed: { label: 'Zakończony', badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+  completed: {
+    label: 'Zakończony',
+    badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  },
 };
 
 const ORDER_STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
@@ -32,9 +42,20 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; badgeClass: string }>
   in_progress: { label: 'W realizacji', badgeClass: 'bg-blue-600 text-white' },
   completed: { label: 'Zakończony', badgeClass: 'bg-emerald-600 text-white' },
   cancelled: { label: 'Anulowany', badgeClass: 'bg-red-600 text-white' },
+  unfinished: { label: 'Nieukończone', badgeClass: 'bg-purple-600 text-white' },
+  follow_up: { label: 'Ponowna wizyta', badgeClass: 'bg-purple-400 text-white' },
 };
 
-const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, onOrdersChanged, onAddOrder, onOrderClick }: ProjectDetailsDrawerProps) => {
+const ProjectDetailsDrawer = ({
+  open,
+  onClose,
+  projectId,
+  instanceId,
+  onEdit,
+  onOrdersChanged,
+  onAddOrder,
+  onOrderClick,
+}: ProjectDetailsDrawerProps) => {
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const queryClient = useQueryClient();
@@ -64,7 +85,11 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
     queryKey: ['project-customer', project?.customer_id],
     enabled: !!project?.customer_id,
     queryFn: async () => {
-      const { data } = await supabase.from('customers').select('name').eq('id', project.customer_id).single();
+      const { data } = await supabase
+        .from('customers')
+        .select('name')
+        .eq('id', project.customer_id)
+        .single();
       return data?.name || '—';
     },
   });
@@ -73,7 +98,11 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
     queryKey: ['project-address', project?.customer_address_id],
     enabled: !!project?.customer_address_id,
     queryFn: async () => {
-      const { data } = await supabase.from('customer_addresses').select('name, street, city').eq('id', project.customer_address_id).single();
+      const { data } = await supabase
+        .from('customer_addresses')
+        .select('name, street, city')
+        .eq('id', project.customer_address_id)
+        .single();
       if (!data) return '—';
       const parts = [data.street, data.city].filter(Boolean);
       return parts.length > 0 ? parts.join(', ') : data.name;
@@ -100,160 +129,197 @@ const ProjectDetailsDrawer = ({ open, onClose, projectId, instanceId, onEdit, on
 
   return (
     <>
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <SheetContent
-        side="right"
-        hideCloseButton
-        hideOverlay
-        className="flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+      <Sheet
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+        }}
       >
-        {!project ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-        <>
-        <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-semibold truncate pr-2">{project.title}</SheetTitle>
-            <div className="flex items-center gap-1">
-              <button onClick={() => onEdit(project)} className="p-2 rounded-full hover:bg-primary/5 transition-colors">
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-primary/5 transition-colors">
-                <X className="w-5 h-5" />
-              </button>
+        <SheetContent
+          side="right"
+          hideCloseButton
+          hideOverlay
+          className="flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          {!project ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
-          {/* Info */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className={statusCfg.badgeClass}>{statusCfg.label}</Badge>
-              <span className="text-sm font-medium">Etapy: {completedOrders.length}/{nonCancelledOrders.length}</span>
-            </div>
-
-            {customerName && (
-              <div>
-                <p className="text-xs text-muted-foreground">Klient</p>
-                <button
-                  className="text-sm font-medium text-primary hover:underline text-left"
-                  onClick={() => project?.customer_id && handleCustomerClick(project.customer_id)}
-                >
-                  {customerName}
-                </button>
-              </div>
-            )}
-
-            {addressName && (
-              <div>
-                <p className="text-xs text-muted-foreground">Adres serwisowy</p>
-                <p className="text-sm">{addressName}</p>
-              </div>
-            )}
-
-            {project.description && (
-              <div>
-                <p className="text-xs text-muted-foreground">Opis</p>
-                <p className="text-sm whitespace-pre-wrap">{project.description}</p>
-              </div>
-            )}
-
-            {project.notes && (
-              <div>
-                <p className="text-xs text-muted-foreground">Notatki</p>
-                <p className="text-sm whitespace-pre-wrap">{project.notes}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Orders list */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Zlecenia w projekcie</h3>
-              {onAddOrder && project.status !== 'completed' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => onAddOrder(project.id, project.customer_id, project.customer_address_id)}
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  Dodaj zlecenie
-                </Button>
-              )}
-            </div>
-            {orders.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">Brak zleceń w tym projekcie</p>
-            ) : (
-              <div className="space-y-2">
-                {orders.map((order: any) => {
-                  const orderStatus = ORDER_STATUS_CONFIG[order.status] || ORDER_STATUS_CONFIG.confirmed;
-                  return (
-                    <div
-                      key={order.id}
-                      className="rounded-lg border border-border bg-white p-3 space-y-1 cursor-pointer hover:shadow-sm transition-shadow active:bg-muted/20"
-                      onClick={() => onOrderClick?.(order.id)}
+          ) : (
+            <>
+              <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-lg font-semibold truncate pr-2">
+                    {project.title}
+                  </SheetTitle>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onEdit(project)}
+                      className="p-2 rounded-full hover:bg-primary/5 transition-colors"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          {order.stage_number && (
-                            <span className="text-xs font-bold text-muted-foreground shrink-0">#{order.stage_number}</span>
-                          )}
-                          <span className="text-sm font-medium truncate">{order.title}</span>
-                        </div>
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${orderStatus.badgeClass}`}>{orderStatus.label}</Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {order.item_date ? (
-                          <>
-                            {format(new Date(order.item_date + 'T00:00:00'), 'd MMM yyyy', { locale: pl })}
-                            {order.start_time && order.end_time && `, ${order.start_time.slice(0, 5)}–${order.end_time.slice(0, 5)}`}
-                          </>
-                        ) : (
-                          'Bez daty'
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="p-2 rounded-full hover:bg-primary/5 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {onAddOrder && project.status !== 'completed' && orders.length === 0 && (
-          <div className="px-6 py-4 border-t border-border shrink-0">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => onAddOrder(project.id, project.customer_id, project.customer_address_id)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Dodaj zlecenie do projektu
-            </Button>
-          </div>
-        )}
-        </>
-        )}
-      </SheetContent>
-    </Sheet>
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+                {/* Info */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className={statusCfg.badgeClass}>
+                      {statusCfg.label}
+                    </Badge>
+                    <span className="text-sm font-medium">
+                      Etapy: {completedOrders.length}/{nonCancelledOrders.length}
+                    </span>
+                  </div>
 
-    <CustomerEditDrawer
-      customer={selectedCustomer}
-      instanceId={instanceId}
-      open={customerDrawerOpen}
-      onClose={() => {
-        setCustomerDrawerOpen(false);
-        setSelectedCustomer(null);
-      }}
-      onCustomerUpdated={() => {
-        queryClient.invalidateQueries({ queryKey: ['project-customer', project?.customer_id] });
-      }}
-    />
+                  {customerName && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Klient</p>
+                      <button
+                        className="text-sm font-medium text-primary hover:underline text-left"
+                        onClick={() =>
+                          project?.customer_id && handleCustomerClick(project.customer_id)
+                        }
+                      >
+                        {customerName}
+                      </button>
+                    </div>
+                  )}
+
+                  {addressName && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Adres serwisowy</p>
+                      <p className="text-sm">{addressName}</p>
+                    </div>
+                  )}
+
+                  {project.description && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Opis</p>
+                      <p className="text-sm whitespace-pre-wrap">{project.description}</p>
+                    </div>
+                  )}
+
+                  {project.notes && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Notatki</p>
+                      <p className="text-sm whitespace-pre-wrap">{project.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Orders list */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Zlecenia w projekcie</h3>
+                    {onAddOrder && project.status !== 'completed' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() =>
+                          onAddOrder(project.id, project.customer_id, project.customer_address_id)
+                        }
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Dodaj zlecenie
+                      </Button>
+                    )}
+                  </div>
+                  {orders.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">
+                      Brak zleceń w tym projekcie
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {orders.map((order: any) => {
+                        const orderStatus =
+                          ORDER_STATUS_CONFIG[order.status] || ORDER_STATUS_CONFIG.confirmed;
+                        return (
+                          <div
+                            key={order.id}
+                            className="rounded-lg border border-border bg-white p-3 space-y-1 cursor-pointer hover:shadow-sm transition-shadow active:bg-muted/20"
+                            onClick={() => onOrderClick?.(order.id)}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {order.stage_number && (
+                                  <span className="text-xs font-bold text-muted-foreground shrink-0">
+                                    #{order.stage_number}
+                                  </span>
+                                )}
+                                <span className="text-sm font-medium truncate">{order.title}</span>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] shrink-0 ${orderStatus.badgeClass}`}
+                              >
+                                {orderStatus.label}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {order.item_date ? (
+                                <>
+                                  {format(new Date(order.item_date + 'T00:00:00'), 'd MMM yyyy', {
+                                    locale: pl,
+                                  })}
+                                  {order.start_time &&
+                                    order.end_time &&
+                                    `, ${order.start_time.slice(0, 5)}–${order.end_time.slice(0, 5)}`}
+                                </>
+                              ) : (
+                                'Bez daty'
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {onAddOrder && project.status !== 'completed' && orders.length === 0 && (
+                <div className="px-6 py-4 border-t border-border shrink-0">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() =>
+                      onAddOrder(project.id, project.customer_id, project.customer_address_id)
+                    }
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Dodaj zlecenie do projektu
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <CustomerEditDrawer
+        customer={selectedCustomer}
+        instanceId={instanceId}
+        open={customerDrawerOpen}
+        onClose={() => {
+          setCustomerDrawerOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onCustomerUpdated={() => {
+          queryClient.invalidateQueries({ queryKey: ['project-customer', project?.customer_id] });
+        }}
+      />
     </>
   );
 };

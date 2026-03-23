@@ -4,7 +4,7 @@ import { Label } from '@shared/ui';
 import { PhoneMaskedInput } from '@shared/ui';
 import ClientSearchAutocomplete from '@/components/ui/client-search-autocomplete';
 import { supabase } from '@/integrations/supabase/client';
-import { formatPhoneDisplay } from '@shared/utils';
+import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
 import { CustomerVehicle, CarSize } from './types';
 import { RefObject } from 'react';
 
@@ -19,7 +19,12 @@ interface CustomerSectionProps {
   foundVehicles: CustomerVehicle[];
   showPhoneDropdown: boolean;
   onSelectVehicle: (vehicle: CustomerVehicle) => void;
-  onCustomerSelect: (customer: { id: string; name: string; phone: string; has_no_show?: boolean }) => void;
+  onCustomerSelect: (customer: {
+    id: string;
+    name: string;
+    phone: string;
+    has_no_show?: boolean;
+  }) => void;
   onClearCustomer: () => void;
   suppressAutoSearch?: boolean;
   phoneInputRef: RefObject<HTMLDivElement>;
@@ -49,47 +54,23 @@ export const CustomerSection = ({
 }: CustomerSectionProps) => {
   const { t } = useTranslation();
 
-  // Normalize phone: remove spaces and country code (+48, 0048, 48 at start)
-  const normalizePhone = (phoneValue: string): string => {
-    let normalized = phoneValue.replace(/\s+/g, '').replace(/[()-]/g, '');
-    normalized = normalized.replace(/^\+48/, '').replace(/^0048/, '').replace(/^48(?=\d{9}$)/, '');
-    return normalized;
-  };
-
-  const handleCustomerSelect = async (customer: { id: string; name: string; phone: string; has_no_show?: boolean }) => {
+  const handleCustomerSelect = async (customer: {
+    id: string;
+    name: string;
+    phone: string;
+    has_no_show?: boolean;
+  }) => {
     onCustomerSelect(customer);
 
-    // Fetch customer's most recent vehicle
-    let vehicleData = null;
-
-    // Try by customer_id
-    const { data: byCustomerId } = await supabase
+    const normalizedPhone = normalizePhone(customer.phone);
+    const { data: vehicleData } = await supabase
       .from('customer_vehicles')
       .select('model, car_size')
       .eq('instance_id', instanceId)
-      .eq('customer_id', customer.id)
+      .eq('phone', normalizedPhone)
       .order('last_used_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-
-    if (byCustomerId) {
-      vehicleData = byCustomerId;
-    } else {
-      // Fallback: try by phone number
-      const normalizedPhone = normalizePhone(customer.phone);
-      const { data: byPhone } = await supabase
-        .from('customer_vehicles')
-        .select('model, car_size')
-        .eq('instance_id', instanceId)
-        .or(`phone.ilike.%${normalizedPhone}%`)
-        .order('last_used_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (byPhone) {
-        vehicleData = byPhone;
-      }
-    }
 
     if (vehicleData) {
       setCarModel(vehicleData.model);
@@ -101,24 +82,6 @@ export const CustomerSection = ({
 
   return (
     <>
-      {/* Customer Name */}
-      <div className="space-y-2">
-        <Label htmlFor="name">
-          {t('addReservation.customerNameAlias')}
-        </Label>
-        <ClientSearchAutocomplete
-          instanceId={instanceId}
-          value={customerName}
-          onChange={(val) => {
-            onCustomerNameChange(val);
-            onClearCustomer();
-          }}
-          onSelect={handleCustomerSelect}
-          onClear={onClearCustomer}
-          suppressAutoSearch={suppressAutoSearch}
-        />
-      </div>
-
       {/* Phone */}
       <div className="space-y-2" ref={phoneInputRef}>
         <div className="flex items-center gap-2">
@@ -132,6 +95,7 @@ export const CustomerSection = ({
           onChange={onPhoneChange}
           className={phoneError ? 'border-destructive' : ''}
           data-testid="phone-input"
+          autoFocus
         />
         {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
 
@@ -140,7 +104,8 @@ export const CustomerSection = ({
           <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3">
             <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <span className="text-sm">
-              Klient <strong>{noShowWarning.customerName}</strong> był nieobecny na wizycie {noShowWarning.date}, usługa: {noShowWarning.serviceName}
+              Klient <strong>{noShowWarning.customerName}</strong> był nieobecny na wizycie{' '}
+              {noShowWarning.date}, usługa: {noShowWarning.serviceName}
             </span>
           </div>
         )}
@@ -159,13 +124,31 @@ export const CustomerSection = ({
                   {vehicle.customer_name || formatPhoneDisplay(vehicle.phone)}
                 </div>
                 <div className="text-sm">
-                  <span className="text-primary font-medium">{formatPhoneDisplay(vehicle.phone)}</span>
+                  <span className="text-primary font-medium">
+                    {formatPhoneDisplay(vehicle.phone)}
+                  </span>
                   {vehicle.model && <span className="text-foreground"> • {vehicle.model}</span>}
                 </div>
               </button>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Customer Name */}
+      <div className="space-y-2">
+        <Label htmlFor="name">{t('addReservation.customerNameAlias')}</Label>
+        <ClientSearchAutocomplete
+          instanceId={instanceId}
+          value={customerName}
+          onChange={(val) => {
+            onCustomerNameChange(val);
+            onClearCustomer();
+          }}
+          onSelect={handleCustomerSelect}
+          onClear={onClearCustomer}
+          suppressAutoSearch={suppressAutoSearch}
+        />
       </div>
     </>
   );

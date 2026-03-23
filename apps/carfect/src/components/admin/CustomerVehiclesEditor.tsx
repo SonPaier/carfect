@@ -84,7 +84,7 @@ export const CustomerVehiclesEditor = ({
           {vehicles.map((vehicle, index) => (
             <div
               key={vehicle.id || `new-${index}`}
-              className="flex items-center gap-1 px-3 py-1.5 bg-background border border-border rounded-full text-sm font-medium"
+              className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
             >
               <span>{vehicle.model}</span>
               {!disabled && (
@@ -93,7 +93,7 @@ export const CustomerVehiclesEditor = ({
                   onClick={() => handleRemoveVehicle(index)}
                   className="p-0.5 hover:bg-hover rounded-full transition-colors"
                 >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   Search,
@@ -6,6 +6,7 @@ import {
   ChevronRight as ChevronRightIcon,
   MoreHorizontal,
   FileText,
+  Trash2,
   RefreshCw,
   MessageSquare,
   Plus,
@@ -14,6 +15,11 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { validateSameCustomer, buildInvoicePositions, type InvoicePosition, type CalendarItemForInvoice } from '@/lib/bulkInvoiceUtils';
+import { matchesSearchQuery } from '@/lib/settlementSearchUtils';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -62,6 +68,7 @@ interface CalendarItemRow {
   photo_urls: unknown;
   end_date: string | null;
   order_number: string | null;
+  checklist_items?: Array<{ id: string; text: string; checked: boolean }> | null;
 }
 
 interface InvoiceRow {
@@ -124,15 +131,21 @@ const STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
   in_progress: { label: 'W realizacji', badgeClass: 'bg-blue-600 hover:bg-blue-700 text-white' },
   completed: { label: 'Zakończony', badgeClass: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
   cancelled: { label: 'Anulowany', badgeClass: 'bg-red-600 hover:bg-red-700 text-white' },
+  unfinished: { label: 'Nieukończone', badgeClass: 'bg-purple-600 hover:bg-purple-700 text-white' },
+  follow_up: {
+    label: 'Ponowna wizyta',
+    badgeClass: 'bg-purple-400 hover:bg-purple-500 text-white',
+  },
 };
 
 const ITEMS_PER_PAGE = 10;
 
 interface SettlementsViewProps {
   instanceId: string;
+  onItemDeleted?: (itemId: string) => void;
 }
 
-const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
+const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
@@ -147,8 +160,41 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   const isMobile = useIsMobile();
   const [addOrderOpen, setAddOrderOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const bulk = useBulkSelection();
+
+  const handleBulkInvoice = () => {
+    const selectedItems = items.filter((i) => bulk.isSelected(i.id));
+    if (selectedItems.length === 0) return;
+    const itemsForInvoice: CalendarItemForInvoice[] = selectedItems.map((i) => ({
+      id: i.id,
+      title: i.title,
+      item_date: i.item_date || '',
+      end_date: i.end_date,
+      price: i.price,
+      customer_id: i.customer_id,
+      customer_name: i.customer_name,
+      customer_email: i.customer_email,
+    }));
+    const error = validateSameCustomer(itemsForInvoice);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    const positions = buildInvoicePositions(itemsForInvoice);
+    const customer = selectedItems.find((i) => i.customer_id);
+    setBulkInvoicePositions(positions);
+    setBulkInvoiceCustomer(customer || null);
+    setBulkInvoiceOpen(true);
+  };
+
+  const [bulkInvoiceOpen, setBulkInvoiceOpen] = useState(false);
+  const [bulkInvoicePositions, setBulkInvoicePositions] = useState<InvoicePosition[]>([]);
+  const [bulkInvoiceCustomer, setBulkInvoiceCustomer] = useState<CalendarItemRow | null>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -189,7 +235,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       const { data, error } = await supabase
         .from('calendar_items')
         .select(
-          'id, title, item_date, customer_name, customer_id, customer_email, customer_phone, customer_address_id, created_at, status, payment_status, price, admin_notes, start_time, end_time, column_id, assigned_employee_ids, photo_urls, end_date, order_number',
+          'id, title, item_date, customer_name, customer_id, customer_email, customer_phone, customer_address_id, created_at, status, payment_status, price, admin_notes, start_time, end_time, column_id, assigned_employee_ids, photo_urls, end_date, order_number, checklist_items',
         )
         .eq('instance_id', instanceId)
         .order('item_date', { ascending: false });
@@ -260,15 +306,13 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   const filteredOrders = useMemo(() => {
     let result = items;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (o) =>
-          (o.customer_name || '').toLowerCase().includes(q) ||
-          (o.title || '').toLowerCase().includes(q) ||
-          (o.item_date || '').includes(q) ||
-          (o.customer_address_id &&
-            addressMap[o.customer_address_id] &&
-            addressMap[o.customer_address_id].toLowerCase().includes(q)),
+      result = result.filter((o) =>
+        matchesSearchQuery(searchQuery, [
+          o.customer_name,
+          o.title,
+          o.item_date,
+          o.customer_address_id ? addressMap[o.customer_address_id] : null,
+        ]),
       );
     }
     if (sortColumn) {
@@ -323,6 +367,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
+    bulk.clear();
   };
 
   const invalidateSettlements = async () => {
@@ -342,8 +387,30 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     toast.success('Status zmieniony');
   };
 
+  const confirmDeleteItem = useCallback(async () => {
+    if (!deleteTargetId) return;
+    setDeleting(true);
+    await handleDeleteItem(deleteTargetId);
+    setDeleting(false);
+    setDeleteDialogOpen(false);
+    setDeleteTargetId(null);
+  }, [deleteTargetId]);
+
   const handleDeleteItem = async (itemId: string) => {
-    // Delete related records first to avoid FK constraint violations
+    // Optimistic removal from cache + notify parent
+    queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
+      old ? old.filter((i: any) => i.id !== itemId) : [],
+    );
+    onItemDeleted?.(itemId);
+    if (bulk.isSelected(itemId)) bulk.toggle(itemId);
+    toast.success('Zlecenie usunięte');
+
+    // Delete from DB in background
+    // Clear parent_item_id on child follow-ups first (FK constraint)
+    await supabase
+      .from('calendar_items')
+      .update({ parent_item_id: null } as any)
+      .eq('parent_item_id', itemId);
     await Promise.all([
       supabase.from('invoices').delete().eq('calendar_item_id', itemId),
       supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId),
@@ -353,11 +420,11 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
     ]);
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
     if (error) {
-      toast.error('Błąd usuwania');
+      toast.error('Błąd usuwania — przywracam');
+      invalidateSettlements(); // rollback
       return;
     }
     invalidateSettlements();
-    toast.success('Zlecenie usunięte');
   };
 
   const handleEditItem = (calItem: CalendarItem) => {
@@ -456,6 +523,7 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
       payment_status: order.payment_status,
       photo_urls: Array.isArray(order.photo_urls) ? (order.photo_urls as string[]) : [],
       end_date: order.end_date,
+      checklist_items: order.checklist_items || [],
     };
     setDetailsItem(calendarItem);
     setDetailsDrawerOpen(true);
@@ -475,6 +543,12 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
             <Plus className="w-4 h-4 mr-2" />
             Dodaj zlecenie
           </Button>
+          {!isMobile && bulk.count > 0 && (
+            <Button size="sm" onClick={handleBulkInvoice} variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              Wystaw fakturę ({bulk.count})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -490,6 +564,24 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
           />
         </div>
       </div>
+
+      {/* Mobile Bulk Action Bar */}
+      {isMobile && bulk.count > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+          <span className="text-sm font-medium">
+            Zaznaczono: {bulk.count}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={bulk.clear}>
+              Anuluj
+            </Button>
+            <Button size="sm" onClick={handleBulkInvoice}>
+              <FileText className="w-4 h-4 mr-1" />
+              Wystaw fakturę
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Cards */}
       {isMobile ? (
@@ -509,10 +601,20 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                 <div
                   key={order.id}
                   className="rounded-lg border border-border bg-card p-3 space-y-2 cursor-pointer active:bg-primary/5"
-                  onClick={() => openDetailsDrawer(order)}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('[role="checkbox"]') || target.closest('[data-bulk-checkbox]')) return;
+                    openDetailsDrawer(order);
+                  }}
                 >
-                  {/* Top row: title + amount */}
+                  {/* Top row: checkbox + title + amount */}
                   <div className="flex items-start justify-between gap-2">
+                    <div data-bulk-checkbox className="pt-0.5 shrink-0 p-1 -m-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={bulk.isSelected(order.id)}
+                        onCheckedChange={() => bulk.toggle(order.id)}
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{order.title || '—'}</p>
                       <p className="text-xs text-muted-foreground">{order.customer_name || '—'}</p>
@@ -647,6 +749,16 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                               Wyślij SMS z nr konta
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setDeleteTargetId(order.id);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Usuń
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -662,6 +774,18 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
           <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[40px] px-2">
+                  {(() => {
+                    const pageIds = paginatedOrders.map((i) => i.id);
+                    const state = bulk.selectionState(pageIds);
+                    return (
+                      <Checkbox
+                        checked={state === 'all' ? true : state === 'some' ? 'indeterminate' : false}
+                        onCheckedChange={() => bulk.toggleAll(pageIds)}
+                      />
+                    );
+                  })()}
+                </TableHead>
                 <TableHead
                   className="w-[8%] cursor-pointer select-none"
                   onClick={() => handleSort('order_number')}
@@ -758,6 +882,12 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                       className="group cursor-pointer"
                       onClick={() => openDetailsDrawer(order)}
                     >
+                      <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={bulk.isSelected(order.id)}
+                          onCheckedChange={() => bulk.toggle(order.id)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm">{formatOrderNumber(order)}</TableCell>
                       <TableCell className="text-sm">
                         <div className="line-clamp-2">{order.title || '—'}</div>
@@ -907,6 +1037,16 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
                                 Wyślij SMS z nr konta
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setDeleteTargetId(order.id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Usuń
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -994,6 +1134,44 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
         }}
       />
 
+      {/* Bulk Invoice Drawer */}
+      <CreateInvoiceDrawer
+        open={bulkInvoiceOpen}
+        onClose={() => {
+          setBulkInvoiceOpen(false);
+          setBulkInvoicePositions([]);
+          setBulkInvoiceCustomer(null);
+        }}
+        instanceId={instanceId}
+        calendarItemId={bulkInvoiceCustomer?.id}
+        customerId={bulkInvoiceCustomer?.customer_id}
+        customerName={bulkInvoiceCustomer?.customer_name}
+        customerEmail={bulkInvoiceCustomer?.customer_email}
+        positions={bulkInvoicePositions}
+        supabaseClient={supabase}
+        onSuccess={async () => {
+          const selectedItems = items.filter((i) => bulk.isSelected(i.id));
+          // Update payment_status on all selected items
+          const results = await Promise.all(
+            selectedItems.map((item) =>
+              supabase
+                .from('calendar_items')
+                .update({ payment_status: 'invoiced' } as Record<string, unknown>)
+                .eq('id', item.id),
+            ),
+          );
+          const failures = results.filter((r) => r.error);
+          if (failures.length > 0) {
+            toast.error(`Nie udało się zaktualizować statusu dla ${failures.length} zleceń`);
+          } else {
+            toast.success(`Faktura wystawiona dla ${selectedItems.length} zleceń`);
+          }
+          bulk.clear();
+          queryClient.refetchQueries({ queryKey: ['settlements', instanceId] });
+          queryClient.refetchQueries({ queryKey: ['settlements-invoices', instanceId] });
+        }}
+      />
+
       {/* SMS Payment Dialog */}
       {smsTarget && (
         <SendPaymentSmsDialog
@@ -1026,6 +1204,17 @@ const SettlementsView = ({ instanceId }: SettlementsViewProps) => {
           setEditingItem(null);
           invalidateSettlements();
         }}
+      />
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Usuń zlecenie"
+        description="Czy na pewno chcesz usunąć to zlecenie? Tej operacji nie można cofnąć."
+        confirmLabel={deleting ? 'Usuwanie...' : 'Usuń'}
+        cancelLabel="Anuluj"
+        onConfirm={confirmDeleteItem}
+        variant="destructive"
+        loading={deleting}
       />
     </div>
   );

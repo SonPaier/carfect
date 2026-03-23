@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@shared/ui';
+import { useIsMobile, EmptyState } from '@shared/ui';
 import ServiceTag from './ServiceTag';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,6 +111,7 @@ interface ReservationsViewProps {
   onTrainingClick?: (training: Training) => void;
   onDeleteTraining?: (trainingId: string) => void;
   employees?: Employee[];
+  onOpenReservation?: (reservationId: string) => void;
 }
 
 type TabValue = 'all' | 'reservations' | 'trainings';
@@ -128,6 +129,7 @@ const ReservationsView = ({
   onTrainingClick,
   onDeleteTraining,
   employees = [],
+  onOpenReservation,
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -768,17 +770,13 @@ const ReservationsView = ({
 
       {/* Content */}
       {groupDates.length === 0 ? (
-        <div className="bg-white border border-border p-12 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center mb-6">
-            <Calendar className="w-10 h-10 text-muted-foreground" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            {t('reservations.noReservations')}
-          </h3>
-          <p className="text-muted-foreground max-w-sm">
-            {debouncedQuery ? t('reservations.noSearchResults') : t('reservations.noUpcoming')}
-          </p>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title={t('reservations.noReservations')}
+          description={
+            debouncedQuery ? t('reservations.noSearchResults') : t('reservations.noUpcoming')
+          }
+        />
       ) : (
         <div>
           {groupDates.map((date) => (
@@ -864,6 +862,7 @@ const ReservationsView = ({
           setCustomerDrawerOpen(false);
           setSelectedCustomer(null);
         }}
+        onOpenReservation={onOpenReservation}
       />
     </div>
   );

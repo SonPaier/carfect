@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { format, subDays, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import {
@@ -21,6 +21,7 @@ import ServicesView from '@/components/admin/ServicesView';
 import CustomersView from '@/components/admin/CustomersView';
 import AdminCalendar from '@/components/admin/AdminCalendar';
 import AddCalendarItemDialog from '@/components/admin/AddCalendarItemDialog';
+import UnscheduledFollowUpsDrawer from '@/components/admin/UnscheduledFollowUpsDrawer';
 import CalendarItemDetailsDrawer from '@/components/admin/CalendarItemDetailsDrawer';
 import AddBreakDialog from '@/components/admin/AddBreakDialog';
 import CalendarMapPanel from '@/components/admin/CalendarMapPanel';
@@ -167,6 +168,22 @@ const Dashboard = () => {
   );
   const { enabled: projectsEnabled } = useInstanceFeature(instanceId, 'projects');
 
+  const { data: unscheduledFollowUpCount = 0 } = useQuery({
+    queryKey: ['unscheduled_follow_ups_count', instanceId],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('calendar_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('instance_id', instanceId!)
+        .eq('status', 'follow_up')
+        .is('item_date', null);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!instanceId,
+    staleTime: 30 * 1000,
+  });
+
   const hostname = window.location.hostname;
   const isSubdomain = hostname.endsWith('.hiservice.pl');
   const basePath = isSubdomain ? '' : '/admin';
@@ -195,6 +212,14 @@ const Dashboard = () => {
   const [hqLocation, setHqLocation] = useState<{ lat: number; lng: number; name: string } | null>(
     null,
   );
+  const [followUpSourceItem, setFollowUpSourceItem] = useState<CalendarItem | null>(null);
+  const [followUpsDrawerOpen, setFollowUpsDrawerOpen] = useState(false);
+  const [followUpsRefreshKey, setFollowUpsRefreshKey] = useState(0);
+
+  // Track locally-updated item IDs so fetchItems preserves optimistic status
+  const locallyUpdatedItemsRef = useRef<Set<string>>(new Set());
+  // Track deleted item IDs so fetchItems/realtime never brings them back
+  const deletedItemIdsRef = useRef<Set<string>>(new Set());
   const [mapOrderPrefill, setMapOrderPrefill] = useState<{
     customerId?: string;
     customerName?: string;
@@ -274,28 +299,21 @@ const Dashboard = () => {
       rangeStart = format(subDays(currentCalendarDate, 7), 'yyyy-MM-dd');
       rangeEnd = format(addDays(currentCalendarDate, mapOpen ? 30 : 14), 'yyyy-MM-dd');
     }
-    console.log('[fetchItems] called, range:', rangeStart, '→', rangeEnd);
     const { data, error } = await supabase
       .from('calendar_items')
       .select(
-        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, project_id',
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, project_id, checklist_items',
       )
       .eq('instance_id', instanceId)
       .not('item_date', 'is', null)
       .gte('item_date', rangeStart)
       .lte('item_date', rangeEnd);
     if (error) {
-      console.error('[fetchItems] ERROR:', error);
+      console.error('Error fetching calendar items:', error);
       return;
     }
 
     const items = data || [];
-    console.log(
-      '[fetchItems] got',
-      items.length,
-      'items, titles:',
-      items.map((i) => i.title).join(', '),
-    );
 
     // Fetch address names for items that have customer_address_id
     const addressIds = [
@@ -363,7 +381,23 @@ const Dashboard = () => {
       }
     }
 
-    setCalendarItems(items as CalendarItem[]);
+    // Filter out deleted items and preserve optimistic status for locally-updated items
+    setCalendarItems((prev) => {
+      const filtered = (items as CalendarItem[]).filter(
+        (item) => !deletedItemIdsRef.current.has(item.id),
+      );
+      const locallyUpdated = new Map<string, string>();
+      for (const p of prev) {
+        if (locallyUpdatedItemsRef.current.has(p.id)) {
+          locallyUpdated.set(p.id, p.status);
+        }
+      }
+      if (locallyUpdated.size === 0) return filtered;
+      return filtered.map((item) => {
+        const optimisticStatus = locallyUpdated.get(item.id);
+        return optimisticStatus ? { ...item, status: optimisticStatus } : item;
+      });
+    });
   }, [instanceId, currentCalendarDate, mapOpen, calendarViewMode]);
 
   // Fetch breaks
@@ -505,11 +539,17 @@ const Dashboard = () => {
     // (e.g. during delete) and can restore a just-removed project. Data will be re-fetched
     // on the next user interaction / window focus.
     queryClient.invalidateQueries({ queryKey: ['projects', instanceId], refetchType: 'none' });
-    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId], refetchType: 'none' });
+    queryClient.invalidateQueries({
+      queryKey: ['projects-orders', instanceId],
+      refetchType: 'none',
+    });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups', instanceId] });
   }, [queryClient, instanceId]);
 
   const handleRealtimeInsert = useCallback(
     (item: CalendarItem) => {
+      if (deletedItemIdsRef.current.has(item.id)) return;
       setCalendarItems((prev) => {
         if (prev.some((i) => i.id === item.id)) return prev;
         return [...prev, item];
@@ -649,6 +689,8 @@ const Dashboard = () => {
 
     // Optimistic update + debounce realtime
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...updateData } : i)));
 
     const { error } = await supabase.from('calendar_items').update(updateData).eq('id', itemId);
@@ -682,7 +724,11 @@ const Dashboard = () => {
 
     // Optimistic update — remove from UI immediately (calendar + lista zleceń)
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
+    deletedItemIdsRef.current.add(itemId);
     setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+    setFollowUpsRefreshKey((k) => k + 1);
     queryClient.setQueryData(['settlements', instanceId], (old: any[]) =>
       old ? old.filter((i: any) => i.id !== itemId) : [],
     );
@@ -691,9 +737,17 @@ const Dashboard = () => {
     // Mark stale without immediate refetch — prevents a background fetch from racing
     // with the optimistic removal and restoring the deleted item in projects views.
     queryClient.invalidateQueries({ queryKey: ['projects', instanceId], refetchType: 'none' });
-    queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId], refetchType: 'none' });
+    queryClient.invalidateQueries({
+      queryKey: ['projects-orders', instanceId],
+      refetchType: 'none',
+    });
 
     // Delete from DB in background
+    // Clear parent_item_id on child follow-ups first (FK constraint)
+    await supabase
+      .from('calendar_items')
+      .update({ parent_item_id: null } as any)
+      .eq('parent_item_id', itemId);
     await Promise.all([
       supabase.from('invoices').delete().eq('calendar_item_id', itemId),
       supabase.from('calendar_item_services').delete().eq('calendar_item_id', itemId),
@@ -704,6 +758,7 @@ const Dashboard = () => {
     const { error } = await supabase.from('calendar_items').delete().eq('id', itemId);
     if (error) {
       toast.error('Błąd usuwania — przywracam');
+      deletedItemIdsRef.current.delete(itemId);
       fetchItems(); // rollback
       return;
     }
@@ -732,6 +787,8 @@ const Dashboard = () => {
   const handleStatusChange = async (itemId: string, newStatus: string) => {
     // Optimistic update + debounce realtime
     markAsLocallyUpdated(itemId);
+    locallyUpdatedItemsRef.current.add(itemId);
+    setTimeout(() => locallyUpdatedItemsRef.current.delete(itemId), 5000);
     setCalendarItems((prev) =>
       prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)),
     );
@@ -743,6 +800,7 @@ const Dashboard = () => {
     const updatePayload: Record<string, any> = { status: newStatus };
     if (newStatus === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
     if (newStatus === 'completed') updatePayload.work_ended_at = new Date().toISOString();
+    if (newStatus === 'unfinished') updatePayload.work_ended_at = new Date().toISOString();
     const { error } = await supabase
       .from('calendar_items')
       .update(updatePayload as any)
@@ -754,6 +812,60 @@ const Dashboard = () => {
       toast.success('Status zmieniony');
       queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
       queryClient.invalidateQueries({ queryKey: ['projects', instanceId] });
+      queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
+      setFollowUpsRefreshKey((k) => k + 1);
+
+      // Auto-complete original when last follow-up is completed
+      if (newStatus === 'completed') {
+        const { data: completedItem } = await supabase
+          .from('calendar_items')
+          .select('parent_item_id')
+          .eq('id', itemId)
+          .single();
+
+        if (completedItem?.parent_item_id) {
+          const { count } = await supabase
+            .from('calendar_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('parent_item_id', completedItem.parent_item_id)
+            .not('status', 'in', '(completed,cancelled)')
+            .neq('id', itemId);
+
+          if (count === 0) {
+            await supabase
+              .from('calendar_items')
+              .update({ status: 'completed', work_ended_at: new Date().toISOString() })
+              .eq('id', completedItem.parent_item_id);
+            toast.success('Oryginalne zlecenie zostało automatycznie zakończone');
+            fetchItems();
+          }
+        }
+      }
+    }
+  };
+
+  const handleFollowUpRequest = async (item: CalendarItem) => {
+    // Don't change status yet — only after follow-up is saved
+    setDetailsOpen(false);
+    setSelectedItem(null);
+    setDashboardDetailsOpen(false);
+    setDashboardSelectedItem(null);
+    setTimeout(() => setFollowUpSourceItem(item), 300);
+  };
+
+  const handleFollowUpItemClick = (itemId: string) => {
+    const item = calendarItems.find((i) => i.id === itemId);
+    if (item) {
+      handleEditItem(item);
+    } else {
+      supabase
+        .from('calendar_items')
+        .select('*')
+        .eq('id', itemId)
+        .single()
+        .then(({ data }) => {
+          if (data) handleEditItem(data as CalendarItem);
+        });
     }
   };
 
@@ -775,6 +887,8 @@ const Dashboard = () => {
       admin_notes: item.admin_notes,
       price: item.price,
       priority: (item as any).priority,
+      status: item.status,
+      checklist_items: (item as any).checklist_items || [],
     });
     setDetailsOpen(false);
     setDashboardDetailsOpen(false);
@@ -782,8 +896,8 @@ const Dashboard = () => {
   };
 
   const handleItemSuccess = () => {
-    console.log('[handleItemSuccess] called, triggering fetchItems');
-    fetchItems();
+    // Small delay to ensure DB replication catches up before refetch
+    setTimeout(() => fetchItems(), 200);
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
@@ -792,6 +906,8 @@ const Dashboard = () => {
     queryClient.invalidateQueries({ queryKey: ['projects-orders', instanceId] });
     queryClient.invalidateQueries({ queryKey: ['projects-stages', instanceId] });
     queryClient.invalidateQueries({ queryKey: ['project-orders'] });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups_count', instanceId] });
+    queryClient.invalidateQueries({ queryKey: ['unscheduled_follow_ups', instanceId] });
   };
 
   const handleDateChange = (date: Date) => {
@@ -804,7 +920,7 @@ const Dashboard = () => {
     const { data } = await supabase
       .from('calendar_items')
       .select(
-        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority',
+        'id, column_id, title, customer_name, customer_phone, customer_email, customer_id, customer_address_id, assigned_employee_ids, item_date, end_date, start_time, end_time, status, admin_notes, price, photo_urls, media_items, payment_status, order_number, priority, checklist_items',
       )
       .eq('id', itemId)
       .single();
@@ -909,7 +1025,14 @@ const Dashboard = () => {
     if (currentView === 'rozliczenia' && instanceId) {
       return (
         <div className="max-w-[1000px] mx-auto">
-          <SettlementsView instanceId={instanceId} />
+          <SettlementsView
+            instanceId={instanceId}
+            onItemDeleted={(itemId) => {
+              deletedItemIdsRef.current.add(itemId);
+              setCalendarItems((prev) => prev.filter((i) => i.id !== itemId));
+              setFollowUpsRefreshKey((k) => k + 1);
+            }}
+          />
         </div>
       );
     }
@@ -949,7 +1072,6 @@ const Dashboard = () => {
             onClose={() => {
               setDetailsOpen(false);
               setSelectedItem(null);
-              fetchItems();
             }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
@@ -957,6 +1079,7 @@ const Dashboard = () => {
             onStatusChange={handleStatusChange}
             onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
             onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
+            onFollowUpRequest={handleFollowUpRequest}
             onAddProtocol={
               protocolsEnabled
                 ? async (item) => {
@@ -1047,6 +1170,8 @@ const Dashboard = () => {
               employeeCalendarViewEnabled && employeesEnabled ? toggleEmployeeView : undefined
             }
             conflictItemIds={conflictItemIds}
+            unscheduledFollowUpCount={unscheduledFollowUpCount}
+            onOpenFollowUps={() => setFollowUpsDrawerOpen(true)}
           />
 
           <CalendarItemDetailsDrawer
@@ -1055,7 +1180,6 @@ const Dashboard = () => {
             onClose={() => {
               setDetailsOpen(false);
               setSelectedItem(null);
-              fetchItems();
             }}
             columns={calendarColumns}
             onDelete={handleDeleteItem}
@@ -1063,6 +1187,7 @@ const Dashboard = () => {
             onStatusChange={handleStatusChange}
             onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
             onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
+            onFollowUpRequest={handleFollowUpRequest}
             onAddProtocol={
               protocolsEnabled
                 ? async (item) => {
@@ -1171,17 +1296,33 @@ const Dashboard = () => {
       )}
       {instanceId && (
         <AddCalendarItemDialog
-          open={addItemOpen}
+          open={addItemOpen || !!followUpSourceItem}
           onClose={() => {
             setAddItemOpen(false);
             setEditingItem(null);
             setMapOrderPrefill({});
             setInitialProjectId(undefined);
+            setFollowUpSourceItem(null);
             fetchItems();
           }}
           instanceId={instanceId}
           columns={calendarColumns}
-          onSuccess={handleItemSuccess}
+          onSuccess={() => {
+            // Optimistically update parent status if follow-up was created
+            if (followUpSourceItem) {
+              const parentId = followUpSourceItem.parent_item_id || followUpSourceItem.id;
+              markAsLocallyUpdated(parentId);
+              locallyUpdatedItemsRef.current.add(parentId);
+              setTimeout(() => locallyUpdatedItemsRef.current.delete(parentId), 5000);
+              setCalendarItems((prev) =>
+                prev.map((i) => (i.id === parentId ? { ...i, status: 'unfinished' } : i)),
+              );
+            }
+            // Refresh follow-ups drawer data
+            setFollowUpsRefreshKey((k) => k + 1);
+            handleItemSuccess();
+            setFollowUpSourceItem(null);
+          }}
           editingItem={editingItem}
           initialDate={newItemData.date}
           initialTime={newItemData.time}
@@ -1192,6 +1333,17 @@ const Dashboard = () => {
           initialCustomerEmail={mapOrderPrefill.customerEmail}
           initialCustomerAddressId={mapOrderPrefill.customerAddressId}
           initialProjectId={initialProjectId}
+          followUpSourceItem={followUpSourceItem}
+        />
+      )}
+
+      {instanceId && (
+        <UnscheduledFollowUpsDrawer
+          open={followUpsDrawerOpen}
+          onClose={() => setFollowUpsDrawerOpen(false)}
+          instanceId={instanceId}
+          onItemClick={handleFollowUpItemClick}
+          refreshKey={followUpsRefreshKey}
         />
       )}
 
@@ -1202,7 +1354,6 @@ const Dashboard = () => {
         onClose={() => {
           setDashboardDetailsOpen(false);
           setDashboardSelectedItem(null);
-          fetchItems();
         }}
         columns={calendarColumns}
         onDelete={handleDeleteItem}
@@ -1210,6 +1361,7 @@ const Dashboard = () => {
         onStatusChange={handleStatusChange}
         onStartWork={(itemId) => handleStatusChange(itemId, 'in_progress')}
         onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
+        onFollowUpRequest={handleFollowUpRequest}
         onAddProtocol={
           protocolsEnabled
             ? async (item) => {

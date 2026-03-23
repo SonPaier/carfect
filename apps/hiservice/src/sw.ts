@@ -28,11 +28,13 @@ registerRoute(
   }),
 );
 
-// Supabase API — StaleWhileRevalidate for offline support (24h, 500 entries)
+// Supabase API — NetworkFirst so mutations (DELETE/UPDATE) are immediately reflected.
+// Cache serves as offline fallback only (3s timeout before falling back to cache).
 registerRoute(
   ({ url }) => url.origin.includes('supabase'),
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: 'supabase-api-cache',
+    networkTimeoutSeconds: 3,
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 500, maxAgeSeconds: 24 * 60 * 60 }),

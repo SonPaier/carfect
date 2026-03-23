@@ -6,7 +6,7 @@ import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { getContrastTextColor } from '@shared/utils';
+import { getContrastTextColor, formatDurationMonths } from '@shared/utils';
 
 interface Template {
   id: string;
@@ -35,15 +35,11 @@ interface EmbedLeadFormPreviewProps {
   branding?: BrandingColors;
 }
 
-// Helper to format duration in Polish
-const formatDuration = (months: number): string => {
-  const years = months / 12;
-  if (years === 1) return '1 rok';
-  if (years < 5) return `${years} lata`;
-  return `${years} lat`;
-};
-
-export default function EmbedLeadFormPreview({ templates, extras, branding }: EmbedLeadFormPreviewProps) {
+export default function EmbedLeadFormPreview({
+  templates,
+  extras,
+  branding,
+}: EmbedLeadFormPreviewProps) {
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [selectedTemplates, setSelectedTemplates] = useState<Set<string>>(new Set());
   const [selectedExtras, setSelectedExtras] = useState<Set<string>>(new Set());
@@ -61,7 +57,7 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
   const selectedBorderColor = primaryColor;
 
   const toggleDescription = (id: string) => {
-    setExpandedDescriptions(prev => {
+    setExpandedDescriptions((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -73,12 +69,12 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
   };
 
   const toggleTemplate = (id: string) => {
-    setSelectedTemplates(prev => {
+    setSelectedTemplates((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
         // Clear duration selection when deselected
-        setDurationSelections(d => {
+        setDurationSelections((d) => {
           const newD = { ...d };
           delete newD[id];
           return newD;
@@ -91,7 +87,7 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
   };
 
   const toggleExtra = (id: string) => {
-    setSelectedExtras(prev => {
+    setSelectedExtras((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -103,7 +99,7 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
   };
 
   const setDurationSelection = (templateId: string, duration: number | null) => {
-    setDurationSelections(prev => ({
+    setDurationSelections((prev) => ({
       ...prev,
       [templateId]: duration,
     }));
@@ -113,9 +109,12 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
     <div className="p-4 min-h-full" style={{ backgroundColor: bgColor }}>
       <div className="max-w-md mx-auto space-y-4">
         {/* Customer Section */}
-        <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+        <div
+          className="rounded-lg p-3 shadow-sm space-y-3"
+          style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+        >
           <h2 className="font-medium text-sm">Dane kontaktowe</h2>
-          
+
           <div className="space-y-1">
             <Label className="text-xs">Imię i nazwisko *</Label>
             <Input placeholder="Jan Kowalski" className="h-8 text-sm" disabled />
@@ -133,9 +132,12 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
         </div>
 
         {/* Vehicle Section */}
-        <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+        <div
+          className="rounded-lg p-3 shadow-sm space-y-3"
+          style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+        >
           <h2 className="font-medium text-sm">Pojazd</h2>
-          
+
           <div className="space-y-1">
             <Label className="text-xs">Model auta *</Label>
             <Input placeholder="BMW X5" className="h-8 text-sm" disabled />
@@ -165,18 +167,22 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
         </div>
 
         {/* Templates Section */}
-        <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+        <div
+          className="rounded-lg p-3 shadow-sm space-y-3"
+          style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+        >
           <div>
             <h2 className="font-medium text-sm">Wybierz pakiet</h2>
             <p className="text-xs opacity-70">Możesz wybrać kilka</p>
           </div>
-          
+
           <div className="space-y-2">
             {templates.map((template) => {
               const isSelected = selectedTemplates.has(template.id);
               const isExpanded = expandedDescriptions.has(template.id);
-              const hasDurations = template.available_durations && template.available_durations.length > 0;
-              
+              const hasDurations =
+                template.available_durations && template.available_durations.length > 0;
+
               return (
                 <div key={template.id} className="space-y-2">
                   <button
@@ -190,20 +196,25 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                     }}
                   >
                     <div className="flex items-start gap-2">
-                      <div 
+                      <div
                         className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
                         style={{
                           borderColor: isSelected ? primaryColor : '#9ca3af',
                           backgroundColor: isSelected ? primaryColor : 'transparent',
                         }}
                       >
-                        {isSelected && <Check className="w-3 h-3" style={{ color: primaryTextColor }} />}
+                        {isSelected && (
+                          <Check className="w-3 h-3" style={{ color: primaryTextColor }} />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-medium text-sm">{template.name}</p>
                           {template.price_from && (
-                            <span className="text-xs font-medium whitespace-nowrap" style={{ color: primaryColor }}>
+                            <span
+                              className="text-xs font-medium whitespace-nowrap"
+                              style={{ color: primaryColor }}
+                            >
                               od {template.price_from} zł
                             </span>
                           )}
@@ -211,10 +222,13 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                       </div>
                     </div>
                   </button>
-                  
+
                   {/* Duration selection - only show if template is selected and has durations */}
                   {isSelected && hasDurations && (
-                    <div className="ml-6 p-2 rounded-lg space-y-1.5" style={{ backgroundColor: `${primaryColor}10` }}>
+                    <div
+                      className="ml-6 p-2 rounded-lg space-y-1.5"
+                      style={{ backgroundColor: `${primaryColor}10` }}
+                    >
                       <p className="text-xs font-medium">Pakiet powłoki:</p>
                       <div className="grid gap-1">
                         {template.available_durations!.map((months) => {
@@ -224,7 +238,9 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                               key={months}
                               className="flex items-center gap-2 p-1.5 rounded cursor-pointer transition-colors"
                               style={{
-                                backgroundColor: isDurationSelected ? selectedBgColor : 'transparent',
+                                backgroundColor: isDurationSelected
+                                  ? selectedBgColor
+                                  : 'transparent',
                               }}
                             >
                               <div
@@ -234,10 +250,13 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                                 }}
                               >
                                 {isDurationSelected && (
-                                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />
+                                  <div
+                                    className="w-1.5 h-1.5 rounded-full"
+                                    style={{ backgroundColor: primaryColor }}
+                                  />
                                 )}
                               </div>
-                              <span className="text-xs">{formatDuration(months)}</span>
+                              <span className="text-xs">{formatDurationMonths(months)}</span>
                               <input
                                 type="radio"
                                 name={`duration-${template.id}`}
@@ -251,12 +270,16 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                         })}
                         {/* "Nie wiem" option */}
                         {(() => {
-                          const isNieWiemSelected = durationSelections[template.id] === null && template.id in durationSelections;
+                          const isNieWiemSelected =
+                            durationSelections[template.id] === null &&
+                            template.id in durationSelections;
                           return (
                             <label
                               className="flex items-center gap-2 p-1.5 rounded cursor-pointer transition-colors"
                               style={{
-                                backgroundColor: isNieWiemSelected ? selectedBgColor : 'transparent',
+                                backgroundColor: isNieWiemSelected
+                                  ? selectedBgColor
+                                  : 'transparent',
                               }}
                             >
                               <div
@@ -266,7 +289,10 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                                 }}
                               >
                                 {isNieWiemSelected && (
-                                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />
+                                  <div
+                                    className="w-1.5 h-1.5 rounded-full"
+                                    style={{ backgroundColor: primaryColor }}
+                                  />
                                 )}
                               </div>
                               <span className="text-xs">Nie wiem, proszę o propozycję</span>
@@ -284,7 +310,7 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                       </div>
                     </div>
                   )}
-                  
+
                   {template.description && (
                     <div className="mt-1 ml-6">
                       <button
@@ -324,12 +350,15 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
 
         {/* Extras Section */}
         {extras.length > 0 && (
-          <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+          <div
+            className="rounded-lg p-3 shadow-sm space-y-3"
+            style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+          >
             <div>
               <h2 className="font-medium text-sm">Dodatki</h2>
               <p className="text-xs opacity-70">Opcjonalne usługi</p>
             </div>
-            
+
             <div className="space-y-2">
               {extras.map((extra) => {
                 const isSelected = selectedExtras.has(extra.id);
@@ -345,14 +374,16 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
                       color: sectionTextColor,
                     }}
                   >
-                    <div 
+                    <div
                       className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0"
                       style={{
                         borderColor: isSelected ? primaryColor : '#9ca3af',
                         backgroundColor: isSelected ? primaryColor : 'transparent',
                       }}
                     >
-                      {isSelected && <Check className="w-3 h-3" style={{ color: primaryTextColor }} />}
+                      {isSelected && (
+                        <Check className="w-3 h-3" style={{ color: primaryTextColor }} />
+                      )}
                     </div>
                     <span className="text-sm">{extra.name}</span>
                   </button>
@@ -363,12 +394,15 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
         )}
 
         {/* Planned Date Section */}
-        <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+        <div
+          className="rounded-lg p-3 shadow-sm space-y-3"
+          style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+        >
           <div>
             <h2 className="font-medium text-sm">Planowany termin realizacji</h2>
             <p className="text-xs opacity-70">Kiedy chciałbyś zrealizować usługę?</p>
           </div>
-          
+
           <Button variant="outline" className="w-full h-8 justify-start text-sm" disabled>
             <Calendar className="w-4 h-4 mr-2" />
             Wybierz datę
@@ -376,9 +410,12 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
         </div>
 
         {/* Budget & Notes Section */}
-        <div className="rounded-lg p-3 shadow-sm space-y-3" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+        <div
+          className="rounded-lg p-3 shadow-sm space-y-3"
+          style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+        >
           <h2 className="font-medium text-sm">Dodatkowe informacje</h2>
-          
+
           <div className="space-y-1">
             <Label className="text-xs">Budżet (zł)</Label>
             <Input type="number" placeholder="np. 5000" className="h-8 text-sm" disabled />
@@ -386,31 +423,35 @@ export default function EmbedLeadFormPreview({ templates, extras, branding }: Em
 
           <div className="space-y-1">
             <Label className="text-xs">Uwagi</Label>
-            <Textarea 
-              placeholder="Dodatkowe informacje..." 
-              className="text-sm resize-none" 
+            <Textarea
+              placeholder="Dodatkowe informacje..."
+              className="text-sm resize-none"
               rows={2}
-              disabled 
+              disabled
             />
           </div>
         </div>
 
         {/* GDPR Section */}
-        <div className="rounded-lg p-3 shadow-sm" style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}>
+        <div
+          className="rounded-lg p-3 shadow-sm"
+          style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
+        >
           <div className="flex items-start gap-2">
             <Checkbox disabled className="mt-0.5" />
             <p className="text-xs opacity-70">
-              <span className="text-red-500 font-medium">*</span> Wyrażam zgodę na przetwarzanie moich danych osobowych...
+              <span className="text-red-500 font-medium">*</span> Wyrażam zgodę na przetwarzanie
+              moich danych osobowych...
             </p>
           </div>
         </div>
 
         {/* Submit Button */}
-        <Button 
-          className="w-full h-10" 
+        <Button
+          className="w-full h-10"
           disabled
-          style={{ 
-            backgroundColor: primaryColor, 
+          style={{
+            backgroundColor: primaryColor,
             color: primaryTextColor,
           }}
         >

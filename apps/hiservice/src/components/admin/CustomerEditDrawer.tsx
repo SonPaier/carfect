@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Phone, MessageSquare, X, ChevronDown, CalendarPlus } from 'lucide-react';
+import { Phone, MessageSquare, X, ChevronDown } from 'lucide-react';
 import type { SelectedCustomer } from './CustomerSearchInput';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { LightTabsList, LightTabsTrigger } from '@/components/ui/light-tabs';
@@ -325,7 +325,11 @@ const CustomerEditDrawer = ({
 
     const deletedIds = addresses.filter((a) => a._deleted && a.id).map((a) => a.id!);
     if (deletedIds.length > 0) {
-      await supabase.from('customer_addresses').delete().in('id', deletedIds);
+      await supabase
+        .from('customer_addresses')
+        .delete()
+        .in('id', deletedIds)
+        .eq('instance_id', instanceId);
     }
 
     const activeAddresses = addresses.filter((a) => !a._deleted);
@@ -564,14 +568,6 @@ const CustomerEditDrawer = ({
                   </div>
                   {!isAddMode && !isEditing && (
                     <div className="flex items-center gap-1 ml-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setNewOrderOpen(true)}
-                        className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-primary/5"
-                      >
-                        <CalendarPlus className="w-4 h-4" />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
