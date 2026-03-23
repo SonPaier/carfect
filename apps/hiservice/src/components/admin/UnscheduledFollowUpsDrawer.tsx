@@ -4,6 +4,7 @@ import { X, MapPin, FileText, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EmptyState } from '@shared/ui';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FollowUpItem {
@@ -89,14 +90,11 @@ const UnscheduledFollowUpsDrawer = ({
         <div className="flex flex-col h-full">
           <div className="px-6 py-4 border-b border-border shrink-0 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Do wykonania</h2>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={onAddClick}
-                className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={onAddClick}>
+                <Plus className="w-4 h-4 mr-1" />
+                Dodaj
+              </Button>
               <button
                 type="button"
                 onClick={onClose}

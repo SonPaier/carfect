@@ -368,8 +368,12 @@ const AddCalendarItemDialog = ({
       setCustomerId(initialCustomerId || null);
       setCustomerAddressId(initialCustomerAddressId || null);
       setColumnId(initialColumnId || columns[0]?.id || '');
-      const initDate = initialDate ? parseISO(initialDate) : new Date();
-      setDateRange({ from: initDate, to: initDate });
+      if (initialDate) {
+        const initDate = parseISO(initialDate);
+        setDateRange({ from: initDate, to: initDate });
+      } else {
+        setDateRange(undefined);
+      }
       const initStart = initialTime || '08:00';
       setStartTime(initStart);
       // Default to "Pół dnia" (4.5h)
