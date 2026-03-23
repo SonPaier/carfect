@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { streamText } from 'npm:ai';
+import { streamText, tool } from 'npm:ai';
 import { createOpenAI } from 'npm:@ai-sdk/openai';
-import { z } from 'npm:zod';
+import { z } from 'npm:zod@3.24.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -170,7 +170,7 @@ Zasady:
           : m.content || '',
       })),
       tools: {
-        run_sql: {
+        run_sql: tool({
           description:
             'Execute a read-only SQL query against the database. Use this to fetch any data needed to answer the user question. Always include WHERE instance_id clause.',
           parameters: z.object({
@@ -212,7 +212,7 @@ Zasady:
 
             return { rows: data, rowCount: Array.isArray(data) ? data.length : 0 };
           },
-        },
+        }),
       },
       maxSteps: 5,
     });
