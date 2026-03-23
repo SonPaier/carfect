@@ -133,6 +133,9 @@ const AddSalesOrderDrawer = ({
 
   // Set initial data when opening
   useEffect(() => {
+    if (open) {
+      resetDirty();
+    }
     if (open && editOrder) {
       customerSearch.setSelectedCustomer({
         id: editOrder.customerId,
