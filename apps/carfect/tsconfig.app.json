@@ -9,13 +9,16 @@
       "@shared/ui/*": ["../../libs/ui/src/*"],
       "@shared/utils": ["../../libs/shared-utils/src/index.ts"],
       "@shared/invoicing": ["../../libs/shared-invoicing/src/index.ts"],
-      "@shared/invoicing/*": ["../../libs/shared-invoicing/src/*"]
+      "@shared/invoicing/*": ["../../libs/shared-invoicing/src/*"],
+      "@shared/ai": ["../../libs/ai/src/index.ts"],
+      "@shared/ai/*": ["../../libs/ai/src/*"]
     }
   },
   "include": [
     "src",
     "../../libs/ui/src",
     "../../libs/shared-utils/src",
-    "../../libs/shared-invoicing/src"
+    "../../libs/shared-invoicing/src",
+    "../../libs/ai/src"
   ]
 }
