@@ -3274,8 +3274,13 @@ const AdminDashboard = () => {
           {/* Content */}
           <div
             className={cn(
-              'flex-1 space-y-6 overflow-auto pb-28 lg:pb-8',
-              currentView === 'calendar' ? 'p-0 lg:p-4 lg:pt-0' : 'p-4',
+              'flex-1 overflow-auto',
+              currentView === 'ai_analyst'
+                ? 'flex flex-col p-0'
+                : cn(
+                    'space-y-6 pb-28 lg:pb-8',
+                    currentView === 'calendar' ? 'p-0 lg:p-4 lg:pt-0' : 'p-4',
+                  ),
             )}
           >
             {/* Header - only shown for settings view */}
@@ -3478,9 +3483,7 @@ const AdminDashboard = () => {
               />
             )}
 
-            {currentView === 'ai_analyst' && instanceId && (
-              <AiAnalystTab instanceId={instanceId} />
-            )}
+            {currentView === 'ai_analyst' && instanceId && <AiAnalystTab instanceId={instanceId} />}
 
             {currentView === 'employees' && instanceId && <EmployeesView instanceId={instanceId} />}
           </div>

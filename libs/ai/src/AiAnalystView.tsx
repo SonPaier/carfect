@@ -61,9 +61,9 @@ export function AiAnalystView({
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-3xl mx-auto w-full">
+    <div className="flex flex-col h-full">
       {/* Scrollable messages area */}
-      <div className="flex-1 overflow-y-auto px-1">
+      <div className="flex-1 overflow-y-auto px-4 min-h-0">
         {/* Empty state with centered suggestions */}
         {!hasMessages && (
           <div className="flex flex-col items-center justify-center h-full gap-6">
@@ -91,7 +91,7 @@ export function AiAnalystView({
 
         {/* Messages */}
         {hasMessages && (
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-w-3xl mx-auto w-full">
             {messages.map((message) => (
               <div key={message.id} className="space-y-2">
                 {message.role === 'user' ? (
@@ -153,63 +153,65 @@ export function AiAnalystView({
       </div>
 
       {/* Fixed bottom input + suggestions */}
-      <div className="shrink-0 border-t bg-background pt-3 pb-4 space-y-2">
-        {/* Suggestions after messages */}
-        {hasMessages && !isLoading && (
-          <div className="flex flex-wrap gap-1.5 px-1">
-            {suggestions.map((s) => (
-              <button
-                key={s.label}
-                type="button"
-                onClick={() => handleSubmit(s.prompt)}
-                disabled={isLoading}
-                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="shrink-0 border-t bg-background pt-3 pb-4 space-y-2 px-4">
+        <div className="max-w-3xl mx-auto w-full space-y-2">
+          {/* Suggestions after messages */}
+          {hasMessages && !isLoading && (
+            <div className="flex flex-wrap gap-1.5 px-1">
+              {suggestions.map((s) => (
+                <button
+                  key={s.label}
+                  type="button"
+                  onClick={() => handleSubmit(s.prompt)}
+                  disabled={isLoading}
+                  className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* Input */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-          className="flex items-end gap-2"
-        >
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Zapytaj o swój biznes..."
-            disabled={isLoading}
-            rows={1}
-            className="flex-1 resize-none rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-            style={{ maxHeight: 200 }}
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className="inline-flex items-center justify-center rounded-md bg-primary h-9 w-9 shrink-0 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          {/* Input */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+            className="flex items-end gap-2"
           >
-            {isLoading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-            ) : (
-              <svg
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-              </svg>
-            )}
-          </button>
-        </form>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Zapytaj o swój biznes..."
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 resize-none rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+              style={{ maxHeight: 200 }}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              className="inline-flex items-center justify-center rounded-md bg-primary h-9 w-9 shrink-0 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
