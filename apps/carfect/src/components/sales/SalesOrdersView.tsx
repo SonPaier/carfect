@@ -252,6 +252,18 @@ const SalesOrdersView = () => {
     });
   };
 
+  const changePaymentStatus = async (id: string, newStatus: 'unpaid' | 'paid') => {
+    const { error } = await (supabase
+      .from('sales_orders')
+      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', id) as any);
+    if (error) {
+      toast.error('Błąd zmiany statusu płatności');
+      return;
+    }
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paymentStatus: newStatus } : o)));
+  };
+
   const changeStatus = async (id: string, newStatus: SalesOrder['status']) => {
     const updates: any = { status: newStatus, updated_at: new Date().toISOString() };
     if (newStatus === 'wysłany') {
@@ -665,19 +677,28 @@ const SalesOrdersView = () => {
                       <TableCell className="text-right text-sm tabular-nums">
                         {formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
-                      <TableCell>
-                        {order.invoiceStatus === 'paid' ? (
-                          <Badge className="bg-emerald-600 text-white text-xs">Opłacone</Badge>
-                        ) : order.invoiceId ? (
-                          <Badge
-                            variant="outline"
-                            className="border-blue-500 text-blue-600 text-xs"
-                          >
-                            Wystawiona FV
-                          </Badge>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        )}
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            changePaymentStatus(
+                              order.id,
+                              order.paymentStatus === 'paid' ? 'unpaid' : 'paid',
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {order.paymentStatus === 'paid' ? (
+                            <Badge className="bg-emerald-600 text-white text-xs">Opłacone</Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500 text-amber-600 text-xs"
+                            >
+                              Do opłacenia
+                            </Badge>
+                          )}
+                        </button>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
