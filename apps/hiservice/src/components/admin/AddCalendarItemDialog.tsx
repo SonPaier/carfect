@@ -715,6 +715,7 @@ const AddCalendarItemDialog = ({
       }
     }
 
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
     const hasDate = !!dateRange?.from;
     // Require column when columns exist, unless it's a project item without date
     const isProjectWithoutDate = !!projectId && !hasDate;
@@ -790,6 +791,7 @@ const AddCalendarItemDialog = ({
           .from('calendar_items')
           .insert({
             ...data,
+            created_by: currentUser?.id || null,
             status: dateRange?.from ? 'confirmed' : 'follow_up',
             ...(followUpSourceItem && {
               parent_item_id: followUpSourceItem.parent_item_id || followUpSourceItem.id,
