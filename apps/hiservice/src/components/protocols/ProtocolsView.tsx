@@ -40,6 +40,13 @@ const protocolTypeLabels: Record<string, string> = {
   completion: 'Zakończenie prac',
 };
 
+const protocolStatusConfig: Record<string, { label: string; className: string }> = {
+  draft:    { label: 'Do zaakceptowania', className: 'bg-yellow-100 text-yellow-700' },
+  accepted: { label: 'Zaakceptowany',     className: 'bg-green-100 text-green-700' },
+  sent:     { label: 'Wysłany',           className: 'bg-blue-100 text-blue-700' },
+  viewed:   { label: 'Obejrzany',         className: 'bg-amber-100 text-amber-700' },
+};
+
 const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +140,15 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
     setFormOpen(true);
   };
 
+  const handleStatusChange = async (protocolId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('protocols')
+      .update({ status: newStatus })
+      .eq('id', protocolId);
+    if (error) { toast.error('Błąd zmiany statusu'); return; }
+    setProtocols((prev) => prev.map((p) => p.id === protocolId ? { ...p, status: newStatus } : p));
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -179,19 +195,20 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
               <TableHead className="cursor-pointer select-none" onClick={() => handleSort('prepared_by')}>
                 <span className="flex items-center">Sporządził<SortIcon column="prepared_by" /></span>
               </TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   Ładowanie...
                 </TableCell>
               </TableRow>
             ) : protocols.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak protokołów'}
                 </TableCell>
               </TableRow>
@@ -207,6 +224,27 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                   </TableCell>
                   <TableCell className="text-sm">
                     {p.prepared_by || '—'}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className={`px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${(protocolStatusConfig[p.status] || protocolStatusConfig.draft).className}`}
+                        >
+                          {(protocolStatusConfig[p.status] || protocolStatusConfig.draft).label}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {Object.entries(protocolStatusConfig)
+                          .filter(([key]) => key !== p.status && key !== 'viewed')
+                          .map(([key, cfg]) => (
+                            <DropdownMenuItem key={key} onClick={() => handleStatusChange(p.id, key)}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
+                            </DropdownMenuItem>
+                          ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -290,6 +328,11 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     <span>{p.prepared_by}</span>
                   </>
                 )}
+              </div>
+              <div className="mt-2">
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${(protocolStatusConfig[p.status] || protocolStatusConfig.draft).className}`}>
+                  {(protocolStatusConfig[p.status] || protocolStatusConfig.draft).label}
+                </span>
               </div>
             </div>
           ))
