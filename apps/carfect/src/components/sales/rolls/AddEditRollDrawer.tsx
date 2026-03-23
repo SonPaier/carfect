@@ -5,6 +5,7 @@ import { Input, Button, Label, Textarea } from '@shared/ui';
 import { toast } from 'sonner';
 import type { SalesRoll } from '../types/rolls';
 import { createRoll, updateRoll, uploadRollPhoto } from '../services/rollService';
+import { supabase } from '@/integrations/supabase/client';
 import { useUnsavedChanges, UnsavedChangesDialog } from '../hooks/useUnsavedChanges';
 
 interface AddEditRollDrawerProps {
@@ -117,6 +118,9 @@ const AddEditRollDrawer = ({
         });
         toast.success('Rolka zaktualizowana');
       } else {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         await createRoll({
           instanceId,
           brand: brand.trim(),
@@ -128,6 +132,7 @@ const AddEditRollDrawer = ({
           lengthM: Number(lengthM),
           deliveryDate: deliveryDate || undefined,
           photoUrl: finalPhotoUrl || undefined,
+          createdBy: user?.id ?? null,
         });
         toast.success('Rolka dodana');
       }

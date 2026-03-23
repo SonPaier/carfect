@@ -181,9 +181,12 @@ const AddSalesProductDrawer = ({
         if (error) throw error;
         productId = product.id;
       } else {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         const { data: insertedProduct, error } = await (supabase
           .from('sales_products')
-          .insert({ instance_id: instanceId, ...payload })
+          .insert({ instance_id: instanceId, ...payload, created_by: user?.id ?? null })
           .select('id')
           .single() as any);
         if (error) throw error;

@@ -30,7 +30,11 @@ const createChainMock = (resolveData: unknown = null, resolveError: unknown = nu
     chain[method] = vi.fn(() => chain);
   });
   chain.then = vi.fn((resolve: (v: unknown) => void) =>
-    Promise.resolve({ data: resolveData, error: resolveError, count: resolveData ? (resolveData as unknown[]).length : 0 }).then(resolve),
+    Promise.resolve({
+      data: resolveData,
+      error: resolveError,
+      count: resolveData ? (resolveData as unknown[]).length : 0,
+    }).then(resolve),
   );
   return chain;
 };
@@ -85,6 +89,7 @@ const mockOrders = [
     tracking_number: null,
     apaczka_tracking_url: null,
     comment: null,
+    payment_status: 'unpaid',
     sales_order_items: [
       {
         id: 'item-1',
@@ -113,6 +118,7 @@ const mockOrders = [
     tracking_number: 'TRK123456',
     apaczka_tracking_url: 'https://tracking.example.com/TRK123456',
     comment: 'Pilne zamówienie',
+    payment_status: 'unpaid',
     sales_order_items: [],
   },
 ];
@@ -167,12 +173,50 @@ describe('SalesOrdersView', () => {
     expect(screen.getByText('Auto Detailing XYZ')).toBeInTheDocument();
   });
 
-  it('shows payment status badges with correct text', async () => {
+  it('shows "Do opłacenia" badge when payment_status is unpaid', async () => {
+    render(<SalesOrdersView />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Do opłacenia').length).toBeGreaterThan(0);
+    });
+
+    // Verify badge has the amber border CSS class representing unpaid state
+    const badge = screen.getAllByText('Do opłacenia')[0];
+    expect(badge.className).toContain('border-amber-500');
+  });
+
+  it('shows "Opłacone" badge when payment_status is paid', async () => {
+    const paidOrder = { ...mockOrders[0], id: 'order-paid-1', payment_status: 'paid' };
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'sales_orders') {
+        return createChainMock([paidOrder]);
+      }
+      return createChainMock([]);
+    });
+
+    render(<SalesOrdersView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Opłacone')).toBeInTheDocument();
+    });
+
+    // Verify badge has the emerald background CSS class representing paid state
+    const badge = screen.getByText('Opłacone');
+    expect(badge.className).toContain('bg-emerald-600');
+  });
+
+  it('shows "Opłacone" badge when invoice status is paid (auto-sync)', async () => {
+    // Auto-sync mechanism: SalesOrdersView fetches both sales_orders and invoices.
+    // When an invoice linked to an order has status 'paid', the component overrides
+    // the order's paymentStatus to 'paid', showing "Opłacone" regardless of
+    // the sales_order.payment_status field value.
     mockFrom.mockImplementation((table: string) => {
       if (table === 'sales_orders') {
         return createChainMock(mockOrdersWithInvoice);
       }
       if (table === 'invoices') {
+        // mockInvoice has status: 'paid' — this triggers the auto-sync override
         return createChainMock([
           {
             id: 'inv-1',
@@ -191,32 +235,9 @@ describe('SalesOrdersView', () => {
     await waitFor(() => {
       expect(screen.getByText('Opłacone')).toBeInTheDocument();
     });
-  });
 
-  it('shows "Wystawiona FV" badge when invoice exists but is not paid', async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'sales_orders') {
-        return createChainMock(mockOrdersWithInvoice);
-      }
-      if (table === 'invoices') {
-        return createChainMock([
-          {
-            id: 'inv-1',
-            sales_order_id: 'order-inv-1',
-            invoice_number: 'FV/001/03/2026',
-            status: 'issued',
-            pdf_url: null,
-          },
-        ]);
-      }
-      return createChainMock([]);
-    });
-
-    render(<SalesOrdersView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Wystawiona FV')).toBeInTheDocument();
-    });
+    // Verify that mockFrom was called with 'invoices' (confirming auto-sync fetch ran)
+    expect(mockFrom).toHaveBeenCalledWith('invoices');
   });
 
   it('search input exists and accepts text', async () => {
@@ -273,9 +294,7 @@ describe('SalesOrdersView', () => {
     await waitFor(() => {
       expect(screen.getByText('Brak zamówień')).toBeInTheDocument();
     });
-    expect(
-      screen.getByText('Utwórz pierwsze zamówienie dla klienta'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Utwórz pierwsze zamówienie dla klienta')).toBeInTheDocument();
   });
 
   it('"Dodaj zamówienie" button renders', async () => {
@@ -390,9 +409,9 @@ describe('SalesOrdersView', () => {
         expect(menuItems.length).toBeGreaterThan(0);
       });
 
-      const nowyMenuItem = screen.getAllByRole('menuitem').find(
-        (el) => el.textContent?.includes('Nowy'),
-      );
+      const nowyMenuItem = screen
+        .getAllByRole('menuitem')
+        .find((el) => el.textContent?.includes('Nowy'));
       if (nowyMenuItem) {
         await user.click(nowyMenuItem);
 
@@ -406,6 +425,112 @@ describe('SalesOrdersView', () => {
         expect(updatePayload.apaczka_tracking_url).toBeNull();
         expect(updatePayload.shipped_at).toBeNull();
       }
+    });
+  });
+
+  describe('payment status', () => {
+    it('changePaymentStatus sends correct payload and updates badge', async () => {
+      let updatePayload: any = null;
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'sales_orders') {
+          const chain = createChainMock([mockOrders[0]]);
+          chain.update = vi.fn((payload: any) => {
+            updatePayload = payload;
+            return chain;
+          });
+          return chain;
+        }
+        return createChainMock([]);
+      });
+
+      const user = userEvent.setup();
+      render(<SalesOrdersView />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Do opłacenia')).toBeInTheDocument();
+      });
+
+      // Assert initial badge state is "Do opłacenia" before any interaction
+      expect(screen.getAllByText('Do opłacenia')[0]).toBeInTheDocument();
+
+      // Click "Do opłacenia" badge to open dropdown
+      const doOplaceniaBadge = screen.getByText('Do opłacenia');
+      await user.click(doOplaceniaBadge);
+
+      // Find and click "Opłacone" menuitem
+      await waitFor(() => {
+        const menuItems = screen.getAllByRole('menuitem');
+        expect(menuItems.length).toBeGreaterThan(0);
+      });
+
+      const oplaconeMenuItem = screen
+        .getAllByRole('menuitem')
+        .find((el) => el.textContent?.includes('Opłacone'));
+      expect(oplaconeMenuItem).toBeDefined();
+      if (oplaconeMenuItem) {
+        await user.click(oplaconeMenuItem);
+
+        await waitFor(() => {
+          expect(updatePayload).not.toBeNull();
+        });
+
+        expect(updatePayload.payment_status).toBe('paid');
+
+        await waitFor(() => {
+          expect(screen.getByText('Opłacone')).toBeInTheDocument();
+        });
+      }
+    });
+
+    it('changing order status does not open order details drawer', async () => {
+      let updatePayload: any = null;
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'sales_orders') {
+          const chain = createChainMock([mockOrders[0]]);
+          chain.update = vi.fn((payload: any) => {
+            updatePayload = payload;
+            return chain;
+          });
+          return chain;
+        }
+        return createChainMock([]);
+      });
+
+      const user = userEvent.setup();
+      render(<SalesOrdersView />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Nowy')).toBeInTheDocument();
+      });
+
+      // Click "Do opłacenia" payment status badge to open its dropdown
+      const doOplaceniaBadge = screen.getByText('Do opłacenia');
+      await user.click(doOplaceniaBadge);
+
+      // Find "Opłacone" option in the dropdown
+      await waitFor(() => {
+        const menuItems = screen.getAllByRole('menuitem');
+        expect(menuItems.length).toBeGreaterThan(0);
+      });
+
+      const oplaconeMenuItem = screen
+        .getAllByRole('menuitem')
+        .find((el) => el.textContent?.includes('Opłacone'));
+      expect(oplaconeMenuItem).toBeDefined();
+      if (oplaconeMenuItem) {
+        await user.click(oplaconeMenuItem);
+
+        await waitFor(() => {
+          expect(updatePayload).not.toBeNull();
+        });
+
+        // Verify handler executed correctly — status set to 'paid'
+        expect(updatePayload.payment_status).toBe('paid');
+      }
+
+      // AddSalesOrderDrawer is mocked as null — clicking a badge's dropdown item
+      // must NOT trigger row-click handler (stopPropagation), so no dialog opens
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
 });

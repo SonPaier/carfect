@@ -140,6 +140,7 @@ export async function createRoll(data: {
   deliveryDate?: string;
   photoUrl?: string;
   extractionConfidence?: Record<string, number>;
+  createdBy?: string | null;
 }): Promise<string> {
   const { data: row, error } = await (supabase
     .from('sales_rolls')
@@ -156,6 +157,7 @@ export async function createRoll(data: {
       delivery_date: data.deliveryDate || null,
       photo_url: data.photoUrl || null,
       extraction_confidence: data.extractionConfidence || null,
+      created_by: data.createdBy ?? null,
     })
     .select('id')
     .single() as any);
@@ -180,6 +182,7 @@ export async function createRollsBatch(
     delivery_date: data.deliveryDate || null,
     photo_url: data.photoUrl || null,
     extraction_confidence: data.extractionConfidence || null,
+    created_by: data.createdBy ?? null,
   }));
 
   const { data: inserted, error } = await (supabase

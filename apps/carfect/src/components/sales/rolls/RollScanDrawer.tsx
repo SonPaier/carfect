@@ -83,6 +83,9 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
 
     setSaving(true);
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const rollsToCreate = savableResults.map((item) => ({
         instanceId,
         brand: item.extractedData.brand || 'ULTRAFIT',
@@ -94,6 +97,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
         lengthM: Number(item.extractedData.lengthM),
         photoUrl: item.photoUrl,
         extractionConfidence: item.confidence,
+        createdBy: user?.id ?? null,
       }));
 
       await createRollsBatch(rollsToCreate);

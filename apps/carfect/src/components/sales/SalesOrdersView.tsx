@@ -204,7 +204,8 @@ const SalesOrdersView = () => {
           priceNet: Number(item.price_net),
           priceGross: Number(item.price_net) * 1.23,
           unit: item.price_unit || 'szt.',
-          discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
+          discountPercent:
+            item.discount_percent != null ? Number(item.discount_percent) : undefined,
         })),
         packages: (o.packages || []).map((pkg: any) => ({
           shippingMethod: pkg.shippingMethod || 'shipping',
@@ -212,6 +213,8 @@ const SalesOrdersView = () => {
         })),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
+        paymentStatus:
+          inv?.status === 'paid' ? 'paid' : ((o.payment_status || 'unpaid') as 'unpaid' | 'paid'),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
         invoiceId: inv?.id || undefined,
@@ -249,6 +252,18 @@ const SalesOrdersView = () => {
     });
   };
 
+  const changePaymentStatus = async (id: string, newStatus: 'unpaid' | 'paid') => {
+    const { error } = await (supabase
+      .from('sales_orders')
+      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', id) as any);
+    if (error) {
+      toast.error('Błąd zmiany statusu płatności');
+      return;
+    }
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paymentStatus: newStatus } : o)));
+  };
+
   const changeStatus = async (id: string, newStatus: SalesOrder['status']) => {
     const updates: any = { status: newStatus, updated_at: new Date().toISOString() };
     if (newStatus === 'wysłany') {
@@ -276,6 +291,7 @@ const SalesOrdersView = () => {
               shippedAt: newStatus === 'wysłany' ? new Date().toISOString() : undefined,
               trackingNumber: newStatus === 'wysłany' ? o.trackingNumber : undefined,
               trackingUrl: newStatus === 'wysłany' ? o.trackingUrl : undefined,
+              paymentStatus: o.paymentStatus,
             }
           : o,
       ),
@@ -662,18 +678,47 @@ const SalesOrdersView = () => {
                         {formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
                       <TableCell>
-                        {order.invoiceStatus === 'paid' ? (
-                          <Badge className="bg-emerald-600 text-white text-xs">Opłacone</Badge>
-                        ) : order.invoiceId ? (
-                          <Badge
-                            variant="outline"
-                            className="border-blue-500 text-blue-600 text-xs"
-                          >
-                            Wystawiona FV
-                          </Badge>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="focus:outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {order.paymentStatus === 'paid' ? (
+                                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
+                                  Opłacone
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="border-amber-500 text-amber-600 cursor-pointer"
+                                >
+                                  Do opłacenia
+                                </Badge>
+                              )}
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-0">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changePaymentStatus(order.id, 'unpaid');
+                              }}
+                            >
+                              <Badge variant="outline" className="border-amber-500 text-amber-600">
+                                Do opłacenia
+                              </Badge>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changePaymentStatus(order.id, 'paid');
+                              }}
+                            >
+                              <Badge className="bg-emerald-600 text-white">Opłacone</Badge>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -703,15 +748,30 @@ const SalesOrdersView = () => {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-0">
-                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'nowy')}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeStatus(order.id, 'nowy');
+                              }}
+                            >
                               <Badge variant="outline" className="border-amber-500 text-amber-600">
                                 Nowy
                               </Badge>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'wysłany')}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeStatus(order.id, 'wysłany');
+                              }}
+                            >
                               <Badge className="bg-emerald-600 text-white">Wysłany</Badge>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => changeStatus(order.id, 'anulowany')}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeStatus(order.id, 'anulowany');
+                              }}
+                            >
                               <Badge variant="outline" className="border-red-500 text-red-600">
                                 Anulowany
                               </Badge>
@@ -982,8 +1042,9 @@ const SalesOrdersView = () => {
               discount: p.discountPercent ?? invoiceDrawerState.order!.customerDiscount ?? 0,
             })),
             ...(() => {
-              const shippingPkgs = (invoiceDrawerState.order!.packages || [])
-                .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null);
+              const shippingPkgs = (invoiceDrawerState.order!.packages || []).filter(
+                (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
+              );
               return shippingPkgs.map((pkg, i) => ({
                 name: shippingPkgs.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`,
                 quantity: 1,
