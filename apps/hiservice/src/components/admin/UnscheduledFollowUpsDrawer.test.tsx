@@ -23,6 +23,7 @@ function renderDrawer(props = {}) {
         onClose={vi.fn()}
         instanceId="test-instance-id"
         onItemClick={vi.fn()}
+        onAddClick={vi.fn()}
         {...props}
       />,
     ),
@@ -40,7 +41,7 @@ describe('UnscheduledFollowUpsDrawer', () => {
     renderDrawer();
 
     await waitFor(() => {
-      expect(screen.getByText('Brak zleceń do dokończenia')).toBeInTheDocument();
+      expect(screen.getByText('Brak zleceń do wykonania')).toBeInTheDocument();
     });
   });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { X, MapPin, FileText } from 'lucide-react';
+import { X, MapPin, FileText, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EmptyState } from '@shared/ui';
@@ -26,6 +26,7 @@ interface UnscheduledFollowUpsDrawerProps {
   onClose: () => void;
   instanceId: string;
   onItemClick: (itemId: string) => void;
+  onAddClick: () => void;
   refreshKey?: number;
 }
 
@@ -34,6 +35,7 @@ const UnscheduledFollowUpsDrawer = ({
   onClose,
   instanceId,
   onItemClick,
+  onAddClick,
   refreshKey = 0,
 }: UnscheduledFollowUpsDrawerProps) => {
   const isMobile = useIsMobile();
@@ -86,20 +88,29 @@ const UnscheduledFollowUpsDrawer = ({
       >
         <div className="flex flex-col h-full">
           <div className="px-6 py-4 border-b border-border shrink-0 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Do dokończenia</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <h2 className="text-lg font-semibold">Do wykonania</h2>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onAddClick}
+                className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
             {items.length === 0 && (
               <EmptyState
-                title="Brak zleceń do dokończenia"
+                title="Brak zleceń do wykonania"
                 description="Wszystkie ponowne wizyty zostały zaplanowane"
               />
             )}
