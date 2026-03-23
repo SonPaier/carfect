@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { streamText, convertToModelMessages } from 'npm:ai';
+import { streamText } from 'npm:ai';
 import { createOpenAI } from 'npm:@ai-sdk/openai';
 import { z } from 'npm:zod';
 
@@ -160,7 +160,15 @@ Zasady:
 - W odpowiedzi podawaj: wynik, zakres dat, główne wnioski.
 - Bądź zwięzły — 2-4 zdania, potem opcjonalnie tabela.
 - Możesz wywołać run_sql wielokrotnie jeśli potrzebujesz danych z różnych tabel.`,
-      messages: convertToModelMessages(messages),
+      messages: messages.map((m: any) => ({
+        role: m.role,
+        content: m.parts
+          ? m.parts
+              .filter((p: any) => p.type === 'text')
+              .map((p: any) => p.text)
+              .join('')
+          : m.content || '',
+      })),
       tools: {
         run_sql: {
           description:
