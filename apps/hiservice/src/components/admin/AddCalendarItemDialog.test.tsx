@@ -289,6 +289,38 @@ describe('AddCalendarItemDialog', () => {
     });
   });
 
+  describe('follow-up checklist inheritance', () => {
+    it('copies all checklist items including already-checked ones from parent to follow-up', async () => {
+      const followUpSourceItem = {
+        id: 'parent-item-1',
+        title: 'Serwis klimatyzacji',
+        customer_name: 'Jan Kowalski',
+        customer_phone: '500100200',
+        customer_email: null,
+        customer_id: null,
+        customer_address_id: null,
+        project_id: null,
+        parent_item_id: null,
+        checklist_items: [
+          { id: 'chk-1', text: 'Sprawdź ciśnienie', checked: false },
+          { id: 'chk-2', text: 'Wymień filtr', checked: true },
+          { id: 'chk-3', text: 'Test szczelności', checked: false },
+        ],
+      };
+
+      renderDialog({ followUpSourceItem });
+
+      await waitFor(() => {
+        expect(screen.getByText('Ponowna wizyta')).toBeInTheDocument();
+      });
+
+      // All 3 items (including the already-checked one) should appear in the checklist
+      expect(screen.getByText('Sprawdź ciśnienie')).toBeInTheDocument();
+      expect(screen.getByText('Wymień filtr')).toBeInTheDocument();
+      expect(screen.getByText('Test szczelności')).toBeInTheDocument();
+    });
+  });
+
   describe('null safety (bugfix)', () => {
     it('handles customer with null phone from project selection', () => {
       mockSupabaseQuery('customers', {

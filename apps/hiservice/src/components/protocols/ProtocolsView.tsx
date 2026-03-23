@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Trash2, Edit, Link2, Mail, Settings2, ArrowUp, ArrowDown, ArrowUpDown, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import CreateProtocolForm from './CreateProtocolForm';
 import SendProtocolEmailDialog from './SendProtocolEmailDialog';
 import ProtocolSettingsDialog from './ProtocolSettingsDialog';
+import ProtocolViewsDialog from './ProtocolViewsDialog';
 
 interface Protocol {
   id: string;
@@ -59,6 +60,7 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [viewsDialogProtocol, setViewsDialogProtocol] = useState<Protocol | null>(null);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -263,6 +265,11 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                         <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
                           <Mail className="w-4 h-4 mr-2" />Wyślij emailem
                         </DropdownMenuItem>
+                        {p.status === 'viewed' && (
+                          <DropdownMenuItem onClick={() => setViewsDialogProtocol(p)}>
+                            <Eye className="w-4 h-4 mr-2" />Historia oglądania
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
                           <Trash2 className="w-4 h-4 mr-2" />Usuń
                         </DropdownMenuItem>
@@ -314,6 +321,11 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
                     <DropdownMenuItem onClick={() => setEmailDialogProtocol(p)}>
                       <Mail className="w-4 h-4 mr-2" />Wyślij emailem
                     </DropdownMenuItem>
+                    {p.status === 'viewed' && (
+                      <DropdownMenuItem onClick={() => setViewsDialogProtocol(p)}>
+                        <Eye className="w-4 h-4 mr-2" />Historia oglądania
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleDeleteClick(p.id)} className="text-destructive">
                       <Trash2 className="w-4 h-4 mr-2" />Usuń
                     </DropdownMenuItem>
@@ -375,6 +387,14 @@ const ProtocolsView = ({ instanceId, filterByUserId }: ProtocolsViewProps) => {
         variant="destructive"
         onConfirm={handleDeleteConfirm}
       />
+
+      {viewsDialogProtocol && (
+        <ProtocolViewsDialog
+          protocolId={viewsDialogProtocol.id}
+          open={!!viewsDialogProtocol}
+          onOpenChange={(v) => { if (!v) setViewsDialogProtocol(null); }}
+        />
+      )}
     </div>
   );
 };

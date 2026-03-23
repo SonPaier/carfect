@@ -346,12 +346,10 @@ const AddCalendarItemDialog = ({
       setStartTime('');
       setEndTime('');
       setAdminNotes('');
-      // Copy unchecked checklist items from parent to follow-up
+      // Copy all checklist items from parent to follow-up with original checked state
       const parentChecklist = followUpSourceItem.checklist_items || [];
       setChecklistItems(
-        parentChecklist
-          .filter((item) => !item.checked)
-          .map((item) => ({ ...item, id: generateId(), checked: false })),
+        parentChecklist.map((item) => ({ ...item, id: generateId() })),
       );
       setPrice('');
       setPriority(DEFAULT_PRIORITY);

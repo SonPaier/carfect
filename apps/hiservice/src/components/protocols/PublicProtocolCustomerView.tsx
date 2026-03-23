@@ -4,6 +4,7 @@ import { pl } from 'date-fns/locale';
 import { Loader2, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProtocolHeader from './ProtocolHeader';
+import { useProtocolViewTracking } from '@/hooks/useProtocolViewTracking';
 import {
   getVisitsFromChain,
   roundUpTo30,
@@ -59,6 +60,8 @@ const PublicProtocolCustomerView = ({ token }: PublicProtocolCustomerViewProps) 
   const [error, setError] = useState<string | null>(null);
   const [visits, setVisits] = useState<VisitInfo[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useProtocolViewTracking(protocol?.id, protocol?.instance_id, token);
 
   useEffect(() => {
     const fetchData = async () => {
