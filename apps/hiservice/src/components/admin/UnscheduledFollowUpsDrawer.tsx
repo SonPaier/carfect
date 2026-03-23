@@ -31,6 +31,9 @@ interface FollowUpItem {
     street: string | null;
     name: string | null;
   } | null;
+  profiles: {
+    full_name: string | null;
+  } | null;
 }
 
 interface UnscheduledFollowUpsDrawerProps {
@@ -65,7 +68,7 @@ const UnscheduledFollowUpsDrawer = ({
     supabase
       .from('calendar_items')
       .select(
-        'id, title, customer_name, customer_phone, admin_notes, created_at, parent_item_id, customer_addresses(city, street, name)',
+        'id, title, customer_name, customer_phone, admin_notes, created_at, parent_item_id, customer_addresses(city, street, name), profiles:created_by(full_name)',
       )
       .eq('instance_id', instanceId)
       .eq('status', 'follow_up')
@@ -174,6 +177,11 @@ const UnscheduledFollowUpsDrawer = ({
                       {item.admin_notes && (
                         <div className="text-xs text-foreground mt-1 whitespace-pre-line line-clamp-3">
                           {item.admin_notes}
+                        </div>
+                      )}
+                      {item.profiles?.full_name && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Utworzył: {item.profiles.full_name}
                         </div>
                       )}
                     </div>
