@@ -328,7 +328,7 @@ const SalesOrdersView = () => {
     const { data: items } = await (supabase
       .from('sales_order_items')
       .select(
-        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent',
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_m2',
       )
       .eq('order_id', order.id)
       .order('sort_order') as any);
@@ -420,6 +420,7 @@ const SalesOrdersView = () => {
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
         discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
+        requiredM2: item.required_m2 ? Number(item.required_m2) : undefined,
         rollAssignments: usages.map((u) => ({
           rollId: u.rollId,
           usageM2: u.usedM2,
@@ -441,6 +442,17 @@ const SalesOrdersView = () => {
           return k; // fallback for legacy UUID keys
         }),
       }));
+    }
+
+    // Fallback: jeśli żadna paczka nie ma productKeys pasujących do editProducts,
+    // przypisz wszystkie produkty do pierwszej paczki
+    const allInstanceKeys = editProducts.map((p) => p.instanceKey);
+    const totalAssigned = editPackages.reduce(
+      (sum, pkg) => sum + (pkg.productKeys?.length ?? 0),
+      0,
+    );
+    if (totalAssigned === 0 && allInstanceKeys.length > 0) {
+      editPackages = [{ ...editPackages[0], productKeys: allInstanceKeys }];
     }
 
     setEditOrder({

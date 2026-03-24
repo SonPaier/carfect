@@ -451,6 +451,7 @@ const AddSalesOrderDrawer = ({
               vehicle: p.vehicle || null,
               sort_order: idx,
               discount_percent: p.discountPercent ?? customerDiscount ?? 0,
+              required_m2: p.requiredM2 ?? null,
             };
           });
           const { data: insertedItems } = await (supabase
@@ -533,6 +534,7 @@ const AddSalesOrderDrawer = ({
               vehicle: p.vehicle || null,
               sort_order: idx,
               discount_percent: p.discountPercent ?? customerDiscount ?? 0,
+              required_m2: p.requiredM2 ?? null,
             };
           });
           const { data: insertedItems } = await (supabase
