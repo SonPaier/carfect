@@ -165,7 +165,7 @@ const PackageCard = ({
   };
 
   return (
-    <div className="bg-muted/30 border border-border rounded-md p-3 space-y-3">
+    <div className="bg-background border border-border rounded-md p-3 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold">Paczka #{index + 1}</span>
