@@ -615,7 +615,7 @@ const AddSalesOrderDrawer = ({
       >
         <SheetContent
           side="right"
-          className="w-full flex flex-col h-full p-0 gap-0 bg-white text-foreground [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60 [&_label]:text-foreground sm:max-w-[80vw]"
+          className="w-full flex flex-col h-full p-0 gap-0 bg-white text-foreground [&_label]:text-foreground sm:max-w-[80vw]"
           hasDarkOverlay
           hideCloseButton
           onInteractOutside={(e) => {
