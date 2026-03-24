@@ -73,7 +73,7 @@ export const createDefaultPackage = (): OrderPackage => ({
   courierServiceId: undefined,
   weight: 1,
   contents: '',
-  declaredValue: 0,
+  declaredValueManual: false,
   oversized: false,
   productKeys: [],
 });
@@ -281,7 +281,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
             courierServiceId: pkg.courierServiceId,
             weight: pkg.weight ?? 1,
             contents: pkg.contents ?? '',
-            declaredValue: pkg.declaredValue ?? 0,
+            declaredValue: pkg.declaredValue,
             oversized: pkg.oversized ?? false,
           };
         }
@@ -347,12 +347,10 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   };
 
   const updatePackageDeclaredValue = useCallback(
-    (packageId: string, value: number | undefined, isManual?: boolean) => {
+    (packageId: string, value: number | undefined, isManual: boolean) => {
       setPackages((prev) =>
         prev.map((p) =>
-          p.id === packageId
-            ? { ...p, declaredValue: value, declaredValueManual: isManual ?? p.declaredValueManual }
-            : p,
+          p.id === packageId ? { ...p, declaredValue: value, declaredValueManual: isManual } : p,
         ),
       );
     },

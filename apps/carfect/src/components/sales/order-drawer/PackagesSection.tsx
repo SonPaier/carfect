@@ -24,7 +24,7 @@ interface PackagesSectionProps {
   onCourierChange: (packageId: string, courierServiceId: number, courierName: string) => void;
   onWeightChange: (packageId: string, weight: number) => void;
   onContentsChange: (packageId: string, contents: string) => void;
-  onDeclaredValueChange: (packageId: string, value: number | undefined, isManual?: boolean) => void;
+  onDeclaredValueChange: (packageId: string, value: number | undefined, isManual: boolean) => void;
   onOversizedChange: (packageId: string, oversized: boolean) => void;
   onShippingCostChange: (packageId: string, cost: number | undefined) => void;
   onAddProduct: (packageId: string) => void;

@@ -223,6 +223,14 @@ const AddSalesOrderDrawer = ({
     }
   }, [open, isEdit, instanceId]);
 
+  /* ── Totals ── */
+
+  /** Effective quantity: total m² from roll assignments, or plain quantity */
+  const getEffectiveQty = (p: OrderProduct) =>
+    p.rollAssignments?.length
+      ? p.rollAssignments.reduce((sum, ra) => sum + ra.usageM2, 0)
+      : p.quantity;
+
   // Auto-update declared value for packages where user hasn't manually set it
   const autoUpdateSignature = orderPackages.packages
     .map((p) => `${p.productKeys.join(',')}-${p.declaredValueManual ? '1' : '0'}`)
@@ -251,14 +259,6 @@ const AddSalesOrderDrawer = ({
   }, [products, customerDiscount, autoUpdateSignature]);
 
   const hasShipping = orderPackages.packages.some((p) => p.shippingMethod === 'shipping');
-
-  /* ── Totals ── */
-
-  /** Effective quantity: total m² from roll assignments, or plain quantity */
-  const getEffectiveQty = (p: OrderProduct) =>
-    p.rollAssignments?.length
-      ? p.rollAssignments.reduce((sum, ra) => sum + ra.usageM2, 0)
-      : p.quantity;
 
   const getProductTotal = (p: OrderProduct) => p.priceNet * getEffectiveQty(p);
 
