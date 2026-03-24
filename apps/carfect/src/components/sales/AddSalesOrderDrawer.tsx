@@ -225,6 +225,8 @@ const AddSalesOrderDrawer = ({
 
   /* ── Totals ── */
 
+  const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
+
   /** Effective quantity: total m² from roll assignments, or plain quantity */
   const getEffectiveQty = (p: OrderProduct) =>
     p.rollAssignments?.length
@@ -266,8 +268,6 @@ const AddSalesOrderDrawer = ({
     () => products.reduce((sum, p) => sum + getProductTotal(p), 0),
     [products],
   );
-
-  const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
 
   // Per-product discount: each product uses its own discountPercent (or customerDiscount fallback).
   // Products flagged excludeFromDiscount with no explicit per-product override get 0%.
