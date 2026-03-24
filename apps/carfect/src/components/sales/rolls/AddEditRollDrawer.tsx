@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
-import { Input, Button, Label, Textarea } from '@shared/ui';
+import { Input, Button, Label, Textarea, NumericInput } from '@shared/ui';
 import { toast } from 'sonner';
 import type { SalesRoll } from '../types/rolls';
 import { createRoll, updateRoll, uploadRollPhoto } from '../services/rollService';
@@ -30,8 +30,8 @@ const AddEditRollDrawer = ({
   const [description, setDescription] = useState('');
   const [productCode, setProductCode] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [widthMm, setWidthMm] = useState<number | ''>('');
-  const [lengthM, setLengthM] = useState<number | ''>('');
+  const [widthMm, setWidthMm] = useState<number | undefined>(undefined);
+  const [lengthM, setLengthM] = useState<number | undefined>(undefined);
   const [deliveryDate, setDeliveryDate] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -51,8 +51,8 @@ const AddEditRollDrawer = ({
       setDescription(roll.description || '');
       setProductCode(roll.productCode || '');
       setBarcode(roll.barcode || '');
-      setWidthMm(roll.widthMm);
-      setLengthM(roll.lengthM);
+      setWidthMm(roll.widthMm || undefined);
+      setLengthM(roll.lengthM || undefined);
       setDeliveryDate(roll.deliveryDate || '');
       setPhotoUrl(roll.photoUrl || '');
       setPhotoFile(null);
@@ -63,8 +63,8 @@ const AddEditRollDrawer = ({
       setDescription('');
       setProductCode('');
       setBarcode('');
-      setWidthMm('');
-      setLengthM('');
+      setWidthMm(undefined);
+      setLengthM(undefined);
       setDeliveryDate('');
       setPhotoUrl('');
       setPhotoFile(null);
@@ -263,11 +263,10 @@ const AddEditRollDrawer = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Szerokość (mm) *</Label>
-              <Input
-                type="number"
-                value={widthMm}
-                onChange={(e) => {
-                  setWidthMm(e.target.value ? Number(e.target.value) : '');
+              <NumericInput
+                value={widthMm || undefined}
+                onChange={(v) => {
+                  setWidthMm(v ?? 0);
                   markDirty();
                 }}
                 placeholder="np. 1524"
@@ -276,11 +275,10 @@ const AddEditRollDrawer = ({
             </div>
             <div className="space-y-1.5">
               <Label>Długość (m) *</Label>
-              <Input
-                type="number"
-                value={lengthM}
-                onChange={(e) => {
-                  setLengthM(e.target.value ? Number(e.target.value) : '');
+              <NumericInput
+                value={lengthM || undefined}
+                onChange={(v) => {
+                  setLengthM(v ?? 0);
                   markDirty();
                 }}
                 placeholder="np. 15"
