@@ -447,12 +447,26 @@ const SalesOrdersView = () => {
     // Fallback: jeśli żadna paczka nie ma productKeys pasujących do editProducts,
     // przypisz wszystkie produkty do pierwszej paczki
     const allInstanceKeys = editProducts.map((p) => p.instanceKey);
-    const totalAssigned = editPackages.reduce(
-      (sum, pkg) => sum + (pkg.productKeys?.length ?? 0),
-      0,
-    );
-    if (totalAssigned === 0 && allInstanceKeys.length > 0) {
-      editPackages = [{ ...editPackages[0], productKeys: allInstanceKeys }];
+    const allAssignedKeys = new Set(editPackages.flatMap((pkg) => pkg.productKeys ?? []));
+    const anyMatches = allInstanceKeys.some((key) => allAssignedKeys.has(key));
+    if (!anyMatches && allInstanceKeys.length > 0) {
+      const firstPkg = editPackages[0];
+      const fallbackPkg = firstPkg
+        ? { ...firstPkg, productKeys: allInstanceKeys }
+        : {
+            id: crypto.randomUUID(),
+            shippingMethod: 'shipping' as const,
+            packagingType: 'tuba' as const,
+            dimensions: { length: 0, diameter: 0 },
+            courier: undefined,
+            courierServiceId: undefined,
+            weight: 1,
+            contents: '',
+            declaredValueManual: false,
+            oversized: false,
+            productKeys: allInstanceKeys,
+          };
+      editPackages = [fallbackPkg];
     }
 
     setEditOrder({
