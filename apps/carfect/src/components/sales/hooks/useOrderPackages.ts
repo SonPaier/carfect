@@ -26,6 +26,7 @@ export interface OrderPackage {
   weight?: number;
   contents?: string;
   declaredValue?: number;
+  declaredValueManual?: boolean;
   oversized?: boolean;
   shippingCost?: number;
   productKeys: string[];
@@ -237,15 +238,11 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   };
 
   const updateRequiredM2 = (key: string, requiredM2: number) => {
-    setProducts((prev) =>
-      prev.map((p) => (getItemKey(p) === key ? { ...p, requiredM2 } : p)),
-    );
+    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, requiredM2 } : p)));
   };
 
   const updateProductDiscount = (key: string, discountPercent: number) => {
-    setProducts((prev) =>
-      prev.map((p) => (getItemKey(p) === key ? { ...p, discountPercent } : p)),
-    );
+    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, discountPercent } : p)));
   };
 
   const addPackage = () => {
@@ -328,8 +325,16 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
-  const updatePackageCourier = (packageId: string, courierServiceId: number, courierName: string) => {
-    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, courierServiceId, courier: courierName } : pkg)));
+  const updatePackageCourier = (
+    packageId: string,
+    courierServiceId: number,
+    courierName: string,
+  ) => {
+    setPackages((prev) =>
+      prev.map((pkg) =>
+        pkg.id === packageId ? { ...pkg, courierServiceId, courier: courierName } : pkg,
+      ),
+    );
   };
 
   const updatePackageWeight = (packageId: string, weight: number) => {
@@ -341,18 +346,27 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, contents } : pkg)));
   };
 
-  const updatePackageDeclaredValue = (packageId: string, declaredValue: number) => {
-    setPackages((prev) =>
-      prev.map((pkg) => (pkg.id === packageId ? { ...pkg, declaredValue } : pkg)),
-    );
-  };
+  const updatePackageDeclaredValue = useCallback(
+    (packageId: string, value: number | undefined, isManual?: boolean) => {
+      setPackages((prev) =>
+        prev.map((p) =>
+          p.id === packageId
+            ? { ...p, declaredValue: value, declaredValueManual: isManual ?? p.declaredValueManual }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
 
   const updatePackageOversized = (packageId: string, oversized: boolean) => {
     setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, oversized } : pkg)));
   };
 
   const updatePackageShippingCost = (packageId: string, shippingCost: number | undefined) => {
-    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, shippingCost } : pkg)));
+    setPackages((prev) =>
+      prev.map((pkg) => (pkg.id === packageId ? { ...pkg, shippingCost } : pkg)),
+    );
   };
 
   return {

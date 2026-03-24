@@ -223,6 +223,33 @@ const AddSalesOrderDrawer = ({
     }
   }, [open, isEdit, instanceId]);
 
+  // Auto-update declared value for packages where user hasn't manually set it
+  const autoUpdateSignature = orderPackages.packages
+    .map((p) => `${p.productKeys.join(',')}-${p.declaredValueManual ? '1' : '0'}`)
+    .join('|');
+
+  useEffect(() => {
+    const newPackages = orderPackages.packages.map((pkg) => {
+      if (pkg.declaredValueManual) return pkg;
+      const pkgProducts = products.filter((p) => pkg.productKeys.includes(getItemKey(p)));
+      if (pkgProducts.length === 0)
+        return pkg.declaredValue !== undefined ? { ...pkg, declaredValue: undefined } : pkg;
+      const autoValue = pkgProducts.reduce((sum, p) => {
+        const qty = getEffectiveQty(p);
+        const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount);
+        const net = p.priceNet * qty * (1 - discount / 100);
+        return sum + net * (1 + VAT_RATE);
+      }, 0);
+      const rounded = Math.round(autoValue * 100) / 100;
+      return pkg.declaredValue === rounded ? pkg : { ...pkg, declaredValue: rounded };
+    });
+    const changed = newPackages.some((pkg, i) => pkg !== orderPackages.packages[i]);
+    if (changed) {
+      orderPackages.setPackages(newPackages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, customerDiscount, autoUpdateSignature]);
+
   const hasShipping = orderPackages.packages.some((p) => p.shippingMethod === 'shipping');
 
   /* ── Totals ── */
@@ -691,9 +718,9 @@ const AddSalesOrderDrawer = ({
                   markDirty();
                   orderPackages.updatePackageContents(...args);
                 }}
-                onDeclaredValueChange={(...args) => {
+                onDeclaredValueChange={(pkgId, value, isManual) => {
                   markDirty();
-                  orderPackages.updatePackageDeclaredValue(...args);
+                  orderPackages.updatePackageDeclaredValue(pkgId, value, isManual);
                 }}
                 onOversizedChange={(...args) => {
                   markDirty();

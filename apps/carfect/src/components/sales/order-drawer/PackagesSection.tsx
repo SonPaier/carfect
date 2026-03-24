@@ -24,7 +24,7 @@ interface PackagesSectionProps {
   onCourierChange: (packageId: string, courierServiceId: number, courierName: string) => void;
   onWeightChange: (packageId: string, weight: number) => void;
   onContentsChange: (packageId: string, contents: string) => void;
-  onDeclaredValueChange: (packageId: string, value: number) => void;
+  onDeclaredValueChange: (packageId: string, value: number | undefined, isManual?: boolean) => void;
   onOversizedChange: (packageId: string, oversized: boolean) => void;
   onShippingCostChange: (packageId: string, cost: number | undefined) => void;
   onAddProduct: (packageId: string) => void;
@@ -103,7 +103,9 @@ export const PackagesSection = ({
               onCourierChange={(serviceId, name) => onCourierChange(pkg.id, serviceId, name)}
               onWeightChange={(weight) => onWeightChange(pkg.id, weight)}
               onContentsChange={(contents) => onContentsChange(pkg.id, contents)}
-              onDeclaredValueChange={(value) => onDeclaredValueChange(pkg.id, value)}
+              onDeclaredValueChange={(value, isManual) =>
+                onDeclaredValueChange(pkg.id, value, isManual)
+              }
               onOversizedChange={(oversized) => onOversizedChange(pkg.id, oversized)}
               onShippingCostChange={(cost) => onShippingCostChange(pkg.id, cost)}
               onAddProduct={() => onAddProduct(pkg.id)}
