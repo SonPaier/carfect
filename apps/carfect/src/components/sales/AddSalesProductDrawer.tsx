@@ -326,7 +326,7 @@ const AddSalesProductDrawer = ({
                 min={0}
                 step="0.01"
                 placeholder="0.00"
-                value={priceNet || undefined}
+                value={priceNet ?? undefined}
                 onChange={(v) => {
                   setPriceNet(v ?? 0);
                   markDirty();

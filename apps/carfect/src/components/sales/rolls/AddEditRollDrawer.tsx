@@ -264,7 +264,7 @@ const AddEditRollDrawer = ({
             <div className="space-y-1.5">
               <Label>Szerokość (mm) *</Label>
               <NumericInput
-                value={widthMm || undefined}
+                value={widthMm ?? undefined}
                 onChange={(v) => {
                   setWidthMm(v ?? 0);
                   markDirty();
@@ -276,7 +276,7 @@ const AddEditRollDrawer = ({
             <div className="space-y-1.5">
               <Label>Długość (m) *</Label>
               <NumericInput
-                value={lengthM || undefined}
+                value={lengthM ?? undefined}
                 onChange={(v) => {
                   setLengthM(v ?? 0);
                   markDirty();

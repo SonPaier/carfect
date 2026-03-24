@@ -252,7 +252,7 @@ const PackageCard = ({
                           </Button>
                           <NumericInput
                             min={1}
-                            value={p.quantity || undefined}
+                            value={p.quantity ?? undefined}
                             onChange={(v) => onUpdateQuantity(itemKey, v ?? 1)}
                             className="w-12 h-7 text-center text-sm px-1"
                           />
@@ -282,7 +282,7 @@ const PackageCard = ({
                         <NumericInput
                           min={0}
                           step={0.1}
-                          value={p.requiredM2 || undefined}
+                          value={p.requiredM2 ?? undefined}
                           onChange={(v) => onUpdateRequiredM2?.(itemKey, v ?? 0)}
                           placeholder="0"
                           className="h-8 text-sm"
@@ -433,8 +433,8 @@ const PackageCard = ({
                     <NumericInput
                       min={0.1}
                       step={0.1}
-                      value={pkg.weight || undefined}
-                      onChange={(v) => onWeightChange(v ?? 0)}
+                      value={pkg.weight ?? undefined}
+                      onChange={(v) => onWeightChange(v ?? 1)}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -464,8 +464,8 @@ const PackageCard = ({
                     <NumericInput
                       min={0.1}
                       step={0.1}
-                      value={pkg.weight || undefined}
-                      onChange={(v) => onWeightChange(v ?? 0)}
+                      value={pkg.weight ?? undefined}
+                      onChange={(v) => onWeightChange(v ?? 1)}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -504,8 +504,8 @@ const PackageCard = ({
                     <NumericInput
                       min={0.1}
                       step={0.1}
-                      value={pkg.weight || undefined}
-                      onChange={(v) => onWeightChange(v ?? 0)}
+                      value={pkg.weight ?? undefined}
+                      onChange={(v) => onWeightChange(v ?? 1)}
                       className="h-8 text-sm"
                     />
                   </div>

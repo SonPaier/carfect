@@ -690,7 +690,7 @@ const AddEditSalesCustomerDrawer = ({
               min={0}
               max={100}
               className="w-20"
-              value={form.discountPercent || undefined}
+              value={form.discountPercent ?? undefined}
               onChange={(v) => {
                 setForm((prev) => ({ ...prev, discountPercent: v ?? 0 }));
                 markDirty();

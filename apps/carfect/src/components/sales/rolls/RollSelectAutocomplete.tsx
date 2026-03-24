@@ -193,7 +193,7 @@ const RollSelectAutocomplete = ({
             <NumericInput
               min={0}
               step={0.1}
-              value={usageM2 || undefined}
+              value={usageM2 ?? undefined}
               onChange={(v) => onSelect(selectedRollId, v ?? 0, selectedRoll?.widthMm)}
               className="h-8 text-xs w-24"
               placeholder="m²"

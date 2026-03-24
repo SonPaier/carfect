@@ -12,15 +12,13 @@ interface NumericInputProps extends Omit<
 
 const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
   ({ value, onChange, onBlur, className, ...props }, ref) => {
-    const [raw, setRaw] = React.useState<string>(() =>
-      value != null && value !== 0 ? String(value) : '',
-    );
+    const [raw, setRaw] = React.useState<string>(() => (value != null ? String(value) : ''));
 
     const prevValueRef = React.useRef(value);
     React.useEffect(() => {
       if (prevValueRef.current !== value) {
         prevValueRef.current = value;
-        setRaw(value != null && value !== 0 ? String(value) : '');
+        setRaw(value != null ? String(value) : '');
       }
     }, [value]);
 

@@ -164,8 +164,8 @@ const MultiRollAssignment = ({
             <NumericInput
               min={0}
               max={remaining > 0 ? remaining : undefined}
-              step={0.01}
-              value={a.usageM2 || undefined}
+              step={0.1}
+              value={a.usageM2 ?? undefined}
               onChange={(v) => handleUsageChange(a.rollId, v ?? 0)}
               className={`h-7 text-xs w-20 ${shortage > 0 ? 'border-destructive' : ''}`}
               placeholder="m²"
