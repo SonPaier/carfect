@@ -328,7 +328,7 @@ const SalesOrdersView = () => {
     const { data: items } = await (supabase
       .from('sales_order_items')
       .select(
-        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent',
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_m2',
       )
       .eq('order_id', order.id)
       .order('sort_order') as any);
@@ -420,6 +420,7 @@ const SalesOrdersView = () => {
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
         discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
+        requiredM2: item.required_m2 ? Number(item.required_m2) : undefined,
         rollAssignments: usages.map((u) => ({
           rollId: u.rollId,
           usageM2: u.usedM2,
@@ -441,6 +442,31 @@ const SalesOrdersView = () => {
           return k; // fallback for legacy UUID keys
         }),
       }));
+    }
+
+    // Fallback: jeśli żadna paczka nie ma productKeys pasujących do editProducts,
+    // przypisz wszystkie produkty do pierwszej paczki
+    const allInstanceKeys = editProducts.map((p) => p.instanceKey);
+    const allAssignedKeys = new Set(editPackages.flatMap((pkg) => pkg.productKeys ?? []));
+    const anyMatches = allInstanceKeys.some((key) => allAssignedKeys.has(key));
+    if (!anyMatches && allInstanceKeys.length > 0) {
+      const firstPkg = editPackages[0];
+      const fallbackPkg = firstPkg
+        ? { ...firstPkg, productKeys: allInstanceKeys }
+        : {
+            id: crypto.randomUUID(),
+            shippingMethod: 'shipping' as const,
+            packagingType: 'tuba' as const,
+            dimensions: { length: 0, diameter: 0 },
+            courier: undefined,
+            courierServiceId: undefined,
+            weight: 1,
+            contents: '',
+            declaredValueManual: false,
+            oversized: false,
+            productKeys: allInstanceKeys,
+          };
+      editPackages = [fallbackPkg];
     }
 
     setEditOrder({

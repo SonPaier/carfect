@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, AlertCircle, Package } from 'lucide-react';
-import { Input, Button, Label } from '@shared/ui';
+import { Input, Button, Label, NumericInput } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
 import { mbToM2 } from '../types/rolls';
 import { fetchActiveRollsByProductName, fetchRollById } from '../services/rollService';
@@ -83,7 +83,7 @@ const RollSelectAutocomplete = ({
     ? rolls.filter(
         (r) =>
           (r.barcode || '').includes(search) ||
-          (r.productCode || '').toLowerCase().includes(search.toLowerCase())
+          (r.productCode || '').toLowerCase().includes(search.toLowerCase()),
       )
     : rolls;
 
@@ -93,7 +93,7 @@ const RollSelectAutocomplete = ({
       setDropdownOpen(false);
       setSearch('');
     },
-    [onSelect, usageM2]
+    [onSelect, usageM2],
   );
 
   const handleClear = useCallback(() => {
@@ -124,12 +124,7 @@ const RollSelectAutocomplete = ({
               Pozostało: {remainingM2.toFixed(2)} m²
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={handleClear}
-          >
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleClear}>
             Zmień
           </Button>
         </div>
@@ -168,7 +163,11 @@ const RollSelectAutocomplete = ({
                     </div>
                     <span
                       className={`shrink-0 ml-2 ${
-                        rm2 <= 0 ? 'text-destructive' : rm2 < 5 ? 'text-orange-500' : 'text-green-600'
+                        rm2 <= 0
+                          ? 'text-destructive'
+                          : rm2 < 5
+                            ? 'text-orange-500'
+                            : 'text-green-600'
                       }`}
                     >
                       {rm2.toFixed(1)} m²
@@ -191,14 +190,11 @@ const RollSelectAutocomplete = ({
       {selectedRoll && (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Input
-              type="number"
+            <NumericInput
               min={0}
               step={0.1}
-              value={usageM2 || ''}
-              onChange={(e) =>
-                onSelect(selectedRollId, e.target.value ? Number(e.target.value) : 0, selectedRoll?.widthMm)
-              }
+              value={usageM2 ?? undefined}
+              onChange={(v) => onSelect(selectedRollId, v ?? 0, selectedRoll?.widthMm)}
               className="h-8 text-xs w-24"
               placeholder="m²"
             />

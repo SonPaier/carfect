@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, X, AlertCircle } from 'lucide-react';
-import { Input, Button, Label } from '@shared/ui';
+import { Button, Label, NumericInput } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
 import { mbToM2 } from '../types/rolls';
 import type { RollAssignment } from '../hooks/useOrderPackages';
@@ -161,16 +161,12 @@ const MultiRollAssignment = ({
                 </div>
               )}
             </div>
-            <Input
-              type="number"
+            <NumericInput
               min={0}
               max={remaining > 0 ? remaining : undefined}
               step={0.1}
-              value={a.usageM2 || ''}
-              onChange={(e) => {
-                const val = e.target.value ? Number(e.target.value) : 0;
-                handleUsageChange(a.rollId, val);
-              }}
+              value={a.usageM2 ?? undefined}
+              onChange={(v) => handleUsageChange(a.rollId, v ?? 0)}
               className={`h-7 text-xs w-20 ${shortage > 0 ? 'border-destructive' : ''}`}
               placeholder="m²"
             />

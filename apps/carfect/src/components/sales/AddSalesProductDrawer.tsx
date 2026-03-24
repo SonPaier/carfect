@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Loader2, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Input } from '@shared/ui';
+import { NumericInput } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
@@ -50,7 +51,7 @@ const AddSalesProductDrawer = ({
   const [fullName, setFullName] = useState('');
   const [shortName, setShortName] = useState('');
   const [description, setDescription] = useState('');
-  const [priceNet, setPriceNet] = useState('');
+  const [priceNet, setPriceNet] = useState<number | undefined>(undefined);
   const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('piece');
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
@@ -80,7 +81,7 @@ const AddSalesProductDrawer = ({
     setFullName('');
     setShortName('');
     setDescription('');
-    setPriceNet('');
+    setPriceNet(undefined);
     setPriceUnit('piece');
     setCategoryId('');
     setExcludeFromDiscount(false);
@@ -94,7 +95,7 @@ const AddSalesProductDrawer = ({
       setFullName(product.fullName);
       setShortName(product.shortName);
       setDescription(product.description || '');
-      setPriceNet(product.priceNet ? String(product.priceNet) : '');
+      setPriceNet(product.priceNet || undefined);
       setPriceUnit((product.priceUnit as 'piece' | 'meter') || 'piece');
       setCategoryId(product.categoryId || '');
       setExcludeFromDiscount(product.excludeFromDiscount || false);
@@ -164,7 +165,7 @@ const AddSalesProductDrawer = ({
         full_name: fullName.trim(),
         short_name: shortName.trim(),
         description: description.trim() || null,
-        price_net: parseFloat(priceNet) || 0,
+        price_net: priceNet ?? 0,
         price_unit: priceUnit,
         category_id: categoryId || null,
         exclude_from_discount: excludeFromDiscount,
@@ -320,15 +321,14 @@ const AddSalesProductDrawer = ({
 
             <div className="space-y-2">
               <Label htmlFor="product-price">Cena netto</Label>
-              <Input
+              <NumericInput
                 id="product-price"
-                type="number"
                 min={0}
                 step="0.01"
                 placeholder="0.00"
-                value={priceNet}
-                onChange={(e) => {
-                  setPriceNet(e.target.value);
+                value={priceNet ?? undefined}
+                onChange={(v) => {
+                  setPriceNet(v ?? 0);
                   markDirty();
                 }}
               />

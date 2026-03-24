@@ -34,6 +34,7 @@ export * from './components/input-otp';
 export * from './components/label';
 export * from './components/menubar';
 export * from './components/navigation-menu';
+export { NumericInput } from './components/numeric-input';
 export * from './components/page-loader';
 export * from './components/pagination';
 export * from './components/phone-masked-input';

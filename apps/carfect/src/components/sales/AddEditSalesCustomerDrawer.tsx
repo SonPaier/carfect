@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@shared/ui';
 import { Checkbox } from '@shared/ui';
 import { Collapsible, CollapsibleContent } from '@shared/ui';
+import { NumericInput } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIsMobile } from '@shared/ui';
@@ -685,14 +686,13 @@ const AddEditSalesCustomerDrawer = ({
         </div>
         {form.discountEnabled && (
           <div className="flex items-center gap-2">
-            <Input
-              type="number"
+            <NumericInput
               min={0}
               max={100}
-              className="w-24"
-              value={form.discountPercent}
-              onChange={(e) => {
-                setForm({ ...form, discountPercent: Number(e.target.value) });
+              className="w-20"
+              value={form.discountPercent ?? undefined}
+              onChange={(v) => {
+                setForm((prev) => ({ ...prev, discountPercent: v ?? 0 }));
                 markDirty();
               }}
             />

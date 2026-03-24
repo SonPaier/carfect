@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { X, Plus, Minus, Loader2 } from 'lucide-react';
 import { Input } from '@shared/ui';
+import { NumericInput } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -164,7 +165,7 @@ const PackageCard = ({
   };
 
   return (
-    <div className="bg-card border border-border rounded-md p-3 space-y-3">
+    <div className="bg-background border border-border rounded-md p-3 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold">Paczka #{index + 1}</span>
@@ -249,13 +250,10 @@ const PackageCard = ({
                           >
                             <Minus className="w-3 h-3" />
                           </Button>
-                          <Input
-                            type="number"
+                          <NumericInput
                             min={1}
-                            value={p.quantity}
-                            onChange={(e) =>
-                              onUpdateQuantity(itemKey, parseInt(e.target.value) || 1)
-                            }
+                            value={p.quantity ?? undefined}
+                            onChange={(v) => onUpdateQuantity(itemKey, v ?? 1)}
                             className="w-12 h-7 text-center text-sm px-1"
                           />
                           <Button
@@ -281,30 +279,22 @@ const PackageCard = ({
                       </div>
                       <div className="space-y-1 w-20">
                         <Label className="text-xs">m² wymag.</Label>
-                        <Input
-                          type="number"
+                        <NumericInput
                           min={0}
                           step={0.1}
-                          value={p.requiredM2 || ''}
-                          onChange={(e) =>
-                            onUpdateRequiredM2?.(itemKey, parseFloat(e.target.value) || 0)
-                          }
+                          value={p.requiredM2 ?? undefined}
+                          onChange={(v) => onUpdateRequiredM2?.(itemKey, v ?? 0)}
                           placeholder="0"
                           className="h-8 text-sm"
                         />
                       </div>
                       <div className="space-y-1 w-16">
                         <Label className="text-xs">Rabat %</Label>
-                        <Input
-                          type="number"
+                        <NumericInput
                           min={0}
                           max={100}
-                          step={1}
-                          value={p.discountPercent != null ? p.discountPercent : ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            onUpdateProductDiscount?.(itemKey, val === '' ? 0 : Number(val));
-                          }}
+                          value={p.discountPercent != null ? p.discountPercent : undefined}
+                          onChange={(v) => onUpdateProductDiscount?.(itemKey, v ?? 0)}
                           placeholder={String(customerDiscount ?? 0)}
                           className="h-8 text-sm placeholder:text-foreground"
                         />
@@ -353,13 +343,13 @@ const PackageCard = ({
               size="sm"
               className="justify-start flex-wrap"
             >
-              <ToggleGroupItem value="shipping" className="text-xs px-3">
+              <ToggleGroupItem value="shipping" className="text-xs px-3 border-border">
                 Wysyłka
               </ToggleGroupItem>
-              <ToggleGroupItem value="pickup" className="text-xs px-3">
+              <ToggleGroupItem value="pickup" className="text-xs px-3 border-border">
                 Odbiór osobisty
               </ToggleGroupItem>
-              <ToggleGroupItem value="uber" className="text-xs px-3">
+              <ToggleGroupItem value="uber" className="text-xs px-3 border-border">
                 Uber
               </ToggleGroupItem>
             </ToggleGroup>
@@ -440,12 +430,11 @@ const PackageCard = ({
                 <div className="grid grid-cols-1 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Waga (kg)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0.1}
                       step={0.1}
-                      value={pkg.weight || 1}
-                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      value={pkg.weight ?? undefined}
+                      onChange={(v) => onWeightChange(v ?? 1)}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -454,34 +443,29 @@ const PackageCard = ({
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Długość (cm)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0}
-                      value={(pkg.dimensions as TubaDimensions)?.length || ''}
-                      onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                      value={(pkg.dimensions as TubaDimensions)?.length || undefined}
+                      onChange={(v) => onDimensionChange('length', v ?? 0)}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Średnica (cm)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0}
-                      value={(pkg.dimensions as TubaDimensions)?.diameter || ''}
-                      onChange={(e) =>
-                        onDimensionChange('diameter', parseFloat(e.target.value) || 0)
-                      }
+                      value={(pkg.dimensions as TubaDimensions)?.diameter || undefined}
+                      onChange={(v) => onDimensionChange('diameter', v ?? 0)}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Waga (kg)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0.1}
                       step={0.1}
-                      value={pkg.weight || 1}
-                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      value={pkg.weight ?? undefined}
+                      onChange={(v) => onWeightChange(v ?? 1)}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -490,42 +474,38 @@ const PackageCard = ({
                 <div className="grid grid-cols-4 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Dł. (cm)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0}
-                      value={(pkg.dimensions as KartonDimensions)?.length || ''}
-                      onChange={(e) => onDimensionChange('length', parseFloat(e.target.value) || 0)}
+                      value={(pkg.dimensions as KartonDimensions)?.length || undefined}
+                      onChange={(v) => onDimensionChange('length', v ?? 0)}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Szer. (cm)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0}
-                      value={(pkg.dimensions as KartonDimensions)?.width || ''}
-                      onChange={(e) => onDimensionChange('width', parseFloat(e.target.value) || 0)}
+                      value={(pkg.dimensions as KartonDimensions)?.width || undefined}
+                      onChange={(v) => onDimensionChange('width', v ?? 0)}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Wys. (cm)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0}
-                      value={(pkg.dimensions as KartonDimensions)?.height || ''}
-                      onChange={(e) => onDimensionChange('height', parseFloat(e.target.value) || 0)}
+                      value={(pkg.dimensions as KartonDimensions)?.height || undefined}
+                      onChange={(v) => onDimensionChange('height', v ?? 0)}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Waga (kg)</Label>
-                    <Input
-                      type="number"
+                    <NumericInput
                       min={0.1}
                       step={0.1}
-                      value={pkg.weight || 1}
-                      onChange={(e) => onWeightChange(parseFloat(e.target.value) || 1)}
+                      value={pkg.weight ?? undefined}
+                      onChange={(v) => onWeightChange(v ?? 1)}
                       className="h-8 text-sm"
                     />
                   </div>
@@ -561,15 +541,14 @@ const PackageCard = ({
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Deklarowana wartość (zł)</Label>
-                  <Input
-                    type="number"
+                  <NumericInput
                     min={0}
-                    value={pkg.declaredValue ?? ''}
-                    onChange={(e) => {
-                      if (e.target.value === '') {
+                    value={pkg.declaredValue}
+                    onChange={(v) => {
+                      if (v === undefined) {
                         onDeclaredValueChange(undefined, false);
                       } else {
-                        onDeclaredValueChange(parseFloat(e.target.value) || 0, true);
+                        onDeclaredValueChange(v, true);
                       }
                     }}
                     placeholder="0.00"
