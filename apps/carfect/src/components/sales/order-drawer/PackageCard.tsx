@@ -77,7 +77,7 @@ interface PackageCardProps {
   onCourierChange: (courierServiceId: number, courierName: string) => void;
   onWeightChange: (weight: number) => void;
   onContentsChange: (contents: string) => void;
-  onDeclaredValueChange: (value: number) => void;
+  onDeclaredValueChange: (value: number | undefined, isManual: boolean) => void;
   onOversizedChange: (oversized: boolean) => void;
   onShippingCostChange: (cost: number | undefined) => void;
   onAddProduct: () => void;
@@ -564,8 +564,14 @@ const PackageCard = ({
                   <Input
                     type="number"
                     min={0}
-                    value={pkg.declaredValue || ''}
-                    onChange={(e) => onDeclaredValueChange(parseFloat(e.target.value) || 0)}
+                    value={pkg.declaredValue ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === '') {
+                        onDeclaredValueChange(undefined, false);
+                      } else {
+                        onDeclaredValueChange(parseFloat(e.target.value) || 0, true);
+                      }
+                    }}
                     placeholder="0.00"
                     className="h-8 text-sm"
                   />

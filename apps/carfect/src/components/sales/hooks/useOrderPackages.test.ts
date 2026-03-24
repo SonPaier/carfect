@@ -85,7 +85,8 @@ describe('useOrderPackages', () => {
       expect(pkg.courierServiceId).toBeUndefined();
       expect(pkg.weight).toBe(1);
       expect(pkg.contents).toBe('');
-      expect(pkg.declaredValue).toBe(0);
+      expect(pkg.declaredValue).toBeUndefined();
+      expect(pkg.declaredValueManual).toBe(false);
       expect(pkg.oversized).toBe(false);
       expect(pkg.productKeys).toEqual([]);
     });
@@ -136,9 +137,7 @@ describe('useOrderPackages', () => {
 
       act(() => {
         result.current.setPackages((prev) =>
-          prev.map((p) =>
-            p.id === pkgId ? { ...p, productKeys: ['orphan-key'] } : p,
-          ),
+          prev.map((p) => (p.id === pkgId ? { ...p, productKeys: ['orphan-key'] } : p)),
         );
       });
 
@@ -260,9 +259,7 @@ describe('useOrderPackages', () => {
       });
 
       act(() => {
-        result.current.handleProductsConfirm([
-          { productId: 'p1', fullName: 'P', priceNet: 10 },
-        ]);
+        result.current.handleProductsConfirm([{ productId: 'p1', fullName: 'P', priceNet: 10 }]);
       });
 
       expect(result.current.activePackageId).toBeNull();
@@ -283,9 +280,7 @@ describe('useOrderPackages', () => {
 
       act(() => {
         result.current.setPackages((prev) =>
-          prev.map((p) =>
-            p.id === pkgId ? { ...p, productKeys: ['remove-me'] } : p,
-          ),
+          prev.map((p) => (p.id === pkgId ? { ...p, productKeys: ['remove-me'] } : p)),
         );
       });
 
@@ -308,9 +303,7 @@ describe('useOrderPackages', () => {
 
       act(() => {
         result.current.setPackages((prev) =>
-          prev.map((p) =>
-            p.id === pkgId ? { ...p, productKeys: ['sole-product'] } : p,
-          ),
+          prev.map((p) => (p.id === pkgId ? { ...p, productKeys: ['sole-product'] } : p)),
         );
       });
 
@@ -630,7 +623,10 @@ describe('useOrderPackages', () => {
     });
 
     it('returns 0 subtotal for empty products', () => {
-      const subtotal = [].reduce((sum: number, p: OrderProduct) => sum + p.priceNet * p.quantity, 0);
+      const subtotal = [].reduce(
+        (sum: number, p: OrderProduct) => sum + p.priceNet * p.quantity,
+        0,
+      );
       expect(subtotal).toBe(0);
     });
   });
@@ -639,8 +635,18 @@ describe('useOrderPackages', () => {
   describe('totals: discount', () => {
     it('applies discount only to non-excluded products', () => {
       const products: OrderProduct[] = [
-        makeProduct({ instanceKey: 'disc1', priceNet: 200, quantity: 1, excludeFromDiscount: false }),
-        makeProduct({ instanceKey: 'disc2', priceNet: 100, quantity: 1, excludeFromDiscount: true }),
+        makeProduct({
+          instanceKey: 'disc1',
+          priceNet: 200,
+          quantity: 1,
+          excludeFromDiscount: false,
+        }),
+        makeProduct({
+          instanceKey: 'disc2',
+          priceNet: 100,
+          quantity: 1,
+          excludeFromDiscount: true,
+        }),
       ];
       const discountPercent = 10;
       // Only disc1 is discounted: 200 * 0.1 = 20 discount
@@ -713,9 +719,7 @@ describe('useOrderPackages', () => {
 
       act(() => {
         result.current.setPackages((prev) =>
-          prev.map((p) =>
-            p.id === pkgId ? { ...p, productKeys: ['exists', 'ghost-key'] } : p,
-          ),
+          prev.map((p) => (p.id === pkgId ? { ...p, productKeys: ['exists', 'ghost-key'] } : p)),
         );
       });
 
@@ -731,41 +735,61 @@ describe('useOrderPackages', () => {
   describe('additional package field updaters', () => {
     it('updatePackageContents updates contents', () => {
       const { result } = setupHook();
-      act(() => { result.current.addPackage(); });
+      act(() => {
+        result.current.addPackage();
+      });
       const pkgId = result.current.packages[0].id;
-      act(() => { result.current.updatePackageContents(pkgId, 'Folia PPF'); });
+      act(() => {
+        result.current.updatePackageContents(pkgId, 'Folia PPF');
+      });
       expect(result.current.packages[0].contents).toBe('Folia PPF');
     });
 
     it('updatePackageDeclaredValue updates declaredValue', () => {
       const { result } = setupHook();
-      act(() => { result.current.addPackage(); });
+      act(() => {
+        result.current.addPackage();
+      });
       const pkgId = result.current.packages[0].id;
-      act(() => { result.current.updatePackageDeclaredValue(pkgId, 500); });
+      act(() => {
+        result.current.updatePackageDeclaredValue(pkgId, 500, true);
+      });
       expect(result.current.packages[0].declaredValue).toBe(500);
     });
 
     it('updatePackageOversized updates oversized flag', () => {
       const { result } = setupHook();
-      act(() => { result.current.addPackage(); });
+      act(() => {
+        result.current.addPackage();
+      });
       const pkgId = result.current.packages[0].id;
-      act(() => { result.current.updatePackageOversized(pkgId, true); });
+      act(() => {
+        result.current.updatePackageOversized(pkgId, true);
+      });
       expect(result.current.packages[0].oversized).toBe(true);
     });
 
     it('updatePackageDimension updates a specific dimension field', () => {
       const { result } = setupHook();
-      act(() => { result.current.addPackage(); });
+      act(() => {
+        result.current.addPackage();
+      });
       const pkgId = result.current.packages[0].id;
-      act(() => { result.current.updatePackageDimension(pkgId, 'length', 120); });
+      act(() => {
+        result.current.updatePackageDimension(pkgId, 'length', 120);
+      });
       expect((result.current.packages[0].dimensions as { length: number })?.length).toBe(120);
     });
 
     it('updatePackageCourier changes courierServiceId and courier name', () => {
       const { result } = setupHook();
-      act(() => { result.current.addPackage(); });
+      act(() => {
+        result.current.addPackage();
+      });
       const pkgId = result.current.packages[0].id;
-      act(() => { result.current.updatePackageCourier(pkgId, 21, 'DHL'); });
+      act(() => {
+        result.current.updatePackageCourier(pkgId, 21, 'DHL');
+      });
       expect(result.current.packages[0].courierServiceId).toBe(21);
       expect(result.current.packages[0].courier).toBe('DHL');
     });

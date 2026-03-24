@@ -33,7 +33,7 @@ export const useSalesSettings = (instanceId: string | null) => {
       return data;
     },
     enabled: !!instanceId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 };
 

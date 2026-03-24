@@ -1,11 +1,5 @@
 import { Label } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 
 type PaymentMethod = 'cod' | 'transfer';
 
@@ -35,7 +29,7 @@ export const PaymentSection = ({
   setBankAccountNumber,
   bankAccounts,
 }: PaymentSectionProps) => {
-  const selectedAccount = bankAccounts.find(a => a.number === bankAccountNumber);
+  const selectedAccount = bankAccounts.find((a) => a.number === bankAccountNumber);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -52,13 +46,10 @@ export const PaymentSection = ({
         </Select>
       </div>
 
-      {paymentMethod === 'transfer' && bankAccounts.length > 0 && (
+      {bankAccounts.length > 0 && (
         <div className="space-y-2">
           <Label>Numer konta</Label>
-          <Select
-            value={bankAccountNumber || undefined}
-            onValueChange={setBankAccountNumber}
-          >
+          <Select value={bankAccountNumber || undefined} onValueChange={setBankAccountNumber}>
             <SelectTrigger>
               <SelectValue placeholder="Wybierz konto">
                 {selectedAccount && (
@@ -74,9 +65,7 @@ export const PaymentSection = ({
               {bankAccounts.map((account, idx) => (
                 <SelectItem key={idx} value={account.number}>
                   <div>
-                    {account.name && (
-                      <span className="font-medium">{account.name} · </span>
-                    )}
+                    {account.name && <span className="font-medium">{account.name} · </span>}
                     <span className="font-mono text-xs">{formatIBAN(account.number)}</span>
                   </div>
                 </SelectItem>
