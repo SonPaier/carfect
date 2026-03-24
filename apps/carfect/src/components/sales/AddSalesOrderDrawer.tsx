@@ -791,46 +791,31 @@ const AddSalesOrderDrawer = ({
                 />
               )}
 
-              {/* Comment */}
-              <div className="space-y-2">
-                <Label htmlFor="order-comment">Uwagi do zamówienia</Label>
-                <Textarea
-                  id="order-comment"
-                  value={comment}
-                  onChange={(e) => {
-                    setComment(e.target.value);
+              {/* Uwagi + Formatki — same row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="order-comment">Uwagi do zamówienia</Label>
+                  <Textarea
+                    id="order-comment"
+                    value={comment}
+                    onChange={(e) => {
+                      setComment(e.target.value);
+                      markDirty();
+                    }}
+                    rows={3}
+                  />
+                </div>
+                <ImagePasteZone
+                  images={attachments}
+                  onImagesChange={(v) => {
+                    setAttachments(v);
                     markDirty();
                   }}
-                  rows={3}
+                  pathPrefix={instanceId || 'unknown'}
+                  maxImages={10}
+                  disabled={saving}
                 />
               </div>
-
-              {/* Email checkbox */}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="send-email"
-                  checked={sendEmail}
-                  onCheckedChange={(v) => {
-                    setSendEmail(v === true);
-                    markDirty();
-                  }}
-                />
-                <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer">
-                  Wyślij email z potwierdzeniem zamówienia
-                </Label>
-              </div>
-
-              {/* Formatki (paste images) */}
-              <ImagePasteZone
-                images={attachments}
-                onImagesChange={(v) => {
-                  setAttachments(v);
-                  markDirty();
-                }}
-                pathPrefix={instanceId || 'unknown'}
-                maxImages={10}
-                disabled={saving}
-              />
 
               {/* Summary — at the end */}
               {products.length > 0 && (
@@ -844,6 +829,21 @@ const AddSalesOrderDrawer = ({
                   totalGross={totalGross}
                 />
               )}
+
+              {/* Email checkbox — after summary */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="send-email"
+                  checked={sendEmail}
+                  onCheckedChange={(v) => {
+                    setSendEmail(v === true);
+                    markDirty();
+                  }}
+                />
+                <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer">
+                  Wyślij email z potwierdzeniem zamówienia
+                </Label>
+              </div>
             </div>
           </div>
 

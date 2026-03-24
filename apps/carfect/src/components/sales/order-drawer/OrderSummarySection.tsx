@@ -42,9 +42,15 @@ export const OrderSummarySection = ({
           {products.map((p, i) => {
             const qty = getEffectiveQty(p);
             const lineNet = p.priceNet * qty;
-            const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount ?? 0);
+            const discount =
+              p.discountPercent ?? (p.excludeFromDiscount ? 0 : (customerDiscount ?? 0));
             const lineNetAfterDiscount = lineNet * (1 - discount / 100);
-            const unit = p.priceUnit === 'piece' ? 'szt.' : p.priceUnit === 'meter' ? 'm²' : p.priceUnit || 'szt.';
+            const unit =
+              p.priceUnit === 'piece'
+                ? 'szt.'
+                : p.priceUnit === 'meter'
+                  ? 'm²'
+                  : p.priceUnit || 'szt.';
             return (
               <div key={i}>
                 <div className="flex justify-between gap-2">
@@ -56,7 +62,9 @@ export const OrderSummarySection = ({
                 {discount > 0 && (
                   <div className="flex justify-between gap-2 text-destructive">
                     <span className="text-xs pl-2">Rabat {discount}%</span>
-                    <span className="tabular-nums text-xs shrink-0">-{formatCurrency(lineNet - lineNetAfterDiscount)}</span>
+                    <span className="tabular-nums text-xs shrink-0">
+                      -{formatCurrency(lineNet - lineNetAfterDiscount)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -85,7 +93,7 @@ export const OrderSummarySection = ({
             <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
           </div>
           <Separator className="my-1" />
-          <div className="flex justify-between font-semibold text-base">
+          <div className="flex justify-between font-semibold text-lg">
             <span>Razem brutto</span>
             <span className="tabular-nums">{formatCurrency(totalGross)}</span>
           </div>

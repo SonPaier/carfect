@@ -343,13 +343,13 @@ const PackageCard = ({
               size="sm"
               className="justify-start flex-wrap"
             >
-              <ToggleGroupItem value="shipping" className="text-xs px-3">
+              <ToggleGroupItem value="shipping" className="text-xs px-3 border-border">
                 Wysyłka
               </ToggleGroupItem>
-              <ToggleGroupItem value="pickup" className="text-xs px-3">
+              <ToggleGroupItem value="pickup" className="text-xs px-3 border-border">
                 Odbiór osobisty
               </ToggleGroupItem>
-              <ToggleGroupItem value="uber" className="text-xs px-3">
+              <ToggleGroupItem value="uber" className="text-xs px-3 border-border">
                 Uber
               </ToggleGroupItem>
             </ToggleGroup>
