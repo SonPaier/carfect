@@ -13,8 +13,14 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+let mockIsAdmin = true;
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'test-user-id' }, loading: false }),
+  useAuth: () => ({
+    user: { id: 'test-user-id' },
+    loading: false,
+    hasRole: () => false,
+    hasInstanceRole: () => mockIsAdmin,
+  }),
 }));
 
 vi.mock('sonner', () => ({
@@ -100,6 +106,7 @@ describe('CreateProtocolForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetSupabaseMocks();
+    mockIsAdmin = true;
     mockSupabaseQuery('protocols', { data: null, error: null }, 'insert');
     mockSupabaseQuery('protocols', { data: null, error: null }, 'update');
     mockSupabaseQuery('employees', { data: [], error: null });
@@ -625,6 +632,47 @@ describe('CreateProtocolForm', () => {
     await user.click(screen.getByText('Clear Customer'));
     await waitFor(() => {
       expect(screen.queryByDisplayValue('Jan Kowalski')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('employee view', () => {
+    beforeEach(() => {
+      mockIsAdmin = false;
+    });
+
+    it('hides customer search, details, address fields for employee', async () => {
+      renderForm({
+        prefillCustomerName: 'Anna Nowak',
+        prefillCustomerPhone: '987654321',
+        prefillCustomerEmail: 'anna@test.pl',
+      });
+      await waitFor(() => {
+        expect(screen.getByText('Utwórz protokół')).toBeInTheDocument();
+      });
+
+      // Customer search and detail fields should not be visible
+      expect(screen.queryByTestId('customer-search')).not.toBeInTheDocument();
+      expect(screen.queryByText('Imię i nazwisko *')).not.toBeInTheDocument();
+      expect(screen.queryByText('Telefon')).not.toBeInTheDocument();
+      expect(screen.queryByText('Email')).not.toBeInTheDocument();
+      expect(screen.queryByText('NIP')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('address-select')).not.toBeInTheDocument();
+    });
+
+    it('still renders common fields for employee', async () => {
+      renderForm({
+        prefillCustomerName: 'Anna Nowak',
+        prefillCustomerPhone: '987654321',
+      });
+      await waitFor(() => {
+        expect(screen.getByText('Utwórz protokół')).toBeInTheDocument();
+      });
+
+      // Common fields visible for employee
+      expect(screen.getByText('Uwagi')).toBeInTheDocument();
+      expect(screen.getByText('Sporządził')).toBeInTheDocument();
+      expect(screen.getByText('Typ protokołu')).toBeInTheDocument();
+      expect(screen.getByText('Zdjęcia')).toBeInTheDocument();
     });
   });
 });
