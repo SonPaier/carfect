@@ -75,6 +75,9 @@ export function formatDuration(minutes: number): string {
 export interface VisitInfo {
   itemDate: string;
   durationMinutes: number;
+  calendarItemId?: string;
+  workStartedAt?: string;
+  workEndedAt?: string;
 }
 
 /**
@@ -84,6 +87,7 @@ export interface VisitInfo {
  */
 export function getVisitsFromChain(
   chainItems: Array<{
+    id?: string;
     item_date?: string | null;
     work_started_at?: string | null;
     work_ended_at?: string | null;
@@ -93,7 +97,13 @@ export function getVisitsFromChain(
     .map((item) => {
       const dur = getVisitDurationMinutes(item.work_started_at, item.work_ended_at);
       if (dur === null || !item.item_date) return null;
-      return { itemDate: item.item_date, durationMinutes: dur };
+      return {
+        itemDate: item.item_date,
+        durationMinutes: dur,
+        calendarItemId: item.id,
+        workStartedAt: item.work_started_at ?? undefined,
+        workEndedAt: item.work_ended_at ?? undefined,
+      };
     })
     .filter((v): v is VisitInfo => v !== null)
     .sort((a, b) => a.itemDate.localeCompare(b.itemDate));

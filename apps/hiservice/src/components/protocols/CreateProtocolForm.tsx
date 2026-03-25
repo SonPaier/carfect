@@ -63,7 +63,8 @@ const CreateProtocolForm = ({
   prefillCustomerAddressId,
   prefillCalendarItemId,
 }: CreateProtocolFormProps) => {
-  const { user } = useAuth();
+  const { user, hasRole, hasInstanceRole } = useAuth();
+  const isAdmin = hasRole('super_admin') || hasInstanceRole('admin', instanceId);
   const isEditMode = !!editingProtocolId;
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
@@ -98,7 +99,7 @@ const CreateProtocolForm = ({
         .select('*')
         .eq('id', editingProtocolId)
         .single()
-        .then(({ data, error }) => {
+        .then(async ({ data, error }) => {
           if (error || !data) {
             toast.error('Nie znaleziono protokołu');
             onClose();
@@ -117,6 +118,32 @@ const CreateProtocolForm = ({
           setProtocolDate(new Date(data.protocol_date));
           setPreparedBy(data.prepared_by || '');
           setCustomerSignature(data.customer_signature || null);
+
+          // Load visits from linked calendar item chain
+          const calItemId = data.calendar_item_id;
+          if (calItemId) {
+            const { data: currentItem } = await supabase
+              .from('calendar_items')
+              .select('id, parent_item_id, item_date, work_started_at, work_ended_at')
+              .eq('id', calItemId)
+              .single();
+            if (currentItem) {
+              const rootId =
+                (currentItem as Record<string, unknown>).parent_item_id || currentItem.id;
+              const { data: chainData } = await supabase
+                .from('calendar_items')
+                .select('id, item_date, work_started_at, work_ended_at')
+                .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
+              const chain = (chainData || []) as Array<{
+                id?: string;
+                item_date?: string | null;
+                work_started_at?: string | null;
+                work_ended_at?: string | null;
+              }>;
+              setVisits(getVisitsFromChain(chain));
+            }
+          }
+
           setLoadingData(false);
         });
     } else {
@@ -153,6 +180,7 @@ const CreateProtocolForm = ({
               .select('id, checklist_items, item_date, work_started_at, work_ended_at')
               .or(`id.eq.${rootId},parent_item_id.eq.${rootId}`);
             const chain = (chainData || []) as Array<{
+              id?: string;
               checklist_items?: ChecklistItem[] | null;
               item_date?: string | null;
               work_started_at?: string | null;
@@ -277,6 +305,22 @@ const CreateProtocolForm = ({
         toast.success('Protokół utworzony');
       }
 
+      // Save modified visit durations to calendar_items (admin only)
+      if (isAdmin) {
+        for (const v of visits) {
+          if (!v.calendarItemId || !v.workStartedAt) continue;
+          const newEndedAt = new Date(
+            new Date(v.workStartedAt).getTime() + v.durationMinutes * 60 * 1000,
+          ).toISOString();
+          if (newEndedAt !== v.workEndedAt) {
+            await supabase
+              .from('calendar_items')
+              .update({ work_ended_at: newEndedAt })
+              .eq('id', v.calendarItemId);
+          }
+        }
+      }
+
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -340,8 +384,8 @@ const CreateProtocolForm = ({
             </Select>
           </div>
 
-          {/* Customer Search */}
-          <div className="space-y-2">
+          {/* Customer Search - admin only */}
+          {isAdmin && <div className="space-y-2">
             <Label>Klient *</Label>
             <CustomerSearchInput
               instanceId={instanceId}
@@ -360,62 +404,66 @@ const CreateProtocolForm = ({
               onClear={handleClearCustomer}
               onCustomerClick={handleCustomerClick}
             />
-          </div>
+          </div>}
 
-          {/* Customer details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Imię i nazwisko *</Label>
-              <Input
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                  if (customerId) setCustomerId(null);
-                }}
-                placeholder="Jan Kowalski"
-              />
-            </div>
-            {!isEditMode && (
-              <div className="space-y-2">
-                <Label>Telefon</Label>
-                <Input
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="+48 ..."
-                  type="tel"
-                />
+          {/* Customer details - admin only */}
+          {isAdmin && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Imię i nazwisko *</Label>
+                  <Input
+                    value={customerName}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      if (customerId) setCustomerId(null);
+                    }}
+                    placeholder="Jan Kowalski"
+                  />
+                </div>
+                {!isEditMode && (
+                  <div className="space-y-2">
+                    <Label>Telefon</Label>
+                    <Input
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="+48 ..."
+                      type="tel"
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="jan@example.com"
-                type="email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>NIP</Label>
-              <Input
-                value={customerNip}
-                onChange={(e) => setCustomerNip(e.target.value)}
-                placeholder="123-456-78-90"
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="jan@example.com"
+                    type="email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>NIP</Label>
+                  <Input
+                    value={customerNip}
+                    onChange={(e) => setCustomerNip(e.target.value)}
+                    placeholder="123-456-78-90"
+                  />
+                </div>
+              </div>
 
-          {/* Customer Address */}
-          <CustomerAddressSelect
-            instanceId={instanceId}
-            customerId={customerId}
-            value={customerAddressId}
-            onChange={setCustomerAddressId}
-            label="Adres klienta"
-          />
+              {/* Customer Address */}
+              <CustomerAddressSelect
+                instanceId={instanceId}
+                customerId={customerId}
+                value={customerAddressId}
+                onChange={setCustomerAddressId}
+                label="Adres klienta"
+              />
+            </>
+          )}
 
           {/* Photos */}
           <div className="space-y-2">
@@ -469,8 +517,8 @@ const CreateProtocolForm = ({
             </Popover>
           </div>
 
-          {/* Visits */}
-          {visits.length > 0 && (
+          {/* Visits - admin only */}
+          {isAdmin && visits.length > 0 && (
             <div className="space-y-2">
               <Label>Wizyty serwisowe</Label>
               <div className="space-y-1 text-sm">
@@ -482,10 +530,45 @@ const CreateProtocolForm = ({
                   </div>
                 </div>
                 {visits.map((v, i) => (
-                  <div key={i} className="flex justify-between">
+                  <div key={i} className="flex justify-between items-center">
                     <span>{format(new Date(v.itemDate + 'T00:00:00'), 'd.MM.yyyy')}</span>
-                    <div className="flex gap-6">
-                      <span className="w-20 text-right">{formatDuration(v.durationMinutes)}</span>
+                    <div className="flex gap-6 items-center">
+                      {isAdmin ? (
+                        <div className="w-auto flex items-center justify-end gap-1">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={Math.floor(v.durationMinutes / 60)}
+                            onChange={(e) => {
+                              const h = Math.max(0, parseInt(e.target.value) || 0);
+                              const m = v.durationMinutes % 60;
+                              const newVisits = [...visits];
+                              newVisits[i] = { ...v, durationMinutes: h * 60 + m };
+                              setVisits(newVisits);
+                            }}
+                            className="w-14 h-9 px-2 text-center text-sm"
+                          />
+                          <span className="text-xs text-muted-foreground">h</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={v.durationMinutes % 60}
+                            onChange={(e) => {
+                              const h = Math.floor(v.durationMinutes / 60);
+                              const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                              const newVisits = [...visits];
+                              newVisits[i] = { ...v, durationMinutes: h * 60 + m };
+                              setVisits(newVisits);
+                            }}
+                            className="w-14 h-9 px-2 text-center text-sm"
+                          />
+                          <span className="text-xs text-muted-foreground">m</span>
+                        </div>
+                      ) : (
+                        <span className="w-20 text-right">{formatDuration(v.durationMinutes)}</span>
+                      )}
                       <span className="w-20 text-right font-medium">
                         {formatDuration(roundUpTo30(v.durationMinutes))}
                       </span>
@@ -509,8 +592,8 @@ const CreateProtocolForm = ({
             </div>
           )}
 
-          {/* Show visits on protocol toggle */}
-          {visits.length > 0 && (
+          {/* Show visits on protocol toggle - admin only */}
+          {isAdmin && visits.length > 0 && (
             <div className="flex items-center gap-2">
               <Checkbox
                 id="show-visits"

@@ -423,15 +423,16 @@ const EmployeeCalendarPage = () => {
       prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)),
     );
     setSelectedItem((prev) => (prev && prev.id === itemId ? { ...prev, status: newStatus } : prev));
-    const updatePayload: Record<string, any> = { status: newStatus };
-    if (newStatus === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
-    if (newStatus === 'completed') updatePayload.work_ended_at = new Date().toISOString();
-    if (newStatus === 'unfinished') updatePayload.work_ended_at = new Date().toISOString();
-    const { error } = await supabase
-      .from('calendar_items')
-      .update(updatePayload as any)
-      .eq('id', itemId);
+    const now = new Date().toISOString();
+    const rpcPayload: Record<string, any> = {
+      _item_id: itemId,
+      _new_status: newStatus,
+    };
+    if (newStatus === 'in_progress') rpcPayload._work_started_at = now;
+    if (newStatus === 'completed' || newStatus === 'unfinished') rpcPayload._work_ended_at = now;
+    const { error } = await supabase.rpc('employee_update_calendar_item_status', rpcPayload);
     if (error) {
+      console.error('Status change error:', error);
       toast.error('Błąd zmiany statusu');
       fetchItems();
       return;

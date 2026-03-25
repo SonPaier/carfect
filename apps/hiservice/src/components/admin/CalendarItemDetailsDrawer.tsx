@@ -973,7 +973,14 @@ const CalendarItemDetailsDrawer = ({
       <Sheet
         open={open}
         onOpenChange={(v) => {
-          if (!v) onClose();
+          if (
+            !v &&
+            !endWorkDialogOpen &&
+            !deleteDialogOpen &&
+            !employeeDrawerOpen &&
+            !invoiceDrawerOpen
+          )
+            onClose();
         }}
         modal={false}
       >

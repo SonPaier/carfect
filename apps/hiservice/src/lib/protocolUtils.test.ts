@@ -135,8 +135,8 @@ describe('getVisitsFromChain', () => {
 
     const visits = getVisitsFromChain(chain);
     expect(visits).toHaveLength(2);
-    expect(visits[0]).toEqual({ itemDate: '2026-03-19', durationMinutes: 92 });
-    expect(visits[1]).toEqual({ itemDate: '2026-03-22', durationMinutes: 135 });
+    expect(visits[0]).toMatchObject({ itemDate: '2026-03-19', durationMinutes: 92 });
+    expect(visits[1]).toMatchObject({ itemDate: '2026-03-22', durationMinutes: 135 });
   });
 
   it('returns empty array for items without work times', () => {
