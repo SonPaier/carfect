@@ -13,7 +13,7 @@ import RollScanResultsTable from './RollScanResultsTable';
 interface RollScanDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  instanceId: string | null;
+  instanceId: string;
   onSaved?: () => void;
 }
 
@@ -36,8 +36,6 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
   );
 
   const handleSave = async () => {
-    if (!instanceId) return;
-
     if (savableResults.length === 0) {
       toast.error('Brak rolek do zapisania');
       return;
