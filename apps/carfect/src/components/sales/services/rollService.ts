@@ -388,9 +388,9 @@ export async function fetchActiveRollsByProductName(
 
 // ─── AI Extraction ──────────────────────────────────────────
 
-export async function extractRollData(imageBase64: string, mediaType?: string) {
+export async function extractRollData(imageBase64: string, mediaType: string, instanceId: string) {
   const { data, error } = await supabase.functions.invoke('extract-roll-data', {
-    body: { imageBase64, mediaType: mediaType || 'image/jpeg' },
+    body: { imageBase64, mediaType: mediaType || 'image/jpeg', instanceId },
   });
 
   if (error) throw new Error(error.message || 'AI extraction failed');

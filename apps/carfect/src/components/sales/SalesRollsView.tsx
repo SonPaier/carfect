@@ -452,7 +452,7 @@ const SalesRollsView = () => {
       <RollScanDrawer
         open={scanDrawerOpen}
         onOpenChange={setScanDrawerOpen}
-        instanceId={instanceId}
+        instanceId={instanceId!}
         onSaved={loadRolls}
       />
 

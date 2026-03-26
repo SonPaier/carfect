@@ -7,7 +7,7 @@ import {
 } from '../services/rollService';
 
 interface UseRollScanArgs {
-  instanceId: string | null;
+  instanceId: string;
 }
 
 export function useRollScan({ instanceId }: UseRollScanArgs) {
@@ -69,8 +69,6 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
 
   const addFiles = useCallback(
     async (files: File[]) => {
-      if (!instanceId) return;
-
       abortRef.current = false;
 
       // Create initial entries
@@ -109,7 +107,7 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
           updateResult(item.tempId, { status: 'extracting' });
           const base64 = await fileToBase64(item.file);
           const mediaType = item.file.type || 'image/jpeg';
-          const extracted = await extractRollData(base64, mediaType);
+          const extracted = await extractRollData(base64, mediaType, instanceId);
 
           updateResult(item.tempId, {
             status: 'confirmed',

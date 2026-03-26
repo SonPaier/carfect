@@ -39,6 +39,7 @@ import {
   deleteRollUsagesByOrder,
   fetchRollRemainingMb,
   uploadRollPhoto,
+  extractRollData,
 } from './rollService';
 
 // ─── Chain mock factory ───────────────────────────────────────
@@ -341,6 +342,80 @@ describe('mapDbRow — snake_case to camelCase conversion', () => {
     expect(result!.deliveryDate).toBe('2025-06-01');
     expect(result!.photoUrl).toBe('https://cdn.example.com/img.jpg');
     expect(result!.extractionConfidence).toEqual({ brand: 0.9 });
+  });
+});
+
+// ─── extractRollData ──────────────────────────────────────────
+
+describe('extractRollData', () => {
+  it('passes instanceId to the edge function body', async () => {
+    mockFunctionsInvoke.mockResolvedValue({
+      data: {
+        brand: 'Ultrafit',
+        productName: 'Crystal XP',
+        description: '',
+        productCode: 'CXP-001',
+        barcode: '',
+        widthMm: 1524,
+        lengthM: 15,
+        confidence: {},
+        warnings: [],
+      },
+      error: null,
+    });
+
+    await extractRollData('base64data', 'image/jpeg', 'inst-42');
+
+    expect(mockFunctionsInvoke).toHaveBeenCalledWith('extract-roll-data', {
+      body: {
+        imageBase64: 'base64data',
+        mediaType: 'image/jpeg',
+        instanceId: 'inst-42',
+      },
+    });
+  });
+
+  it('returns extracted data from the edge function', async () => {
+    const extractedData = {
+      brand: 'Ultrafit',
+      productName: 'Crystal XP',
+      description: 'Paint Protection Film',
+      productCode: 'CXP-001',
+      barcode: '1234567890123',
+      widthMm: 1524,
+      lengthM: 15,
+      confidence: { productName: 0.95 },
+      warnings: [],
+    };
+    mockFunctionsInvoke.mockResolvedValue({ data: extractedData, error: null });
+
+    const result = await extractRollData('base64data', 'image/jpeg', 'inst-1');
+
+    expect(result.productName).toBe('Crystal XP');
+    expect(result.brand).toBe('Ultrafit');
+    expect(result.widthMm).toBe(1524);
+  });
+
+  it('throws when edge function returns an error', async () => {
+    mockFunctionsInvoke.mockResolvedValue({
+      data: null,
+      error: { message: 'Function timeout' },
+    });
+
+    await expect(extractRollData('base64', 'image/jpeg', 'inst-1')).rejects.toThrow(
+      'Function timeout',
+    );
+  });
+
+  it('throws when response data contains an error field', async () => {
+    mockFunctionsInvoke.mockResolvedValue({
+      data: { error: 'Nie udało się odczytać danych z etykiety' },
+      error: null,
+    });
+
+    await expect(extractRollData('base64', 'image/jpeg', 'inst-1')).rejects.toThrow(
+      'Nie udało się odczytać danych z etykiety',
+    );
   });
 });
 
