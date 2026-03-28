@@ -109,12 +109,12 @@ export const PAYMENT_TYPES: { value: PaymentType; label: string }[] = [
 ];
 
 export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string }> = {
-  not_invoiced: { label: 'Do rozliczenia', color: 'bg-gray-900 text-white' },
+  not_invoiced: { label: 'Do rozliczenia', color: 'bg-orange-500 text-white' },
   invoice_sent: { label: 'Wysłano FV', color: 'bg-yellow-400 text-gray-900' },
   paid: { label: 'Opłacony', color: 'bg-emerald-600 text-white' },
   overdue: { label: 'Przeterminowana', color: 'bg-red-600 text-white' },
   collective: { label: 'Zbiorczy', color: 'bg-blue-600 text-white' },
-  non_payable: { label: 'Niepłatny', color: 'bg-gray-400 text-white' },
-  sms_blik_sent: { label: 'Wysłano SMS BLIK', color: 'bg-orange-500 text-white' },
+  non_payable: { label: 'Niepłatny', color: 'bg-gray-600 text-white' },
+  sms_blik_sent: { label: 'Wysłano SMS BLIK', color: 'bg-amber-600 text-white' },
   sms_bank_sent: { label: 'Wysłano SMS konto', color: 'bg-purple-600 text-white' },
 };

@@ -154,7 +154,7 @@ const EmployeeCalendarPage = () => {
 
   // Fetch items
   const fetchItems = useCallback(async () => {
-    if (!instanceId || !config) return;
+    if (!instanceId || !config || !linkedEmployeeResolved) return;
     const columnIds = config.column_ids || [];
     if (columnIds.length === 0) return;
 
@@ -233,7 +233,7 @@ const EmployeeCalendarPage = () => {
     }
 
     setCalendarItems(items as CalendarItem[]);
-  }, [instanceId, config, currentCalendarDate, mapOpen, linkedEmployeeId]);
+  }, [instanceId, config, currentCalendarDate, mapOpen, linkedEmployeeId, linkedEmployeeResolved]);
 
   // Fetch breaks
   const fetchBreaks = useCallback(async () => {
@@ -278,6 +278,7 @@ const EmployeeCalendarPage = () => {
       .maybeSingle()
       .then(({ data }) => {
         if (data) setLinkedEmployeeId(data.id);
+        setLinkedEmployeeResolved(true);
       });
   }, [instanceId, user]);
 
@@ -648,7 +649,12 @@ const EmployeeCalendarPage = () => {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <main ref={mainRef} className="flex-1 overflow-auto p-4 lg:p-6 pb-20 lg:pb-6">
-          {currentView === 'dashboard' && instanceId && config ? (
+          {currentView === 'dashboard' && instanceId && config && linkedEmployeeResolved && !linkedEmployeeId ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-lg font-medium text-foreground">Konto nie jest powiązane z pracownikiem</p>
+              <p className="text-sm text-muted-foreground mt-2">Skontaktuj się z administratorem, aby przypisać Twoje konto do profilu pracownika.</p>
+            </div>
+          ) : currentView === 'dashboard' && instanceId && config && linkedEmployeeResolved ? (
             <>
               <EmployeeDashboard
                 key={dashboardRefreshKey}

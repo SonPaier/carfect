@@ -389,7 +389,7 @@ export function InvoiceForm({
                       const total = Number(val);
                       if (isNaN(total) || total < 0) return;
                       const unitPrice = pos.quantity > 0 ? total / pos.quantity : 0;
-                      onUpdatePosition(idx, 'unit_price_gross', parseFloat(unitPrice.toFixed(6)));
+                      onUpdatePosition(idx, 'unit_price_gross', Math.round(unitPrice * 100) / 100);
                       e.target.value = '';
                     }}
                     className="bg-white h-8 text-sm placeholder:text-foreground"
