@@ -184,11 +184,13 @@ const ServicesSummary = ({
   instanceId,
   hidePrices = false,
   allowEdit = false,
+  itemPrice,
 }: {
   itemId: string;
   instanceId: string;
   hidePrices?: boolean;
   allowEdit?: boolean;
+  itemPrice?: number | null;
 }) => {
   const queryClient = useQueryClient();
   const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
@@ -323,8 +325,14 @@ const ServicesSummary = ({
         ))}
         {!hidePrices && servicesData.length > 0 && (
           <div className="border-t border-border pt-1.5 mt-1.5 flex items-center justify-between">
-            <span className="text-sm font-bold">Razem netto</span>
-            <span className="text-base font-bold">{grandTotal.toFixed(0)} zł</span>
+            <span className="text-sm font-bold">Razem usługi netto</span>
+            <span className="text-base font-bold">{grandTotal.toFixed(2)} zł</span>
+          </div>
+        )}
+        {!hidePrices && !!itemPrice && itemPrice !== grandTotal && (
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-sm font-bold">Kwota zlecenia netto</span>
+            <span className="text-base font-bold">{itemPrice.toFixed(2)} zł</span>
           </div>
         )}
       </div>
@@ -1276,6 +1284,7 @@ const CalendarItemDetailsDrawer = ({
                   instanceId={instanceId}
                   hidePrices={!!hidePrices}
                   allowEdit={!isEmployee || !!canEditServices}
+                  itemPrice={item.price}
                 />
               )}
 

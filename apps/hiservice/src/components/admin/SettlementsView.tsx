@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PAYMENT_STATUS_CONFIG, type PaymentStatus, CreateInvoiceDrawer } from '@shared/invoicing';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InvoiceStatusBadge } from '@/components/invoicing/InvoiceStatusBadge';
 import CalendarItemDetailsDrawer from './CalendarItemDetailsDrawer';
 import SendPaymentSmsDialog from './SendPaymentSmsDialog';
@@ -147,6 +148,8 @@ interface SettlementsViewProps {
 
 const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
   const [invoiceTarget, setInvoiceTarget] = useState<CalendarItemRow | null>(null);
@@ -170,12 +173,13 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const handleBulkInvoice = () => {
     const selectedItems = items.filter((i) => bulk.isSelected(i.id));
     if (selectedItems.length === 0) return;
+
     const itemsForInvoice: CalendarItemForInvoice[] = selectedItems.map((i) => ({
       id: i.id,
       title: i.title,
       item_date: i.item_date || '',
       end_date: i.end_date,
-      price: i.price,
+      price: getEffectivePrice(i),
       customer_id: i.customer_id,
       customer_name: i.customer_name,
       customer_email: i.customer_email,
@@ -243,6 +247,33 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       return (data || []) as CalendarItemRow[];
     },
   });
+
+  const itemsWithoutPrice = useMemo(() => items.filter((i) => !i.price).map((i) => i.id), [items]);
+
+  const { data: serviceTotalsMap = {} } = useQuery({
+    queryKey: ['settlements-service-totals', instanceId, itemsWithoutPrice],
+    enabled: itemsWithoutPrice.length > 0,
+    queryFn: async () => {
+      const { data: services } = await supabase
+        .from('calendar_item_services')
+        .select('calendar_item_id, custom_price, quantity, unified_services(price)')
+        .in('calendar_item_id', itemsWithoutPrice);
+      const totals: Record<string, number> = {};
+      if (services) {
+        for (const s of services) {
+          const unitPrice = s.custom_price ?? (s.unified_services as any)?.price ?? 0;
+          const qty = s.quantity ?? 1;
+          totals[s.calendar_item_id] = (totals[s.calendar_item_id] || 0) + Math.round(unitPrice * qty * 100) / 100;
+        }
+      }
+      return totals;
+    },
+  });
+
+  const getEffectivePrice = useCallback(
+    (item: CalendarItemRow) => item.price || serviceTotalsMap[item.id] || 0,
+    [serviceTotalsMap],
+  );
 
   const addressIds = useMemo(() => {
     return [...new Set(items.map((i) => i.customer_address_id).filter(Boolean))] as string[];
@@ -315,6 +346,12 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
         ]),
       );
     }
+    if (statusFilter !== 'all') {
+      result = result.filter((o) => o.status === statusFilter);
+    }
+    if (paymentFilter !== 'all') {
+      result = result.filter((o) => (o.payment_status || 'not_invoiced') === paymentFilter);
+    }
     if (sortColumn) {
       result = [...result].sort((a, b) => {
         let valA: any, valB: any;
@@ -344,8 +381,8 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
             valB = b.payment_status || '';
             break;
           case 'price':
-            valA = a.price ?? 0;
-            valB = b.price ?? 0;
+            valA = getEffectivePrice(a);
+            valB = getEffectivePrice(b);
             break;
           default:
             return 0;
@@ -356,7 +393,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       });
     }
     return result;
-  }, [items, searchQuery, sortColumn, sortDirection, addressMap]);
+  }, [items, searchQuery, statusFilter, paymentFilter, sortColumn, sortDirection, addressMap]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const paginatedOrders = useMemo(() => {
@@ -563,6 +600,28 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
             className="pl-9"
           />
         </div>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Wszystkie statusy</SelectItem>
+            {Object.entries(STATUS_CONFIG).map(([key, { label }]) => (
+              <SelectItem key={key} value={key}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={(v) => { setPaymentFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-[170px]">
+            <SelectValue placeholder="Płatność" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Wszystkie płatności</SelectItem>
+            {Object.entries(PAYMENT_STATUS_CONFIG).map(([key, { label }]) => (
+              <SelectItem key={key} value={key}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Mobile Bulk Action Bar */}
@@ -625,7 +684,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                       )}
                     </div>
                     <span className="text-sm font-semibold tabular-nums whitespace-nowrap">
-                      {formatCurrency(order.price)}
+                      {formatCurrency(getEffectivePrice(order))}
                     </span>
                   </div>
 
@@ -989,7 +1048,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
                         )}
                       </TableCell>
                       <TableCell className="text-right text-sm tabular-nums">
-                        {formatCurrency(order.price)}
+                        {formatCurrency(getEffectivePrice(order))}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

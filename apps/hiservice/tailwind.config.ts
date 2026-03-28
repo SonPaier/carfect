@@ -6,5 +6,6 @@ export default {
   content: [
     "./src/**/*.{ts,tsx}",
     "../../libs/ui/src/**/*.{ts,tsx}",
+    "../../libs/shared-invoicing/src/**/*.{ts,tsx}",
   ],
 } satisfies Config;

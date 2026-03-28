@@ -147,7 +147,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         const pos: InvoicePosition[] = data.map((s: any) => ({
           name: s.unified_services?.name || 'Usluga',
           quantity: s.quantity != null ? Number(s.quantity) : 1,
-          unit_price_gross: s.custom_price ?? s.unified_services?.price ?? 0,
+          unit_price_gross: Math.round((s.custom_price ?? s.unified_services?.price ?? 0) * 100) / 100,
           vat_rate: settings?.default_vat_rate ?? 23,
           unit: s.unified_services?.unit || 'szt.',
         }));
@@ -165,13 +165,14 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     }
   }, [issueDate, paymentDays]);
 
-  // Calculate totals based on price mode
+  // Calculate totals based on price mode (round per-line to avoid floating point drift)
   const { totalNetto, totalVat, totalGross } = useMemo(() => {
+    const r = (v: number) => Math.round(v * 100) / 100;
     let netto = 0;
     let brutto = 0;
     for (const p of positions) {
       const discountMultiplier = 1 - (p.discount || 0) / 100;
-      const lineTotal = p.unit_price_gross * p.quantity * discountMultiplier;
+      const lineTotal = r(p.unit_price_gross * p.quantity * discountMultiplier);
       // vat_rate -1 means "zwolniony" (exempt) — netto equals brutto
       if (p.vat_rate === -1) {
         netto += lineTotal;
@@ -181,13 +182,12 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       const rate = p.vat_rate / 100;
       if (priceMode === 'netto') {
         netto += lineTotal;
-        brutto += lineTotal * (1 + rate);
+        brutto += r(lineTotal * (1 + rate));
       } else {
         brutto += lineTotal;
-        netto += lineTotal / (1 + rate);
+        netto += r(lineTotal / (1 + rate));
       }
     }
-    const r = (v: number) => Math.round(v * 100) / 100;
     return { totalNetto: r(netto), totalVat: r(brutto - netto), totalGross: r(brutto) };
   }, [positions, priceMode]);
 

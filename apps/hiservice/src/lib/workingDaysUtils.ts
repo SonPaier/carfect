@@ -22,6 +22,10 @@ export function getNextWorkingDays(count: number, workingHours: WorkingHours): s
   const d = new Date();
   d.setHours(0, 0, 0, 0);
 
+  // Always include today so employees see today's assignments regardless of working hours config
+  dates.push(format(d, 'yyyy-MM-dd'));
+  d.setDate(d.getDate() + 1);
+
   // Treat null/undefined/empty object as "no config" → fallback to Mon-Fri
   const hasConfig = workingHours != null && Object.keys(workingHours).length > 0;
 
@@ -29,7 +33,7 @@ export function getNextWorkingDays(count: number, workingHours: WorkingHours): s
   let iterations = 0;
   while (dates.length < count && iterations < 30) {
     const dayKey = WEEKDAY_MAP[d.getDay()];
-    
+
     if (!hasConfig) {
       // Fallback: skip Saturday (6) and Sunday (0)
       if (d.getDay() !== 0 && d.getDay() !== 6) {
