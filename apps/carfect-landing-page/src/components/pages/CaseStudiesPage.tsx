@@ -7,9 +7,9 @@ import ImagePlaceholder from "@/components/case-study/ImagePlaceholder";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import caseStudy1 from "@/assets/studio-car-detailing-case-study-armcar-gdansk.jpg";
+import caseStudy1 from "@/assets/studio-car-detailing-case-study-armcar-gdansk.webp";
 import caseStudy2 from "@/assets/studio-car-detailing-case-study-armcar-gdansk-2.webp";
-import caseStudy3 from "@/assets/studio-car-detailing-case-study-armcar-gdansk-3.jpg";
+import caseStudy3 from "@/assets/studio-car-detailing-case-study-armcar-gdansk-3.webp";
 import { ArrowRight } from "lucide-react";
 
 const SmsIcon = () => (

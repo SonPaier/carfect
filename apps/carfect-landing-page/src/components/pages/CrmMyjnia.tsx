@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import SubpageHero from "@/components/landing/SubpageHero";
 import kalendarzMobile from "@/assets/crm-kalendarz-mobile.png";
 import widokHala from "@/assets/crm-studio-detailing-myjnia-reczna.webp";
-import smsPrzypomnienie from "@/assets/crm-sms-przypomnienie.jpg";
+import smsPrzypomnienie from "@/assets/crm-sms-przypomnienie.webp";
 
 const ClockIcon = () => (
   <svg viewBox="0 0 48 48" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
