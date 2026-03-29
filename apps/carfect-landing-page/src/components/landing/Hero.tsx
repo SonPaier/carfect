@@ -154,6 +154,8 @@ const Hero = () => {
               className="w-full h-auto"
               sizes="(max-width: 1024px) 90vw, 800px"
               priority
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
 
@@ -170,7 +172,6 @@ const Hero = () => {
               alt="Carfect — kalendarz na telefonie"
               className="w-full h-auto"
               sizes="200px"
-              priority
             />
           </div>
         </div>

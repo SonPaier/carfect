@@ -80,6 +80,7 @@ const Header = () => {
           <Link
             href="/"
             className="transition-all hover:opacity-80"
+            aria-label="Carfect — strona główna"
           >
             <CarfectLogo className={`h-6 md:h-7 w-auto transition-all duration-300 ${
               hasSolidBackground && isHomePage ? "text-foreground" : "text-white"
