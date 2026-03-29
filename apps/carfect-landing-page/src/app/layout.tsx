@@ -86,7 +86,7 @@ const jsonLdGraph = [
     email: 'hello@carfect.pl',
     telephone: '+48666610222',
     description: 'Twórcy systemu CRM i rezerwacji online dla myjni samochodowych i studiów detailingu w Polsce.',
-    foundingDate: '2024',
+    foundingDate: '2026',
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'PL',
@@ -96,6 +96,7 @@ const jsonLdGraph = [
       name: 'Polska',
     },
     sameAs: [
+      'https://www.wikidata.org/wiki/Q138823946',
       'https://www.facebook.com/carfect.pl',
       'https://www.instagram.com/carfect.pl',
     ],
