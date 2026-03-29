@@ -552,22 +552,41 @@ const CalendarItemDetailsDrawer = ({
     fetchAddr();
   }, [item?.customer_address_id]);
 
-  // Fetch protocol linked to this calendar item
+  // Fetch protocol linked to this calendar item (by calendar_item_id or by customer+date fallback)
   useEffect(() => {
     if (!item?.id || !open) {
       setProtocolToken(null);
       return;
     }
     const fetchProtocol = async () => {
+      // First try: direct link by calendar_item_id
       const { data } = await (supabase.from('protocols') as any)
         .select('public_token')
         .eq('calendar_item_id', item.id)
         .limit(1)
         .maybeSingle();
-      setProtocolToken(data?.public_token || null);
+      if (data?.public_token) {
+        setProtocolToken(data.public_token);
+        return;
+      }
+      // Fallback: find by customer name + date (for protocols created from list, not from calendar item)
+      if (item.customer_name && instanceId) {
+        const { data: fallback } = await (supabase.from('protocols') as any)
+          .select('public_token')
+          .eq('instance_id', instanceId)
+          .eq('customer_name', item.customer_name)
+          .gte('created_at', item.item_date)
+          .lte('created_at', item.item_date + 'T23:59:59')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setProtocolToken(fallback?.public_token || null);
+      } else {
+        setProtocolToken(null);
+      }
     };
     fetchProtocol();
-  }, [item?.id, open]);
+  }, [item?.id, open, instanceId]);
 
   // Fetch SMS notifications
   useEffect(() => {
