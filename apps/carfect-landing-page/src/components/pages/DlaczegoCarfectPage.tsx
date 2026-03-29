@@ -392,7 +392,7 @@ const DlaczegoCarfectPage = () => {
                 Wypróbuj Carfect za darmo przez 30 dni. Bez karty, bez zobowiązań.
               </p>
               <a
-                href="/#hero"
+                href="tel:+48666610222"
                 className="inline-flex h-14 px-8 items-center justify-center gap-2 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Umów prezentację

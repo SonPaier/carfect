@@ -214,7 +214,7 @@ const OpiniePage = () => {
                 Dołącz do grona zadowolonych właścicieli myjni i studiów detailingu
               </p>
               <a
-                href="/#hero"
+                href="tel:+48666610222"
                 className="inline-flex h-14 px-8 items-center justify-center text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Wypróbuj Carfect za darmo

@@ -5,6 +5,7 @@ import { CheckCircle } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
+import SubpageHero from "@/components/landing/SubpageHero";
 
 const ClockIcon = () => (
   <svg viewBox="0 0 48 48" fill="none" className="w-8 h-8" xmlns="http://www.w3.org/2000/svg">
@@ -76,12 +77,11 @@ const CrmDetailing = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-16 md:py-24">
-          <div className="container mx-auto px-4">
+        <SubpageHero>
             <h1 id="crm-dla-studia-detailingu-system-rezerwacji-i-ofert-detailingowych" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">CRM dla studia detailingu – System rezerwacji i ofert detailingowych
 
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">Oprogramowanie CRM dla studiów detailingu. Generator ofert, kalendarz, protokoły przyjęcia, przypomnienia o przeglądach powłok.
 
             </p>
@@ -91,15 +91,14 @@ const CrmDetailing = () => {
                 asChild
                 className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90">
 
-                <Link href="/umow-prezentacje">Umów prezentację</Link>
+                <Link href="tel:+48666610222">Umów prezentację</Link>
               </Button>
             </div>
 
             <p className="mt-4 text-sm text-white/60">
               Od 139 zł/msc • Bez zobowiązań • 30 dni za darmo
             </p>
-          </div>
-        </section>
+        </SubpageHero>
 
         <article>
         {/* What's Different Section */}
@@ -364,7 +363,7 @@ const CrmDetailing = () => {
                   asChild
                   className="w-full h-12 text-base font-semibold rounded-xl">
 
-                  <Link href="/umow-prezentacje">Umów bezpłatną prezentację</Link>
+                  <Link href="tel:+48666610222">Umów bezpłatną prezentację</Link>
                 </Button>
               </div>
             </div>
@@ -387,7 +386,7 @@ const CrmDetailing = () => {
               asChild
               className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90">
 
-              <Link href="/umow-prezentacje">Umów bezpłatną prezentację</Link>
+              <Link href="tel:+48666610222">Umów bezpłatną prezentację</Link>
             </Button>
           </div>
         </section>

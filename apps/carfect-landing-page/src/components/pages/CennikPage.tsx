@@ -127,12 +127,12 @@ const CennikPage = () => {
                   Bez podawania karty kredytowej. Bez zobowiązań. Pełen dostęp do
                   wszystkich funkcji.
                 </p>
-                <button
-                  onClick={scrollToHero}
-                  className="h-14 px-8 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                <a
+                  href="tel:+48666610222"
+                  className="inline-flex items-center justify-center h-14 px-8 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  Rozpocznij bezpłatny okres próbny
-                </button>
+                  Umów prezentację
+                </a>
               </div>
             </div>
           </div>

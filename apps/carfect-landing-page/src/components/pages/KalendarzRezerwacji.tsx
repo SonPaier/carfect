@@ -5,6 +5,7 @@ import { Calendar, CalendarDays, Clock, Edit3, Layers, Pause, Users, Globe, Mess
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
+import SubpageHero from "@/components/landing/SubpageHero";
 import kalendarzDesktopImg from "@/assets/studio-detailing-myjnia-reczna-kalendarz.png";
 import edycjaRezerwacjiImg from "@/assets/kalendarz-rezerwacji-myjnia-reczna-korzysci-1.webp";
 import rezerwacjaWielodniowaImg from "@/assets/kalendarz-rezerwacji-myjnia-reczna-korzysci-2.webp";
@@ -17,26 +18,24 @@ const KalendarzRezerwacji = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-16 md:py-24">
-          <div className="container mx-auto px-4">
+        <SubpageHero>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Kalendarz Rezerwacji dla Myjni i Detailingu
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">
               Widok dzienny i tygodniowy, przypisanie rezerwacji do stanowisk. Rezerwacje 24/7 bez telefonów.
             </p>
 
             <div className="mt-8">
-              <Button 
+              <Button
                 asChild
                 className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
               >
-                <Link href="/umow-prezentacje">Umów prezentację</Link>
+                <Link href="tel:+48666610222">Umów prezentację</Link>
               </Button>
             </div>
-          </div>
-        </section>
+        </SubpageHero>
 
         <article>
         {/* How It Works Section */}
@@ -317,7 +316,7 @@ const KalendarzRezerwacji = () => {
               asChild
               className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
             >
-              <Link href="/umow-prezentacje">Umów bezpłatną prezentację</Link>
+              <Link href="tel:+48666610222">Umów bezpłatną prezentację</Link>
             </Button>
           </div>
         </section>

@@ -102,7 +102,7 @@ const KontaktPage = () => {
                 Umów bezpłatną prezentację i przekonaj się, jak Carfect może usprawnić Twój biznes.
               </p>
               <a
-                href="/#hero"
+                href="tel:+48666610222"
                 className="inline-flex h-14 px-8 items-center justify-center gap-2 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Umów prezentację

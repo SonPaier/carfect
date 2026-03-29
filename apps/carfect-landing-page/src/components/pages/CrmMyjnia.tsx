@@ -4,6 +4,7 @@ import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import SubpageHero from "@/components/landing/SubpageHero";
 import kalendarzMobile from "@/assets/crm-kalendarz-mobile.png";
 import widokHala from "@/assets/crm-studio-detailing-myjnia-reczna.webp";
 import smsPrzypomnienie from "@/assets/crm-sms-przypomnienie.jpg";
@@ -98,23 +99,21 @@ const CrmMyjnia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-16 md:py-24">
-          <div className="container mx-auto px-4">
+        <SubpageHero>
             <h1 id="crm-dla-recznej-myjni-samochodowej" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">CRM dla ręcznej myjni samochodowej</h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">System CRM dedykowany dla myjni ręcznych. Rezerwacje, kalendarz, baza klientów, przypomnienia SMS, raportowanie czasu pracy.</p>
 
             <div className="mt-8">
               <Button asChild className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90">
-                <Link href="/umow-prezentacje">Umów prezentację</Link>
+                <Link href="tel:+48666610222">Umów prezentację</Link>
               </Button>
             </div>
 
             <p className="mt-4 text-sm text-white/60">
               Od 89 zł/msc • Bez zobowiązań • 30 dni za darmo
             </p>
-          </div>
-        </section>
+        </SubpageHero>
 
         <article>
         {/* Why CRM Section */}
@@ -284,7 +283,7 @@ const CrmMyjnia = () => {
             </h2>
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">Dołącz do wielu myjni, które już korzystają z Carfect. Zacznij bezpłatny okres próbny już dziś.</p>
             <Button asChild className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90">
-              <Link href="/umow-prezentacje">Umów bezpłatną prezentację</Link>
+              <Link href="tel:+48666610222">Umów bezpłatną prezentację</Link>
             </Button>
           </div>
         </section>

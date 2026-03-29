@@ -180,7 +180,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/umow-prezentacje"
+                  href="tel:+48666610222"
                   className="text-background/70 hover:text-background transition-colors text-sm"
                 >
                   Umów prezentację

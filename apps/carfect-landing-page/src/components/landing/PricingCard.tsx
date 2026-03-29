@@ -150,12 +150,12 @@ const PricingCard = ({
       </div>
 
       {/* CTA */}
-      <button
-        onClick={onScrollToHero}
-        className="w-full h-14 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-auto"
+      <a
+        href="tel:+48666610222"
+        className="w-full h-14 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-auto flex items-center justify-center"
       >
         Umów prezentację
-      </button>
+      </a>
     </div>
   );
 };
