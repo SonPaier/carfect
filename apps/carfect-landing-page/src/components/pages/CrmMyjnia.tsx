@@ -5,7 +5,7 @@ import Footer from "@/components/landing/Footer";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import SubpageHero from "@/components/landing/SubpageHero";
-import kalendarzMobile from "@/assets/crm-kalendarz-mobile.png";
+import kalendarzMobile from "@/assets/crm-kalendarz-mobile.webp";
 import widokHala from "@/assets/crm-studio-detailing-myjnia-reczna.webp";
 import smsPrzypomnienie from "@/assets/crm-sms-przypomnienie.webp";
 

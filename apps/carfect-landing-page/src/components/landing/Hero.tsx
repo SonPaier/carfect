@@ -9,7 +9,7 @@ import Image from "next/image";
 import { z } from "zod";
 
 import appDesktop from "@/assets/app-desktop.png";
-import appMobile from "@/assets/studio-detailing-myjnia-reczna-kalendarz-rezerwacji-telefon.png";
+import appMobile from "@/assets/studio-detailing-myjnia-reczna-kalendarz-rezerwacji-telefon.webp";
 
 const contactSchema = z.object({
   contact: z.string().refine(
@@ -154,6 +154,8 @@ const Hero = () => {
               className="w-full h-auto"
               sizes="(max-width: 1024px) 90vw, 800px"
               priority
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
 
@@ -170,7 +172,6 @@ const Hero = () => {
               alt="Carfect — kalendarz na telefonie"
               className="w-full h-auto"
               sizes="200px"
-              priority
             />
           </div>
         </div>
