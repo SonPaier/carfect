@@ -9,7 +9,7 @@ const TermsOfService = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md shadow-sm border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md shadow-sm border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="transition-all hover:opacity-80">
@@ -70,19 +70,19 @@ const TermsOfService = () => {
                 Definicje
               </h2>
               <div className="pl-11 space-y-4">
-                <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="p-4 bg-muted/30 rounded-lg">
                   <h3 className="font-semibold text-foreground mb-2">Partner</h3>
                   <p className="text-sm leading-relaxed">
                     Podmiot prowadzący działalność gospodarczą, który na podstawie umowy z Operatorem korzysta z Serwisu w celu oferowania swoich usług i zarządzania rezerwacjami we własnej domenie (subdomenie carfect.pl).
                   </p>
                 </div>
-                <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="p-4 bg-muted/30 rounded-lg">
                   <h3 className="font-semibold text-foreground mb-2">Klient</h3>
                   <p className="text-sm leading-relaxed">
                     Osoba fizyczna, prawna lub jednostka organizacyjna korzystająca z Serwisu w celu dokonania rezerwacji usługi u Partnera.
                   </p>
                 </div>
-                <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="p-4 bg-muted/30 rounded-lg">
                   <h3 className="font-semibold text-foreground mb-2">Serwis</h3>
                   <p className="text-sm leading-relaxed">
                     System rezerwacyjny online działający w domenie carfect.pl oraz subdomenach Partnerów.

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Outfit } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -7,9 +7,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { CookieBanner } from '@/components/CookieBanner';
 import './globals.css';
 
-const outfit = Outfit({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'latin-ext'],
-  variable: '--font-outfit',
+  variable: '--font-jakarta',
 });
 
 export const viewport: Viewport = {
@@ -74,22 +74,50 @@ const jsonLdGraph = [
     '@id': 'https://carfect.pl/#organization',
     name: 'Carfect.pl',
     url: 'https://carfect.pl',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://carfect.pl/favicon-32x32.png',
+      width: 32,
+      height: 32,
+    },
+    alternateName: 'Carfect',
+    legalName: 'Carfect.pl',
+    knowsAbout: ['CRM dla myjni samochodowych', 'system rezerwacji detailing', 'oprogramowanie dla studia detailingu', 'zarządzanie myjnią ręczną'],
     email: 'hello@carfect.pl',
+    telephone: '+48666610222',
     description: 'Twórcy systemu CRM i rezerwacji online dla myjni samochodowych i studiów detailingu w Polsce.',
-    foundingDate: '2024',
+    foundingDate: '2026',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'PL',
+    },
     areaServed: {
       '@type': 'Country',
       name: 'Polska',
     },
-    sameAs: [],
+    sameAs: [
+      'https://www.wikidata.org/wiki/Q138823946',
+      'https://www.facebook.com/carfect.pl',
+      'https://www.instagram.com/carfect.pl',
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+48666610222',
+      contactType: 'sales',
+      availableLanguage: 'Polish',
+    },
   },
   {
     '@type': 'SoftwareApplication',
     '@id': 'https://carfect.pl/#software',
     name: 'Carfect.pl',
     applicationCategory: 'BusinessApplication',
+    applicationSubCategory: 'CRM',
     operatingSystem: 'Web',
     description: 'CRM i system rezerwacji dla myjni samochodowych i studiów detailingu',
+    featureList: 'Kalendarz rezerwacji, Rezerwacje online 24/7, Generator ofert detailingowych, Protokół przyjęcia pojazdu, Przypomnienia SMS, Zarządzanie zespołem, Baza klientów, Analityka i raporty, Integracja z Fakturownia i iFirma',
+    screenshot: 'https://carfect.pl/og-image.png',
+    inLanguage: 'pl',
     offers: {
       '@type': 'Offer',
       price: '75',
@@ -115,7 +143,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pl" className={outfit.variable}>
+    <html lang="pl" className={plusJakartaSans.variable}>
       <head>
         <script
           type="application/ld+json"

@@ -91,7 +91,7 @@ const Header = () => {
 
           {/* CTA Button - Desktop */}
           <Link
-            href="/umow-prezentacje"
+            href="tel:+48666610222"
             className="hidden md:inline-flex items-center justify-center px-5 py-2 text-sm font-medium rounded-sm transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {nav.umowPrezentacje}
@@ -123,7 +123,7 @@ const Header = () => {
             />
             <div className="px-4 pb-4">
               <Link
-                href="/umow-prezentacje"
+                href="tel:+48666610222"
                 onClick={closeMobileMenu}
                 className="block w-full text-center px-5 py-3 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >

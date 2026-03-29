@@ -1,41 +1,66 @@
-import { client } from '@/lib/sanity/client';
-import {
-  allBlogPostsQuery,
-  blogPostBySlugQuery,
-  allBlogPostSlugsQuery,
-  featuredBlogPostsQuery,
-} from '@/lib/sanity/queries';
+import fs from 'fs';
+import path from 'path';
+import matter from 'gray-matter';
+import readingTime from 'reading-time';
 
 export interface BlogPost {
+  slug: string;
   title: string;
-  slug: { current: string };
-  excerpt: string;
-  coverImage: unknown;
-  category: { title: string; slug: { current: string } } | null;
+  description: string;
+  category: string;
+  date: string;
   author: string;
-  publishedAt: string;
+  image: string;
   featured: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  body?: any[];
-  seo?: {
-    metaTitle?: string;
-    metaDescription?: string;
-    ogImage?: unknown;
-  };
+  content: string;
+  readingTime: string;
 }
 
-export async function getAllPosts(): Promise<BlogPost[]> {
-  return client.fetch(allBlogPostsQuery, {}, { next: { tags: ['blogPost'] } });
+export function getAllPosts(): BlogPost[] {
+  const postsDirectory = path.join(process.cwd(), 'content/blog');
+
+  if (!fs.existsSync(postsDirectory)) {
+    return [];
+  }
+
+  const fileNames = fs.readdirSync(postsDirectory);
+
+  const posts = fileNames
+    .filter(fileName => fileName.endsWith('.mdx'))
+    .map(fileName => {
+      const slug = fileName.replace(/\.mdx$/, '');
+      const fullPath = path.join(postsDirectory, fileName);
+      const fileContents = fs.readFileSync(fullPath, 'utf8');
+      const { data, content } = matter(fileContents);
+
+      return {
+        slug,
+        title: data.title || 'Untitled',
+        description: data.description || '',
+        category: data.category || 'Bez kategorii',
+        date: data.date || new Date().toISOString(),
+        author: data.author || 'Carfect Team',
+        image: data.image || '/images/blog/placeholder.jpg',
+        featured: data.featured || false,
+        content,
+        readingTime: readingTime(content).text,
+      };
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return posts;
 }
 
-export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
-  return client.fetch(blogPostBySlugQuery, { slug }, { next: { tags: ['blogPost'] } });
+export function getPostBySlug(slug: string): BlogPost | null {
+  const posts = getAllPosts();
+  return posts.find(post => post.slug === slug) || null;
 }
 
-export async function getFeaturedPosts(): Promise<BlogPost[]> {
-  return client.fetch(featuredBlogPostsQuery, {}, { next: { tags: ['blogPost'] } });
+export function getFeaturedPost(): BlogPost | null {
+  const posts = getAllPosts();
+  return posts.find(post => post.featured) || posts[0] || null;
 }
 
-export async function getAllPostSlugs(): Promise<{ slug: string }[]> {
-  return client.fetch(allBlogPostSlugsQuery, {}, { next: { tags: ['blogPost'] } });
+export function getAllPostSlugs(): { slug: string }[] {
+  return getAllPosts().map(post => ({ slug: post.slug }));
 }

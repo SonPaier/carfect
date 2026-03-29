@@ -1,40 +1,36 @@
 import Image from 'next/image';
 import { Calendar, User } from 'lucide-react';
-import HeaderClient from '@/components/landing/HeaderClient';
-import FooterServer from '@/components/landing/FooterServer';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import Header from '@/components/landing/Header';
+import Footer from '@/components/landing/Footer';
 import { BlogPost } from '@/lib/blog';
-import type { SiteSettings } from '@/types/sanity';
-import { PortableText } from '@portabletext/react';
-import { urlFor } from '@/lib/sanity/image';
 
 interface BlogPostLayoutProps {
   post: BlogPost;
-  settings?: SiteSettings;
 }
 
-export default function BlogPostLayout({ post, settings }: BlogPostLayoutProps) {
-  const imageUrl = post.coverImage ? urlFor(post.coverImage).width(768).height(432).url() : null;
-
+export default function BlogPostLayout({ post }: BlogPostLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <HeaderClient settings={settings} />
+      <Header />
       <main className="flex-1">
         <section className="pt-24 pb-10 md:pb-14 bg-gradient-to-b from-muted/30 to-background">
           <div className="container px-4">
             <div className="max-w-3xl mx-auto">
               {post.category && (
                 <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary mb-4">
-                  {post.category.title}
+                  {post.category}
                 </span>
               )}
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
                 {post.title}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8">
-                {post.publishedAt && (
+                {post.date && (
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {new Date(post.publishedAt).toLocaleDateString('pl-PL', {
+                    {new Date(post.date).toLocaleDateString('pl-PL', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -49,10 +45,10 @@ export default function BlogPostLayout({ post, settings }: BlogPostLayoutProps) 
                 )}
               </div>
 
-              {imageUrl && (
+              {post.image && (
                 <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-10">
                   <Image
-                    src={imageUrl}
+                    src={post.image}
                     alt={post.title}
                     fill
                     className="object-cover"
@@ -78,12 +74,12 @@ export default function BlogPostLayout({ post, settings }: BlogPostLayoutProps) 
               prose-blockquote:bg-muted/30 prose-blockquote:rounded-r-lg
               prose-img:rounded-2xl prose-img:my-8
               max-w-none">
-              {post.body && <PortableText value={post.body} />}
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
             </article>
           </div>
         </section>
       </main>
-      <FooterServer settings={settings} />
+      <Footer />
     </div>
   );
 }

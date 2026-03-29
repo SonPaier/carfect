@@ -1,12 +1,72 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { FileText, Layers, Link2, Mail, Eye, Palette, Globe, CheckCircle, Clock } from "lucide-react";
+import { Link2, CheckCircle } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
+import SubpageHero from "@/components/landing/SubpageHero";
 import szablonyOfertImg from "@/assets/studio-detailing-szablony-ofert.webp";
-import generatorOfertImg from "@/assets/studio-detailing-generator-ofert-korzysci.webp";
+
+const FileTextIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 4h20l10 10v30a2 2 0 01-2 2H10a2 2 0 01-2-2V6a2 2 0 012-2z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M30 4v10h10" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M16 22h16M16 29h16M16 36h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+  </svg>
+);
+
+const LayersIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 4L44 14 24 24 4 14 24 4z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M4 24l20 10 20-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    <path d="M4 34l20 10 20-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.3" />
+  </svg>
+);
+
+const MailIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="10" width="40" height="30" rx="3" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 13l20 14 20-14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M4 40l14-14M44 40L30 26" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
+
+const EyeIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 24C4 24 12 10 24 10s20 14 20 14-8 14-20 14S4 24 4 24z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="24" cy="24" r="6" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="2" />
+    <circle cx="24" cy="24" r="2.5" fill="currentColor" />
+  </svg>
+);
+
+const PaletteIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 6C14.059 6 6 14.059 6 24c0 9.941 8.059 18 18 18 2.21 0 4-.894 4-2.4V38c0-1.326.527-2.598 1.464-3.536L36 28l4-4a18 18 0 00-16-18z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <circle cx="14" cy="22" r="3" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="18" cy="14" r="3" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="28" cy="12" r="3" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="36" cy="18" r="3" fill="currentColor" fillOpacity="0.4" />
+    <path d="M36 28l6 6a4 4 0 01-5.657 5.657L30 34" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const GlobeIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="24" r="18" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeWidth="2" />
+    <path d="M6 24h36M24 6C18 12 14 18 14 24s4 12 10 18M24 6c6 6 10 12 10 18s-4 12-10 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M7 16h34M7 32h34" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="24" r="18" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M24 14v10l7 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="24" cy="24" r="2" fill="currentColor" />
+    <path d="M24 6V4M24 44v-2M6 24H4M44 24h-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
+  </svg>
+);
 
 const GeneratorOfert = () => {
   return (
@@ -14,30 +74,32 @@ const GeneratorOfert = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-32 md:py-48">
-          <div className="container mx-auto px-4">
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "Generator ofert", href: "/funkcje/generator-ofert" },
+        ]}>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Generator Ofert Detailingowych – Twórz Profesjonalne Wyceny w 5 Minut
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">
               Kreator ofert z wariantami cenowymi, dodatkami i automatyczną wysyłką e-mail. Publiczny link dla klienta zwiększa skuteczność sprzedaży.
             </p>
 
             <div className="mt-8">
-              <Button 
+              <Button
                 asChild
                 className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
               >
-                <Link href="/umow-prezentacje">Umów prezentację</Link>
+                <Link href="tel:+48666610222">Umów prezentację</Link>
               </Button>
             </div>
-          </div>
-        </section>
+        </SubpageHero>
 
         <article>
         {/* Why Professional Offer Matters */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-6">
               Dlaczego profesjonalna oferta ma znaczenie?
@@ -49,7 +111,7 @@ const GeneratorOfert = () => {
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-primary" />
+                  <ClockIcon />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">5 minut</h3>
                 <p className="text-muted-foreground">
@@ -67,7 +129,7 @@ const GeneratorOfert = () => {
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Palette className="w-8 h-8 text-primary" />
+                  <PaletteIcon />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Twój branding</h3>
                 <p className="text-muted-foreground">
@@ -87,7 +149,7 @@ const GeneratorOfert = () => {
 
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12 mb-16">
               <div className="w-full lg:w-[30%] flex justify-center">
-                <div className="rounded-2xl overflow-hidden border border-border bg-muted shadow-lg max-w-[200px] sm:max-w-[220px] lg:max-w-[240px]">
+                <div className="rounded-2xl overflow-hidden bg-muted shadow-lg max-w-[200px] sm:max-w-[220px] lg:max-w-[240px]">
                   <Image
                     src={szablonyOfertImg}
                     alt="Wybór szablonów usług detailingowych w generatorze ofert Carfect"
@@ -134,7 +196,7 @@ const GeneratorOfert = () => {
         </section>
 
         {/* Public Link Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-12">
               Publiczny link dla klienta
@@ -142,9 +204,9 @@ const GeneratorOfert = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto mb-12">
               {/* Feature 1 */}
-              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Mail className="w-6 h-6 text-primary" />
+                  <MailIcon />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   Wyślij bezpośrednio z systemu
@@ -155,9 +217,9 @@ const GeneratorOfert = () => {
               </div>
 
               {/* Feature 2 */}
-              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Eye className="w-6 h-6 text-primary" />
+                  <EyeIcon />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   Klient ogląda ofertę w przeglądarce
@@ -168,9 +230,9 @@ const GeneratorOfert = () => {
               </div>
 
               {/* Feature 3 */}
-              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Palette className="w-6 h-6 text-primary" />
+                  <PaletteIcon />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   Branding Twojej firmy
@@ -181,7 +243,7 @@ const GeneratorOfert = () => {
               </div>
 
               {/* Feature 4 */}
-              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                   <Link2 className="w-6 h-6 text-primary" />
                 </div>
@@ -224,7 +286,7 @@ const GeneratorOfert = () => {
                 </ul>
               </div>
               <div className="flex-1 order-1 lg:order-2">
-                <div className="rounded-2xl overflow-hidden border border-border shadow-lg bg-white">
+                <div className="rounded-2xl overflow-hidden shadow-lg bg-white">
                   <iframe
                     src="https://demo.carfect.pl/embed"
                     width="100%"
@@ -240,33 +302,39 @@ const GeneratorOfert = () => {
         </section>
 
         {/* Related Features */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-8">
               Powiązane funkcje
             </h2>
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <Link 
+              <Link
                 href="/funkcje/protokol-przyjecia-pojazdu"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <FileText className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <FileTextIcon />
+                </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Protokół przyjęcia</h3>
                 <p className="text-sm text-muted-foreground mt-1">Dokumentacja stanu pojazdu ze zdjęciami</p>
               </Link>
               <Link
                 href="/crm/crm-dla-studia-detailingu"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Layers className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <LayersIcon />
+                </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">CRM dla detailingu</h3>
                 <p className="text-sm text-muted-foreground mt-1">Pełne rozwiązanie dla studia</p>
               </Link>
-              <Link 
+              <Link
                 href="/crm/crm-dla-studia-detailingu"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Palette className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <PaletteIcon />
+                </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">CRM dla detailingu</h3>
                 <p className="text-sm text-muted-foreground mt-1">Pełne rozwiązanie dla studia</p>
               </Link>
@@ -285,11 +353,11 @@ const GeneratorOfert = () => {
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
               Wypróbuj generator ofert Carfect i przekonaj się, jak łatwo tworzyć profesjonalne wyceny dla klientów.
             </p>
-            <Button 
+            <Button
               asChild
               className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
             >
-              <Link href="/umow-prezentacje">Umów bezpłatną prezentację</Link>
+              <Link href="tel:+48666610222">Umów bezpłatną prezentację</Link>
             </Button>
           </div>
         </section>

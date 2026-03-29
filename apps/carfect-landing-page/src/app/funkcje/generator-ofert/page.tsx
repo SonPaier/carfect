@@ -1,32 +1,25 @@
 import type { Metadata } from 'next';
-import { fetchPageData, fetchPageMetadata } from '@/lib/sanity/fetchPage';
-import SanityPageLayout from '@/components/sanity/SanityPageLayout';
 import GeneratorOfert from '@/components/pages/GeneratorOfert';
 
-export const revalidate = 60;
-
-export async function generateMetadata(): Promise<Metadata> {
-  return fetchPageMetadata('funkcje-generator-ofert', {
+export const metadata: Metadata = {
+  title: 'Generator Ofert Detailingowych – Twórz Profesjonalne Wyceny w 5 Minut',
+  description: 'Twórz profesjonalne oferty detailingowe w kilka minut. Gotowe szablony, automatyczne wyceny i wysyłka do klienta prosto z systemu Carfect.',
+  alternates: { canonical: 'https://carfect.pl/funkcje/generator-ofert' },
+  openGraph: {
     title: 'Generator Ofert Detailingowych – Twórz Profesjonalne Wyceny w 5 Minut',
     description: 'Twórz profesjonalne oferty detailingowe w kilka minut. Gotowe szablony, automatyczne wyceny i wysyłka do klienta prosto z systemu Carfect.',
-    canonical: 'https://carfect.pl/funkcje/generator-ofert',
-  });
-}
+    url: 'https://carfect.pl/funkcje/generator-ofert',
+    siteName: 'Carfect.pl',
+    locale: 'pl_PL',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Generator Ofert Detailingowych – Twórz Profesjonalne Wyceny w 5 Minut',
+    description: 'Twórz profesjonalne oferty detailingowe w kilka minut. Gotowe szablony, automatyczne wyceny i wysyłka do klienta prosto z systemu Carfect.',
+  },
+};
 
-export default async function Page() {
-  const { page, settings, pricingConfig } = await fetchPageData('funkcje-generator-ofert');
-
-  return (
-    <SanityPageLayout
-      page={page}
-      settings={settings}
-      pricingConfig={pricingConfig}
-      breadcrumbs={[
-        { name: 'Strona główna', href: '/' },
-        { name: 'Funkcje', href: '/funkcje' },
-        { name: 'Generator ofert', href: '/funkcje/generator-ofert' },
-      ]}
-      fallback={<GeneratorOfert />}
-    />
-  );
+export default function Page() {
+  return <GeneratorOfert />;
 }

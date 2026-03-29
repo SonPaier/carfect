@@ -1,18 +1,9 @@
 import type { MetadataRoute } from 'next';
-import { client } from '@/lib/sanity/client';
-import { allPagesQuery, allBlogPostsQuery, allCaseStudySlugsQuery, allLegalPagesQuery } from '@/lib/sanity/queries';
+import { getAllPostSlugs } from '@/lib/blog';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://carfect.pl';
 
-  const [pages, blogPosts, caseStudies, legalPages] = await Promise.all([
-    client.fetch<Array<{ slug: { current: string }; _updatedAt: string }>>(allPagesQuery, {}, { next: { tags: ['pages'] } }),
-    client.fetch<Array<{ slug: { current: string }; publishedAt: string }>>(allBlogPostsQuery, {}, { next: { tags: ['blogPost'] } }),
-    client.fetch<Array<{ slug: string }>>(allCaseStudySlugsQuery, {}, { next: { tags: ['sanity'] } }),
-    client.fetch<Array<{ slug: { current: string }; _updatedAt: string }>>(allLegalPagesQuery, {}, { next: { tags: ['sanity'] } }),
-  ]);
-
-  // Static routes that always exist
   const staticRoutes = [
     '',
     '/crm',
@@ -31,18 +22,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/dlaczego-carfect',
     '/kontakt',
     '/umow-prezentacje',
-    '/demo',
     '/blog',
     '/polityka-prywatnosci',
     '/regulamin',
   ];
 
-  const blogRoutes = (blogPosts || []).map((post) => `/blog/${post.slug.current}`);
-  const caseStudyRoutes = (caseStudies || []).map((cs) => `/case-studies/${cs.slug}`);
-  const legalRoutes = (legalPages || []).map((lp) => `/${lp.slug.current}`);
+  const blogSlugs = getAllPostSlugs();
+  const blogRoutes = blogSlugs.map((item) => `/blog/${item.slug}`);
 
-  // Combine all routes, dedup
-  const allRoutes = [...new Set([...staticRoutes, ...blogRoutes, ...caseStudyRoutes])];
+  const allRoutes = [...staticRoutes, ...blogRoutes];
 
   return allRoutes.map((route) => ({
     url: `${baseUrl}${route}`,

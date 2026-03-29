@@ -3,15 +3,9 @@ import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import BlogPostLayout from '@/components/blog/BlogPostLayout';
 import { getAllPostSlugs, getPostBySlug } from '@/lib/blog';
-import { urlFor } from '@/lib/sanity/image';
-import { client } from '@/lib/sanity/client';
-import { siteSettingsQuery } from '@/lib/sanity/queries';
-import type { SiteSettings } from '@/types/sanity';
 
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  const slugs = await getAllPostSlugs();
+export function generateStaticParams() {
+  const slugs = getAllPostSlugs();
   return slugs.map((item) => ({
     slug: item.slug,
   }));
@@ -19,7 +13,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const post = getPostBySlug(slug);
 
   if (!post) {
     return {
@@ -28,11 +22,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   const baseUrl = 'https://carfect.pl';
-  const postUrl = `${baseUrl}/blog/${post.slug.current}`;
-  const title = post.seo?.metaTitle || post.title;
-  const description = post.seo?.metaDescription || post.excerpt;
-  const ogImage = post.seo?.ogImage || post.coverImage;
-  const imageUrl = ogImage ? urlFor(ogImage).width(1200).height(630).url() : undefined;
+  const postUrl = `${baseUrl}/blog/${post.slug}`;
+  const title = post.title;
+  const description = post.description;
+  const imageUrl = post.image || undefined;
 
   return {
     title,
@@ -47,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: 'Carfect.pl',
       locale: 'pl_PL',
       type: 'article',
-      publishedTime: post.publishedAt,
+      publishedTime: post.date,
       authors: post.author ? [post.author] : undefined,
       ...(imageUrl && {
         images: [{ url: imageUrl, width: 1200, height: 630, alt: post.title }],
@@ -64,10 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [post, settings] = await Promise.all([
-    getPostBySlug(slug),
-    client.fetch<SiteSettings | null>(siteSettingsQuery, {}, { next: { tags: ['settings'] } }),
-  ]);
+  const post = getPostBySlug(slug);
 
   if (!post) {
     notFound();
@@ -78,9 +68,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <Breadcrumbs items={[
         { name: 'Strona główna', href: '/' },
         { name: 'Blog', href: '/blog' },
-        { name: post.title, href: `/blog/${post.slug.current}` },
+        { name: post.title, href: `/blog/${post.slug}` },
       ]} />
-      <BlogPostLayout post={post} settings={settings || undefined} />
+      <BlogPostLayout post={post} />
     </>
   );
 }
