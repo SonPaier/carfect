@@ -74,14 +74,29 @@ const jsonLdGraph = [
     '@id': 'https://carfect.pl/#organization',
     name: 'Carfect.pl',
     url: 'https://carfect.pl',
+    logo: 'https://carfect.pl/favicon-32x32.png',
     email: 'hello@carfect.pl',
+    telephone: '+48666610222',
     description: 'Twórcy systemu CRM i rezerwacji online dla myjni samochodowych i studiów detailingu w Polsce.',
     foundingDate: '2024',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'PL',
+    },
     areaServed: {
       '@type': 'Country',
       name: 'Polska',
     },
-    sameAs: [],
+    sameAs: [
+      'https://www.facebook.com/carfect.pl',
+      'https://www.instagram.com/carfect.pl',
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+48666610222',
+      contactType: 'sales',
+      availableLanguage: 'Polish',
+    },
   },
   {
     '@type': 'SoftwareApplication',
