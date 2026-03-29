@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Link2, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,11 @@ const ProtokolPrzyjecia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "Protokół przyjęcia pojazdu", href: "/funkcje/protokol-przyjecia-pojazdu" },
+        ]}>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Protokół Przyjęcia Pojazdu dla Studia Detailingu – Cyfrowy Protokół ze Zdjęciami
             </h1>

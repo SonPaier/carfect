@@ -8,7 +8,6 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import SubpageHero from "@/components/landing/SubpageHero";
 import widokHala from "@/assets/crm-studio-detailing-myjnia-reczna.webp";
-import raportCzasuPracy from "@/assets/myjnia-reczna-studio-car-detailing-raport-czasu-pracy.webp";
 
 const UsersIcon = () => (
   <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
@@ -101,7 +100,11 @@ const ZarzadzanieZespolem = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "Zarządzanie zespołem", href: "/funkcje/zarzadzanie-zespolem" },
+        ]}>
             <h1 id="zarzadzaj-zespolem-bez-chaosu-i-zbednych-arkuszy" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Zarządzaj zespołem bez chaosu i zbędnych arkuszy
             </h1>

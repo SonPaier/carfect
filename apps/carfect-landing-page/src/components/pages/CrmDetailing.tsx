@@ -77,7 +77,11 @@ const CrmDetailing = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "CRM", href: "/crm" },
+          { name: "CRM dla detailingu", href: "/crm/crm-dla-studia-detailingu" },
+        ]}>
             <h1 id="crm-dla-studia-detailingu-system-rezerwacji-i-ofert-detailingowych" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">CRM dla studia detailingu – System rezerwacji i ofert detailingowych
 
             </h1>

@@ -7,7 +7,6 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import SubpageHero from "@/components/landing/SubpageHero";
 import szablonyOfertImg from "@/assets/studio-detailing-szablony-ofert.webp";
-import generatorOfertImg from "@/assets/studio-detailing-generator-ofert-korzysci.webp";
 
 const FileTextIcon = () => (
   <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
@@ -75,7 +74,11 @@ const GeneratorOfert = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "Generator ofert", href: "/funkcje/generator-ofert" },
+        ]}>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Generator Ofert Detailingowych – Twórz Profesjonalne Wyceny w 5 Minut
             </h1>

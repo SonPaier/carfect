@@ -79,7 +79,11 @@ const SmsPrzypomnienia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "SMS Przypomnienia", href: "/funkcje/sms-przypomnienia" },
+        ]}>
             <h1 id="automatyczne-sms-przypomnienia-dla-myjni-i-detailingu" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Automatyczne SMS Przypomnienia dla Myjni i Detailingu
             </h1>

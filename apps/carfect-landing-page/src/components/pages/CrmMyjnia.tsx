@@ -99,7 +99,11 @@ const CrmMyjnia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "CRM", href: "/crm" },
+          { name: "CRM dla myjni", href: "/crm/crm-dla-myjni-samochodowych" },
+        ]}>
             <h1 id="crm-dla-recznej-myjni-samochodowej" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">CRM dla ręcznej myjni samochodowej</h1>
 
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">System CRM dedykowany dla myjni ręcznych. Rezerwacje, kalendarz, baza klientów, przypomnienia SMS, raportowanie czasu pracy.</p>

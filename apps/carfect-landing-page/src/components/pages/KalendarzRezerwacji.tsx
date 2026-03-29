@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { Calendar, CalendarDays, Clock, Edit3, Layers, Pause, Users, Globe, MessageSquare } from "lucide-react";
+import { Calendar, CalendarDays, Layers, Pause, Users, Globe, MessageSquare } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,11 @@ const KalendarzRezerwacji = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <SubpageHero>
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "Kalendarz rezerwacji", href: "/funkcje/kalendarz-rezerwacji" },
+        ]}>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Kalendarz Rezerwacji dla Myjni i Detailingu
             </h1>
