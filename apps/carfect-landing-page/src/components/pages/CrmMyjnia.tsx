@@ -98,7 +98,7 @@ const CrmMyjnia = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-32 md:py-48">
+        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-16 md:py-24">
           <div className="container mx-auto px-4">
             <h1 id="crm-dla-recznej-myjni-samochodowej" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">CRM dla ręcznej myjni samochodowej</h1>
             
