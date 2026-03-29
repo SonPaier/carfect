@@ -61,11 +61,7 @@ const PricingCard = ({
 
   return (
     <div
-      className={`bg-card rounded-3xl border p-6 md:p-10 flex flex-col h-full ${
-        isHighlighted
-          ? "border-primary shadow-xl shadow-primary/10"
-          : "border-border shadow-xl"
-      }`}
+      className={`bg-card rounded-3xl p-6 md:p-10 flex flex-col h-full`}
     >
       {/* Title */}
       <h3 className="text-2xl font-bold text-foreground text-center mb-6">
@@ -81,11 +77,13 @@ const PricingCard = ({
           </span>
         </p>
         <p className="text-sm text-muted-foreground mt-2">
-          za pierwsze stanowisko / miesiąc
+          pierwsze stanowisko / miesiąc
         </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Każde kolejne: <span className="font-semibold text-foreground">{displayAdditionalPrice}zł</span>
-        </p>
+        <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+          <span className="text-sm text-muted-foreground">Każde kolejne stanowisko:</span>
+          <span className="text-lg font-bold text-foreground">{displayAdditionalPrice} zł</span>
+          <span className="text-sm text-muted-foreground">/ mies.</span>
+        </div>
       </div>
 
       {/* Features */}
@@ -133,6 +131,11 @@ const PricingCard = ({
 
       {/* Total */}
       <div className="text-center p-4 rounded-xl bg-primary/5 border border-primary/10 mb-6">
+        {stations > 1 && (
+          <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
+            <p>1 × {displayFirstPrice} zł + {stations - 1} × {displayAdditionalPrice} zł</p>
+          </div>
+        )}
         <p className="text-sm text-muted-foreground mb-1">
           {isYearly ? "Razem rocznie" : "Razem miesięcznie"}
         </p>
@@ -149,7 +152,7 @@ const PricingCard = ({
       {/* CTA */}
       <button
         onClick={onScrollToHero}
-        className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-amber-500 text-primary-foreground hover:from-primary/90 hover:to-amber-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 mt-auto"
+        className="w-full h-14 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-auto"
       >
         Umów prezentację
       </button>

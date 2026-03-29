@@ -1,30 +1,12 @@
 import type { Metadata } from 'next';
-import { fetchPageData, fetchPageMetadata } from '@/lib/sanity/fetchPage';
-import SanityPageLayout from '@/components/sanity/SanityPageLayout';
+import OpiniePage from '@/components/pages/OpiniePage';
 
-export const revalidate = 60;
+export const metadata: Metadata = {
+  title: 'Opinie Klientów Carfect – Co Mówią Właściciele Myjni i Studiów Detailingu',
+  description: 'Przeczytaj opinie właścicieli myjni samochodowych i studiów detailingu o systemie Carfect. Sprawdź jak CRM pomógł im rozwinąć biznes.',
+  alternates: { canonical: 'https://carfect.pl/opinie' },
+};
 
-export async function generateMetadata(): Promise<Metadata> {
-  return fetchPageMetadata('opinie', {
-    title: 'Opinie Klientów Carfect – Co Mówią Właściciele Myjni i Studiów Detailingu',
-    description: 'Przeczytaj opinie właścicieli myjni samochodowych i studiów detailingu o systemie Carfect. Sprawdź jak CRM pomógł im rozwinąć biznes.',
-    canonical: 'https://carfect.pl/opinie',
-  });
-}
-
-export default async function Page() {
-  const { page, settings, pricingConfig } = await fetchPageData('opinie');
-
-  return (
-    <SanityPageLayout
-      page={page}
-      settings={settings}
-      pricingConfig={pricingConfig}
-      breadcrumbs={[
-        { name: 'Strona główna', href: '/' },
-        { name: 'Opinie', href: '/opinie' },
-      ]}
-      fallback={null}
-    />
-  );
+export default function Page() {
+  return <OpiniePage />;
 }

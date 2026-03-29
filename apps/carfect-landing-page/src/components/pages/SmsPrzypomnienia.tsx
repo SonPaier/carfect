@@ -1,9 +1,76 @@
 "use client";
 import Link from "next/link";
-import { MessageSquare, Bell, Check, Car, Sparkles, BarChart3, TrendingUp, Package, AlertTriangle } from "lucide-react";
+import { Check, AlertTriangle } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
+
+const MessageSquareIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="6" width="40" height="30" rx="4" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 36l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M13 20h22M13 27h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="36" cy="27" r="2" fill="currentColor" fillOpacity="0.3" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 6C17.373 6 12 11.373 12 18v10l-4 6h32l-4-6V18C36 11.373 30.627 6 24 6z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M20 34a4 4 0 008 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M24 6V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="37" cy="10" r="4" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M35.5 10h3M37 8.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const CarIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 28l4-12h24l4 12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <rect x="6" y="28" width="36" height="12" rx="3" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <circle cx="14" cy="40" r="4" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="2" />
+    <circle cx="34" cy="40" r="4" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="2" />
+    <path d="M14 28h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+    <rect x="16" y="31" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+    <rect x="26" y="31" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+  </svg>
+);
+
+const SparklesIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 4l3 9 9 3-9 3-3 9-3-9-9-3 9-3 3-9z" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M38 28l1.5 4.5L44 34l-4.5 1.5L38 40l-1.5-4.5L32 34l4.5-1.5L38 28z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" opacity="0.6" />
+    <path d="M10 32l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" opacity="0.5" />
+  </svg>
+);
+
+const BarChart3Icon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="24" width="8" height="18" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+    <rect x="20" y="14" width="8" height="28" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+    <rect x="34" y="6" width="8" height="36" rx="2" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 44h40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
+
+const TrendingUpIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 36L18 22l8 8 16-18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M34 12h8v8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 36L18 22l8 8 16-18" fill="currentColor" fillOpacity="0.1" />
+    <path d="M4 44h40" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+    <path d="M4 44V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+  </svg>
+);
+
+const PackageIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 4L44 14v20L24 44 4 34V14L24 4z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M24 4v40M4 14l20 10 20-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+    <path d="M14 9l20 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+    <rect x="18" y="20" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+  </svg>
+);
 
 const SmsPrzypomnienia = () => {
   return (
@@ -16,13 +83,13 @@ const SmsPrzypomnienia = () => {
             <h1 id="automatyczne-sms-przypomnienia-dla-myjni-i-detailingu" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Automatyczne SMS Przypomnienia dla Myjni i Detailingu
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">
               Zmniejsz no-show o 80%. Przypomnienia o przeglądach powłoki. 100 SMS miesięcznie w cenie pakietu.
             </p>
 
             <div className="mt-8">
-              <Button 
+              <Button
                 asChild
                 className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
               >
@@ -34,7 +101,7 @@ const SmsPrzypomnienia = () => {
 
         <article>
         {/* No-show Problem Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 id="problem-no-show-w-branzy-automotive" className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-6">
               Problem no-show w branży automotive
@@ -45,7 +112,7 @@ const SmsPrzypomnienia = () => {
 
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12 max-w-5xl mx-auto">
               <div className="flex-1">
-                <div className="bg-destructive/10 rounded-2xl p-8 border border-destructive/20">
+                <div className="bg-destructive/10 rounded-2xl p-8">
                   <div className="flex items-center gap-3 mb-4">
                     <AlertTriangle className="w-8 h-8 text-destructive" />
                     <h3 id="bez-przypomnien" className="text-xl font-semibold text-foreground">Bez przypomnień</h3>
@@ -67,7 +134,7 @@ const SmsPrzypomnienia = () => {
                 </div>
               </div>
               <div className="flex-1">
-                <div className="bg-primary/10 rounded-2xl p-8 border border-primary/20">
+                <div className="bg-primary/10 rounded-2xl p-8">
                   <div className="flex items-center gap-3 mb-4">
                     <Check className="w-8 h-8 text-primary" />
                     <h3 id="z-sms-carfect" className="text-xl font-semibold text-foreground">Z SMS Carfect</h3>
@@ -101,7 +168,7 @@ const SmsPrzypomnienia = () => {
 
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
               {/* SMS Type 1 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Check className="w-6 h-6 text-primary" />
@@ -123,10 +190,10 @@ const SmsPrzypomnienia = () => {
               </div>
 
               {/* SMS Type 2 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bell className="w-6 h-6 text-primary" />
+                    <BellIcon />
                   </div>
                   <div>
                     <h3 id="przypomnienie-24h-i-1h-przed-wizyta" className="text-xl font-semibold text-foreground mb-3">
@@ -145,10 +212,10 @@ const SmsPrzypomnienia = () => {
               </div>
 
               {/* SMS Type 3 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Car className="w-6 h-6 text-primary" />
+                    <CarIcon />
                   </div>
                   <div>
                     <h3 id="informacja-o-gotowym-pojezdzie" className="text-xl font-semibold text-foreground mb-3">
@@ -167,10 +234,10 @@ const SmsPrzypomnienia = () => {
               </div>
 
               {/* SMS Type 4 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-6 h-6 text-primary" />
+                    <SparklesIcon />
                   </div>
                   <div>
                     <h3 id="przypomnienie-o-odswiezeniu-powloki-i-serwisach" className="text-xl font-semibold text-foreground mb-3">
@@ -192,7 +259,7 @@ const SmsPrzypomnienia = () => {
         </section>
 
         {/* Statistics Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 id="statystyki-i-efektywnosc" className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-12">
               Statystyki i efektywność
@@ -200,9 +267,9 @@ const SmsPrzypomnienia = () => {
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Stat 1 */}
-              <div className="bg-card rounded-2xl p-8 shadow-sm border border-border text-center">
+              <div className="bg-card rounded-2xl p-8 shadow-sm text-center">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-primary" />
+                  <TrendingUpIcon />
                 </div>
                 <h3 id="80-procent" className="text-3xl md:text-4xl font-bold text-primary mb-2">
                   80%
@@ -216,9 +283,9 @@ const SmsPrzypomnienia = () => {
               </div>
 
               {/* Stat 2 */}
-              <div className="bg-card rounded-2xl p-8 shadow-sm border border-border text-center">
+              <div className="bg-card rounded-2xl p-8 shadow-sm text-center">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-8 h-8 text-primary" />
+                  <BarChart3Icon />
                 </div>
                 <h3 id="plus-35-procent" className="text-3xl md:text-4xl font-bold text-primary mb-2">
                   +35%
@@ -245,7 +312,7 @@ const SmsPrzypomnienia = () => {
               <div className="bg-card rounded-2xl p-8 md:p-12 border-2 border-primary shadow-lg">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Package className="w-7 h-7 text-primary" />
+                    <PackageIcon />
                   </div>
                   <div>
                     <h3 id="100-sms-w-kazdym-pakiecie" className="text-2xl font-bold text-foreground">
@@ -261,7 +328,7 @@ const SmsPrzypomnienia = () => {
                   W każdym pakiecie (Myjnia i Detailing) dostajesz 100 SMS-ów miesięcznie bez dodatkowych opłat. Wykorzystujesz je na potwierdzenia, przypomnienia i powiadomienia o gotowości pojazdu. W panelu widzisz ile SMS-ów zostało.
                 </p>
 
-                <div className="border-t border-border pt-8">
+                <div className="border-t pt-8">
                   <h4 className="text-lg font-semibold text-foreground mb-4">
                     Po przekroczeniu limitu?
                   </h4>
@@ -275,7 +342,7 @@ const SmsPrzypomnienia = () => {
         </section>
 
         {/* Related Features */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 id="powiazane-funkcje" className="text-2xl md:text-3xl font-bold text-foreground text-center mb-8">
               Powiązane funkcje
@@ -283,25 +350,31 @@ const SmsPrzypomnienia = () => {
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <Link
                 href="/funkcje/kalendarz-rezerwacji"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Bell className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <BellIcon />
+                </div>
                 <h3 id="kalendarz-rezerwacji" className="font-semibold text-foreground group-hover:text-primary transition-colors">Kalendarz rezerwacji</h3>
                 <p className="text-sm text-muted-foreground mt-1">Zarządzanie terminami i stanowiskami</p>
               </Link>
-              <Link 
+              <Link
                 href="/funkcje/zarzadzanie-zespolem"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <MessageSquare className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <MessageSquareIcon />
+                </div>
                 <h3 id="zarzadzanie-zespolem" className="font-semibold text-foreground group-hover:text-primary transition-colors">Zarządzanie zespołem</h3>
                 <p className="text-sm text-muted-foreground mt-1">Grafiki i uprawnienia pracowników</p>
               </Link>
               <Link
                 href="/crm/crm-dla-myjni-samochodowych"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <BarChart3 className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <BarChart3Icon />
+                </div>
                 <h3 id="crm-dla-myjni" className="font-semibold text-foreground group-hover:text-primary transition-colors">CRM dla myjni</h3>
                 <p className="text-sm text-muted-foreground mt-1">Pełne rozwiązanie dla myjni</p>
               </Link>
@@ -320,7 +393,7 @@ const SmsPrzypomnienia = () => {
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
               100 SMS miesięcznie w cenie pakietu. Zmniejsz no-show i zwiększ przychody z przeglądów.
             </p>
-            <Button 
+            <Button
               asChild
               className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
             >

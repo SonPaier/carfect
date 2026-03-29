@@ -10,7 +10,44 @@ import Link from "next/link";
 import caseStudy1 from "@/assets/studio-car-detailing-case-study-armcar-gdansk.jpg";
 import caseStudy2 from "@/assets/studio-car-detailing-case-study-armcar-gdansk-2.webp";
 import caseStudy3 from "@/assets/studio-car-detailing-case-study-armcar-gdansk-3.jpg";
-import { MessageSquare, FileText, Users, RefreshCw, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+
+const SmsIcon = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="6" width="22" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 20l6 6v-6" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="11" cy="15" r="1.5" fill="currentColor" />
+    <circle cx="15" cy="15" r="1.5" fill="currentColor" />
+    <circle cx="19" cy="15" r="1.5" fill="currentColor" />
+    <path d="M28 12h6a3 3 0 013 3v12a3 3 0 01-3 3h-2l-4 4v-4h-6a3 3 0 01-3-3v-3" stroke="currentColor" strokeWidth="2" opacity="0.4" />
+  </svg>
+);
+
+const OfferIcon = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="4" width="20" height="28" rx="2" stroke="currentColor" strokeWidth="2" />
+    <path d="M10 12h12M10 17h8M10 22h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="28" cy="28" r="8" stroke="currentColor" strokeWidth="2" />
+    <path d="M26 28l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const TeamIcon = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="14" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 30c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="28" cy="14" r="4" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+    <path d="M26 30c0-3.866 2.686-7.1 6.3-7.9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+  </svg>
+);
+
+const RetentionIcon = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 6a14 14 0 110 28 14 14 0 010-28z" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2" />
+    <path d="M20 6a14 14 0 010 28" stroke="currentColor" strokeWidth="2" />
+    <path d="M16 18l4 4 6-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 const CaseStudiesPage = () => {
   return <div className="min-h-screen bg-background flex flex-col">
       <Header />
@@ -190,9 +227,9 @@ Co więcej, Armen nie musi już prowadzić oddzielnych arkuszy czasu pracy, dzwo
               </h2>
               
               <div className="space-y-4">
-                <div className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="w-5 h-5 text-primary" />
+                <div className="flex items-start gap-4 p-4 bg-card rounded-xl">
+                  <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center flex-shrink-0 text-primary">
+                    <SmsIcon />
                   </div>
                   <div>
                     <h3 id="automatyczne-przypomnienia-sms" className="font-semibold text-foreground mb-1">Automatyczne przypomnienia SMS</h3>
@@ -202,9 +239,9 @@ Co więcej, Armen nie musi już prowadzić oddzielnych arkuszy czasu pracy, dzwo
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-primary" />
+                <div className="flex items-start gap-4 p-4 bg-card rounded-xl">
+                  <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center flex-shrink-0 text-primary">
+                    <OfferIcon />
                   </div>
                   <div>
                     <h3 id="generator-ofert" className="font-semibold text-foreground mb-1">Generator ofert</h3>
@@ -214,9 +251,9 @@ Co więcej, Armen nie musi już prowadzić oddzielnych arkuszy czasu pracy, dzwo
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-5 h-5 text-primary" />
+                <div className="flex items-start gap-4 p-4 bg-card rounded-xl">
+                  <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center flex-shrink-0 text-primary">
+                    <TeamIcon />
                   </div>
                   <div>
                     <h3 id="autonomia-zespolu" className="font-semibold text-foreground mb-1">Autonomia zespołu</h3>
@@ -226,9 +263,9 @@ Co więcej, Armen nie musi już prowadzić oddzielnych arkuszy czasu pracy, dzwo
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <RefreshCw className="w-5 h-5 text-primary" />
+                <div className="flex items-start gap-4 p-4 bg-card rounded-xl">
+                  <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center flex-shrink-0 text-primary">
+                    <RetentionIcon />
                   </div>
                   <div>
                     <h3 id="powracalnosc-klientow" className="font-semibold text-foreground mb-1">Powracalność klientów</h3>

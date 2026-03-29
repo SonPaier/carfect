@@ -9,7 +9,7 @@ const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md shadow-sm border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md shadow-sm border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="transition-all hover:opacity-80">
@@ -64,25 +64,25 @@ const PrivacyPolicy = () => {
               <div className="pl-11 space-y-4">
                 <p className="leading-relaxed">Operator przetwarza dane w następujących celach:</p>
                 <div className="space-y-4">
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                  <div className="p-4 bg-muted/30 rounded-lg">
                     <h3 className="font-semibold text-foreground mb-2">Realizacja rezerwacji (Klienci)</h3>
                     <p className="text-sm leading-relaxed">
                       Przekazanie danych (imię, telefon, dane pojazdu) do wybranego Partnera w celu wykonania usługi (Art. 6 ust. 1 lit. b RODO).
                     </p>
                   </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                  <div className="p-4 bg-muted/30 rounded-lg">
                     <h3 className="font-semibold text-foreground mb-2">Obsługa techniczna i historia</h3>
                     <p className="text-sm leading-relaxed">
                       Przechowywanie danych w bazie carfect.pl w celu umożliwienia Klientowi zarządzania rezerwacjami oraz wysyłki powiadomień SMS o statusie rezerwacji (Art. 6 ust. 1 lit. b RODO).
                     </p>
                   </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                  <div className="p-4 bg-muted/30 rounded-lg">
                     <h3 className="font-semibold text-foreground mb-2">Rozliczenia z Partnerami</h3>
                     <p className="text-sm leading-relaxed">
                       Przetwarzanie danych firmowych Partnerów niezbędnych do wystawiania faktur VAT i prowadzenia księgowości (Art. 6 ust. 1 lit. c RODO).
                     </p>
                   </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                  <div className="p-4 bg-muted/30 rounded-lg">
                     <h3 className="font-semibold text-foreground mb-2">Marketing Partnera</h3>
                     <p className="text-sm leading-relaxed">
                       W przypadku wyrażenia zgody przez Klienta na subdomenie Partnera, dane mogą być wykorzystane przez tego Partnera do wysyłki okazjonalnych informacji marketingowych. W tym zakresie Partner staje się osobnym Administratorem danych.

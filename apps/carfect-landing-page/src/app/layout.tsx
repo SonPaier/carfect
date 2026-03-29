@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Outfit } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -7,9 +7,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { CookieBanner } from '@/components/CookieBanner';
 import './globals.css';
 
-const outfit = Outfit({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'latin-ext'],
-  variable: '--font-outfit',
+  variable: '--font-jakarta',
 });
 
 export const viewport: Viewport = {
@@ -115,7 +115,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pl" className={outfit.variable}>
+    <html lang="pl" className={plusJakartaSans.variable}>
       <head>
         <script
           type="application/ld+json"

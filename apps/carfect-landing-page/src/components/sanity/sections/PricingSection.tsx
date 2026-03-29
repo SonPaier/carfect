@@ -122,7 +122,7 @@ function PlanCard({ plan, isYearly, isHighlighted }: { plan: NonNullable<Pricing
 
       <button
         onClick={scrollToHero}
-        className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-amber-500 text-primary-foreground hover:from-primary/90 hover:to-amber-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 mt-auto"
+        className="w-full h-14 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-auto"
       >
         {plan.ctaText || 'Umów prezentację'}
       </button>

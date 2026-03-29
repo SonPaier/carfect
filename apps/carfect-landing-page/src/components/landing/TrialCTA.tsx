@@ -6,9 +6,18 @@ const TrialCTA = () => {
   const footer = t("footer");
 
   return (
-    <section className="py-16 md:py-24 bg-background">
-      <div className="container px-4">
-        <div className="max-w-3xl mx-auto text-center bg-gradient-to-br from-primary/5 via-amber-500/5 to-primary/10 rounded-3xl p-8 md:p-12 border border-primary/10">
+    <section className="py-16 md:py-24 bg-background relative overflow-hidden">
+      {/* CARFECT watermark text */}
+      <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none" aria-hidden="true">
+        <span
+          className="text-[12rem] md:text-[18rem] lg:text-[22rem] font-black tracking-widest text-foreground/[0.02] whitespace-nowrap"
+          style={{ transform: "rotate(-12deg)" }}
+        >
+          CARFECT
+        </span>
+      </div>
+      <div className="container px-4 relative z-10">
+        <div className="max-w-3xl mx-auto text-center rounded-3xl p-8 md:p-12">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
             Wypróbuj bezpłatnie przez 14 dni.
             <br />

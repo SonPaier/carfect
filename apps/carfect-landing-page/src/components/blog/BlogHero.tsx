@@ -2,27 +2,24 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar } from 'lucide-react';
 import { BlogPost } from '@/lib/blog';
-import { urlFor } from '@/lib/sanity/image';
 
 interface BlogHeroProps {
   post: BlogPost;
 }
 
 export default function BlogHero({ post }: BlogHeroProps) {
-  const imageUrl = post.coverImage ? urlFor(post.coverImage).width(800).height(500).url() : null;
-
   return (
     <section className="py-10 md:py-14 bg-gradient-to-b from-muted/30 to-background">
       <div className="container mx-auto px-4">
         <Link
-          href={`/blog/${post.slug.current}`}
+          href={`/blog/${post.slug}`}
           className="block max-w-6xl mx-auto group"
         >
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            {imageUrl && (
+            {post.image && (
               <div className="relative aspect-[16/10] rounded-2xl overflow-hidden">
                 <Image
-                  src={imageUrl}
+                  src={post.image}
                   alt={post.title}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -35,20 +32,20 @@ export default function BlogHero({ post }: BlogHeroProps) {
             <div>
               {post.category && (
                 <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary mb-4">
-                  {post.category.title}
+                  {post.category}
                 </span>
               )}
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
                 {post.title}
               </h1>
               <p className="text-foreground/70 text-lg mb-6">
-                {post.excerpt}
+                {post.description}
               </p>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {post.publishedAt && (
+                {post.date && (
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {new Date(post.publishedAt).toLocaleDateString('pl-PL', {
+                    {new Date(post.date).toLocaleDateString('pl-PL', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

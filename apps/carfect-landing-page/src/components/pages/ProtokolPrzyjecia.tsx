@@ -2,11 +2,61 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FileText, Camera, PenTool, Link2, Shield, Award, FolderOpen, CheckCircle } from "lucide-react";
+import { Link2, CheckCircle } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import protokolImg from "@/assets/studio-detailing-protokol-przyjecia-samochodu.webp";
+
+const FileTextIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 4h20l10 10v30a2 2 0 01-2 2H10a2 2 0 01-2-2V6a2 2 0 012-2z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M30 4v10h10" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M16 22h16M16 29h16M16 36h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+  </svg>
+);
+
+const CameraIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 10l3-4h10l3 4h8a3 3 0 013 3v22a3 3 0 01-3 3H8a3 3 0 01-3-3V13a3 3 0 013-3h8z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="24" cy="24" r="7" stroke="currentColor" strokeWidth="2" />
+    <circle cx="24" cy="24" r="3.5" fill="currentColor" fillOpacity="0.3" />
+    <circle cx="38" cy="16" r="2" fill="currentColor" fillOpacity="0.4" />
+  </svg>
+);
+
+const PenToolIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M34 6l8 8-22 22H12v-8L34 6z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M28 12l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 36l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    <path d="M8 44h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+    <path d="M20 16l-8 4v8l4-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 4L6 12v14c0 10.28 7.68 19.9 18 22 10.32-2.1 18-11.72 18-22V12L24 4z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M16 24l6 6 10-12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const AwardIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="20" r="14" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M17 32l-4 12 11-6 11 6-4-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    <path d="M24 12l2.5 5 5.5.8-4 3.9.94 5.5L24 25l-4.94 2.2.94-5.5-4-3.9 5.5-.8L24 12z" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+  </svg>
+);
+
+const FolderOpenIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 12a3 3 0 013-3h12l4 4h18a3 3 0 013 3v4H4v-8z" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M4 20h40l-4 22H8L4 20z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M16 30h16M16 36h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+  </svg>
+);
 
 const ProtokolPrzyjecia = () => {
   return (
@@ -19,13 +69,13 @@ const ProtokolPrzyjecia = () => {
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Protokół Przyjęcia Pojazdu dla Studia Detailingu – Cyfrowy Protokół ze Zdjęciami
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">
               Diagram uszkodzeń, zdjęcia, podpis klienta online. Koniec z papierowymi kartkami. Publiczny link dla klienta.
             </p>
 
             <div className="mt-8">
-              <Button 
+              <Button
                 asChild
                 className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
               >
@@ -37,7 +87,7 @@ const ProtokolPrzyjecia = () => {
 
         <article>
         {/* Why Protocol Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-6">
               Dlaczego warto mieć protokół przyjęcia i wydania pojazdu?
@@ -47,27 +97,27 @@ const ProtokolPrzyjecia = () => {
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="bg-card rounded-2xl p-6 border border-border text-center">
+              <div className="bg-card rounded-2xl p-6 text-center">
                 <div className="w-14 h-14 rounded-xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-7 h-7 text-destructive" />
+                  <ShieldIcon />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Ochrona przed reklamacjami</h3>
                 <p className="text-sm text-muted-foreground">
                   Dokumentujesz stan pojazdu przed rozpoczęciem prac. W razie sporu masz zdjęcia i podpis klienta potwierdzający istniejące wcześniej uszkodzenia.
                 </p>
               </div>
-              <div className="bg-card rounded-2xl p-6 border border-border text-center">
+              <div className="bg-card rounded-2xl p-6 text-center">
                 <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Camera className="w-7 h-7 text-primary" />
+                  <CameraIcon />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Dowód fotograficzny</h3>
                 <p className="text-sm text-muted-foreground">
                   Każde zdjęcie ma automatyczną datę i godzinę wykonania. To niepodważalny dowód w przypadku roszczeń o nowe uszkodzenia po odebraniu auta.
                 </p>
               </div>
-              <div className="bg-card rounded-2xl p-6 border border-border text-center">
+              <div className="bg-card rounded-2xl p-6 text-center">
                 <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <PenTool className="w-7 h-7 text-primary" />
+                  <PenToolIcon />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Podpis klienta</h3>
                 <p className="text-sm text-muted-foreground">
@@ -87,7 +137,7 @@ const ProtokolPrzyjecia = () => {
 
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12 max-w-5xl mx-auto">
               <div className="flex-1">
-                <div className="rounded-2xl overflow-hidden border border-border shadow-lg">
+                <div className="rounded-2xl overflow-hidden shadow-lg">
                   <Image
                     src={protokolImg}
                     alt="Cyfrowy protokół przyjęcia pojazdu Carfect z diagramem uszkodzeń i zdjęciami"
@@ -188,7 +238,7 @@ const ProtokolPrzyjecia = () => {
         </section>
 
         {/* Benefits Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-12">
               Korzyści
@@ -196,9 +246,9 @@ const ProtokolPrzyjecia = () => {
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {/* Benefit 1 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Shield className="w-6 h-6 text-primary" />
+                  <ShieldIcon />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">
                   Brak sporów o stan pojazdu
@@ -209,9 +259,9 @@ const ProtokolPrzyjecia = () => {
               </div>
 
               {/* Benefit 2 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Award className="w-6 h-6 text-primary" />
+                  <AwardIcon />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">
                   Profesjonalny wizerunek
@@ -222,9 +272,9 @@ const ProtokolPrzyjecia = () => {
               </div>
 
               {/* Benefit 3 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <FolderOpen className="w-6 h-6 text-primary" />
+                  <FolderOpenIcon />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">
                   Wszystko w jednym systemie
@@ -244,27 +294,33 @@ const ProtokolPrzyjecia = () => {
               Powiązane funkcje
             </h2>
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <Link 
+              <Link
                 href="/funkcje/generator-ofert"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <FileText className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <FileTextIcon />
+                </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Generator ofert</h3>
                 <p className="text-sm text-muted-foreground mt-1">Twórz profesjonalne wyceny</p>
               </Link>
-              <Link 
+              <Link
                 href="/crm/crm-dla-studia-detailingu"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Camera className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <CameraIcon />
+                </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">CRM dla detailingu</h3>
                 <p className="text-sm text-muted-foreground mt-1">Pełne rozwiązanie dla studia</p>
               </Link>
-              <Link 
+              <Link
                 href="/funkcje/sms-przypomnienia"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Shield className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <ShieldIcon />
+                </div>
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">SMS przypomnienia</h3>
                 <p className="text-sm text-muted-foreground mt-1">Automatyczne powiadomienia</p>
               </Link>
@@ -283,7 +339,7 @@ const ProtokolPrzyjecia = () => {
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
               Przejdź na cyfrowe protokoły przyjęcia i chroń swoje studio przed nieuzasadnionymi reklamacjami.
             </p>
-            <Button 
+            <Button
               asChild
               className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
             >

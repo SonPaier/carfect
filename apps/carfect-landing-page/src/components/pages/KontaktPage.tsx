@@ -60,7 +60,7 @@ const KontaktPage = () => {
                 <a
                   key={index}
                   href={contact.href}
-                  className="bg-card rounded-2xl border border-border p-6 text-center hover:shadow-lg hover:border-primary/30 transition-all group"
+                  className="bg-card rounded-2xl p-6 text-center transition-all group"
                 >
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
                     <contact.icon className="w-7 h-7 text-primary" />
@@ -78,7 +78,7 @@ const KontaktPage = () => {
         <section className="py-20 md:py-28 bg-background">
           <div className="container px-4">
             <div className="max-w-2xl mx-auto">
-              <div className="bg-card rounded-2xl border border-border p-8 text-center">
+              <div className="bg-card rounded-2xl p-8 text-center">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-6">
                   <MapPin className="w-7 h-7 text-primary" />
                 </div>
@@ -103,7 +103,7 @@ const KontaktPage = () => {
               </p>
               <a
                 href="/#hero"
-                className="inline-flex h-14 px-8 items-center justify-center gap-2 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-amber-500 text-primary-foreground hover:from-primary/90 hover:to-amber-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+                className="inline-flex h-14 px-8 items-center justify-center gap-2 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Umów prezentację
                 <ArrowRight className="w-5 h-5" />
