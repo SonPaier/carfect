@@ -25,6 +25,7 @@ import {
   Send,
   Loader2,
   Camera,
+  ChevronRight,
 } from 'lucide-react';
 import EmptyState from '@/components/ui/empty-state';
 import CustomerEditDrawer from './CustomerEditDrawer';
@@ -1072,6 +1073,19 @@ const CalendarItemDetailsDrawer = ({
                   <span className="text-sm font-medium">Numer zlecenia</span>
                   <p className="text-sm">{item.order_number}</p>
                 </div>
+              )}
+
+              {/* Protocol link */}
+              {protocolToken && onAddProtocol && (
+                <button
+                  type="button"
+                  onClick={() => onAddProtocol(item)}
+                  className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg text-sm font-medium text-primary hover:bg-primary/20 transition-colors w-full"
+                >
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span>Protokół przyjęcia</span>
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                </button>
               )}
 
               {/* Customer */}
