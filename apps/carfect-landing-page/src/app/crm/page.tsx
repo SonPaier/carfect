@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import PlaceholderPage from '@/components/pages/PlaceholderPage';
+import CrmPage from '@/components/pages/CrmPage';
 
 export const metadata: Metadata = {
   title: 'CRM dla Myjni i Detailingu – Zarządzaj Firmą w Jednym Miejscu',
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <PlaceholderPage />;
+  return <CrmPage />;
 }
