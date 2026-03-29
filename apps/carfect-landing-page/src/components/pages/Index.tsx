@@ -1,9 +1,8 @@
-"use client";
+'use client';
 
 import { useRef } from "react";
 import Header from "@/components/landing/Header";
 import Hero from "@/components/landing/Hero";
-import AppPreview from "@/components/landing/AppPreview";
 import BenefitsZigZag from "@/components/landing/BenefitsZigZag";
 import Testimonials from "@/components/landing/Testimonials";
 import TrialCTA from "@/components/landing/TrialCTA";
@@ -18,8 +17,8 @@ const Index = () => {
   const heroRef = useRef<HTMLDivElement>(null);
 
   const scrollToContact = () => {
-    const footer = document.querySelector("#footer");
-    footer?.scrollIntoView({ behavior: "smooth" });
+    const footer = document.querySelector('#footer');
+    footer?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -31,9 +30,6 @@ const Index = () => {
       <TrustedBy />
       <ScrollFadeIn>
         <FeaturesGrid />
-      </ScrollFadeIn>
-      <ScrollFadeIn>
-        <AppPreview />
       </ScrollFadeIn>
       <ScrollFadeIn delay={0.1}>
         <section id="pricing">
