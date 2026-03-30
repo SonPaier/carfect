@@ -660,9 +660,7 @@ const EmployeeCalendarPage = () => {
                 key={dashboardRefreshKey}
                 instanceId={instanceId}
                 columnIds={config.column_ids || []}
-                hidePrices={
-                  config?.visible_fields && (config.visible_fields as any).price === false
-                }
+                hidePrices={true}
                 hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
                 onItemClick={(item) => handleItemClick(item)}
                 linkedEmployeeId={linkedEmployeeId}
@@ -688,9 +686,7 @@ const EmployeeCalendarPage = () => {
                 onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
                 onFollowUpRequest={handleFollowUpRequest}
                 canEditServices={!!allowedActions.edit_services}
-                hidePrices={
-                  config?.visible_fields && (config.visible_fields as any).price === false
-                }
+                hidePrices={true}
                 hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
                 onAddProtocol={
                   protocolsEnabled
@@ -835,9 +831,7 @@ const EmployeeCalendarPage = () => {
                     onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
                     onFollowUpRequest={handleFollowUpRequest}
                     canEditServices={!!allowedActions.edit_services}
-                    hidePrices={
-                      config?.visible_fields && (config.visible_fields as any).price === false
-                    }
+                    hidePrices={true}
                     hideHours={
                       config?.visible_fields && (config.visible_fields as any).hours === false
                     }
@@ -1014,7 +1008,7 @@ const EmployeeCalendarPage = () => {
           onEndWork={(itemId) => handleStatusChange(itemId, 'completed')}
           onFollowUpRequest={handleFollowUpRequest}
           canEditServices={!!allowedActions.edit_services}
-          hidePrices={config?.visible_fields && (config.visible_fields as any).price === false}
+          hidePrices={true}
           hideHours={config?.visible_fields && (config.visible_fields as any).hours === false}
           instanceId={instanceId || undefined}
           forceSideRight
