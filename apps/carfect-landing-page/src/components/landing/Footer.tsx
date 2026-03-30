@@ -91,7 +91,7 @@ const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold mb-4">{footer.contact}</h4>
+            <p className="font-semibold mb-4">{footer.contact}</p>
             <ul className="space-y-3">
               <li>
                 <a
@@ -136,7 +136,7 @@ const Footer = () => {
 
           {/* Navigation */}
           <div>
-            <h4 className="font-semibold mb-4">Nawigacja</h4>
+            <p className="font-semibold mb-4">Nawigacja</p>
             <ul className="space-y-3">
               <li>
                 <Link
@@ -191,7 +191,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h4 className="font-semibold mb-4">Informacje</h4>
+            <p className="font-semibold mb-4">Informacje</p>
             <ul className="space-y-3">
               <li>
                 <Link

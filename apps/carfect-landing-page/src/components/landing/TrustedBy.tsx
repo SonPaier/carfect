@@ -15,7 +15,7 @@ const TrustedBy = () => {
   return (
     <section className="py-10 md:py-14 bg-gray-100">
       <div className="container px-4">
-        <p className="text-center text-sm text-muted-foreground/70 mb-8 tracking-widest uppercase font-medium">
+        <p className="text-center text-sm text-muted-foreground mb-8 tracking-widest uppercase font-medium">
           Pracują z nami najlepsi
         </p>
         <div className="flex flex-wrap items-center justify-center gap-10 md:gap-16">

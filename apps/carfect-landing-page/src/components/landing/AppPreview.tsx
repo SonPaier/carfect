@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useTranslation } from "@/hooks/useTranslation";
 import appDesktop from "@/assets/app-desktop.png";
-import appMobile from "@/assets/crm-kalendarz-mobile.png";
+import appMobile from "@/assets/crm-kalendarz-mobile.webp";
 
 const AppPreview = () => {
   const { t } = useTranslation();
