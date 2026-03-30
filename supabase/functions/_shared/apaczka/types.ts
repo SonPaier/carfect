@@ -24,21 +24,21 @@ export interface ApaczkaShipmentItem {
   dimension1: number; // length cm
   dimension2: number; // width cm (or diameter for tuba)
   dimension3: number; // height cm (0 for tuba)
-  weight: number;     // kg
+  weight: number; // kg
   is_nstd: number;
   shipment_type_code: string; // "PACZKA" | "RURA"
   customs_data: unknown[];
 }
 
 export interface ApaczkaCod {
-  amount: number;      // grosze
-  currency: string;    // "PLN"
+  amount: number; // grosze
+  currency: string; // "PLN"
   bankaccount: string; // 26 digits, no spaces
 }
 
 export interface ApaczkaPickup {
-  type: "SELF" | "COURIER";
-  date: string;       // YYYY-MM-DD
+  type: 'SELF' | 'COURIER';
+  date: string; // YYYY-MM-DD
   hours_from: string;
   hours_to: string;
 }
@@ -65,7 +65,7 @@ export interface ApaczkaOrderRequest {
   };
   option: Record<string, unknown>;
   notification: ApaczkaNotification;
-  shipment_value: number;    // grosze
+  shipment_value: number; // grosze
   shipment_currency: string; // "PLN"
   pickup: ApaczkaPickup;
   shipment: ApaczkaShipmentItem[];
@@ -110,12 +110,18 @@ export interface SenderAddress {
 
 export interface OrderPackage {
   id: string;
-  shippingMethod: "shipping" | "pickup" | "uber";
-  packagingType?: "karton" | "tuba";
+  shippingMethod: 'shipping' | 'pickup' | 'uber';
+  packagingType?: 'karton' | 'tuba';
   dimensions?: KartonDimensions | TubaDimensions;
+  courierServiceId?: number;
+  courier?: string;
   weight?: number;
   contents?: string;
+  declaredValue?: number;
   oversized?: boolean;
+  shippingCost?: number;
+  apaczka_order_id?: string;
+  tracking_number?: string;
   productKeys: string[];
 }
 

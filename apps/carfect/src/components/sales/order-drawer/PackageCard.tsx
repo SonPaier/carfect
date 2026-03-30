@@ -579,6 +579,20 @@ const PackageCard = ({
                   <span className="text-xs text-destructive">{valuation.error}</span>
                 )}
               </div>
+
+              {/* Kwota pobrania — tylko dla COD, wypełnia się po sprawdzeniu wyceny */}
+              {paymentMethod === 'cod' && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Kwota pobrania (zł)</Label>
+                  {pkg.shippingCost != null ? (
+                    <p className="text-base font-semibold">
+                      {formatCurrency((pkg.declaredValue ?? 0) + pkg.shippingCost)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">—</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
