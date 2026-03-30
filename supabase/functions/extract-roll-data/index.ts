@@ -455,6 +455,9 @@ serve(async (req) => {
     }
 
     // Step 3: Match with existing products in database
+    // RULE: product name MUST come from the database. We search the entire
+    // raw OCR text for ANY word from a product's short_name or full_name.
+    // One matching word (>= 2 chars) is enough to identify the product.
     let matchedProductId: string | null = null;
     let matchedVariantId: string | null = null;
     let matchedProductName: string | null = null;
@@ -464,61 +467,48 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Get all products for this instance
       const { data: products } = await supabase
         .from('sales_products')
         .select('id, full_name, short_name')
         .eq('instance_id', instanceId);
 
       if (products && products.length > 0) {
-        const scannedName = ((extracted.productName as string) || '').toLowerCase();
-        const scannedCode = ((extracted.productCode as string) || '').toUpperCase();
+        // Normalize entire OCR text to lowercase for searching
+        const ocrLower = rawText.toLowerCase();
+        const ocrWords = ocrLower.split(/[\s\n\r,.\-\/]+/).filter((w) => w.length >= 2);
 
-        // Match by product name (fuzzy — check if scanned name contains product short_name or vice versa)
-        let bestMatch: { id: string; short_name: string; score: number } | null = null;
+        let bestMatch: { id: string; short_name: string; matchedWords: number; totalWords: number } | null = null;
 
         for (const p of products) {
-          const shortLower = p.short_name.toLowerCase();
-          const fullLower = p.full_name.toLowerCase();
+          // Get unique significant words from product names (skip very short ones)
+          const allProductNames = [p.short_name, p.full_name].join(' ').toLowerCase();
+          const productWords = [...new Set(
+            allProductNames.split(/[\s\-\/]+/).filter((w) => w.length >= 2)
+          )];
 
-          // Exact match
-          if (scannedName === shortLower || scannedName === fullLower) {
-            bestMatch = { id: p.id, short_name: p.short_name, score: 1 };
-            break;
-          }
+          if (productWords.length === 0) continue;
 
-          // Scanned name contains product name or vice versa
-          if (scannedName.includes(shortLower) || shortLower.includes(scannedName)) {
-            const score =
-              Math.min(scannedName.length, shortLower.length) /
-              Math.max(scannedName.length, shortLower.length);
-            if (!bestMatch || score > bestMatch.score) {
-              bestMatch = { id: p.id, short_name: p.short_name, score };
-            }
-          }
+          // Count how many product words appear anywhere in OCR text
+          const matchedWords = productWords.filter((pw) => ocrWords.includes(pw)).length;
 
-          // Match by words overlap (check both short_name and full_name)
-          const scannedWords = scannedName.split(/\s+/).filter((w) => w.length > 1);
-          for (const dbName of [shortLower, fullLower]) {
-            const productWords = dbName.split(/\s+/).filter((w) => w.length > 1);
-            if (productWords.length === 0) continue;
-            const overlap = scannedWords.filter((w) => productWords.includes(w)).length;
-            if (overlap > 0) {
-              const score = overlap / Math.max(scannedWords.length, productWords.length);
-              if (!bestMatch || score > bestMatch.score) {
-                bestMatch = { id: p.id, short_name: p.short_name, score };
-              }
+          // At least 1 word must match
+          if (matchedWords > 0) {
+            if (!bestMatch || matchedWords > bestMatch.matchedWords ||
+                (matchedWords === bestMatch.matchedWords && productWords.length < bestMatch.totalWords)) {
+              bestMatch = { id: p.id, short_name: p.short_name, matchedWords, totalWords: productWords.length };
             }
           }
         }
 
-        if (bestMatch && bestMatch.score >= 0.5) {
+        if (bestMatch) {
           matchedProductId = bestMatch.id;
           matchedProductName = bestMatch.short_name;
 
-          // Override scanned product name with matched DB name
+          // ALWAYS use DB name, never OCR-parsed name
           extracted.productName = bestMatch.short_name;
-          confidence.productName = Math.max(confidence.productName, 0.95);
+          confidence.productName = bestMatch.matchedWords >= 2 ? 0.98 : 0.85;
+
+          console.log(`Product matched: "${bestMatch.short_name}" (${bestMatch.matchedWords}/${bestMatch.totalWords} words)`);
 
           // Try to match variant by dimensions
           const { data: variants } = await supabase
@@ -527,7 +517,6 @@ serve(async (req) => {
             .eq('product_id', bestMatch.id);
 
           if (variants && extracted.widthMm && extracted.lengthM) {
-            const dimStr = `${extracted.widthMm}mm x ${extracted.lengthM}m`;
             for (const v of variants) {
               if (
                 v.name.includes(`${extracted.widthMm}mm`) &&
