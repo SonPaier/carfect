@@ -25,6 +25,7 @@ import {
   Send,
   Loader2,
   Camera,
+  ChevronRight,
 } from 'lucide-react';
 import EmptyState from '@/components/ui/empty-state';
 import CustomerEditDrawer from './CustomerEditDrawer';
@@ -1074,6 +1075,19 @@ const CalendarItemDetailsDrawer = ({
                 </div>
               )}
 
+              {/* Protocol link — show when protocol exists, or offer to create one */}
+              {onAddProtocol && (
+                <button
+                  type="button"
+                  onClick={() => onAddProtocol(item)}
+                  className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg text-sm font-medium text-primary hover:bg-primary/20 transition-colors w-full"
+                >
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span>{protocolToken ? 'Protokół przyjęcia' : 'Dodaj protokół'}</span>
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                </button>
+              )}
+
               {/* Customer */}
               {(item.customer_name || item.customer_phone || item.customer_email) && (
                 <div className="space-y-2">
@@ -1334,15 +1348,40 @@ const CalendarItemDetailsDrawer = ({
                         </div>
                       );
                     })()}
-                  {invoicingSettings?.active && itemInvoices.length === 0 && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => setInvoiceDrawerOpen(true)}
-                    >
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      Wystaw FV
-                    </Button>
+                  {/* Invoice + SMS buttons in one row */}
+                  {itemInvoices.length === 0 && (invoicingSettings?.active || item.status === 'completed') && (
+                    <div className="flex gap-2">
+                      {invoicingSettings?.active && (
+                        <Button
+                          variant="outline"
+                          className="flex-1 justify-center"
+                          onClick={() => setInvoiceDrawerOpen(true)}
+                        >
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          Wystaw FV
+                        </Button>
+                      )}
+                      {item.status === 'completed' && (
+                        <Button
+                          variant="outline"
+                          className="flex-1 justify-center"
+                          disabled={!item.customer_phone}
+                          onClick={() => {
+                            const phone = item.customer_phone || '';
+                            let message = `Prośba o rozliczenie "${item.title}"`;
+                            if (item.price != null) message += ` w kwocie ${item.price.toFixed(2)} PLN`;
+                            message += '.';
+                            if (protocolToken) {
+                              message += ` Link do protokołu: ${window.location.origin}/protocol/${protocolToken}`;
+                            }
+                            window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, '_self');
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          SMS rozliczenie
+                        </Button>
+                      )}
+                    </div>
                   )}
                   {itemInvoices.length > 0 && (
                     <div className="space-y-1">
@@ -1401,26 +1440,6 @@ const CalendarItemDetailsDrawer = ({
                         );
                       })}
                     </div>
-                  )}
-                  {item.status === 'completed' && itemInvoices.length === 0 && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      disabled={!item.customer_phone}
-                      onClick={() => {
-                        const phone = item.customer_phone || '';
-                        let message = `Prośba o rozliczenie "${item.title}"`;
-                        if (item.price != null) message += ` w kwocie ${item.price.toFixed(2)} PLN`;
-                        message += '.';
-                        if (protocolToken) {
-                          message += ` Link do protokołu: ${window.location.origin}/protocol/${protocolToken}`;
-                        }
-                        window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, '_self');
-                      }}
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Wyślij SMS o rozliczeniu
-                    </Button>
                   )}
                 </div>
               )}
