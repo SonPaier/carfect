@@ -100,6 +100,13 @@ function isNoiseLine(line: string): boolean {
   if (isDateString(line)) return true;
   if (/^(?:www\.|http)/i.test(line)) return true;
   if (/^\d+(?:\.\d+)?$/.test(line.replace(/\s/g, ''))) return true;
+  // Lines with CJK characters, Arabic, or other non-Latin scripts are OCR noise
+  if (/[\u4e00-\u9fff\u3400-\u4dbf\u0600-\u06ff]/.test(line)) return true;
+  // Lines that are mostly non-alphanumeric
+  const alphaNum = line.replace(/[^a-zA-Z0-9]/g, '');
+  if (alphaNum.length < line.replace(/\s/g, '').length * 0.4) return true;
+  // "Made in/for/by" lines
+  if (/^made\s+(in|for|by|hor)\b/i.test(line)) return true;
   return false;
 }
 
@@ -382,7 +389,7 @@ function parseRollLabel(rawText: string) {
     consumed.add(i);
 
     // Stop after collecting enough (product names are usually 1-3 lines)
-    if (nameCandidates.join(' ').length >= 20) break;
+    if (nameCandidates.length >= 3 || nameCandidates.join(' ').length >= 30) break;
   }
 
   if (nameCandidates.length > 0) {
@@ -490,14 +497,17 @@ serve(async (req) => {
             }
           }
 
-          // Match by words overlap
+          // Match by words overlap (check both short_name and full_name)
           const scannedWords = scannedName.split(/\s+/).filter((w) => w.length > 1);
-          const productWords = shortLower.split(/\s+/).filter((w) => w.length > 1);
-          const overlap = scannedWords.filter((w) => productWords.includes(w)).length;
-          if (overlap > 0) {
-            const score = overlap / Math.max(scannedWords.length, productWords.length);
-            if (!bestMatch || score > bestMatch.score) {
-              bestMatch = { id: p.id, short_name: p.short_name, score };
+          for (const dbName of [shortLower, fullLower]) {
+            const productWords = dbName.split(/\s+/).filter((w) => w.length > 1);
+            if (productWords.length === 0) continue;
+            const overlap = scannedWords.filter((w) => productWords.includes(w)).length;
+            if (overlap > 0) {
+              const score = overlap / Math.max(scannedWords.length, productWords.length);
+              if (!bestMatch || score > bestMatch.score) {
+                bestMatch = { id: p.id, short_name: p.short_name, score };
+              }
             }
           }
         }
