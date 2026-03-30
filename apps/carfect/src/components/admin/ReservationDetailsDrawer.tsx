@@ -28,6 +28,7 @@ import {
   Plus,
   Users,
   UserX,
+  ChevronRight,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
@@ -835,6 +836,19 @@ const ReservationDetailsDrawer = ({
                   <div className="font-medium">{carModel}</div>
                 </div>
               </div>
+            )}
+
+            {/* Protocol link — visible when protocol exists */}
+            {existingProtocolId && !isHallMode && (
+              <button
+                type="button"
+                onClick={handleEditProtocol}
+                className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg text-sm font-medium text-primary hover:bg-primary/20 transition-colors w-full"
+              >
+                <FileText className="w-4 h-4 shrink-0" />
+                <span>Protokół przyjęcia pojazdu</span>
+                <ChevronRight className="w-4 h-4 ml-auto" />
+              </button>
             )}
 
             {/* Car size warning if missing */}
