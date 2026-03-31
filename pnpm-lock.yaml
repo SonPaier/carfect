@@ -169,13 +169,13 @@ importers:
         version: 10.4.27(postcss@8.5.8)
       eslint:
         specifier: ^9.32.0
-        version: 9.39.4(jiti@2.6.1)
+        version: 9.39.4(jiti@1.21.7)
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
-        version: 5.2.0(eslint@9.39.4(jiti@2.6.1))
+        version: 5.2.0(eslint@9.39.4(jiti@1.21.7))
       eslint-plugin-react-refresh:
         specifier: ^0.4.20
-        version: 0.4.26(eslint@9.39.4(jiti@2.6.1))
+        version: 0.4.26(eslint@9.39.4(jiti@1.21.7))
       globals:
         specifier: ^15.15.0
         version: 15.15.0
@@ -190,7 +190,7 @@ importers:
         version: 5.9.3
       typescript-eslint:
         specifier: ^8.38.0
-        version: 8.57.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+        version: 8.57.0(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3)
       vite:
         specifier: ^5.4.19
         version: 5.4.21(@types/node@22.19.15)(terser@5.46.0)
@@ -380,10 +380,10 @@ importers:
         version: 10.4.27(postcss@8.5.8)
       eslint:
         specifier: ^9.32.0
-        version: 9.39.4(jiti@1.21.7)
+        version: 9.39.4(jiti@2.6.1)
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
-        version: 5.2.0(eslint@9.39.4(jiti@1.21.7))
+        version: 5.2.0(eslint@9.39.4(jiti@2.6.1))
       globals:
         specifier: ^15.15.0
         version: 15.15.0
@@ -398,7 +398,7 @@ importers:
         version: 5.9.3
       typescript-eslint:
         specifier: ^8.38.0
-        version: 8.57.0(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3)
+        version: 8.57.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
 
   apps/hiservice:
     dependencies:
@@ -659,7 +659,11 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jsdom@20.0.3)(terser@5.46.0)
 
-  libs/ai: {}
+  libs/ai:
+    dependencies:
+      '@ai-sdk/react':
+        specifier: ^3.0.136
+        version: 3.0.136(react@19.2.4)(zod@3.25.76)
 
   libs/shared-invoicing: {}
 
@@ -9561,6 +9565,10 @@ snapshots:
   eslint-plugin-react-hooks@5.2.0(eslint@9.39.4(jiti@2.6.1)):
     dependencies:
       eslint: 9.39.4(jiti@2.6.1)
+
+  eslint-plugin-react-refresh@0.4.26(eslint@9.39.4(jiti@1.21.7)):
+    dependencies:
+      eslint: 9.39.4(jiti@1.21.7)
 
   eslint-plugin-react-refresh@0.4.26(eslint@9.39.4(jiti@2.6.1)):
     dependencies:
