@@ -6,6 +6,7 @@ export interface SalesCustomerRef {
   id: string;
   name: string;
   discountPercent?: number;
+  isNetPayer?: boolean;
 }
 
 export function useCustomerSearch(instanceId: string | null) {
@@ -18,37 +19,43 @@ export function useCustomerSearch(instanceId: string | null) {
   const containerRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const searchCustomers = useCallback(async (q: string) => {
-    if (!instanceId || q.length < CUSTOMER_SEARCH_MIN_LENGTH) {
-      setSearchResults([]);
-      setDropdownOpen(false);
-      return;
-    }
-    setSearching(true);
-    const { data } = await (supabase
-      .from('sales_customers')
-      .select('id, name, discount_percent')
-      .eq('instance_id', instanceId)
-      .ilike('name', `%${q}%`)
-      .order('name')
-      .limit(10) as any);
+  const searchCustomers = useCallback(
+    async (q: string) => {
+      if (!instanceId || q.length < CUSTOMER_SEARCH_MIN_LENGTH) {
+        setSearchResults([]);
+        setDropdownOpen(false);
+        return;
+      }
+      setSearching(true);
+      const { data } = await (supabase
+        .from('sales_customers')
+        .select('id, name, discount_percent, is_net_payer')
+        .eq('instance_id', instanceId)
+        .ilike('name', `%${q}%`)
+        .order('name')
+        .limit(10) as any);
 
-    const results: SalesCustomerRef[] = (data || []).map((c: any) => ({
-      id: c.id,
-      name: c.name,
-      discountPercent: c.discount_percent ?? undefined,
-    }));
-    setSearchResults(results);
-    setDropdownOpen(true);
-    setActiveIndex(-1);
-    setSearching(false);
-  }, [instanceId]);
+      const results: SalesCustomerRef[] = (data || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        discountPercent: c.discount_percent ?? undefined,
+        isNetPayer: c.is_net_payer ?? false,
+      }));
+      setSearchResults(results);
+      setDropdownOpen(true);
+      setActiveIndex(-1);
+      setSearching(false);
+    },
+    [instanceId],
+  );
 
   // Debounced search
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => searchCustomers(customerSearch), 300);
-    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
   }, [customerSearch, searchCustomers]);
 
   // Close dropdown on outside click
@@ -64,15 +71,17 @@ export function useCustomerSearch(instanceId: string | null) {
 
   const handleCustomerKeyDown = (e: React.KeyboardEvent) => {
     if (!dropdownOpen) return;
-    const totalItems = searchResults.length + (searchResults.length === 0 && customerSearch.length >= CUSTOMER_SEARCH_MIN_LENGTH ? 1 : 0);
+    const totalItems =
+      searchResults.length +
+      (searchResults.length === 0 && customerSearch.length >= CUSTOMER_SEARCH_MIN_LENGTH ? 1 : 0);
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setActiveIndex(prev => Math.min(prev + 1, totalItems - 1));
+        setActiveIndex((prev) => Math.min(prev + 1, totalItems - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setActiveIndex(prev => Math.max(prev - 1, 0));
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
         break;
       case 'Enter':
         e.preventDefault();
