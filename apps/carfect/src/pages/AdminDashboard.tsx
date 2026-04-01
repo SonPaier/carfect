@@ -3138,8 +3138,8 @@ const AdminDashboard = () => {
                     </Button>
                   )}
                   {/* 8. Powiadomienia - ukryte */}
-                  {/* AI Analyst */}
-                  {hasFeature('ai_analyst') && (
+                  {/* AI Analyst - hidden until env vars deployed */}
+                  {/* {hasFeature('ai_analyst') && (
                     <Button
                       variant="ghost"
                       className={cn(
@@ -3157,7 +3157,7 @@ const AdminDashboard = () => {
                       <Sparkles className="w-4 h-4 shrink-0" />
                       {!sidebarCollapsed && 'Asystent AI'}
                     </Button>
-                  )}
+                  )} */}
                   {/* 9. Ustawienia - admin only, always last */}
                   {userRole !== 'employee' && (
                     <Button
