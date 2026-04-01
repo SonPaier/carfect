@@ -30,7 +30,7 @@ const TestimonialCard = ({
   const logoSrc = logo ? logoMap[logo] : null;
 
   return (
-    <article className={`p-6 md:p-8 rounded-2xl bg-card border border-border hover:border-primary/20 transition-colors ${fullWidth ? 'w-full' : ''}`}>
+    <article className={`p-6 md:p-8 rounded-2xl bg-card shadow-sm hover:shadow-md transition-shadow ${fullWidth ? 'w-full' : ''}`}>
       {/* Stars */}
       <div className="flex gap-1 mb-4">
         {Array.from({ length: 5 }).map((_, i) => (

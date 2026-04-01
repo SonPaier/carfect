@@ -49,6 +49,8 @@ interface PackagesSectionProps {
   paymentMethod?: string;
   totalGross?: number;
   bankAccountNumber?: string;
+  codAmountOverrides?: Record<string, number | undefined>;
+  onCodAmountChange?: (packageId: string, value: number | undefined) => void;
 }
 
 export const PackagesSection = ({
@@ -83,6 +85,8 @@ export const PackagesSection = ({
   totalGross,
   bankAccountNumber,
   availableCouriers,
+  codAmountOverrides,
+  onCodAmountChange,
 }: PackagesSectionProps) => {
   return (
     <div className="space-y-2">
@@ -131,6 +135,8 @@ export const PackagesSection = ({
               paymentMethod={paymentMethod}
               totalGross={totalGross}
               bankAccountNumber={bankAccountNumber}
+              codAmountOverride={codAmountOverrides?.[pkg.id]}
+              onCodAmountChange={(value) => onCodAmountChange?.(pkg.id, value)}
             />
           ))}
         </div>

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useTranslation } from "@/hooks/useTranslation";
 import appDesktop from "@/assets/app-desktop.png";
-import appMobile from "@/assets/crm-kalendarz-mobile.png";
+import appMobile from "@/assets/crm-kalendarz-mobile.webp";
 
 const AppPreview = () => {
   const { t } = useTranslation();
@@ -11,7 +11,7 @@ const AppPreview = () => {
     <section className="py-20 md:py-32 bg-white">
       <div className="container px-4">
         <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground section-heading mb-6">
             {preview.title}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">

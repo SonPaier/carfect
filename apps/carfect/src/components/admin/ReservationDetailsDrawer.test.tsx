@@ -842,8 +842,50 @@ describe('ReservationDetailsDrawer', () => {
       renderDrawer({
         reservation: { ...mockBaseReservation, status: 'unknown_status' },
       });
-      
+
       expect(screen.getByText('unknown_status')).toBeInTheDocument();
+    });
+  });
+
+  describe('Protocol Link', () => {
+    it('RDD-U-028: shows protocol link button when protocol exists for reservation', async () => {
+      // Override supabase mock to return a protocol for vehicle_protocols table
+      const { supabase } = await import('@/integrations/supabase/client');
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'vehicle_protocols') {
+          return createChainMock({ id: 'protocol-123' }) as ReturnType<typeof supabase.from>;
+        }
+        if (table === 'instances') {
+          return createChainMock({ public_token: 'test-token-123' }) as ReturnType<typeof supabase.from>;
+        }
+        return createChainMock(null) as ReturnType<typeof supabase.from>;
+      });
+
+      renderDrawer();
+
+      await waitFor(() => {
+        expect(screen.getByText('Protokół przyjęcia pojazdu')).toBeInTheDocument();
+      });
+    });
+
+    it('RDD-U-029: does not show protocol link when no protocol exists', async () => {
+      // Reset supabase mock to return null for vehicle_protocols
+      const { supabase } = await import('@/integrations/supabase/client');
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'instances') {
+          return createChainMock({ public_token: 'test-token-123' }) as ReturnType<typeof supabase.from>;
+        }
+        return createChainMock(null) as ReturnType<typeof supabase.from>;
+      });
+
+      renderDrawer();
+
+      // Wait for async protocol check to complete
+      await waitFor(() => {
+        expect(screen.getByText(/Jan Kowalski/)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('Protokół przyjęcia pojazdu')).not.toBeInTheDocument();
     });
   });
 });

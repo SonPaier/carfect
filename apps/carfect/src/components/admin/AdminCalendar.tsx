@@ -1547,19 +1547,13 @@ const AdminCalendar = ({
       {viewMode === 'day' && <>
           {/* Station Headers - outside grid on desktop (JS-synced horizontal scroll) */}
           {!isMobile && (
-            <div ref={headerScrollRef} onScroll={handleHeaderScroll} className="flex border-b border-border/50 bg-card sticky top-0 z-40 overflow-x-auto" style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
-            }}>
+            <div ref={headerScrollRef} onScroll={handleHeaderScroll} className="flex border-b border-border/50 bg-card sticky top-0 z-40 overflow-x-auto">
               {renderDayStationHeaders()}
             </div>
           )}
           
           {/* Main scrollable container */}
-          <div ref={gridScrollRef} onScroll={!isMobile ? handleGridScroll : undefined} className="flex-1 overflow-auto" style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}>
+          <div ref={gridScrollRef} onScroll={!isMobile ? handleGridScroll : undefined} className="flex-1 overflow-auto">
             {/* Station Headers - inside grid on mobile (native sticky, no JS sync needed) */}
             {isMobile && (
               <div className="flex border-b border-border/50 bg-card sticky top-0 z-40">
@@ -1814,9 +1808,8 @@ const AdminCalendar = ({
                               </span>
                             </div>
                         }
-                        {/* Line 3: Service chips - always visible in hall mode */}
+                        {/* Service chips */}
                           {hallMode ?
-                        // Hall mode: services always visible (ignoring visible_fields.services config)
                         reservation.services_data && reservation.services_data.length > 0 ?
                         <div className="flex flex-wrap gap-0.5 mt-0.5">
                                 {reservation.services_data.map((svc, idx) =>
@@ -1832,8 +1825,7 @@ const AdminCalendar = ({
                                 </span>
                               </div> :
 
-
-                        // Standard admin mode
+                        // Standard admin mode: services FIRST, then employees
                         reservation.services_data && reservation.services_data.length > 0 ?
                         <div className="flex flex-wrap gap-0.5 mt-0.5">
                                 {reservation.services_data.map((svc, idx) =>
@@ -1850,25 +1842,18 @@ const AdminCalendar = ({
                               </div>
 
                         }
-                          {/* Offer number - above notes */}
-                          {!hallMode && reservation.offer_number &&
-                        <div className="text-[10px] font-mono mt-0.5">
-                              #{reservation.offer_number}
-                            </div>
-                        }
-                          {/* Assigned employees chips - blue variant */}
+                          {/* Assigned employees chips - right after service title */}
                           {showEmployeesOnReservations && reservation.assigned_employee_ids && reservation.assigned_employee_ids.length > 0 && (() => {
                           const assignedEmps = reservation.assigned_employee_ids.
                           map((id) => employees.find((e) => e.id === id)).
                           filter((e): e is Employee => !!e);
                           if (assignedEmps.length === 0) return null;
                           return (
-                            <div className="flex flex-wrap gap-1 mt-1">
+                            <div className="flex flex-wrap gap-1 mt-0.5">
                                 {assignedEmps.slice(0, 2).map((emp) =>
                               <span
                                 key={emp.id}
                                 className="inline-flex items-center px-2.5 py-1 text-[12px] md:text-[13px] font-semibold bg-primary text-primary-foreground rounded-md leading-none">
-
                                     {emp.name.split(' ')[0]}
                                   </span>
                               )}
@@ -1878,8 +1863,13 @@ const AdminCalendar = ({
                                   </span>
                               }
                               </div>);
-
                         })()}
+                          {/* Offer number */}
+                          {!hallMode && reservation.offer_number &&
+                        <div className="text-[10px] font-mono mt-0.5">
+                              #{reservation.offer_number}
+                            </div>
+                        }
                           {/* Line 4: Notes (only if duration > 30 minutes and visible) */}
                           {(() => {
                           const durationMinutes = (parseTime(displayEnd) - parseTime(displayStart)) * 60;

@@ -1,30 +1,25 @@
 import type { Metadata } from 'next';
-import { fetchPageData, fetchPageMetadata } from '@/lib/sanity/fetchPage';
-import SanityPageLayout from '@/components/sanity/SanityPageLayout';
+import OpiniePage from '@/components/pages/OpiniePage';
 
-export const revalidate = 60;
-
-export async function generateMetadata(): Promise<Metadata> {
-  return fetchPageMetadata('opinie', {
+export const metadata: Metadata = {
+  title: 'Opinie Klientów Carfect – Co Mówią Właściciele Myjni i Studiów Detailingu',
+  description: 'Przeczytaj opinie właścicieli myjni samochodowych i studiów detailingu o systemie Carfect. Sprawdź jak CRM pomógł im rozwinąć biznes.',
+  alternates: { canonical: 'https://carfect.pl/opinie' },
+  openGraph: {
     title: 'Opinie Klientów Carfect – Co Mówią Właściciele Myjni i Studiów Detailingu',
     description: 'Przeczytaj opinie właścicieli myjni samochodowych i studiów detailingu o systemie Carfect. Sprawdź jak CRM pomógł im rozwinąć biznes.',
-    canonical: 'https://carfect.pl/opinie',
-  });
-}
+    url: 'https://carfect.pl/opinie',
+    siteName: 'Carfect.pl',
+    locale: 'pl_PL',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Opinie Klientów Carfect – Co Mówią Właściciele Myjni i Studiów Detailingu',
+    description: 'Przeczytaj opinie właścicieli myjni samochodowych i studiów detailingu o systemie Carfect. Sprawdź jak CRM pomógł im rozwinąć biznes.',
+  },
+};
 
-export default async function Page() {
-  const { page, settings, pricingConfig } = await fetchPageData('opinie');
-
-  return (
-    <SanityPageLayout
-      page={page}
-      settings={settings}
-      pricingConfig={pricingConfig}
-      breadcrumbs={[
-        { name: 'Strona główna', href: '/' },
-        { name: 'Opinie', href: '/opinie' },
-      ]}
-      fallback={null}
-    />
-  );
+export default function Page() {
+  return <OpiniePage />;
 }

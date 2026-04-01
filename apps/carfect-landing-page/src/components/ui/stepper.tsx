@@ -39,6 +39,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           onClick={handleDecrement}
           disabled={value <= min}
           className="h-10 w-10 rounded-lg"
+          aria-label="Zmniejsz"
         >
           <Minus className="h-4 w-4" />
         </Button>
@@ -52,6 +53,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           onClick={handleIncrement}
           disabled={value >= max}
           className="h-10 w-10 rounded-lg"
+          aria-label="Zwiększ"
         >
           <Plus className="h-4 w-4" />
         </Button>

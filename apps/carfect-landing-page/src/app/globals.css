@@ -21,9 +21,9 @@
     --secondary-foreground: 215 35% 12%;
 
     --muted: 45 86% 97%;
-    --muted-foreground: 215 15% 50%;
+    --muted-foreground: 215 20% 40%;
 
-    --section-alt: 45 86% 97%;
+    --section-alt: 220 10% 96%;
 
     --accent: 45 70% 92%;
     --accent-foreground: 45 100% 20%;
@@ -95,7 +95,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: transparent;
   }
 
   body {
@@ -110,4 +110,42 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+}
+
+/* Global overrides — kill all shadows, borders, gradients on buttons */
+*,
+*::before,
+*::after,
+*:hover,
+*:focus {
+  box-shadow: none !important;
+}
+
+button[class*="bg-gradient"],
+a[class*="bg-gradient"] {
+  background-image: none !important;
+}
+
+/* H2 accent underline */
+section h2 {
+  position: relative !important;
+  display: inline-block !important;
+  padding-bottom: 16px !important;
+}
+
+section h2::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 72px !important;
+  height: 5px !important;
+  border-radius: 9999px !important;
+  background: hsl(var(--primary)) !important;
+}
+
+.text-center h2::after,
+header h2::after {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
 }

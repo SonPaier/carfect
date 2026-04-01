@@ -3,22 +3,19 @@ import Image from 'next/image';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { BlogPost } from '@/lib/blog';
-import { urlFor } from '@/lib/sanity/image';
 
 interface BlogCardProps {
   post: BlogPost;
 }
 
 export default function BlogCard({ post }: BlogCardProps) {
-  const imageUrl = post.coverImage ? urlFor(post.coverImage).width(600).height(375).url() : null;
-
   return (
     <Card className="group hover:border-primary/20 transition-all overflow-hidden h-full flex flex-col">
-      <Link href={`/blog/${post.slug.current}`}>
-        {imageUrl && (
+      <Link href={`/blog/${post.slug}`}>
+        {post.image && (
           <div className="relative aspect-[16/10] overflow-hidden">
             <Image
-              src={imageUrl}
+              src={post.image}
               alt={post.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -30,7 +27,7 @@ export default function BlogCard({ post }: BlogCardProps) {
         <CardHeader>
           {post.category && (
             <span className="inline-block w-fit px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary mb-2">
-              {post.category.title}
+              {post.category}
             </span>
           )}
           <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
@@ -40,16 +37,16 @@ export default function BlogCard({ post }: BlogCardProps) {
 
         <CardContent className="flex-1">
           <p className="text-foreground/70 text-sm line-clamp-3">
-            {post.excerpt}
+            {post.description}
           </p>
         </CardContent>
 
         <CardFooter className="flex items-center justify-between pt-0">
           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-            {post.publishedAt && (
+            {post.date && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                {new Date(post.publishedAt).toLocaleDateString('pl-PL')}
+                {new Date(post.date).toLocaleDateString('pl-PL')}
               </span>
             )}
           </div>

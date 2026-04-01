@@ -24,8 +24,8 @@ describe('BankTransferCard', () => {
     renderWithProviders(
       <BankTransferCard
         instance={{
-          name: 'ArmCar',
-          offer_bank_company_name: 'ArmCar Sp. z o.o.',
+          name: 'Test Studio',
+          offer_bank_company_name: 'Test Studio Sp. z o.o.',
           offer_bank_account_number: 'PL 12 3456 7890',
           offer_bank_name: 'mBank',
           address: 'ul. Testowa 1, Warszawa',
@@ -36,7 +36,7 @@ describe('BankTransferCard', () => {
     );
 
     expect(screen.getByText('Dane do płatności')).toBeInTheDocument();
-    expect(screen.getByText('ArmCar Sp. z o.o.')).toBeInTheDocument();
+    expect(screen.getByText('Test Studio Sp. z o.o.')).toBeInTheDocument();
     expect(screen.getByText('PL 12 3456 7890')).toBeInTheDocument();
     expect(screen.getByText('mBank')).toBeInTheDocument();
     expect(screen.getByText('ul. Testowa 1, Warszawa')).toBeInTheDocument();

@@ -1,10 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type { RollScanResult, RollScanStatus } from '../types/rolls';
-import {
-  extractRollData,
-  uploadRollPhoto,
-  fileToBase64,
-} from '../services/rollService';
+import { extractRollData, uploadRollPhoto, fileToBase64 } from '../services/rollService';
 
 interface UseRollScanArgs {
   instanceId: string;
@@ -17,37 +13,28 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
   const [totalCount, setTotalCount] = useState(0);
   const abortRef = useRef(false);
 
-  const updateResult = useCallback(
-    (tempId: string, updates: Partial<RollScanResult>) => {
-      setResults((prev) =>
-        prev.map((r) => (r.tempId === tempId ? { ...r, ...updates } : r))
-      );
-    },
-    []
-  );
+  const updateResult = useCallback((tempId: string, updates: Partial<RollScanResult>) => {
+    setResults((prev) => prev.map((r) => (r.tempId === tempId ? { ...r, ...updates } : r)));
+  }, []);
 
-  const updateExtractedField = useCallback(
-    (tempId: string, field: string, value: unknown) => {
-      setResults((prev) =>
-        prev.map((r) =>
-          r.tempId === tempId
-            ? { ...r, extractedData: { ...r.extractedData, [field]: value } }
-            : r
-        )
-      );
-    },
-    []
-  );
+  const updateExtractedField = useCallback((tempId: string, field: string, value: unknown) => {
+    setResults((prev) =>
+      prev.map((r) =>
+        r.tempId === tempId ? { ...r, extractedData: { ...r.extractedData, [field]: value } } : r,
+      ),
+    );
+  }, []);
 
-  const confirmResult = useCallback((tempId: string) => {
-    updateResult(tempId, { status: 'confirmed' });
-  }, [updateResult]);
+  const confirmResult = useCallback(
+    (tempId: string) => {
+      updateResult(tempId, { status: 'confirmed' });
+    },
+    [updateResult],
+  );
 
   const confirmAll = useCallback(() => {
     setResults((prev) =>
-      prev.map((r) =>
-        r.status === 'review' ? { ...r, status: 'confirmed' } : r
-      )
+      prev.map((r) => (r.status === 'review' ? { ...r, status: 'confirmed' } : r)),
     );
   }, []);
 
@@ -106,8 +93,8 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
           // Step 2: Extract data via AI
           updateResult(item.tempId, { status: 'extracting' });
           const base64 = await fileToBase64(item.file);
-          const mediaType = item.file.type || 'image/jpeg';
-          const extracted = await extractRollData(base64, mediaType, instanceId);
+          // fileToBase64 converts to JPEG via compressImage
+          const extracted = await extractRollData(base64, 'image/jpeg', instanceId);
 
           updateResult(item.tempId, {
             status: 'confirmed',
@@ -136,7 +123,7 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
 
       setProcessing(false);
     },
-    [instanceId, updateResult]
+    [instanceId, updateResult],
   );
 
   const retryFile = useCallback(

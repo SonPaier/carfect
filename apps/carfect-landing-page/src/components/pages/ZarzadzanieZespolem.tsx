@@ -2,12 +2,97 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Users, Clock, Calendar, Layers, Monitor, Tablet, Eye, BarChart3, AlertTriangle, Lock } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
+import SubpageHero from "@/components/landing/SubpageHero";
 import widokHala from "@/assets/crm-studio-detailing-myjnia-reczna.webp";
-import raportCzasuPracy from "@/assets/myjnia-reczna-studio-car-detailing-raport-czasu-pracy.webp";
+
+const UsersIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="18" cy="16" r="7" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 42c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="34" cy="18" r="5" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+    <path d="M34 30c5.523 0 10 4.477 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="24" r="18" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M24 14v10l7 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="24" cy="24" r="2" fill="currentColor" />
+    <path d="M24 6V4M24 44v-2M6 24H4M44 24h-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="8" width="40" height="36" rx="3" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 18h40" stroke="currentColor" strokeWidth="2" />
+    <path d="M15 4v8M33 4v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <rect x="10" y="24" width="6" height="5" rx="1" fill="currentColor" fillOpacity="0.3" />
+    <rect x="21" y="24" width="6" height="5" rx="1" fill="currentColor" fillOpacity="0.3" />
+    <rect x="32" y="24" width="6" height="5" rx="1" fill="currentColor" fillOpacity="0.3" />
+    <rect x="10" y="34" width="6" height="5" rx="1" fill="currentColor" fillOpacity="0.2" />
+    <rect x="21" y="34" width="6" height="5" rx="1" fill="currentColor" fillOpacity="0.2" />
+  </svg>
+);
+
+const LayersIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 4L44 14 24 24 4 14 24 4z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M4 24l20 10 20-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    <path d="M4 34l20 10 20-10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.3" />
+  </svg>
+);
+
+const MonitorIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="6" width="44" height="30" rx="3" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M2 28h44" stroke="currentColor" strokeWidth="2" opacity="0.4" />
+    <path d="M17 44h14M24 36v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    <rect x="8" y="12" width="18" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+    <path d="M32 14h8M32 19h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
+
+const TabletIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="4" width="32" height="40" rx="4" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M8 36h32" stroke="currentColor" strokeWidth="2" opacity="0.4" />
+    <circle cx="24" cy="41" r="1.5" fill="currentColor" fillOpacity="0.4" />
+    <rect x="14" y="11" width="20" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+    <path d="M17 20h6M17 24h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
+
+const EyeIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 24C4 24 12 10 24 10s20 14 20 14-8 14-20 14S4 24 4 24z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="24" cy="24" r="6" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="2" />
+    <circle cx="24" cy="24" r="2.5" fill="currentColor" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="22" width="32" height="22" rx="3" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="2" />
+    <path d="M16 22V16a8 8 0 0116 0v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="24" cy="33" r="3" fill="currentColor" fillOpacity="0.4" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M24 36v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+  </svg>
+);
+
+const BarChart3Icon = () => (
+  <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="24" width="8" height="18" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+    <rect x="20" y="14" width="8" height="28" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+    <rect x="34" y="6" width="8" height="36" rx="2" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="2" />
+    <path d="M4 44h40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+  </svg>
+);
 
 const ZarzadzanieZespolem = () => {
   return (
@@ -15,30 +100,32 @@ const ZarzadzanieZespolem = () => {
       <Header />
       <main className="flex-1 pt-20">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-amber-950 text-white py-32 md:py-48">
-          <div className="container mx-auto px-4">
+        <SubpageHero breadcrumbs={[
+          { name: "Strona główna", href: "/" },
+          { name: "Funkcje", href: "/funkcje" },
+          { name: "Zarządzanie zespołem", href: "/funkcje/zarzadzanie-zespolem" },
+        ]}>
             <h1 id="zarzadzaj-zespolem-bez-chaosu-i-zbednych-arkuszy" className="text-3xl md:text-4xl lg:text-5xl font-bold max-w-4xl leading-tight">
               Zarządzaj zespołem bez chaosu i zbędnych arkuszy
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl">
               Zmień żmudne liczenie godzin w zautomatyzowany proces. Od rejestracji czasu pracy po gotowe listy płac – wszystko w jednym miejscu.
             </p>
 
             <div className="mt-8">
-              <Button 
+              <Button
                 asChild
                 className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
               >
-                <Link href="/umow-prezentacje">Umów prezentację</Link>
+                <Link href="tel:+48666610222">Umów prezentację</Link>
               </Button>
             </div>
-          </div>
-        </section>
+        </SubpageHero>
 
         <article>
         {/* Challenges Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 id="wyzwania-w-zarzadzaniu-zespolem-myjni-detailingu" className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-6">
               Wyzwania w zarządzaniu zespołem myjni ręcznej i studia car detailing
@@ -48,7 +135,7 @@ const ZarzadzanieZespolem = () => {
             </p>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
+              <div className="bg-card rounded-xl p-6 text-center">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
@@ -57,7 +144,7 @@ const ZarzadzanieZespolem = () => {
                   Kartki papieru, ołówek i kalkulator prowadzą do błędów w rozliczeniach i sporów o godziny nadliczbowe
                 </p>
               </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
+              <div className="bg-card rounded-xl p-6 text-center">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
@@ -66,7 +153,7 @@ const ZarzadzanieZespolem = () => {
                   Dwie osoby jednocześnie na tym samym stanowisku lub nikt w trakcie szczytu – brak synchronizacji paraliżuje halę
                 </p>
               </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
+              <div className="bg-card rounded-xl p-6 text-center">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
@@ -75,7 +162,7 @@ const ZarzadzanieZespolem = () => {
                   Niejasne przypisania prowadzą do zleceń wykonanych w pośpiechu lub w ogóle pominiętych
                 </p>
               </div>
-              <div className="bg-card rounded-xl p-6 border border-border text-center">
+              <div className="bg-card rounded-xl p-6 text-center">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
@@ -97,10 +184,10 @@ const ZarzadzanieZespolem = () => {
 
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {/* Feature 1 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-6 h-6 text-primary" />
+                    <ClockIcon />
                   </div>
                   <div>
                     <h3 id="ewidencja-czasu-pracy" className="text-xl font-semibold text-foreground mb-3">
@@ -114,10 +201,10 @@ const ZarzadzanieZespolem = () => {
               </div>
 
               {/* Feature 2 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-6 h-6 text-primary" />
+                    <CalendarIcon />
                   </div>
                   <div>
                     <h3 id="grafik-pracownikow" className="text-xl font-semibold text-foreground mb-3">
@@ -131,10 +218,10 @@ const ZarzadzanieZespolem = () => {
               </div>
 
               {/* Feature 3 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Layers className="w-6 h-6 text-primary" />
+                    <LayersIcon />
                   </div>
                   <div>
                     <h3 id="przypisywanie-do-stanowisk" className="text-xl font-semibold text-foreground mb-3">
@@ -148,10 +235,10 @@ const ZarzadzanieZespolem = () => {
               </div>
 
               {/* Feature 4 */}
-              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border">
+              <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-primary" />
+                    <UsersIcon />
                   </div>
                   <div>
                     <h3 id="przypisywanie-do-konkretnych-zlecen" className="text-xl font-semibold text-foreground mb-3">
@@ -168,7 +255,7 @@ const ZarzadzanieZespolem = () => {
         </section>
 
         {/* Live View Section */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 id="widok-na-zywo-dla-pracownikow" className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center mb-12">
               Widok na żywo dla pracowników
@@ -176,7 +263,7 @@ const ZarzadzanieZespolem = () => {
 
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12 mb-12">
               <div className="flex-1">
-                <div className="rounded-2xl overflow-hidden border border-border">
+                <div className="rounded-2xl overflow-hidden">
                   <Image
                     src={widokHala}
                     alt="Widok tabletu na hali myjni - pracownicy widzą harmonogram zleceń w czasie rzeczywistym"
@@ -189,7 +276,7 @@ const ZarzadzanieZespolem = () => {
                 {/* Sub-feature 1 */}
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Tablet className="w-5 h-5 text-primary" />
+                    <TabletIcon />
                   </div>
                   <div>
                     <h3 id="tablet-monitor-na-hali" className="text-lg font-semibold text-foreground mb-1">
@@ -204,7 +291,7 @@ const ZarzadzanieZespolem = () => {
                 {/* Sub-feature 2 */}
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-5 h-5 text-primary" />
+                    <EyeIcon />
                   </div>
                   <div>
                     <h3 id="harmonogram-w-czasie-rzeczywistym" className="text-lg font-semibold text-foreground mb-1">
@@ -219,7 +306,7 @@ const ZarzadzanieZespolem = () => {
                 {/* Sub-feature 3 */}
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-5 h-5 text-primary" />
+                    <LockIcon />
                   </div>
                   <div>
                     <h3 id="bez-dostepu-do-ustawien-i-wybranych-detali" className="text-lg font-semibold text-foreground mb-1">
@@ -248,25 +335,25 @@ const ZarzadzanieZespolem = () => {
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
-                    <BarChart3 className="w-5 h-5 text-primary flex-shrink-0" />
+                    <BarChart3Icon />
                     <span className="text-foreground">Godziny pracy i nadgodziny</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <BarChart3 className="w-5 h-5 text-primary flex-shrink-0" />
+                    <BarChart3Icon />
                     <span className="text-foreground">Liczba wykonanych usług</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <BarChart3 className="w-5 h-5 text-primary flex-shrink-0" />
+                    <BarChart3Icon />
                     <span className="text-foreground">Przychód na pracownika</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <BarChart3 className="w-5 h-5 text-primary flex-shrink-0" />
+                    <BarChart3Icon />
                     <span className="text-foreground">Porównanie okresów</span>
                   </li>
                 </ul>
               </div>
               <div className="flex-1 order-1 lg:order-2">
-                <div className="rounded-2xl overflow-hidden border border-border">
+                <div className="rounded-2xl overflow-hidden">
                   <Image
                     src={raportCzasuPracy}
                     alt="Raport czasu pracy zespołu - szczegółowe zestawienie godzin, nadgodzin i wykonanych usług"
@@ -280,7 +367,7 @@ const ZarzadzanieZespolem = () => {
         </section> */}
 
         {/* Related Features */}
-        <section className="py-16 md:py-20 border-b border-border">
+        <section className="py-16 md:py-20 border-b">
           <div className="container mx-auto px-4">
             <h2 id="powiazane-funkcje" className="text-2xl md:text-3xl font-bold text-foreground text-center mb-8">
               Powiązane funkcje
@@ -288,17 +375,21 @@ const ZarzadzanieZespolem = () => {
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Link
                 href="/funkcje/kalendarz-rezerwacji"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Calendar className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <CalendarIcon />
+                </div>
                 <h3 id="kalendarz-rezerwacji" className="font-semibold text-foreground group-hover:text-primary transition-colors">Kalendarz rezerwacji</h3>
                 <p className="text-sm text-muted-foreground mt-1">Zarządzanie terminami i stanowiskami</p>
               </Link>
               <Link
                 href="/crm/crm-dla-myjni-samochodowych"
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-colors group"
+                className="bg-card rounded-xl p-6 transition-colors group"
               >
-                <Users className="w-8 h-8 text-primary mb-3" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-4">
+                  <UsersIcon />
+                </div>
                 <h3 id="crm-dla-myjni" className="font-semibold text-foreground group-hover:text-primary transition-colors">CRM dla myjni</h3>
                 <p className="text-sm text-muted-foreground mt-1">Pełne rozwiązanie dla myjni</p>
               </Link>
@@ -317,11 +408,11 @@ const ZarzadzanieZespolem = () => {
             <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
               Ewidencja czasu, grafik i widok na żywo dla hali. Zacznij zarządzać zespołem profesjonalnie.
             </p>
-            <Button 
+            <Button
               asChild
               className="h-12 px-8 text-base font-semibold rounded-xl bg-white text-primary hover:bg-white/90"
             >
-              <Link href="/umow-prezentacje">Umów bezpłatną prezentację</Link>
+              <Link href="tel:+48666610222">Umów bezpłatną prezentację</Link>
             </Button>
           </div>
         </section>

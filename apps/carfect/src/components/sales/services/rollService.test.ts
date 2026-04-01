@@ -40,15 +40,32 @@ import {
   fetchRollRemainingMb,
   uploadRollPhoto,
   extractRollData,
+  fileToBase64,
 } from './rollService';
+import { compressImage } from '@shared/utils';
 
 // ─── Chain mock factory ───────────────────────────────────────
 
 const createChainMock = (resolveData: unknown = null, resolveError: unknown = null) => {
   const chain: Record<string, unknown> = {};
   const methods = [
-    'select', 'eq', 'neq', 'order', 'limit', 'single', 'maybeSingle',
-    'insert', 'update', 'delete', 'upsert', 'ilike', 'in', 'gte', 'lte', 'or', 'not',
+    'select',
+    'eq',
+    'neq',
+    'order',
+    'limit',
+    'single',
+    'maybeSingle',
+    'insert',
+    'update',
+    'delete',
+    'upsert',
+    'ilike',
+    'in',
+    'gte',
+    'lte',
+    'or',
+    'not',
   ];
   methods.forEach((m) => {
     chain[m] = vi.fn(() => chain);
@@ -445,5 +462,29 @@ describe('uploadRollPhoto', () => {
     const file = new File(['content'], 'photo.jpg', { type: 'image/jpeg' });
 
     await expect(uploadRollPhoto(file, 'inst-1')).rejects.toThrow('Storage quota exceeded');
+  });
+});
+
+// ─── fileToBase64 — HEIC conversion ─────────────────────────
+
+describe('fileToBase64', () => {
+  it('calls compressImage to convert the file before reading as base64', async () => {
+    const file = new File(['fake-heic-data'], 'photo.heic', { type: 'image/heic' });
+
+    const base64 = await fileToBase64(file);
+
+    expect(compressImage).toHaveBeenCalledWith(file, 2048, 0.9);
+    expect(typeof base64).toBe('string');
+    expect(base64.length).toBeGreaterThan(0);
+  });
+
+  it('returns valid base64 without data URI prefix', async () => {
+    const file = new File(['test-content'], 'photo.jpg', { type: 'image/jpeg' });
+
+    const base64 = await fileToBase64(file);
+
+    // Should not contain "data:" prefix
+    expect(base64).not.toContain('data:');
+    expect(base64).not.toContain('base64,');
   });
 });
