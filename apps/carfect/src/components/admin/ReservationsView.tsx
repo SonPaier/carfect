@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
@@ -181,6 +181,8 @@ const ReservationsView = ({
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -683,7 +685,7 @@ const ReservationsView = ({
           }
         />
       ) : (
-        <>
+        <div ref={tableRef}>
           {/* Desktop table */}
           <div className="hidden sm:block border border-border/50 rounded-xl overflow-hidden bg-white">
             <Table>
@@ -876,14 +878,18 @@ const ReservationsView = ({
             totalItems={sortedItems.length}
             pageSize={pageSize}
             pageSizeOptions={[25, 50, 100]}
-            onPageChange={setCurrentPage}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+              tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             onPageSizeChange={(size) => {
               setPageSize(size);
               setCurrentPage(1);
+              tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
             itemLabel="rezerwacji"
           />
-        </>
+        </div>
       )}
 
       {/* Reject reservation dialog */}
