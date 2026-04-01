@@ -31,6 +31,7 @@ export interface SalesOrder {
   paymentStatus: 'unpaid' | 'paid';
   trackingNumber?: string;
   trackingUrl?: string;
+  apaczkaOrderId?: string;
   /** Invoice data if exists */
   invoiceId?: string;
   invoiceNumber?: string;

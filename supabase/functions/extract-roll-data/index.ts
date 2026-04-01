@@ -467,35 +467,57 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      const { data: products } = await supabase
+      const { data: products, error: productsErr } = await supabase
         .from('sales_products')
         .select('id, full_name, short_name')
         .eq('instance_id', instanceId);
+
+      console.log(
+        `[Match] instanceId: ${instanceId}, products found: ${products?.length ?? 0}, error: ${productsErr?.message ?? 'none'}`,
+      );
 
       if (products && products.length > 0) {
         // Normalize entire OCR text to lowercase for searching
         const ocrLower = rawText.toLowerCase();
         const ocrWords = ocrLower.split(/[\s\n\r,.\-\/]+/).filter((w) => w.length >= 2);
+        console.log(`[Match] OCR words: ${JSON.stringify(ocrWords)}`);
 
-        let bestMatch: { id: string; short_name: string; matchedWords: number; totalWords: number } | null = null;
+        let bestMatch: {
+          id: string;
+          short_name: string;
+          matchedWords: number;
+          totalWords: number;
+        } | null = null;
 
         for (const p of products) {
           // Get unique significant words from product names (skip very short ones)
           const allProductNames = [p.short_name, p.full_name].join(' ').toLowerCase();
-          const productWords = [...new Set(
-            allProductNames.split(/[\s\-\/]+/).filter((w) => w.length >= 2)
-          )];
+          const productWords = [
+            ...new Set(allProductNames.split(/[\s\-\/]+/).filter((w) => w.length >= 2)),
+          ];
 
           if (productWords.length === 0) continue;
 
           // Count how many product words appear anywhere in OCR text
           const matchedWords = productWords.filter((pw) => ocrWords.includes(pw)).length;
+          console.log(
+            `[Match] Product "${p.short_name}" words: ${JSON.stringify(productWords)}, matched: ${matchedWords}`,
+          );
 
           // At least 1 word must match
           if (matchedWords > 0) {
-            if (!bestMatch || matchedWords > bestMatch.matchedWords ||
-                (matchedWords === bestMatch.matchedWords && productWords.length < bestMatch.totalWords)) {
-              bestMatch = { id: p.id, short_name: p.short_name, matchedWords, totalWords: productWords.length };
+            if (
+              !bestMatch ||
+              matchedWords > bestMatch.matchedWords ||
+              (matchedWords === bestMatch.matchedWords &&
+                productWords.length < bestMatch.totalWords)
+            ) {
+              bestMatch = {
+                id: p.id,
+                short_name: p.short_name,
+                matchedWords,
+                totalWords: productWords.length,
+              };
             }
           }
         }
@@ -508,7 +530,9 @@ serve(async (req) => {
           extracted.productName = bestMatch.short_name;
           confidence.productName = bestMatch.matchedWords >= 2 ? 0.98 : 0.85;
 
-          console.log(`Product matched: "${bestMatch.short_name}" (${bestMatch.matchedWords}/${bestMatch.totalWords} words)`);
+          console.log(
+            `[Match] WINNER: "${bestMatch.short_name}" (${bestMatch.matchedWords}/${bestMatch.totalWords} words)`,
+          );
 
           // Try to match variant by dimensions
           const { data: variants } = await supabase
@@ -527,8 +551,12 @@ serve(async (req) => {
               }
             }
           }
+        } else {
+          console.log(`[Match] NO MATCH found for OCR text`);
         }
       }
+    } else {
+      console.log('[Match] No instanceId provided, skipping product matching');
     }
 
     // Flag warnings
