@@ -3182,24 +3182,26 @@ const AdminDashboard = () => {
               )}
             </nav>
 
-            {/* Sales CRM switch button */}
-            {hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') && (
-              <div className={cn(sidebarCollapsed ? 'px-1 pb-1' : 'px-3 pb-1')}>
-                <Separator className="mb-2" />
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full gap-3',
-                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
-                  )}
-                  onClick={() => navigate(adminBasePath + '/sales-crm')}
-                  title="Przejdź do Panelu Sprzedaży"
-                >
-                  <ArrowLeftRight className="w-4 h-4 shrink-0" />
-                  {!sidebarCollapsed && 'Panel Sprzedaży'}
-                </Button>
-              </div>
-            )}
+            {/* Sales CRM switch button — restricted to Kaja for now */}
+            {hasFeature('sales_crm') &&
+              roles.some((r) => r.role === 'sales') &&
+              username === 'Kaja' && (
+                <div className={cn(sidebarCollapsed ? 'px-1 pb-1' : 'px-3 pb-1')}>
+                  <Separator className="mb-2" />
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full gap-3',
+                      sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                    )}
+                    onClick={() => navigate(adminBasePath + '/sales-crm')}
+                    title="Przejdź do Panelu Sprzedaży"
+                  >
+                    <ArrowLeftRight className="w-4 h-4 shrink-0" />
+                    {!sidebarCollapsed && 'Panel Sprzedaży'}
+                  </Button>
+                </div>
+              )}
 
             {/* Collapse toggle & User menu */}
             <div
@@ -3672,7 +3674,9 @@ const AdminDashboard = () => {
           protocolsEnabled={hasFeature('vehicle_reception_protocol')}
           userRole={userRole}
           currentVersion={currentVersion}
-          salesCrmEnabled={hasFeature('sales_crm') && roles.some((r) => r.role === 'sales')}
+          salesCrmEnabled={
+            hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') && username === 'Kaja'
+          }
           onSwitchToSalesCrm={() => navigate(adminBasePath + '/sales-crm')}
         />
       )}

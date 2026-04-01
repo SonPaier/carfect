@@ -217,6 +217,7 @@ const SalesOrdersView = () => {
           inv?.status === 'paid' ? 'paid' : ((o.payment_status || 'unpaid') as 'unpaid' | 'paid'),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
+        apaczkaOrderId: o.apaczka_order_id || undefined,
         invoiceId: inv?.id || undefined,
         invoiceNumber: inv?.invoice_number || undefined,
         invoiceStatus: inv?.status || undefined,
@@ -548,6 +549,24 @@ const SalesOrdersView = () => {
       toast.success('Przesyłka anulowana');
     } catch (err: any) {
       toast.error('Nie udało się anulować przesyłki' + (err.message ? ': ' + err.message : ''));
+    }
+  };
+
+  const handlePrintLabel = async (orderId: string) => {
+    try {
+      toast.info('Pobieram etykietę...');
+      const { data, error } = await supabase.functions.invoke('get-apaczka-label', {
+        body: { orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.pdf_base64) throw new Error('Brak danych etykiety');
+      const pdfBytes = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: any) {
+      toast.error('Nie udało się pobrać etykiety' + (err.message ? ': ' + err.message : ''));
     }
   };
 
@@ -889,6 +908,16 @@ const SalesOrdersView = () => {
                             >
                               Utwórz przesyłkę
                             </DropdownMenuItem>
+                            {order.apaczkaOrderId && order.status !== 'anulowany' && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePrintLabel(order.id);
+                                }}
+                              >
+                                Drukuj etykietę
+                              </DropdownMenuItem>
+                            )}
                             {order.trackingNumber && (
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
