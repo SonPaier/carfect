@@ -57,6 +57,8 @@ import { cn } from '@/lib/utils';
 import ServiceTag from './ServiceTag';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import { supabase } from '@/integrations/supabase/client';
+import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
+import { FileText } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 
 interface Service {
@@ -166,6 +168,14 @@ const ReservationsView = ({
   onOpenReservation,
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
+  const instanceId = reservations[0]?.instance_id ?? null;
+  const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
+  const invoicingActive = invoicingSettings?.active ?? false;
+
+  // Invoice drawer state
+  const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
+  const [invoiceTarget, setInvoiceTarget] = useState<Reservation | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTab, setActiveTab] = useSessionStorageState<TabValue>(
@@ -569,6 +579,18 @@ const ReservationsView = ({
               {t('common.call')}
             </a>
           </DropdownMenuItem>
+          {invoicingActive && (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setInvoiceTarget(reservation);
+                setInvoiceDrawerOpen(true);
+              }}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Wystaw FV
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
             onClick={(e) => handleRejectClick(e, reservation)}
@@ -959,6 +981,36 @@ const ReservationsView = ({
         }}
         onOpenReservation={onOpenReservation}
       />
+
+      {/* Invoice drawer */}
+      {instanceId && (
+        <CreateInvoiceDrawer
+          open={invoiceDrawerOpen}
+          onClose={() => {
+            setInvoiceDrawerOpen(false);
+            setInvoiceTarget(null);
+          }}
+          instanceId={instanceId}
+          customerName={invoiceTarget?.customer_name}
+          customerEmail={null}
+          positions={
+            invoiceTarget
+              ? (invoiceTarget.services_data || (invoiceTarget.service ? [invoiceTarget.service] : []))
+                  .map((s) => ({
+                    name: s.name,
+                    quantity: 1,
+                    unit_price_gross: invoiceTarget.price
+                      ? Math.round(invoiceTarget.price / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
+                      : 0,
+                    vat_rate: 23,
+                    unit: 'szt.',
+                    discount: 0,
+                  }))
+              : []
+          }
+          supabaseClient={supabase}
+        />
+      )}
     </div>
   );
 };

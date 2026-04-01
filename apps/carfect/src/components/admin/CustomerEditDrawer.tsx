@@ -756,7 +756,12 @@ const CustomerEditDrawer = ({
                               key={vehicle.id || `v-${idx}`}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/90 text-white rounded-full text-sm"
                             >
-                              <span>{vehicle.model}</span>
+                              <div>
+                                <span>{vehicle.model}</span>
+                                {hasFeature('vehicle_vin') && vehicle.vin && (
+                                  <div className="text-xs text-slate-300 font-mono">{vehicle.vin}</div>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteVehicle(vehicle, idx)}
