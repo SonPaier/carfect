@@ -3183,7 +3183,7 @@ const AdminDashboard = () => {
             </nav>
 
             {/* Sales CRM switch button */}
-            {hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') && (
+            {hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') && username?.toLowerCase() === 'kaja' && (
               <div className={cn(sidebarCollapsed ? 'px-1 pb-1' : 'px-3 pb-1')}>
                 <Separator className="mb-2" />
                 <Button
@@ -3672,7 +3672,7 @@ const AdminDashboard = () => {
           protocolsEnabled={hasFeature('vehicle_reception_protocol')}
           userRole={userRole}
           currentVersion={currentVersion}
-          salesCrmEnabled={hasFeature('sales_crm') && roles.some((r) => r.role === 'sales')}
+          salesCrmEnabled={hasFeature('sales_crm') && roles.some((r) => r.role === 'sales') && username?.toLowerCase() === 'kaja'}
           onSwitchToSalesCrm={() => navigate(adminBasePath + '/sales-crm')}
         />
       )}
