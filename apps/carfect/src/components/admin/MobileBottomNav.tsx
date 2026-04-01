@@ -95,7 +95,7 @@ const MobileBottomNav = ({
           // 1. Kalendarz
           { id: 'calendar' as ViewType, icon: Calendar, label: 'Kalendarz' },
           // 2. Rezerwacje
-          { id: 'reservations' as ViewType, icon: List, label: 'Rezerwacje' },
+          { id: 'reservations' as ViewType, icon: List, label: 'Realizacje' },
           // 3. Oferty (when enabled)
           ...(offersEnabled
             ? [{ id: 'offers' as ViewType, icon: FileText, label: t('navigation.offers') }]

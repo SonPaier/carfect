@@ -151,7 +151,7 @@ export const VehicleDiagram = ({
     }
   }, [draggingPointId, onSelectPoint]);
 
-  const imagePath = `/assets/vehicles/${bodyType}/full.png`;
+  const imagePath = `/assets/vehicles/${bodyType}/full.webp`;
 
   return (
     <div

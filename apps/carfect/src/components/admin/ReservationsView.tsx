@@ -1,24 +1,30 @@
-import { useMemo, useCallback, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useTranslation } from 'react-i18next';
-import { format, isToday, isTomorrow, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { format, parseISO } from 'date-fns';
 import {
   Search,
   Phone,
   MessageSquare,
   Check,
   Trash2,
-  AlertCircle,
-  CheckCircle2,
   Calendar,
-  Clock,
   GraduationCap,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  MoreHorizontal,
 } from 'lucide-react';
-import { normalizeSearchQuery } from '@shared/utils';
+import { normalizeSearchQuery, formatPhoneDisplay } from '@shared/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
-import { Tabs, TabsContent } from '@shared/ui';
+import { Tabs } from '@shared/ui';
 import { AdminTabsList, AdminTabsTrigger } from './AdminTabsList';
 import { Badge } from '@shared/ui';
 import {
@@ -31,11 +37,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@shared/ui';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@shared/ui';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@shared/ui';
+import { PaginationFooter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { EmptyState } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { useIsMobile, EmptyState } from '@shared/ui';
 import ServiceTag from './ServiceTag';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import { supabase } from '@/integrations/supabase/client';
+import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
+import { FileText } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 
 interface Service {
@@ -115,8 +138,21 @@ interface ReservationsViewProps {
 }
 
 type TabValue = 'all' | 'reservations' | 'trainings';
+type SortField = 'customer_name' | 'vehicle_plate' | 'reservation_date' | 'price' | 'status';
+type SortDirection = 'asc' | 'desc';
 
 const DEBOUNCE_MS = 300;
+
+const statusConfig: Record<string, { label: string; className: string }> = {
+  pending: { label: 'Oczekuje', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+  confirmed: { label: 'Potwierdzona', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  in_progress: { label: 'W trakcie', className: 'bg-orange-100 text-orange-800 border-orange-200' },
+  completed: { label: 'Zakończona', className: 'bg-slate-100 text-slate-800 border-slate-200' },
+  cancelled: { label: 'Anulowana', className: 'bg-red-100 text-red-800 border-red-200' },
+  change_requested: { label: 'Zmiana', className: 'bg-red-100 text-red-800 border-red-200' },
+  no_show: { label: 'Nieobecność', className: 'bg-slate-100 text-slate-800 border-slate-200' },
+  released: { label: 'Zwolniona', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+};
 
 const ReservationsView = ({
   reservations,
@@ -132,7 +168,14 @@ const ReservationsView = ({
   onOpenReservation,
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
+  const instanceId = reservations[0]?.instance_id ?? null;
+  const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
+  const invoicingActive = invoicingSettings?.active ?? false;
+
+  // Invoice drawer state
+  const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
+  const [invoiceTarget, setInvoiceTarget] = useState<Reservation | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTab, setActiveTab] = useSessionStorageState<TabValue>(
@@ -149,6 +192,17 @@ const ReservationsView = ({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Sort state
+  const [sortField, setSortField] = useState<SortField>('reservation_date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   // If trainings got disabled, reset tab
   useEffect(() => {
     if (!trainingsEnabled && activeTab === 'trainings') {
@@ -164,55 +218,40 @@ const ReservationsView = ({
     return map;
   }, [employees]);
 
-  const formatDateHeader = (dateStr: string): string => {
-    const date = parseISO(dateStr);
-    if (isToday(date)) {
-      return `${t('dates.today')}, ${format(date, 'd MMMM', { locale: pl })}`;
-    }
-    if (isTomorrow(date)) {
-      return `${t('dates.tomorrow')}, ${format(date, 'd MMMM', { locale: pl })}`;
-    }
-    return format(date, 'EEEE, d MMMM', { locale: pl });
-  };
-
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
+      setCurrentPage(1);
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Build unified list items
+  // Reset page when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  // Reset page when sort or status filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortField, sortDirection, statusFilter]);
+
+  // Build unified list items (all reservations, not just future)
   const allItems = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const reservationItems: ListItem[] = reservations.map((r) => ({
+      type: 'reservation' as const,
+      date: r.reservation_date,
+      start_time: r.start_time,
+      data: r,
+    }));
 
-    const reservationItems: ListItem[] = reservations
-      .filter((r) => {
-        const resDate = parseISO(r.reservation_date);
-        resDate.setHours(0, 0, 0, 0);
-        return resDate >= today;
-      })
-      .map((r) => ({
-        type: 'reservation' as const,
-        date: r.reservation_date,
-        start_time: r.start_time,
-        data: r,
-      }));
-
-    const trainingItems: ListItem[] = trainings
-      .filter((tr) => {
-        const trDate = parseISO(tr.start_date);
-        trDate.setHours(0, 0, 0, 0);
-        return trDate >= today;
-      })
-      .map((tr) => ({
-        type: 'training' as const,
-        date: tr.start_date,
-        start_time: tr.start_time,
-        data: tr,
-      }));
+    const trainingItems: ListItem[] = trainings.map((tr) => ({
+      type: 'training' as const,
+      date: tr.start_date,
+      start_time: tr.start_time,
+      data: tr,
+    }));
 
     return [...reservationItems, ...trainingItems];
   }, [reservations, trainings]);
@@ -244,13 +283,17 @@ const ReservationsView = ({
                 .map((id) => employeeMap.get(id)?.toLowerCase() || '')
                 .join(' ')
             : '';
+        const serviceNames = (r.services_data || (r.service ? [r.service] : []))
+          .map((s) => s.name.toLowerCase())
+          .join(' ');
         return (
           (r.confirmation_code &&
             normalizeSearchQuery(r.confirmation_code).toLowerCase().includes(normalizedQuery)) ||
           r.customer_name?.toLowerCase().includes(query) ||
           (r.customer_phone && normalizeSearchQuery(r.customer_phone).includes(normalizedQuery)) ||
           r.vehicle_plate?.toLowerCase().includes(query) ||
-          employeeNames.includes(query)
+          employeeNames.includes(query) ||
+          serviceNames.includes(query)
         );
       } else {
         const tr = item.data as Training;
@@ -269,44 +312,60 @@ const ReservationsView = ({
     });
   }, [tabFiltered, debouncedQuery, employeeMap]);
 
-  // Sort and group by date
-  const groupedItems = useMemo(() => {
-    const sorted = [...searchFiltered].sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date);
-      if (dateCompare !== 0) return dateCompare;
-      return (a.start_time || '').localeCompare(b.start_time || '');
+  // Status filter
+  const statusFiltered = useMemo(() => {
+    if (statusFilter === 'all') return searchFiltered;
+    return searchFiltered.filter((item) => {
+      if (item.type === 'reservation') {
+        return (item.data as Reservation).status === statusFilter;
+      }
+      return false;
     });
+  }, [searchFiltered, statusFilter]);
 
-    const groups: Record<string, ListItem[]> = {};
-    for (const item of sorted) {
-      if (!groups[item.date]) groups[item.date] = [];
-      groups[item.date].push(item);
-    }
-    return groups;
-  }, [searchFiltered]);
+  // Sorted items
+  const sortedItems = useMemo(() => {
+    return [...statusFiltered].sort((a, b) => {
+      let aVal = '';
+      let bVal = '';
 
-  const groupDates = Object.keys(groupedItems).sort();
+      if (sortField === 'reservation_date') {
+        aVal = a.date + (a.start_time || '');
+        bVal = b.date + (b.start_time || '');
+      } else if (sortField === 'customer_name') {
+        aVal = a.type === 'reservation' ? (a.data as Reservation).customer_name || '' : (a.data as Training).title || '';
+        bVal = b.type === 'reservation' ? (b.data as Reservation).customer_name || '' : (b.data as Training).title || '';
+      } else if (sortField === 'vehicle_plate') {
+        aVal = a.type === 'reservation' ? (a.data as Reservation).vehicle_plate || '' : '';
+        bVal = b.type === 'reservation' ? (b.data as Reservation).vehicle_plate || '' : '';
+      } else if (sortField === 'price') {
+        const aPrice = a.type === 'reservation' ? ((a.data as Reservation).price ?? -1) : -1;
+        const bPrice = b.type === 'reservation' ? ((b.data as Reservation).price ?? -1) : -1;
+        return sortDirection === 'asc' ? aPrice - bPrice : bPrice - aPrice;
+      } else if (sortField === 'status') {
+        aVal = a.type === 'reservation' ? (a.data as Reservation).status || '' : '';
+        bVal = b.type === 'reservation' ? (b.data as Reservation).status || '' : '';
+      }
+
+      const cmp = aVal.localeCompare(bVal);
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+  }, [statusFiltered, sortField, sortDirection]);
+
+  // Paginated items
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedItems.slice(start, start + pageSize);
+  }, [sortedItems, currentPage, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
 
   // Counts for tabs
-  const counts = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const upcomingRes = reservations.filter((r) => {
-      const d = parseISO(r.reservation_date);
-      d.setHours(0, 0, 0, 0);
-      return d >= today;
-    });
-    const upcomingTr = trainings.filter((tr) => {
-      const d = parseISO(tr.start_date);
-      d.setHours(0, 0, 0, 0);
-      return d >= today;
-    });
-    return {
-      all: upcomingRes.length + upcomingTr.length,
-      reservations: upcomingRes.length,
-      trainings: upcomingTr.length,
-    };
-  }, [reservations, trainings]);
+  const counts = useMemo(() => ({
+    all: reservations.length + trainings.length,
+    reservations: reservations.length,
+    trainings: trainings.length,
+  }), [reservations, trainings]);
 
   const handleRejectClick = (e: React.MouseEvent, reservation: Reservation) => {
     e.stopPropagation();
@@ -366,19 +425,6 @@ const ReservationsView = ({
     setCustomerDrawerOpen(true);
   };
 
-  const renderServicePills = (reservation: Reservation) => {
-    const services =
-      reservation.services_data || (reservation.service ? [reservation.service] : []);
-    if (services.length === 0) return null;
-    return (
-      <div className="flex flex-wrap gap-1">
-        {services.map((service, idx) => (
-          <ServiceTag key={idx} name={service.name} shortcut={service.shortcut} />
-        ))}
-      </div>
-    );
-  };
-
   const getEmployeeNames = (ids: string[]) => {
     return ids
       .map((id) => employeeMap.get(id))
@@ -386,353 +432,236 @@ const ReservationsView = ({
       .join(', ');
   };
 
-  const renderReservationCard = (reservation: Reservation) => {
-    const timeRange = `${reservation.start_time?.slice(0, 5)} - ${reservation.end_time?.slice(0, 5)}`;
-    const isPending = reservation.status === 'pending' || !reservation.status;
-
-    return (
-      <div
-        key={reservation.id}
-        onClick={() => onReservationClick(reservation)}
-        className={cn(
-          'p-4 transition-colors cursor-pointer hover:bg-hover',
-          isPending && 'bg-amber-500/5',
-        )}
-      >
-        {/* Desktop layout */}
-        <div className="hidden sm:flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div
-              className={cn(
-                'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-                isPending ? 'bg-amber-500/20 text-amber-600' : 'bg-green-500/20 text-green-600',
-              )}
-            >
-              {isPending ? (
-                <AlertCircle className="w-4 h-4" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4" />
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex items-center gap-3 text-sm">
-                <span className="font-medium text-foreground tabular-nums flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                  {timeRange}
-                </span>
-                {reservation.station && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{reservation.station.name}</span>
-                  </>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">{reservation.vehicle_plate}</span>
-                <span className="text-muted-foreground">•</span>
-                <button
-                  onClick={(e) => handleCustomerClick(e, reservation)}
-                  className="text-sm text-primary hover:underline truncate"
-                >
-                  {reservation.customer_name}
-                </button>
-              </div>
-
-              {renderServicePills(reservation)}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {isPending && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1 border-green-500 text-green-600 hover:bg-green-500 hover:text-white h-8"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onConfirmReservation(reservation.id);
-                }}
-              >
-                <Check className="w-4 h-4" />
-                {t('common.confirm')}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-              asChild
-            >
-              <a
-                href={`sms:${reservation.customer_phone}`}
-                onClick={(e) => e.stopPropagation()}
-                title={t('common.sendSms')}
-              >
-                <MessageSquare className="w-4 h-4" />
-              </a>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-              asChild
-            >
-              <a
-                href={`tel:${reservation.customer_phone}`}
-                onClick={(e) => e.stopPropagation()}
-                title={t('common.call')}
-              >
-                <Phone className="w-4 h-4" />
-              </a>
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={(e) => handleRejectClick(e, reservation)}
-              title={t('reservations.rejectReservation')}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile layout */}
-        <div className="sm:hidden space-y-3">
-          <div className="flex items-start gap-3">
-            <div
-              className={cn(
-                'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                isPending ? 'bg-amber-500/20 text-amber-600' : 'bg-green-500/20 text-green-600',
-              )}
-            >
-              {isPending ? (
-                <AlertCircle className="w-4 h-4" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="text-sm font-medium text-foreground tabular-nums flex items-center gap-2">
-                {timeRange}
-                {reservation.station && (
-                  <span className="text-muted-foreground font-normal">
-                    • {reservation.station.name}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{reservation.vehicle_plate}</span>
-                <span className="text-muted-foreground">•</span>
-                <button
-                  onClick={(e) => handleCustomerClick(e, reservation)}
-                  className="text-sm text-primary hover:underline truncate"
-                >
-                  {reservation.customer_name}
-                </button>
-              </div>
-
-              {renderServicePills(reservation)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-1">
-            {isPending && (
-              <Button
-                variant="outline"
-                className="h-9 gap-1 border-green-500 text-green-600 hover:bg-green-500 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onConfirmReservation(reservation.id);
-                }}
-              >
-                <Check className="w-4 h-4" />
-                {t('common.confirm')}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-hover"
-              asChild
-            >
-              <a href={`sms:${reservation.customer_phone}`} onClick={(e) => e.stopPropagation()}>
-                <MessageSquare className="w-4 h-4" />
-              </a>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-hover"
-              asChild
-            >
-              <a href={`tel:${reservation.customer_phone}`} onClick={(e) => e.stopPropagation()}>
-                <Phone className="w-4 h-4" />
-              </a>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={(e) => handleRejectClick(e, reservation)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderTrainingCard = (training: Training) => {
-    const timeRange = `${training.start_time?.slice(0, 5)} - ${training.end_time?.slice(0, 5)}`;
-    const assignedNames = getEmployeeNames(training.assigned_employee_ids || []);
-
-    return (
-      <div
-        key={training.id}
-        onClick={() => onTrainingClick?.(training)}
-        className="p-4 transition-colors cursor-pointer hover:bg-hover"
-      >
-        {/* Desktop layout */}
-        <div className="hidden sm:flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-violet-500/20 text-violet-600">
-              <GraduationCap className="w-4 h-4" />
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex items-center gap-3 text-sm">
-                <span className="font-medium text-foreground tabular-nums flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                  {timeRange}
-                </span>
-                {training.station && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{training.station.name}</span>
-                  </>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">{training.title}</span>
-                {assignedNames && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-sm text-muted-foreground truncate">{assignedNames}</span>
-                  </>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-1">
-                <ServiceTag
-                  name={
-                    training.status === 'sold_out'
-                      ? t('trainings.statusSoldOut')
-                      : t('trainings.statusOpen')
-                  }
-                  shortcut={null}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={(e) => handleDeleteTrainingClick(e, training)}
-              title={t('trainings.deleteTraining')}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile layout */}
-        <div className="sm:hidden space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-violet-500/20 text-violet-600">
-              <GraduationCap className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="text-sm font-medium text-foreground tabular-nums flex items-center gap-2">
-                {timeRange}
-                {training.station && (
-                  <span className="text-muted-foreground font-normal">
-                    • {training.station.name}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{training.title}</span>
-                {assignedNames && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-sm text-muted-foreground truncate">{assignedNames}</span>
-                  </>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-1">
-                <ServiceTag
-                  name={
-                    training.status === 'sold_out'
-                      ? t('trainings.statusSoldOut')
-                      : t('trainings.statusOpen')
-                  }
-                  shortcut={null}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={(e) => handleDeleteTrainingClick(e, training)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderItem = (item: ListItem) => {
-    if (item.type === 'reservation') {
-      return renderReservationCard(item.data as Reservation);
+  const handleSortClick = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
-    return renderTrainingCard(item.data as Training);
+  };
+
+  const SortableHeader = ({
+    field,
+    children,
+    className,
+  }: {
+    field: SortField;
+    children: React.ReactNode;
+    className?: string;
+  }) => {
+    const isActive = sortField === field;
+    return (
+      <TableHead
+        className={cn('cursor-pointer select-none whitespace-nowrap', className)}
+        onClick={() => handleSortClick(field)}
+      >
+        <span className="flex items-center gap-1">
+          {children}
+          {isActive ? (
+            sortDirection === 'asc' ? (
+              <ArrowUp className="w-3.5 h-3.5 text-muted-foreground" />
+            ) : (
+              <ArrowDown className="w-3.5 h-3.5 text-muted-foreground" />
+            )
+          ) : (
+            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground opacity-40" />
+          )}
+        </span>
+      </TableHead>
+    );
+  };
+
+  const renderStatusBadge = (status: string) => {
+    const cfg = statusConfig[status];
+    if (!cfg) return <Badge variant="outline">{status}</Badge>;
+    return (
+      <Badge variant="outline" className={cn('text-xs border', cfg.className)}>
+        {cfg.label}
+      </Badge>
+    );
+  };
+
+  const renderServices = (reservation: Reservation) => {
+    const services =
+      reservation.services_data || (reservation.service ? [reservation.service] : []);
+    if (services.length === 0) return <span className="text-muted-foreground">—</span>;
+
+    const firstName = services[0].name;
+    const rest = services.slice(1);
+
+    if (rest.length === 0) {
+      return <span className="text-sm">{firstName}</span>;
+    }
+
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button type="button" className="text-sm text-left">
+              {firstName}
+              <span className="text-muted-foreground">, +{rest.length}</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            {rest.map((s, i) => (
+              <div key={i}>{s.name}</div>
+            ))}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
+  const renderDate = (item: ListItem) => {
+    const dateStr = item.date;
+    const parsedDate = parseISO(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isUpcoming = parsedDate >= today;
+
+    const timeStr = item.start_time ? `, ${item.start_time.slice(0, 5)}` : '';
+    const formatted = format(parsedDate, 'dd.MM.yyyy') + (isUpcoming ? timeStr : '');
+
+    if (item.type === 'reservation') {
+      const r = item.data as Reservation;
+      const endDate = r.end_date;
+      if (endDate && endDate !== dateStr) {
+        const parsedEnd = parseISO(endDate);
+        const endTimeStr = isUpcoming && r.end_time ? `, ${r.end_time.slice(0, 5)}` : '';
+        const endFormatted = format(parsedEnd, 'dd.MM.yyyy') + endTimeStr;
+        return (
+          <div className="whitespace-nowrap">
+            <div>{formatted}</div>
+            <div className="text-xs text-muted-foreground">{endFormatted}</div>
+          </div>
+        );
+      }
+    }
+    return <div className="whitespace-nowrap">{formatted}</div>;
+  };
+
+  const renderReservationActions = (reservation: Reservation) => {
+    const isPending = reservation.status === 'pending' || !reservation.status;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          {isPending && (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onConfirmReservation(reservation.id);
+              }}
+            >
+              <Check className="w-4 h-4 mr-2 text-green-600" />
+              {t('common.confirm')}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem asChild>
+            <a href={`sms:${reservation.customer_phone}`} onClick={(e) => e.stopPropagation()}>
+              <MessageSquare className="w-4 h-4 mr-2" />
+              SMS
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href={`tel:${reservation.customer_phone}`} onClick={(e) => e.stopPropagation()}>
+              <Phone className="w-4 h-4 mr-2" />
+              {t('common.call')}
+            </a>
+          </DropdownMenuItem>
+          {invoicingActive && (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setInvoiceTarget(reservation);
+                setInvoiceDrawerOpen(true);
+              }}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Wystaw FV
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={(e) => handleRejectClick(e, reservation)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {t('reservations.rejectReservation')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
+  const renderTrainingActions = (training: Training) => {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={(e) => handleDeleteTrainingClick(e, training)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {t('trainings.deleteTraining')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   const showTabs = trainingsEnabled;
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto pb-28">
+    <div className="space-y-4 max-w-[1000px] mx-auto pb-28">
       {/* Title */}
-      <h1 className="text-2xl font-bold text-foreground">{t('reservations.title')}</h1>
+      <h1 className="text-2xl font-bold text-foreground">Realizacje</h1>
 
       {/* Sticky header on mobile */}
       <div className="sm:static sticky top-0 z-20 bg-background pb-4 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={t('reservations.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search + status filter */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t('reservations.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px] shrink-0">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Wszystkie statusy</SelectItem>
+              {Object.entries(statusConfig)
+                .filter(([key]) => !['pending', 'change_requested', 'released'].includes(key))
+                .map(([key, cfg]) => (
+                  <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Tabs - only when trainings enabled */}
@@ -769,7 +698,7 @@ const ReservationsView = ({
       </div>
 
       {/* Content */}
-      {groupDates.length === 0 ? (
+      {sortedItems.length === 0 ? (
         <EmptyState
           icon={Calendar}
           title={t('reservations.noReservations')}
@@ -778,22 +707,210 @@ const ReservationsView = ({
           }
         />
       ) : (
-        <div>
-          {groupDates.map((date) => (
-            <div key={date}>
-              <div className="sticky top-[120px] sm:top-0 z-10 flex items-center justify-center py-3 bg-background/95 backdrop-blur-sm">
-                <div className="px-4 py-1 rounded-full bg-transparent">
-                  <span className="font-medium capitalize text-foreground text-lg">
-                    {formatDateHeader(date)}
-                  </span>
-                </div>
-              </div>
+        <div ref={tableRef}>
+          {/* Desktop table */}
+          <div className="hidden sm:block border border-border/50 rounded-xl overflow-hidden bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableHeader field="customer_name">Klient</SortableHeader>
+                  <SortableHeader field="vehicle_plate">Pojazd</SortableHeader>
+                  <TableHead>Usługi</TableHead>
+                  <SortableHeader field="reservation_date">Data realizacji</SortableHeader>
+                  <SortableHeader field="price" className="text-right">Kwota brutto</SortableHeader>
+                  <SortableHeader field="status">Status</SortableHeader>
+                  <TableHead className="w-10" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((item) => {
+                  if (item.type === 'reservation') {
+                    const r = item.data as Reservation;
+                    return (
+                      <TableRow
+                        key={r.id}
+                        className="cursor-pointer hover:bg-hover"
+                        onClick={() => onReservationClick(r)}
+                      >
+                        <TableCell>
+                          <div>
+                            <button
+                              className="font-medium text-primary hover:underline text-sm text-left"
+                              onClick={(e) => handleCustomerClick(e, r)}
+                            >
+                              {r.customer_name}
+                            </button>
+                            {r.customer_phone && (
+                              <div className="text-xs text-muted-foreground">{formatPhoneDisplay(r.customer_phone)}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <span className="font-medium">{r.vehicle_plate || '—'}</span>
+                        </TableCell>
+                        <TableCell>{renderServices(r)}</TableCell>
+                        <TableCell>{renderDate(item)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {r.price != null ? `${Math.round(Number(r.price))} zł` : '—'}
+                        </TableCell>
+                        <TableCell>{renderStatusBadge(r.status)}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {renderReservationActions(r)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  } else {
+                    const tr = item.data as Training;
+                    const assignedNames = getEmployeeNames(tr.assigned_employee_ids || []);
+                    return (
+                      <TableRow
+                        key={tr.id}
+                        className="cursor-pointer hover:bg-hover"
+                        onClick={() => onTrainingClick?.(tr)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="w-4 h-4 text-violet-600 shrink-0" />
+                            <div className="font-medium">{tr.title}</div>
+                          </div>
+                          {assignedNames && (
+                            <div className="text-xs text-muted-foreground">{assignedNames}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>—</TableCell>
+                        <TableCell>
+                          <ServiceTag
+                            name={
+                              tr.status === 'sold_out'
+                                ? t('trainings.statusSoldOut')
+                                : t('trainings.statusOpen')
+                            }
+                            shortcut={null}
+                          />
+                        </TableCell>
+                        <TableCell>{renderDate(item)}</TableCell>
+                        <TableCell className="text-right">—</TableCell>
+                        <TableCell>—</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {renderTrainingActions(tr)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
-              <div className="bg-white border border-border/50 rounded-xl overflow-hidden divide-y divide-border/50 mb-4">
-                {groupedItems[date].map((item) => renderItem(item))}
-              </div>
-            </div>
-          ))}
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {paginatedItems.map((item) => {
+              if (item.type === 'reservation') {
+                const r = item.data as Reservation;
+                return (
+                  <div
+                    key={r.id}
+                    className="border border-border/50 rounded-xl p-4 cursor-pointer hover:bg-hover bg-white space-y-2"
+                    onClick={() => onReservationClick(r)}
+                  >
+                    {/* Top row: status + plate */}
+                    <div className="flex items-center justify-between">
+                      {renderStatusBadge(r.status)}
+                      <span className="font-medium text-sm shrink-0">{r.vehicle_plate}</span>
+                    </div>
+                    {/* Customer */}
+                    <div>
+                      <button
+                        className="font-medium text-primary hover:underline text-sm text-left"
+                        onClick={(e) => handleCustomerClick(e, r)}
+                      >
+                        {r.customer_name}
+                      </button>
+                      {r.customer_phone && (
+                        <div className="text-xs text-muted-foreground">{formatPhoneDisplay(r.customer_phone)}</div>
+                      )}
+                    </div>
+                    {/* Services + price */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm">{renderServices(r)}</div>
+                      <span className="text-sm font-medium shrink-0">
+                        {r.price != null ? `${Math.round(Number(r.price))} zł` : '—'}
+                      </span>
+                    </div>
+                    {/* Date + actions */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="text-sm text-muted-foreground">
+                        {format(parseISO(r.reservation_date), 'dd.MM.yyyy')}
+                        {r.end_date && r.end_date !== r.reservation_date && (
+                          <span> – {format(parseISO(r.end_date), 'dd.MM.yyyy')}</span>
+                        )}
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {renderReservationActions(r)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              } else {
+                const tr = item.data as Training;
+                const assignedNames = getEmployeeNames(tr.assigned_employee_ids || []);
+                return (
+                  <div
+                    key={tr.id}
+                    className="border border-border/50 rounded-xl p-4 cursor-pointer hover:bg-hover bg-white space-y-2"
+                    onClick={() => onTrainingClick?.(tr)}
+                  >
+                    {/* Top row: icon + status */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-violet-600" />
+                        <span className="font-medium text-sm">{tr.title}</span>
+                      </div>
+                      <ServiceTag
+                        name={
+                          tr.status === 'sold_out'
+                            ? t('trainings.statusSoldOut')
+                            : t('trainings.statusOpen')
+                        }
+                        shortcut={null}
+                      />
+                    </div>
+                    {assignedNames && (
+                      <div className="text-xs text-muted-foreground">{assignedNames}</div>
+                    )}
+                    {/* Date + actions */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="text-sm text-muted-foreground">
+                        {format(parseISO(tr.start_date), 'dd.MM.yyyy')}
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {renderTrainingActions(tr)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+            })}
+          </div>
+
+          {/* Pagination */}
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={sortedItems.length}
+            pageSize={pageSize}
+            pageSizeOptions={[25, 50, 100]}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+              tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+              tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            itemLabel="rezerwacji"
+          />
         </div>
       )}
 
@@ -864,6 +981,36 @@ const ReservationsView = ({
         }}
         onOpenReservation={onOpenReservation}
       />
+
+      {/* Invoice drawer */}
+      {instanceId && (
+        <CreateInvoiceDrawer
+          open={invoiceDrawerOpen}
+          onClose={() => {
+            setInvoiceDrawerOpen(false);
+            setInvoiceTarget(null);
+          }}
+          instanceId={instanceId}
+          customerName={invoiceTarget?.customer_name}
+          customerEmail={null}
+          positions={
+            invoiceTarget
+              ? (invoiceTarget.services_data || (invoiceTarget.service ? [invoiceTarget.service] : []))
+                  .map((s) => ({
+                    name: s.name,
+                    quantity: 1,
+                    unit_price_gross: invoiceTarget.price
+                      ? Math.round(invoiceTarget.price / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
+                      : 0,
+                    vat_rate: 23,
+                    unit: 'szt.',
+                    discount: 0,
+                  }))
+              : []
+          }
+          supabaseClient={supabase}
+        />
+      )}
     </div>
   );
 };

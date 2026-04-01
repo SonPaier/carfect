@@ -112,14 +112,57 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
             warnings: extracted.warnings || [],
           });
         } catch (err: any) {
+          // Show error roll in results table so user can retry
           updateResult(item.tempId, {
             status: 'error',
             error: err.message || 'Nieznany błąd',
+            extractedData: {},
           });
         }
       }
 
       setProcessing(false);
+    },
+    [instanceId, updateResult],
+  );
+
+  const retryFile = useCallback(
+    async (tempId: string, file: File) => {
+      updateResult(tempId, {
+        file,
+        thumbnailUrl: URL.createObjectURL(file),
+        status: 'uploading',
+        error: undefined,
+      });
+
+      try {
+        const photoUrl = await uploadRollPhoto(file, instanceId);
+        updateResult(tempId, { photoUrl, status: 'extracting' });
+
+        const base64 = await fileToBase64(file);
+        const extracted = await extractRollData(base64, 'image/jpeg', instanceId);
+
+        updateResult(tempId, {
+          status: 'confirmed',
+          photoUrl,
+          extractedData: {
+            brand: extracted.brand,
+            productName: extracted.productName,
+            description: extracted.description,
+            productCode: extracted.productCode,
+            barcode: extracted.barcode,
+            widthMm: extracted.widthMm,
+            lengthM: extracted.lengthM,
+          },
+          confidence: extracted.confidence || {},
+          warnings: extracted.warnings || [],
+        });
+      } catch (err: any) {
+        updateResult(tempId, {
+          status: 'error',
+          error: err.message || 'Nieznany błąd',
+        });
+      }
     },
     [instanceId, updateResult],
   );
@@ -142,6 +185,7 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
     confirmResult,
     confirmAll,
     removeResult,
+    retryFile,
     reset,
     abort,
   };

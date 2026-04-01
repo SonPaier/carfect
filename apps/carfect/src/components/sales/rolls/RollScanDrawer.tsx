@@ -168,22 +168,11 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
             processing={scan.processing}
           />
 
-          {scan.errorResults.length > 0 && (
-            <div className="p-3 rounded-md bg-red-50 border border-red-200">
-              <p className="text-sm font-medium text-red-800">
-                {scan.errorResults.length}{' '}
-                {scan.errorResults.length === 1
-                  ? 'zdjęcie nie zostało przetworzone'
-                  : 'zdjęć nie zostało przetworzonych'}
-              </p>
-              <p className="text-xs text-red-600 mt-1">
-                Sprawdź czy zdjęcia są wyraźne i zawierają etykietę rolki. Możesz dodać nowe
-                zdjęcia.
-              </p>
-            </div>
-          )}
-
-          <RollScanResultsTable results={scan.results} onRemove={scan.removeResult} />
+          <RollScanResultsTable
+            results={scan.results}
+            onRemove={scan.removeResult}
+            onRetry={scan.retryFile}
+          />
         </div>
 
         <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-2">

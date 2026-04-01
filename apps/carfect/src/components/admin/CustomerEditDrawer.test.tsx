@@ -47,6 +47,16 @@ vi.mock('@shared/ui', async () => {
   return { ...actual, useIsMobile: () => false };
 });
 
+vi.mock('@/hooks/useInstanceFeatures', () => ({
+  useInstanceFeatures: () => ({
+    features: {},
+    loading: false,
+    hasFeature: () => false,
+    getFeatureParams: () => null,
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock('./CustomerRemindersTab', () => ({
   CustomerRemindersTab: () => <div data-testid="reminders-tab">RemindersTab</div>,
 }));
