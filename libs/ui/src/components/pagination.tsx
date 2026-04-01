@@ -70,10 +70,116 @@ const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span"
 );
 PaginationEllipsis.displayName = "PaginationEllipsis";
 
+interface PaginationFooterProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  pageSizeOptions?: number[];
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  itemLabel?: string;
+}
+
+const PaginationFooter = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  pageSize,
+  pageSizeOptions = [25, 50, 100],
+  onPageChange,
+  onPageSizeChange,
+  itemLabel = 'pozycji',
+}: PaginationFooterProps) => {
+  const start = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const end = Math.min(currentPage * pageSize, totalItems);
+
+  const getPageNumbers = (): (number | 'ellipsis')[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | 'ellipsis')[] = [];
+    const nums = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+      (page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1
+    );
+    for (let i = 0; i < nums.length; i++) {
+      if (i > 0 && nums[i] - nums[i - 1] > 1) {
+        pages.push('ellipsis');
+      }
+      pages.push(nums[i]);
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span>
+          {totalItems > 0 ? `${start}–${end} z ${totalItems} ${itemLabel}` : `0 ${itemLabel}`}
+        </span>
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+        >
+          {pageSizeOptions.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center gap-1">
+          <button
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          {getPageNumbers().map((item, idx) =>
+            item === 'ellipsis' ? (
+              <span
+                key={`ellipsis-${idx}`}
+                className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground"
+              >
+                ...
+              </span>
+            ) : (
+              <button
+                key={item}
+                className={cn(
+                  'inline-flex items-center justify-center rounded-md h-8 w-8 text-sm',
+                  item === currentPage
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-input bg-background hover:bg-accent'
+                )}
+                onClick={() => onPageChange(item)}
+              >
+                {item}
+              </button>
+            )
+          )}
+          <button
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+PaginationFooter.displayName = 'PaginationFooter';
+
 export {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
+  PaginationFooter,
   PaginationItem,
   PaginationLink,
   PaginationNext,
