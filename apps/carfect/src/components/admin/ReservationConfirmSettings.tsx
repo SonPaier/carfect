@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, Loader2, Clock, Smartphone, Check, Users } from 'lucide-react';
+import { Bell, Loader2, Clock, Smartphone, Check, Users, Car } from 'lucide-react';
 import { Switch } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { useInstanceSettings, useUpdateInstanceSettings } from '@/hooks/useInstanceSettings';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ReservationConfirmSettingsProps {
   instanceId: string | null;
@@ -25,6 +26,37 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
   const { data: instanceSettings, isLoading: isSettingsLoading } = useInstanceSettings(instanceId);
   const { updateSetting } = useUpdateInstanceSettings(instanceId);
   const [savingEmployeeSettings, setSavingEmployeeSettings] = useState(false);
+
+  // VIN feature toggle
+  const queryClient = useQueryClient();
+  const [vinEnabled, setVinEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('instance_features')
+      .select('enabled')
+      .eq('instance_id', instanceId)
+      .eq('feature_key', 'vehicle_vin')
+      .maybeSingle()
+      .then(({ data }) => {
+        setVinEnabled(data?.enabled ?? false);
+      });
+  }, [instanceId]);
+
+  const handleVinToggle = async (enabled: boolean) => {
+    if (!instanceId) return;
+    setVinEnabled(enabled);
+    await supabase
+      .from('instance_features')
+      .upsert({
+        instance_id: instanceId,
+        feature_key: 'vehicle_vin',
+        enabled,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'instance_id,feature_key' });
+    queryClient.invalidateQueries({ queryKey: ['instance_features'] });
+  };
 
   // Push notification subscription
   const {
@@ -282,6 +314,23 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
           }
           </div>
         }
+      </div>
+
+      {/* VIN */}
+      <div className="space-y-4 border-t pt-6">
+        <div className="flex items-center gap-3">
+          <Car className="w-5 h-5 text-muted-foreground" />
+          <h3 className="font-semibold">Pojazdy</h3>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Numer VIN pojazdu</Label>
+            <p className="text-sm text-muted-foreground">
+              Dodaj pole VIN przy pojazdach klienta i w protokole
+            </p>
+          </div>
+          <Switch checked={vinEnabled} onCheckedChange={handleVinToggle} />
+        </div>
       </div>
     </div>);
 

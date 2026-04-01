@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Warehouse,
   GraduationCap,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -35,6 +36,7 @@ import TrainingTypesSettings from './TrainingTypesSettings';
 import { useIsMobile } from '@shared/ui';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
+import { IntegrationsSettingsView } from '@shared/invoicing';
 
 interface SettingsViewProps {
   instanceId: string | null;
@@ -49,6 +51,7 @@ type SettingsTab =
   | 'hours'
   | 'halls'
   | 'trainings'
+  | 'integrations'
   | 'app'
   | 'sms'
   | 'users';
@@ -141,6 +144,7 @@ const SettingsView = ({
       icon: <GraduationCap className="w-4 h-4" />,
       visible: hasFeature('trainings'),
     },
+    { key: 'integrations', label: 'Integracje', icon: <Link2 className="w-4 h-4" /> },
     { key: 'app', label: t('settings.tabs.app'), icon: <Settings2 className="w-4 h-4" /> },
     { key: 'sms', label: t('settings.tabs.sms'), icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'users', label: t('settings.tabs.users'), icon: <Users className="w-4 h-4" /> },
@@ -542,6 +546,14 @@ const SettingsView = ({
 
       case 'trainings':
         return <TrainingTypesSettings instanceId={instanceId} />;
+
+      case 'integrations':
+        return (
+          <IntegrationsSettingsView
+            instanceId={instanceId}
+            supabaseClient={supabase}
+          />
+        );
 
       case 'app':
         return <ReservationConfirmSettings instanceId={instanceId} />;

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@shared/ui';
+import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
@@ -76,7 +77,9 @@ const DAMAGE_TYPE_LABELS: Record<string, string> = {
 
 export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSettings }: CreateProtocolFormProps) => {
   const [searchParams] = useSearchParams();
-  
+  const { hasFeature } = useInstanceFeatures(instanceId);
+  const showVin = hasFeature('vehicle_vin');
+
   const [instance, setInstance] = useState<Instance | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,6 +112,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [reservationId, setReservationId] = useState<string | null>(reservationIdFromUrl);
   const [registrationNumber, setRegistrationNumber] = useState('');
+  const [vin, setVin] = useState('');
   const [fuelLevel, setFuelLevel] = useState('');
   const [odometerReading, setOdometerReading] = useState('');
   const [bodyType, setBodyType] = useState<BodyType>('sedan');
@@ -309,6 +313,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setNip(protocolData.nip || '');
           setPhone(protocolData.phone || '');
           setRegistrationNumber(protocolData.registration_number || '');
+          setVin((protocolData as any).vin || '');
           setProtocolType((protocolData.protocol_type as ProtocolType) || 'reception');
           setCustomerSignature(protocolData.customer_signature || null);
           setFuelLevel(protocolData.fuel_level?.toString() || '');
@@ -567,6 +572,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         nip: nip || null,
         phone: normalizePhone(phone) || null,
         registration_number: registrationNumber || null,
+        vin: vin || null,
         fuel_level: fuelLevel ? parseInt(fuelLevel) : null,
         odometer_reading: odometerReading ? parseInt(odometerReading) : null,
         body_type: bodyType,
@@ -816,6 +822,18 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 className="border-foreground/60"
               />
             </div>
+            {showVin && (
+              <div className="space-y-2">
+                <Label>VIN</Label>
+                <Input
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value.toUpperCase())}
+                  maxLength={17}
+                  placeholder="np. WBA1234567890ABCD"
+                  className="border-foreground/60 font-mono"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Stan paliwa (%)</Label>
               <Input
