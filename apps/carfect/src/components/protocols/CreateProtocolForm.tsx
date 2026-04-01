@@ -313,7 +313,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setNip(protocolData.nip || '');
           setPhone(protocolData.phone || '');
           setRegistrationNumber(protocolData.registration_number || '');
-          setVin((protocolData as any).vin || '');
+          setVin(protocolData.vin || '');
           setProtocolType((protocolData.protocol_type as ProtocolType) || 'reception');
           setCustomerSignature(protocolData.customer_signature || null);
           setFuelLevel(protocolData.fuel_level?.toString() || '');
