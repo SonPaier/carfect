@@ -717,7 +717,7 @@ const ReservationsView = ({
                   <SortableHeader field="vehicle_plate">Pojazd</SortableHeader>
                   <TableHead>Usługi</TableHead>
                   <SortableHeader field="reservation_date">Data realizacji</SortableHeader>
-                  <SortableHeader field="price" className="text-right">Kwota</SortableHeader>
+                  <SortableHeader field="price" className="text-right">Kwota brutto</SortableHeader>
                   <SortableHeader field="status">Status</SortableHeader>
                   <TableHead className="w-10" />
                 </TableRow>
