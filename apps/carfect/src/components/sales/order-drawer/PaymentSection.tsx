@@ -1,5 +1,6 @@
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { RadioGroup, RadioGroupItem } from '@shared/ui';
 
 type PaymentMethod = 'cod' | 'transfer';
 
@@ -20,6 +21,8 @@ interface PaymentSectionProps {
   bankAccountNumber: string;
   setBankAccountNumber: (v: string) => void;
   bankAccounts: BankAccount[];
+  isNetPayer: boolean;
+  setIsNetPayer: (v: boolean) => void;
 }
 
 export const PaymentSection = ({
@@ -28,22 +31,48 @@ export const PaymentSection = ({
   bankAccountNumber,
   setBankAccountNumber,
   bankAccounts,
+  isNetPayer,
+  setIsNetPayer,
 }: PaymentSectionProps) => {
   const selectedAccount = bankAccounts.find((a) => a.number === bankAccountNumber);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label>Sposób płatności</Label>
-        <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="cod">Za pobraniem</SelectItem>
-            <SelectItem value="transfer">Przelew</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Sposób płatności</Label>
+          <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cod">Za pobraniem</SelectItem>
+              <SelectItem value="transfer">Przelew</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Płatnik</Label>
+          <RadioGroup
+            value={isNetPayer ? 'netto' : 'brutto'}
+            onValueChange={(v) => setIsNetPayer(v === 'netto')}
+            className="flex gap-4 pt-1"
+          >
+            <div className="flex items-center gap-1.5">
+              <RadioGroupItem value="brutto" id="payer-brutto" />
+              <Label htmlFor="payer-brutto" className="font-normal cursor-pointer">
+                Brutto
+              </Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <RadioGroupItem value="netto" id="payer-netto" />
+              <Label htmlFor="payer-netto" className="font-normal cursor-pointer">
+                Netto
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
       </div>
 
       {bankAccounts.length > 0 && (

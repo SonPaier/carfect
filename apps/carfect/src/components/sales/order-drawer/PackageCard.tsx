@@ -102,6 +102,8 @@ interface PackageCardProps {
   paymentMethod?: string;
   totalGross?: number;
   bankAccountNumber?: string;
+  codAmountOverride?: number;
+  onCodAmountChange?: (value: number | undefined) => void;
 }
 
 const PackageCard = ({
@@ -136,6 +138,8 @@ const PackageCard = ({
   paymentMethod,
   totalGross,
   bankAccountNumber,
+  codAmountOverride,
+  onCodAmountChange,
 }: PackageCardProps) => {
   const valuation = useApaczkaValuation(
     instanceId,
@@ -580,17 +584,28 @@ const PackageCard = ({
                 )}
               </div>
 
-              {/* Kwota pobrania — tylko dla COD, wypełnia się po sprawdzeniu wyceny */}
+              {/* Kwota pobrania — tylko dla COD, domyślnie declaredValue + shippingCost */}
               {paymentMethod === 'cod' && (
                 <div className="space-y-1">
                   <Label className="text-xs">Kwota pobrania (zł)</Label>
-                  {pkg.shippingCost != null ? (
-                    <p className="text-base font-semibold">
-                      {formatCurrency((pkg.declaredValue ?? 0) + pkg.shippingCost)}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">—</p>
-                  )}
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="h-9"
+                    value={
+                      codAmountOverride != null
+                        ? codAmountOverride
+                        : pkg.shippingCost != null
+                          ? Math.round(((pkg.declaredValue ?? 0) + pkg.shippingCost) * 100) / 100
+                          : ''
+                    }
+                    placeholder="—"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onCodAmountChange?.(val === '' ? undefined : Number(val));
+                    }}
+                  />
                 </div>
               )}
             </div>

@@ -431,7 +431,9 @@ export async function uploadRollPhoto(file: File, instanceId: string): Promise<s
 
 // ─── File to Base64 ─────────────────────────────────────────
 
-export function fileToBase64(file: File): Promise<string> {
+export async function fileToBase64(file: File): Promise<string> {
+  // Convert to JPEG first — Google Vision doesn't support HEIC
+  const blob = await compressImage(file, 2048, 0.9);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -441,6 +443,6 @@ export function fileToBase64(file: File): Promise<string> {
       resolve(base64);
     };
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
 }

@@ -107,6 +107,10 @@ const AddSalesOrderDrawer = ({
   // Local state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [isNetPayer, setIsNetPayer] = useState(false);
+  const [codAmountOverrides, setCodAmountOverrides] = useState<Record<string, number | undefined>>(
+    {},
+  );
   const [sendEmail, setSendEmail] = useState(false);
   const [comment, setComment] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
@@ -227,6 +231,13 @@ const AddSalesOrderDrawer = ({
 
   const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
 
+  // Sync isNetPayer when customer changes
+  useEffect(() => {
+    if (customerSearch.selectedCustomer) {
+      setIsNetPayer(customerSearch.selectedCustomer.isNetPayer ?? false);
+    }
+  }, [customerSearch.selectedCustomer?.id]);
+
   /** Effective quantity: total m² from roll assignments, or plain quantity */
   const getEffectiveQty = (p: OrderProduct) =>
     p.rollAssignments?.length
@@ -291,7 +302,7 @@ const AddSalesOrderDrawer = ({
   const shippingNetTotal = shippingCosts.reduce((sum, cost) => sum + cost / (1 + VAT_RATE), 0);
 
   const totalNet = Math.max(0, subtotalNet - discountAmount) + shippingNetTotal;
-  const totalGross = totalNet * (1 + VAT_RATE);
+  const totalGross = isNetPayer ? totalNet : totalNet * (1 + VAT_RATE);
 
   /* ── Handlers ── */
 
@@ -686,6 +697,11 @@ const AddSalesOrderDrawer = ({
                   markDirty();
                 }}
                 bankAccounts={bankAccounts}
+                isNetPayer={isNetPayer}
+                setIsNetPayer={(v) => {
+                  setIsNetPayer(v);
+                  markDirty();
+                }}
               />
 
               <PackagesSection
@@ -781,6 +797,11 @@ const AddSalesOrderDrawer = ({
                 totalGross={totalGross}
                 bankAccountNumber={bankAccountNumber}
                 availableCouriers={instanceData?.apaczka_services || []}
+                codAmountOverrides={codAmountOverrides}
+                onCodAmountChange={(pkgId, value) => {
+                  markDirty();
+                  setCodAmountOverrides((prev) => ({ ...prev, [pkgId]: value }));
+                }}
               />
 
               {hasShipping && (
@@ -829,6 +850,7 @@ const AddSalesOrderDrawer = ({
                   shippingCosts={shippingCosts}
                   totalNet={totalNet}
                   totalGross={totalGross}
+                  isNetPayer={isNetPayer}
                 />
               )}
 
