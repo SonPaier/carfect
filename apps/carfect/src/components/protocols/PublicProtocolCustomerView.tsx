@@ -43,6 +43,7 @@ interface Protocol {
   customer_signature: string | null;
   protocol_type?: ProtocolType;
   photo_urls?: string[];
+  service_items?: Array<{ name: string; quantity: number; unit_price: number }> | null;
 }
 
 interface PublicProtocolCustomerViewProps {
@@ -250,6 +251,25 @@ export const PublicProtocolCustomerView = ({
                     />
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Services receipt */}
+          {protocol.service_items && protocol.service_items.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-sm">Usługi</Label>
+              <div className="border rounded-lg overflow-hidden">
+                {protocol.service_items.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-3 py-2 border-b last:border-b-0 text-sm">
+                    <span>{item.name}</span>
+                    <span className="font-medium">{item.unit_price * item.quantity} zł</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
+                  <span>Suma</span>
+                  <span>{protocol.service_items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
+                </div>
               </div>
             </div>
           )}

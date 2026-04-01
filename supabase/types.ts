@@ -4522,6 +4522,7 @@ export type Database = {
           release_notes: string | null
           release_signature: string | null
           reservation_id: string | null
+          service_items: Json | null
           status: string
           updated_at: string
           vehicle_model: string | null
@@ -4552,6 +4553,7 @@ export type Database = {
           release_notes?: string | null
           release_signature?: string | null
           reservation_id?: string | null
+          service_items?: Json | null
           status?: string
           updated_at?: string
           vehicle_model?: string | null
@@ -4582,6 +4584,7 @@ export type Database = {
           release_notes?: string | null
           release_signature?: string | null
           reservation_id?: string | null
+          service_items?: Json | null
           status?: string
           updated_at?: string
           vehicle_model?: string | null

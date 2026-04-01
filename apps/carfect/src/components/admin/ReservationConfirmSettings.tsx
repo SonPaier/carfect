@@ -27,31 +27,34 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
   const { updateSetting } = useUpdateInstanceSettings(instanceId);
   const [savingEmployeeSettings, setSavingEmployeeSettings] = useState(false);
 
-  // VIN feature toggle
+  // Feature toggles
   const queryClient = useQueryClient();
   const [vinEnabled, setVinEnabled] = useState(false);
+  const [protocolServicesEnabled, setProtocolServicesEnabled] = useState(false);
 
   useEffect(() => {
     if (!instanceId) return;
     supabase
       .from('instance_features')
-      .select('enabled')
+      .select('feature_key, enabled')
       .eq('instance_id', instanceId)
-      .eq('feature_key', 'vehicle_vin')
-      .maybeSingle()
+      .in('feature_key', ['vehicle_vin', 'protocol_services'])
       .then(({ data }) => {
-        setVinEnabled(data?.enabled ?? false);
+        for (const row of data || []) {
+          if (row.feature_key === 'vehicle_vin') setVinEnabled(row.enabled);
+          if (row.feature_key === 'protocol_services') setProtocolServicesEnabled(row.enabled);
+        }
       });
   }, [instanceId]);
 
-  const handleVinToggle = async (enabled: boolean) => {
+  const handleFeatureToggle = async (featureKey: string, enabled: boolean, setter: (v: boolean) => void) => {
     if (!instanceId) return;
-    setVinEnabled(enabled);
+    setter(enabled);
     await supabase
       .from('instance_features')
       .upsert({
         instance_id: instanceId,
-        feature_key: 'vehicle_vin',
+        feature_key: featureKey,
         enabled,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'instance_id,feature_key' });
@@ -316,11 +319,11 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         }
       </div>
 
-      {/* VIN */}
+      {/* Protokoły */}
       <div className="space-y-4 border-t pt-6">
         <div className="flex items-center gap-3">
           <Car className="w-5 h-5 text-muted-foreground" />
-          <h3 className="font-semibold">Pojazdy</h3>
+          <h3 className="font-semibold">Protokoły i pojazdy</h3>
         </div>
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
@@ -329,7 +332,16 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
               Dodaj pole VIN przy pojazdach klienta i w protokole
             </p>
           </div>
-          <Switch checked={vinEnabled} onCheckedChange={handleVinToggle} />
+          <Switch checked={vinEnabled} onCheckedChange={(v) => handleFeatureToggle('vehicle_vin', v, setVinEnabled)} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label>Usługi i kwoty na protokole</Label>
+            <p className="text-sm text-muted-foreground">
+              Wyświetlaj listę usług z cenami na protokole (jak rachunek)
+            </p>
+          </div>
+          <Switch checked={protocolServicesEnabled} onCheckedChange={(v) => handleFeatureToggle('protocol_services', v, setProtocolServicesEnabled)} />
         </div>
       </div>
     </div>);
