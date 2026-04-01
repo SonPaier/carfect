@@ -3018,7 +3018,7 @@ const AdminDashboard = () => {
                       setSidebarOpen(false);
                       setCurrentView('reservations');
                     }}
-                    title="Rezerwacje"
+                    title="Realizacje"
                   >
                     <div className="relative">
                       <Users className="w-4 h-4 shrink-0" />
@@ -3030,7 +3030,7 @@ const AdminDashboard = () => {
                     </div>
                     {!sidebarCollapsed && (
                       <>
-                        <span className="flex-1 text-left">Rezerwacje</span>
+                        <span className="flex-1 text-left">Realizacje</span>
                         {pendingCount > 0 && (
                           <span className="min-w-[20px] h-5 px-1.5 text-xs font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
                             {pendingCount}

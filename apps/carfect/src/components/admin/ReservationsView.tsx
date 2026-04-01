@@ -51,7 +51,7 @@ import {
   TableHeader,
   TableRow,
 } from '@shared/ui';
-import { PaginationFooter } from '@shared/ui';
+import { PaginationFooter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { EmptyState } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import ServiceTag from './ServiceTag';
@@ -148,6 +148,8 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   completed: { label: 'Zakończona', className: 'bg-slate-100 text-slate-800 border-slate-200' },
   cancelled: { label: 'Anulowana', className: 'bg-red-100 text-red-800 border-red-200' },
   change_requested: { label: 'Zmiana', className: 'bg-red-100 text-red-800 border-red-200' },
+  no_show: { label: 'Nieobecność', className: 'bg-slate-100 text-slate-800 border-slate-200' },
+  released: { label: 'Zwolniona', className: 'bg-slate-100 text-slate-600 border-slate-200' },
 };
 
 const ReservationsView = ({
@@ -183,10 +185,11 @@ const ReservationsView = ({
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Sort state
   const [sortField, setSortField] = useState<SortField>('reservation_date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   // If trainings got disabled, reset tab
   useEffect(() => {
@@ -217,10 +220,10 @@ const ReservationsView = ({
     setCurrentPage(1);
   }, [activeTab]);
 
-  // Reset page when sort changes
+  // Reset page when sort or status filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [sortField, sortDirection]);
+  }, [sortField, sortDirection, statusFilter]);
 
   // Build unified list items (all reservations, not just future)
   const allItems = useMemo(() => {
@@ -268,13 +271,17 @@ const ReservationsView = ({
                 .map((id) => employeeMap.get(id)?.toLowerCase() || '')
                 .join(' ')
             : '';
+        const serviceNames = (r.services_data || (r.service ? [r.service] : []))
+          .map((s) => s.name.toLowerCase())
+          .join(' ');
         return (
           (r.confirmation_code &&
             normalizeSearchQuery(r.confirmation_code).toLowerCase().includes(normalizedQuery)) ||
           r.customer_name?.toLowerCase().includes(query) ||
           (r.customer_phone && normalizeSearchQuery(r.customer_phone).includes(normalizedQuery)) ||
           r.vehicle_plate?.toLowerCase().includes(query) ||
-          employeeNames.includes(query)
+          employeeNames.includes(query) ||
+          serviceNames.includes(query)
         );
       } else {
         const tr = item.data as Training;
@@ -293,9 +300,20 @@ const ReservationsView = ({
     });
   }, [tabFiltered, debouncedQuery, employeeMap]);
 
+  // Status filter
+  const statusFiltered = useMemo(() => {
+    if (statusFilter === 'all') return searchFiltered;
+    return searchFiltered.filter((item) => {
+      if (item.type === 'reservation') {
+        return (item.data as Reservation).status === statusFilter;
+      }
+      return false;
+    });
+  }, [searchFiltered, statusFilter]);
+
   // Sorted items
   const sortedItems = useMemo(() => {
-    return [...searchFiltered].sort((a, b) => {
+    return [...statusFiltered].sort((a, b) => {
       let aVal = '';
       let bVal = '';
 
@@ -320,7 +338,7 @@ const ReservationsView = ({
       const cmp = aVal.localeCompare(bVal);
       return sortDirection === 'asc' ? cmp : -cmp;
     });
-  }, [searchFiltered, sortField, sortDirection]);
+  }, [statusFiltered, sortField, sortDirection]);
 
   // Paginated items
   const paginatedItems = useMemo(() => {
@@ -465,15 +483,15 @@ const ReservationsView = ({
     }
 
     return (
-      <TooltipProvider>
+      <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="text-sm">
+            <button type="button" className="text-sm text-left">
               {firstName}
               <span className="text-muted-foreground">, +{rest.length}</span>
-            </span>
+            </button>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="bottom" align="start">
             {rest.map((s, i) => (
               <div key={i}>{s.name}</div>
             ))}
@@ -485,19 +503,30 @@ const ReservationsView = ({
 
   const renderDate = (item: ListItem) => {
     const dateStr = item.date;
-    const formatted = format(parseISO(dateStr), 'dd.MM.yyyy');
+    const parsedDate = parseISO(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isUpcoming = parsedDate >= today;
+
+    const timeStr = item.start_time ? `, ${item.start_time.slice(0, 5)}` : '';
+    const formatted = format(parsedDate, 'dd.MM.yyyy') + (isUpcoming ? timeStr : '');
+
     if (item.type === 'reservation') {
       const r = item.data as Reservation;
       const endDate = r.end_date;
-      const endFormatted = endDate && endDate !== dateStr ? format(parseISO(endDate), 'dd.MM.yyyy') : null;
-      return (
-        <div>
-          <div>{formatted}</div>
-          {endFormatted && <div className="text-xs text-muted-foreground">{endFormatted}</div>}
-        </div>
-      );
+      if (endDate && endDate !== dateStr) {
+        const parsedEnd = parseISO(endDate);
+        const endTimeStr = isUpcoming && r.end_time ? `, ${r.end_time.slice(0, 5)}` : '';
+        const endFormatted = format(parsedEnd, 'dd.MM.yyyy') + endTimeStr;
+        return (
+          <div className="whitespace-nowrap">
+            <div>{formatted}</div>
+            <div className="text-xs text-muted-foreground">{endFormatted}</div>
+          </div>
+        );
+      }
     }
-    return <div>{formatted}</div>;
+    return <div className="whitespace-nowrap">{formatted}</div>;
   };
 
   const renderReservationActions = (reservation: Reservation) => {
@@ -581,19 +610,34 @@ const ReservationsView = ({
   return (
     <div className="space-y-4 max-w-[1000px] mx-auto pb-28">
       {/* Title */}
-      <h1 className="text-2xl font-bold text-foreground">{t('reservations.title')}</h1>
+      <h1 className="text-2xl font-bold text-foreground">Realizacje</h1>
 
       {/* Sticky header on mobile */}
       <div className="sm:static sticky top-0 z-20 bg-background pb-4 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={t('reservations.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search + status filter */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={t('reservations.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px] shrink-0">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Wszystkie statusy</SelectItem>
+              {Object.entries(statusConfig)
+                .filter(([key]) => !['pending', 'change_requested', 'released'].includes(key))
+                .map(([key, cfg]) => (
+                  <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Tabs - only when trainings enabled */}
@@ -683,7 +727,7 @@ const ReservationsView = ({
                         <TableCell>{renderServices(r)}</TableCell>
                         <TableCell>{renderDate(item)}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {r.price != null ? `${Number(r.price).toFixed(2)} zł` : '—'}
+                          {r.price != null ? `${Math.round(Number(r.price))} zł` : '—'}
                         </TableCell>
                         <TableCell>{renderStatusBadge(r.status)}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -766,7 +810,7 @@ const ReservationsView = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm">{renderServices(r)}</div>
                       <span className="text-sm font-medium shrink-0">
-                        {r.price != null ? `${Number(r.price).toFixed(2)} zł` : '—'}
+                        {r.price != null ? `${Math.round(Number(r.price))} zł` : '—'}
                       </span>
                     </div>
                     {/* Date + actions */}
