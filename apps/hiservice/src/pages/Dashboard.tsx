@@ -971,7 +971,7 @@ const Dashboard = () => {
   const renderContent = () => {
     if (currentView === 'dashboard' && instanceId) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <DashboardOverview
             instanceId={instanceId}
             workingHours={workingHours}
@@ -992,7 +992,7 @@ const Dashboard = () => {
 
     if (currentView === 'uslugi' && instanceId) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <ServicesView instanceId={instanceId} />
         </div>
       );
@@ -1000,7 +1000,7 @@ const Dashboard = () => {
 
     if (currentView === 'klienci' && instanceId) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <CustomersView instanceId={instanceId} />
         </div>
       );
@@ -1008,7 +1008,7 @@ const Dashboard = () => {
 
     if (currentView === 'pracownicy' && instanceId) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <EmployeesView instanceId={instanceId} />
         </div>
       );
@@ -1016,7 +1016,7 @@ const Dashboard = () => {
 
     if (currentView === 'protokoly' && instanceId && protocolsEnabled) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <ProtocolsView instanceId={instanceId} />
         </div>
       );
@@ -1024,7 +1024,7 @@ const Dashboard = () => {
 
     if (currentView === 'rozliczenia' && instanceId) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <SettlementsView
             instanceId={instanceId}
             onItemDeleted={(itemId) => {
@@ -1040,7 +1040,7 @@ const Dashboard = () => {
     if (currentView === 'projekty' && instanceId && projectsEnabled) {
       return (
         <>
-          <div className="max-w-[1000px] mx-auto">
+          <div className="max-w-[1150px] mx-auto">
             <ProjectsView
               instanceId={instanceId}
               onAddOrder={handleProjectAddOrder}
@@ -1112,7 +1112,7 @@ const Dashboard = () => {
 
     if (currentView === 'powiadomienia-sms') {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <SmsNotificationsView instanceId={instanceId} />
         </div>
       );
@@ -1120,7 +1120,7 @@ const Dashboard = () => {
 
     if (currentView === 'przypomnienia' && instanceId && remindersEnabled) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <RemindersView instanceId={instanceId} />
         </div>
       );
@@ -1128,7 +1128,7 @@ const Dashboard = () => {
 
     if (currentView === 'aktywnosci' && instanceId && activitiesEnabled) {
       return (
-        <div className="max-w-[1000px] mx-auto">
+        <div className="max-w-[1150px] mx-auto">
           <NotificationsView instanceId={instanceId} onItemClick={handleDashboardItemClick} />
         </div>
       );
