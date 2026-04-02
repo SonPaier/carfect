@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Loader2, Search, X } from 'lucide-react';
 import { Button, Input, Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { bruttoToNetto } from '@/utils/pricing';
 
 export interface PickedProduct {
   id: string;
@@ -19,7 +20,14 @@ interface Service {
   description: string | null;
   category_id: string | null;
   price_from: number | null;
+  price_small: number | null;
+  price_medium: number | null;
+  price_large: number | null;
 }
+
+const getServicePrice = (s: Service): number | null => {
+  return s.price_from ?? s.price_small ?? s.price_medium ?? s.price_large ?? null;
+};
 
 interface Category {
   id: string;
@@ -67,17 +75,17 @@ export function OfferProductPickerDrawer({
         const [servicesRes, categoriesRes] = await Promise.all([
           supabase
             .from('unified_services')
-            .select('id, name, short_name, description, category_id, price_from')
+            .select('id, name, short_name, description, category_id, price_from, price_small, price_medium, price_large')
             .eq('instance_id', instanceId)
             .eq('active', true)
-            .in('service_type', ['both', 'offer'])
+            .eq('service_type', 'both')
             .order('sort_order'),
           supabase
             .from('unified_categories')
             .select('id, name, sort_order')
             .eq('instance_id', instanceId)
             .eq('active', true)
-            .in('category_type', ['both', 'offer'])
+            .eq('category_type', 'both')
             .order('sort_order'),
         ]);
 
@@ -136,16 +144,17 @@ export function OfferProductPickerDrawer({
         name: s.name,
         short_name: s.short_name,
         description: s.description,
-        price: s.price_from ?? 0,
+        price: getServicePrice(s) ? bruttoToNetto(getServicePrice(s)!) : 0,
       }));
 
     onConfirm(picked);
     onClose();
   };
 
-  const formatPrice = (price: number | null): string => {
-    if (price === null) return 'wycena';
-    return `${price.toFixed(0)} zł`;
+  const formatServicePrice = (s: Service): string => {
+    const raw = getServicePrice(s);
+    if (raw === null) return 'wycena';
+    return `${bruttoToNetto(raw).toFixed(0)} zł netto`;
   };
 
   const alreadyAddedSet = useMemo(
@@ -259,7 +268,7 @@ export function OfferProductPickerDrawer({
                         {/* Price */}
                         <div className="text-right mr-4 ml-4">
                           <p className="font-semibold text-foreground">
-                            {formatPrice(service.price_from)}
+                            {formatServicePrice(service)}
                           </p>
                         </div>
 

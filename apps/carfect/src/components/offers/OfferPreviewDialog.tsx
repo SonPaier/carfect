@@ -196,6 +196,7 @@ export const OfferPreviewDialog = ({
       id: offer.id || '',
       offer_number: 'PODGLĄD',
       instance_id: instanceId,
+      offer_format: offer.offerFormat ?? null,
       customer_data: {
         name: offer.customerData.name,
         email: offer.customerData.email,

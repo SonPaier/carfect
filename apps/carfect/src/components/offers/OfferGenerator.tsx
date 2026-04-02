@@ -119,7 +119,7 @@ export const OfferGenerator = ({
   const steps = isV2
     ? [
         { id: 1, label: t('offers.steps.customerData'), icon: User },
-        { id: 2, label: t('offers.steps.summary'), icon: FileCheck },
+        { id: 2, label: 'Usługi', icon: Package },
       ]
     : [
         { id: 1, label: t('offers.steps.customerData'), icon: User },

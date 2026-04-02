@@ -138,11 +138,10 @@ describe('ProductsSummaryStepV2', () => {
     // Product should now be in the suggested section
     await waitFor(() => {
       expect(screen.getByText('Sugerowane — opcjonalne dla klienta (1)')).toBeInTheDocument();
-      expect(screen.getByText('opcjonalne')).toBeInTheDocument();
     });
 
     // Selected section should show 0 selected
-    expect(screen.getByText(/Wybrane uslugi \(0\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Wybrane usługi, ceny netto/i)).toBeInTheDocument();
   });
 
   it('removes product from list when remove button is clicked', async () => {
@@ -249,31 +248,20 @@ describe('ProductsSummaryStepV2', () => {
     });
   });
 
-  it('selected products total is shown and excluded suggested products from sum', async () => {
+  it('onUpdateOffer receives only selected products in option total', async () => {
     const user = userEvent.setup();
     render(<ProductsSummaryStepV2 {...defaultProps} />);
 
-    // Add two products
+    // Add a product
     await user.click(screen.getByRole('button', { name: /dodaj usluge/i }));
-    await user.click(screen.getByTestId('picker-add-service-a')); // price 200
+    await user.click(screen.getByTestId('picker-add-service-a'));
 
-    await user.click(screen.getByRole('button', { name: /dodaj usluge/i }));
-    await user.click(screen.getByTestId('picker-add-service-b')); // price 400
-
-    // Both selected — total net should be 600 (200+400)
+    // onUpdateOffer should have been called with options containing the product
     await waitFor(() => {
-      expect(screen.getByText('Suma netto:')).toBeInTheDocument();
-      // formatPrice is mocked to return "600 zł"
-      expect(screen.getByText('600 zł')).toBeInTheDocument();
-    });
-
-    // Now toggle Usługa A to suggested
-    const toggleButtons = screen.getAllByTitle('Oznacz jako sugerowane');
-    await user.click(toggleButtons[0]);
-
-    // Total should only include Usługa B (400 zł)
-    await waitFor(() => {
-      expect(screen.getByText('400 zł')).toBeInTheDocument();
+      expect(defaultProps.onUpdateOffer).toHaveBeenCalled();
+      const lastCall = defaultProps.onUpdateOffer.mock.calls.at(-1)?.[0];
+      expect(lastCall?.options?.[0]?.items).toHaveLength(1);
+      expect(lastCall?.options?.[0]?.items?.[0]?.isOptional).toBe(false);
     });
   });
 });

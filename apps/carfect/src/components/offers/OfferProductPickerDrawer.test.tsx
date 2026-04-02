@@ -183,12 +183,12 @@ describe('OfferProductPickerDrawer', () => {
       id: 'svc-1',
       name: 'Mycie podstawowe',
       short_name: 'MP',
-      price: 50,
+      price: expect.closeTo(40.65, 0),
     });
     expect(confirmedProducts[1]).toMatchObject({
       id: 'svc-3',
       name: 'Korekta lakieru',
-      price: 800,
+      price: expect.closeTo(650.41, 0),
     });
     expect(onClose).toHaveBeenCalledOnce();
   });

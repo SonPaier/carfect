@@ -49,7 +49,7 @@ const PublicOfferView = () => {
             id, instance_id, offer_number, public_token, status, customer_data,
             vehicle_data, total_net, total_gross, vat_rate, notes, payment_terms,
             warranty, service_info, valid_until, hide_unit_prices, created_at,
-            approved_at, viewed_at, selected_state, has_unified_services,
+            approved_at, viewed_at, selected_state, has_unified_services, offer_format,
             offer_options (
               id, name, description, is_selected, subtotal_net, sort_order,
               scope_id, is_upsell,

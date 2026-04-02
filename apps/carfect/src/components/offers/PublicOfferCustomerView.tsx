@@ -115,6 +115,7 @@ export interface PublicOfferData {
   offer_number: string;
   public_token: string;
   has_unified_services?: boolean;
+  offer_format?: string | null;
   customer_data?: {
     name?: string;
     email?: string;
@@ -224,7 +225,7 @@ export const PublicOfferCustomerView = ({
 
         const inferredScopeName = opt.scope_id
           ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
-          : (inferredNameFromTitle ?? t('publicOffer.otherFallback'));
+          : (inferredNameFromTitle ?? (offer.offer_format === 'v2' ? 'Pozycje' : t('publicOffer.otherFallback')));
 
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
 

@@ -3,11 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Checkbox } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Gift, Plus, Trash2, Package, ArrowUp } from 'lucide-react';
+import { Gift, Plus, Trash2, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatPrice } from '@/lib/offerUtils';
 import { OfferProductPickerDrawer, PickedProduct } from './OfferProductPickerDrawer';
 import { ConditionsSection } from './summary/ConditionsSection';
 import type { OfferState, OfferOption, OfferItem } from '@/hooks/useOffer';
@@ -46,7 +43,6 @@ export const ProductsSummaryStepV2 = ({
   const { t } = useTranslation();
   const [products, setProducts] = useState<FlatProduct[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [conditionsOpen, setConditionsOpen] = useState(false);
   const initializedRef = useRef(false);
 
   // Mount: load existing products from offer.options[0]
@@ -96,10 +92,6 @@ export const ProductsSummaryStepV2 = ({
 
   const selectedProducts = products.filter((p) => !p.isSuggested);
   const suggestedProducts = products.filter((p) => p.isSuggested);
-
-  const totalNet = selectedProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
-  const totalGross = Math.round(totalNet * (1 + offer.vatRate / 100) * 100) / 100;
-
   const alreadyAddedIds = products.map((p) => p.productId);
 
   const handleAddProducts = useCallback((picked: PickedProduct[]) => {
@@ -142,9 +134,8 @@ export const ProductsSummaryStepV2 = ({
     <div className="space-y-6">
       {/* Selected Products */}
       <div className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Package className="w-4 h-4" />
-          Wybrane uslugi ({selectedProducts.length})
+        <h3 className="font-semibold">
+          Wybrane usługi, ceny netto
         </h3>
 
         {selectedProducts.length === 0 && (
@@ -166,21 +157,12 @@ export const ProductsSummaryStepV2 = ({
           ))}
         </div>
 
-        {selectedProducts.length > 0 && (
-          <div className="flex justify-end gap-4 text-sm pt-2 border-t">
-            <span className="text-muted-foreground">Suma netto:</span>
-            <span className="font-bold">{formatPrice(totalNet)}</span>
-            <span className="text-muted-foreground">Brutto:</span>
-            <span className="font-bold">{formatPrice(totalGross)}</span>
-          </div>
-        )}
       </div>
 
       {/* Suggested Products */}
       {suggestedProducts.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-semibold flex items-center gap-2 text-muted-foreground">
-            <Gift className="w-4 h-4" />
+          <h3 className="font-semibold">
             Sugerowane — opcjonalne dla klienta ({suggestedProducts.length})
           </h3>
 
@@ -202,9 +184,8 @@ export const ProductsSummaryStepV2 = ({
       {/* Add Product Button */}
       <Button
         type="button"
-        variant="outline"
         onClick={() => setPickerOpen(true)}
-        className="w-full h-12 border-dashed"
+        className="w-full h-12"
       >
         <Plus className="w-4 h-4 mr-2" />
         Dodaj usluge
@@ -212,26 +193,14 @@ export const ProductsSummaryStepV2 = ({
 
       <Separator />
 
-      {/* Conditions */}
+      {/* Conditions — always expanded for v2 */}
       <ConditionsSection
         offer={offer}
-        open={conditionsOpen}
-        onOpenChange={setConditionsOpen}
+        open={true}
+        onOpenChange={() => {}}
         onUpdateOffer={onUpdateOffer}
         getTextareaRows={getTextareaRows}
       />
-
-      {/* Hide unit prices checkbox */}
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="hideUnitPrices"
-          checked={offer.hideUnitPrices}
-          onCheckedChange={(checked) => onUpdateOffer({ hideUnitPrices: !!checked })}
-        />
-        <Label htmlFor="hideUnitPrices" className="text-sm cursor-pointer">
-          Ukryj ceny jednostkowe w ofercie
-        </Label>
-      </div>
 
       {/* Picker Drawer */}
       <OfferProductPickerDrawer
@@ -270,20 +239,12 @@ function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, isSug
 
   return (
     <div
-      className={cn(
-        'flex items-center gap-3 p-3 rounded-lg border',
-        isSuggested ? 'bg-muted/30 border-border/50' : 'bg-white',
-      )}
+      className="flex items-center gap-3 p-3 rounded-lg border bg-white"
     >
       <div className="flex-1 min-w-0">
-        <p className={cn('font-medium text-sm truncate', isSuggested && 'text-muted-foreground')}>
+        <p className="font-medium text-sm truncate">
           {product.name}
         </p>
-        {isSuggested && (
-          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-            opcjonalne
-          </span>
-        )}
       </div>
 
       <div className="shrink-0">
