@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Palmtree, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Palmtree, Trash2 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useTimeEntries, useCreateTimeEntry, useUpdateTimeEntry, getEffectiveMinutes, TimeEntry } from '@/hooks/useTimeEntries';
@@ -30,6 +30,8 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
+  const [manualSaving, setManualSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
@@ -423,6 +425,35 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
               </>
             )}
           </div>
+          <Button
+            onClick={async () => {
+              if (!editingCell) return;
+              // Flush debounce
+              if (saveTimerRef.current) {
+                clearTimeout(saveTimerRef.current);
+                saveTimerRef.current = null;
+              }
+              pendingSaveRef.current = null;
+              setManualSaving(true);
+              setSaved(false);
+              try {
+                await executeSave(editingCell);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2000);
+              } finally {
+                setManualSaving(false);
+              }
+            }}
+            disabled={manualSaving}
+            className="w-full h-12"
+          >
+            {manualSaving ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : saved ? (
+              <Check className="w-4 h-4 mr-2" />
+            ) : null}
+            {saved ? 'Zapisano' : 'Zapisz'}
+          </Button>
           {editingCellIsDayOff ? (
             <Button onClick={handleRemoveDayOff} variant="outline" className="w-full h-12 bg-red-50 border-red-200 text-red-700 hover:bg-red-100">
               <Trash2 className="w-4 h-4 mr-2" />Usuń Wolne
