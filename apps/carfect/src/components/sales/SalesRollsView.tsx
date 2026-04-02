@@ -129,33 +129,60 @@ const SalesRollsView = () => {
 
   // Summary grouped by product name
   const summary = useMemo(() => {
-    const map = new Map<string, { count: number; totalRemainingMb: number; totalRemainingM2: number }>();
+    const LOW_THRESHOLD = 0.2;
+    const map = new Map<
+      string,
+      { count: number; unopened: number; lowStock: number; totalRemainingMb: number; totalRemainingM2: number; widths: Set<number> }
+    >();
+    let totalUnopened = 0;
+    let totalLowStock = 0;
+
     for (const r of rolls) {
       const key = r.productName;
-      const prev = map.get(key);
       const remainingMb = r.remainingMb ?? r.lengthM;
       const remainingM2 = mbToM2(remainingMb, r.widthMm);
+      const isUnopened = remainingMb >= r.lengthM && (r.currentUsageMb ?? 0) === 0;
+      const isLow = !isUnopened && remainingMb < r.lengthM * LOW_THRESHOLD;
+
+      if (isUnopened) totalUnopened++;
+      if (isLow) totalLowStock++;
+
+      const prev = map.get(key);
       if (prev) {
         prev.count += 1;
+        prev.unopened += isUnopened ? 1 : 0;
+        prev.lowStock += isLow ? 1 : 0;
         prev.totalRemainingMb += remainingMb;
         prev.totalRemainingM2 += remainingM2;
+        prev.widths.add(r.widthMm);
       } else {
-        map.set(key, { count: 1, totalRemainingMb: remainingMb, totalRemainingM2: remainingM2 });
+        map.set(key, {
+          count: 1,
+          unopened: isUnopened ? 1 : 0,
+          lowStock: isLow ? 1 : 0,
+          totalRemainingMb: remainingMb,
+          totalRemainingM2: remainingM2,
+          widths: new Set([r.widthMm]),
+        });
       }
     }
     const rows = [...map.entries()]
       .map(([name, v]) => ({
         name,
         count: v.count,
+        unopened: v.unopened,
+        opened: v.count - v.unopened,
+        lowStock: v.lowStock,
         remainingMb: v.totalRemainingMb,
         remainingM2: v.totalRemainingM2,
+        widths: [...v.widths].sort((a, b) => a - b),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     const totalCount = rolls.length;
     const totalM2 = rows.reduce((sum, r) => sum + r.remainingM2, 0);
     const totalMb = rows.reduce((sum, r) => sum + r.remainingMb, 0);
-    return { rows, totalCount, totalM2, totalMb };
+    return { rows, totalCount, totalM2, totalMb, totalUnopened, totalLowStock };
   }, [rolls]);
 
   // Sort
@@ -523,14 +550,22 @@ const SalesRollsView = () => {
 
       {/* Summary dialog */}
       <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Podsumowanie stanów</DialogTitle>
           </DialogHeader>
-          <div className="flex gap-4 text-sm mb-4">
+          <div className="flex gap-3 text-sm mb-4 flex-wrap">
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Rolek</div>
               <div className="text-lg font-semibold">{summary.totalCount}</div>
+            </div>
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Nieotwarte</div>
+              <div className="text-lg font-semibold">{summary.totalUnopened}</div>
+            </div>
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Kończące się</div>
+              <div className="text-lg font-semibold text-orange-500">{summary.totalLowStock}</div>
             </div>
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Pozostało mb</div>
@@ -546,7 +581,11 @@ const SalesRollsView = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Produkt</TableHead>
+                  <TableHead className="text-right">Szer.</TableHead>
                   <TableHead className="text-right">Rolek</TableHead>
+                  <TableHead className="text-right">Nieotwarte</TableHead>
+                  <TableHead className="text-right">Otwarte</TableHead>
+                  <TableHead className="text-right">Kończące się</TableHead>
                   <TableHead className="text-right">Pozostało mb</TableHead>
                   <TableHead className="text-right">Pozostało m²</TableHead>
                 </TableRow>
@@ -555,7 +594,19 @@ const SalesRollsView = () => {
                 {summary.rows.map((row) => (
                   <TableRow key={row.name}>
                     <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                      {row.widths.map((w) => `${w}mm`).join(', ')}
+                    </TableCell>
                     <TableCell className="text-right">{row.count}</TableCell>
+                    <TableCell className="text-right">{row.unopened}</TableCell>
+                    <TableCell className="text-right">{row.opened}</TableCell>
+                    <TableCell className="text-right">
+                      {row.lowStock > 0 ? (
+                        <span className="text-orange-500 font-medium">{row.lowStock}</span>
+                      ) : (
+                        '0'
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">{row.remainingMb.toFixed(1)}</TableCell>
                     <TableCell className="text-right">{row.remainingM2.toFixed(2)}</TableCell>
                   </TableRow>
