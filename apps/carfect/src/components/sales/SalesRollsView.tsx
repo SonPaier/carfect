@@ -127,62 +127,55 @@ const SalesRollsView = () => {
     );
   }, [rolls, searchQuery]);
 
-  // Summary grouped by product name
+  // Summary grouped by product name + width variant
   const summary = useMemo(() => {
-    const LOW_THRESHOLD = 0.2;
     const map = new Map<
       string,
-      { count: number; unopened: number; lowStock: number; totalRemainingMb: number; totalRemainingM2: number; widths: Set<number> }
+      { name: string; widthMm: number; count: number; unopened: number; totalRemainingMb: number; totalRemainingM2: number }
     >();
     let totalUnopened = 0;
-    let totalLowStock = 0;
 
     for (const r of rolls) {
-      const key = r.productName;
+      const key = `${r.productName}::${r.widthMm}`;
       const remainingMb = r.remainingMb ?? r.lengthM;
       const remainingM2 = mbToM2(remainingMb, r.widthMm);
       const isUnopened = remainingMb >= r.lengthM && (r.currentUsageMb ?? 0) === 0;
-      const isLow = !isUnopened && remainingMb < r.lengthM * LOW_THRESHOLD;
 
       if (isUnopened) totalUnopened++;
-      if (isLow) totalLowStock++;
 
       const prev = map.get(key);
       if (prev) {
         prev.count += 1;
         prev.unopened += isUnopened ? 1 : 0;
-        prev.lowStock += isLow ? 1 : 0;
         prev.totalRemainingMb += remainingMb;
         prev.totalRemainingM2 += remainingM2;
-        prev.widths.add(r.widthMm);
       } else {
         map.set(key, {
+          name: r.productName,
+          widthMm: r.widthMm,
           count: 1,
           unopened: isUnopened ? 1 : 0,
-          lowStock: isLow ? 1 : 0,
           totalRemainingMb: remainingMb,
           totalRemainingM2: remainingM2,
-          widths: new Set([r.widthMm]),
         });
       }
     }
-    const rows = [...map.entries()]
-      .map(([name, v]) => ({
-        name,
+    const rows = [...map.values()]
+      .map((v) => ({
+        name: v.name,
+        widthMm: v.widthMm,
         count: v.count,
         unopened: v.unopened,
         opened: v.count - v.unopened,
-        lowStock: v.lowStock,
         remainingMb: v.totalRemainingMb,
         remainingM2: v.totalRemainingM2,
-        widths: [...v.widths].sort((a, b) => a - b),
       }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => a.name.localeCompare(b.name) || a.widthMm - b.widthMm);
 
     const totalCount = rolls.length;
     const totalM2 = rows.reduce((sum, r) => sum + r.remainingM2, 0);
     const totalMb = rows.reduce((sum, r) => sum + r.remainingMb, 0);
-    return { rows, totalCount, totalM2, totalMb, totalUnopened, totalLowStock };
+    return { rows, totalCount, totalM2, totalMb, totalUnopened };
   }, [rolls]);
 
   // Sort
@@ -587,10 +580,10 @@ const SalesRollsView = () => {
               </TableHeader>
               <TableBody>
                 {summary.rows.map((row) => (
-                  <TableRow key={row.name}>
+                  <TableRow key={`${row.name}-${row.widthMm}`}>
                     <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
-                      {row.widths.map((w) => `${w}mm`).join(', ')}
+                      {row.widthMm}mm
                     </TableCell>
                     <TableCell className="text-right">{row.count}</TableCell>
                     <TableCell className="text-right">{row.unopened}</TableCell>
