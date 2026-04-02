@@ -564,10 +564,6 @@ const SalesRollsView = () => {
               <div className="text-lg font-semibold">{summary.totalUnopened}</div>
             </div>
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
-              <div className="text-muted-foreground">Kończące się</div>
-              <div className="text-lg font-semibold text-orange-500">{summary.totalLowStock}</div>
-            </div>
-            <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Pozostało mb</div>
               <div className="text-lg font-semibold">{summary.totalMb.toFixed(1)}</div>
             </div>
@@ -585,7 +581,6 @@ const SalesRollsView = () => {
                   <TableHead className="text-right">Rolek</TableHead>
                   <TableHead className="text-right">Nieotwarte</TableHead>
                   <TableHead className="text-right">Otwarte</TableHead>
-                  <TableHead className="text-right">Kończące się</TableHead>
                   <TableHead className="text-right">Pozostało mb</TableHead>
                   <TableHead className="text-right">Pozostało m²</TableHead>
                 </TableRow>
@@ -600,13 +595,6 @@ const SalesRollsView = () => {
                     <TableCell className="text-right">{row.count}</TableCell>
                     <TableCell className="text-right">{row.unopened}</TableCell>
                     <TableCell className="text-right">{row.opened}</TableCell>
-                    <TableCell className="text-right">
-                      {row.lowStock > 0 ? (
-                        <span className="text-orange-500 font-medium">{row.lowStock}</span>
-                      ) : (
-                        '0'
-                      )}
-                    </TableCell>
                     <TableCell className="text-right">{row.remainingMb.toFixed(1)}</TableCell>
                     <TableCell className="text-right">{row.remainingM2.toFixed(2)}</TableCell>
                   </TableRow>
