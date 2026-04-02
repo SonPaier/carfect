@@ -528,15 +528,15 @@ const SalesRollsView = () => {
             <DialogTitle>Podsumowanie stanów</DialogTitle>
           </DialogHeader>
           <div className="flex gap-4 text-sm mb-4">
-            <div className="bg-muted rounded-lg px-4 py-2">
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Rolek</div>
               <div className="text-lg font-semibold">{summary.totalCount}</div>
             </div>
-            <div className="bg-muted rounded-lg px-4 py-2">
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Pozostało mb</div>
               <div className="text-lg font-semibold">{summary.totalMb.toFixed(1)}</div>
             </div>
-            <div className="bg-muted rounded-lg px-4 py-2">
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Pozostało m²</div>
               <div className="text-lg font-semibold">{summary.totalM2.toFixed(2)}</div>
             </div>
