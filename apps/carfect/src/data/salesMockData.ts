@@ -38,6 +38,7 @@ export interface SalesOrder {
   invoiceStatus?: string; // 'draft' | 'issued' | 'sent' | 'paid'
   invoicePdfUrl?: string;
   customerDiscount?: number;
+  paymentMethod?: string;
 }
 
 export const mockSalesOrders: SalesOrder[] = [];
