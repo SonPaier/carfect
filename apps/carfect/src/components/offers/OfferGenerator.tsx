@@ -160,10 +160,9 @@ export const OfferGenerator = ({
     if (loadId) {
       // Pass isDuplicate flag to regenerate all UUIDs and prevent primary key conflicts
       loadOffer(loadId, !!duplicateFromId);
-    } else if (instanceData) {
-      // For new offers, no need to load instance-level defaults here
-      // Conditions (warranty, notes, paymentTerms, serviceInfo) are loaded
-      // from scope templates in SummaryStepV2 when the user reaches step 3
+    } else {
+      // New offer — set v2 format
+      updateOffer({ offerFormat: 'v2' });
     }
   }, [offerId, duplicateFromId, instanceData]);
 

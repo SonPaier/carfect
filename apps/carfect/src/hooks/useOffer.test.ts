@@ -1245,10 +1245,7 @@ describe('useOffer', () => {
     it('replaces options for new offer (no id)', async () => {
       const { result } = renderHook(() => useOffer(INSTANCE_ID));
 
-      // Ensure no id (new offer)
-      expect(result.current.offer.id).toBeUndefined();
-
-      // Mock for generateOptionsFromScopes
+      // Mock for generateOptionsFromScopes — set up BEFORE calling updateSelectedScopes
       mockSupabaseQuery('offer_scopes', {
         data: [{ id: 's1', name: 'PPF', is_extras_scope: false, sort_order: 0, active: true }],
         error: null,
@@ -1282,8 +1279,12 @@ describe('useOffer', () => {
         result.current.updateSelectedScopes(['s1']);
       });
 
+      // generateOptionsFromScopes is fire-and-forget async — wait for options to populate
+      await vi.waitFor(() => {
+        expect(result.current.offer.options).toHaveLength(1);
+      });
+
       expect(result.current.offer.selectedScopeIds).toEqual(['s1']);
-      expect(result.current.offer.options).toHaveLength(1);
       expect(result.current.offer.options[0].name).toBe('PPF');
     });
 

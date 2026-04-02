@@ -39,7 +39,7 @@ export const useOffer = (instanceId: string) => {
     serviceInfo: '',
     notes: '',
     defaultSelectedState: undefined,
-    offerFormat: 'v2',
+    offerFormat: null,
   });
 
   const [loading, setLoading] = useState(false);
