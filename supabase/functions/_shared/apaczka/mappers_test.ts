@@ -153,7 +153,7 @@ Deno.test('APM-005b: free payment sends zero shipment_value and no COD', () => {
     serviceId: 1,
   });
 
-  assertEquals(result.shipment_value, 0); // zero product value for free payment
+  assertEquals(result.shipment_value, 15000); // declaredValue 150 * 100 — still passed for insurance
   assertEquals(result.cod, undefined); // no COD
 });
 

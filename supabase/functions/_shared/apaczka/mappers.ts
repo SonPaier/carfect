@@ -86,8 +86,7 @@ export function mapOrderToApaczkaRequest(params: {
   const shipmentItems = mapPackagesToShipmentItems([pkg]);
   const declaredValue = pkg.declaredValue ?? 0;
   const shippingCost = pkg.shippingCost ?? 0;
-  // For 'free' payment: zero product value, only shipping cost applies
-  const shipmentValue = order.payment_method === 'free' ? 0 : Math.round(declaredValue * 100); // PLN to grosze
+  const shipmentValue = Math.round(declaredValue * 100); // PLN to grosze
 
   const request: ApaczkaOrderRequest = {
     service_id: serviceId,
