@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
@@ -60,6 +61,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
 import { FileText } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
+import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
 
 interface Service {
   id: string;
@@ -171,6 +173,7 @@ const ReservationsView = ({
   const instanceId = reservations[0]?.instance_id ?? null;
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
   const invoicingActive = invoicingSettings?.active ?? false;
+  const { hasFeature } = useInstanceFeatures(instanceId);
 
   // Invoice drawer state
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
@@ -217,6 +220,34 @@ const ReservationsView = ({
     }
     return map;
   }, [employees]);
+
+  // VIN lookup maps for search (plate→vin + phone→vins)
+  const { data: vinMaps } = useQuery({
+    queryKey: ['vin_search_maps', instanceId],
+    queryFn: async () => {
+      if (!instanceId) return { byPlate: new Map<string, string>(), byPhone: new Map<string, string[]>() };
+      const { data } = await supabase
+        .from('customer_vehicles')
+        .select('plate, phone, vin')
+        .eq('instance_id', instanceId)
+        .not('vin', 'is', null);
+      const byPlate = new Map<string, string>();
+      const byPhone = new Map<string, string[]>();
+      for (const row of data || []) {
+        if (!row.vin) continue;
+        const vinLower = row.vin.toLowerCase();
+        if (row.plate) byPlate.set(row.plate.toLowerCase(), vinLower);
+        if (row.phone) {
+          const existing = byPhone.get(row.phone) || [];
+          existing.push(vinLower);
+          byPhone.set(row.phone, existing);
+        }
+      }
+      return { byPlate, byPhone };
+    },
+    enabled: !!instanceId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Debounce search query
   useEffect(() => {
@@ -286,12 +317,16 @@ const ReservationsView = ({
         const serviceNames = (r.services_data || (r.service ? [r.service] : []))
           .map((s) => s.name.toLowerCase())
           .join(' ');
+        const vinByPlate = r.vehicle_plate ? vinMaps?.byPlate.get(r.vehicle_plate.toLowerCase()) : undefined;
+        const vinsByPhone = r.customer_phone ? vinMaps?.byPhone.get(r.customer_phone) : undefined;
+        const vinMatch = vinByPlate?.includes(query) || vinsByPhone?.some((v) => v.includes(query));
         return (
           (r.confirmation_code &&
             normalizeSearchQuery(r.confirmation_code).toLowerCase().includes(normalizedQuery)) ||
           r.customer_name?.toLowerCase().includes(query) ||
           (r.customer_phone && normalizeSearchQuery(r.customer_phone).includes(normalizedQuery)) ||
           r.vehicle_plate?.toLowerCase().includes(query) ||
+          vinMatch ||
           employeeNames.includes(query) ||
           serviceNames.includes(query)
         );
@@ -310,7 +345,7 @@ const ReservationsView = ({
         );
       }
     });
-  }, [tabFiltered, debouncedQuery, employeeMap]);
+  }, [tabFiltered, debouncedQuery, employeeMap, vinMaps]);
 
   // Status filter
   const statusFiltered = useMemo(() => {
@@ -643,7 +678,11 @@ const ReservationsView = ({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder={t('reservations.searchPlaceholder')}
+              placeholder={
+                hasFeature('vehicle_vin')
+                  ? t('reservations.searchPlaceholder') + ', VIN...'
+                  : t('reservations.searchPlaceholder')
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -751,7 +790,7 @@ const ReservationsView = ({
                         <TableCell>{renderServices(r)}</TableCell>
                         <TableCell>{renderDate(item)}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {r.price != null ? `${Math.round(Number(r.price))} zł` : '—'}
+                          {r.price != null ? `${Number(r.price).toFixed(2)} zł` : '—'}
                         </TableCell>
                         <TableCell>{renderStatusBadge(r.status)}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -834,7 +873,7 @@ const ReservationsView = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm">{renderServices(r)}</div>
                       <span className="text-sm font-medium shrink-0">
-                        {r.price != null ? `${Math.round(Number(r.price))} zł` : '—'}
+                        {r.price != null ? `${Number(r.price).toFixed(2)} zł` : '—'}
                       </span>
                     </div>
                     {/* Date + actions */}

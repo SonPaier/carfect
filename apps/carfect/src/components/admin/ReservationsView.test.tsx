@@ -6,17 +6,36 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ReservationsView from './ReservationsView';
 
 // ---- Supabase mock ----
+let mockVehicleData: Array<{ plate: string | null; phone: string | null; vin: string }> = [];
+
+const chainable = () => {
+  const self: Record<string, any> = {};
+  self.select = () => self;
+  self.eq = () => self;
+  self.not = () => self;
+  self.in = () => Promise.resolve({ data: [] });
+  self.maybeSingle = () => Promise.resolve({ data: null });
+  self.single = () => Promise.resolve({ data: null });
+  self.then = (resolve: any) => resolve({ data: mockVehicleData });
+  return self;
+};
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: () => Promise.resolve({ data: null }),
-          single: () => Promise.resolve({ data: null }),
+    from: (table: string) => {
+      if (table === 'customer_vehicles') {
+        return chainable();
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () => Promise.resolve({ data: null }),
+            single: () => Promise.resolve({ data: null }),
+          }),
+          in: () => Promise.resolve({ data: [] }),
         }),
-        in: () => Promise.resolve({ data: [] }),
-      }),
-    }),
+      };
+    },
   },
 }));
 
@@ -109,6 +128,7 @@ const renderView = (props: Partial<typeof defaultProps> = {}) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockVehicleData = [];
 });
 
 describe('ReservationsView', () => {
@@ -152,12 +172,12 @@ describe('ReservationsView', () => {
       expect(within(table).getByText('KR 99999')).toBeInTheDocument();
     });
 
-    it('renders price without decimals with zł suffix', () => {
+    it('renders price with two decimal places and zł suffix', () => {
       const reservation = makeReservation({ price: 350 });
       renderView({ reservations: [reservation] });
 
       const table = screen.getByRole('table');
-      expect(within(table).getByText('350 zł')).toBeInTheDocument();
+      expect(within(table).getByText('350.00 zł')).toBeInTheDocument();
     });
 
     it('renders dash when price is null', () => {
@@ -170,12 +190,12 @@ describe('ReservationsView', () => {
       expect(cells.length).toBeGreaterThan(0);
     });
 
-    it('rounds fractional price to integer', () => {
+    it('displays fractional price with two decimal places', () => {
       const reservation = makeReservation({ price: 299.99 });
       renderView({ reservations: [reservation] });
 
       const table = screen.getByRole('table');
-      expect(within(table).getByText('300 zł')).toBeInTheDocument();
+      expect(within(table).getByText('299.99 zł')).toBeInTheDocument();
     });
   });
 
@@ -353,6 +373,48 @@ describe('ReservationsView', () => {
       const table = screen.getByRole('table');
       expect(within(table).getByText('Anna Nowak')).toBeInTheDocument();
       expect(within(table).queryByText('Jan Kowalski')).not.toBeInTheDocument();
+    });
+
+    it('filters reservations by VIN from customer_vehicles (matched by plate)', async () => {
+      const user = userEvent.setup();
+      mockVehicleData = [{ plate: 'WA 12345', phone: '+48600111333', vin: 'WVWZZZ3CZWE123456' }];
+      const reservations = [
+        makeReservation({ id: 'r1', vehicle_plate: 'WA 12345', customer_phone: '+48600111333', customer_name: 'Jan Kowalski' }),
+        makeReservation({ id: 'r2', vehicle_plate: 'KR 99999', customer_phone: '+48500000000', customer_name: 'Anna Nowak' }),
+      ];
+      renderView({ reservations });
+
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'WVWZZZ');
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      });
+
+      const table = screen.getByRole('table');
+      expect(within(table).getByText('Jan Kowalski')).toBeInTheDocument();
+      expect(within(table).queryByText('Anna Nowak')).not.toBeInTheDocument();
+    });
+
+    it('filters reservations by VIN matched via customer phone (no plate on vehicle)', async () => {
+      const user = userEvent.setup();
+      mockVehicleData = [{ plate: null, phone: '+48600111222', vin: '4Y1SL65848Z411439' }];
+      const reservations = [
+        makeReservation({ id: 'r1', customer_phone: '+48600111222', customer_name: 'Jan Kowalski' }),
+        makeReservation({ id: 'r2', customer_phone: '+48500000000', customer_name: 'Anna Nowak' }),
+      ];
+      renderView({ reservations });
+
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, '4Y1SL658');
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      });
+
+      const table = screen.getByRole('table');
+      expect(within(table).getByText('Jan Kowalski')).toBeInTheDocument();
+      expect(within(table).queryByText('Anna Nowak')).not.toBeInTheDocument();
     });
 
     it('shows empty state when search matches nothing', async () => {
