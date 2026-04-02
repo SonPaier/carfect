@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Disc,
   BarChart3,
+  X,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
@@ -31,7 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { ConfirmDialog, Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
+import { ConfirmDialog, Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
 import { formatRollSize, formatMbM2Lines, mbToM2 } from './types/rolls';
@@ -170,7 +171,7 @@ const SalesRollsView = () => {
         remainingMb: v.totalRemainingMb,
         remainingM2: v.totalRemainingM2,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name) || a.widthMm - b.widthMm);
+      .sort((a, b) => b.remainingMb - a.remainingMb || a.name.localeCompare(b.name));
 
     const totalCount = rolls.length;
     const totalM2 = rows.reduce((sum, r) => sum + r.remainingM2, 0);
@@ -541,13 +542,25 @@ const SalesRollsView = () => {
         variant="destructive"
       />
 
-      {/* Summary dialog */}
-      <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Podsumowanie stanów</DialogTitle>
-          </DialogHeader>
-          <div className="flex gap-3 text-sm mb-4 flex-wrap">
+      {/* Summary drawer */}
+      <Sheet open={summaryOpen} onOpenChange={setSummaryOpen}>
+        <SheetContent
+          side="right"
+          className="w-[80vw] sm:max-w-[80vw] flex flex-col bg-white p-0 gap-0"
+          hideCloseButton
+        >
+          <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
+            <SheetTitle>Podsumowanie stanów</SheetTitle>
+            <button
+              type="button"
+              onClick={() => setSummaryOpen(false)}
+              className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </SheetHeader>
+
+          <div className="flex gap-3 text-sm px-6 py-4 shrink-0 flex-wrap">
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
               <div className="text-muted-foreground">Rolek</div>
               <div className="text-lg font-semibold">{summary.totalCount}</div>
@@ -565,38 +578,41 @@ const SalesRollsView = () => {
               <div className="text-lg font-semibold">{summary.totalM2.toFixed(2)}</div>
             </div>
           </div>
-          <div className="overflow-y-auto border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produkt</TableHead>
-                  <TableHead className="text-right">Szer.</TableHead>
-                  <TableHead className="text-right">Rolek</TableHead>
-                  <TableHead className="text-right">Nieotwarte</TableHead>
-                  <TableHead className="text-right">Otwarte</TableHead>
-                  <TableHead className="text-right">Pozostało mb</TableHead>
-                  <TableHead className="text-right">Pozostało m²</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summary.rows.map((row) => (
-                  <TableRow key={`${row.name}-${row.widthMm}`}>
-                    <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
-                      {row.widthMm}mm
-                    </TableCell>
-                    <TableCell className="text-right">{row.count}</TableCell>
-                    <TableCell className="text-right">{row.unopened}</TableCell>
-                    <TableCell className="text-right">{row.opened}</TableCell>
-                    <TableCell className="text-right">{row.remainingMb.toFixed(1)}</TableCell>
-                    <TableCell className="text-right">{row.remainingM2.toFixed(2)}</TableCell>
+
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    <TableHead>Produkt</TableHead>
+                    <TableHead className="text-right">Szer.</TableHead>
+                    <TableHead className="text-right">Rolek</TableHead>
+                    <TableHead className="text-right">Nieotwarte</TableHead>
+                    <TableHead className="text-right">Otwarte</TableHead>
+                    <TableHead className="text-right">Pozostało mb</TableHead>
+                    <TableHead className="text-right">Pozostało m²</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {summary.rows.map((row) => (
+                    <TableRow key={`${row.name}-${row.widthMm}`}>
+                      <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                        {row.widthMm}mm
+                      </TableCell>
+                      <TableCell className="text-right">{row.count}</TableCell>
+                      <TableCell className="text-right">{row.unopened}</TableCell>
+                      <TableCell className="text-right">{row.opened}</TableCell>
+                      <TableCell className="text-right">{row.remainingMb.toFixed(1)}</TableCell>
+                      <TableCell className="text-right">{row.remainingM2.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
