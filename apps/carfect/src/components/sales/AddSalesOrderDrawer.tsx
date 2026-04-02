@@ -42,7 +42,7 @@ import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChang
 // Re-export types used externally
 export type { OrderPackage, OrderProduct, DeliveryType };
 
-type PaymentMethod = 'cod' | 'transfer';
+type PaymentMethod = 'cod' | 'transfer' | 'free';
 
 export interface EditOrderData {
   id: string;
@@ -852,6 +852,7 @@ const AddSalesOrderDrawer = ({
                   totalNet={totalNet}
                   totalGross={totalGross}
                   isNetPayer={isNetPayer}
+                  paymentMethod={paymentMethod}
                 />
               )}
 

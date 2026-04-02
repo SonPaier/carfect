@@ -2,7 +2,7 @@ import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
 
-type PaymentMethod = 'cod' | 'transfer';
+type PaymentMethod = 'cod' | 'transfer' | 'free';
 
 export interface BankAccount {
   name: string;
@@ -48,6 +48,7 @@ export const PaymentSection = ({
             <SelectContent>
               <SelectItem value="cod">Za pobraniem</SelectItem>
               <SelectItem value="transfer">Przelew</SelectItem>
+              <SelectItem value="free">Bezpłatne</SelectItem>
             </SelectContent>
           </Select>
         </div>
