@@ -108,7 +108,8 @@ const CustomerOrdersTab = ({ customerId, instanceId, hidePrices }: CustomerOrder
   };
 
   const handleCardClick = async (orderId: string) => {
-    const { data } = await supabase
+    console.log('[CustomerOrdersTab] handleCardClick', orderId);
+    const { data, error } = await supabase
       .from('calendar_items')
       .select(
         'id, title, item_date, end_date, start_time, end_time, column_id, status, admin_notes, price, customer_id, customer_address_id, assigned_employee_ids, customer_name, customer_phone, customer_email, photo_urls, checklist_items',
@@ -116,6 +117,7 @@ const CustomerOrdersTab = ({ customerId, instanceId, hidePrices }: CustomerOrder
       .eq('id', orderId)
       .single();
 
+    console.log('[CustomerOrdersTab] fetch result', { data, error });
     if (data) {
       const calendarItem: CalendarItem = {
         id: data.id,
