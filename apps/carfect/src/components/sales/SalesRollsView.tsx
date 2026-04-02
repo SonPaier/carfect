@@ -593,7 +593,7 @@ const SalesRollsView = () => {
               <TableBody>
                 {summary.rows.map((row) => (
                   <TableRow key={row.name}>
-                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
                       {row.widths.map((w) => `${w}mm`).join(', ')}
                     </TableCell>
