@@ -222,6 +222,7 @@ const SalesOrdersView = () => {
         invoiceNumber: inv?.invoice_number || undefined,
         invoiceStatus: inv?.status || undefined,
         invoicePdfUrl: inv?.pdf_url || undefined,
+        paymentMethod: o.payment_method || undefined,
       };
     });
 
@@ -479,7 +480,7 @@ const SalesOrdersView = () => {
       products: editProducts,
       packages: editPackages,
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
-      paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer',
+      paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer' | 'free',
       bankAccountNumber: orderData?.bank_account_number || '',
       comment: orderData?.comment || '',
       sendEmail: false,
@@ -720,7 +721,9 @@ const SalesOrdersView = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-right text-sm tabular-nums">
-                        {formatCurrency(order.totalNet, order.currency)}
+                        {order.paymentMethod === 'free'
+                          ? 'Bezpłatne'
+                          : formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -841,65 +844,66 @@ const SalesOrdersView = () => {
                               Edytuj
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            {order.invoiceId ? (
-                              <DropdownMenuItem
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (order.invoicePdfUrl) {
-                                    window.open(order.invoicePdfUrl, '_blank');
-                                    return;
-                                  }
-                                  try {
-                                    toast.info('Pobieram PDF...');
-                                    const session = await supabase.auth.getSession();
-                                    const token = session.data.session?.access_token;
-                                    const res = await fetch(
-                                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
-                                      {
-                                        method: 'POST',
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                          Authorization: `Bearer ${token}`,
-                                          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                                        },
-                                        body: JSON.stringify({
-                                          action: 'get_pdf_url',
-                                          instanceId,
-                                          invoiceId: order.invoiceId,
-                                        }),
-                                      },
-                                    );
-                                    if (!res.ok) throw new Error(await res.text());
-                                    const contentType = res.headers.get('content-type') || '';
-                                    if (contentType.includes('application/pdf')) {
-                                      const blob = await res.blob();
-                                      const url = URL.createObjectURL(blob);
-                                      window.open(url, '_blank');
-                                    } else {
-                                      const json = await res.json();
-                                      if (json.pdf_url) {
-                                        window.open(json.pdf_url, '_blank');
-                                      } else {
-                                        toast.error('PDF faktury niedostępny');
-                                      }
+                            {order.paymentMethod !== 'free' &&
+                              (order.invoiceId ? (
+                                <DropdownMenuItem
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (order.invoicePdfUrl) {
+                                      window.open(order.invoicePdfUrl, '_blank');
+                                      return;
                                     }
-                                  } catch {
-                                    toast.error('Nie udało się pobrać PDF');
-                                  }
-                                }}
-                              >
-                                Pobierz FV
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenInvoiceDrawer(order);
-                                }}
-                              >
-                                Wystaw FV
-                              </DropdownMenuItem>
-                            )}
+                                    try {
+                                      toast.info('Pobieram PDF...');
+                                      const session = await supabase.auth.getSession();
+                                      const token = session.data.session?.access_token;
+                                      const res = await fetch(
+                                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
+                                        {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            Authorization: `Bearer ${token}`,
+                                            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                                          },
+                                          body: JSON.stringify({
+                                            action: 'get_pdf_url',
+                                            instanceId,
+                                            invoiceId: order.invoiceId,
+                                          }),
+                                        },
+                                      );
+                                      if (!res.ok) throw new Error(await res.text());
+                                      const contentType = res.headers.get('content-type') || '';
+                                      if (contentType.includes('application/pdf')) {
+                                        const blob = await res.blob();
+                                        const url = URL.createObjectURL(blob);
+                                        window.open(url, '_blank');
+                                      } else {
+                                        const json = await res.json();
+                                        if (json.pdf_url) {
+                                          window.open(json.pdf_url, '_blank');
+                                        } else {
+                                          toast.error('PDF faktury niedostępny');
+                                        }
+                                      }
+                                    } catch {
+                                      toast.error('Nie udało się pobrać PDF');
+                                    }
+                                  }}
+                                >
+                                  Pobierz FV
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenInvoiceDrawer(order);
+                                  }}
+                                >
+                                  Wystaw FV
+                                </DropdownMenuItem>
+                              ))}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();

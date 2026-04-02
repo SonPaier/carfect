@@ -1,42 +1,58 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const deliveryLabels: Record<string, string> = {
-  shipping: "Wysyłka",
-  pickup: "Odbiór osobisty",
-  uber: "Uber",
+  shipping: 'Wysyłka',
+  pickup: 'Odbiór osobisty',
+  uber: 'Uber',
 };
 
 const paymentLabels: Record<string, string> = {
-  cod: "Za pobraniem",
-  transfer: "Przelew",
+  cod: 'Za pobraniem',
+  transfer: 'Przelew',
+  free: 'Bezpłatne',
 };
 
 const formatCurrency = (v: number) =>
-  v.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " zł";
+  v.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
 
 const buildEmailHtml = (
   bodyHtml: string,
-  instance: { name?: string; email?: string; phone?: string; address?: string; website?: string; contact_person?: string; logo_url?: string },
+  instance: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    website?: string;
+    contact_person?: string;
+    logo_url?: string;
+  },
 ): string => {
   const logoHtml = instance.logo_url
     ? `<div style="text-align:center;padding:30px 0 20px;">
-        <img src="${instance.logo_url}" alt="${instance.name || ""}" style="max-height:60px;max-width:200px;" />
+        <img src="${instance.logo_url}" alt="${instance.name || ''}" style="max-height:60px;max-width:200px;" />
       </div>`
     : `<div style="text-align:center;padding:30px 0 20px;">
-        <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${instance.name || ""}</h1>
+        <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${instance.name || ''}</h1>
       </div>`;
 
   const footerParts: string[] = [];
-  if (instance.phone) footerParts.push(`<span style="margin:0 8px;"><a href="tel:${instance.phone}" style="color:#555;text-decoration:none;">${instance.phone}</a></span>`);
+  if (instance.phone)
+    footerParts.push(
+      `<span style="margin:0 8px;"><a href="tel:${instance.phone}" style="color:#555;text-decoration:none;">${instance.phone}</a></span>`,
+    );
   if (instance.address) footerParts.push(`<span style="margin:0 8px;">${instance.address}</span>`);
-  if (instance.website) footerParts.push(`<span style="margin:0 8px;"><a href="${instance.website}" style="color:#555;text-decoration:underline;">${instance.website}</a></span>`);
+  if (instance.website)
+    footerParts.push(
+      `<span style="margin:0 8px;"><a href="${instance.website}" style="color:#555;text-decoration:underline;">${instance.website}</a></span>`,
+    );
   if (instance.email) footerParts.push(`<span style="margin:0 8px;">${instance.email}</span>`);
 
   return `<!DOCTYPE html>
@@ -59,10 +75,10 @@ const buildEmailHtml = (
   </div>
 </td></tr>
 <tr><td style="padding:24px 12px 8px;text-align:center;">
-  <p style="margin:0 0 6px;font-size:14px;color:#555;font-weight:600;">${instance.name || ""}</p>
-  ${instance.contact_person ? `<p style="margin:0 0 10px;font-size:13px;color:#777;">${instance.contact_person}</p>` : ""}
+  <p style="margin:0 0 6px;font-size:14px;color:#555;font-weight:600;">${instance.name || ''}</p>
+  ${instance.contact_person ? `<p style="margin:0 0 10px;font-size:13px;color:#777;">${instance.contact_person}</p>` : ''}
   <div style="font-size:12px;color:#888;line-height:1.8;">
-    ${footerParts.join("<br>")}
+    ${footerParts.join('<br>')}
   </div>
 </td></tr>
 <tr><td style="padding:20px 12px 30px;text-align:center;border-top:1px solid #e0e0e0;margin-top:16px;">
@@ -78,82 +94,85 @@ const buildEmailHtml = (
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const token = authHeader.replace('Bearer ', '');
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const { orderId } = await req.json();
     if (!orderId) {
-      return new Response(JSON.stringify({ error: "orderId is required" }), {
+      return new Response(JSON.stringify({ error: 'orderId is required' }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Fetch order
     const { data: order, error: orderErr } = await supabase
-      .from("sales_orders")
-      .select("*, instances(name, email, phone, address, website, contact_person, logo_url, slug)")
-      .eq("id", orderId)
+      .from('sales_orders')
+      .select('*, instances(name, email, phone, address, website, contact_person, logo_url, slug)')
+      .eq('id', orderId)
       .single();
 
     if (orderErr || !order) {
-      return new Response(JSON.stringify({ error: "Order not found" }), {
+      return new Response(JSON.stringify({ error: 'Order not found' }), {
         status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Verify user belongs to the order's instance
     const { data: roleCheck } = await supabase
-      .from("user_roles")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("instance_id", order.instance_id)
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('instance_id', order.instance_id)
       .maybeSingle();
     if (!roleCheck) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Fetch customer
     const { data: customer } = await supabase
-      .from("sales_customers")
-      .select("email, is_net_payer")
-      .eq("id", order.customer_id)
+      .from('sales_customers')
+      .select('email, is_net_payer')
+      .eq('id', order.customer_id)
       .single();
 
-    const customerEmail = (customer?.email || "").replace(/^mailto:/i, "").trim();
+    const customerEmail = (customer?.email || '').replace(/^mailto:/i, '').trim();
     if (!customerEmail) {
-      return new Response(JSON.stringify({ error: "No customer email" }), {
+      return new Response(JSON.stringify({ error: 'No customer email' }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -161,15 +180,15 @@ serve(async (req) => {
 
     // Fetch order items
     const { data: items } = await supabase
-      .from("sales_order_items")
-      .select("name, quantity, price_net")
-      .eq("order_id", orderId)
-      .order("sort_order");
+      .from('sales_order_items')
+      .select('name, quantity, price_net')
+      .eq('order_id', orderId)
+      .order('sort_order');
 
     const VAT_RATE = 0.23;
     const inst = order.instances as any;
-    const instanceName = inst?.name || "";
-    const orderDate = new Date(order.created_at).toLocaleDateString("pl-PL");
+    const instanceName = inst?.name || '';
+    const orderDate = new Date(order.created_at).toLocaleDateString('pl-PL');
 
     // Build products list HTML
     const productsHtml = (items || [])
@@ -178,17 +197,21 @@ serve(async (req) => {
         const displayPrice = isNetPayer
           ? `${formatCurrency(lineTotal)} netto`
           : `${formatCurrency(lineTotal * (1 + VAT_RATE))} brutto`;
-        const qtyLabel = item.quantity > 1 ? ` (x${item.quantity})` : "";
+        const qtyLabel = item.quantity > 1 ? ` (x${item.quantity})` : '';
         return `<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;">${item.name}${qtyLabel} – ${displayPrice}</p>`;
       })
-      .join("\n");
+      .join('\n');
 
     // Total lines
     const totalNetDisplay = formatCurrency(order.total_net);
     const totalGrossDisplay = formatCurrency(order.total_gross);
 
+    const isFreePayment = order.payment_method === 'free';
+
     let totalHtml: string;
-    if (isNetPayer) {
+    if (isFreePayment) {
+      totalHtml = `<p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#333;font-weight:600;">Suma całkowita: Bezpłatne</p>`;
+    } else if (isNetPayer) {
       totalHtml = `<p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#333;font-weight:600;">Suma całkowita: ${totalNetDisplay} netto</p>`;
     } else {
       totalHtml = `<p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#333;">Suma całkowita: ${totalNetDisplay} netto</p>
@@ -197,22 +220,35 @@ serve(async (req) => {
 
     // Build attachments HTML (formatki images)
     const orderAttachments = Array.isArray(order.attachments) ? order.attachments : [];
-    const attachmentsHtml = orderAttachments.length > 0
-      ? `<div style="margin:16px 0 0;">
+    const attachmentsHtml =
+      orderAttachments.length > 0
+        ? `<div style="margin:16px 0 0;">
 <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;font-weight:700;">Formatki:</p>
-${orderAttachments.map((a: any) => `<img src="${a.url}" alt="${a.name || "Formatka"}" style="max-width:100%;border-radius:8px;margin:0 0 8px;display:block;" />`).join("\n")}
+${orderAttachments.map((a: any) => `<img src="${a.url}" alt="${a.name || 'Formatka'}" style="max-width:100%;border-radius:8px;margin:0 0 8px;display:block;" />`).join('\n')}
 </div>`
-      : "";
+        : '';
 
-    const deliveryLabel = deliveryLabels[order.delivery_type] || order.delivery_type || "—";
-    const paymentLabel = paymentLabels[order.payment_method] || order.payment_method || "—";
+    const deliveryLabel = deliveryLabels[order.delivery_type] || order.delivery_type || '—';
+    const paymentLabel = paymentLabels[order.payment_method] || order.payment_method || '—';
 
     // Footer contact info
     const contactLines: string[] = [];
-    if (instanceName) contactLines.push(`<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;font-weight:600;">${instanceName}</p>`);
-    if (inst?.phone) contactLines.push(`<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;">${inst.phone}</p>`);
-    if (inst?.email) contactLines.push(`<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;">${inst.email}</p>`);
-    if (inst?.website) contactLines.push(`<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;"><a href="${inst.website}" style="color:#333;text-decoration:underline;">${inst.website}</a></p>`);
+    if (instanceName)
+      contactLines.push(
+        `<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;font-weight:600;">${instanceName}</p>`,
+      );
+    if (inst?.phone)
+      contactLines.push(
+        `<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;">${inst.phone}</p>`,
+      );
+    if (inst?.email)
+      contactLines.push(
+        `<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;">${inst.email}</p>`,
+      );
+    if (inst?.website)
+      contactLines.push(
+        `<p style="margin:0 0 4px;font-size:15px;line-height:1.7;color:#333;"><a href="${inst.website}" style="color:#333;text-decoration:underline;">${inst.website}</a></p>`,
+      );
 
     const bodyHtml = `
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#333;">Dzień dobry,</p>
@@ -227,28 +263,28 @@ ${attachmentsHtml}
 <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;">Sposób dostawy: ${deliveryLabel}</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#333;">Sposób płatności: ${paymentLabel}</p>
 <p style="margin:16px 0 16px;font-size:15px;line-height:1.7;color:#333;">Dziękujemy za zaufanie i wybór naszych produktów!</p>
-${contactLines.join("\n")}`;
+${contactLines.join('\n')}`;
 
     const emailBody = buildEmailHtml(bodyHtml, {
       name: instanceName,
-      email: inst?.email || "",
-      phone: inst?.phone || "",
-      address: inst?.address || "",
-      website: inst?.website || "",
-      contact_person: inst?.contact_person || "",
-      logo_url: inst?.logo_url || "",
+      email: inst?.email || '',
+      phone: inst?.phone || '',
+      address: inst?.address || '',
+      website: inst?.website || '',
+      contact_person: inst?.contact_person || '',
+      logo_url: inst?.logo_url || '',
     });
 
     // SMTP
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "587");
-    const smtpUser = Deno.env.get("SMTP_USER");
-    const smtpPass = Deno.env.get("SMTP_PASS");
+    const smtpHost = Deno.env.get('SMTP_HOST');
+    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '587');
+    const smtpUser = Deno.env.get('SMTP_USER');
+    const smtpPass = Deno.env.get('SMTP_PASS');
 
     if (!smtpHost || !smtpUser || !smtpPass) {
-      return new Response(JSON.stringify({ error: "SMTP not configured" }), {
+      return new Response(JSON.stringify({ error: 'SMTP not configured' }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -262,7 +298,7 @@ ${contactLines.join("\n")}`;
     });
 
     const replyTo = inst?.email || smtpUser;
-    const fromName = instanceName || "Zamówienia";
+    const fromName = instanceName || 'Zamówienia';
 
     await client.send({
       from: `${fromName} <${smtpUser}>`,
@@ -276,14 +312,14 @@ ${contactLines.join("\n")}`;
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in send-order-confirmation:", error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error in send-order-confirmation:', error);
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

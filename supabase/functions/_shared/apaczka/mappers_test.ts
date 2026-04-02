@@ -139,6 +139,24 @@ Deno.test('APM-005: includes COD with amount = declaredValue + shippingCost', ()
   assertEquals(result.cod!.bankaccount, '12345678901234567890123456');
 });
 
+Deno.test('APM-005b: free payment sends zero shipment_value and no COD', () => {
+  const freePackage: OrderPackage = {
+    ...kartonPackage,
+    declaredValue: 150,
+    shippingCost: 50,
+  };
+  const result = mapOrderToApaczkaRequest({
+    order: { ...mockOrder, payment_method: 'free' },
+    customer: mockCustomer,
+    senderAddress: mockSender,
+    pkg: freePackage,
+    serviceId: 1,
+  });
+
+  assertEquals(result.shipment_value, 15000); // declaredValue 150 * 100 — still passed for insurance
+  assertEquals(result.cod, undefined); // no COD
+});
+
 Deno.test('APM-006: receiver uses company name when available', () => {
   const customerWithCompany = { ...mockCustomer, company: 'Firma ABC' };
   const result = mapOrderToApaczkaRequest({

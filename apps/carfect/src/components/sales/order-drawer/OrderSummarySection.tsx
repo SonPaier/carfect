@@ -14,6 +14,7 @@ interface OrderSummarySectionProps {
   totalNet: number;
   totalGross: number;
   isNetPayer?: boolean;
+  paymentMethod?: 'cod' | 'transfer' | 'free';
 }
 
 export const OrderSummarySection = ({
@@ -23,6 +24,7 @@ export const OrderSummarySection = ({
   totalNet,
   totalGross,
   isNetPayer = false,
+  paymentMethod,
 }: OrderSummarySectionProps) => {
   const vatAmount = totalNet * VAT_RATE;
 
@@ -99,14 +101,18 @@ export const OrderSummarySection = ({
               <Separator className="my-1" />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Razem brutto</span>
-                <span className="tabular-nums">{formatCurrency(totalGross)}</span>
+                <span className="tabular-nums">
+                  {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalGross)}
+                </span>
               </div>
             </>
           )}
           {isNetPayer && (
             <div className="flex justify-between font-semibold text-lg">
               <span>Do zapłaty (netto)</span>
-              <span className="tabular-nums">{formatCurrency(totalNet)}</span>
+              <span className="tabular-nums">
+                {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalNet)}
+              </span>
             </div>
           )}
         </div>
