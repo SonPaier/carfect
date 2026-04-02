@@ -802,6 +802,7 @@ const AddSalesOrderDrawer = ({
                   markDirty();
                   setCodAmountOverrides((prev) => ({ ...prev, [pkgId]: value }));
                 }}
+                isNetPayer={isNetPayer}
               />
 
               {hasShipping && (

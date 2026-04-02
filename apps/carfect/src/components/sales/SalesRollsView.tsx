@@ -10,6 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Disc,
+  BarChart3,
+  X,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
@@ -30,10 +32,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { ConfirmDialog } from '@shared/ui';
+import { ConfirmDialog, Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
-import { formatRollSize, formatMbM2Lines } from './types/rolls';
+import { formatRollSize, formatMbM2Lines, mbToM2 } from './types/rolls';
 import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
@@ -82,6 +84,8 @@ const SalesRollsView = () => {
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
   const [detailsRoll, setDetailsRoll] = useState<SalesRoll | null>(null);
 
+  const [summaryOpen, setSummaryOpen] = useState(false);
+
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
@@ -119,9 +123,61 @@ const SalesRollsView = () => {
         r.brand.toLowerCase().includes(q) ||
         r.productName.toLowerCase().includes(q) ||
         (r.productCode || '').toLowerCase().includes(q) ||
-        (r.barcode || '').includes(q),
+        (r.barcode || '').includes(q) ||
+        (r.customerNames || []).some((name) => name.toLowerCase().includes(q)),
     );
   }, [rolls, searchQuery]);
+
+  // Summary grouped by product name + width variant
+  const summary = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; widthMm: number; count: number; unopened: number; totalRemainingMb: number; totalRemainingM2: number }
+    >();
+    let totalUnopened = 0;
+
+    for (const r of rolls) {
+      const key = `${r.productName}::${r.widthMm}`;
+      const remainingMb = r.remainingMb ?? r.lengthM;
+      const remainingM2 = mbToM2(remainingMb, r.widthMm);
+      const isUnopened = remainingMb >= r.lengthM && (r.currentUsageMb ?? 0) === 0;
+
+      if (isUnopened) totalUnopened++;
+
+      const prev = map.get(key);
+      if (prev) {
+        prev.count += 1;
+        prev.unopened += isUnopened ? 1 : 0;
+        prev.totalRemainingMb += remainingMb;
+        prev.totalRemainingM2 += remainingM2;
+      } else {
+        map.set(key, {
+          name: r.productName,
+          widthMm: r.widthMm,
+          count: 1,
+          unopened: isUnopened ? 1 : 0,
+          totalRemainingMb: remainingMb,
+          totalRemainingM2: remainingM2,
+        });
+      }
+    }
+    const rows = [...map.values()]
+      .map((v) => ({
+        name: v.name,
+        widthMm: v.widthMm,
+        count: v.count,
+        unopened: v.unopened,
+        opened: v.count - v.unopened,
+        remainingMb: v.totalRemainingMb,
+        remainingM2: v.totalRemainingM2,
+      }))
+      .sort((a, b) => b.remainingMb - a.remainingMb || a.name.localeCompare(b.name));
+
+    const totalCount = rolls.length;
+    const totalM2 = rows.reduce((sum, r) => sum + r.remainingM2, 0);
+    const totalMb = rows.reduce((sum, r) => sum + r.remainingMb, 0);
+    return { rows, totalCount, totalM2, totalMb, totalUnopened };
+  }, [rolls]);
 
   // Sort
   const sortedRolls = useMemo(() => {
@@ -223,6 +279,10 @@ const SalesRollsView = () => {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Ewidencja rolek</h2>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
+            <BarChart3 className="w-4 h-4" />
+            Zobacz stany
+          </Button>
           <Button variant="outline" size="sm" onClick={handleAddManual}>
             <Plus className="w-4 h-4" />
             Dodaj ręcznie
@@ -239,7 +299,7 @@ const SalesRollsView = () => {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po nazwie, kodzie, barcode..."
+            placeholder="Szukaj po nazwie, kodzie, barcode, kliencie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -481,6 +541,78 @@ const SalesRollsView = () => {
         confirmLabel="Usuń"
         variant="destructive"
       />
+
+      {/* Summary drawer */}
+      <Sheet open={summaryOpen} onOpenChange={setSummaryOpen}>
+        <SheetContent
+          side="right"
+          className="w-[80vw] sm:max-w-[80vw] flex flex-col bg-white p-0 gap-0"
+          hideCloseButton
+        >
+          <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
+            <SheetTitle>Podsumowanie stanów</SheetTitle>
+            <button
+              type="button"
+              onClick={() => setSummaryOpen(false)}
+              className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </SheetHeader>
+
+          <div className="flex gap-3 text-sm px-6 py-4 shrink-0 flex-wrap">
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Rolek</div>
+              <div className="text-lg font-semibold">{summary.totalCount}</div>
+            </div>
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Nieotwarte</div>
+              <div className="text-lg font-semibold">{summary.totalUnopened}</div>
+            </div>
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Pozostało mb</div>
+              <div className="text-lg font-semibold">{summary.totalMb.toFixed(1)}</div>
+            </div>
+            <div className="bg-gray-50 border rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Pozostało m²</div>
+              <div className="text-lg font-semibold">{summary.totalM2.toFixed(2)}</div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    <TableHead>Produkt</TableHead>
+                    <TableHead className="text-right">Szer.</TableHead>
+                    <TableHead className="text-right">Rolek</TableHead>
+                    <TableHead className="text-right">Nieotwarte</TableHead>
+                    <TableHead className="text-right">Otwarte</TableHead>
+                    <TableHead className="text-right">Pozostało mb</TableHead>
+                    <TableHead className="text-right">Pozostało m²</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary.rows.map((row) => (
+                    <TableRow key={`${row.name}-${row.widthMm}`}>
+                      <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                        {row.widthMm}mm
+                      </TableCell>
+                      <TableCell className="text-right">{row.count}</TableCell>
+                      <TableCell className="text-right">{row.unopened}</TableCell>
+                      <TableCell className="text-right">{row.opened}</TableCell>
+                      <TableCell className="text-right">{row.remainingMb.toFixed(1)}</TableCell>
+                      <TableCell className="text-right">{row.remainingM2.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

@@ -17,6 +17,7 @@ import { normalizePhone } from '@shared/utils';
 import SendSmsDialog from './SendSmsDialog';
 import { CustomerRemindersTab } from './CustomerRemindersTab';
 import { CustomerVehiclesEditor, VehicleChip } from './CustomerVehiclesEditor';
+import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
 
 interface Customer {
   id: string;
@@ -60,6 +61,7 @@ const CustomerEditDrawer = ({
 }: CustomerEditDrawerProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { hasFeature } = useInstanceFeatures(instanceId);
   const [visits, setVisits] = useState<VisitHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
@@ -120,7 +122,7 @@ const CustomerEditDrawer = ({
     const normalizedPhone = normalizePhone(customer.phone);
     const { data } = await supabase
       .from('customer_vehicles')
-      .select('id, model, car_size')
+      .select('id, model, car_size, vin')
       .eq('instance_id', instanceId)
       .eq('phone', normalizedPhone)
       .order('last_used_at', { ascending: false });
@@ -131,6 +133,7 @@ const CustomerEditDrawer = ({
           id: v.id,
           model: v.model,
           carSize: (v.car_size as 'S' | 'M' | 'L') || 'M',
+          vin: (v as any).vin || undefined,
         })),
       );
     }
@@ -456,8 +459,18 @@ const CustomerEditDrawer = ({
           phone: normalizedPhone,
           model: v.model,
           car_size: v.carSize,
+          vin: v.vin || null,
         })),
       );
+    }
+
+    // Update VIN for existing vehicles
+    const toUpdate = editVehicles.filter((v) => v.id && !v.isNew);
+    for (const v of toUpdate) {
+      await supabase
+        .from('customer_vehicles')
+        .update({ vin: v.vin || null } as any)
+        .eq('id', v.id!);
     }
   };
 
@@ -657,6 +670,12 @@ const CustomerEditDrawer = ({
                     vehicles={editVehicles}
                     onChange={setEditVehicles}
                     disabled={saving}
+                    showVin={hasFeature('vehicle_vin')}
+                    onVinChange={(index, vin) => {
+                      setEditVehicles((prev) =>
+                        prev.map((v, i) => (i === index ? { ...v, vin } : v))
+                      );
+                    }}
                   />
 
                   {/* SMS Consent */}
@@ -737,7 +756,12 @@ const CustomerEditDrawer = ({
                               key={vehicle.id || `v-${idx}`}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/90 text-white rounded-full text-sm"
                             >
-                              <span>{vehicle.model}</span>
+                              <div>
+                                <span>{vehicle.model}</span>
+                                {hasFeature('vehicle_vin') && vehicle.vin && (
+                                  <div className="text-xs text-slate-300 font-mono">{vehicle.vin}</div>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteVehicle(vehicle, idx)}

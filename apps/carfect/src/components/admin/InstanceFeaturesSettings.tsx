@@ -6,7 +6,7 @@ import { Label } from '@shared/ui';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { Input } from '@shared/ui';
-import { Building2, ClipboardCheck, FileText, GraduationCap, Link2, TrendingUp } from 'lucide-react';
+import { Building2, Car, ClipboardCheck, FileText, GraduationCap, Link2, TrendingUp } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInstancePlan } from '@/hooks/useInstancePlan';
@@ -100,6 +100,13 @@ const AVAILABLE_FEATURES: FeatureDefinition[] = [
     description: 'Moduł CRM do zarządzania sprzedażą produktów',
     icon: TrendingUp,
     isPaid: true,
+  },
+  {
+    key: 'vehicle_vin',
+    name: 'Numer VIN pojazdu',
+    description: 'Dodaj pole VIN przy pojazdach klienta',
+    icon: Car,
+    isPaid: false,
   },
 ];
 

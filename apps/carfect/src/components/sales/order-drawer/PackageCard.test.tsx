@@ -263,6 +263,73 @@ describe('PackageCard', () => {
     });
   });
 
+  describe('COD amount with netto payer', () => {
+    const codPackage: OrderPackage = {
+      ...basePackage,
+      declaredValue: 2800,
+      shippingCost: 15,
+    };
+
+    const getCodInput = () => {
+      const label = screen.getByText('Kwota pobrania (zł)');
+      return label.parentElement!.querySelector('input') as HTMLInputElement;
+    };
+
+    it('shows brutto COD amount by default (isNetPayer=false)', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={codPackage}
+          paymentMethod="cod"
+          isNetPayer={false}
+        />,
+      );
+
+      // (2800 + 15) / 1 = 2815
+      expect(Number(getCodInput().value)).toBe(2815);
+    });
+
+    it('shows netto COD amount when isNetPayer is true', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={codPackage}
+          paymentMethod="cod"
+          isNetPayer={true}
+        />,
+      );
+
+      // (2800 + 15) / 1.23 = 2288.62 (rounded to 2 decimal places)
+      expect(Number(getCodInput().value)).toBeCloseTo(2288.62, 2);
+    });
+
+    it('uses manual codAmountOverride regardless of isNetPayer', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={codPackage}
+          paymentMethod="cod"
+          isNetPayer={true}
+          codAmountOverride={1500}
+        />,
+      );
+
+      expect(Number(getCodInput().value)).toBe(1500);
+    });
+
+    it('does not show COD section when paymentMethod is transfer', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={codPackage}
+          paymentMethod="transfer"
+        />,
+      );
+
+      expect(screen.queryByText('Kwota pobrania (zł)')).not.toBeInTheDocument();
+    });
+  });
+
   describe('shipping/pickup/uber toggle', () => {
     it('renders Wysylka, Odbior osobisty and Uber toggle options', () => {
       render(<PackageCard {...defaultProps} />);

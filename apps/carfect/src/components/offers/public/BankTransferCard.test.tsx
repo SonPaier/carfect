@@ -42,10 +42,22 @@ describe('BankTransferCard', () => {
     expect(screen.getByText('ul. Testowa 1, Warszawa')).toBeInTheDocument();
   });
 
+  it('renders nothing when only company name but no account number', () => {
+    const { container } = renderWithProviders(
+      <BankTransferCard
+        instance={{ offer_bank_company_name: 'Test' }}
+        vehicleModel="Audi A4"
+        offerNumber="OFF-123"
+      />,
+    );
+
+    expect(container.innerHTML).toBe('');
+  });
+
   it('builds transfer title from vehicle and offer number', () => {
     renderWithProviders(
       <BankTransferCard
-        instance={{ offer_bank_company_name: 'Test' }}
+        instance={{ offer_bank_company_name: 'Test', offer_bank_account_number: '123' }}
         vehicleModel="Audi A4"
         offerNumber="OFF-123"
       />,

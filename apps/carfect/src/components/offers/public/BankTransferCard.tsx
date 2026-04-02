@@ -45,7 +45,7 @@ function CopyButton({ text }: { text: string }) {
 
 export function BankTransferCard({ instance, vehicleModel, offerNumber }: BankTransferCardProps) {
   const { t } = useTranslation();
-  if (!instance.offer_bank_account_number && !instance.offer_bank_company_name) return null;
+  if (!instance.offer_bank_account_number) return null;
 
   const transferTitle = t('publicOffer.bank.transferTitleValue', {
     vehicle: vehicleModel || '',

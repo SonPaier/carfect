@@ -201,11 +201,11 @@ describe('SalesRollsView', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText('Szukaj po nazwie, kodzie, barcode...'),
+        screen.getByPlaceholderText('Szukaj po nazwie, kodzie, barcode, kliencie...'),
       ).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText('Szukaj po nazwie, kodzie, barcode...');
+    const searchInput = screen.getByPlaceholderText('Szukaj po nazwie, kodzie, barcode, kliencie...');
     await user.type(searchInput, 'Hexis');
     expect(searchInput).toHaveValue('Hexis');
   });

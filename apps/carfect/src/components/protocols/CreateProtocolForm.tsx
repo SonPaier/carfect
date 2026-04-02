@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@shared/ui';
+import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
@@ -76,7 +77,10 @@ const DAMAGE_TYPE_LABELS: Record<string, string> = {
 
 export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSettings }: CreateProtocolFormProps) => {
   const [searchParams] = useSearchParams();
-  
+  const { hasFeature } = useInstanceFeatures(instanceId);
+  const showVin = hasFeature('vehicle_vin');
+  const showServices = hasFeature('protocol_services');
+
   const [instance, setInstance] = useState<Instance | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,6 +113,8 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [reservationId, setReservationId] = useState<string | null>(reservationIdFromUrl);
   const [registrationNumber, setRegistrationNumber] = useState('');
+  const [vin, setVin] = useState('');
+  const [serviceItems, setServiceItems] = useState<Array<{ name: string; quantity: number; unit_price: number }>>([]);
   const [fuelLevel, setFuelLevel] = useState('');
   const [odometerReading, setOdometerReading] = useState('');
   const [bodyType, setBodyType] = useState<BodyType>('sedan');
@@ -309,6 +315,10 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setNip(protocolData.nip || '');
           setPhone(protocolData.phone || '');
           setRegistrationNumber(protocolData.registration_number || '');
+          setVin(protocolData.vin || '');
+          if (protocolData.service_items) {
+            setServiceItems(protocolData.service_items as Array<{ name: string; quantity: number; unit_price: number }>);
+          }
           setProtocolType((protocolData.protocol_type as ProtocolType) || 'reception');
           setCustomerSignature(protocolData.customer_signature || null);
           setFuelLevel(protocolData.fuel_level?.toString() || '');
@@ -385,7 +395,41 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
     fetchData();
   }, [instanceId, protocolId]);
 
-  const handleOfferSelect = (offer: {
+  // Load services from reservation when creating from reservation
+  useEffect(() => {
+    if (!reservationId || !showServices || protocolId) return;
+    const loadReservationServices = async () => {
+      const { data: res } = await supabase
+        .from('reservations')
+        .select('service_items, price, service_ids')
+        .eq('id', reservationId)
+        .single();
+      if (!res) return;
+
+      const items = res.service_items as Array<{ service_id: string; custom_price?: number | null; name?: string }> | null;
+      if (items && items.length > 0) {
+        // Fetch service names for items that don't have embedded names
+        const serviceIds = items.map((i) => i.service_id).filter(Boolean);
+        const { data: services } = await supabase
+          .from('services')
+          .select('id, name')
+          .in('id', serviceIds);
+        const nameMap = new Map((services || []).map((s) => [s.id, s.name]));
+
+        const totalPrice = res.price ?? 0;
+        const perServicePrice = items.length > 0 ? Math.round(totalPrice / items.length) : 0;
+
+        setServiceItems(items.map((item) => ({
+          name: item.name || nameMap.get(item.service_id) || 'Usługa',
+          quantity: 1,
+          unit_price: item.custom_price ?? perServicePrice,
+        })));
+      }
+    };
+    loadReservationServices();
+  }, [reservationId, showServices, protocolId]);
+
+  const handleOfferSelect = async (offer: {
     id: string;
     offer_number: string;
     customer_name: string;
@@ -401,6 +445,23 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
     if (offer.customer_email) setCustomerEmail(offer.customer_email);
     if (offer.customer_nip) setNip(offer.customer_nip);
     if (offer.vehicle_model) setVehicleModel(offer.vehicle_model);
+
+    // Load offer services
+    if (showServices) {
+      const { data: options } = await supabase
+        .from('offer_options')
+        .select('name, subtotal_net, is_selected')
+        .eq('offer_id', offer.id)
+        .eq('is_selected', true)
+        .order('sort_order');
+      if (options && options.length > 0) {
+        setServiceItems(options.map((opt) => ({
+          name: opt.name,
+          quantity: 1,
+          unit_price: Math.round((opt.subtotal_net || 0) * 1.23),
+        })));
+      }
+    }
   };
 
   const handleCustomerSelect = (customer: ClientSearchValue) => {
@@ -567,6 +628,8 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         nip: nip || null,
         phone: normalizePhone(phone) || null,
         registration_number: registrationNumber || null,
+        vin: vin || null,
+        service_items: serviceItems.length > 0 ? serviceItems : null,
         fuel_level: fuelLevel ? parseInt(fuelLevel) : null,
         odometer_reading: odometerReading ? parseInt(odometerReading) : null,
         body_type: bodyType,
@@ -816,6 +879,18 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 className="border-foreground/60"
               />
             </div>
+            {showVin && (
+              <div className="space-y-2">
+                <Label>VIN</Label>
+                <Input
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value.toUpperCase())}
+                  maxLength={17}
+                  placeholder="np. WBA1234567890ABCD"
+                  className="border-foreground/60 font-mono"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Stan paliwa (%)</Label>
               <Input
@@ -927,6 +1002,72 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 </div>
               )}
             </>
+          )}
+
+          {/* Services receipt */}
+          {showServices && serviceItems.length > 0 && (
+            <div className="space-y-2">
+              <Label>Usługi</Label>
+              <div className="border border-foreground/60 rounded-lg overflow-hidden">
+                {serviceItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-3 py-2 border-b border-foreground/20 last:border-b-0">
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        value={item.name}
+                        onChange={(e) => {
+                          const updated = [...serviceItems];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setServiceItems(updated);
+                        }}
+                        className="border-0 p-0 h-auto text-sm bg-transparent focus-visible:ring-0"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Input
+                        type="number"
+                        value={item.unit_price}
+                        onChange={(e) => {
+                          const updated = [...serviceItems];
+                          updated[idx] = { ...updated[idx], unit_price: Number(e.target.value) || 0 };
+                          setServiceItems(updated);
+                        }}
+                        className="w-24 text-right border-0 p-0 h-auto text-sm bg-transparent focus-visible:ring-0"
+                      />
+                      <span className="text-sm text-muted-foreground">zł</span>
+                      <button
+                        type="button"
+                        onClick={() => setServiceItems(serviceItems.filter((_, i) => i !== idx))}
+                        className="text-destructive hover:text-destructive/80 text-xs ml-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
+                  <span>Suma</span>
+                  <span>{serviceItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setServiceItems([...serviceItems, { name: '', quantity: 1, unit_price: 0 }])}
+                className="text-sm text-primary hover:underline"
+              >
+                + Dodaj pozycję
+              </button>
+            </div>
+          )}
+
+          {/* Show add button when no items yet but feature enabled */}
+          {showServices && serviceItems.length === 0 && (
+            <button
+              type="button"
+              onClick={() => setServiceItems([{ name: '', quantity: 1, unit_price: 0 }])}
+              className="text-sm text-primary hover:underline"
+            >
+              + Dodaj usługi do protokołu
+            </button>
           )}
 
           {/* Notes - auto-filled with damage points */}

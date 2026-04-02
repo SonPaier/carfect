@@ -307,7 +307,31 @@ export function InvoiceForm({
 
       {/* Positions */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Pozycje</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Pozycje</h3>
+          <div className="flex items-center gap-3 text-sm">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name="priceMode"
+                checked={priceMode === 'netto'}
+                onChange={() => onPriceModeChange('netto')}
+                className="accent-primary"
+              />
+              Netto
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name="priceMode"
+                checked={priceMode === 'brutto'}
+                onChange={() => onPriceModeChange('brutto')}
+                className="accent-primary"
+              />
+              Brutto
+            </label>
+          </div>
+        </div>
         {positions.map((pos, idx) => (
           <div key={idx} className="space-y-2 p-3 rounded-lg border border-border bg-white">
             <div className="flex items-center gap-2">

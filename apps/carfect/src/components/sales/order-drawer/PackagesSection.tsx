@@ -51,6 +51,7 @@ interface PackagesSectionProps {
   bankAccountNumber?: string;
   codAmountOverrides?: Record<string, number | undefined>;
   onCodAmountChange?: (packageId: string, value: number | undefined) => void;
+  isNetPayer?: boolean;
 }
 
 export const PackagesSection = ({
@@ -87,6 +88,7 @@ export const PackagesSection = ({
   availableCouriers,
   codAmountOverrides,
   onCodAmountChange,
+  isNetPayer,
 }: PackagesSectionProps) => {
   return (
     <div className="space-y-2">
@@ -137,6 +139,7 @@ export const PackagesSection = ({
               bankAccountNumber={bankAccountNumber}
               codAmountOverride={codAmountOverrides?.[pkg.id]}
               onCodAmountChange={(value) => onCodAmountChange?.(pkg.id, value)}
+              isNetPayer={isNetPayer}
             />
           ))}
         </div>
