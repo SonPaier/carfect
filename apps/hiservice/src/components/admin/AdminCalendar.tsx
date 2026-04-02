@@ -1276,7 +1276,7 @@ const AdminCalendar = ({
             <div
               ref={headerScrollRef}
               onScroll={handleHeaderScroll}
-              className={cn('flex overflow-x-auto', !isMobile && 'flex-1')}
+              className={cn('flex overflow-x-auto flex-1')}
               style={{
                 ...getMobileColumnsContainerStyle(visibleColumns.length),
                 scrollbarWidth: 'none',
