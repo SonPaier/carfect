@@ -25,6 +25,7 @@ import { ScopesStep } from './ScopesStep';
 import { OptionsStep } from './OptionsStep';
 import { SummaryStep } from './SummaryStep';
 import { SummaryStepV2 } from './SummaryStepV2';
+import { ProductsSummaryStepV2 } from './ProductsSummaryStepV2';
 import { OfferPreviewDialog } from './OfferPreviewDialog';
 import { SendOfferEmailDialog } from '@/components/admin/SendOfferEmailDialog';
 import { toast } from 'sonner';
@@ -86,14 +87,6 @@ export const OfferGenerator = ({
   // Ref for CustomerDataStep to call scrollToFirstError
   const customerStepRef = useRef<CustomerDataStepHandle>(null);
 
-  // Step 3 (Options) is temporarily hidden but code remains
-  const steps = [
-    { id: 1, label: t('offers.steps.customerData'), icon: User },
-    { id: 2, label: t('offers.steps.scope'), icon: Layers },
-    // { id: 3, label: t('offers.steps.optionsProducts'), icon: Package }, // Hidden temporarily
-    { id: 3, label: t('offers.steps.summary'), icon: FileCheck }, // Summary is now step 3
-  ];
-
   const {
     offer,
     loading,
@@ -119,6 +112,20 @@ export const OfferGenerator = ({
     saveOffer,
     loadOffer,
   } = useOffer(instanceId);
+
+  const isV2 = offer.offerFormat === 'v2';
+  const maxStep = isV2 ? 2 : 3;
+
+  const steps = isV2
+    ? [
+        { id: 1, label: t('offers.steps.customerData'), icon: User },
+        { id: 2, label: t('offers.steps.summary'), icon: FileCheck },
+      ]
+    : [
+        { id: 1, label: t('offers.steps.customerData'), icon: User },
+        { id: 2, label: t('offers.steps.scope'), icon: Layers },
+        { id: 3, label: t('offers.steps.summary'), icon: FileCheck },
+      ];
 
   // Fetch instance settings for unit prices visibility and email dialog
   useEffect(() => {
@@ -257,8 +264,7 @@ export const OfferGenerator = ({
       setValidationErrors({});
     }
 
-    if (currentStep < 3) {
-      // Max step is now 3 (Summary)
+    if (currentStep < maxStep) {
       // Optimistic navigation - change step immediately
       setCurrentStep((prev) => prev + 1);
       // Fire-and-forget auto-save in background (silent - no toast)
@@ -419,20 +425,12 @@ export const OfferGenerator = ({
   };
 
   const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(
-          offer.customerData.name &&
-          offer.customerData.email &&
-          offer.vehicleData.brandModel
-        );
-      case 2:
-        return offer.selectedScopeIds.length > 0;
-      case 3: // Summary (was step 4)
-        return true;
-      default:
-        return false;
+    if (step === 1) {
+      return !!(offer.customerData.name && offer.customerData.email && offer.vehicleData.brandModel);
     }
+    if (isV2) return true; // v2 step 2 (products) — always OK
+    if (step === 2) return offer.selectedScopeIds.length > 0;
+    return true;
   };
 
   const canProceed = validateStep(currentStep);
@@ -517,13 +515,26 @@ export const OfferGenerator = ({
         )}
 
         {currentStep === 2 && (
-          <Card className="p-6">
-            <ScopesStep
+          isV2 ? (
+            <ProductsSummaryStepV2
               instanceId={instanceId}
-              selectedScopeIds={offer.selectedScopeIds}
-              onScopesChange={updateSelectedScopes}
+              offer={offer}
+              showUnitPrices={instanceShowUnitPrices}
+              isEditing={!!offerId}
+              onUpdateOffer={updateOffer}
+              calculateTotalNet={calculateTotalNet}
+              calculateTotalGross={calculateTotalGross}
+              onShowPreview={handleShowPreview}
             />
-          </Card>
+          ) : (
+            <Card className="p-6">
+              <ScopesStep
+                instanceId={instanceId}
+                selectedScopeIds={offer.selectedScopeIds}
+                onScopesChange={updateSelectedScopes}
+              />
+            </Card>
+          )
         )}
 
         {/* Step 3 (Options) is temporarily hidden - code preserved for future use
@@ -545,7 +556,7 @@ export const OfferGenerator = ({
       )}
       */}
 
-        {currentStep === 3 && (
+        {!isV2 && currentStep === 3 && (
           <SummaryStepV2
             instanceId={instanceId}
             offer={offer}
@@ -615,10 +626,10 @@ export const OfferGenerator = ({
           </Button>
           */}
 
-            {currentStep < 3 ? (
+            {currentStep < maxStep ? (
               <Button
                 onClick={handleNext}
-                disabled={currentStep === 2 && !canProceed}
+                disabled={!isV2 && currentStep === 2 && !canProceed}
                 className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
               >
                 <span className="hidden sm:inline">{t('common.next')}</span>

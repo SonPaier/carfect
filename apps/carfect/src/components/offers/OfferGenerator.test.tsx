@@ -78,6 +78,10 @@ vi.mock('./SummaryStepV2', () => ({
   SummaryStepV2: () => <div data-testid="summary-step">Summary</div>,
 }));
 
+vi.mock('./ProductsSummaryStepV2', () => ({
+  ProductsSummaryStepV2: () => <div data-testid="products-summary-step">ProductsSummary</div>,
+}));
+
 vi.mock('./OfferPreviewDialog', () => ({
   OfferPreviewDialog: () => null,
 }));
