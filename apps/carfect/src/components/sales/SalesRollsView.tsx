@@ -550,7 +550,7 @@ const SalesRollsView = () => {
 
       {/* Summary dialog */}
       <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex flex-col">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Podsumowanie stanów</DialogTitle>
           </DialogHeader>
