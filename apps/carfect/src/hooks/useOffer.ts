@@ -39,6 +39,7 @@ export const useOffer = (instanceId: string) => {
     serviceInfo: '',
     notes: '',
     defaultSelectedState: undefined,
+    offerFormat: 'v2',
   });
 
   const [loading, setLoading] = useState(false);
@@ -189,6 +190,8 @@ export const useOffer = (instanceId: string) => {
   // Scope handlers
   const updateSelectedScopes = useCallback(
     (scopeIds: string[]) => {
+      if (offerRef.current.offerFormat === 'v2') return; // v2 nie używa scopów
+
       type ScopeUpdateAction =
         | { type: 'none' }
         | { type: 'replace' }
@@ -496,6 +499,7 @@ export const useOffer = (instanceId: string) => {
           offer_number?: string;
           selected_state?: Json;
           has_unified_services?: boolean;
+          offer_format?: string | null;
         } = {
           instance_id: instanceId,
           customer_data: offer.customerData as unknown as Json,
@@ -515,6 +519,7 @@ export const useOffer = (instanceId: string) => {
           ...(selectedStateToSave && { selected_state: selectedStateToSave as unknown as Json }),
           // New offers use unified services (service_type='both')
           ...(!offer.id && { has_unified_services: true }),
+          offer_format: offer.offerFormat ?? null,
         };
 
         let offerId = offer.id;
@@ -1218,6 +1223,7 @@ export const useOffer = (instanceId: string) => {
         defaultSelectedState,
         widgetSelectedExtras,
         widgetDurationSelections,
+        offerFormat: (offerData.offer_format as 'v1' | 'v2' | null) ?? null,
       });
     } catch (error) {
       console.error('Error loading offer:', error);
