@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Disc,
+  BarChart3,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
@@ -30,10 +31,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { ConfirmDialog } from '@shared/ui';
+import { ConfirmDialog, Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
-import { formatRollSize, formatMbM2Lines } from './types/rolls';
+import { formatRollSize, formatMbM2Lines, mbToM2 } from './types/rolls';
 import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
@@ -82,6 +83,8 @@ const SalesRollsView = () => {
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
   const [detailsRoll, setDetailsRoll] = useState<SalesRoll | null>(null);
 
+  const [summaryOpen, setSummaryOpen] = useState(false);
+
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
@@ -123,6 +126,37 @@ const SalesRollsView = () => {
         (r.customerNames || []).some((name) => name.toLowerCase().includes(q)),
     );
   }, [rolls, searchQuery]);
+
+  // Summary grouped by product name
+  const summary = useMemo(() => {
+    const map = new Map<string, { count: number; totalRemainingMb: number; totalRemainingM2: number }>();
+    for (const r of rolls) {
+      const key = r.productName;
+      const prev = map.get(key);
+      const remainingMb = r.remainingMb ?? r.lengthM;
+      const remainingM2 = mbToM2(remainingMb, r.widthMm);
+      if (prev) {
+        prev.count += 1;
+        prev.totalRemainingMb += remainingMb;
+        prev.totalRemainingM2 += remainingM2;
+      } else {
+        map.set(key, { count: 1, totalRemainingMb: remainingMb, totalRemainingM2: remainingM2 });
+      }
+    }
+    const rows = [...map.entries()]
+      .map(([name, v]) => ({
+        name,
+        count: v.count,
+        remainingMb: v.totalRemainingMb,
+        remainingM2: v.totalRemainingM2,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const totalCount = rolls.length;
+    const totalM2 = rows.reduce((sum, r) => sum + r.remainingM2, 0);
+    const totalMb = rows.reduce((sum, r) => sum + r.remainingMb, 0);
+    return { rows, totalCount, totalM2, totalMb };
+  }, [rolls]);
 
   // Sort
   const sortedRolls = useMemo(() => {
@@ -224,6 +258,10 @@ const SalesRollsView = () => {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-xl font-semibold text-foreground">Ewidencja rolek</h2>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
+            <BarChart3 className="w-4 h-4" />
+            Zobacz stany
+          </Button>
           <Button variant="outline" size="sm" onClick={handleAddManual}>
             <Plus className="w-4 h-4" />
             Dodaj ręcznie
@@ -482,6 +520,51 @@ const SalesRollsView = () => {
         confirmLabel="Usuń"
         variant="destructive"
       />
+
+      {/* Summary dialog */}
+      <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Podsumowanie stanów</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-4 text-sm mb-4">
+            <div className="bg-muted rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Rolek</div>
+              <div className="text-lg font-semibold">{summary.totalCount}</div>
+            </div>
+            <div className="bg-muted rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Pozostało mb</div>
+              <div className="text-lg font-semibold">{summary.totalMb.toFixed(1)}</div>
+            </div>
+            <div className="bg-muted rounded-lg px-4 py-2">
+              <div className="text-muted-foreground">Pozostało m²</div>
+              <div className="text-lg font-semibold">{summary.totalM2.toFixed(2)}</div>
+            </div>
+          </div>
+          <div className="overflow-y-auto border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produkt</TableHead>
+                  <TableHead className="text-right">Rolek</TableHead>
+                  <TableHead className="text-right">Pozostało mb</TableHead>
+                  <TableHead className="text-right">Pozostało m²</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary.rows.map((row) => (
+                  <TableRow key={row.name}>
+                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="text-right">{row.count}</TableCell>
+                    <TableCell className="text-right">{row.remainingMb.toFixed(1)}</TableCell>
+                    <TableCell className="text-right">{row.remainingM2.toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
