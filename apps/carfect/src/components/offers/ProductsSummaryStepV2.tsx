@@ -253,6 +253,7 @@ function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, isSug
             type="number"
             value={priceValue}
             onChange={(e) => setPriceValue(e.target.value)}
+            onFocus={(e) => e.target.select()}
             onBlur={commitPrice}
             onKeyDown={(e) => e.key === 'Enter' && commitPrice()}
             className="w-24 h-8 text-right text-sm"
