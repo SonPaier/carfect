@@ -44,6 +44,10 @@ vi.mock('@shared/invoicing', () => ({
   useInvoicingSettings: () => ({ settings: null }),
 }));
 
+vi.mock('@/hooks/usePricingMode', () => ({
+  usePricingMode: () => 'brutto',
+}));
+
 vi.mock('@/hooks/useInstanceFeatures', () => ({
   useInstanceFeatures: () => ({
     features: {},
@@ -141,7 +145,7 @@ describe('ReservationsView', () => {
       expect(within(table).getByText('Pojazd')).toBeInTheDocument();
       expect(within(table).getByText('Usługi')).toBeInTheDocument();
       expect(within(table).getByText('Data realizacji')).toBeInTheDocument();
-      expect(within(table).getByText('Kwota brutto')).toBeInTheDocument();
+      expect(within(table).getByText('Cena brutto / netto')).toBeInTheDocument();
       expect(within(table).getByText('Status')).toBeInTheDocument();
     });
   });
