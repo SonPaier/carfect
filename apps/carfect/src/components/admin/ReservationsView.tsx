@@ -62,7 +62,6 @@ import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
 import { FileText } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
-import { usePricingMode } from '@/hooks/usePricingMode';
 
 interface Service {
   id: string;
@@ -173,7 +172,6 @@ const ReservationsView = ({
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
   const instanceId = reservations[0]?.instance_id ?? null;
-  const pricingMode = usePricingMode(instanceId);
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
   const invoicingActive = invoicingSettings?.active ?? false;
   const { hasFeature } = useInstanceFeatures(instanceId);
@@ -1053,8 +1051,8 @@ const ReservationsView = ({
                   .map((s) => ({
                     name: s.name,
                     quantity: 1,
-                    unit_price_gross: invoiceTarget.price
-                      ? Math.round(invoiceTarget.price / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
+                    unit_price_gross: invoiceTarget.price_netto
+                      ? Math.round(invoiceTarget.price_netto / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
                       : 0,
                     vat_rate: 23,
                     unit: 'szt.',

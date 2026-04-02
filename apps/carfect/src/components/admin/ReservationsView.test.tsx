@@ -44,10 +44,6 @@ vi.mock('@shared/invoicing', () => ({
   useInvoicingSettings: () => ({ settings: null }),
 }));
 
-vi.mock('@/hooks/usePricingMode', () => ({
-  usePricingMode: () => 'brutto',
-}));
-
 vi.mock('@/hooks/useInstanceFeatures', () => ({
   useInstanceFeatures: () => ({
     features: {},
@@ -89,6 +85,7 @@ interface Reservation {
   services_data?: Array<{ name: string; shortcut?: string | null }>;
   station?: { name: string; type?: string };
   price: number | null;
+  price_netto?: number | null;
   photo_urls?: string[] | null;
   assigned_employee_ids?: string[] | null;
 }
@@ -200,6 +197,24 @@ describe('ReservationsView', () => {
 
       const table = screen.getByRole('table');
       expect(within(table).getByText('299.99 zł')).toBeInTheDocument();
+    });
+
+    it('shows netto price below brutto when price_netto is present', () => {
+      const reservation = makeReservation({ price: 300, price_netto: 243.9 });
+      renderView({ reservations: [reservation] });
+
+      const table = screen.getByRole('table');
+      expect(within(table).getByText('300.00 zł')).toBeInTheDocument();
+      expect(within(table).getByText('243.90 zł netto')).toBeInTheDocument();
+    });
+
+    it('does not show netto line when price_netto is null', () => {
+      const reservation = makeReservation({ price: 300 });
+      renderView({ reservations: [reservation] });
+
+      const table = screen.getByRole('table');
+      expect(within(table).getByText('300.00 zł')).toBeInTheDocument();
+      expect(within(table).queryByText(/zł netto/)).not.toBeInTheDocument();
     });
   });
 
