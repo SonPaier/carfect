@@ -9,6 +9,7 @@ export interface SalesRoll {
   widthMm: number;
   lengthM: number;
   initialLengthM: number;
+  initialRemainingMb: number;
   deliveryDate?: string;
   photoUrl?: string;
   status: 'active' | 'archived';

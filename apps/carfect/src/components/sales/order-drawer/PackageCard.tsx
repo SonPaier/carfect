@@ -20,7 +20,7 @@ import {
   type RollAssignment,
   getItemKey,
 } from '../hooks/useOrderPackages';
-import { formatCurrency } from '../constants';
+import { formatCurrency, VAT_RATE } from '../constants';
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
 import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
@@ -104,6 +104,7 @@ interface PackageCardProps {
   bankAccountNumber?: string;
   codAmountOverride?: number;
   onCodAmountChange?: (value: number | undefined) => void;
+  isNetPayer?: boolean;
 }
 
 const PackageCard = ({
@@ -140,6 +141,7 @@ const PackageCard = ({
   bankAccountNumber,
   codAmountOverride,
   onCodAmountChange,
+  isNetPayer,
 }: PackageCardProps) => {
   const valuation = useApaczkaValuation(
     instanceId,
@@ -597,7 +599,11 @@ const PackageCard = ({
                       codAmountOverride != null
                         ? codAmountOverride
                         : pkg.shippingCost != null
-                          ? Math.round(((pkg.declaredValue ?? 0) + pkg.shippingCost) * 100) / 100
+                          ? Math.round(
+                              ((pkg.declaredValue ?? 0) + pkg.shippingCost) /
+                                (isNetPayer ? 1 + VAT_RATE : 1) *
+                                100,
+                            ) / 100
                           : ''
                     }
                     placeholder="—"

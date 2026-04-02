@@ -36,10 +36,12 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
   );
 
   const handleSave = async () => {
+    if (saving) return;
     if (savableResults.length === 0) {
       toast.error('Brak rolek do zapisania');
       return;
     }
+    setSaving(true);
 
     for (const item of savableResults) {
       const d = item.extractedData;
@@ -47,6 +49,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
         toast.error(
           `Rolka "${d.productName || 'bez nazwy'}" nie ma wymaganych danych (nazwa, szerokość, długość)`,
         );
+        setSaving(false);
         return;
       }
     }
@@ -61,6 +64,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
       toast.error(
         `Zduplikowane kody produktów w skanowaniu: ${[...new Set(batchDupes)].join(', ')}`,
       );
+      setSaving(false);
       return;
     }
 
@@ -75,11 +79,10 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
       const existingCodes = (existing || []).map((r: any) => r.product_code);
       if (existingCodes.length > 0) {
         toast.error(`Rolki z tymi kodami już istnieją: ${existingCodes.join(', ')}`);
+        setSaving(false);
         return;
       }
     }
-
-    setSaving(true);
     try {
       const {
         data: { user },
@@ -93,6 +96,9 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
         barcode: item.extractedData.barcode,
         widthMm: Number(item.extractedData.widthMm),
         lengthM: Number(item.extractedData.lengthM),
+        initialRemainingMb: item.extractedData.remainingMb != null
+          ? Number(item.extractedData.remainingMb)
+          : undefined,
         photoUrl: item.photoUrl,
         extractionConfidence: item.confidence,
         createdBy: user?.id ?? null,
@@ -116,7 +122,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-full sm:w-[700px] sm:max-w-[700px] flex flex-col bg-white p-0 gap-0"
+        className="w-full sm:w-[1000px] sm:max-w-[1000px] flex flex-col bg-white p-0 gap-0"
         hideCloseButton
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
@@ -172,6 +178,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
             results={scan.results}
             onRemove={scan.removeResult}
             onRetry={scan.retryFile}
+            onUpdateField={scan.updateExtractedField}
           />
         </div>
 

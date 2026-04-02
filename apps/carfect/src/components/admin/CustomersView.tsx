@@ -28,6 +28,7 @@ import { useIsMobile, EmptyState } from '@shared/ui';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import SendSmsDialog from './SendSmsDialog';
 import { toast } from 'sonner';
+import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
 
 interface Customer {
   id: string;
@@ -46,6 +47,7 @@ interface CustomerVehicle {
   phone: string;
   model: string;
   plate: string | null;
+  vin: string | null;
 }
 
 interface CustomersViewProps {
@@ -61,6 +63,7 @@ const ITEMS_PER_PAGE = 10;
 const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { hasFeature } = useInstanceFeatures(instanceId);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [vehicles, setVehicles] = useState<CustomerVehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +86,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
       supabase.from('customers').select('*').eq('instance_id', instanceId).order('name'),
       supabase
         .from('customer_vehicles')
-        .select('phone, model, plate')
+        .select('phone, model, plate, vin')
         .eq('instance_id', instanceId),
     ]);
 
@@ -128,7 +131,8 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
         const matchesVehicle = customerVehicles.some(
           (v) =>
             v.model.toLowerCase().includes(query) ||
-            (v.plate && v.plate.toLowerCase().includes(query)),
+            (v.plate && v.plate.toLowerCase().includes(query)) ||
+            (v.vin && v.vin.toLowerCase().includes(query)),
         );
 
         return matchesCustomer || matchesVehicle;
@@ -353,7 +357,11 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder={t('customers.searchPlaceholder')}
+            placeholder={
+              hasFeature('vehicle_vin')
+                ? t('customers.searchPlaceholder') + ', VIN...'
+                : t('customers.searchPlaceholder')
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"

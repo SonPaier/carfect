@@ -119,7 +119,8 @@ const SalesRollsView = () => {
         r.brand.toLowerCase().includes(q) ||
         r.productName.toLowerCase().includes(q) ||
         (r.productCode || '').toLowerCase().includes(q) ||
-        (r.barcode || '').includes(q),
+        (r.barcode || '').includes(q) ||
+        (r.customerNames || []).some((name) => name.toLowerCase().includes(q)),
     );
   }, [rolls, searchQuery]);
 
@@ -239,7 +240,7 @@ const SalesRollsView = () => {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po nazwie, kodzie, barcode..."
+            placeholder="Szukaj po nazwie, kodzie, barcode, kliencie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
