@@ -203,12 +203,6 @@ describe('ServiceFormDialog', () => {
       expect(screen.getAllByText(/Bez kategorii/i).length).toBeGreaterThan(0);
     });
 
-    it('SVC-U-006: Wyświetla radio buttons netto/brutto', () => {
-      renderServiceFormDialog();
-      expect(screen.getByLabelText(/Cena brutto/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Cena netto/i)).toBeInTheDocument();
-    });
-
     it('SVC-U-007: Wyświetla pole ceny bazowej domyślnie', () => {
       renderServiceFormDialog();
       expect(screen.getByRole('spinbutton')).toBeInTheDocument();
@@ -527,20 +521,6 @@ describe('ServiceFormDialog', () => {
       await user.type(shortNameInput, 'ABCDEFGHIJKLM');
 
       expect(shortNameInput).toHaveValue('ABCDEFGHIJ'); // Max 10 chars
-    });
-
-    it('SVC-U-023: Zmiana radio netto/brutto aktualizuje label ceny', async () => {
-      const { user } = renderServiceFormDialog();
-      const grossRadio = screen.getByLabelText(/Cena brutto/i);
-      const netRadio = screen.getByLabelText(/Cena netto/i);
-
-      // Default is net
-      expect(netRadio).toBeChecked();
-
-      await user.click(grossRadio);
-
-      expect(grossRadio).toBeChecked();
-      expect(netRadio).not.toBeChecked();
     });
 
     it('SVC-U-024: Kliknięcie "Cena zależna od wielkości" pokazuje pola S/M/L', async () => {

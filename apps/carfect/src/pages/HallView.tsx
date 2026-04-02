@@ -634,6 +634,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           status,
           confirmation_code,
           price,
+          price_netto,
           service_ids,
           service_items,
           has_unified_services,

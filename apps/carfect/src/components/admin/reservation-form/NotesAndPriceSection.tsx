@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Textarea } from '@shared/ui';
+import { calculatePricePair } from '@/utils/pricing';
+import type { PricingMode } from '@/hooks/usePricingMode';
 
 interface NotesAndPriceSectionProps {
   adminNotes: string;
@@ -15,6 +17,7 @@ interface NotesAndPriceSectionProps {
   customerDiscountPercent: number | null;
   markUserEditing?: () => void;
   onFinalPriceUserEdit?: () => void;
+  pricingMode?: PricingMode;
 }
 
 export const NotesAndPriceSection = ({
@@ -28,15 +31,24 @@ export const NotesAndPriceSection = ({
   customerDiscountPercent,
   markUserEditing,
   onFinalPriceUserEdit,
+  pricingMode = 'brutto',
 }: NotesAndPriceSectionProps) => {
   const { t } = useTranslation();
   const [isFocused, setIsFocused] = useState(false);
 
   // When focused: allow empty string for editing
   // When not focused: fallback to discountedPrice if empty
-  const displayedValue = isFocused 
-    ? finalPrice 
+  const displayedValue = isFocused
+    ? finalPrice
     : (finalPrice !== '' ? finalPrice : (discountedPrice || ''));
+
+  const priceLabel = pricingMode === 'netto' ? 'Kwota netto' : 'Kwota brutto';
+
+  // Calculate the other price for preview
+  const currentPrice = finalPrice !== '' ? parseFloat(finalPrice) : discountedPrice;
+  const pair = currentPrice > 0 ? calculatePricePair(currentPrice, pricingMode) : null;
+  const otherPrice = pair ? (pricingMode === 'netto' ? pair.brutto : pair.netto) : null;
+  const otherLabel = pricingMode === 'netto' ? 'brutto' : 'netto';
 
   return (
     <>
@@ -61,7 +73,7 @@ export const NotesAndPriceSection = ({
       {showPrice && (
         <div className="space-y-2">
           <Label htmlFor="finalPrice" className="text-sm text-foreground">
-            {t('addReservation.amount')}
+            {priceLabel}
           </Label>
           <div className="flex items-center gap-2 flex-wrap">
             <Input
@@ -86,6 +98,11 @@ export const NotesAndPriceSection = ({
               </div>
             )}
           </div>
+          {otherPrice !== null && (
+            <p className="text-xs text-muted-foreground">
+              {otherPrice.toFixed(2)} zł {otherLabel}
+            </p>
+          )}
         </div>
       )}
     </>

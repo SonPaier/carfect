@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Phone, MessageSquare, Mail, Car, Clock, X } from 'lucide-react';
+import { usePricingMode } from '@/hooks/usePricingMode';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -37,6 +38,7 @@ interface VisitHistory {
   vehicle_plate: string;
   service_name: string | null;
   price: number | null;
+  price_netto: number | null;
   status: string | null;
 }
 
@@ -62,6 +64,7 @@ const CustomerEditDrawer = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { hasFeature } = useInstanceFeatures(instanceId);
+  const pricingMode = usePricingMode(instanceId);
   const [visits, setVisits] = useState<VisitHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
@@ -187,6 +190,7 @@ const CustomerEditDrawer = ({
         start_time,
         vehicle_plate,
         price,
+        price_netto,
         status,
         service_ids,
         service_items
@@ -258,6 +262,7 @@ const CustomerEditDrawer = ({
             vehicle_plate: v.vehicle_plate,
             service_name: serviceName,
             price: v.price,
+            price_netto: v.price_netto ?? null,
             status: v.status,
           };
         }),
@@ -824,7 +829,13 @@ const CustomerEditDrawer = ({
                                   ? `${visit.service_name} • ${visit.vehicle_plate}`
                                   : visit.vehicle_plate}
                               </div>
-                              {visit.price && <div className="font-medium">{visit.price} zł</div>}
+                              {visit.price && (
+                                <div className="font-medium">
+                                  {pricingMode === 'netto' && visit.price_netto != null
+                                    ? `${visit.price_netto} zł`
+                                    : `${visit.price} zł`}
+                                </div>
+                              )}
                             </div>
                             <div className="mt-1">
                               <span

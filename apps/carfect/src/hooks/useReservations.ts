@@ -95,6 +95,7 @@ async function fetchReservationsForRange(
     status,
     confirmation_code,
     price,
+    price_netto,
     customer_notes,
     admin_notes,
     source,

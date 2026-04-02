@@ -57,6 +57,10 @@ vi.mock('@/hooks/useInstanceFeatures', () => ({
   }),
 }));
 
+vi.mock('@/hooks/usePricingMode', () => ({
+  usePricingMode: () => 'brutto',
+}));
+
 vi.mock('./CustomerRemindersTab', () => ({
   CustomerRemindersTab: () => <div data-testid="reminders-tab">RemindersTab</div>,
 }));
