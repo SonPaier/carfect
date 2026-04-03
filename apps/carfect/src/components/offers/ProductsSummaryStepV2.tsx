@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
-import { Separator } from '@shared/ui';
+
 import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { OfferProductPickerDrawer, PickedProduct } from './OfferProductPickerDrawer';
 import { ConditionsSection } from './summary/ConditionsSection';
+import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
 import type { OfferState, OfferOption, OfferItem } from '@/hooks/useOffer';
 
 interface ProductsSummaryStepV2Props {
@@ -18,6 +20,7 @@ interface ProductsSummaryStepV2Props {
   calculateTotalNet: () => number;
   calculateTotalGross: () => number;
   onShowPreview: () => void;
+  onServiceSaved?: () => void;
 }
 
 interface FlatProduct {
@@ -39,10 +42,35 @@ export const ProductsSummaryStepV2 = ({
   calculateTotalNet,
   calculateTotalGross,
   onShowPreview,
+  onServiceSaved,
 }: ProductsSummaryStepV2Props) => {
   const { t } = useTranslation();
   const [products, setProducts] = useState<FlatProduct[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceData | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Fetch categories once for ServiceFormDialog
+  useEffect(() => {
+    supabase
+      .from('service_categories')
+      .select('id, name')
+      .eq('instance_id', instanceId)
+      .then(({ data }) => { if (data) setCategories(data); });
+  }, [instanceId]);
+
+  const handleEditService = useCallback(async (productId: string) => {
+    const { data } = await supabase
+      .from('unified_services')
+      .select('*')
+      .eq('id', productId)
+      .single();
+    if (data) {
+      setEditingService(data as unknown as ServiceData);
+      setEditDialogOpen(true);
+    }
+  }, []);
   const initializedRef = useRef(false);
 
   // Mount: load existing products from offer.options[0]
@@ -150,6 +178,7 @@ export const ProductsSummaryStepV2 = ({
               onPriceChange={handlePriceChange}
               onToggleSuggested={handleToggleSuggested}
               onRemove={handleRemove}
+              onEdit={handleEditService}
             />
           ))}
         </div>
@@ -165,9 +194,7 @@ export const ProductsSummaryStepV2 = ({
         Dodaj usługę
       </Button>
 
-      <Separator />
-
-      {/* Conditions — always expanded for v2 */}
+      {/* Conditions */}
       <ConditionsSection
         offer={offer}
         open={true}
@@ -184,6 +211,20 @@ export const ProductsSummaryStepV2 = ({
         alreadyAddedProductIds={alreadyAddedIds}
         onConfirm={handleAddProducts}
       />
+
+      {/* Service Edit Dialog */}
+      <ServiceFormDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        instanceId={instanceId}
+        service={editingService}
+        categories={categories}
+        onSaved={() => {
+          setEditDialogOpen(false);
+          setEditingService(null);
+          onServiceSaved?.();
+        }}
+      />
     </div>
   );
 };
@@ -194,9 +235,10 @@ interface ProductRowProps {
   onPriceChange: (itemId: string, price: number) => void;
   onToggleSuggested: (itemId: string) => void;
   onRemove: (itemId: string) => void;
+  onEdit: (productId: string) => void;
 }
 
-function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove }: ProductRowProps) {
+function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState(product.price.toString());
 
@@ -212,12 +254,20 @@ function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove }: Pro
 
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-lg border bg-white"
+      className="flex items-start gap-4 p-3 rounded-lg border bg-white"
     >
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">
-          {product.name}
-        </p>
+        {product.productId ? (
+          <button
+            type="button"
+            onClick={() => onEdit(product.productId)}
+            className="font-medium text-sm block text-left hover:text-primary transition-colors"
+          >
+            {product.name}
+          </button>
+        ) : (
+          <p className="font-medium text-sm">{product.name}</p>
+        )}
       </div>
 
       <div className="shrink-0">

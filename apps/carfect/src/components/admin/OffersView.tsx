@@ -120,7 +120,7 @@ export default function OffersView({
   );
 
   const [showScopesSettings, setShowScopesSettings] = useState(false);
-  const [hasLegacyScopes, setHasLegacyScopes] = useState(false);
+
 
   // Email dialog state
   const [sendEmailDialogOpen, setSendEmailDialogOpen] = useState(false);
@@ -272,17 +272,6 @@ export default function OffersView({
     fetchOffers();
   }, [instanceId]);
 
-  useEffect(() => {
-    if (!instanceId) return;
-    (async () => {
-      const { count } = await supabase
-        .from('offer_scopes')
-        .select('id', { count: 'exact', head: true })
-        .eq('instance_id', instanceId)
-        .eq('active', true);
-      setHasLegacyScopes((count ?? 0) > 0);
-    })();
-  }, [instanceId]);
 
   const handleDeleteOffer = async (offerId: string) => {
     try {
@@ -535,7 +524,7 @@ export default function OffersView({
             - {t('offers.generator')}
           </title>
         </Helmet>
-        <div className="max-w-3xl mx-auto">
+        <div>
           <h1 className="text-2xl font-bold mb-4">
             {duplicatingOfferId
               ? t('offers.duplicateOffer')
@@ -595,17 +584,7 @@ export default function OffersView({
         <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <h1 className="text-2xl font-bold">{t('offers.title')}</h1>
           <div className="flex items-center gap-2">
-            {hasLegacyScopes && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateTo('services')}
-                className="sm:w-auto sm:px-4 bg-white"
-              >
-                <Layers className="w-4 h-4" />
-                <span className="hidden sm:inline ml-2">{t('offers.templates')}</span>
-              </Button>
-            )}
+            {/* Legacy templates button — hidden, accessible via URL ?action=services */}
             <Button
               variant="outline"
               size="icon"

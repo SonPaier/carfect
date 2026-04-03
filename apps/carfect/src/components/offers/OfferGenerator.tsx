@@ -2,32 +2,24 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@shared/ui';
-import { Card } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import {
   ChevronLeft,
-  ChevronRight,
   Save,
   Send,
-  User,
-  Layers,
-  Package,
-  FileCheck,
   Loader2,
-  Download,
   Eye,
-  Printer,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOffer } from '@/hooks/useOffer';
 import { CustomerDataStep, CustomerDataStepHandle, ValidationErrors } from './CustomerDataStep';
 import { ScopesStep } from './ScopesStep';
-import { OptionsStep } from './OptionsStep';
-import { SummaryStep } from './SummaryStep';
 import { SummaryStepV2 } from './SummaryStepV2';
 import { ProductsSummaryStepV2 } from './ProductsSummaryStepV2';
 import { OfferPreviewDialog } from './OfferPreviewDialog';
+import { OfferPreviewPanel } from './OfferPreviewPanel';
 import { SendOfferEmailDialog } from '@/components/admin/SendOfferEmailDialog';
+import { useIsMobile } from '@shared/ui';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -58,7 +50,7 @@ export const OfferGenerator = ({
 }: OfferGeneratorProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
+  const isMobile = useIsMobile();
   const [instanceShowUnitPrices, setInstanceShowUnitPrices] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -67,6 +59,7 @@ export const OfferGenerator = ({
   const [sending, setSending] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
   const [savedOfferForEmail, setSavedOfferForEmail] = useState<{
     id: string;
     offer_number: string;
@@ -94,19 +87,7 @@ export const OfferGenerator = ({
     updateCustomerData,
     updateVehicleData,
     updateSelectedScopes,
-    addOption,
-    updateOption,
-    removeOption,
-    duplicateOption,
-    addItemToOption,
-    updateItemInOption,
-    removeItemFromOption,
-    addAddition,
-    updateAddition,
-    removeAddition,
     updateOffer,
-    calculateOptionTotal,
-    calculateAdditionsTotal,
     calculateTotalNet,
     calculateTotalGross,
     saveOffer,
@@ -114,18 +95,6 @@ export const OfferGenerator = ({
   } = useOffer(instanceId);
 
   const isV2 = offer.offerFormat === 'v2';
-  const maxStep = isV2 ? 2 : 3;
-
-  const steps = isV2
-    ? [
-        { id: 1, label: t('offers.steps.customerData'), icon: User },
-        { id: 2, label: 'Usługi', icon: Package },
-      ]
-    : [
-        { id: 1, label: t('offers.steps.customerData'), icon: User },
-        { id: 2, label: t('offers.steps.scope'), icon: Layers },
-        { id: 3, label: t('offers.steps.summary'), icon: FileCheck },
-      ];
 
   // Fetch instance settings for unit prices visibility and email dialog
   useEffect(() => {
@@ -171,7 +140,7 @@ export const OfferGenerator = ({
       // New offer — set v2 format
       updateOffer({ offerFormat: 'v2' });
     }
-  }, [offerId, duplicateFromId, instanceData]);
+  }, [offerId, duplicateFromId]);
 
   // Track changes for new offers
   useEffect(() => {
@@ -237,50 +206,6 @@ export const OfferGenerator = ({
     setPendingClose(false);
   };
 
-  const handleNext = () => {
-    // Validate step 1 before proceeding
-    if (currentStep === 1) {
-      const errors: ValidationErrors = {};
-
-      if (!offer.customerData.name?.trim()) {
-        errors.name = 'Imię i nazwisko jest wymagane';
-      }
-      if (!offer.customerData.email?.trim()) {
-        errors.email = 'Email jest wymagany';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(offer.customerData.email.trim())) {
-        errors.email = 'Nieprawidłowy format email';
-      }
-      if (!offer.vehicleData.brandModel?.trim()) {
-        errors.brandModel = 'Marka i model jest wymagany';
-      }
-
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors);
-        // Scroll to first error field
-        customerStepRef.current?.scrollToFirstError(errors);
-        return;
-      }
-
-      setValidationErrors({});
-    }
-
-    if (currentStep < maxStep) {
-      // Optimistic navigation - change step immediately
-      setCurrentStep((prev) => prev + 1);
-      // Fire-and-forget auto-save in background (silent - no toast)
-      saveOffer(true).catch((error) => console.error('Auto-save failed:', error));
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentStep > 1) {
-      // Optimistic navigation - change step immediately
-      setCurrentStep((prev) => prev - 1);
-      // Fire-and-forget auto-save in background (silent - no toast)
-      saveOffer(true).catch((error) => console.error('Auto-save failed:', error));
-    }
-  };
-
   const handleSave = async () => {
     try {
       const savedId = await saveOffer();
@@ -294,6 +219,26 @@ export const OfferGenerator = ({
   };
 
   const handleSend = async () => {
+    // Validate required fields before sending
+    const errors: ValidationErrors = {};
+    if (!offer.customerData.name?.trim()) {
+      errors.name = 'Imię i nazwisko jest wymagane';
+    }
+    if (!offer.customerData.email?.trim()) {
+      errors.email = 'Email jest wymagany';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(offer.customerData.email.trim())) {
+      errors.email = 'Nieprawidłowy format email';
+    }
+    if (!offer.vehicleData.brandModel?.trim()) {
+      errors.brandModel = 'Marka i model jest wymagany';
+    }
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      customerStepRef.current?.scrollToFirstError(errors);
+      return;
+    }
+    setValidationErrors({});
+
     setSending(true);
     try {
       const savedId = await saveOffer();
@@ -424,17 +369,6 @@ export const OfferGenerator = ({
     }
   };
 
-  const validateStep = (step: number): boolean => {
-    if (step === 1) {
-      return !!(offer.customerData.name && offer.customerData.email && offer.vehicleData.brandModel);
-    }
-    if (isV2) return true; // v2 step 2 (products) — always OK
-    if (step === 2) return offer.selectedScopeIds.length > 0;
-    return true;
-  };
-
-  const canProceed = validateStep(currentStep);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -443,120 +377,52 @@ export const OfferGenerator = ({
     );
   }
 
-  return (
-    <div className="pb-24">
-      <div className="max-w-3xl mx-auto w-full space-y-6">
-        {/* Steps Header */}
-        <div className="flex items-center justify-center gap-2">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = currentStep === step.id;
-            const isCompleted = currentStep > step.id;
+  const formContent = (
+    <div className="space-y-6">
+      <CustomerDataStep
+        ref={customerStepRef}
+        instanceId={instanceId}
+        customerData={offer.customerData}
+        vehicleData={offer.vehicleData}
+        onCustomerChange={(data) => {
+          updateCustomerData(data);
+          if (data.name !== undefined && validationErrors.name) {
+            setValidationErrors((prev) => ({ ...prev, name: undefined }));
+          }
+          if (data.email !== undefined && validationErrors.email) {
+            setValidationErrors((prev) => ({ ...prev, email: undefined }));
+          }
+        }}
+        onVehicleChange={(data) => {
+          updateVehicleData(data);
+          if (data.brandModel !== undefined && validationErrors.brandModel) {
+            setValidationErrors((prev) => ({ ...prev, brandModel: undefined }));
+          }
+        }}
+        validationErrors={validationErrors}
+        internalNotes={offer.internalNotes}
+        onInternalNotesChange={(value) => updateOffer({ internalNotes: value })}
+      />
 
-            return (
-              <div key={step.id} className="flex items-center">
-                {index > 0 && (
-                  <div
-                    className={cn(
-                      'w-8 md:w-16 h-0.5 mx-2',
-                      isCompleted ? 'bg-primary' : 'bg-border',
-                    )}
-                  />
-                )}
-                <button
-                  onClick={() => setCurrentStep(step.id)}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
-                    isActive && 'bg-primary text-primary-foreground',
-                    isCompleted &&
-                      !isActive &&
-                      'bg-primary/10 text-primary hover:bg-primary hover:text-white',
-                    !isActive &&
-                      !isCompleted &&
-                      'text-muted-foreground hover:bg-primary hover:text-white',
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden md:inline text-sm font-medium">{step.label}</span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Step Content */}
-        {currentStep === 1 && (
-          <Card className="p-6">
-            <CustomerDataStep
-              ref={customerStepRef}
-              instanceId={instanceId}
-              customerData={offer.customerData}
-              vehicleData={offer.vehicleData}
-              onCustomerChange={(data) => {
-                updateCustomerData(data);
-                if (data.name !== undefined && validationErrors.name) {
-                  setValidationErrors((prev) => ({ ...prev, name: undefined }));
-                }
-                if (data.email !== undefined && validationErrors.email) {
-                  setValidationErrors((prev) => ({ ...prev, email: undefined }));
-                }
-              }}
-              onVehicleChange={(data) => {
-                updateVehicleData(data);
-                if (data.brandModel !== undefined && validationErrors.brandModel) {
-                  setValidationErrors((prev) => ({ ...prev, brandModel: undefined }));
-                }
-              }}
-              validationErrors={validationErrors}
-              internalNotes={offer.internalNotes}
-              onInternalNotesChange={(value) => updateOffer({ internalNotes: value })}
-            />
-          </Card>
-        )}
-
-        {currentStep === 2 && (
-          isV2 ? (
-            <ProductsSummaryStepV2
-              instanceId={instanceId}
-              offer={offer}
-              showUnitPrices={instanceShowUnitPrices}
-              isEditing={!!offerId}
-              onUpdateOffer={updateOffer}
-              calculateTotalNet={calculateTotalNet}
-              calculateTotalGross={calculateTotalGross}
-              onShowPreview={handleShowPreview}
-            />
-          ) : (
-            <Card className="p-6">
-              <ScopesStep
-                instanceId={instanceId}
-                selectedScopeIds={offer.selectedScopeIds}
-                onScopesChange={updateSelectedScopes}
-              />
-            </Card>
-          )
-        )}
-
-        {/* Step 3 (Options) is temporarily hidden - code preserved for future use
-      {currentStep === 3 && (
-        <OptionsStep
+      {isV2 ? (
+        <ProductsSummaryStepV2
           instanceId={instanceId}
-          options={offer.options}
-          selectedScopeIds={offer.selectedScopeIds}
+          offer={offer}
           showUnitPrices={instanceShowUnitPrices}
-          onAddOption={addOption}
-          onUpdateOption={updateOption}
-          onRemoveOption={removeOption}
-          onDuplicateOption={duplicateOption}
-          onAddItem={addItemToOption}
-          onUpdateItem={updateItemInOption}
-          onRemoveItem={removeItemFromOption}
-          calculateOptionTotal={calculateOptionTotal}
+          isEditing={!!offerId}
+          onUpdateOffer={updateOffer}
+          calculateTotalNet={calculateTotalNet}
+          calculateTotalGross={calculateTotalGross}
+          onShowPreview={handleShowPreview}
+          onServiceSaved={() => setPreviewRefreshKey((k) => k + 1)}
         />
-      )}
-      */}
-
-        {!isV2 && currentStep === 3 && (
+      ) : (
+        <>
+          <ScopesStep
+            instanceId={instanceId}
+            selectedScopeIds={offer.selectedScopeIds}
+            onScopesChange={updateSelectedScopes}
+          />
           <SummaryStepV2
             instanceId={instanceId}
             offer={offer}
@@ -567,23 +433,44 @@ export const OfferGenerator = ({
             calculateTotalGross={calculateTotalGross}
             onShowPreview={handleShowPreview}
           />
-        )}
-      </div>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="pb-24">
+      {/* Desktop: split view with preview */}
+      {!isMobile ? (
+        <div className="flex gap-6 h-[calc(100vh-12rem)]">
+          {/* Left: Form */}
+          <div className="w-[540px] shrink-0 overflow-y-auto pr-2">
+            {formContent}
+          </div>
+
+          {/* Right: Live Preview */}
+          <div className="flex-1 min-w-0 border rounded-lg overflow-hidden bg-white">
+            <OfferPreviewPanel
+              offer={offer}
+              instanceId={instanceId}
+              calculateTotalNet={calculateTotalNet}
+              calculateTotalGross={calculateTotalGross}
+              refreshKey={previewRefreshKey}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Mobile: single-column layout */
+        <div className="space-y-6">
+          {formContent}
+        </div>
+      )}
 
       {/* Fixed Footer */}
       <div className="fixed bottom-0 left-0 right-0 lg:left-[var(--sidebar-w,0px)] bg-background border-t py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 transition-[left] duration-300">
-        <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
+        <div className="flex items-center justify-between px-4">
           <div>
-            {currentStep > 1 ? (
-              <Button
-                variant="outline"
-                onClick={handlePrev}
-                className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                <span className="hidden sm:inline">{t('common.back')}</span>
-              </Button>
-            ) : onClose ? (
+            {onClose && (
               <Button
                 variant="outline"
                 onClick={handleClose}
@@ -592,7 +479,7 @@ export const OfferGenerator = ({
                 <span className="hidden sm:inline">{t('common.cancel')}</span>
                 <ChevronLeft className="w-5 h-5 sm:hidden" />
               </Button>
-            ) : null}
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -605,50 +492,30 @@ export const OfferGenerator = ({
               <span className="hidden sm:inline">{t('common.save')}</span>
             </Button>
 
-            {/* Preview button - always visible */}
-            <Button
-              variant="outline"
-              onClick={handleShowPreview}
-              className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
-            >
-              <Eye className="w-5 h-5" />
-              <span className="hidden sm:inline">{t('offers.preview')}</span>
-            </Button>
-
-            {/* TODO: Print feature - to be refined in future
-          <Button
-            variant="outline"
-            onClick={handlePrint}
-            className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
-          >
-            <Printer className="w-5 h-5" />
-            <span className="hidden sm:inline">Drukuj</span>
-          </Button>
-          */}
-
-            {currentStep < maxStep ? (
+            {/* Preview button - only on mobile (desktop has inline preview) */}
+            {isMobile && (
               <Button
-                onClick={handleNext}
-                disabled={!isV2 && currentStep === 2 && !canProceed}
-                className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
+                variant="outline"
+                onClick={handleShowPreview}
+                className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
               >
-                <span className="hidden sm:inline">{t('common.next')}</span>
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSend}
-                disabled={sending || !canProceed}
-                className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
-              >
-                {sending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-                <span className="hidden sm:inline">{t('offers.sendOffer')}</span>
+                <Eye className="w-5 h-5" />
+                <span className="hidden sm:inline">{t('offers.preview')}</span>
               </Button>
             )}
+
+            <Button
+              onClick={handleSend}
+              disabled={sending}
+              className="gap-2 h-12 w-12 sm:w-auto sm:px-4"
+            >
+              {sending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+              <span className="hidden sm:inline">{t('offers.sendOffer')}</span>
+            </Button>
           </div>
         </div>
       </div>

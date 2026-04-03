@@ -225,7 +225,7 @@ export const PublicOfferCustomerView = ({
 
         const inferredScopeName = opt.scope_id
           ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
-          : (inferredNameFromTitle ?? (offer.offer_format === 'v2' ? 'Pozycje' : t('publicOffer.otherFallback')));
+          : (inferredNameFromTitle ?? (offer.offer_format === 'v2' ? 'Usługi' : t('publicOffer.otherFallback')));
 
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
 
@@ -724,7 +724,7 @@ export const PublicOfferCustomerView = ({
                           return (
                             <div
                               key={item.id}
-                              className="rounded-lg border border-dashed p-4 opacity-80"
+                              className="rounded-lg border p-4"
                               style={{
                                 borderColor: '#d0d0d0',
                                 backgroundColor: branding.offer_section_bg_color,
