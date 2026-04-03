@@ -168,16 +168,22 @@ const RollDetailsDrawer = ({
                 <p className="font-medium">{formatRollSize(roll.widthMm, roll.initialLengthM)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Stan początkowy</span>
+                <span className="text-muted-foreground">Pełna rolka</span>
                 <p className="font-medium">{formatMbM2(roll.initialLengthM, roll.widthMm)}</p>
               </div>
+              {roll.initialRemainingMb < roll.initialLengthM && (
+                <div>
+                  <span className="text-muted-foreground">Stan przy dodaniu</span>
+                  <p className="font-medium">{formatMbM2(roll.initialRemainingMb, roll.widthMm)}</p>
+                </div>
+              )}
               <div>
                 <span className="text-muted-foreground">Pozostało</span>
                 <p
                   className={`font-medium ${
                     (roll.remainingMb || 0) <= 0
                       ? 'text-destructive'
-                      : (roll.remainingMb || 0) < roll.initialLengthM * 0.2
+                      : (roll.remainingMb || 0) < roll.initialRemainingMb * 0.2
                         ? 'text-orange-500'
                         : 'text-green-600'
                   }`}
