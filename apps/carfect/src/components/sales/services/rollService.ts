@@ -30,10 +30,13 @@ function mapUsageRow(row: any): SalesRollUsage {
   return {
     id: row.id,
     rollId: row.roll_id,
-    orderId: row.order_id,
-    orderItemId: row.order_item_id,
+    orderId: row.order_id ?? null,
+    orderItemId: row.order_item_id ?? null,
     usedM2: Number(row.used_m2),
     usedMb: Number(row.used_mb),
+    source: row.source || 'order',
+    workerName: row.worker_name ?? null,
+    note: row.note ?? null,
     createdAt: row.created_at,
   };
 }
@@ -266,7 +269,7 @@ export async function deleteRoll(id: string): Promise<void> {
 export async function fetchRollUsages(rollId: string): Promise<SalesRollUsage[]> {
   const { data, error } = await (supabase
     .from('sales_roll_usages')
-    .select('*')
+    .select('id, roll_id, order_id, order_item_id, used_m2, used_mb, source, worker_name, note, created_at')
     .eq('roll_id', rollId)
     .order('created_at', { ascending: false }) as any);
 
@@ -289,12 +292,81 @@ export async function createRollUsage(data: {
       order_item_id: data.orderItemId,
       used_m2: data.usedM2,
       used_mb: data.usedMb,
+      source: 'order',
     })
     .select('id')
     .single() as any);
 
   if (error) throw new Error(error.message);
   return row.id;
+}
+
+export async function createManualRollUsage(data: {
+  rollId: string;
+  usedMb: number;
+  usedM2: number;
+  source: 'manual' | 'worker';
+  workerName?: string;
+  note?: string;
+}): Promise<string> {
+  const { data: row, error } = await (supabase
+    .from('sales_roll_usages')
+    .insert({
+      roll_id: data.rollId,
+      used_mb: data.usedMb,
+      used_m2: data.usedM2,
+      source: data.source,
+      worker_name: data.workerName || null,
+      note: data.note || null,
+    })
+    .select('id')
+    .single() as any);
+
+  if (error) throw new Error(error.message);
+  return row.id;
+}
+
+export async function updateManualRollUsage(
+  id: string,
+  data: {
+    usedMb: number;
+    usedM2: number;
+    source: 'manual' | 'worker';
+    workerName?: string;
+    note?: string;
+  },
+): Promise<void> {
+  const { data: rows, error } = await (supabase
+    .from('sales_roll_usages')
+    .update({
+      used_mb: data.usedMb,
+      used_m2: data.usedM2,
+      source: data.source,
+      worker_name: data.workerName || null,
+      note: data.note || null,
+    })
+    .eq('id', id)
+    .neq('source', 'order')
+    .select('id') as any);
+
+  if (error) throw new Error(error.message);
+  if (!rows || rows.length === 0) {
+    throw new Error('Nie udało się zaktualizować zużycia — brak uprawnień lub rekord nie istnieje.');
+  }
+}
+
+export async function deleteRollUsage(id: string): Promise<void> {
+  const { data, error } = await (supabase
+    .from('sales_roll_usages')
+    .delete()
+    .eq('id', id)
+    .neq('source', 'order')
+    .select('id') as any);
+
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error('Nie udało się usunąć zużycia — brak uprawnień lub rekord nie istnieje.');
+  }
 }
 
 export async function deleteRollUsagesByOrderItem(orderItemId: string): Promise<void> {

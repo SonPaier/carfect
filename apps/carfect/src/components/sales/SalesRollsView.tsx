@@ -36,7 +36,7 @@ import { ConfirmDialog, Sheet, SheetContent, SheetHeader, SheetTitle } from '@sh
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
 import { formatRollSize, formatMbM2Lines, mbToM2 } from './types/rolls';
-import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
+import { fetchRolls, fetchRollById, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
 import RollDetailsDrawer from './rolls/RollDetailsDrawer';
@@ -529,6 +529,13 @@ const SalesRollsView = () => {
         onOpenChange={setDetailsDrawerOpen}
         roll={detailsRoll}
         onEdit={handleEditClick}
+        onUsageChange={async () => {
+          loadRolls();
+          if (detailsRoll) {
+            const updated = await fetchRollById(detailsRoll.id);
+            if (updated) setDetailsRoll(updated);
+          }
+        }}
       />
 
       {/* Delete confirm */}
