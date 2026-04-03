@@ -6,7 +6,7 @@ import { Button } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
-import { User, Building2, Car, Search, Loader2 } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { CustomerData, VehicleData } from '@/hooks/useOffer';
 import { toast } from 'sonner';
 import { CarSearchAutocomplete, CarSearchValue } from '@/components/ui/car-search-autocomplete';
@@ -327,11 +327,10 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
       <div className="space-y-8">
         {/* Customer Info Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <User className="w-5 h-5 text-primary" />
+          <div className="text-lg font-semibold">
             Dane klienta
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2" ref={nameInputRef}>
               <Label htmlFor="customerName">Imię i nazwisko *</Label>
               <ClientSearchAutocomplete
@@ -408,18 +407,18 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                 id="inquiryContent"
                 value={customerData.inquiryContent || ''}
                 onChange={(e) => onCustomerChange({ inquiryContent: e.target.value })}
-                placeholder="Treść zapytania od klienta..."
+                placeholder=""
                 minRows={3}
               />
             </div>
             {onInternalNotesChange && (
               <div className="space-y-2">
-                <Label htmlFor="internalNotes">Notatka wewnętrzna (tylko dla admina)</Label>
+                <Label htmlFor="internalNotes">Notatka wewnętrzna (widoczna tylko dla Ciebie)</Label>
                 <AutoResizeTextarea
                   id="internalNotes"
                   value={internalNotes || ''}
                   onChange={(e) => onInternalNotesChange(e.target.value)}
-                  placeholder="Notatki widoczne tylko w panelu admina..."
+                  placeholder=""
                   minRows={3}
                 />
               </div>
@@ -429,8 +428,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
 
         {/* Company Info Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <Building2 className="w-5 h-5 text-primary" />
+          <div className="text-lg font-semibold">
             Dane firmy (opcjonalne)
           </div>
           {!showManualCompany ? (
@@ -533,41 +531,42 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
 
         {/* Vehicle Info Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <Car className="w-5 h-5 text-primary" />
+          <div className="text-lg font-semibold">
             Dane pojazdu
           </div>
-          <div className="space-y-2" ref={brandModelRef}>
-            <Label htmlFor="vehicleBrandModel">Marka i model *</Label>
-            <CarSearchAutocomplete
-              value={vehicleData.brandModel || ''}
-              onChange={(val: CarSearchValue) => {
-                if (val === null) {
-                  onVehicleChange({ brandModel: '' });
-                } else if ('type' in val && val.type === 'custom') {
-                  onVehicleChange({ brandModel: val.label });
-                } else {
-                  onVehicleChange({ brandModel: val.label });
-                }
-              }}
-              error={hasBrandModelError}
-            />
-            {validationErrors?.brandModel && (
-              <p className="text-sm text-red-500">{validationErrors.brandModel}</p>
-            )}
-          </div>
-
-          {/* Paint Color and Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2" ref={brandModelRef}>
+              <Label htmlFor="vehicleBrandModel">Marka i model *</Label>
+              <CarSearchAutocomplete
+                value={vehicleData.brandModel || ''}
+                onChange={(val: CarSearchValue) => {
+                  if (val === null) {
+                    onVehicleChange({ brandModel: '' });
+                  } else if ('type' in val && val.type === 'custom') {
+                    onVehicleChange({ brandModel: val.label });
+                  } else {
+                    onVehicleChange({ brandModel: val.label });
+                  }
+                }}
+                error={hasBrandModelError}
+              />
+              {validationErrors?.brandModel && (
+                <p className="text-sm text-red-500">{validationErrors.brandModel}</p>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="paintColor">Kolor lakieru</Label>
               <Input
                 id="paintColor"
                 value={vehicleData.paintColor || ''}
                 onChange={(e) => onVehicleChange({ paintColor: e.target.value })}
-                placeholder="np. Czarny, Biały perłowy..."
+                placeholder=""
               />
             </div>
+          </div>
+
+          {/* Paint Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Typ lakieru</Label>
               <RadioGroup

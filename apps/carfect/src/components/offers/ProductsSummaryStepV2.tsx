@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Gift, Plus, Trash2, ArrowUp } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OfferProductPickerDrawer, PickedProduct } from './OfferProductPickerDrawer';
 import { ConditionsSection } from './summary/ConditionsSection';
@@ -90,8 +90,6 @@ export const ProductsSummaryStepV2 = ({
     onUpdateOffer({ options: [syntheticOption] });
   }, [products]);
 
-  const selectedProducts = products.filter((p) => !p.isSuggested);
-  const suggestedProducts = products.filter((p) => p.isSuggested);
   const alreadyAddedIds = products.map((p) => p.productId);
 
   const handleAddProducts = useCallback((picked: PickedProduct[]) => {
@@ -132,54 +130,30 @@ export const ProductsSummaryStepV2 = ({
 
   return (
     <div className="space-y-6">
-      {/* Selected Products */}
+      {/* Products */}
       <div className="space-y-3">
         <h3 className="font-semibold">
           Wybrane usługi, ceny netto
         </h3>
 
-        {selectedProducts.length === 0 && (
+        {products.length === 0 && (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            Brak wybranych uslug. Kliknij &quot;Dodaj usluge&quot; ponizej.
+            Brak wybranych usług. Kliknij &quot;Dodaj usługę&quot; poniżej.
           </p>
         )}
 
         <div className="space-y-2">
-          {selectedProducts.map((product) => (
+          {products.map((product) => (
             <ProductRow
               key={product.itemId}
               product={product}
               onPriceChange={handlePriceChange}
               onToggleSuggested={handleToggleSuggested}
               onRemove={handleRemove}
-              isSuggested={false}
             />
           ))}
         </div>
-
       </div>
-
-      {/* Suggested Products */}
-      {suggestedProducts.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-semibold">
-            Sugerowane — opcjonalne dla klienta ({suggestedProducts.length})
-          </h3>
-
-          <div className="space-y-2">
-            {suggestedProducts.map((product) => (
-              <ProductRow
-                key={product.itemId}
-                product={product}
-                onPriceChange={handlePriceChange}
-                onToggleSuggested={handleToggleSuggested}
-                onRemove={handleRemove}
-                isSuggested
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Add Product Button */}
       <Button
@@ -188,7 +162,7 @@ export const ProductsSummaryStepV2 = ({
         className="w-full h-12"
       >
         <Plus className="w-4 h-4 mr-2" />
-        Dodaj usluge
+        Dodaj usługę
       </Button>
 
       <Separator />
@@ -220,10 +194,9 @@ interface ProductRowProps {
   onPriceChange: (itemId: string, price: number) => void;
   onToggleSuggested: (itemId: string) => void;
   onRemove: (itemId: string) => void;
-  isSuggested: boolean;
 }
 
-function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, isSuggested }: ProductRowProps) {
+function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove }: ProductRowProps) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState(product.price.toString());
 
@@ -276,12 +249,14 @@ function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, isSug
         type="button"
         onClick={() => onToggleSuggested(product.itemId)}
         className={cn(
-          'p-1.5 rounded-full transition-colors',
-          isSuggested ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground hover:bg-muted',
+          'px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
+          product.isSuggested
+            ? 'bg-primary text-white hover:bg-primary/90'
+            : 'bg-muted/50 text-muted-foreground hover:bg-muted',
         )}
-        title={isSuggested ? 'Przenies do wybranych' : 'Oznacz jako sugerowane'}
+        title={product.isSuggested ? 'Oznaczone jako opcja' : 'Oznacz jako opcje'}
       >
-        {isSuggested ? <ArrowUp className="w-4 h-4" /> : <Gift className="w-4 h-4" />}
+        Opcja
       </button>
 
       <button

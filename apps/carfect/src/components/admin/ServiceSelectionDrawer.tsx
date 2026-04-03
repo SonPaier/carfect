@@ -536,7 +536,7 @@ const ServiceSelectionDrawer = ({
                             {service.short_name ? (
                               <>
                                 <p className="font-bold text-primary">{service.short_name}</p>
-                                <p className="text-muted-foreground text-[11px] leading-tight">
+                                <p className="text-muted-foreground text-xs leading-tight">
                                   {service.name}
                                 </p>
                               </>

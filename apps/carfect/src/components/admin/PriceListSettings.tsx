@@ -445,12 +445,18 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
 
   // Filter services by search query
   const filteredServices = useMemo(() => {
-    if (!searchQuery.trim()) return services;
-    const query = searchQuery.toLowerCase().trim();
-    return services.filter(s => 
-      s.name.toLowerCase().includes(query) || 
-      (s.shortcut && s.shortcut.toLowerCase().includes(query))
-    );
+    let result = services;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(query) ||
+        (s.shortcut && s.shortcut.toLowerCase().includes(query))
+      );
+    }
+    return [...result].sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    });
   }, [services, searchQuery]);
 
   const getServicesByCategory = (categoryId: string | null) => {
