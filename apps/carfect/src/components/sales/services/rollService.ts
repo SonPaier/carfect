@@ -23,6 +23,7 @@ function mapDbRow(row: any): SalesRoll {
     extractionConfidence: row.extraction_confidence,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    createdBy: row.created_by ?? null,
   };
 }
 
@@ -101,6 +102,19 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
     }
   }
 
+  // Fetch creator names
+  const creatorIds = [...new Set(rolls.map((r) => r.createdBy).filter(Boolean))] as string[];
+  const creatorMap = new Map<string, string>();
+  if (creatorIds.length > 0) {
+    const { data: profileRows } = await (supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', creatorIds) as any);
+    for (const p of profileRows || []) {
+      if (p.full_name && !p.full_name.includes('@')) creatorMap.set(p.id, p.full_name);
+    }
+  }
+
   // Compute remaining + customer names
   const enriched = rolls.map((roll) => {
     const usageMb = usageMap.get(roll.id) || 0;
@@ -121,6 +135,7 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
       remainingMb,
       remainingM2: remainingMb * widthM,
       customerNames,
+      createdByName: roll.createdBy ? creatorMap.get(roll.createdBy) ?? null : null,
     };
   });
 

@@ -396,7 +396,7 @@ const AddSalesProductDrawer = ({
                     className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20"
                   >
                     <Input
-                      placeholder="Nazwa wariantu"
+                      placeholder="np. 1220mm x 2m"
                       value={variant.name}
                       onChange={(e) => {
                         updateVariantName(index, e.target.value);

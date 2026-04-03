@@ -16,6 +16,8 @@ export interface SalesRoll {
   extractionConfidence?: Record<string, number>;
   createdAt: string;
   updatedAt: string;
+  createdBy?: string | null;
+  createdByName?: string | null;
   // Computed client-side from usages
   currentUsageMb?: number;
   remainingMb?: number;

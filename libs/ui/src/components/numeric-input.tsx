@@ -24,6 +24,7 @@ const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
 
     return (
       <Input
+        step="any"
         {...props}
         ref={ref}
         type="number"

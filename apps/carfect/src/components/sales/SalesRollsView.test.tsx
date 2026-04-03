@@ -137,9 +137,7 @@ describe('SalesRollsView', () => {
     expect(screen.getByText('Kod')).toBeInTheDocument();
     expect(screen.getByText('Rozmiar')).toBeInTheDocument();
     expect(screen.getByText('Na stanie')).toBeInTheDocument();
-    expect(screen.getByText('Zużyto')).toBeInTheDocument();
-    expect(screen.getByText('Pozostało')).toBeInTheDocument();
-    expect(screen.getByText('Data dostawy')).toBeInTheDocument();
+    expect(screen.getByText('Dodano')).toBeInTheDocument();
   });
 
   it('displays roll data — brand, product name, dimensions', async () => {
