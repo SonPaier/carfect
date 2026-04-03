@@ -96,7 +96,8 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       hasRole('super_admin') ||
       hasInstanceRole('admin', instance.id) ||
       hasInstanceRole('employee', instance.id) ||
-      hasInstanceRole('hall', instance.id);
+      hasInstanceRole('hall', instance.id) ||
+      hasInstanceRole('sales', instance.id);
     if (hasAccess) {
       supabase
         .from('profiles')

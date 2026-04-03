@@ -239,6 +239,14 @@ const DevRoutes = () => (
       />
       {/* Sales CRM routes - BEFORE /admin/:view */}
       <Route
+        path="/sales-crm/:view?"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <SalesDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/sales-crm/:view?"
         element={
           <ProtectedRoute requiredRole="admin">
