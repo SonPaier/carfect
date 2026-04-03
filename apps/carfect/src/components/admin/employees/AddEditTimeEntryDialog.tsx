@@ -92,8 +92,8 @@ const AddEditTimeEntryDialog = ({
       }
 
       onOpenChange(false);
-    } catch (error: any) {
-      if (error?.message?.includes('overlap')) {
+    } catch (error: unknown) {
+      if ((error as Error)?.message?.includes('overlap')) {
         toast.error('Wpis nakłada się z istniejącym wpisem');
       } else {
         toast.error('Wystąpił błąd');

@@ -211,9 +211,9 @@ const EditInstanceUserDialog = ({
       // First refresh the user list, then close the dialog
       await onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating user:', error);
-      toast.error(error.message || t('editUser.updateError'));
+      toast.error((error as Error).message || t('editUser.updateError'));
     } finally {
       setLoading(false);
     }

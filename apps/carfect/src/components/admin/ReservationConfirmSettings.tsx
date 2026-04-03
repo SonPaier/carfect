@@ -84,7 +84,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       if (data) {
         setAutoConfirm(data.auto_confirm_reservations !== false);
         setCustomerEditCutoffHours(data.customer_edit_cutoff_hours ?? 1);
-        setPricingMode((data as any).pricing_mode || 'brutto');
+        setPricingMode((data as { pricing_mode?: string }).pricing_mode || 'brutto');
       }
       setLoading(false);
     };
@@ -153,7 +153,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
 
     const { error } = await supabase
       .from('instances')
-      .update({ pricing_mode: mode } as any)
+      .update({ pricing_mode: mode } as Record<string, unknown>)
       .eq('id', instanceId);
 
     if (error) {

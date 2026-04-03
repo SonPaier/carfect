@@ -57,8 +57,8 @@ export function useGusLookup() {
         postalCode,
         city,
       };
-    } catch (err: any) {
-      toast.error(err.message || 'Błąd pobierania danych');
+    } catch (err: unknown) {
+      toast.error((err as Error).message || 'Błąd pobierania danych');
       return null;
     } finally {
       setLoading(false);

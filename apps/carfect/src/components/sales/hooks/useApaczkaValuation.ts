@@ -49,7 +49,7 @@ export function useApaczkaValuation(
         const val = data.valuation;
         // Try price_table format: { "serviceId": { price_gross: 2134 } } (value in grosze)
         if (val?.price_table) {
-          const firstEntry = Object.values(val.price_table)[0] as any;
+          const firstEntry = Object.values(val.price_table)[0] as { price_gross?: number; price?: number };
           const grossGrosze = firstEntry?.price_gross ?? firstEntry?.price ?? null;
           return grossGrosze != null ? Number(grossGrosze) / 100 : null;
         }

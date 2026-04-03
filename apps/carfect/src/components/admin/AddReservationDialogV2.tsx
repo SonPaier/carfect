@@ -769,7 +769,7 @@ const AddReservationDialogV2 = ({
       if (error) return;
       if (employeesDirtyRef.current) return;
 
-      const raw = (data as any)?.assigned_employee_ids;
+      const raw = (data as { assigned_employee_ids?: unknown })?.assigned_employee_ids;
       const ids = Array.isArray(raw) ? (raw as string[]) : [];
       setAssignedEmployeeIds(ids);
     })();

@@ -78,7 +78,7 @@ export function TrainingDetailsDrawer({
     try {
       const { error } = await supabase
         .from('trainings')
-        .update({ status: newStatus } as any)
+        .update({ status: newStatus })
         .eq('id', training.id);
       if (error) throw error;
       onStatusChanged?.(training.id, newStatus);

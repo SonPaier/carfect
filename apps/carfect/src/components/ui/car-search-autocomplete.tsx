@@ -278,7 +278,7 @@ export const CarSearchAutocomplete = ({
           onFocus={() => {
             // Only auto-open if user has interacted or not suppressed
             if (!suppressAutoOpen || hasUserInteracted) {
-              inputValue.length >= 1 && setIsOpen(true);
+              if (inputValue.length >= 1) setIsOpen(true);
             }
           }}
           disabled={disabled}

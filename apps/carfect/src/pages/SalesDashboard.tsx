@@ -80,7 +80,7 @@ const SalesDashboard = () => {
 
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: salesSettings } = useSalesSettings(instanceId);
-  const [instanceData, setInstanceData] = useState<any>(null);
+  const [instanceData, setInstanceData] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!instanceId) return;

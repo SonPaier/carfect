@@ -33,9 +33,9 @@ export function useCustomerSearch(instanceId: string | null) {
         .eq('instance_id', instanceId)
         .ilike('name', `%${q}%`)
         .order('name')
-        .limit(10) as any);
+        .limit(10));
 
-      const results: SalesCustomerRef[] = (data || []).map((c: any) => ({
+      const results: SalesCustomerRef[] = (data || []).map((c: { id: string; name: string; discount_percent?: number | null; is_net_payer?: boolean | null }) => ({
         id: c.id,
         name: c.name,
         discountPercent: c.discount_percent ?? undefined,

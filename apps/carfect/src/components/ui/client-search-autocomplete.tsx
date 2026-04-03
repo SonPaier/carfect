@@ -266,7 +266,7 @@ const ClientSearchAutocomplete = ({
             // Don't open if just selected or if suppressed and no interaction
             if (justSelected) return;
             if (!suppressAutoSearch || hasUserInteracted) {
-              foundCustomers.length > 0 && setDropdownOpen(true);
+              if (foundCustomers.length > 0) setDropdownOpen(true);
             }
           }}
           onKeyDown={handleKeyDown}

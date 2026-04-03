@@ -106,9 +106,9 @@ const ResetPasswordDialog = ({
       toast.success('Hasło zostało zresetowane');
       handleReset();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error resetting password:', error);
-      toast.error(error.message || 'Nie udało się zresetować hasła');
+      toast.error((error as Error).message || 'Nie udało się zresetować hasła');
     } finally {
       setLoading(false);
     }

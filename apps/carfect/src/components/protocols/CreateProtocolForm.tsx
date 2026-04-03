@@ -329,15 +329,15 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setNotes(protocolData.notes || '');
           
           // Load protocol photos
-          const loadedPhotos = (protocolData as any).photo_urls || [];
+          const loadedPhotos = (protocolData as Record<string, unknown>).photo_urls as string[] || [];
           setProtocolPhotoUrls(loadedPhotos);
           if (loadedPhotos.length > 0) {
             setShowPhotosSection(true);
           }
 
           // Load release fields
-          const releaseSignatureData = (protocolData as any).release_signature || null;
-          const releaseNotesData = (protocolData as any).release_notes || null;
+          const releaseSignatureData = (protocolData as Record<string, unknown>).release_signature as string | null || null;
+          const releaseNotesData = (protocolData as Record<string, unknown>).release_notes as string | null || null;
           if (releaseSignatureData) {
             setReleaseSignature(releaseSignatureData);
             setShowReleaseSection(true);
@@ -355,7 +355,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           if (pointsError) throw pointsError;
 
           if (pointsData) {
-            const points = pointsData.map((p: any) => ({
+            const points = pointsData.map((p) => ({
               id: p.id,
               view: p.view as VehicleView,
               x_percent: p.x_percent,
@@ -547,7 +547,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
               custom_note: data.custom_note || null,
               photo_url: data.photo_url,
               photo_urls: data.photo_urls,
-            } as any)
+            })
             .select('id')
             .single();
           // Update the temp ID with the real one
@@ -618,7 +618,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
       // Filter out unsaved damage points (those with isNew flag)
       const savedDamagePoints = damagePoints.filter(p => !p.isNew);
       
-      const protocolPayload: Record<string, any> = {
+      const protocolPayload: Record<string, unknown> = {
         instance_id: instanceId,
         offer_id: offerId,
         offer_number: offerNumber || null,
@@ -682,7 +682,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
             ...protocolPayload,
             protocol_time: currentTime,
             public_token: generateShortToken(),
-          } as any)
+          })
           .select('id')
           .single();
 
@@ -705,7 +705,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
         const { error: pointsError } = await supabase
           .from('protocol_damage_points')
-          .insert(pointsToInsert as any);
+          .insert(pointsToInsert);
 
         if (pointsError) throw pointsError;
       }
@@ -1341,7 +1341,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 .update({ photo_urls: newPhotos })
                 .eq('id', protocolId);
               // Update damage points photo URLs in DB
-              const savedPoints = newPoints.filter(p => !('isNew' in p && (p as any).isNew));
+              const savedPoints = newPoints.filter(p => !('isNew' in p && (p as Record<string, unknown>).isNew));
               for (const p of savedPoints) {
                 if ('id' in p && p.id) {
                   await supabase

@@ -140,8 +140,8 @@ const AddEditRollDrawer = ({
       resetDirty();
       onOpenChange(false);
       onSaved?.();
-    } catch (err: any) {
-      toast.error('Błąd: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Błąd: ' + (err as Error).message);
     } finally {
       setSaving(false);
     }

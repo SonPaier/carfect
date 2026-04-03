@@ -404,7 +404,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
         .eq('instance_id', instanceId)
         .eq('category_type', 'both')
         .eq('active', true)
-        .order('sort_order') as unknown as { data: ServiceCategory[] | null; error: any };
+        .order('sort_order') as unknown as { data: ServiceCategory[] | null; error: Error | null };
       
       if (error) throw error;
       setCategories(data || []);
@@ -423,7 +423,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
         .select('*')
         .eq('instance_id', instanceId)
         .eq('service_type', 'both')
-        .order('sort_order') as unknown as { data: Service[] | null; error: any };
+        .order('sort_order') as unknown as { data: Service[] | null; error: Error | null };
       
       if (error) throw error;
       setServices(data || []);

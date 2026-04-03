@@ -87,9 +87,9 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
           username: u.username || t('common.noName', 'Brak nazwy'),
         })),
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching users:', error);
-      toast.error(error.message || t('instanceUsers.fetchError'));
+      toast.error((error as Error).message || t('instanceUsers.fetchError'));
     } finally {
       setLoading(false);
     }
@@ -132,9 +132,9 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
         user.is_blocked ? t('instanceUsers.userUnblocked') : t('instanceUsers.userBlocked'),
       );
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error blocking/unblocking user:', error);
-      toast.error(error.message || t('errors.generic'));
+      toast.error((error as Error).message || t('errors.generic'));
     } finally {
       setActionLoading(null);
     }

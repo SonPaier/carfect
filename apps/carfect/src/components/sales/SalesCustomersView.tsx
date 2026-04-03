@@ -99,7 +99,7 @@ const SalesCustomersView = () => {
       .from('sales_orders')
       .select('customer_id, created_at')
       .eq('instance_id', instanceId)
-      .order('created_at', { ascending: false }) as any);
+      .order('created_at', { ascending: false }));
     if (!error && data) {
       const map: Record<string, string> = {};
       for (const row of data as { customer_id: string; created_at: string }[]) {
@@ -120,7 +120,7 @@ const SalesCustomersView = () => {
         'id, name, contact_person, phone, email, default_currency, nip, company, is_net_payer, discount_percent, sales_notes, shipping_addressee, shipping_country_code, shipping_street, shipping_street_line2, shipping_postal_code, shipping_city, billing_street, billing_postal_code, billing_city, billing_country_code, billing_street_line2, shipping_same_as_billing',
       )
       .eq('instance_id', instanceId)
-      .order('name') as any);
+      .order('name'));
     if (error) {
       console.error(error);
       toast.error('Błąd ładowania klientów');

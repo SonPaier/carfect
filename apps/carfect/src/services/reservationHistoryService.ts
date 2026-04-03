@@ -5,8 +5,8 @@ export interface ReservationChange {
   reservation_id: string | null;
   change_type: 'created' | 'updated';
   field_name: string | null;
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
   batch_id: string;
   changed_by_username: string;
   changed_by_type: 'admin' | 'customer' | 'system';

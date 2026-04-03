@@ -34,8 +34,8 @@ interface UseReservationsRealtimeOptions {
   onDelete: (reservationId: string) => void;
   onRefetch: () => void;
   onNewCustomerReservation?: (reservation: Reservation) => void;
-  onTrainingInsert?: (training: any) => void;
-  onTrainingUpdate?: (training: any) => void;
+  onTrainingInsert?: (training: Record<string, unknown>) => void;
+  onTrainingUpdate?: (training: Record<string, unknown>) => void;
   onTrainingDelete?: (trainingId: string) => void;
 }
 
@@ -99,7 +99,7 @@ export function useReservationsRealtime({
   }, [onRefetch]);
 
   // Map raw data to Reservation
-  const mapRealtimeData = useCallback((data: any): Reservation => {
+  const mapRealtimeData = useCallback((data: Record<string, unknown>): Reservation => {
     const serviceItems = data.service_items as ServiceItem[] | null;
     const serviceIds = data.service_ids as string[] | null;
 
@@ -139,8 +139,8 @@ export function useReservationsRealtime({
       service_items: Array.isArray(data.service_items) ? data.service_items : undefined,
       services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
       station: data.stations ? {
-        name: data.stations.name,
-        type: data.stations.type
+        name: (data.stations as { name: string; type: string }).name,
+        type: (data.stations as { name: string; type: string }).type
       } : undefined,
       has_unified_services: data.has_unified_services,
       photo_urls: data.photo_urls,
@@ -160,7 +160,7 @@ export function useReservationsRealtime({
         const audio = new Audio('/sounds/notification.mp3');
         audio.volume = 0.5;
         audio.play().catch(() => {});
-      } catch {}
+      } catch { /* audio playback may fail silently */ }
     };
 
     const setupRealtimeChannel = () => {
@@ -203,7 +203,7 @@ export function useReservationsRealtime({
           },
           async (payload) => {
             if (payload.eventType === 'INSERT') {
-              const newRecord = payload.new as any;
+              const newRecord = payload.new as Record<string, unknown>;
               const reservationDate = parseISO(newRecord.reservation_date);
 
               // Check if within loaded range

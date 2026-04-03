@@ -264,7 +264,7 @@ const AdminCalendar = ({
       try {
         const parsed = new Date(saved);
         if (!isNaN(parsed.getTime())) return parsed;
-      } catch {}
+      } catch { /* invalid date in localStorage */ }
     }
     return new Date();
   });
@@ -414,7 +414,7 @@ const AdminCalendar = ({
       el.addEventListener('touchend', onTouchEnd, { passive: true });
 
       // Store cleanup ref
-      (el as any).__axisLockCleanup = () => {
+      (el as HTMLElement & { __axisLockCleanup?: () => void }).__axisLockCleanup = () => {
         el.removeEventListener('touchstart', onTouchStart);
         el.removeEventListener('touchmove', onTouchMove);
         el.removeEventListener('touchend', onTouchEnd);
@@ -423,10 +423,10 @@ const AdminCalendar = ({
 
     return () => {
       clearTimeout(timerId);
-      const el = gridScrollRef.current;
-      if (el && (el as any).__axisLockCleanup) {
-        (el as any).__axisLockCleanup();
-        delete (el as any).__axisLockCleanup;
+      const el = gridScrollRef.current as (HTMLElement & { __axisLockCleanup?: () => void }) | null;
+      if (el && el.__axisLockCleanup) {
+        el.__axisLockCleanup();
+        delete el.__axisLockCleanup;
       }
     };
   }, [isMobile, currentDate, viewMode]);

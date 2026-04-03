@@ -4,7 +4,41 @@ import type { SalesRoll, SalesRollUsage } from '../types/rolls';
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function mapDbRow(row: any): SalesRoll {
+interface RollDbRow {
+  id: string;
+  instance_id: string;
+  brand: string;
+  product_name: string;
+  description: string | null;
+  product_code: string | null;
+  barcode: string | null;
+  width_mm: number | string;
+  length_m: number | string;
+  initial_length_m: number | string;
+  initial_remaining_mb: number | string | null;
+  delivery_date: string | null;
+  photo_url: string | null;
+  status: string;
+  extraction_confidence: Record<string, number> | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+interface UsageDbRow {
+  id: string;
+  roll_id: string;
+  order_id: string | null;
+  order_item_id: string | null;
+  used_m2: number | string;
+  used_mb: number | string;
+  source: string;
+  worker_name: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+function mapDbRow(row: RollDbRow): SalesRoll {
   return {
     id: row.id,
     instanceId: row.instance_id,
@@ -27,7 +61,7 @@ function mapDbRow(row: any): SalesRoll {
   };
 }
 
-function mapUsageRow(row: any): SalesRollUsage {
+function mapUsageRow(row: UsageDbRow): SalesRollUsage {
   return {
     id: row.id,
     rollId: row.roll_id,
@@ -58,10 +92,10 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
   // Active tab: only active status
   // Sold tab: any status (active or archived) — we'll filter by usage+remaining client-side
   if (tab === 'active') {
-    query = (query as any).eq('status', 'active');
+    query = query.eq('status', 'active');
   }
 
-  const { data: rollRows, error } = await (query as any);
+  const { data: rollRows, error } = await query;
 
   if (error) throw new Error(error.message);
   if (!rollRows || rollRows.length === 0) return [];
@@ -70,10 +104,10 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
   const rollIds = rolls.map((r) => r.id);
 
   // Fetch aggregated usages with order → customer info
-  const { data: usageRows, error: usageErr } = await (supabase
+  const { data: usageRows, error: usageErr } = await supabase
     .from('sales_roll_usages')
     .select('roll_id, used_mb, order_id')
-    .in('roll_id', rollIds) as any);
+    .in('roll_id', rollIds);
 
   if (usageErr) throw new Error(usageErr.message);
 
@@ -90,13 +124,13 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
   }
 
   // Fetch customer names for orders
-  const allOrderIds = [...new Set((usageRows || []).map((u: any) => u.order_id).filter(Boolean))];
+  const allOrderIds = [...new Set((usageRows || []).map((u) => u.order_id).filter(Boolean))];
   const orderCustomerMap = new Map<string, string>();
   if (allOrderIds.length > 0) {
-    const { data: orderRows } = await (supabase
+    const { data: orderRows } = await supabase
       .from('sales_orders')
       .select('id, customer_name')
-      .in('id', allOrderIds) as any);
+      .in('id', allOrderIds);
     for (const o of orderRows || []) {
       if (o.customer_name) orderCustomerMap.set(o.id, o.customer_name);
     }
@@ -106,10 +140,10 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
   const creatorIds = [...new Set(rolls.map((r) => r.createdBy).filter(Boolean))] as string[];
   const creatorMap = new Map<string, string>();
   if (creatorIds.length > 0) {
-    const { data: profileRows } = await (supabase
+    const { data: profileRows } = await supabase
       .from('profiles')
       .select('id, full_name')
-      .in('id', creatorIds) as any);
+      .in('id', creatorIds);
     for (const p of profileRows || []) {
       if (p.full_name && !p.full_name.includes('@')) creatorMap.set(p.id, p.full_name);
     }
@@ -163,7 +197,7 @@ export async function createRoll(data: {
   extractionConfidence?: Record<string, number>;
   createdBy?: string | null;
 }): Promise<string> {
-  const { data: row, error } = await (supabase
+  const { data: row, error } = await supabase
     .from('sales_rolls')
     .insert({
       instance_id: data.instanceId,
@@ -182,7 +216,7 @@ export async function createRoll(data: {
       created_by: data.createdBy ?? null,
     })
     .select('id')
-    .single() as any);
+    .single();
 
   if (error) throw new Error(error.message);
   return row.id;
@@ -208,13 +242,13 @@ export async function createRollsBatch(
     created_by: data.createdBy ?? null,
   }));
 
-  const { data: inserted, error } = await (supabase
+  const { data: inserted, error } = await supabase
     .from('sales_rolls')
     .insert(rows)
-    .select('id') as any);
+    .select('id');
 
   if (error) throw new Error(error.message);
-  return (inserted || []).map((r: any) => r.id);
+  return (inserted || []).map((r: { id: string }) => r.id);
 }
 
 export async function updateRoll(
@@ -246,7 +280,7 @@ export async function updateRoll(
   if (data.photoUrl !== undefined) update.photo_url = data.photoUrl;
   if (data.status !== undefined) update.status = data.status;
 
-  const { error } = await (supabase.from('sales_rolls').update(update).eq('id', id) as any);
+  const { error } = await supabase.from('sales_rolls').update(update).eq('id', id);
 
   if (error) throw new Error(error.message);
 }
@@ -261,11 +295,11 @@ export async function restoreRoll(id: string): Promise<void> {
 
 export async function deleteRoll(id: string): Promise<void> {
   // Check if there are usages
-  const { data: usages, error: checkErr } = await (supabase
+  const { data: usages, error: checkErr } = await supabase
     .from('sales_roll_usages')
     .select('id')
     .eq('roll_id', id)
-    .limit(1) as any);
+    .limit(1);
 
   if (checkErr) throw new Error(checkErr.message);
   if (usages && usages.length > 0) {
@@ -274,7 +308,7 @@ export async function deleteRoll(id: string): Promise<void> {
     );
   }
 
-  const { error } = await (supabase.from('sales_rolls').delete().eq('id', id) as any);
+  const { error } = await supabase.from('sales_rolls').delete().eq('id', id);
 
   if (error) throw new Error(error.message);
 }
@@ -282,11 +316,11 @@ export async function deleteRoll(id: string): Promise<void> {
 // ─── Roll Usages ────────────────────────────────────────────
 
 export async function fetchRollUsages(rollId: string): Promise<SalesRollUsage[]> {
-  const { data, error } = await (supabase
+  const { data, error } = await supabase
     .from('sales_roll_usages')
     .select('id, roll_id, order_id, order_item_id, used_m2, used_mb, source, worker_name, note, created_at')
     .eq('roll_id', rollId)
-    .order('created_at', { ascending: false }) as any);
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
   return (data || []).map(mapUsageRow);
@@ -299,7 +333,7 @@ export async function createRollUsage(data: {
   usedM2: number;
   usedMb: number;
 }): Promise<string> {
-  const { data: row, error } = await (supabase
+  const { data: row, error } = await supabase
     .from('sales_roll_usages')
     .insert({
       roll_id: data.rollId,
@@ -310,7 +344,7 @@ export async function createRollUsage(data: {
       source: 'order',
     })
     .select('id')
-    .single() as any);
+    .single();
 
   if (error) throw new Error(error.message);
   return row.id;
@@ -324,7 +358,7 @@ export async function createManualRollUsage(data: {
   workerName?: string;
   note?: string;
 }): Promise<string> {
-  const { data: row, error } = await (supabase
+  const { data: row, error } = await supabase
     .from('sales_roll_usages')
     .insert({
       roll_id: data.rollId,
@@ -335,7 +369,7 @@ export async function createManualRollUsage(data: {
       note: data.note || null,
     })
     .select('id')
-    .single() as any);
+    .single();
 
   if (error) throw new Error(error.message);
   return row.id;
@@ -351,7 +385,7 @@ export async function updateManualRollUsage(
     note?: string;
   },
 ): Promise<void> {
-  const { data: rows, error } = await (supabase
+  const { data: rows, error } = await supabase
     .from('sales_roll_usages')
     .update({
       used_mb: data.usedMb,
@@ -362,7 +396,7 @@ export async function updateManualRollUsage(
     })
     .eq('id', id)
     .neq('source', 'order')
-    .select('id') as any);
+    .select('id');
 
   if (error) throw new Error(error.message);
   if (!rows || rows.length === 0) {
