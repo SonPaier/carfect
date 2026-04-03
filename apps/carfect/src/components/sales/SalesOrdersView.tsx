@@ -171,7 +171,7 @@ const SalesOrdersView = () => {
 
     // Fetch invoices separately
     const orderIds = (data || []).map((o: any) => o.id);
-    let invoiceMap: Record<string, any> = {};
+    const invoiceMap: Record<string, any> = {};
     if (orderIds.length > 0) {
       const { data: invoices, error: invError } = await (supabase
         .from('invoices')
@@ -363,7 +363,7 @@ const SalesOrdersView = () => {
 
     // Fetch roll widths for assigned rolls
     const rollIds = [...new Set((rollUsages || []).map((u: any) => u.roll_id))] as string[];
-    let rollWidthMap: Record<string, number> = {};
+    const rollWidthMap: Record<string, number> = {};
     if (rollIds.length > 0) {
       const { data: rollsData } = await (supabase
         .from('sales_rolls')

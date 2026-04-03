@@ -975,7 +975,7 @@ const AddReservationDialogV2 = ({
 
         if (!error && data) {
           const customerIds = data.filter((v) => v.customer_id).map((v) => v.customer_id!);
-          let customerNames: Record<string, string> = {};
+          const customerNames: Record<string, string> = {};
 
           if (customerIds.length > 0) {
             const { data: customersData } = await supabase

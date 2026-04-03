@@ -115,7 +115,7 @@ const PublicOfferView = () => {
           ),
         ] as string[];
 
-        let productDetails: Record<string, { description?: string; photo_urls?: string[] | null }> =
+        const productDetails: Record<string, { description?: string; photo_urls?: string[] | null }> =
           {};
         if (productIds.length > 0) {
           const { data: productsData } = await supabase
