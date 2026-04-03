@@ -16,22 +16,6 @@ const OpiniePage = () => {
         "Odkąd korzystam z Carfect, mój kalendarz rezerwacji jest uporządkowany, klienci otrzymują automatyczne przypomnienia, a ja oszczędzam mnóstwo czasu. Generator ofert pomógł mi domykać więcej zleceń – klienci są pod wrażeniem profesjonalnych wycen.",
       rating: 5,
     },
-    {
-      name: "Tomasz K.",
-      company: "Myjnia Ręczna AutoSpa",
-      logo: null,
-      quote:
-        "Rezerwacje online to był strzał w dziesiątkę. Telefon dzwoni o 70% mniej, a klienci sami wybierają dogodny termin. Widok na tablecie dla pracowników – nie wyobrażam sobie już pracy bez tego.",
-      rating: 5,
-    },
-    {
-      name: "Marta W.",
-      company: "Detailing Studio Premium",
-      logo: null,
-      quote:
-        "System SMS-ów praktycznie wyeliminował no-showy. Wcześniej traciłam 2-3 terminy tygodniowo, teraz to sporadyczne przypadki. Protokół przyjęcia pojazdu ze zdjęciami uratował mnie przed kilkoma nieuzasadnionymi reklamacjami.",
-      rating: 5,
-    },
   ];
 
   const appreciatedFeatures = [
@@ -112,7 +96,7 @@ const OpiniePage = () => {
               {testimonials.map((testimonial, index) => (
                 <div
                   key={index}
-                  className="bg-card rounded-2xl border border-border p-8 flex flex-col hover:shadow-lg transition-shadow"
+                  className="bg-card rounded-2xl p-8 flex flex-col"
                 >
                   <Quote className="w-10 h-10 text-primary/30 mb-4" />
                   <p className="text-muted-foreground leading-relaxed flex-grow mb-6">
@@ -173,7 +157,7 @@ const OpiniePage = () => {
               {appreciatedFeatures.map((feature, index) => (
                 <div
                   key={index}
-                  className="bg-card rounded-2xl border border-border p-8 text-center hover:shadow-lg transition-shadow"
+                  className="bg-card rounded-2xl p-8 text-center"
                 >
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
                     <feature.icon className="w-8 h-8 text-primary" />
@@ -206,7 +190,7 @@ const OpiniePage = () => {
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="bg-card rounded-2xl border border-border p-8 text-center hover:shadow-lg transition-shadow"
+                  className="bg-card rounded-2xl p-8 text-center"
                 >
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
                     <stat.icon className="w-8 h-8 text-primary" />
@@ -230,8 +214,8 @@ const OpiniePage = () => {
                 Dołącz do grona zadowolonych właścicieli myjni i studiów detailingu
               </p>
               <a
-                href="/#hero"
-                className="inline-flex h-14 px-8 items-center justify-center text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-amber-500 text-primary-foreground hover:from-primary/90 hover:to-amber-500/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+                href="tel:+48666610222"
+                className="inline-flex h-14 px-8 items-center justify-center text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Wypróbuj Carfect za darmo
               </a>

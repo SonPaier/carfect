@@ -64,7 +64,7 @@ const CalendarMapPanel = ({ items, columns, onItemClick, onNearbyAddressClick, o
 
       {/* Left order list panel — desktop only */}
       {!isMobile && (
-        <div className="absolute left-0 top-0 w-[300px] h-full bg-card border-r border-border z-10">
+        <div className="absolute left-0 top-0 w-[380px] h-full bg-card border-r border-border z-10">
           <div className="px-3 py-2.5 border-b border-border">
             <h3 className="font-semibold text-sm">
               Zlecenia ({filteredItems.length})
@@ -97,7 +97,7 @@ const CalendarMapPanel = ({ items, columns, onItemClick, onNearbyAddressClick, o
       )}
 
       {/* Floating filters */}
-      <div className={`absolute ${isMobile ? 'top-4 left-4 right-14 flex flex-wrap gap-2' : 'top-4 left-[316px] flex items-center gap-2'} z-20`}>
+      <div className={`absolute ${isMobile ? 'top-4 left-4 right-14 flex flex-wrap gap-2' : 'top-4 left-[396px] flex items-center gap-2'} z-20`}>
         <div className="flex rounded-lg overflow-hidden shadow-sm">
           {(['today', 'week', 'month'] as DateFilter[]).map(f => (
             <Button

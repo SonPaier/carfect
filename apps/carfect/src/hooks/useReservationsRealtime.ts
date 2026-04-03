@@ -220,7 +220,7 @@ export function useReservationsRealtime({
               const { data } = await supabase.from('reservations').select(`
                 id, instance_id, customer_name, customer_phone, vehicle_plate,
                 reservation_date, end_date, start_time, end_time, station_id,
-                status, confirmation_code, price, source, service_ids, service_items,
+                status, confirmation_code, price, price_netto, source, service_ids, service_items,
                 created_by_username, offer_number, photo_urls, has_unified_services,
                 checked_service_ids, stations:station_id (name, type)
               `).eq('id', payload.new.id).single();
@@ -245,7 +245,7 @@ export function useReservationsRealtime({
               const { data } = await supabase.from('reservations').select(`
                 id, instance_id, customer_name, customer_phone, vehicle_plate,
                 reservation_date, end_date, start_time, end_time, station_id,
-                status, confirmation_code, price, source, service_ids, service_items,
+                status, confirmation_code, price, price_netto, source, service_ids, service_items,
                 admin_notes, customer_notes, car_size, offer_number, photo_urls,
                 has_unified_services, checked_service_ids, stations:station_id (name, type)
               `).eq('id', payload.new.id).single();

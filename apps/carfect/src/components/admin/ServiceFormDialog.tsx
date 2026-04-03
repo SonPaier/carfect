@@ -6,7 +6,6 @@ import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { Label } from '@shared/ui';
-import { RadioGroup, RadioGroupItem } from '@shared/ui';
 import { useTranslation } from 'react-i18next';
 import { useIsMobile } from '@shared/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@shared/ui';
@@ -18,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProtocolPhotosUploader } from '@/components/protocols/ProtocolPhotosUploader';
+import { bruttoToNetto } from '@/utils/pricing';
 
 interface ServiceCategory {
   id: string;
@@ -181,7 +181,6 @@ const ServiceFormContent = ({
     price_small: service?.price_small ?? null,
     price_medium: service?.price_medium ?? null,
     price_large: service?.price_large ?? null,
-    prices_are_net: service?.prices_are_net ?? true,
     duration_minutes: service?.duration_minutes ?? null,
     duration_small: service?.duration_small ?? null,
     duration_medium: service?.duration_medium ?? null,
@@ -268,7 +267,6 @@ const ServiceFormContent = ({
         price_small: service.price_small ?? null,
         price_medium: service.price_medium ?? null,
         price_large: service.price_large ?? null,
-        prices_are_net: service.prices_are_net ?? true,
         duration_minutes: service.duration_minutes ?? null,
         duration_small: service.duration_small ?? null,
         duration_medium: service.duration_medium ?? null,
@@ -344,7 +342,7 @@ const ServiceFormContent = ({
         price_small: showSizePrices ? formData.price_small : null,
         price_medium: showSizePrices ? formData.price_medium : null,
         price_large: showSizePrices ? formData.price_large : null,
-        prices_are_net: formData.prices_are_net,
+        prices_are_net: false,
         duration_minutes: showSizeDurations ? null : formData.duration_minutes,
         duration_small: showSizeDurations ? formData.duration_small : null,
         duration_medium: showSizeDurations ? formData.duration_medium : null,
@@ -436,9 +434,7 @@ const ServiceFormContent = ({
     setFormData((prev) => ({ ...prev, [field]: numValue }));
   };
 
-  const priceLabel = formData.prices_are_net
-    ? t('priceList.form.priceNet', 'Cena netto')
-    : t('priceList.form.priceGross', 'Cena brutto');
+  const priceLabel = t('priceList.form.priceGross', 'Cena brutto');
 
   return (
     <div className="flex flex-col h-full">
@@ -523,33 +519,6 @@ const ServiceFormContent = ({
 
         {/* Row 2: Price section */}
         <div className="space-y-4">
-          {/* Radio for net/gross above price label */}
-          <div className="space-y-2">
-            <Label className="text-sm leading-5">
-              {t('priceList.form.priceTypeQuestion', 'Ustal, czy cena jest netto czy brutto')}
-            </Label>
-            <RadioGroup
-              value={formData.prices_are_net ? 'net' : 'gross'}
-              onValueChange={(v) =>
-                setFormData((prev) => ({ ...prev, prices_are_net: v === 'net' }))
-              }
-              className="flex items-center gap-4"
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="gross" id="price-gross" />
-                <Label htmlFor="price-gross" className="text-sm font-normal cursor-pointer">
-                  {t('priceList.form.priceGross', 'Cena brutto')}
-                </Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="net" id="price-net" />
-                <Label htmlFor="price-net" className="text-sm font-normal cursor-pointer">
-                  {t('priceList.form.priceNet', 'Cena netto')}
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
           {!showSizePrices && (
             <div className="flex items-center gap-1.5">
               <Label className="text-sm leading-5">{t('priceList.form.priceType', 'Cena')}</Label>
@@ -568,6 +537,11 @@ const ServiceFormContent = ({
                   min="0"
                 />
               </div>
+              {formData.price_from != null && (
+                <p className="text-xs text-muted-foreground">
+                  {bruttoToNetto(formData.price_from).toFixed(2)} zł netto
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => setShowSizePrices(true)}
@@ -622,6 +596,16 @@ const ServiceFormContent = ({
                   />
                 </div>
               </div>
+              {(formData.price_small != null || formData.price_medium != null || formData.price_large != null) && (
+                <p className="text-xs text-muted-foreground">
+                  Netto:{' '}
+                  {[
+                    formData.price_small != null && `S: ${bruttoToNetto(formData.price_small).toFixed(2)}`,
+                    formData.price_medium != null && `M: ${bruttoToNetto(formData.price_medium).toFixed(2)}`,
+                    formData.price_large != null && `L: ${bruttoToNetto(formData.price_large).toFixed(2)}`,
+                  ].filter(Boolean).join(', ')} zł
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => setShowSizePrices(false)}

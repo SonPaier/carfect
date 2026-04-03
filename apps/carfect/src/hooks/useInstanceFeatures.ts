@@ -13,6 +13,8 @@ interface InstanceFeatures {
   trainings: boolean;
   sales_crm: boolean;
   ai_analyst: boolean;
+  vehicle_vin: boolean;
+  protocol_services: boolean;
 }
 
 const defaultFeatures: InstanceFeatures = {
@@ -26,6 +28,8 @@ const defaultFeatures: InstanceFeatures = {
   trainings: false,
   sales_crm: false,
   ai_analyst: false,
+  vehicle_vin: false,
+  protocol_services: false,
 };
 
 export const useInstanceFeatures = (instanceId: string | null) => {

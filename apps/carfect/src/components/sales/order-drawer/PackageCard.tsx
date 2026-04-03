@@ -20,7 +20,7 @@ import {
   type RollAssignment,
   getItemKey,
 } from '../hooks/useOrderPackages';
-import { formatCurrency } from '../constants';
+import { formatCurrency, VAT_RATE } from '../constants';
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
 import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
@@ -102,6 +102,9 @@ interface PackageCardProps {
   paymentMethod?: string;
   totalGross?: number;
   bankAccountNumber?: string;
+  codAmountOverride?: number;
+  onCodAmountChange?: (value: number | undefined) => void;
+  isNetPayer?: boolean;
 }
 
 const PackageCard = ({
@@ -136,6 +139,9 @@ const PackageCard = ({
   paymentMethod,
   totalGross,
   bankAccountNumber,
+  codAmountOverride,
+  onCodAmountChange,
+  isNetPayer,
 }: PackageCardProps) => {
   const valuation = useApaczkaValuation(
     instanceId,
@@ -579,6 +585,35 @@ const PackageCard = ({
                   <span className="text-xs text-destructive">{valuation.error}</span>
                 )}
               </div>
+
+              {/* Kwota pobrania — tylko dla COD, domyślnie declaredValue + shippingCost */}
+              {paymentMethod === 'cod' && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Kwota pobrania (zł)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="h-9"
+                    value={
+                      codAmountOverride != null
+                        ? codAmountOverride
+                        : pkg.shippingCost != null
+                          ? Math.round(
+                              ((pkg.declaredValue ?? 0) + pkg.shippingCost) /
+                                (isNetPayer ? 1 + VAT_RATE : 1) *
+                                100,
+                            ) / 100
+                          : ''
+                    }
+                    placeholder="—"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onCodAmountChange?.(val === '' ? undefined : Number(val));
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

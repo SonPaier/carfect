@@ -1,35 +1,35 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const url = new URL(req.url);
-    const slug = url.searchParams.get("slug");
-    const context = url.searchParams.get("context") || "public"; // "admin" or "public"
+    const slug = url.searchParams.get('slug');
+    const context = url.searchParams.get('context') || 'public'; // "admin" or "public"
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    let instanceName = "ArmCar";
-    let instanceLogo = "/pwa-192x192.png";
-    let themeColor = "#1a1a2e";
-    let backgroundColor = "#1a1a2e";
+    let instanceName = 'Carfect';
+    let instanceLogo = '/pwa-192x192.png';
+    let themeColor = '#1a1a2e';
+    let backgroundColor = '#1a1a2e';
 
     if (slug) {
       const { data: instance } = await supabase
-        .from("instances")
-        .select("name, logo_url, primary_color, background_color")
-        .eq("slug", slug)
+        .from('instances')
+        .select('name, logo_url, primary_color, background_color')
+        .eq('slug', slug)
         .single();
 
       if (instance) {
@@ -46,43 +46,43 @@ serve(async (req) => {
       }
     }
 
-    const isAdmin = context === "admin";
+    const isAdmin = context === 'admin';
     const appName = isAdmin ? `Admin ${instanceName}` : instanceName;
     // With separate subdomains, start_url is always "/" since each subdomain is its own app
-    const startUrl = "/";
+    const startUrl = '/';
     const shortName = isAdmin ? `Admin` : instanceName.substring(0, 12);
 
     // For admin, we'll add a visual distinction by using a different theme
-    const adminThemeColor = "#ef4444"; // red accent for admin
+    const adminThemeColor = '#ef4444'; // red accent for admin
 
     const manifest = {
       name: appName,
       short_name: shortName,
-      description: isAdmin 
-        ? `Panel administracyjny ${instanceName}` 
+      description: isAdmin
+        ? `Panel administracyjny ${instanceName}`
         : `System rezerwacji ${instanceName}`,
       theme_color: isAdmin ? adminThemeColor : themeColor,
       background_color: backgroundColor,
-      display: "standalone",
-      orientation: "portrait",
+      display: 'standalone',
+      orientation: 'portrait',
       start_url: startUrl,
-      scope: "/",
+      scope: '/',
       icons: [
         {
           src: instanceLogo,
-          sizes: "192x192",
-          type: "image/png",
+          sizes: '192x192',
+          type: 'image/png',
         },
         {
           src: instanceLogo,
-          sizes: "512x512",
-          type: "image/png",
+          sizes: '512x512',
+          type: 'image/png',
         },
         {
           src: instanceLogo,
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "maskable",
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
         },
       ],
     };
@@ -90,16 +90,16 @@ serve(async (req) => {
     return new Response(JSON.stringify(manifest), {
       headers: {
         ...corsHeaders,
-        "Content-Type": "application/manifest+json",
-        "Cache-Control": "public, max-age=3600",
+        'Content-Type': 'application/manifest+json',
+        'Cache-Control': 'public, max-age=3600',
       },
     });
   } catch (error: unknown) {
-    console.error("Error generating manifest:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error('Error generating manifest:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

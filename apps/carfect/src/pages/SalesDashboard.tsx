@@ -213,7 +213,22 @@ const SalesDashboard = () => {
             })}
           </nav>
 
-          {/* Panel Studio switch - hidden until role-based access is implemented */}
+          {/* Panel Studio switch — only for Kaja */}
+          {hasStudioAccess && authUsername === 'Kaja' && (
+            <div className={cn('mt-auto', sidebarCollapsed ? 'px-2' : 'px-4')}>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full gap-2 text-muted-foreground',
+                  sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                )}
+                onClick={() => navigate(studioBasePath)}
+              >
+                <ArrowLeftRight className="w-4 h-4 shrink-0" />
+                {!sidebarCollapsed && 'Panel Studio'}
+              </Button>
+            </div>
+          )}
 
           {/* Footer: collapse + user */}
           <div className={cn(sidebarCollapsed ? 'p-2 space-y-2' : 'p-4 space-y-3')}>

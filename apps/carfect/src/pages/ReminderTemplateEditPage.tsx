@@ -11,6 +11,7 @@ import { AdminTabsList, AdminTabsTrigger } from '@/components/admin/AdminTabsLis
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useInstanceData } from '@/hooks/useInstanceData';
 import { toast } from 'sonner';
 import { TemplateAssignedCustomers } from '@/components/admin/TemplateAssignedCustomers';
 import type { Json } from '@/integrations/supabase/types';
@@ -58,6 +59,7 @@ export default function ReminderTemplateEditPage() {
 
   // Get instanceId directly from roles (already fetched by useAuth)
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
+  const { data: instanceData } = useInstanceData(instanceId);
 
   // Check if we came from ServiceFormDialog (to return and assign template)
   const returnToService = searchParams.get('returnToService');
@@ -220,7 +222,7 @@ export default function ReminderTemplateEditPage() {
     const serviceType = items[0]?.service_type || 'serwis';
     const template = SMS_TEMPLATES[serviceType] || SMS_TEMPLATES.serwis;
     return template
-      .replace('{short_name}', 'Armcar')
+      .replace('{short_name}', instanceData?.name || '...')
       .replace('{vehicle_model}', 'Porsche 911')
       .replace('{reservation_phone}', '123456789');
   };

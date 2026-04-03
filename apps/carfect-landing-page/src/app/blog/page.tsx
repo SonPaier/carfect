@@ -1,15 +1,10 @@
 import type { Metadata } from 'next';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
-import HeaderClient from '@/components/landing/HeaderClient';
-import FooterServer from '@/components/landing/FooterServer';
-import { client } from '@/lib/sanity/client';
-import { siteSettingsQuery } from '@/lib/sanity/queries';
-import type { SiteSettings } from '@/types/sanity';
+import Header from '@/components/landing/Header';
+import Footer from '@/components/landing/Footer';
 import BlogHero from '@/components/blog/BlogHero';
 import BlogGrid from '@/components/blog/BlogGrid';
-import { getAllPosts, getFeaturedPosts } from '@/lib/blog';
-
-export const revalidate = 60;
+import { getAllPosts, getFeaturedPost } from '@/lib/blog';
 
 export const metadata: Metadata = {
   title: 'Blog – Porady dla Właścicieli Myjni i Studiów Detailingu',
@@ -31,20 +26,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function BlogPage() {
-  const [featuredPosts, allPosts, settings] = await Promise.all([
-    getFeaturedPosts(),
-    getAllPosts(),
-    client.fetch<SiteSettings | null>(siteSettingsQuery, {}, { next: { tags: ['settings'] } }),
-  ]);
-  const featuredPost = featuredPosts[0] || allPosts[0] || null;
+export default function BlogPage() {
+  const featuredPost = getFeaturedPost();
+  const allPosts = getAllPosts();
   const regularPosts = allPosts.filter(
-    (post) => post.slug.current !== featuredPost?.slug.current
+    (post) => post.slug !== featuredPost?.slug
   );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <HeaderClient settings={settings || undefined} />
+      <Header />
       <main className="flex-1 pt-24">
         <Breadcrumbs items={[
           { name: 'Strona główna', href: '/' },
@@ -55,7 +46,7 @@ export default async function BlogPage() {
 
         <BlogGrid posts={regularPosts} />
       </main>
-      <FooterServer settings={settings || undefined} />
+      <Footer />
     </div>
   );
 }

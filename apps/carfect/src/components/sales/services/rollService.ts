@@ -16,6 +16,7 @@ function mapDbRow(row: any): SalesRoll {
     widthMm: Number(row.width_mm),
     lengthM: Number(row.length_m),
     initialLengthM: Number(row.initial_length_m),
+    initialRemainingMb: Number(row.initial_remaining_mb ?? row.length_m),
     deliveryDate: row.delivery_date,
     photoUrl: row.photo_url,
     status: row.status,
@@ -99,8 +100,9 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
 
   // Compute remaining + customer names
   const enriched = rolls.map((roll) => {
-    const usedMb = usageMap.get(roll.id) || 0;
-    const remainingMb = Math.max(0, roll.lengthM - usedMb);
+    const usageMb = usageMap.get(roll.id) || 0;
+    const usedMb = (roll.lengthM - roll.initialRemainingMb) + usageMb;
+    const remainingMb = Math.max(0, roll.initialRemainingMb - usageMb);
     const widthM = roll.widthMm / 1000;
     const orderIds = rollOrderIds.get(roll.id);
     const customerNames = orderIds
@@ -137,6 +139,7 @@ export async function createRoll(data: {
   barcode?: string;
   widthMm: number;
   lengthM: number;
+  initialRemainingMb?: number;
   deliveryDate?: string;
   photoUrl?: string;
   extractionConfidence?: Record<string, number>;
@@ -154,6 +157,7 @@ export async function createRoll(data: {
       width_mm: data.widthMm,
       length_m: data.lengthM,
       initial_length_m: data.lengthM,
+      initial_remaining_mb: data.initialRemainingMb ?? data.lengthM,
       delivery_date: data.deliveryDate || null,
       photo_url: data.photoUrl || null,
       extraction_confidence: data.extractionConfidence || null,
@@ -179,6 +183,7 @@ export async function createRollsBatch(
     width_mm: data.widthMm,
     length_m: data.lengthM,
     initial_length_m: data.lengthM,
+    initial_remaining_mb: data.initialRemainingMb ?? data.lengthM,
     delivery_date: data.deliveryDate || null,
     photo_url: data.photoUrl || null,
     extraction_confidence: data.extractionConfidence || null,
@@ -318,7 +323,7 @@ export async function fetchRollRemainingMb(
 ): Promise<{ lengthM: number; widthMm: number; usedMb: number; remainingMb: number }> {
   const { data: roll, error: rollErr } = await (supabase
     .from('sales_rolls')
-    .select('length_m, width_mm')
+    .select('length_m, width_mm, initial_remaining_mb')
     .eq('id', rollId)
     .single() as any);
 
@@ -333,15 +338,16 @@ export async function fetchRollRemainingMb(
   const { data: usages, error: usageErr } = await (query as any);
   if (usageErr) throw new Error(usageErr.message);
 
-  const usedMb = (usages || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
+  const usageMb = (usages || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
   const lengthM = Number(roll.length_m);
   const widthMm = Number(roll.width_mm);
+  const initialRemainingMb = Number(roll.initial_remaining_mb ?? lengthM);
 
   return {
     lengthM,
     widthMm,
-    usedMb,
-    remainingMb: Math.max(0, lengthM - usedMb),
+    usedMb: (lengthM - initialRemainingMb) + usageMb,
+    remainingMb: Math.max(0, initialRemainingMb - usageMb),
   };
 }
 
@@ -363,8 +369,9 @@ export async function fetchRollById(rollId: string): Promise<SalesRoll | null> {
     .select('used_mb')
     .eq('roll_id', rollId) as any);
 
-  const usedMb = (usageRows || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
-  const remainingMb = Math.max(0, roll.lengthM - usedMb);
+  const usageMb = (usageRows || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
+  const usedMb = (roll.lengthM - roll.initialRemainingMb) + usageMb;
+  const remainingMb = Math.max(0, roll.initialRemainingMb - usageMb);
   const widthM = roll.widthMm / 1000;
 
   return {
@@ -431,7 +438,9 @@ export async function uploadRollPhoto(file: File, instanceId: string): Promise<s
 
 // ─── File to Base64 ─────────────────────────────────────────
 
-export function fileToBase64(file: File): Promise<string> {
+export async function fileToBase64(file: File): Promise<string> {
+  // Convert to JPEG first — Google Vision doesn't support HEIC
+  const blob = await compressImage(file, 2048, 0.9);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -441,6 +450,6 @@ export function fileToBase64(file: File): Promise<string> {
       resolve(base64);
     };
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
 }

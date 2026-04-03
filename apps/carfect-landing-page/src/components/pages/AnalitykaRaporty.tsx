@@ -12,7 +12,7 @@ const AnalitykaRaporty = () => {
         <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
-              <div className="bg-card rounded-2xl p-12 md:p-16 shadow-lg border-2 border-border text-center">
+              <div className="bg-card rounded-2xl p-12 md:p-16 shadow-lg border-2 text-center">
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
                   <Clock className="w-10 h-10 text-primary" />
                 </div>

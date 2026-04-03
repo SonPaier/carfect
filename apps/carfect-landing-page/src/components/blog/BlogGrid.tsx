@@ -15,7 +15,7 @@ export default function BlogGrid({ posts }: BlogGridProps) {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {posts.map((post) => (
-            <BlogCard key={post.slug.current} post={post} />
+            <BlogCard key={post.slug} post={post} />
           ))}
         </div>
       </div>

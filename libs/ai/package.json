@@ -7,5 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "^3.0.136"
   }
 }

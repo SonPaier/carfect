@@ -30,7 +30,10 @@ afterEach(() => {
 });
 
 // Trigger debounced search: advance timer, then flush all async microtasks
-async function triggerSearch(result: { current: ReturnType<typeof useCustomerSearch> }, query: string) {
+async function triggerSearch(
+  result: { current: ReturnType<typeof useCustomerSearch> },
+  query: string,
+) {
   act(() => {
     result.current.setCustomerSearch(query);
   });
@@ -102,8 +105,8 @@ describe('useCustomerSearch', () => {
     await triggerSearch(result, 'ac');
 
     expect(result.current.searchResults).toEqual([
-      { id: '1', name: 'Acme Corp', discountPercent: 10 },
-      { id: '2', name: 'Acme Ltd', discountPercent: undefined },
+      { id: '1', name: 'Acme Corp', discountPercent: 10, isNetPayer: false },
+      { id: '2', name: 'Acme Ltd', discountPercent: undefined, isNetPayer: false },
     ]);
     expect(result.current.dropdownOpen).toBe(true);
     expect(result.current.activeIndex).toBe(-1);
@@ -124,13 +127,19 @@ describe('useCustomerSearch', () => {
     expect(result.current.dropdownOpen).toBe(true);
 
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowDown', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowDown',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.activeIndex).toBe(0);
 
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowDown', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowDown',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.activeIndex).toBe(1);
@@ -151,23 +160,35 @@ describe('useCustomerSearch', () => {
 
     // Move down to index 1
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowDown', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowDown',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowDown', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowDown',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.activeIndex).toBe(1);
 
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowUp', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowUp',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.activeIndex).toBe(0);
 
     // Should not go below 0
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowUp', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowUp',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.activeIndex).toBe(0);
@@ -187,16 +208,27 @@ describe('useCustomerSearch', () => {
     expect(result.current.dropdownOpen).toBe(true);
 
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'ArrowDown', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'ArrowDown',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.activeIndex).toBe(0);
 
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'Enter', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'Enter',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
-    expect(result.current.selectedCustomer).toEqual({ id: '1', name: 'Alpha', discountPercent: 5 });
+    expect(result.current.selectedCustomer).toEqual({
+      id: '1',
+      name: 'Alpha',
+      discountPercent: 5,
+      isNetPayer: false,
+    });
     expect(result.current.dropdownOpen).toBe(false);
     expect(result.current.customerSearch).toBe('');
     expect(result.current.searchResults).toEqual([]);
@@ -213,7 +245,10 @@ describe('useCustomerSearch', () => {
     expect(result.current.dropdownOpen).toBe(true);
 
     act(() => {
-      result.current.handleCustomerKeyDown({ key: 'Escape', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      result.current.handleCustomerKeyDown({
+        key: 'Escape',
+        preventDefault: vi.fn(),
+      } as unknown as React.KeyboardEvent);
     });
 
     expect(result.current.dropdownOpen).toBe(false);

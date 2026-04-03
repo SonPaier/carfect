@@ -31,12 +31,14 @@ export interface SalesOrder {
   paymentStatus: 'unpaid' | 'paid';
   trackingNumber?: string;
   trackingUrl?: string;
+  apaczkaOrderId?: string;
   /** Invoice data if exists */
   invoiceId?: string;
   invoiceNumber?: string;
   invoiceStatus?: string; // 'draft' | 'issued' | 'sent' | 'paid'
   invoicePdfUrl?: string;
   customerDiscount?: number;
+  paymentMethod?: string;
 }
 
 export const mockSalesOrders: SalesOrder[] = [];

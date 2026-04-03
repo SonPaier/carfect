@@ -55,6 +55,16 @@ vi.mock('./SendSmsDialog', () => ({
     open ? <div data-testid="send-sms-dialog">SendSmsDialog</div> : null,
 }));
 
+vi.mock('@/hooks/useInstanceFeatures', () => ({
+  useInstanceFeatures: () => ({
+    features: {},
+    loading: false,
+    hasFeature: () => false,
+    getFeatureParams: () => null,
+    refetch: vi.fn(),
+  }),
+}));
+
 // ---- Sample data ----
 const mockCustomer = {
   id: 'cust-1',
@@ -320,6 +330,38 @@ describe('CustomersView', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Maria Zielinska')).toBeInTheDocument();
+        expect(screen.queryByText('Jan Kowalski')).not.toBeInTheDocument();
+      });
+    });
+
+    it('filters customers by vehicle VIN', async () => {
+      const user = userEvent.setup();
+      const customer2 = {
+        id: 'cust-2',
+        name: 'Robert OMD',
+        phone: '+48604138302',
+        email: null,
+        notes: null,
+        created_at: '2026-02-01T00:00:00Z',
+        phone_verified: null,
+        company: null,
+        nip: null,
+        address: null,
+      };
+      const vehicleWithVin = { phone: '+48604138302', model: 'Audi A7', plate: null, vin: '4Y1SL65848Z411439' };
+
+      setupMocks([mockCustomer, customer2], [mockVehicle, vehicleWithVin]);
+
+      render(<CustomersView {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Jan Kowalski')).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByPlaceholderText(/Szukaj/), '4Y1SL658');
+
+      await waitFor(() => {
+        expect(screen.getByText('Robert OMD')).toBeInTheDocument();
         expect(screen.queryByText('Jan Kowalski')).not.toBeInTheDocument();
       });
     });

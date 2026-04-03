@@ -74,16 +74,16 @@ const CustomerOrderCard = ({
       onClick={onClick}
     >
       {/* Title — max 2 lines */}
-      {title && <div className="text-sm font-semibold line-clamp-2">{title}</div>}
+      {title && <div className="text-sm font-semibold line-clamp-3 break-words">{title}</div>}
 
       {/* Date — black font, full range */}
       <div className="text-xs font-medium text-foreground">{dateDisplay}</div>
 
       {/* Customer name */}
-      {customerName && <div className="text-xs text-muted-foreground truncate">{customerName}</div>}
+      {customerName && <div className="text-xs text-muted-foreground line-clamp-2">{customerName}</div>}
 
       {/* Service address */}
-      {addressParts && <div className="text-xs text-muted-foreground truncate">{addressParts}</div>}
+      {addressParts && <div className="text-xs text-muted-foreground line-clamp-1">{addressParts}</div>}
 
       {/* Price */}
       {!hidePrices && price != null && (

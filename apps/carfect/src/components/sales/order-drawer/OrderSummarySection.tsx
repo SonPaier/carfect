@@ -13,6 +13,8 @@ interface OrderSummarySectionProps {
   shippingCosts?: number[];
   totalNet: number;
   totalGross: number;
+  isNetPayer?: boolean;
+  paymentMethod?: 'cod' | 'transfer' | 'free';
 }
 
 export const OrderSummarySection = ({
@@ -21,6 +23,8 @@ export const OrderSummarySection = ({
   shippingCosts = [],
   totalNet,
   totalGross,
+  isNetPayer = false,
+  paymentMethod,
 }: OrderSummarySectionProps) => {
   const vatAmount = totalNet * VAT_RATE;
 
@@ -88,15 +92,29 @@ export const OrderSummarySection = ({
             <span className="text-muted-foreground">Razem netto</span>
             <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">VAT (23%)</span>
-            <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
-          </div>
-          <Separator className="my-1" />
-          <div className="flex justify-between font-semibold text-lg">
-            <span>Razem brutto</span>
-            <span className="tabular-nums">{formatCurrency(totalGross)}</span>
-          </div>
+          {!isNetPayer && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">VAT (23%)</span>
+                <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
+              </div>
+              <Separator className="my-1" />
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Razem brutto</span>
+                <span className="tabular-nums">
+                  {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalGross)}
+                </span>
+              </div>
+            </>
+          )}
+          {isNetPayer && (
+            <div className="flex justify-between font-semibold text-lg">
+              <span>Do zapłaty (netto)</span>
+              <span className="tabular-nums">
+                {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalNet)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </>

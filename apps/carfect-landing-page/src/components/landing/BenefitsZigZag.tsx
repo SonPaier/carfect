@@ -20,11 +20,11 @@ const BenefitsZigZag = () => {
   const features: FeatureItem[] = benefits.features || [];
 
   return (
-    <section id="benefits" className="py-20 md:py-32 bg-white border-y border-gray-200">
+    <section id="benefits" className="py-20 md:py-32 bg-white">
       <div className="container px-4">
         {/* Header */}
         <header className="text-center mb-16 md:mb-24">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground section-heading mb-6">
             {benefits.sectionTitle}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">

@@ -10,7 +10,7 @@ import type {
   KartonDimensions,
   TubaDimensions,
   ValidationResult,
-} from "./types.ts";
+} from './types.ts';
 
 const DEFAULT_WEIGHT_KG = 1;
 
@@ -28,22 +28,22 @@ export function validateShippingData(params: {
 
   // Sender address
   if (!senderAddress) {
-    errors.push("Brak konfiguracji adresu nadawcy (apaczka_sender_address) na instancji");
+    errors.push('Brak konfiguracji adresu nadawcy (apaczka_sender_address) na instancji');
   } else {
-    if (!senderAddress.street) errors.push("Brak ulicy nadawcy");
-    if (!senderAddress.postal_code) errors.push("Brak kodu pocztowego nadawcy");
-    if (!senderAddress.city) errors.push("Brak miasta nadawcy");
-    if (!senderAddress.name) errors.push("Brak nazwy nadawcy");
-    if (!senderAddress.phone) errors.push("Brak telefonu nadawcy");
+    if (!senderAddress.street) errors.push('Brak ulicy nadawcy');
+    if (!senderAddress.postal_code) errors.push('Brak kodu pocztowego nadawcy');
+    if (!senderAddress.city) errors.push('Brak miasta nadawcy');
+    if (!senderAddress.name) errors.push('Brak nazwy nadawcy');
+    if (!senderAddress.phone) errors.push('Brak telefonu nadawcy');
   }
 
   // Receiver address
-  if (!customer.shipping_street) errors.push("Brak ulicy odbiorcy");
-  if (!customer.shipping_postal_code) errors.push("Brak kodu pocztowego odbiorcy");
-  if (!customer.shipping_city) errors.push("Brak miasta odbiorcy");
+  if (!customer.shipping_street) errors.push('Brak ulicy odbiorcy');
+  if (!customer.shipping_postal_code) errors.push('Brak kodu pocztowego odbiorcy');
+  if (!customer.shipping_city) errors.push('Brak miasta odbiorcy');
 
   // At least one shipping package
-  const shippingPackages = packages.filter((p) => p.shippingMethod === "shipping");
+  const shippingPackages = packages.filter((p) => p.shippingMethod === 'shipping');
   if (shippingPackages.length === 0) {
     errors.push("Brak paczek z metodą wysyłki 'shipping'");
   }
@@ -56,10 +56,10 @@ export function validateShippingData(params: {
   }
 
   // COD requires bank account
-  if (order.payment_method === "cod") {
+  if (order.payment_method === 'cod') {
     const bankAccount = stripBankAccount(order.bank_account_number as string | null);
     if (!bankAccount || bankAccount.length !== 26) {
-      errors.push("Za pobraniem wymaga numeru konta bankowego (26 cyfr)");
+      errors.push('Za pobraniem wymaga numeru konta bankowego (26 cyfr)');
     }
   }
 
@@ -67,22 +67,26 @@ export function validateShippingData(params: {
 }
 
 /**
- * Map order data to Apaczka API order request.
+ * Map a single package to an Apaczka API order request.
+ * Each package becomes a separate Apaczka shipment.
+ * shipment_value = declaredValue of the package (ubezpieczenie).
+ * cod.amount = declaredValue + shippingCost (kwota pobrania od odbiorcy).
  */
 export function mapOrderToApaczkaRequest(params: {
   order: Record<string, unknown>;
   customer: Record<string, unknown>;
   senderAddress: SenderAddress;
-  packages: OrderPackage[];
+  pkg: OrderPackage;
   serviceId: number;
 }): ApaczkaOrderRequest {
-  const { order, customer, senderAddress, packages, serviceId } = params;
+  const { order, customer, senderAddress, pkg, serviceId } = params;
 
   const sender = mapSenderAddress(senderAddress);
   const receiver = mapReceiverAddress(customer);
-  const shipmentItems = mapPackagesToShipmentItems(packages);
-  const totalGross = Number(order.total_gross) || 0;
-  const shipmentValue = Math.round(totalGross * 100); // PLN to grosze
+  const shipmentItems = mapPackagesToShipmentItems([pkg]);
+  const declaredValue = pkg.declaredValue ?? 0;
+  const shippingCost = pkg.shippingCost ?? 0;
+  const shipmentValue = Math.round(declaredValue * 100); // PLN to grosze
 
   const request: ApaczkaOrderRequest = {
     service_id: serviceId,
@@ -90,17 +94,18 @@ export function mapOrderToApaczkaRequest(params: {
     option: {},
     notification: buildDefaultNotification(),
     shipment_value: shipmentValue,
-    shipment_currency: "PLN",
+    shipment_currency: 'PLN',
     pickup: buildDefaultPickup(),
     shipment: shipmentItems,
-    comment: (order.comment as string) || "",
-    content: buildContentDescription(packages),
+    comment: (order.comment as string) || '',
+    content: buildContentDescription([pkg]),
     is_zebra: 0,
   };
 
   // Add COD if payment is cash on delivery
-  if (order.payment_method === "cod") {
-    request.cod = buildCod(totalGross, order.bank_account_number as string);
+  // cod.amount = kwota deklarowana + koszt wysyłki (to, co kurier pobiera od odbiorcy)
+  if (order.payment_method === 'cod') {
+    request.cod = buildCod(declaredValue + shippingCost, order.bank_account_number as string);
   }
 
   return request;
@@ -108,54 +113,52 @@ export function mapOrderToApaczkaRequest(params: {
 
 function mapSenderAddress(sender: SenderAddress): ApaczkaAddress {
   return {
-    country_code: sender.country_code || "PL",
+    country_code: sender.country_code || 'PL',
     name: sender.name,
     line1: sender.street,
-    line2: "",
+    line2: '',
     postal_code: formatPostalCode(sender.postal_code),
-    state_code: "",
+    state_code: '',
     city: sender.city,
     is_residential: 0,
     contact_person: sender.contact_person || sender.name,
-    email: sender.email || "",
-    phone: sender.phone || "",
-    foreign_address_id: "",
+    email: sender.email || '',
+    phone: sender.phone || '',
+    foreign_address_id: '',
   };
 }
 
 function mapReceiverAddress(customer: Record<string, unknown>): ApaczkaAddress {
-  const name = (customer.company as string) || (customer.name as string) || "";
+  const name = (customer.company as string) || (customer.name as string) || '';
   const isResidential = customer.company ? 0 : 1;
 
   return {
-    country_code: (customer.shipping_country_code as string) || "PL",
+    country_code: (customer.shipping_country_code as string) || 'PL',
     name,
-    line1: (customer.shipping_street as string) || "",
-    line2: (customer.shipping_street_line2 as string) || "",
+    line1: (customer.shipping_street as string) || '',
+    line2: (customer.shipping_street_line2 as string) || '',
     postal_code: formatPostalCode(customer.shipping_postal_code as string),
-    state_code: "",
-    city: (customer.shipping_city as string) || "",
+    state_code: '',
+    city: (customer.shipping_city as string) || '',
     is_residential: isResidential,
-    contact_person: (customer.contact_person as string) || (customer.name as string) || "",
-    email: (customer.contact_email as string) || (customer.email as string) || "",
-    phone: (customer.contact_phone as string) || (customer.phone as string) || "",
-    foreign_address_id: "",
+    contact_person: (customer.contact_person as string) || (customer.name as string) || '',
+    email: (customer.contact_email as string) || (customer.email as string) || '',
+    phone: (customer.contact_phone as string) || (customer.phone as string) || '',
+    foreign_address_id: '',
   };
 }
 
 /**
  * Map UI packages (only those with shippingMethod==='shipping') to Apaczka shipment items.
  */
-export function mapPackagesToShipmentItems(
-  packages: OrderPackage[],
-): ApaczkaShipmentItem[] {
+export function mapPackagesToShipmentItems(packages: OrderPackage[]): ApaczkaShipmentItem[] {
   return packages
-    .filter((pkg) => pkg.shippingMethod === "shipping")
+    .filter((pkg) => pkg.shippingMethod === 'shipping')
     .map((pkg) => {
       const weight = pkg.weight || DEFAULT_WEIGHT_KG;
       const isNstd = pkg.oversized ? 1 : 0;
 
-      if (pkg.packagingType === "tuba") {
+      if (pkg.packagingType === 'tuba') {
         const dims = pkg.dimensions as TubaDimensions | undefined;
         const diameter = dims?.diameter || 0;
         // Map tuba as PACZKA with non-standard flag — RURA not supported by all couriers
@@ -165,7 +168,7 @@ export function mapPackagesToShipmentItems(
           dimension3: diameter,
           weight,
           is_nstd: 1,
-          shipment_type_code: "PACZKA",
+          shipment_type_code: 'PACZKA',
           customs_data: [],
         };
       }
@@ -177,7 +180,7 @@ export function mapPackagesToShipmentItems(
         dimension3: dims?.height || 0,
         weight,
         is_nstd: isNstd,
-        shipment_type_code: "PACZKA",
+        shipment_type_code: 'PACZKA',
         customs_data: [],
       };
     });
@@ -185,17 +188,17 @@ export function mapPackagesToShipmentItems(
 
 function buildContentDescription(packages: OrderPackage[]): string {
   const contents = packages
-    .filter((p) => p.shippingMethod === "shipping" && p.contents)
+    .filter((p) => p.shippingMethod === 'shipping' && p.contents)
     .map((p) => p.contents!.trim())
     .filter(Boolean);
-  return contents.length > 0 ? contents.join(", ") : "Produkty";
+  return contents.length > 0 ? contents.join(', ') : 'Produkty';
 }
 
 function buildCod(totalGross: number, bankAccountNumber: string): ApaczkaCod {
   return {
     amount: Math.round(totalGross * 100),
-    currency: "PLN",
-    bankaccount: stripBankAccount(bankAccountNumber) || "",
+    currency: 'PLN',
+    bankaccount: stripBankAccount(bankAccountNumber) || '',
   };
 }
 
@@ -204,8 +207,8 @@ function buildCod(totalGross: number, bankAccountNumber: string): ApaczkaCod {
  * Handles: "81304" → "81-304", "81-304" → "81-304", "81 304" → "81-304"
  */
 export function formatPostalCode(code: string | null | undefined): string {
-  if (!code) return "";
-  const digits = code.replace(/\D/g, "");
+  if (!code) return '';
+  const digits = code.replace(/\D/g, '');
   if (digits.length === 5) {
     return `${digits.slice(0, 2)}-${digits.slice(2)}`;
   }
@@ -216,9 +219,9 @@ export function formatPostalCode(code: string | null | undefined): string {
  * Strip bank account to digits only (26-digit Polish IBAN without PL prefix).
  */
 export function stripBankAccount(account: string | null | undefined): string {
-  if (!account) return "";
+  if (!account) return '';
   // Remove "PL" prefix if present, then remove all non-digits
-  return account.replace(/^PL/i, "").replace(/\D/g, "");
+  return account.replace(/^PL/i, '').replace(/\D/g, '');
 }
 
 function buildDefaultNotification(): ApaczkaNotification {
@@ -239,11 +242,11 @@ function buildDefaultPickup(): ApaczkaPickup {
   if (day === 0) tomorrow.setDate(tomorrow.getDate() + 1); // Sunday → Monday
   if (day === 6) tomorrow.setDate(tomorrow.getDate() + 2); // Saturday → Monday
 
-  const dateStr = tomorrow.toISOString().split("T")[0];
+  const dateStr = tomorrow.toISOString().split('T')[0];
   return {
-    type: "SELF",
+    type: 'SELF',
     date: dateStr,
-    hours_from: "",
-    hours_to: "",
+    hours_from: '',
+    hours_to: '',
   };
 }

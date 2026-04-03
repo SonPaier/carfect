@@ -82,12 +82,29 @@ const UnscheduledFollowUpsDrawer = ({
     const creatorIds = [...new Set(data.map((i: any) => i.created_by).filter(Boolean))];
     let profileMap: Record<string, string> = {};
     if (creatorIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', creatorIds);
-      if (profiles) {
-        profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name]));
+      // Try employees first (linked_user_id → user id), then profiles as fallback
+      const { data: employees } = await supabase
+        .from('employees')
+        .select('linked_user_id, name')
+        .eq('instance_id', instanceId)
+        .in('linked_user_id', creatorIds);
+      if (employees) {
+        employees.forEach((e: any) => {
+          if (e.linked_user_id && e.name) profileMap[e.linked_user_id] = e.name;
+        });
+      }
+      // Fallback for creators not found in employees
+      const missingIds = creatorIds.filter(id => !profileMap[id]);
+      if (missingIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', missingIds);
+        if (profiles) {
+          profiles.forEach((p: any) => {
+            if (p.full_name) profileMap[p.id] = p.full_name;
+          });
+        }
       }
     }
 

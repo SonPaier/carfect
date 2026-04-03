@@ -5,7 +5,17 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import PricingCard from "./PricingCard";
-import { Rocket } from "lucide-react";
+const RocketIcon = () => (
+  <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 6c-6 8-10 18-10 28v6l-8 8h36l-8-8v-6c0-10-4-20-10-28z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="32" cy="28" r="5" stroke="currentColor" strokeWidth="2" />
+    <path d="M22 34c-6 0-10 4-12 8l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+    <path d="M42 34c6 0 10 4 12 8l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+    <path d="M26 48h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M28 52h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    <path d="M30 56h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.3" />
+  </svg>
+);
 
 interface PricingProps {
   onScrollToContact: () => void;
@@ -28,6 +38,7 @@ const myjniaFeatures = [
   },
   { text: "Widok dla pracowników" },
   { text: "Analityka i raporty" },
+  { text: "Integracja z Fakturownia i iFirma", tooltip: "Automatycznie wystawiaj faktury za usługi bezpośrednio z poziomu Carfect" },
 ];
 
 const detailingFeatures = [
@@ -48,10 +59,35 @@ const Pricing = ({ onScrollToContact }: PricingProps) => {
   };
 
   return (
-    <section id="pricing" className="py-20 md:py-32 bg-section-alt">
+    <section
+      id="pricing"
+      className="py-20 md:py-32 bg-section-alt relative overflow-hidden"
+      style={{
+        backgroundImage: `
+          repeating-linear-gradient(
+            -35deg,
+            transparent,
+            transparent 80px,
+            rgba(0,0,0,0.02) 80px,
+            rgba(0,0,0,0.02) 81px,
+            transparent 81px,
+            transparent 200px
+          ),
+          repeating-linear-gradient(
+            35deg,
+            transparent,
+            transparent 120px,
+            rgba(0,0,0,0.015) 120px,
+            rgba(0,0,0,0.015) 122px,
+            transparent 122px,
+            transparent 300px
+          )
+        `,
+      }}
+    >
       <div className="container px-4">
         <header className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground section-heading mb-6">
             {pricing.sectionTitle}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -115,9 +151,9 @@ const Pricing = ({ onScrollToContact }: PricingProps) => {
 
         {/* Help Section */}
         <div className="mt-12 md:mt-16 max-w-3xl mx-auto">
-          <div className="bg-background rounded-2xl p-8 md:p-10 text-center border border-border/50 shadow-sm">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-5">
-              <Rocket className="w-7 h-7 text-primary" />
+          <div className="bg-background rounded-2xl p-8 md:p-10 text-center shadow-md">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/5 text-primary mb-6">
+              <RocketIcon />
             </div>
             <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
               Działasz od pierwszego dnia!
