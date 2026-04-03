@@ -38,7 +38,7 @@ interface NotificationsViewProps {
   onNavigateBack: () => void;
   onNavigateToOffers: () => void;
   onNavigateToReservations: () => void;
-  onReservationClick?: (reservation: any) => void;
+  onReservationClick?: (reservation: Record<string, unknown>) => void;
   onNotificationsChange?: () => void;
 }
 
@@ -106,13 +106,13 @@ export default function NotificationsView({
 
       if (reservationData) {
         // Resolve service names from service_items JSONB or service_ids via unified_services
-        let servicesData: any[] | null = null;
-        const serviceItems = reservationData.service_items as any[] | null;
+        let servicesData: { name: string; shortcut: string | null }[] | null = null;
+        const serviceItems = reservationData.service_items as { name?: string; short_name?: string }[] | null;
         const serviceIds = reservationData.service_ids as string[] | null;
 
         if (serviceItems && Array.isArray(serviceItems) && serviceItems.length > 0) {
           // Use embedded names from service_items
-          servicesData = serviceItems.map((item: any) => ({
+          servicesData = serviceItems.map((item) => ({
             name: item.name || 'Usługa',
             shortcut: item.short_name || null,
           }));

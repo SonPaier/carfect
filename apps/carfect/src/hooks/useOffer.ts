@@ -844,8 +844,7 @@ export const useOffer = (instanceId: string) => {
 
               if (customerError) {
                 console.error('Error saving offer customer:', customerError);
-              } else {
-              }
+              } else { /* customer saved successfully, no action needed */ }
             }
           }
         } catch (customerSaveError) {

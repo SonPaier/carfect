@@ -363,7 +363,7 @@ const ServiceFormContent = ({
       if (service?.id) {
         const { error } = await supabase
           .from('unified_services')
-          .update(serviceData as any)
+          .update(serviceData as Record<string, unknown>)
           .eq('id', service.id);
 
         if (error) throw error;
@@ -371,7 +371,7 @@ const ServiceFormContent = ({
       } else {
         const { error } = await supabase
           .from('unified_services')
-          .insert({ ...serviceData, sort_order: totalServicesCount } as any);
+          .insert({ ...serviceData, sort_order: totalServicesCount } as Record<string, unknown>);
 
         if (error) throw error;
         toast.success(t('priceList.serviceAdded'));

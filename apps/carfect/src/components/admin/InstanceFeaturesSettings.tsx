@@ -167,16 +167,16 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
           feature_key: featureKey,
           enabled: !currentEnabled,
           parameters: currentFeature?.parameters || null,
-        } as any, {
+        }, {
           onConflict: 'instance_id,feature_key',
         });
-      
+
       if (error) throw error;
 
       setFeatures(prev => {
         const existing = prev.find(f => f.feature_key === featureKey);
         if (existing) {
-          return prev.map(f => 
+          return prev.map(f =>
             f.feature_key === featureKey ? { ...f, enabled: !currentEnabled } : f
           );
         }
@@ -214,7 +214,7 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
           feature_key: featureKey,
           enabled: currentFeature?.enabled ?? false,
           parameters,
-        } as any, {
+        }, {
           onConflict: 'instance_id,feature_key',
         });
       

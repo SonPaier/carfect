@@ -328,7 +328,7 @@ const ReservationDetailsDrawer = ({
       .limit(10);
 
     for (const offer of offers || []) {
-      const customerData = offer.customer_data as any;
+      const customerData = offer.customer_data as { phone?: string; email?: string } | null;
       if (normalizePhone(customerData?.phone) === normalizedPhone && customerData?.email) {
         return customerData.email;
       }

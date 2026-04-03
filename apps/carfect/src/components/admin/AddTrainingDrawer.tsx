@@ -117,7 +117,7 @@ export function AddTrainingDrawer({
         .select('*')
         .eq('instance_id', instanceId)
         .eq('active', true)
-        .order('sort_order')) as any;
+        .order('sort_order'));
       if (data) setTrainingTypes(data);
     };
     fetch();
@@ -281,12 +281,12 @@ export function AddTrainingDrawer({
       if (isEditMode && editingTraining) {
         const { error } = await supabase
           .from('trainings')
-          .update(payload as any)
+          .update(payload)
           .eq('id', editingTraining.id);
         if (error) throw error;
         toast.success(t('trainings.trainingUpdated'));
       } else {
-        const { error } = await supabase.from('trainings').insert(payload as any);
+        const { error } = await supabase.from('trainings').insert(payload);
         if (error) throw error;
         toast.success(t('trainings.trainingSaved'));
       }

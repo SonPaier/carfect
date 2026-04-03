@@ -68,7 +68,7 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
             customer_name: e.customer_name,
             customer_phone: e.customer_phone,
             due_date: today,
-            title: (e.followup_services as any)?.name || 'Follow-up',
+            title: (e.followup_services as { name?: string } | null)?.name || 'Follow-up',
             status: 'pending',
           }));
 

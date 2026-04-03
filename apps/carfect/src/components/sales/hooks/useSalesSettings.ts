@@ -28,7 +28,7 @@ export const useSalesSettings = (instanceId: string | null) => {
         .from('sales_instance_settings')
         .select('*')
         .eq('instance_id', instanceId)
-        .maybeSingle() as any);
+        .maybeSingle());
       if (error) throw error;
       return data;
     },
@@ -63,7 +63,7 @@ export const useSaveSalesSettings = (instanceId: string | null) => {
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'instance_id' },
-      ) as any);
+      ));
       if (error) throw error;
     },
     onSuccess: () => {

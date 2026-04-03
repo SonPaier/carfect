@@ -143,9 +143,9 @@ const AddInstanceUserDialog = ({
       resetForm();
       onOpenChange(false);
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating user:', error);
-      toast.error(error.message || 'Nie udało się utworzyć użytkownika');
+      toast.error((error as Error).message || 'Nie udało się utworzyć użytkownika');
     } finally {
       setLoading(false);
     }

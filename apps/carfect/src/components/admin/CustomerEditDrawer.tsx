@@ -111,8 +111,8 @@ const CustomerEditDrawer = ({
         setEditNotes(customer.notes || '');
         setEditCompany(customer.company || '');
         setEditNip(customer.nip || '');
-        setEditDiscountPercent((customer as any).discount_percent?.toString() || '');
-        setEditSmsConsent((customer as any).sms_consent ?? false);
+        setEditDiscountPercent((customer as Customer & { discount_percent?: number }).discount_percent?.toString() || '');
+        setEditSmsConsent((customer as Customer & { sms_consent?: boolean }).sms_consent ?? false);
         setActiveTab('info');
       }
     }
@@ -136,7 +136,7 @@ const CustomerEditDrawer = ({
           id: v.id,
           model: v.model,
           carSize: (v.car_size as 'S' | 'M' | 'L') || 'M',
-          vin: (v as any).vin || undefined,
+          vin: v.vin || undefined,
         })),
       );
     }
@@ -205,9 +205,9 @@ const CustomerEditDrawer = ({
       // Collect unique service IDs to resolve names
       const allServiceIds = new Set<string>();
       data.forEach((v) => {
-        const items = v.service_items as any[];
+        const items = v.service_items as { service_id?: string }[] | null;
         if (items?.length) {
-          items.forEach((item: any) => {
+          items.forEach((item) => {
             if (item.service_id) allServiceIds.add(item.service_id);
           });
         }
@@ -233,13 +233,13 @@ const CustomerEditDrawer = ({
         data.map((v) => {
           // Resolve service name: first from service_items JSONB metadata, then from DB lookup
           let serviceName: string | null = null;
-          const items = v.service_items as any[];
+          const items = v.service_items as { service_id?: string; short_name?: string; name?: string }[] | null;
           if (items?.length) {
             serviceName =
               items
                 .map(
-                  (item: any) =>
-                    item.short_name || item.name || serviceNamesMap.get(item.service_id) || null,
+                  (item) =>
+                    item.short_name || item.name || (item.service_id ? serviceNamesMap.get(item.service_id) : null) || null,
                 )
                 .filter(Boolean)
                 .join(', ') || null;
@@ -474,7 +474,7 @@ const CustomerEditDrawer = ({
     for (const v of toUpdate) {
       await supabase
         .from('customer_vehicles')
-        .update({ vin: v.vin || null } as any)
+        .update({ vin: v.vin || null })
         .eq('id', v.id!);
     }
   };
@@ -490,7 +490,7 @@ const CustomerEditDrawer = ({
       setEditNotes(customer?.notes || '');
       setEditCompany(customer?.company || '');
       setEditNip(customer?.nip || '');
-      setEditDiscountPercent((customer as any)?.discount_percent?.toString() || '');
+      setEditDiscountPercent((customer as Customer & { discount_percent?: number })?.discount_percent?.toString() || '');
       // Re-fetch vehicles to restore original state
       fetchCustomerVehicles();
     }
