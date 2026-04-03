@@ -62,7 +62,7 @@ const RollDetailsDrawer = ({
         if (error || cancelled) return;
 
         const orderIds = [...new Set((usageRows || []).map((u: any) => u.order_id).filter(Boolean))];
-        let orderMap: Record<string, { orderNumber: string; customerName: string }> = {};
+        const orderMap: Record<string, { orderNumber: string; customerName: string }> = {};
 
         if (orderIds.length > 0) {
           const { data: orders } = await (supabase

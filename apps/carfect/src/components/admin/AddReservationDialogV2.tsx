@@ -810,7 +810,9 @@ const AddReservationDialogV2 = ({
             price_small: service.price_small,
             price_medium: service.price_medium,
             price_large: service.price_large,
-            category_prices_are_net: false,
+            category_prices_are_net: service.category_id
+              ? categoryNetMap.get(service.category_id) ?? false
+              : false,
           });
         }
       });
@@ -823,7 +825,7 @@ const AddReservationDialogV2 = ({
         }
       }
     }
-  }, [open, services, editingReservation, servicesWithCategory.length]);
+  }, [open, services, editingReservation, servicesWithCategory.length, categoryNetMap]);
 
   // Get duration for a service based on car size
   const getServiceDuration = (service: Service): number => {
@@ -975,7 +977,7 @@ const AddReservationDialogV2 = ({
 
         if (!error && data) {
           const customerIds = data.filter((v) => v.customer_id).map((v) => v.customer_id!);
-          let customerNames: Record<string, string> = {};
+          const customerNames: Record<string, string> = {};
 
           if (customerIds.length > 0) {
             const { data: customersData } = await supabase
@@ -1392,9 +1394,14 @@ const AddReservationDialogV2 = ({
           name: si.name || svc?.name,
           short_name: si.short_name || svc?.short_name,
         };
-        // Add custom_price_netto when custom_price exists
+        // Add custom_price_netto when custom_price exists.
+        // custom_price is in the unit matching pricingMode, so use calculatePricePair
+        // to derive the correct netto regardless of whether the mode is netto or brutto.
         if (enriched.custom_price !== null && enriched.custom_price !== undefined) {
-          return { ...enriched, custom_price_netto: bruttoToNetto(enriched.custom_price) };
+          return {
+            ...enriched,
+            custom_price_netto: calculatePricePair(enriched.custom_price, pricingMode).netto,
+          };
         }
         return enriched;
       });

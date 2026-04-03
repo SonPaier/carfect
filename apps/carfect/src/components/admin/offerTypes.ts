@@ -37,6 +37,7 @@ export interface Offer {
   selected_state?: SelectedState | null;
   follow_up_phone_status?: FollowUpPhoneStatus;
   internal_notes?: string | null;
+  offer_format?: string | null;
 }
 
 export interface OfferWithOptions extends Offer {

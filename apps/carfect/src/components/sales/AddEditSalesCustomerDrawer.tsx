@@ -120,8 +120,8 @@ const AddEditSalesCustomerDrawer = ({
 
     // Fetch invoices and roll usages for these orders
     const orderIds = (data || []).map((o: any) => o.id);
-    let invoiceMap: Record<string, any> = {};
-    let rollMap: Record<string, any[]> = {};
+    const invoiceMap: Record<string, any> = {};
+    const rollMap: Record<string, any[]> = {};
     if (orderIds.length > 0) {
       const [invRes, rollRes] = await Promise.all([
         supabase

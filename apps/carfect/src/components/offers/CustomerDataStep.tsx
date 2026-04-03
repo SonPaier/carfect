@@ -6,7 +6,7 @@ import { Button } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
-import { User, Building2, Car, Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, ChevronRight } from 'lucide-react';
 import { CustomerData, VehicleData } from '@/hooks/useOffer';
 import { toast } from 'sonner';
 import { CarSearchAutocomplete, CarSearchValue } from '@/components/ui/car-search-autocomplete';
@@ -111,10 +111,10 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
     const { t } = useTranslation();
     const [nipLoading, setNipLoading] = useState(false);
     const [emailError, setEmailError] = useState<string | null>(null);
-    const [showManualCompany, setShowManualCompany] = useState(
-      !!customerData.company || !!customerData.nip || !!customerData.companyAddress,
+    const hasCompanyData = !!(customerData.company || customerData.companyAddress || customerData.companyCity);
+    const [companyExpanded, setCompanyExpanded] = useState(
+      !!(customerData.nip || hasCompanyData),
     );
-
     // Phone search state
     const [phoneResults, setPhoneResults] = useState<
       Array<{ id: string; name: string; phone: string; email: string | null }>
@@ -148,12 +148,14 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
 
     // Phone search: debounced lookup in customers table
     const suppressPhoneSearchRef = useRef(false);
+    const phoneUserInteractedRef = useRef(false);
 
     useEffect(() => {
       if (suppressPhoneSearchRef.current) {
         suppressPhoneSearchRef.current = false;
         return;
       }
+      if (!phoneUserInteractedRef.current) return;
       const digits = customerData.phone.replace(/\D/g, '');
       if (digits.length < 3) {
         setPhoneResults([]);
@@ -306,7 +308,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
             companyPostalCode: parsed.postalCode,
             companyCity: parsed.city,
           });
-          setShowManualCompany(true);
+          setCompanyExpanded(true);
         } else {
           toast.error('Nie znaleziono firmy o podanym NIP');
         }
@@ -327,11 +329,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
       <div className="space-y-8">
         {/* Customer Info Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <User className="w-5 h-5 text-primary" />
-            Dane klienta
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:[grid-template-columns:1fr_minmax(0,1.3fr)_minmax(0,0.7fr)] gap-4">
             <div className="space-y-2" ref={nameInputRef}>
               <Label htmlFor="customerName">Imię i nazwisko *</Label>
               <ClientSearchAutocomplete
@@ -348,6 +346,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                 }}
                 onClear={() => onCustomerChange({ name: '', phone: '' })}
                 className={hasNameError ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                suppressAutoSearch={!!customerData.name}
               />
               {validationErrors?.name && (
                 <p className="text-sm text-red-500">{validationErrors.name}</p>
@@ -373,7 +372,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
               <PhoneMaskedInput
                 id="customerPhone"
                 value={customerData.phone}
-                onChange={(val) => onCustomerChange({ phone: val })}
+                onChange={(val) => { phoneUserInteractedRef.current = true; onCustomerChange({ phone: val }); }}
               />
               {showPhoneDropdown && phoneResults.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 border border-border rounded-lg overflow-hidden bg-card shadow-lg z-[9999]">
@@ -408,18 +407,18 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                 id="inquiryContent"
                 value={customerData.inquiryContent || ''}
                 onChange={(e) => onCustomerChange({ inquiryContent: e.target.value })}
-                placeholder="Treść zapytania od klienta..."
+                placeholder=""
                 minRows={3}
               />
             </div>
             {onInternalNotesChange && (
               <div className="space-y-2">
-                <Label htmlFor="internalNotes">Notatka wewnętrzna (tylko dla admina)</Label>
+                <Label htmlFor="internalNotes">Notatka własna</Label>
                 <AutoResizeTextarea
                   id="internalNotes"
                   value={internalNotes || ''}
                   onChange={(e) => onInternalNotesChange(e.target.value)}
-                  placeholder="Notatki widoczne tylko w panelu admina..."
+                  placeholder=""
                   minRows={3}
                 />
               </div>
@@ -427,147 +426,119 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
           </div>
         </div>
 
-        {/* Company Info Section */}
+        {/* Company Info Section — collapsed by default */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <Building2 className="w-5 h-5 text-primary" />
+          <button
+            type="button"
+            onClick={() => setCompanyExpanded((prev) => !prev)}
+            className="text-lg font-semibold flex items-center gap-2 hover:text-primary transition-colors"
+          >
+            <ChevronRight className={cn('w-4 h-4 transition-transform', companyExpanded && 'rotate-90')} />
             Dane firmy (opcjonalne)
-          </div>
-          {!showManualCompany ? (
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 flex gap-2">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="companyNipSearch">NIP</Label>
+          </button>
+          {companyExpanded && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyNip">NIP</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="companyNipSearch"
+                    id="companyNip"
                     value={customerData.nip}
                     onChange={(e) => onCustomerChange({ nip: e.target.value })}
                   />
-                </div>
-                <div className="flex items-end">
                   <Button
                     variant="outline"
                     onClick={lookupNip}
                     disabled={nipLoading}
-                    className="gap-2"
+                    title="Pobierz dane z GUS"
+                    className="gap-2 shrink-0"
                   >
                     {nipLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Search className="w-4 h-4" />
                     )}
-                    Pobierz dane
+                    GUS
                   </Button>
                 </div>
               </div>
-              <div className="flex items-end">
-                <Button variant="ghost" onClick={() => setShowManualCompany(true)}>
-                  Wprowadź ręcznie
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Nazwa firmy</Label>
-                  <Input
-                    id="companyName"
-                    value={customerData.company}
-                    onChange={(e) => onCustomerChange({ company: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyNip">NIP</Label>
-                  <div className="flex gap-2">
+              {hasCompanyData && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Nazwa firmy</Label>
                     <Input
-                      id="companyNip"
-                      value={customerData.nip}
-                      onChange={(e) => onCustomerChange({ nip: e.target.value })}
+                      id="companyName"
+                      value={customerData.company}
+                      onChange={(e) => onCustomerChange({ company: e.target.value })}
                     />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={lookupNip}
-                      disabled={nipLoading}
-                      title="Pobierz dane z NIP"
-                    >
-                      {nipLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Search className="w-4 h-4" />
-                      )}
-                    </Button>
                   </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="companyAddress">Adres (ulica i numer)</Label>
-                <Input
-                  id="companyAddress"
-                  value={customerData.companyAddress}
-                  onChange={(e) => onCustomerChange({ companyAddress: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyPostalCode">Kod pocztowy</Label>
-                  <Input
-                    id="companyPostalCode"
-                    value={customerData.companyPostalCode}
-                    onChange={(e) => onCustomerChange({ companyPostalCode: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyCity">Miejscowość</Label>
-                  <Input
-                    id="companyCity"
-                    value={customerData.companyCity}
-                    onChange={(e) => onCustomerChange({ companyCity: e.target.value })}
-                  />
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyAddress">Adres (ulica i numer)</Label>
+                    <Input
+                      id="companyAddress"
+                      value={customerData.companyAddress}
+                      onChange={(e) => onCustomerChange({ companyAddress: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="companyPostalCode">Kod pocztowy</Label>
+                      <Input
+                        id="companyPostalCode"
+                        value={customerData.companyPostalCode}
+                        onChange={(e) => onCustomerChange({ companyPostalCode: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="companyCity">Miejscowość</Label>
+                      <Input
+                        id="companyCity"
+                        value={customerData.companyCity}
+                        onChange={(e) => onCustomerChange({ companyCity: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
 
         {/* Vehicle Info Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <Car className="w-5 h-5 text-primary" />
-            Dane pojazdu
-          </div>
-          <div className="space-y-2" ref={brandModelRef}>
-            <Label htmlFor="vehicleBrandModel">Marka i model *</Label>
-            <CarSearchAutocomplete
-              value={vehicleData.brandModel || ''}
-              onChange={(val: CarSearchValue) => {
-                if (val === null) {
-                  onVehicleChange({ brandModel: '' });
-                } else if ('type' in val && val.type === 'custom') {
-                  onVehicleChange({ brandModel: val.label });
-                } else {
-                  onVehicleChange({ brandModel: val.label });
-                }
-              }}
-              error={hasBrandModelError}
-            />
-            {validationErrors?.brandModel && (
-              <p className="text-sm text-red-500">{validationErrors.brandModel}</p>
-            )}
-          </div>
-
-          {/* Paint Color and Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2" ref={brandModelRef}>
+              <Label htmlFor="vehicleBrandModel">Marka i model pojazdu *</Label>
+              <CarSearchAutocomplete
+                value={vehicleData.brandModel || ''}
+                onChange={(val: CarSearchValue) => {
+                  if (val === null) {
+                    onVehicleChange({ brandModel: '' });
+                  } else if ('type' in val && val.type === 'custom') {
+                    onVehicleChange({ brandModel: val.label });
+                  } else {
+                    onVehicleChange({ brandModel: val.label });
+                  }
+                }}
+                error={hasBrandModelError}
+              />
+              {validationErrors?.brandModel && (
+                <p className="text-sm text-red-500">{validationErrors.brandModel}</p>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="paintColor">Kolor lakieru</Label>
               <Input
                 id="paintColor"
                 value={vehicleData.paintColor || ''}
                 onChange={(e) => onVehicleChange({ paintColor: e.target.value })}
-                placeholder="np. Czarny, Biały perłowy..."
+                placeholder=""
               />
             </div>
+          </div>
+
+          {/* Paint Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Typ lakieru</Label>
               <RadioGroup

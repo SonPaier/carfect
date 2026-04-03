@@ -231,7 +231,7 @@ export const CarSearchAutocomplete = ({
     const queryParts = normalizedQuery.split(' ').filter(Boolean);
 
     // Find all matching parts
-    let result: React.ReactNode[] = [];
+    const result: React.ReactNode[] = [];
     let lastIndex = 0;
 
     queryParts.forEach((part) => {

@@ -218,7 +218,7 @@ const CustomerEditDrawer = ({
       });
 
       // Fetch service names from unified_services
-      let serviceNamesMap = new Map<string, string>();
+      const serviceNamesMap = new Map<string, string>();
       if (allServiceIds.size > 0) {
         const { data: services } = await supabase
           .from('unified_services')
