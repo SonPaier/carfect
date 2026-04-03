@@ -939,9 +939,9 @@
   {
     "brand": "Dodge",
     "models": [
-      { "name": "Dodge Charger", "size": "L" },
-      { "name": "Dodge Challenger", "size": "L" },
-      { "name": "Dodge Durango", "size": "L" }
+      { "name": "Charger", "size": "L" },
+      { "name": "Challenger", "size": "L" },
+      { "name": "Durango", "size": "L" }
     ]
   },
   {

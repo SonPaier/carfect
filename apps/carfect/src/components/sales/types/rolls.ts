@@ -24,13 +24,18 @@ export interface SalesRoll {
   customerNames?: string[];
 }
 
+export type RollUsageSource = 'order' | 'manual' | 'worker';
+
 export interface SalesRollUsage {
   id: string;
   rollId: string;
-  orderId: string;
-  orderItemId: string;
+  orderId: string | null;
+  orderItemId: string | null;
   usedM2: number;
   usedMb: number;
+  source: RollUsageSource;
+  workerName: string | null;
+  note: string | null;
   createdAt: string;
 }
 
