@@ -81,10 +81,6 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 - Dropdown menu per offer → "Drukuj PDF" item
 - Calls API, opens PDF in new tab or triggers download
 
-### Offer Editor (bottom action bar)
-- Print icon button next to existing actions
-- Same behavior — calls API, opens/downloads PDF
-
 ### Public Offer View (client-facing)
 - "Pobierz PDF" button, visible but not in print
 - Calls same API endpoint with public token

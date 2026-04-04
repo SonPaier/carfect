@@ -40,8 +40,6 @@ apps/carfect/src/
   lib/pdfUtils.ts                  # NEW — helper to call API and open PDF
   components/admin/
     OfferListCard.tsx              # MODIFY — add "Drukuj PDF" to menu
-  components/offers/
-    OfferGenerator.tsx             # MODIFY — add print icon in bottom bar
   pages/
     PublicOfferView.tsx            # MODIFY — add "Pobierz PDF" button
 ```
@@ -448,16 +446,7 @@ export async function openOfferPdf(publicToken: string): Promise<void> {
 - [ ] **Step 3: Wire up in OffersView.tsx — call `openOfferPdf(offer.public_token)`**
 - [ ] **Step 4: Commit**
 
-### Task 9: Add print icon to OfferGenerator bottom bar
-
-**Files:**
-- Modify: `apps/carfect/src/components/offers/OfferGenerator.tsx`
-
-- [ ] **Step 1: Add Printer icon button next to existing actions in bottom bar**
-- [ ] **Step 2: Only show when offer is saved (has public_token)**
-- [ ] **Step 3: Commit**
-
-### Task 10: Add "Pobierz PDF" button to public offer view
+### Task 9: Add "Pobierz PDF" button to public offer view
 
 **Files:**
 - Modify: `apps/carfect/src/pages/PublicOfferView.tsx`
