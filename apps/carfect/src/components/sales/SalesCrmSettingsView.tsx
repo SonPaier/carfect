@@ -22,9 +22,32 @@ import SalesSettingsView from './SalesSettingsView';
 
 type SettingsTab = 'company' | 'invoicing' | 'apaczka';
 
+interface ApaczkaService {
+  name: string;
+  serviceId: number | '';
+}
+
+interface ApaczkaSenderAddress {
+  name?: string;
+  contact_person?: string;
+  street?: string;
+  postal_code?: string;
+  city?: string;
+  country_code?: string;
+  phone?: string;
+  email?: string;
+}
+
+interface InstanceDataForSettings {
+  apaczka_app_id?: string | null;
+  apaczka_app_secret?: string | null;
+  apaczka_services?: ApaczkaService[] | null;
+  apaczka_sender_address?: ApaczkaSenderAddress | null;
+}
+
 interface SalesCrmSettingsViewProps {
   instanceId: string | null;
-  instanceData: any;
+  instanceData: InstanceDataForSettings | null;
 }
 
 const tabs: { key: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -65,7 +88,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
       setApaczkaAppId(instanceData.apaczka_app_id || '');
       setApaczkaAppSecret(instanceData.apaczka_app_secret || '');
       setApaczkaServices(
-        (instanceData.apaczka_services || []).map((s: any) => ({
+        (instanceData.apaczka_services || []).map((s) => ({
           name: s.name || '',
           serviceId: s.serviceId ?? '',
         })),
@@ -100,8 +123,8 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         .eq('id', instanceId);
       if (error) throw error;
       toast.success('Ustawienia Apaczka zapisane');
-    } catch (err: any) {
-      toast.error('Błąd zapisu: ' + (err.message || ''));
+    } catch (err: unknown) {
+      toast.error('Błąd zapisu: ' + ((err as Error).message || ''));
     } finally {
       setSavingApaczka(false);
     }
@@ -132,22 +155,15 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         body: { instanceId },
       });
       if (error) {
-        let errDetail = '';
-        try {
-          const errBody = await (error as any).context?.json?.();
-          errDetail = errBody?.error || '';
-        } catch {
-          /* ignore */
-        }
-        throw new Error(errDetail || 'Nie udało się pobrać serwisów');
+        throw new Error(error.message || 'Nie udało się pobrać serwisów');
       }
       if (data?.error) {
         throw new Error(data.error);
       }
       setAvailableServices(data.services || []);
       toast.success(`Pobrano ${data.services?.length || 0} serwisów z Apaczka`);
-    } catch (err: any) {
-      toast.error('Błąd pobierania serwisów: ' + (err.message || ''));
+    } catch (err: unknown) {
+      toast.error('Błąd pobierania serwisów: ' + ((err as Error).message || ''));
     } finally {
       setFetchingServices(false);
     }
