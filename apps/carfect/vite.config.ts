@@ -115,6 +115,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
+      '@shared/pdf': path.resolve(__dirname, '../../libs/pdf/src/index.ts'),
       '@shared/ui': path.resolve(__dirname, '../../libs/ui/src/index.ts'),
       '@shared/utils': path.resolve(__dirname, '../../libs/shared-utils/src/index.ts'),
       '@shared/invoicing': path.resolve(__dirname, '../../libs/shared-invoicing/src/index.ts'),
