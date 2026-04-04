@@ -13,7 +13,6 @@ interface ManageUserRequest {
   username?: string;
   password?: string;
   role?: 'admin' | 'employee' | 'hall' | 'sales';
-  adminPassword?: string; // Required for reset-password: caller's own password to confirm identity
 }
 
 Deno.serve(async (req) => {
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body: ManageUserRequest = await req.json();
-    const { action, instanceId, userId, username, password, role, adminPassword } = body;
+    const { action, instanceId, userId, username, password, role } = body;
 
     if (!instanceId) {
       return new Response(JSON.stringify({ error: 'Brak ID instancji' }), {
@@ -415,27 +414,6 @@ Deno.serve(async (req) => {
         if (!userId || !password) {
           return new Response(JSON.stringify({ error: 'Wymagane: userId, password' }), {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Require admin's own password for identity confirmation
-        if (!adminPassword) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane potwierdzenie hasłem administratora' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-          );
-        }
-
-        // Verify admin's password by attempting sign-in
-        const { error: verifyError } = await supabase.auth.signInWithPassword({
-          email: caller.email!,
-          password: adminPassword,
-        });
-
-        if (verifyError) {
-          return new Response(JSON.stringify({ error: 'Nieprawidłowe hasło administratora' }), {
-            status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }

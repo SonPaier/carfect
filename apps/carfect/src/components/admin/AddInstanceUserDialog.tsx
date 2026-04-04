@@ -202,7 +202,7 @@ const AddInstanceUserDialog = ({
                   <SelectItem value="employee">Pracownik</SelectItem>
                   <SelectItem value="hall">Widok Hali (Kiosk)</SelectItem>
                   <SelectItem value="sales">Sprzedaż (CRM)</SelectItem>
-                  <SelectItem value="admin">Admin Instancji</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">

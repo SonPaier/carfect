@@ -720,7 +720,7 @@ const ReservationsView = ({
             <SelectContent>
               <SelectItem value="all">Wszystkie</SelectItem>
               {Object.entries(statusConfig)
-                .filter(([key]) => !['pending', 'change_requested', 'released'].includes(key))
+                .filter(([key]) => !['pending', 'change_requested', 'released', 'cancelled'].includes(key))
                 .map(([key, cfg]) => (
                   <SelectItem key={key} value={key}>
                     {cfg.label}

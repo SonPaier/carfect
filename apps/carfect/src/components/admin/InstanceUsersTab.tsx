@@ -266,6 +266,44 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
         </div>
       )}
 
+      {/* Role permissions table */}
+      <div className="border border-border/50 rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Rola</TableHead>
+              <TableHead>Dostęp</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">Admin</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                Pełny dostęp: kalendarz, rezerwacje, ustawienia, użytkownicy, statystyki
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Pracownik</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                Kalendarz, rezerwacje, powiadomienia (bez ustawień i użytkowników)
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Hala</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                Tylko widok kalendarza (tryb kiosk, bez sidebara)
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Sprzedaż</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                Panel CRM: zamówienia, klienci, produkty, oferty
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+
       <AddInstanceUserDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
