@@ -43,8 +43,7 @@ const PublicOfferView = () => {
 
       try {
         // Single RPC call replaces 3+ separate table queries
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: rpcData, error } = await (supabase.rpc as any)('get_public_offer', {
+        const { data: rpcData, error } = await supabase.rpc('get_public_offer', {
           p_token: token,
           p_skip_mark_viewed: isAdminPreview || shouldPrint,
         });

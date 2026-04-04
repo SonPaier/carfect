@@ -60,11 +60,9 @@ export default function PublicProtocolView() {
 
       try {
         // Single RPC call — replaces 4 separate table queries
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
-          'get_protocol_by_token',
-          { p_token: token },
-        );
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_protocol_by_token', {
+          p_token: token,
+        });
 
         if (rpcError) {
           if (rpcError.message?.includes('not found')) {
