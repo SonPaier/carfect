@@ -1,5 +1,9 @@
-node_modules
-dist
-.next
-.nx
+node_modules/
+dist/
+.next/
+.nx/
 pnpm-lock.yaml
+supabase/.temp/
+src/integrations/supabase/types.ts
+*.min.js
+*.min.css

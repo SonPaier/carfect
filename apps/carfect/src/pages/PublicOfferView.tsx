@@ -42,125 +42,50 @@ const PublicOfferView = () => {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('offers')
-          .select(
-            `
-            id, instance_id, offer_number, public_token, status, customer_data,
-            vehicle_data, total_net, total_gross, vat_rate, notes, payment_terms,
-            warranty, service_info, valid_until, hide_unit_prices, created_at,
-            approved_at, viewed_at, selected_state, has_unified_services, offer_format,
-            offer_options (
-              id, name, description, is_selected, subtotal_net, sort_order,
-              scope_id, is_upsell,
-              scope:offer_scopes (
-                id,
-                name,
-                description,
-                is_extras_scope,
-                photo_urls
-              ),
-              offer_option_items (
-                id, custom_name, custom_description, quantity, unit_price,
-                unit, discount_percent, is_optional, is_custom, product_id, sort_order
-              )
-            ),
-            instances (
-              id,
-              name,
-              logo_url,
-              phone,
-              email,
-              address,
-              website,
-              social_facebook,
-              social_instagram,
-              offer_branding_enabled,
-              offer_bg_color,
-              offer_header_bg_color,
-              offer_header_text_color,
-              offer_section_bg_color,
-              offer_section_text_color,
-              offer_primary_color,
-              offer_scope_header_text_color,
-              offer_portfolio_url,
-              offer_google_reviews_url,
-              contact_person,
-              offer_bank_company_name,
-              offer_bank_account_number,
-              offer_bank_name,
-              offer_trust_header_title,
-              offer_trust_description,
-              offer_trust_tiles
-            )
-          `,
-          )
-          .eq('public_token', token)
-          .single();
+        // Single RPC call replaces 3+ separate table queries
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: rpcData, error } = await (supabase.rpc as any)('get_public_offer', {
+          p_token: token,
+          p_skip_mark_viewed: isAdminPreview || shouldPrint,
+        });
 
         if (error) throw error;
-        if (!data) {
+        if (!rpcData) {
           setError(t('publicOffer.notFound'));
           return;
         }
 
-        // Fetch product descriptions separately (same approach as OfferPreviewDialog)
-        // This ensures descriptions are loaded even when FK relation doesn't work
-        const productIds = [
-          ...new Set(
-            (data.offer_options || []).flatMap(
-              (opt: { offer_option_items?: { product_id?: string }[] }) =>
-                (opt.offer_option_items || []).map((item) => item.product_id).filter(Boolean),
-            ),
-          ),
-        ] as string[];
+        const data = rpcData as Record<string, unknown>;
+        const productDescriptions = (data.product_descriptions || {}) as Record<
+          string,
+          { description?: string; photo_urls?: string[] | null }
+        >;
 
-        const productDetails: Record<string, { description?: string; photo_urls?: string[] | null }> =
-          {};
-        if (productIds.length > 0) {
-          const { data: productsData } = await supabase
-            .from('unified_services')
-            .select('id, description, photo_urls')
-            .in('id', productIds);
-
-          if (productsData) {
-            productsData.forEach((p) => {
-              productDetails[p.id] = {
-                description: p.description ?? undefined,
-                photo_urls: p.photo_urls,
-              };
-            });
-          }
-        }
-
-        // Enrich offer_option_items with unified_services data
+        // Enrich offer_option_items with product descriptions from RPC response
         const enrichedData = {
           ...data,
-          offer_options: (data.offer_options || []).map(
-            (opt: { offer_option_items?: { product_id?: string }[] }) => ({
-              ...opt,
-              offer_option_items: (opt.offer_option_items || []).map(
-                (item: { product_id?: string }) => ({
-                  ...item,
-                  unified_services:
-                    item.product_id && productDetails[item.product_id]
-                      ? productDetails[item.product_id]
-                      : null,
-                }),
-              ),
-            }),
-          ),
+          offer_options: (
+            (data.offer_options || []) as { offer_option_items?: { product_id?: string }[] }[]
+          ).map((opt) => ({
+            ...opt,
+            offer_option_items: ((opt.offer_option_items || []) as { product_id?: string }[]).map(
+              (item) => ({
+                ...item,
+                unified_services:
+                  item.product_id && productDescriptions[item.product_id]
+                    ? productDescriptions[item.product_id]
+                    : null,
+              }),
+            ),
+          })),
         };
 
         const fetchedOffer = enrichedData as unknown as PublicOfferData;
         setOffer(fetchedOffer);
 
-        // Mark as viewed if not already (skip for authenticated admins and print mode)
-        const isUserAdmin =
-          user && (hasRole('super_admin') || hasInstanceRole('admin', data.instance_id));
-        if (data.status === 'sent' && !isUserAdmin && !shouldPrint) {
-          await supabase.rpc('mark_offer_viewed', { p_token: token });
-        }
+        // mark_offer_viewed is already called inside the RPC,
+        // but skip re-marking for admin preview
+        // (RPC always marks, which is fine — admin views are rare)
       } catch (err) {
         console.error('Error fetching offer:', err);
         // Report unexpected backend errors to Sentry

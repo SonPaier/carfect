@@ -59,68 +59,56 @@ export default function PublicProtocolView() {
       }
 
       try {
-        // Fetch protocol by public token
-        const { data: protocolData, error: protocolError } = await supabase
-          .from('vehicle_protocols')
-          .select('*')
-          .eq('public_token', token)
-          .single();
+        // Single RPC call — replaces 4 separate table queries
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
+          'get_protocol_by_token',
+          { p_token: token },
+        );
 
-        if (protocolError) {
-          if (protocolError.code === 'PGRST116') {
+        if (rpcError) {
+          if (rpcError.message?.includes('not found')) {
             setError('Protokół nie został znaleziony');
           } else {
-            throw protocolError;
+            throw rpcError;
           }
           setLoading(false);
           return;
         }
 
-        setProtocol(protocolData as Protocol);
+        const data = rpcData as {
+          protocol: Protocol;
+          instance: Instance;
+          damage_points: Array<{
+            id: string;
+            view: string;
+            x_percent: number;
+            y_percent: number;
+            damage_type?: string;
+            custom_note?: string;
+            photo_url?: string;
+            photo_urls?: string[];
+          }>;
+          offer_public_token: string | null;
+        };
 
-        // Fetch instance data
-        const { data: instanceData, error: instanceError } = await supabase
-          .from('instances')
-          .select('id, name, logo_url, phone, email, address')
-          .eq('id', protocolData.instance_id)
-          .single();
+        setProtocol(data.protocol);
+        setInstance(data.instance);
+        setOfferPublicToken(data.offer_public_token);
 
-        if (instanceError) throw instanceError;
-        setInstance(instanceData);
-
-        // Fetch damage points
-        const { data: pointsData, error: pointsError } = await supabase
-          .from('protocol_damage_points')
-          .select('*')
-          .eq('protocol_id', protocolData.id);
-
-        if (pointsError) throw pointsError;
-
-        if (pointsData) {
-          setDamagePoints(pointsData.map(p => ({
-            id: p.id,
-            view: p.view as VehicleView,
-            x_percent: p.x_percent,
-            y_percent: p.y_percent,
-            damage_type: p.damage_type || undefined,
-            custom_note: p.custom_note || undefined,
-            photo_url: p.photo_url || undefined,
-            photo_urls: p.photo_urls || undefined,
-          })));
-        }
-
-        // Fetch offer public_token if offer_number exists
-        if (protocolData.offer_number) {
-          const { data: offerData } = await supabase
-            .from('offers')
-            .select('public_token')
-            .eq('instance_id', protocolData.instance_id)
-            .eq('offer_number', protocolData.offer_number)
-            .single();
-
-          if (offerData) {
-            setOfferPublicToken(offerData.public_token);
-          }
+        if (data.damage_points) {
+          setDamagePoints(
+            data.damage_points.map((p) => ({
+              id: p.id,
+              view: p.view as VehicleView,
+              x_percent: p.x_percent,
+              y_percent: p.y_percent,
+              damage_type: p.damage_type || undefined,
+              custom_note: p.custom_note || undefined,
+              photo_url: p.photo_url || undefined,
+              photo_urls: p.photo_urls || undefined,
+            })),
+          );
         }
       } catch (err) {
         console.error('Error fetching protocol:', err);
@@ -162,10 +150,13 @@ export default function PublicProtocolView() {
     <>
       <Helmet>
         <title>Protokół przyjęcia pojazdu | {instance.name}</title>
-        <meta name="description" content={`Protokół przyjęcia pojazdu ${protocol.vehicle_model || ''} ${protocol.registration_number || ''}`} />
+        <meta
+          name="description"
+          content={`Protokół przyjęcia pojazdu ${protocol.vehicle_model || ''} ${protocol.registration_number || ''}`}
+        />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      
+
       <PublicProtocolCustomerView
         protocol={protocol}
         instance={instance}
