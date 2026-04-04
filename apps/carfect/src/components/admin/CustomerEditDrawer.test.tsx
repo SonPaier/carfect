@@ -212,12 +212,12 @@ describe('CustomerEditDrawer', () => {
           // First call: uniqueness check returns null (phone is free)
           // Second call: update the customer
           const c = createChainMock(null, null);
-          (c as any).update = vi.fn(() => c);
+          (c as Record<string, unknown>).update = vi.fn(() => c);
           return c;
         }
         if (table === 'customer_vehicles') {
           const c = createChainMock([], null);
-          (c as any).update = vehiclesUpdateSpy;
+          (c as Record<string, unknown>).update = vehiclesUpdateSpy;
           return c;
         }
         return createChainMock(null, null);
@@ -262,7 +262,7 @@ describe('CustomerEditDrawer', () => {
       mockFrom.mockImplementation((table: string) => {
         if (table === 'customer_vehicles') {
           const c = createChainMock([{ id: 'veh-1', model: 'BMW X5', car_size: 'L' }], null);
-          (c as any).delete = deleteVehiclesSpy;
+          (c as Record<string, unknown>).delete = deleteVehiclesSpy;
           return c;
         }
         return createChainMock(null, null);

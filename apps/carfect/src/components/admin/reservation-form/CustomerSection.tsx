@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, History } from 'lucide-react';
 import { Label } from '@shared/ui';
 import { PhoneMaskedInput } from '@shared/ui';
 import ClientSearchAutocomplete from '@/components/ui/client-search-autocomplete';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
+import { CustomerHistoryDrawer } from '@/components/admin/CustomerHistoryDrawer';
 import { CustomerVehicle, CarSize } from './types';
 import { RefObject } from 'react';
 
@@ -31,6 +33,8 @@ interface CustomerSectionProps {
   setCarModel: (model: string) => void;
   setCarSize: (size: CarSize) => void;
   noShowWarning?: { customerName: string; date: string; serviceName: string } | null;
+  onOpenReservation?: (reservationId: string) => void;
+  selectedCustomerId?: string | null;
 }
 
 export const CustomerSection = ({
@@ -51,8 +55,43 @@ export const CustomerSection = ({
   setCarModel,
   setCarSize,
   noShowWarning,
+  onOpenReservation,
+  selectedCustomerId,
 }: CustomerSectionProps) => {
   const { t } = useTranslation();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [visitCount, setVisitCount] = useState<number | null>(null);
+
+  const customerPhone = selectedCustomerId ? normalizePhone(phone) : null;
+
+  // Fetch visit count when a customer is selected
+  useEffect(() => {
+    if (!customerPhone || !instanceId) {
+      setVisitCount(null);
+      setHistoryOpen(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchCount = async () => {
+      const { count, error } = await supabase
+        .from('reservations')
+        .select('id', { count: 'exact', head: true })
+        .eq('instance_id', instanceId)
+        .eq('customer_phone', customerPhone)
+        .neq('status', 'cancelled');
+      if (cancelled) return;
+      if (error) {
+        console.error('Error fetching visit count:', error);
+        return;
+      }
+      setVisitCount(count ?? 0);
+    };
+
+    fetchCount();
+    return () => { cancelled = true; };
+  }, [customerPhone, instanceId]);
 
   const handleCustomerSelect = async (customer: {
     id: string;
@@ -62,12 +101,12 @@ export const CustomerSection = ({
   }) => {
     onCustomerSelect(customer);
 
-    const normalizedPhone = normalizePhone(customer.phone);
+    const custPhone = normalizePhone(customer.phone);
     const { data: vehicleData } = await supabase
       .from('customer_vehicles')
       .select('model, car_size')
       .eq('instance_id', instanceId)
-      .eq('phone', normalizedPhone)
+      .eq('phone', custPhone)
       .order('last_used_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -137,7 +176,19 @@ export const CustomerSection = ({
 
       {/* Customer Name */}
       <div className="space-y-2">
-        <Label htmlFor="name">{t('addReservation.customerNameAlias')}</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="name">{t('addReservation.customerNameAlias')}</Label>
+          {visitCount != null && visitCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+            >
+              <History className="w-3.5 h-3.5" />
+              Historia ({visitCount})
+            </button>
+          )}
+        </div>
         <ClientSearchAutocomplete
           instanceId={instanceId}
           value={customerName}
@@ -150,6 +201,18 @@ export const CustomerSection = ({
           suppressAutoSearch={suppressAutoSearch}
         />
       </div>
+
+      {/* History Drawer */}
+      {customerPhone && (
+        <CustomerHistoryDrawer
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          customerPhone={customerPhone}
+          customerName={customerName || customerPhone}
+          instanceId={instanceId}
+          onOpenReservation={onOpenReservation}
+        />
+      )}
     </>
   );
 };

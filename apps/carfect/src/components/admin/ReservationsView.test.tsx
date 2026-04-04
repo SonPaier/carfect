@@ -9,14 +9,14 @@ import ReservationsView from './ReservationsView';
 let mockVehicleData: Array<{ plate: string | null; phone: string | null; vin: string }> = [];
 
 const chainable = () => {
-  const self: Record<string, any> = {};
+  const self: Record<string, unknown> = {};
   self.select = () => self;
   self.eq = () => self;
   self.not = () => self;
   self.in = () => Promise.resolve({ data: [] });
   self.maybeSingle = () => Promise.resolve({ data: null });
   self.single = () => Promise.resolve({ data: null });
-  self.then = (resolve: any) => resolve({ data: mockVehicleData });
+  self.then = (resolve: (val: { data: typeof mockVehicleData }) => void) => resolve({ data: mockVehicleData });
   return self;
 };
 
