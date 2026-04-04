@@ -78,17 +78,22 @@ export const CarSearchAutocomplete = ({
     setInputValue(value);
   }, [value]);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click and commit custom value
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        // Commit custom value on blur if user typed something not from list
+        const trimmed = inputValue.trim();
+        if (trimmed && trimmed !== value) {
+          onChange({ type: 'custom', label: trimmed });
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [inputValue, value, onChange]);
 
   // Use car models from context
   const { searchModels } = useCarModels();
@@ -226,7 +231,7 @@ export const CarSearchAutocomplete = ({
     const queryParts = normalizedQuery.split(' ').filter(Boolean);
 
     // Find all matching parts
-    let result: React.ReactNode[] = [];
+    const result: React.ReactNode[] = [];
     let lastIndex = 0;
 
     queryParts.forEach((part) => {
@@ -273,7 +278,7 @@ export const CarSearchAutocomplete = ({
           onFocus={() => {
             // Only auto-open if user has interacted or not suppressed
             if (!suppressAutoOpen || hasUserInteracted) {
-              inputValue.length >= 1 && setIsOpen(true);
+              if (inputValue.length >= 1) setIsOpen(true);
             }
           }}
           disabled={disabled}

@@ -101,15 +101,14 @@ const AddSalesProductDrawer = ({
       setExcludeFromDiscount(product.excludeFromDiscount || false);
       setHasVariants(product.hasVariants || false);
       if (product.hasVariants && product.id) {
-        (
-          supabase
-            .from('sales_product_variants')
-            .select('id, name, sort_order')
-            .eq('product_id', product.id)
-            .order('sort_order') as any
-        ).then(({ data }: any) => {
+        supabase
+          .from('sales_product_variants')
+          .select('id, name, sort_order')
+          .eq('product_id', product.id)
+          .order('sort_order')
+          .then(({ data }) => {
           setVariants(
-            (data || []).map((v: any) => ({
+            (data || []).map((v) => ({
               id: v.id,
               name: v.name,
               sortOrder: v.sort_order,
@@ -175,27 +174,27 @@ const AddSalesProductDrawer = ({
       let productId: string;
 
       if (isEdit && product) {
-        const { error } = await (supabase
+        const { error } = await supabase
           .from('sales_products')
           .update(payload)
-          .eq('id', product.id) as any);
+          .eq('id', product.id);
         if (error) throw error;
         productId = product.id;
       } else {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        const { data: insertedProduct, error } = await (supabase
+        const { data: insertedProduct, error } = await supabase
           .from('sales_products')
           .insert({ instance_id: instanceId, ...payload, created_by: user?.id ?? null })
           .select('id')
-          .single() as any);
+          .single();
         if (error) throw error;
         productId = insertedProduct.id;
       }
 
       // Handle variants
-      await (supabase.from('sales_product_variants').delete().eq('product_id', productId) as any);
+      await supabase.from('sales_product_variants').delete().eq('product_id', productId);
 
       if (hasVariants && variants.length > 0) {
         const variantPayload = variants.map((v, idx) => ({
@@ -203,9 +202,9 @@ const AddSalesProductDrawer = ({
           name: v.name.trim(),
           sort_order: idx,
         }));
-        const { error: vError } = await (supabase
+        const { error: vError } = await supabase
           .from('sales_product_variants')
-          .insert(variantPayload) as any);
+          .insert(variantPayload);
         if (vError) throw vError;
       }
 
@@ -214,8 +213,8 @@ const AddSalesProductDrawer = ({
       resetForm();
       onOpenChange(false);
       onSaved?.();
-    } catch (err: any) {
-      toast.error('Błąd: ' + (err.message || ''));
+    } catch (err: unknown) {
+      toast.error('Błąd: ' + (err instanceof Error ? err.message : ''));
     } finally {
       setSaving(false);
     }
@@ -396,7 +395,7 @@ const AddSalesProductDrawer = ({
                     className="flex items-center gap-2 border border-border rounded-md p-2 bg-muted/20"
                   >
                     <Input
-                      placeholder="Nazwa wariantu"
+                      placeholder="np. 1220mm x 2m"
                       value={variant.name}
                       onChange={(e) => {
                         updateVariantName(index, e.target.value);

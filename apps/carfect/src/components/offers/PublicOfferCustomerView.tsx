@@ -115,6 +115,7 @@ export interface PublicOfferData {
   offer_number: string;
   public_token: string;
   has_unified_services?: boolean;
+  offer_format?: string | null;
   customer_data?: {
     name?: string;
     email?: string;
@@ -224,7 +225,7 @@ export const PublicOfferCustomerView = ({
 
         const inferredScopeName = opt.scope_id
           ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
-          : (inferredNameFromTitle ?? t('publicOffer.otherFallback'));
+          : (inferredNameFromTitle ?? (offer.offer_format === 'v2' ? 'Usługi' : t('publicOffer.otherFallback')));
 
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
 
@@ -553,7 +554,10 @@ export const PublicOfferCustomerView = ({
               const allItems = section.options.flatMap((opt) =>
                 (opt.offer_option_items || []).filter((item) => item.id && !item.is_optional),
               );
-              if (allItems.length === 0) return null;
+              const suggestedItems = section.options.flatMap((opt) =>
+                (opt.offer_option_items || []).filter((item) => item.id && item.is_optional),
+              );
+              if (allItems.length === 0 && suggestedItems.length === 0) return null;
 
               const scopeDescription = section.scopeDescription;
 
@@ -703,6 +707,51 @@ export const PublicOfferCustomerView = ({
                       );
                     })}
                   </div>
+
+                  {/* Suggested items for v2 offers */}
+                  {suggestedItems.length > 0 && (
+                    <div className="mt-6">
+                      <h3
+                        className="font-semibold text-base mb-3"
+                        style={{ color: branding.offer_scope_header_text_color }}
+                      >
+                        Sugerowane dodatki
+                      </h3>
+                      <div className="space-y-3">
+                        {suggestedItems.map((item) => {
+                          const itemTotal =
+                            item.quantity * item.unit_price * (1 - item.discount_percent / 100);
+                          return (
+                            <div
+                              key={item.id}
+                              className="rounded-lg border p-4"
+                              style={{
+                                borderColor: '#d0d0d0',
+                                backgroundColor: branding.offer_section_bg_color,
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <span
+                                  className="font-medium text-base flex-1"
+                                  style={{ color: branding.offer_section_text_color }}
+                                >
+                                  {item.custom_name}
+                                </span>
+                                {!offer.hide_unit_prices && (
+                                  <span
+                                    className="font-semibold text-base whitespace-nowrap"
+                                    style={{ color: itemTotal === 0 ? branding.offer_primary_color : branding.offer_section_text_color }}
+                                  >
+                                    {itemTotal === 0 ? 'Gratis!' : `${itemTotal.toFixed(2)} zł`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </section>
               );
             })}

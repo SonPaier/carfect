@@ -95,6 +95,7 @@ interface Reservation {
     type?: 'washing' | 'ppf' | 'detailing' | 'universal';
   };
   price: number | null;
+  price_netto?: number | null;
   photo_urls?: string[] | null;
   assigned_employee_ids?: string[] | null;
 }
@@ -174,6 +175,18 @@ const ReservationsView = ({
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
   const invoicingActive = invoicingSettings?.active ?? false;
   const { hasFeature } = useInstanceFeatures(instanceId);
+
+  const formatDisplayPrice = (r: Reservation) => {
+    if (r.price == null) return '—';
+    return (
+      <div>
+        <div className="font-medium">{Number(r.price).toFixed(2)} zł</div>
+        {r.price_netto != null && (
+          <div className="text-xs text-muted-foreground">{Number(r.price_netto).toFixed(2)} zł netto</div>
+        )}
+      </div>
+    );
+  };
 
   // Invoice drawer state
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
@@ -756,7 +769,7 @@ const ReservationsView = ({
                   <SortableHeader field="vehicle_plate">Pojazd</SortableHeader>
                   <TableHead>Usługi</TableHead>
                   <SortableHeader field="reservation_date">Data realizacji</SortableHeader>
-                  <SortableHeader field="price" className="text-right">Kwota brutto</SortableHeader>
+                  <SortableHeader field="price" className="text-right">Cena brutto / netto</SortableHeader>
                   <SortableHeader field="status">Status</SortableHeader>
                   <TableHead className="w-10" />
                 </TableRow>
@@ -790,7 +803,7 @@ const ReservationsView = ({
                         <TableCell>{renderServices(r)}</TableCell>
                         <TableCell>{renderDate(item)}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {r.price != null ? `${Number(r.price).toFixed(2)} zł` : '—'}
+                          {formatDisplayPrice(r)}
                         </TableCell>
                         <TableCell>{renderStatusBadge(r.status)}</TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -872,9 +885,9 @@ const ReservationsView = ({
                     {/* Services + price */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm">{renderServices(r)}</div>
-                      <span className="text-sm font-medium shrink-0">
-                        {r.price != null ? `${Number(r.price).toFixed(2)} zł` : '—'}
-                      </span>
+                      <div className="text-right shrink-0">
+                        {formatDisplayPrice(r)}
+                      </div>
                     </div>
                     {/* Date + actions */}
                     <div className="flex items-center justify-between pt-1">
@@ -1038,8 +1051,8 @@ const ReservationsView = ({
                   .map((s) => ({
                     name: s.name,
                     quantity: 1,
-                    unit_price_gross: invoiceTarget.price
-                      ? Math.round(invoiceTarget.price / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
+                    unit_price_gross: invoiceTarget.price_netto
+                      ? Math.round(invoiceTarget.price_netto / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
                       : 0,
                     vat_rate: 23,
                     unit: 'szt.',

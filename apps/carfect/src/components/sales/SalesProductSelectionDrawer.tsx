@@ -86,23 +86,23 @@ const SalesProductSelectionDrawer = ({
   const fetchProducts = useCallback(async () => {
     if (!open || !instanceId) return;
     setLoading(true);
-    const { data } = await (supabase
+    const { data } = await supabase
       .from('sales_products')
       .select(
         'id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount, category_id',
       )
       .eq('instance_id', instanceId)
-      .order('created_at', { ascending: false }) as any);
+      .order('created_at', { ascending: false });
 
     // Fetch category names
-    const { data: cats } = await (supabase
+    const { data: cats } = await supabase
       .from('unified_categories')
       .select('id, name')
       .eq('instance_id', instanceId)
-      .eq('category_type', 'sales') as any);
-    const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
+      .eq('category_type', 'sales');
+    const catMap = new Map((cats || []).map((c) => [c.id, c.name]));
 
-    const allProducts: SalesProductOption[] = (data || []).map((p: any) => ({
+    const allProducts: SalesProductOption[] = (data || []).map((p) => ({
       id: p.id,
       fullName: p.full_name,
       shortName: p.short_name || '',
@@ -117,14 +117,14 @@ const SalesProductSelectionDrawer = ({
     // Fetch variants for products that have them
     const variantProductIds = allProducts.filter((p) => p.hasVariants).map((p) => p.id);
     if (variantProductIds.length > 0) {
-      const { data: variants } = await (supabase
+      const { data: variants } = await supabase
         .from('sales_product_variants')
         .select('id, product_id, name, sort_order')
         .in('product_id', variantProductIds)
-        .order('sort_order') as any);
+        .order('sort_order');
 
       const variantsByProduct = new Map<string, SalesProductVariantOption[]>();
-      (variants || []).forEach((v: any) => {
+      (variants || []).forEach((v) => {
         const parent = allProducts.find((p) => p.id === v.product_id);
         if (!parent) return;
         const list = variantsByProduct.get(v.product_id) || [];

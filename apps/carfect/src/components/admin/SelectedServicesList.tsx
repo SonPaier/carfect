@@ -4,6 +4,8 @@ import { Trash2, Plus } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
+import { getServiceDisplayPrice } from '@/utils/pricing';
+import type { PricingMode } from '@/hooks/usePricingMode';
 
 type CarSize = 'small' | 'medium' | 'large';
 
@@ -26,6 +28,7 @@ interface ServiceWithCategory {
 export interface ServiceItem {
   service_id: string;
   custom_price: number | null;
+  custom_price_netto?: number | null;
   name?: string;
   short_name?: string | null;
   price_small?: number | null;
@@ -43,18 +46,8 @@ interface SelectedServicesListProps {
   onPriceChange: (serviceId: string, price: number | null) => void;
   onAddMore: () => void;
   onTotalPriceChange?: (newTotal: number) => void;
+  pricingMode?: PricingMode;
 }
-
-// Round to nearest 5 PLN
-const roundToNearest5 = (value: number): number => {
-  return Math.round(value / 5) * 5;
-};
-
-// Convert net price to brutto (gross) and round
-const netToBrutto = (netPrice: number): number => {
-  const brutto = netPrice * 1.23;
-  return roundToNearest5(brutto);
-};
 
 const SelectedServicesList = ({
   services,
@@ -65,31 +58,16 @@ const SelectedServicesList = ({
   onPriceChange,
   onAddMore,
   onTotalPriceChange,
+  pricingMode = 'brutto',
 }: SelectedServicesListProps) => {
   const { t } = useTranslation();
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   // Local editing value to allow typing empty/partial values
   const [editingValue, setEditingValue] = useState<string>('');
 
-  // Get base price for a service based on car size
+  // Get base price for a service based on car size and pricing mode
   const getBasePrice = (service: ServiceWithCategory): number => {
-    let price = 0;
-    if (carSize === 'small' && service.price_small !== null) {
-      price = service.price_small;
-    } else if (carSize === 'medium' && service.price_medium !== null) {
-      price = service.price_medium;
-    } else if (carSize === 'large' && service.price_large !== null) {
-      price = service.price_large;
-    } else {
-      price = service.price_from || 0;
-    }
-    
-    // If category prices are net, convert to brutto
-    if (service.category_prices_are_net) {
-      price = netToBrutto(price);
-    }
-    
-    return price;
+    return getServiceDisplayPrice(service, carSize, pricingMode) ?? 0;
   };
 
   // Get duration for a service based on car size
@@ -175,9 +153,6 @@ const SelectedServicesList = ({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDuration(duration)}
-                    {service.category_prices_are_net && (
-                      <span className="ml-1 text-primary">(netto→brutto)</span>
-                    )}
                   </p>
                 </div>
 
@@ -279,7 +254,7 @@ const SelectedServicesList = ({
             {t('addReservation.totalDuration')}: <span className="font-bold text-base text-foreground">{formatDuration(totalDuration)}</span>
           </p>
           <p className="text-lg font-bold">
-            {totalPrice} zł
+            {totalPrice} zł {pricingMode === 'netto' ? 'netto' : 'brutto'}
           </p>
         </div>
       </div>

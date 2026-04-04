@@ -968,7 +968,7 @@ const CalendarItemDetailsDrawer = ({
           side="right"
           hideCloseButton
           hideOverlay
-          className={`flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full ${isEmployee ? 'sm:!w-full sm:!max-w-full' : ''}`}
+          className={`flex flex-col p-0 gap-0 z-[1500] w-full sm:w-[550px] sm:max-w-[550px] h-full ${isEmployee ? 'sm:!w-full sm:!max-w-full' : ''}`}
         >
           <SheetTitle className="sr-only">Szczegóły</SheetTitle>
           <SheetDescription className="sr-only">Brak danych</SheetDescription>
@@ -997,7 +997,7 @@ const CalendarItemDetailsDrawer = ({
           side="right"
           hideCloseButton
           hideOverlay
-          className={`flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full ${isEmployee ? 'sm:!w-full sm:!max-w-full' : ''}`}
+          className={`flex flex-col p-0 gap-0 z-[1500] w-full sm:w-[550px] sm:max-w-[550px] h-full ${isEmployee ? 'sm:!w-full sm:!max-w-full' : ''}`}
         >
           {/* Accessible title */}
           <SheetTitle className="sr-only">{item.title}</SheetTitle>

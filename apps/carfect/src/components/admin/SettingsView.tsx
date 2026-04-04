@@ -40,8 +40,8 @@ import { IntegrationsSettingsView } from '@shared/invoicing';
 
 interface SettingsViewProps {
   instanceId: string | null;
-  instanceData: any;
-  onInstanceUpdate: (data: any) => void;
+  instanceData: Record<string, unknown>;
+  onInstanceUpdate: (data: Record<string, unknown>) => void;
   onWorkingHoursUpdate?: () => void;
 }
 
@@ -116,7 +116,7 @@ const SettingsView = ({
       });
       const accounts = instanceData.bank_accounts;
       if (Array.isArray(accounts) && accounts.length > 0) {
-        const normalized = (accounts as any[]).map((a: any) =>
+        const normalized = (accounts as (string | { name?: string; number?: string })[]).map((a) =>
           typeof a === 'string'
             ? { name: '', number: a }
             : { name: a.name || '', number: a.number || '' },

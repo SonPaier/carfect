@@ -95,6 +95,7 @@ async function fetchReservationsForRange(
     status,
     confirmation_code,
     price,
+    price_netto,
     customer_notes,
     admin_notes,
     source,
@@ -131,7 +132,7 @@ async function fetchReservationsForRange(
     .filter(r => r.original_reservation_id)
     .map(r => r.original_reservation_id);
 
-  const originalReservationsMap = new Map<string, any>();
+  const originalReservationsMap = new Map<string, { id: string; reservation_date: string; start_time: string; confirmation_code: string }>();
   if (changeRequestIds.length > 0) {
     const { data: originals } = await supabase
       .from('reservations')
@@ -144,7 +145,7 @@ async function fetchReservationsForRange(
   }
 
   // Map reservation data
-  return data.map((r: any) => {
+  return data.map((r) => {
     const serviceItems = r.service_items as ServiceItem[] | null;
     const serviceIds = r.service_ids as string[] | null;
 

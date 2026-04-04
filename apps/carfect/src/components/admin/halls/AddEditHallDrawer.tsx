@@ -224,9 +224,9 @@ const AddEditHallDrawer = ({
 
       onOpenChange(false);
       onSaved();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving hall:', error);
-      if (error.code === '23505') {
+      if ((error as { code?: string }).code === '23505') {
         toast.error(t('halls.slugExists'));
       } else {
         toast.error(t('common.error'));

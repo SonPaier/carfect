@@ -35,6 +35,8 @@ import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
 import { useIsMobile } from '@shared/ui';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useEmployees } from '@/hooks/useEmployees';
+import { usePricingMode } from '@/hooks/usePricingMode';
+import { bruttoToNetto } from '@/utils/pricing';
 import SendSmsDialog from '@/components/admin/SendSmsDialog';
 import { ReservationHistoryDrawer } from './history/ReservationHistoryDrawer';
 import CustomerEditDrawer from './CustomerEditDrawer';
@@ -85,6 +87,7 @@ interface Reservation {
   status: string;
   confirmation_code: string;
   price?: number;
+  price_netto?: number | null;
   customer_notes?: string | null;
   admin_notes?: string | null;
   source?: string | null;
@@ -192,6 +195,7 @@ const ReservationDetailsDrawer = ({
   hallConfig,
 }: ReservationDetailsDrawerProps) => {
   const isHallMode = mode === 'hall';
+  const pricingMode = usePricingMode(reservation?.instance_id ?? null);
   const visibleFields = hallConfig?.visible_fields;
   const allowedActions = hallConfig?.allowed_actions;
 
@@ -324,7 +328,7 @@ const ReservationDetailsDrawer = ({
       .limit(10);
 
     for (const offer of offers || []) {
-      const customerData = offer.customer_data as any;
+      const customerData = offer.customer_data as { phone?: string; email?: string } | null;
       if (normalizePhone(customerData?.phone) === normalizedPhone && customerData?.email) {
         return customerData.email;
       }
@@ -870,7 +874,7 @@ const ReservationDetailsDrawer = ({
                       reservation.services_data.map((svc, idx) => (
                         <span
                           key={svc.id || idx}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
                         >
                           {svc.name}
                           {svc.id && (
@@ -886,7 +890,7 @@ const ReservationDetailsDrawer = ({
                         </span>
                       ))
                     ) : reservation.service ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium">
                         {reservation.service.name}
                       </span>
                     ) : null}
@@ -924,7 +928,7 @@ const ReservationDetailsDrawer = ({
                       return (
                         <span
                           key={empId}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
                         >
                           {name}
                           <button
@@ -994,7 +998,9 @@ const ReservationDetailsDrawer = ({
                 })) || [];
 
               const calculatedTotal = servicesWithPrices.reduce((sum, svc) => sum + svc.price, 0);
-              const displayTotal = price ? parseFloat(price) : calculatedTotal;
+              const bruttoTotal = price ? parseFloat(price) : calculatedTotal;
+              const nettoTotal = reservation.price_netto ?? bruttoToNetto(bruttoTotal);
+              const displayTotal = pricingMode === 'netto' ? nettoTotal : bruttoTotal;
 
               if (displayTotal <= 0 && servicesWithPrices.length === 0) return null;
 
@@ -1003,8 +1009,15 @@ const ReservationDetailsDrawer = ({
               return (
                 <div className="flex-1">
                   <div>
-                    <div className="text-xs text-foreground">{t('addReservation.amount')}</div>
+                    <div className="text-xs text-foreground">
+                      {pricingMode === 'netto' ? 'Kwota netto' : 'Kwota brutto'}
+                    </div>
                     <div className="font-semibold text-lg">{displayTotal} zł</div>
+                    <div className="text-xs text-muted-foreground">
+                      {pricingMode === 'netto'
+                        ? `${bruttoTotal} zł brutto`
+                        : `${Number(nettoTotal).toFixed(2)} zł netto`}
+                    </div>
 
                     {hasMultipleServices && (
                       <button

@@ -36,13 +36,13 @@ import { ConfirmDialog, Sheet, SheetContent, SheetHeader, SheetTitle } from '@sh
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
 import { formatRollSize, formatMbM2Lines, mbToM2 } from './types/rolls';
-import { fetchRolls, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
+import { fetchRolls, fetchRollById, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
 import RollDetailsDrawer from './rolls/RollDetailsDrawer';
 
 type TabType = 'active' | 'sold';
-type SortColumn = 'productName' | 'productCode' | 'widthMm' | 'remainingMb' | 'deliveryDate';
+type SortColumn = 'productName' | 'productCode' | 'widthMm' | 'remainingMb' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
@@ -197,8 +197,8 @@ const SalesRollsView = () => {
         case 'remainingMb':
           cmp = (a.remainingMb || 0) - (b.remainingMb || 0);
           break;
-        case 'deliveryDate':
-          cmp = (a.deliveryDate || '').localeCompare(b.deliveryDate || '');
+        case 'createdAt':
+          cmp = (a.createdAt || '').localeCompare(b.createdAt || '');
           break;
       }
       return sortDirection === 'asc' ? cmp : -cmp;
@@ -343,18 +343,11 @@ const SalesRollsView = () => {
                 Rozmiar <SortIcon col="widthMm" />
               </TableHead>
               <TableHead>Na stanie</TableHead>
-              <TableHead>Zużyto</TableHead>
               <TableHead
                 className="cursor-pointer select-none"
-                onClick={() => handleSort('remainingMb')}
+                onClick={() => handleSort('createdAt')}
               >
-                Pozostało <SortIcon col="remainingMb" />
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort('deliveryDate')}
-              >
-                Data dostawy <SortIcon col="deliveryDate" />
+                Dodano <SortIcon col="createdAt" />
               </TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -403,12 +396,6 @@ const SalesRollsView = () => {
                   <TableCell className="text-sm whitespace-nowrap">
                     {formatRollSize(roll.widthMm, roll.initialLengthM)}
                   </TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">
-                    <MbM2Display mb={roll.initialLengthM} widthMm={roll.widthMm} />
-                  </TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">
-                    <MbM2Display mb={roll.currentUsageMb || 0} widthMm={roll.widthMm} />
-                  </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <MbM2Display
                       mb={roll.remainingMb || 0}
@@ -416,14 +403,17 @@ const SalesRollsView = () => {
                       className={`font-medium ${
                         (roll.remainingMb || 0) <= 0
                           ? 'text-destructive'
-                          : (roll.remainingMb || 0) < roll.initialLengthM * 0.2
+                          : (roll.remainingMb || 0) < roll.initialRemainingMb * 0.2
                             ? 'text-orange-500'
                             : 'text-green-600'
                       }`}
                     />
                   </TableCell>
                   <TableCell className="text-sm">
-                    {roll.deliveryDate ? format(parseISO(roll.deliveryDate), 'dd.MM.yyyy') : '—'}
+                    <div>{format(parseISO(roll.createdAt), 'dd.MM.yyyy')}</div>
+                    {roll.createdByName && (
+                      <div className="text-xs text-muted-foreground">{roll.createdByName}</div>
+                    )}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
@@ -529,6 +519,13 @@ const SalesRollsView = () => {
         onOpenChange={setDetailsDrawerOpen}
         roll={detailsRoll}
         onEdit={handleEditClick}
+        onUsageChange={async () => {
+          loadRolls();
+          if (detailsRoll) {
+            const updated = await fetchRollById(detailsRoll.id);
+            if (updated) setDetailsRoll(updated);
+          }
+        }}
       />
 
       {/* Delete confirm */}

@@ -53,7 +53,7 @@ export function validatePassword(
     { key: 'hasUppercase', met: /[A-Z]/.test(password) },
     { key: 'hasLowercase', met: /[a-z]/.test(password) },
     { key: 'hasNumber', met: /\d/.test(password) },
-    { key: 'hasSpecial', met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password) },
+    { key: 'hasSpecial', met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password) },
     { key: 'noSequence', met: !hasSequence(password) },
     { key: 'noRepeating', met: !hasRepeatingChars(password) },
     { key: 'notCommon', met: password.length === 0 || !isCommonPassword(password) },

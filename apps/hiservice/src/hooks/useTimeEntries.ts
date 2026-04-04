@@ -63,7 +63,7 @@ export const useTimeEntries = (instanceId: string | null, employeeId?: string | 
       return data || [];
     },
     enabled: !!instanceId,
-    staleTime: 1 * 60 * 1000,
+    staleTime: 0,
   });
 };
 

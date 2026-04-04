@@ -56,7 +56,7 @@ export const useInstanceFeatures = (instanceId: string | null) => {
     
     (query.data || []).forEach(f => {
       if (f.feature_key in featuresMap) {
-        (featuresMap as any)[f.feature_key] = f.enabled;
+        (featuresMap as Record<string, boolean>)[f.feature_key] = f.enabled;
       }
       paramsMap[f.feature_key] = f.parameters as Record<string, unknown> | null;
     });

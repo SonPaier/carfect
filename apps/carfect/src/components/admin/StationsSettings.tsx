@@ -229,10 +229,10 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
           employeeIds: selectedEmployeeIds,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving station:', error);
       // Handle station limit error from trigger
-      if (error.message?.includes('Limit stanowisk')) {
+      if ((error as Error).message?.includes('Limit stanowisk')) {
         toast.error('Osiągnięto limit stanowisk dla Twojego planu');
       } else {
         toast.error(t('stationsSettings.saveError'));

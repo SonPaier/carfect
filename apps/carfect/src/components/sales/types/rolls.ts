@@ -16,6 +16,8 @@ export interface SalesRoll {
   extractionConfidence?: Record<string, number>;
   createdAt: string;
   updatedAt: string;
+  createdBy?: string | null;
+  createdByName?: string | null;
   // Computed client-side from usages
   currentUsageMb?: number;
   remainingMb?: number;
@@ -24,13 +26,18 @@ export interface SalesRoll {
   customerNames?: string[];
 }
 
+export type RollUsageSource = 'order' | 'manual' | 'worker';
+
 export interface SalesRollUsage {
   id: string;
   rollId: string;
-  orderId: string;
-  orderItemId: string;
+  orderId: string | null;
+  orderItemId: string | null;
   usedM2: number;
   usedMb: number;
+  source: RollUsageSource;
+  workerName: string | null;
+  note: string | null;
   createdAt: string;
 }
 

@@ -78,6 +78,10 @@ vi.mock('./SummaryStepV2', () => ({
   SummaryStepV2: () => <div data-testid="summary-step">Summary</div>,
 }));
 
+vi.mock('./ProductsSummaryStepV2', () => ({
+  ProductsSummaryStepV2: () => <div data-testid="products-summary-step">ProductsSummary</div>,
+}));
+
 vi.mock('./OfferPreviewDialog', () => ({
   OfferPreviewDialog: () => null,
 }));
@@ -114,20 +118,29 @@ describe('OfferGenerator', () => {
     };
   });
 
-  describe('step navigation', () => {
-    it('starts on step 1 (customer data)', () => {
+  describe('layout', () => {
+    it('renders customer data form', () => {
       renderGenerator();
       expect(screen.getByTestId('customer-step')).toBeInTheDocument();
     });
 
+    it('renders products summary for v2 offers', () => {
+      mockOfferState = { ...mockOfferState, offerFormat: 'v2' };
+      renderGenerator();
+      expect(screen.getByTestId('products-summary-step')).toBeInTheDocument();
+    });
+  });
+
+  describe('send validation', () => {
     it('does not advance from step 1 without required fields', async () => {
       const user = userEvent.setup();
       renderGenerator();
 
-      const nextButton = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton);
+      // Click the Send button without filling required fields
+      const sendButton = screen.getByRole('button', { name: /wyślij/i });
+      await user.click(sendButton);
 
-      // Should show validation errors and stay on step 1
+      // Should show validation errors
       expect(screen.getByTestId('customer-step')).toBeInTheDocument();
       expect(screen.getByTestId('error-name')).toBeInTheDocument();
       expect(screen.getByTestId('error-email')).toBeInTheDocument();
@@ -146,12 +159,15 @@ describe('OfferGenerator', () => {
 
       renderGenerator();
 
-      const nextButton = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton);
+      // Click Send — should proceed (call saveOffer) since fields are valid
+      const sendButton = screen.getByRole('button', { name: /wyślij/i });
+      await user.click(sendButton);
 
-      // Should now be on step 2
+      // No validation errors should appear
       await waitFor(() => {
-        expect(screen.getByTestId('scopes-step')).toBeInTheDocument();
+        expect(screen.queryByTestId('error-name')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('error-email')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('error-brandModel')).not.toBeInTheDocument();
       });
     });
   });
@@ -168,12 +184,12 @@ describe('OfferGenerator', () => {
 
       renderGenerator();
 
-      const nextButton = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton);
+      // Click Save button — should call saveOffer
+      const saveButton = screen.getByRole('button', { name: /zapisz/i });
+      await user.click(saveButton);
 
-      // saveOffer should be called with silent=true (auto-save)
       await waitFor(() => {
-        expect(mockSaveOffer).toHaveBeenCalledWith(true);
+        expect(mockSaveOffer).toHaveBeenCalled();
       });
     });
   });
@@ -196,63 +212,38 @@ describe('OfferGenerator', () => {
     });
   });
 
-  describe('step 2 validation', () => {
+  describe('v1 offer format', () => {
     it('does not advance from step 2 without selected scopes', async () => {
-      const user = userEvent.setup();
-
+      // v1 offers show ScopesStep + SummaryStepV2 in the single-page layout
       mockOfferState = {
         ...mockOfferState,
         customerData: { ...mockOfferState.customerData, name: 'Jan', email: 'jan@test.pl' },
         vehicleData: { ...mockOfferState.vehicleData, brandModel: 'BMW M3' },
         selectedScopeIds: [],
+        offerFormat: 'v1',
       };
 
       renderGenerator();
 
-      // Go to step 2
-      const nextButton = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('scopes-step')).toBeInTheDocument();
-      });
-
-      // Try to advance to step 3 without scopes
-      const nextButton2 = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton2);
-
-      // Should still be on step 2
+      // v1 layout shows scopes-step in single page
       expect(screen.getByTestId('scopes-step')).toBeInTheDocument();
-      expect(screen.queryByTestId('summary-step')).not.toBeInTheDocument();
     });
 
     it('advances from step 2 with selected scopes', async () => {
-      const user = userEvent.setup();
-
+      // v1 offers with scopes selected show summary in single-page layout
       mockOfferState = {
         ...mockOfferState,
         customerData: { ...mockOfferState.customerData, name: 'Jan', email: 'jan@test.pl' },
         vehicleData: { ...mockOfferState.vehicleData, brandModel: 'BMW M3' },
         selectedScopeIds: ['scope-1'],
+        offerFormat: 'v1',
       };
 
       renderGenerator();
 
-      // Go to step 2
-      const nextButton = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('scopes-step')).toBeInTheDocument();
-      });
-
-      // Advance to step 3
-      const nextButton2 = screen.getByRole('button', { name: /dalej/i });
-      await user.click(nextButton2);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('summary-step')).toBeInTheDocument();
-      });
+      // v1 layout shows both scopes-step and summary-step together
+      expect(screen.getByTestId('scopes-step')).toBeInTheDocument();
+      expect(screen.getByTestId('summary-step')).toBeInTheDocument();
     });
   });
 });

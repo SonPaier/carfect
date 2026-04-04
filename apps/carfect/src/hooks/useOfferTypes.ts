@@ -89,6 +89,7 @@ export interface OfferState {
   // Widget selections for auto-preselection in Step 3
   widgetSelectedExtras?: string[]; // uuid[] from widget
   widgetDurationSelections?: Record<string, number | null>; // templateId → months
+  offerFormat?: 'v1' | 'v2' | null;
 }
 
 export const defaultCustomerData: CustomerData = {

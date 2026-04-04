@@ -195,7 +195,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   }, [timeEntries, workingHours]);
 
   // Filter only active (not soft-deleted) employees
-  const activeEmployees = employees.filter((e) => e.active && !(e as any).deleted_at);
+  const activeEmployees = employees.filter((e) => e.active && !(e as Record<string, unknown>).deleted_at);
 
   // Calculate period totals (works for both weekly and monthly)
   const periodSummary = useMemo(() => calculateMonthlySummary(timeEntries), [timeEntries]);

@@ -78,9 +78,9 @@ const DeleteUserDialog = ({
       resetForm();
       onOpenChange(false);
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting user:', error);
-      toast.error(error.message || 'Nie udało się usunąć użytkownika');
+      toast.error((error as Error).message || 'Nie udało się usunąć użytkownika');
     } finally {
       setLoading(false);
     }

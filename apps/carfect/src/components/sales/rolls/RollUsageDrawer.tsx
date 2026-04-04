@@ -60,7 +60,7 @@ const RollUsageDrawer = ({ open, onOpenChange, roll }: RollUsageDrawerProps) => 
 
         // Fetch order details for all unique order IDs
         const orderIds = [...new Set((usageRows || []).map((u: any) => u.order_id))];
-        let orderMap: Record<string, { orderNumber: string; customerName: string }> = {};
+        const orderMap: Record<string, { orderNumber: string; customerName: string }> = {};
 
         if (orderIds.length > 0) {
           const { data: orders } = await (supabase

@@ -111,11 +111,11 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
             confidence: extracted.confidence || {},
             warnings: extracted.warnings || [],
           });
-        } catch (err: any) {
+        } catch (err: unknown) {
           // Show error roll in results table so user can retry
           updateResult(item.tempId, {
             status: 'error',
-            error: err.message || 'Nieznany błąd',
+            error: (err as Error).message || 'Nieznany błąd',
             extractedData: {},
           });
         }
@@ -157,10 +157,10 @@ export function useRollScan({ instanceId }: UseRollScanArgs) {
           confidence: extracted.confidence || {},
           warnings: extracted.warnings || [],
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         updateResult(tempId, {
           status: 'error',
-          error: err.message || 'Nieznany błąd',
+          error: (err as Error).message || 'Nieznany błąd',
         });
       }
     },

@@ -33,6 +33,8 @@ import {
   DropdownMenuTrigger,
 } from '@shared/ui';
 import SelectedServicesList, { ServiceItem } from './SelectedServicesList';
+import { usePricingMode } from '@/hooks/usePricingMode';
+import { bruttoToNetto, getServiceDisplayPrice, calculatePricePair } from '@/utils/pricing';
 import { EmployeeSelectionDrawer } from './EmployeeSelectionDrawer';
 import { AssignedEmployeesChips } from './AssignedEmployeesChips';
 import {
@@ -188,6 +190,7 @@ const AddReservationDialogV2 = ({
 
   // Employee assignment feature
   const { data: instanceSettings } = useInstanceSettings(instanceId);
+  const pricingMode = usePricingMode(instanceId);
   const showEmployeeAssignment =
     isReservationMode && (instanceSettings?.assign_employees_to_reservations ?? false);
   const { data: employees = [] } = useEmployees(instanceId);
@@ -216,6 +219,7 @@ const AddReservationDialogV2 = ({
   const timeRef = useRef<HTMLDivElement>(null);
   const dateRangeRef = useRef<HTMLDivElement>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [categoryNetMap, setCategoryNetMap] = useState<Map<string, boolean>>(new Map());
   const [stations, setStations] = useState<Station[]>([]);
   const [foundVehicles, setFoundVehicles] = useState<CustomerVehicle[]>([]);
   const [foundCustomers, setFoundCustomers] = useState<Customer[]>([]);
@@ -354,10 +358,28 @@ const AddReservationDialogV2 = ({
         .eq('service_type', serviceTypeFilter)
         .eq('active', true);
 
-      const { data: servicesData } = await servicesQuery.order('sort_order');
+      // Fetch categories for prices_are_net mapping
+      const categoriesQuery = supabase
+        .from('unified_categories')
+        .select('id, prices_are_net')
+        .eq('instance_id', instanceId)
+        .eq('active', true);
 
-      if (servicesData) {
-        setServices(servicesData);
+      const [servicesRes, categoriesRes] = await Promise.all([
+        servicesQuery.order('sort_order'),
+        categoriesQuery,
+      ]);
+
+      if (categoriesRes.data) {
+        const netMap = new Map<string, boolean>();
+        categoriesRes.data.forEach((cat) => {
+          netMap.set(cat.id, cat.prices_are_net || false);
+        });
+        setCategoryNetMap(netMap);
+      }
+
+      if (servicesRes.data) {
+        setServices(servicesRes.data);
       }
 
       // Fetch all active stations (for reservation mode)
@@ -509,7 +531,7 @@ const AddReservationDialogV2 = ({
                 price_small: service.price_small,
                 price_medium: service.price_medium,
                 price_large: service.price_large,
-                category_prices_are_net: false,
+                category_prices_are_net: service.category_id ? categoryNetMap.get(service.category_id) || false : false,
               });
             }
           });
@@ -747,7 +769,7 @@ const AddReservationDialogV2 = ({
       if (error) return;
       if (employeesDirtyRef.current) return;
 
-      const raw = (data as any)?.assigned_employee_ids;
+      const raw = (data as { assigned_employee_ids?: unknown })?.assigned_employee_ids;
       const ids = Array.isArray(raw) ? (raw as string[]) : [];
       setAssignedEmployeeIds(ids);
     })();
@@ -788,7 +810,9 @@ const AddReservationDialogV2 = ({
             price_small: service.price_small,
             price_medium: service.price_medium,
             price_large: service.price_large,
-            category_prices_are_net: false,
+            category_prices_are_net: service.category_id
+              ? categoryNetMap.get(service.category_id) ?? false
+              : false,
           });
         }
       });
@@ -801,7 +825,7 @@ const AddReservationDialogV2 = ({
         }
       }
     }
-  }, [open, services, editingReservation, servicesWithCategory.length]);
+  }, [open, services, editingReservation, servicesWithCategory.length, categoryNetMap]);
 
   // Get duration for a service based on car size
   const getServiceDuration = (service: Service): number => {
@@ -817,12 +841,18 @@ const AddReservationDialogV2 = ({
     return total + (service ? getServiceDuration(service) : 0);
   }, 0);
 
-  // Get price for a service based on car size
+  // Get price for a service based on car size and pricing mode
+  // Uses servicesWithCategory (enriched from drawer) first, falls back to categoryNetMap
+  // because edit-mode restoration may populate services before drawer enrichment
   const getServicePrice = (service: Service): number => {
-    if (carSize === 'small' && service.price_small) return service.price_small;
-    if (carSize === 'large' && service.price_large) return service.price_large;
-    if (carSize === 'medium' && service.price_medium) return service.price_medium;
-    return service.price_from || 0;
+    const svcWithCat = servicesWithCategory.find((s) => s.id === service.id);
+    const categoryIsNet = svcWithCat?.category_prices_are_net
+      ?? (service.category_id ? categoryNetMap.get(service.category_id) || false : false);
+    return getServiceDisplayPrice(
+      { ...service, category_prices_are_net: categoryIsNet },
+      carSize,
+      pricingMode,
+    ) ?? 0;
   };
 
   // Calculate total price from selected services (using custom prices from serviceItems if available)
@@ -947,7 +977,7 @@ const AddReservationDialogV2 = ({
 
         if (!error && data) {
           const customerIds = data.filter((v) => v.customer_id).map((v) => v.customer_id!);
-          let customerNames: Record<string, string> = {};
+          const customerNames: Record<string, string> = {};
 
           if (customerIds.length > 0) {
             const { data: customersData } = await supabase
@@ -1356,12 +1386,30 @@ const AddReservationDialogV2 = ({
         }
       }
 
-      // Enrich service_items with names before saving (ensure no "Usługa" fallback)
+      // Enrich service_items with names and netto prices before saving
       const enrichedServiceItems = serviceItems.map((si) => {
-        if (si.name) return si;
         const svc = servicesWithCategory.find((s) => s.id === si.service_id);
-        return { ...si, name: svc?.name, short_name: svc?.short_name };
+        const enriched = {
+          ...si,
+          name: si.name || svc?.name,
+          short_name: si.short_name || svc?.short_name,
+        };
+        // Add custom_price_netto when custom_price exists.
+        // custom_price is in the unit matching pricingMode, so use calculatePricePair
+        // to derive the correct netto regardless of whether the mode is netto or brutto.
+        if (enriched.custom_price !== null && enriched.custom_price !== undefined) {
+          return {
+            ...enriched,
+            custom_price_netto: calculatePricePair(enriched.custom_price, pricingMode).netto,
+          };
+        }
+        return enriched;
       });
+
+      // Calculate brutto and netto totals
+      // finalPrice / totalPrice are in the unit matching pricingMode
+      const userPrice = finalPrice ? parseFloat(finalPrice) : totalPrice;
+      const { netto: priceNetto, brutto: priceBrutto } = calculatePricePair(userPrice, pricingMode);
 
       if (isEditMode && editingReservation) {
         // Update existing reservation
@@ -1376,7 +1424,8 @@ const AddReservationDialogV2 = ({
           vehicle_plate: carModel || '',
           car_size: carSize || null,
           admin_notes: adminNotes.trim() || null,
-          price: finalPrice ? parseFloat(finalPrice) : totalPrice,
+          price: priceBrutto,
+          price_netto: priceNetto,
           service_id: editingReservation.has_unified_services ? null : selectedServices[0],
           service_ids: selectedServices,
           service_items:
@@ -1430,7 +1479,8 @@ const AddReservationDialogV2 = ({
           vehicle_plate: carModel || '',
           car_size: carSize || null,
           admin_notes: adminNotes.trim() || null,
-          price: finalPrice ? parseFloat(finalPrice) : totalPrice,
+          price: priceBrutto,
+          price_netto: priceNetto,
           service_id: null,
           service_ids: selectedServices,
           service_items:
@@ -1779,6 +1829,7 @@ const AddReservationDialogV2 = ({
                 }
               }}
               onAddMore={() => setServiceDrawerOpen(true)}
+              pricingMode={pricingMode}
             />
           </div>
 
@@ -1914,6 +1965,7 @@ const AddReservationDialogV2 = ({
             customerDiscountPercent={customerDiscountPercent}
             markUserEditing={markUserEditing}
             onFinalPriceUserEdit={() => setUserModifiedFinalPrice(true)}
+            pricingMode={pricingMode}
           />
         </div>
       </div>

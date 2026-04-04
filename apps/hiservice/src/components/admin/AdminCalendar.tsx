@@ -1098,10 +1098,10 @@ const AdminCalendar = ({
                 size="sm"
                 onClick={onOpenFollowUps}
                 className="gap-1 relative"
-                title="Do dokończenia"
+                title="Do wykonania"
               >
                 <RotateCcw className="w-4 h-4" />
-                {!isMobile && <span>Do dokończenia</span>}
+                {!isMobile && <span>Do wykonania</span>}
                 {(unscheduledFollowUpCount ?? 0) > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-purple-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                     {unscheduledFollowUpCount}
@@ -1276,7 +1276,7 @@ const AdminCalendar = ({
             <div
               ref={headerScrollRef}
               onScroll={handleHeaderScroll}
-              className={cn('flex overflow-x-auto', !isMobile && 'flex-1')}
+              className={cn('flex overflow-x-auto flex-1')}
               style={{
                 ...getMobileColumnsContainerStyle(visibleColumns.length),
                 scrollbarWidth: 'none',

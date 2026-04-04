@@ -176,7 +176,7 @@ const DESCRIPTION_PATTERNS = [
 ];
 
 function isDateString(s: string): boolean {
-  const clean = s.replace(/[\s\.\/\-]/g, '');
+  const clean = s.replace(/[\s./\-]/g, '');
   if (/^\d{8}$/.test(clean)) {
     const day = parseInt(clean.slice(0, 2));
     const month = parseInt(clean.slice(2, 4));
@@ -184,7 +184,7 @@ function isDateString(s: string): boolean {
     if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2020 && year <= 2035)
       return true;
   }
-  if (/\d{1,2}\s*[\.\/-]\s*\d{1,2}\s*[\.\/-]\s*\d{4}/.test(s)) return true;
+  if (/\d{1,2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{4}/.test(s)) return true;
   return false;
 }
 
@@ -291,7 +291,7 @@ function parseRollLabel(rawText: string) {
         break;
       }
     }
-    const digitsOnly = lines[i].replace(/[\s\-]/g, '');
+    const digitsOnly = lines[i].replace(/[\s\-]/g, '');  // eslint-disable-line no-useless-escape
     if (/^\d{13}$/.test(digitsOnly) && !isDateString(digitsOnly)) {
       result.barcode = digitsOnly;
       confidence.barcode = 0.95;
@@ -306,7 +306,7 @@ function parseRollLabel(rawText: string) {
     // Metric in mixed line: "60" x 50ft / 1,524mm x 15m"
     if (line.includes('/')) {
       const metricPart = line.split('/').pop()!.trim();
-      const m = metricPart.match(/(\d[\d,\.]*)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i);
+      const m = metricPart.match(/(\d[\d,.]*)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i);
       if (m) {
         result.widthMm = Math.round(parseFloat(m[1].replace(/,/g, '')));
         result.lengthM = Math.round(parseFloat(m[2]));
@@ -317,7 +317,7 @@ function parseRollLabel(rawText: string) {
       }
     }
     // Pure metric
-    const met = line.match(/(\d[\d,\.]*)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i);
+    const met = line.match(/(\d[\d,.]*)\s*mm\s*[x×X]\s*(\d+(?:\.\d+)?)\s*m\b/i);
     if (met) {
       result.widthMm = Math.round(parseFloat(met[1].replace(/,/g, '')));
       result.lengthM = Math.round(parseFloat(met[2]));

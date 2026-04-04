@@ -39,6 +39,7 @@ export const useOffer = (instanceId: string) => {
     serviceInfo: '',
     notes: '',
     defaultSelectedState: undefined,
+    offerFormat: null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -189,6 +190,8 @@ export const useOffer = (instanceId: string) => {
   // Scope handlers
   const updateSelectedScopes = useCallback(
     (scopeIds: string[]) => {
+      if (offerRef.current.offerFormat === 'v2') return; // v2 nie używa scopów
+
       type ScopeUpdateAction =
         | { type: 'none' }
         | { type: 'replace' }
@@ -496,6 +499,7 @@ export const useOffer = (instanceId: string) => {
           offer_number?: string;
           selected_state?: Json;
           has_unified_services?: boolean;
+          offer_format?: string | null;
         } = {
           instance_id: instanceId,
           customer_data: offer.customerData as unknown as Json,
@@ -515,6 +519,7 @@ export const useOffer = (instanceId: string) => {
           ...(selectedStateToSave && { selected_state: selectedStateToSave as unknown as Json }),
           // New offers use unified services (service_type='both')
           ...(!offer.id && { has_unified_services: true }),
+          offer_format: offer.offerFormat ?? null,
         };
 
         let offerId = offer.id;
@@ -559,8 +564,8 @@ export const useOffer = (instanceId: string) => {
         const optionIdsToCheck = offer.options.map((o) => o.id);
         const itemIdsToCheck = offer.options.flatMap((o) => o.items.map((i) => i.id));
 
-        let optionIdMap: Record<string, string> = {};
-        let itemIdMap: Record<string, string> = {};
+        const optionIdMap: Record<string, string> = {};
+        const itemIdMap: Record<string, string> = {};
         let needsIdRegeneration = false;
 
         if (optionIdsToCheck.length > 0) {
@@ -839,8 +844,7 @@ export const useOffer = (instanceId: string) => {
 
               if (customerError) {
                 console.error('Error saving offer customer:', customerError);
-              } else {
-              }
+              } else { /* customer saved successfully, no action needed */ }
             }
           }
         } catch (customerSaveError) {
@@ -929,7 +933,7 @@ export const useOffer = (instanceId: string) => {
       const optionIdMap: Record<string, string> = {};
       const itemIdMap: Record<string, string> = {};
 
-      let options: OfferOption[] = regularOptions.map((opt: any) => {
+      const options: OfferOption[] = regularOptions.map((opt: any) => {
         const originalOptionId = opt.id;
         const newOptionId = isDuplicate ? crypto.randomUUID() : originalOptionId;
 
@@ -977,7 +981,7 @@ export const useOffer = (instanceId: string) => {
         ...new Set(options.filter((opt) => opt.scopeId).map((opt) => opt.scopeId as string)),
       ];
 
-      let additions: OfferItem[] = additionsOption
+      const additions: OfferItem[] = additionsOption
         ? (additionsOption.offer_option_items || [])
             .sort((a: any, b: any) => a.sort_order - b.sort_order)
             .map((item: any) => {
@@ -1040,7 +1044,7 @@ export const useOffer = (instanceId: string) => {
           .map((opt: { scope_id?: string }) => opt.scope_id as string);
         const allScopeIds = [...new Set([...durationScopeIds, ...optionScopeIds])];
 
-        let scopeNamesMap: Record<string, string> = {};
+        const scopeNamesMap: Record<string, string> = {};
 
         if (allScopeIds.length > 0) {
           const { data: scopesData } = await supabase
@@ -1218,6 +1222,7 @@ export const useOffer = (instanceId: string) => {
         defaultSelectedState,
         widgetSelectedExtras,
         widgetDurationSelections,
+        offerFormat: (offerData.offer_format as 'v1' | 'v2' | null) ?? null,
       });
     } catch (error) {
       console.error('Error loading offer:', error);

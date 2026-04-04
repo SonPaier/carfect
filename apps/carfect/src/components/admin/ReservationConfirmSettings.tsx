@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, Loader2, Clock, Smartphone, Check, Users, Car } from 'lucide-react';
-import { Switch } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Input } from '@shared/ui';
-import { Button } from '@shared/ui';
+import { Bell, Loader2, Clock, Smartphone, Check, Users, Car, Banknote } from 'lucide-react';
+import { Switch, Label, Input, Button, RadioGroup, RadioGroupItem } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
@@ -26,6 +23,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
   const { data: instanceSettings, isLoading: isSettingsLoading } = useInstanceSettings(instanceId);
   const { updateSetting } = useUpdateInstanceSettings(instanceId);
   const [savingEmployeeSettings, setSavingEmployeeSettings] = useState(false);
+
+  // Pricing mode
+  const [pricingMode, setPricingMode] = useState<'netto' | 'brutto'>('brutto');
 
   // Feature toggles
   const queryClient = useQueryClient();
@@ -77,13 +77,14 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
 
       const { data } = await supabase.
       from('instances').
-      select('auto_confirm_reservations, customer_edit_cutoff_hours').
+      select('auto_confirm_reservations, customer_edit_cutoff_hours, pricing_mode').
       eq('id', instanceId).
       single();
 
       if (data) {
         setAutoConfirm(data.auto_confirm_reservations !== false);
         setCustomerEditCutoffHours(data.customer_edit_cutoff_hours ?? 1);
+        setPricingMode((data as { pricing_mode?: string }).pricing_mode || 'brutto');
       }
       setLoading(false);
     };
@@ -145,6 +146,25 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     setSaving(false);
   };
 
+  const handlePricingModeChange = async (mode: 'netto' | 'brutto') => {
+    if (!instanceId) return;
+    const prev = pricingMode;
+    setPricingMode(mode);
+
+    const { error } = await supabase
+      .from('instances')
+      .update({ pricing_mode: mode } as Record<string, unknown>)
+      .eq('id', instanceId);
+
+    if (error) {
+      toast.error('Błąd podczas zapisywania ustawień');
+      setPricingMode(prev);
+    } else {
+      toast.success(mode === 'netto' ? 'Tryb cen netto' : 'Tryb cen brutto');
+      queryClient.invalidateQueries({ queryKey: ['instance_data'] });
+    }
+  };
+
   const handleEnablePush = async () => {
     const result = await subscribe();
     if (result.success) {
@@ -165,6 +185,39 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
+      {/* Pricing Mode */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Banknote className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold">Tryb cen</h3>
+        </div>
+
+        <div className="p-4 rounded-lg border-border bg-white border-0">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="font-medium">Domyślny tryb cen</Label>
+              <p className="text-sm text-muted-foreground">
+                Określa, czy ceny w aplikacji są wyświetlane i wprowadzane jako netto czy brutto
+              </p>
+            </div>
+            <RadioGroup
+              value={pricingMode}
+              onValueChange={(v) => handlePricingModeChange(v as 'netto' | 'brutto')}
+              className="flex gap-4"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="brutto" id="pricing-brutto" />
+                <Label htmlFor="pricing-brutto">Brutto</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="netto" id="pricing-netto" />
+                <Label htmlFor="pricing-netto">Netto</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </div>
+      </div>
+
       {/* Reservation Confirmation Settings - moved up */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">

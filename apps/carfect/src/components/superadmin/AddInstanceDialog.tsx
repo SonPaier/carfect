@@ -246,17 +246,18 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
       // Reset form
       resetForm();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating instance:', error);
 
       // Handle specific error for duplicate slug
-      if (error.code === '23505' && error.message?.includes('instances_slug_key')) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === '23505' && err.message?.includes('instances_slug_key')) {
         setSlugStatus('taken');
         toast.error('Ten slug jest już zajęty. Wybierz inny.');
         return;
       }
 
-      toast.error(`Błąd: ${error.message || 'Nie udało się utworzyć instancji'}`);
+      toast.error(`Błąd: ${err.message || 'Nie udało się utworzyć instancji'}`);
     } finally {
       setLoading(false);
     }

@@ -391,7 +391,7 @@ const AdminDashboard = () => {
       try {
         const parsed = new Date(saved);
         if (!isNaN(parsed.getTime())) return parsed;
-      } catch {}
+      } catch { /* invalid date in localStorage */ }
     }
     return new Date();
   });
@@ -764,6 +764,7 @@ const AdminDashboard = () => {
         status,
         confirmation_code,
         price,
+        price_netto,
         customer_notes,
         admin_notes,
         source,
