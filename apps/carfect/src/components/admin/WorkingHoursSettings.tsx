@@ -51,16 +51,23 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
       if (!instanceId) return;
 
       setLoading(true);
-      const { data, error } = await supabase
-        .from('instances')
-        .select('working_hours')
-        .eq('id', instanceId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('instances')
+          .select('working_hours')
+          .eq('id', instanceId)
+          .maybeSingle();
 
-      if (data?.working_hours) {
-        setWorkingHours(data.working_hours as unknown as WorkingHours);
+        if (error) {
+          console.error('Error fetching working hours:', error);
+        } else if (data?.working_hours) {
+          setWorkingHours(data.working_hours as unknown as WorkingHours);
+        }
+      } catch (e) {
+        console.error('Error fetching working hours:', e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchWorkingHours();

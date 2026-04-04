@@ -29,10 +29,12 @@ export function FakturowniaConfigForm({
   }, [config]);
 
   const handleChange = (field: keyof FakturowniaConfig, value: string) => {
-    const updated = { domain, api_token: apiToken, [field]: value };
     if (field === 'domain') setDomain(value);
     if (field === 'api_token') setApiToken(value);
-    onChange(updated);
+    onChange({
+      domain: field === 'domain' ? value : domain,
+      api_token: field === 'api_token' ? value : apiToken,
+    });
     setTestResult(null);
   };
 
@@ -42,7 +44,8 @@ export function FakturowniaConfigForm({
     setTestResult(null);
     try {
       const res = await fetch(
-        `https://${domain}.fakturownia.pl/invoices.json?period=last_5&page=1&per_page=1&api_token=${apiToken}`,
+        `https://${domain}.fakturownia.pl/invoices.json?period=last_5&page=1&per_page=1`,
+        { headers: { Authorization: `Token token=${apiToken}` } },
       );
       setTestResult(res.ok ? 'success' : 'error');
     } catch {

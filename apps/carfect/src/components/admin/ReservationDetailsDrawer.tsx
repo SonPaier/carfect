@@ -1234,7 +1234,7 @@ const ReservationDetailsDrawer = ({
                     }
                   }}
                   disabled={sendingConfirmationSms}
-                  className="flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline text-[16px] disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline text-sm disabled:opacity-50"
                 >
                   {sendingConfirmationSms ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1275,7 +1275,7 @@ const ReservationDetailsDrawer = ({
                     }
                   }}
                   disabled={sendingPickupSms}
-                  className="flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline text-[16px] disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline text-sm disabled:opacity-50"
                 >
                   {sendingPickupSms ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

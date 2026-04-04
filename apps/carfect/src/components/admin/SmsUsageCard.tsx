@@ -60,7 +60,7 @@ export function SmsUsageCard({ instanceId, showInstanceName = false }: SmsUsageC
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [instanceId]);
 
@@ -68,9 +68,7 @@ export function SmsUsageCard({ instanceId, showInstanceName = false }: SmsUsageC
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            {showInstanceName ? 'Zużycie SMS' : 'Zużycie SMS'}
-          </CardTitle>
+          <CardTitle className="text-sm font-medium">Zużycie SMS</CardTitle>
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>

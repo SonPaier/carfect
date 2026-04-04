@@ -29,10 +29,12 @@ export function IfirmaConfigForm({
   }, [config]);
 
   const handleChange = (field: keyof IfirmaConfig, value: string) => {
-    const updated = { invoice_api_user: user, invoice_api_key: apiKey, [field]: value };
     if (field === 'invoice_api_user') setUser(value);
     if (field === 'invoice_api_key') setApiKey(value);
-    onChange(updated);
+    onChange({
+      invoice_api_user: field === 'invoice_api_user' ? value : user,
+      invoice_api_key: field === 'invoice_api_key' ? value : apiKey,
+    });
     setTestResult(null);
   };
 
