@@ -597,7 +597,7 @@ const SettingsView = ({
   };
 
   return (
-    <div className="space-y-6 lg:space-y-0 lg:flex lg:flex-row lg:gap-6">
+    <div className="space-y-4 lg:space-y-0 lg:flex lg:flex-row lg:gap-4">
       {/* Sidebar / Mobile Dropdown */}
       {isMobile ? (
         <Collapsible open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} className="w-full">
@@ -637,27 +637,29 @@ const SettingsView = ({
         </Collapsible>
       ) : (
         <div className="w-56 shrink-0">
-          <div className="bg-white rounded-lg border border-border/50 overflow-hidden sticky top-0">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
-                  activeTab === tab.key
-                    ? 'bg-hover text-foreground font-medium'
-                    : 'text-foreground hover:bg-hover',
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+          <div className="sticky top-0">
+            <div className="bg-white rounded-lg border border-border/50 overflow-hidden">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
+                    activeTab === tab.key
+                      ? 'bg-hover text-foreground font-medium'
+                      : 'text-foreground hover:bg-hover',
+                  )}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {/* Version info — fixed below menu */}
+            {currentVersion && (
+              <p className="text-xs text-muted-foreground py-3 px-4">Wersja: {currentVersion}</p>
+            )}
           </div>
-          {/* Version info — outside menu border */}
-          {currentVersion && (
-            <p className="text-xs text-muted-foreground py-3 px-4">Wersja: {currentVersion}</p>
-          )}
         </div>
       )}
 

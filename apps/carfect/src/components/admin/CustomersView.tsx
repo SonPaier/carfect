@@ -234,7 +234,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
             description={searchQuery ? undefined : 'Dodaj pierwszego klienta, aby rozpocząć'}
           />
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {paginatedCustomers.map((customer) => {
               const customerVehicles = getVehiclesForCustomer(customer.phone);
               return (
@@ -248,7 +248,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
                 >
                   <div className="min-w-0 flex-1 space-y-0.5">
                     {/* Line 1: Name */}
-                    <div className="font-medium text-foreground">{customer.name}</div>
+                    <div className="font-semibold text-sm text-foreground">{customer.name}</div>
                     {/* Line 2: Phone */}
                     <div className="text-sm text-muted-foreground">
                       {formatPhoneDisplay(customer.phone)}

@@ -641,7 +641,7 @@ export default function OffersView({
           />
         ) : (
           <>
-            <div className="space-y-3 pb-24 lg:pb-0">
+            <div className="space-y-2 pb-24 lg:pb-0">
               {paginatedOffers.map((offer) => (
                 <OfferListCard
                   key={offer.id}

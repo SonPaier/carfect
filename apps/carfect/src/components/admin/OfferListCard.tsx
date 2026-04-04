@@ -62,7 +62,7 @@ function ApprovedPrice({ offer }: { offer: OfferWithOptions }) {
 function CustomerLine({ offer }: { offer: OfferWithOptions }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-baseline gap-1 font-semibold text-base leading-tight">
+    <div className="flex items-baseline gap-1 font-semibold text-sm leading-tight">
       <span className="truncate">
         {offer.customer_data?.name || offer.customer_data?.company || t('offers.noCustomer')}
       </span>

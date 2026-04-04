@@ -448,7 +448,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-medium">Pracownicy i czas pracy</h1>
+        <h1 className="text-2xl font-medium">Pracownicy</h1>
         {isAdmin && (
           <div className="flex gap-2">
             <Button

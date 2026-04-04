@@ -257,7 +257,7 @@ export const ProtocolsView = ({
         />
       ) : (
         <>
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {paginatedProtocols.map((protocol) => (
               <Card
                 key={protocol.id}
@@ -272,7 +272,9 @@ export const ProtocolsView = ({
                       {/* Line 1: Customer name */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <User className="h-4 w-4 text-muted-foreground flex-shrink-0 hidden sm:block" />
-                        <span className="font-medium truncate">{protocol.customer_name}</span>
+                        <span className="font-semibold text-sm truncate">
+                          {protocol.customer_name}
+                        </span>
                       </div>
 
                       {/* Line 2: Car */}
