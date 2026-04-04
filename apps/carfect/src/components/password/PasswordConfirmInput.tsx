@@ -23,6 +23,7 @@ const PasswordConfirmInput = ({
   onChange,
   match,
   placeholder,
+  alwaysVisible,
 }: PasswordConfirmInputProps) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(alwaysVisible ?? false);

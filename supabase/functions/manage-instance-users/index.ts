@@ -13,7 +13,6 @@ interface ManageUserRequest {
   username?: string;
   password?: string;
   role?: 'admin' | 'employee' | 'hall' | 'sales';
-  adminPassword?: string; // Required for reset-password: caller's own password to confirm identity
 }
 
 Deno.serve(async (req) => {
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body: ManageUserRequest = await req.json();
-    const { action, instanceId, userId, username, password, role, adminPassword } = body;
+    const { action, instanceId, userId, username, password, role } = body;
 
     if (!instanceId) {
       return new Response(JSON.stringify({ error: 'Brak ID instancji' }), {

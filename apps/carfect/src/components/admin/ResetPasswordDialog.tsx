@@ -114,7 +114,7 @@ const ResetPasswordDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* New password — always visible, no eye toggle */}
+          {/* New password — always visible, no eye toggle, no requirements (shown below confirm) */}
           <PasswordInput
             label="Nowe hasło"
             value={password}
@@ -133,15 +133,27 @@ const ResetPasswordDialog = ({
             alwaysVisible
           />
 
-          {/* Requirements checklist — below confirm */}
-          <PasswordInput
-            value={password}
-            onChange={setPassword}
-            validation={validation}
-            strength={strength}
-            showStrength={false}
-            showInput={false}
-          />
+          {/* Requirements checklist — below confirm, no input/strength */}
+          {password.length > 0 && (
+            <ul className="space-y-0.5 text-xs">
+              {validation.requirements.map((req) => (
+                <li
+                  key={req.key}
+                  className={`flex items-center gap-1.5 transition-colors ${req.met ? 'text-green-600' : 'text-muted-foreground'}`}
+                >
+                  {req.met ? '✓' : '✗'} {req.key === 'minLength' ? 'Minimum 8 znaków'
+                    : req.key === 'hasUppercase' ? 'Wielka litera (A-Z)'
+                    : req.key === 'hasLowercase' ? 'Mała litera (a-z)'
+                    : req.key === 'hasNumber' ? 'Cyfra (0-9)'
+                    : req.key === 'hasSpecial' ? 'Znak specjalny (!@#$%...)'
+                    : req.key === 'noSequence' ? 'Brak sekwencji klawiszowych'
+                    : req.key === 'noRepeating' ? 'Brak powtarzających się znaków'
+                    : req.key === 'notCommon' ? 'Nie jest popularnym hasłem'
+                    : req.key}
+                </li>
+              ))}
+            </ul>
+          )}
 
           <DialogFooter>
             <Button
