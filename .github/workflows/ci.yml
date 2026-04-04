@@ -140,4 +140,4 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test supabase/functions/ --no-check --allow-env --allow-net
+      - run: deno test supabase/functions/ --no-check --allow-env --allow-net --allow-read
