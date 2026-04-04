@@ -273,7 +273,7 @@ export function TrainingDetailsDrawer({
                     onBlur={() => setTimeout(handleSaveNotes, 100)}
                     rows={3}
                     disabled={savingNotes}
-                    className="text-sm bg-white dark:bg-card border-foreground/60"
+                    className="text-sm bg-white dark:bg-card"
                   />
                 ) : (
                   <p

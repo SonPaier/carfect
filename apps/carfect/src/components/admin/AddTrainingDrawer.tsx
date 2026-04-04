@@ -112,12 +112,12 @@ export function AddTrainingDrawer({
   useEffect(() => {
     if (!instanceId || !open) return;
     const fetch = async () => {
-      const { data } = (await supabase
+      const { data } = await supabase
         .from('training_types')
         .select('*')
         .eq('instance_id', instanceId)
         .eq('active', true)
-        .order('sort_order'));
+        .order('sort_order');
       if (data) setTrainingTypes(data);
     };
     fetch();
@@ -337,7 +337,7 @@ export function AddTrainingDrawer({
               <div className="space-y-2">
                 <Label>{t('trainings.type')}</Label>
                 <Select value={selectedTypeId} onValueChange={handleTypeChange}>
-                  <SelectTrigger className="bg-white dark:bg-card border-foreground/60">
+                  <SelectTrigger className="bg-white dark:bg-card">
                     <SelectValue placeholder="Wybierz typ szkolenia" />
                   </SelectTrigger>
                   <SelectContent className="bg-white dark:bg-card z-50">
@@ -416,7 +416,7 @@ export function AddTrainingDrawer({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  className="bg-white dark:bg-card border-foreground/60"
+                  className="bg-white dark:bg-card"
                 />
               </div>
 

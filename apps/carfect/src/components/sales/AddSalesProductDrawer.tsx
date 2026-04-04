@@ -107,14 +107,14 @@ const AddSalesProductDrawer = ({
           .eq('product_id', product.id)
           .order('sort_order')
           .then(({ data }) => {
-          setVariants(
-            (data || []).map((v) => ({
-              id: v.id,
-              name: v.name,
-              sortOrder: v.sort_order,
-            })),
-          );
-        });
+            setVariants(
+              (data || []).map((v) => ({
+                id: v.id,
+                name: v.name,
+                sortOrder: v.sort_order,
+              })),
+            );
+          });
       } else {
         setVariants([]);
       }
@@ -232,7 +232,7 @@ const AddSalesProductDrawer = ({
     >
       <SheetContent
         side="right"
-        className="w-full sm:max-w-[var(--drawer-width)] flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
+        className="w-full sm:max-w-[var(--drawer-width)] flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white"
         hideOverlay
         hideCloseButton
         onInteractOutside={(e) => {

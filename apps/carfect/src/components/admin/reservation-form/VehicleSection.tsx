@@ -2,12 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { CarSearchAutocomplete, CarSearchValue } from '@/components/ui/car-search-autocomplete';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@shared/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { CarSize, CustomerVehicle } from './types';
 import { RefObject } from 'react';
@@ -59,11 +54,11 @@ export const VehicleSection = ({
             {(['small', 'medium', 'large'] as CarSize[]).map((size) => (
               <Tooltip key={size}>
                 <TooltipTrigger asChild>
-                   <Button
+                  <Button
                     type="button"
                     size="sm"
                     variant={carSize === size ? 'secondary' : 'outline'}
-                    className="w-9 h-9 font-bold p-0 border-foreground/60"
+                    className="w-9 h-9 font-bold p-0"
                     onClick={() => onCarSizeChange(size)}
                   >
                     {size === 'small' ? 'S' : size === 'medium' ? 'M' : 'L'}
@@ -91,7 +86,7 @@ export const VehicleSection = ({
                 'px-3 py-1.5 text-sm rounded-full transition-colors font-medium',
                 selectedVehicleId === vehicle.id
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-white hover:bg-hover-strong text-foreground border border-border'
+                  : 'bg-white hover:bg-hover-strong text-foreground border border-border',
               )}
             >
               {vehicle.model}

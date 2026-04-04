@@ -531,7 +531,9 @@ const AddReservationDialogV2 = ({
                 price_small: service.price_small,
                 price_medium: service.price_medium,
                 price_large: service.price_large,
-                category_prices_are_net: service.category_id ? categoryNetMap.get(service.category_id) || false : false,
+                category_prices_are_net: service.category_id
+                  ? categoryNetMap.get(service.category_id) || false
+                  : false,
               });
             }
           });
@@ -811,7 +813,7 @@ const AddReservationDialogV2 = ({
             price_medium: service.price_medium,
             price_large: service.price_large,
             category_prices_are_net: service.category_id
-              ? categoryNetMap.get(service.category_id) ?? false
+              ? (categoryNetMap.get(service.category_id) ?? false)
               : false,
           });
         }
@@ -846,13 +848,16 @@ const AddReservationDialogV2 = ({
   // because edit-mode restoration may populate services before drawer enrichment
   const getServicePrice = (service: Service): number => {
     const svcWithCat = servicesWithCategory.find((s) => s.id === service.id);
-    const categoryIsNet = svcWithCat?.category_prices_are_net
-      ?? (service.category_id ? categoryNetMap.get(service.category_id) || false : false);
-    return getServiceDisplayPrice(
-      { ...service, category_prices_are_net: categoryIsNet },
-      carSize,
-      pricingMode,
-    ) ?? 0;
+    const categoryIsNet =
+      svcWithCat?.category_prices_are_net ??
+      (service.category_id ? categoryNetMap.get(service.category_id) || false : false);
+    return (
+      getServiceDisplayPrice(
+        { ...service, category_prices_are_net: categoryIsNet },
+        carSize,
+        pricingMode,
+      ) ?? 0
+    );
   };
 
   // Calculate total price from selected services (using custom prices from serviceItems if available)
@@ -1994,9 +1999,7 @@ const AddReservationDialogV2 = ({
     if (!open) return null;
     return (
       <>
-        <div className="flex flex-col h-full bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60">
-          {formContent}
-        </div>
+        <div className="flex flex-col h-full bg-white">{formContent}</div>
         <EmployeeSelectionDrawer
           open={employeeDrawerOpen}
           onOpenChange={setEmployeeDrawerOpen}
@@ -2019,7 +2022,7 @@ const AddReservationDialogV2 = ({
         <SheetContent
           side="right"
           className={cn(
-            'w-full sm:max-w-[27rem] flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60',
+            'w-full sm:max-w-[27rem] flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white',
             isMobile && isDrawerHidden && '!hidden',
           )}
           hideOverlay

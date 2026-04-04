@@ -171,11 +171,11 @@
   /*
    * GLOBAL FORM CONTROL STANDARD:
    * All form controls (Input, Select, Textarea, DatePicker popover)
-   * use: bg-input (white), border-foreground/60 (dark border),
+   * use: bg-input (white), border-border (light gray),
    * focus:ring-primary, focus:border-primary.
    * Defined in component files: input.tsx, select.tsx, textarea.tsx,
    * popover.tsx, dropdown-menu.tsx.
-   * To change globally, update --input and --foreground tokens.
+   * To change globally, update --input and --border tokens.
    */
 }
 

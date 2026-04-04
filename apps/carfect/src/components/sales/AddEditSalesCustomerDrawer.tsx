@@ -853,7 +853,7 @@ const AddEditSalesCustomerDrawer = ({
     >
       <SheetContent
         side="right"
-        className="w-full sm:max-w-[var(--drawer-width)] flex flex-col p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_select]:border-foreground/60"
+        className="w-full sm:max-w-[var(--drawer-width)] flex flex-col p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white"
         hideCloseButton
         hideOverlay
         onInteractOutside={(e) => {

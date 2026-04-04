@@ -848,7 +848,7 @@ const ComponentsTab = () => {
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen} modal={false}>
         <SheetContent
           side="right"
-          className="w-full flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white text-foreground [&_input]:border-foreground/60 [&_textarea]:border-foreground/60 [&_label]:text-foreground sm:max-w-[var(--drawer-width)]"
+          className="w-full flex flex-col h-full p-0 gap-0 shadow-[-8px_0_30px_-12px_rgba(0,0,0,0.15)] bg-white text-foreground [&_label]:text-foreground sm:max-w-[var(--drawer-width)]"
           hideOverlay
           hideCloseButton
           onInteractOutside={(e) => e.preventDefault()}

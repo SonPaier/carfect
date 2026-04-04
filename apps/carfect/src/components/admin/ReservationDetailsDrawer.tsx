@@ -874,7 +874,7 @@ const ReservationDetailsDrawer = ({
                       reservation.services_data.map((svc, idx) => (
                         <span
                           key={svc.id || idx}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-foreground/80 text-background rounded-full text-sm font-medium"
                         >
                           {svc.name}
                           {svc.id && (
@@ -890,7 +890,7 @@ const ReservationDetailsDrawer = ({
                         </span>
                       ))
                     ) : reservation.service ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-foreground/80 text-background rounded-full text-sm font-medium">
                         {reservation.service.name}
                       </span>
                     ) : null}
@@ -898,10 +898,10 @@ const ReservationDetailsDrawer = ({
                     {/* Add button - same style as employee Add */}
                     <Button
                       type="button"
+                      variant="secondary"
                       size="sm"
                       onClick={() => setServiceDrawerOpen(true)}
                       disabled={savingService}
-                      className="rounded-full"
                     >
                       {savingService ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -928,7 +928,7 @@ const ReservationDetailsDrawer = ({
                       return (
                         <span
                           key={empId}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-foreground/80 text-background rounded-full text-sm font-medium"
                         >
                           {name}
                           <button
@@ -946,10 +946,10 @@ const ReservationDetailsDrawer = ({
                     {/* Add button - same style as services Add */}
                     <Button
                       type="button"
+                      variant="secondary"
                       size="sm"
                       onClick={() => setEmployeeDrawerOpen(true)}
                       disabled={savingEmployees}
-                      className="rounded-full"
                     >
                       {savingEmployees ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
