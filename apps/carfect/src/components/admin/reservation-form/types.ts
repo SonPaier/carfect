@@ -88,6 +88,8 @@ export interface EditingReservation {
   price?: number | null;
   confirmation_code?: string;
   offer_number?: string | null;
+  has_unified_services?: boolean | null;
+  assigned_employee_ids?: string[] | null;
 }
 
 export interface YardVehicle {

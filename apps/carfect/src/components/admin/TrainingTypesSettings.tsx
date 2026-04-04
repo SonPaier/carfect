@@ -106,7 +106,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
           .update({
             name: formName.trim(),
             duration_days: parseFloat(formDuration),
-          } as any)
+          } as { name: string; duration_days: number })
           .eq('id', editingType.id);
         if (error) throw error;
         toast.success('Typ szkolenia zaktualizowany');
@@ -121,7 +121,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
             name: formName.trim(),
             duration_days: parseFloat(formDuration),
             sort_order: maxOrder,
-          } as any);
+          } as { instance_id: string; name: string; duration_days: number; sort_order: number });
         if (error) throw error;
         toast.success('Typ szkolenia dodany');
       }
@@ -141,7 +141,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
     try {
       const { error } = await supabase
         .from('training_types')
-        .update({ active: false } as any)
+        .update({ active: false } as { active: boolean })
         .eq('id', deletingType.id);
       if (error) throw error;
       toast.success('Typ szkolenia usunięty');

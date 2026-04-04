@@ -120,7 +120,7 @@ export function TrainingDetailsDrawer({
     try {
       const { error } = await supabase
         .from('trainings')
-        .update({ description: localDescription || null } as any)
+        .update({ description: localDescription || null } as { description: string | null })
         .eq('id', training.id);
       if (error) throw error;
       toast.success('Notatki zapisane');
@@ -137,7 +137,7 @@ export function TrainingDetailsDrawer({
     try {
       const { error } = await supabase
         .from('trainings')
-        .update({ assigned_employee_ids: employeeIds } as any)
+        .update({ assigned_employee_ids: employeeIds } as { assigned_employee_ids: string[] })
         .eq('id', training.id);
       if (error) throw error;
       toast.success('Pracownicy zaktualizowani');

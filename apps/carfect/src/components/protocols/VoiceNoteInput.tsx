@@ -10,7 +10,7 @@ interface VoiceNoteInputProps {
 
 export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInputProps) => {
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef<string>('');
 
   const stopRecognition = useCallback(() => {
@@ -22,7 +22,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
   }, []);
 
   const startLiveRecognition = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       toast.error('Przeglądarka nie wspiera rozpoznawania mowy. Użyj Chrome lub Edge.');
@@ -43,7 +43,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
       toast.info('Słucham... Kliknij ponownie aby zakończyć');
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let finalTranscript = '';
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
@@ -55,7 +55,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
       }
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('Speech recognition error:', event.error);
       recognitionRef.current = null;
       setIsRecording(false);
