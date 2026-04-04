@@ -185,7 +185,7 @@ export function OfferListCard({
 
   return (
     <div
-      className="bg-white border border-border p-4 hover:border-primary/30 transition-colors cursor-pointer relative"
+      className="bg-white border border-border p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer relative"
       onClick={() => onEdit(offer.id)}
     >
       {/* MOBILE LAYOUT */}

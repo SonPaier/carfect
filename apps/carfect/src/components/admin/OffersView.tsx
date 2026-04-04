@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   FileText,
   Loader2,
-  Filter,
   Search,
   Settings,
   ChevronLeft,
@@ -120,7 +119,6 @@ export default function OffersView({
   );
 
   const [showScopesSettings, setShowScopesSettings] = useState(false);
-
 
   // Email dialog state
   const [sendEmailDialogOpen, setSendEmailDialogOpen] = useState(false);
@@ -271,7 +269,6 @@ export default function OffersView({
   useEffect(() => {
     fetchOffers();
   }, [instanceId]);
-
 
   const handleDeleteOffer = async (offerId: string) => {
     try {
@@ -589,12 +586,11 @@ export default function OffersView({
               variant="outline"
               size="icon"
               onClick={() => setShowScopesSettings(true)}
-              className="sm:w-auto sm:px-4 bg-white"
+              className="bg-white"
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline ml-2">{t('offers.settings')}</span>
             </Button>
-            <Button onClick={() => navigateTo('new')}>{t('offers.newOffer')}</Button>
+            <Button onClick={() => navigateTo('new')}>Dodaj ofertę</Button>
           </div>
         </div>
 
@@ -610,7 +606,6 @@ export default function OffersView({
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder={t('offers.status')} />
