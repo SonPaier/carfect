@@ -1,7 +1,7 @@
 import { Toaster, SonnerToaster as Sonner } from '@shared/ui';
 import { TooltipProvider } from '@shared/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/hooks/useAuth';
 import { CarModelsProvider } from '@/contexts/CarModelsContext';
@@ -83,32 +83,48 @@ const getSubdomainInfo = () => {
 
 // Super Admin Routes Component
 const SuperAdminRoutes = () => (
-  <Suspense fallback={<PageLoader />}>
-    <Routes>
-      <Route path="/login" element={<SuperAdminAuth />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute requiredRole="super_admin">
-            <SuperAdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  </Suspense>
+  <CarModelsProvider>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/login" element={<SuperAdminAuth />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute requiredRole="super_admin">
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+  </CarModelsProvider>
 );
 
 // Instance Public Routes - for armcar.carfect.pl (public calendar only)
 const InstancePublicRoutes = ({ subdomain }: { subdomain: string }) => (
   <Suspense fallback={<PageLoader />}>
     <Routes>
-      <Route path="/" element={<Rezerwacje instanceSubdomain={subdomain} />} />
+      <Route
+        path="/"
+        element={
+          <CarModelsProvider>
+            <Rezerwacje instanceSubdomain={subdomain} />
+          </CarModelsProvider>
+        }
+      />
       <Route path="/res" element={<MojaRezerwacja />} />
       <Route path="/moja-rezerwacja" element={<Navigate to="/res" replace />} />
       <Route path="/offers/:token" element={<PublicOfferView />} />
       <Route path="/protocols/:token" element={<PublicProtocolView />} />
-      <Route path="/embed" element={<EmbedLeadForm />} />
+      <Route
+        path="/embed"
+        element={
+          <CarModelsProvider>
+            <EmbedLeadForm />
+          </CarModelsProvider>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
@@ -123,55 +139,53 @@ const InstanceAdminRoutes = ({ subdomain }: { subdomain: string }) => (
       <Route path="/forgot-password" element={<ForgotPassword subdomainSlug={subdomain} />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Public routes - BEFORE catch-all */}
+      {/* Public routes - no CarModelsProvider needed */}
       <Route path="/offers/:token" element={<PublicOfferView />} />
       <Route path="/protocols/:token" element={<PublicProtocolView />} />
 
-      {/* Role-based redirect - ONLY for /dashboard */}
-      <Route path="/dashboard" element={<RoleBasedRedirect />} />
-
-      {/* Hall view - specific route BEFORE catch-all */}
+      {/* All admin routes wrapped in CarModelsProvider */}
       <Route
-        path="/halls/:hallId"
         element={
-          <ProtectedRoute requiredRole="admin">
-            <HallView />
-          </ProtectedRoute>
+          <CarModelsProvider>
+            <Outlet />
+          </CarModelsProvider>
         }
-      />
-
-      {/* Reminder template routes - must be before /:view? to avoid conflict */}
-      <Route
-        path="/reminders/:shortId"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <ReminderTemplateEditPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Sales CRM routes - BEFORE catch-all /:view? */}
-      <Route
-        path="/sales-crm/:view?"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <SalesDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Admin dashboard with optional view param - handles both / and /:view */}
-      <Route
-        path="/:view?"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      >
+        <Route path="/dashboard" element={<RoleBasedRedirect />} />
+        <Route
+          path="/halls/:hallId"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <HallView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reminders/:shortId"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <ReminderTemplateEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sales-crm/:view?"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <SalesDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/:view?"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
     </Routes>
   </Suspense>
 );
@@ -185,99 +199,101 @@ const PageLoader = () => (
 
 // Development Routes - full access for local testing
 const DevRoutes = () => (
-  <Suspense fallback={<PageLoader />}>
-    <Routes>
-      <Route path="/" element={<Navigate to="/rezerwacje" replace />} />
-      <Route path="/rezerwacje" element={<Rezerwacje />} />
-      <Route path="/res" element={<MojaRezerwacja />} />
-      <Route path="/moja-rezerwacja" element={<Navigate to="/res" replace />} />
-      <Route path="/offers/:token" element={<PublicOfferView />} />
-      <Route path="/protocols/:token" element={<PublicProtocolView />} />
-      {/* Instance-specific login route */}
-      <Route path="/:slug/login" element={<InstanceAuth />} />
-      <Route path="/:slug/forgot-password" element={<ForgotPassword />} />
-      <Route path="/:slug/reset-password" element={<ResetPassword />} />
-      {/* Default login without slug - use demo instance for dev */}
-      <Route path="/login" element={<InstanceAuth subdomainSlug="demo" />} />
-      <Route path="/forgot-password" element={<ForgotPassword subdomainSlug="demo" />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      {/* Role-based redirect after login */}
-      <Route path="/dashboard" element={<RoleBasedRedirect />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/halls/:hallId"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <HallView />
-          </ProtectedRoute>
-        }
-      />
-      {/* Halls without /admin prefix - for hall role navigation */}
-      <Route
-        path="/halls/:hallId"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <HallView />
-          </ProtectedRoute>
-        }
-      />
-      {/* Reminder template routes - must be before /admin/:view to avoid conflict */}
-      <Route
-        path="/admin/reminders/:shortId"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <ReminderTemplateEditPage />
-          </ProtectedRoute>
-        }
-      />
-      {/* Sales CRM routes - BEFORE /admin/:view */}
-      <Route
-        path="/sales-crm/:view?"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <SalesDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/sales-crm/:view?"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <SalesDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/:view"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/super-admin"
-        element={
-          <ProtectedRoute requiredRole="super_admin">
-            <SuperAdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      {/* Design system - component showcase */}
-      <Route path="/design-system" element={<DesignSystem />} />
-      {/* Legacy routes - redirect to login */}
-      <Route path="/admin/login" element={<InstanceAuth />} />
-      <Route path="/super-admin/login" element={<SuperAdminAuth />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  </Suspense>
+  <CarModelsProvider>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/rezerwacje" replace />} />
+        <Route path="/rezerwacje" element={<Rezerwacje />} />
+        <Route path="/res" element={<MojaRezerwacja />} />
+        <Route path="/moja-rezerwacja" element={<Navigate to="/res" replace />} />
+        <Route path="/offers/:token" element={<PublicOfferView />} />
+        <Route path="/protocols/:token" element={<PublicProtocolView />} />
+        {/* Instance-specific login route */}
+        <Route path="/:slug/login" element={<InstanceAuth />} />
+        <Route path="/:slug/forgot-password" element={<ForgotPassword />} />
+        <Route path="/:slug/reset-password" element={<ResetPassword />} />
+        {/* Default login without slug - use demo instance for dev */}
+        <Route path="/login" element={<InstanceAuth subdomainSlug="demo" />} />
+        <Route path="/forgot-password" element={<ForgotPassword subdomainSlug="demo" />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Role-based redirect after login */}
+        <Route path="/dashboard" element={<RoleBasedRedirect />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/halls/:hallId"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <HallView />
+            </ProtectedRoute>
+          }
+        />
+        {/* Halls without /admin prefix - for hall role navigation */}
+        <Route
+          path="/halls/:hallId"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <HallView />
+            </ProtectedRoute>
+          }
+        />
+        {/* Reminder template routes - must be before /admin/:view to avoid conflict */}
+        <Route
+          path="/admin/reminders/:shortId"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <ReminderTemplateEditPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Sales CRM routes - BEFORE /admin/:view */}
+        <Route
+          path="/sales-crm/:view?"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <SalesDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sales-crm/:view?"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <SalesDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/:view"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute requiredRole="super_admin">
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* Design system - component showcase */}
+        <Route path="/design-system" element={<DesignSystem />} />
+        {/* Legacy routes - redirect to login */}
+        <Route path="/admin/login" element={<InstanceAuth />} />
+        <Route path="/super-admin/login" element={<SuperAdminAuth />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  </CarModelsProvider>
 );
 
 const App = () => {
@@ -301,13 +317,11 @@ const App = () => {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <CarModelsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>{renderRoutes()}</BrowserRouter>
-            </TooltipProvider>
-          </CarModelsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>{renderRoutes()}</BrowserRouter>
+          </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

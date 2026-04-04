@@ -21,6 +21,47 @@ import { useGusLookup } from './hooks/useGusLookup';
 import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChanges';
 import { COUNTRIES } from './constants';
 
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price_net: number;
+  price_unit: string;
+}
+
+interface Invoice {
+  id: string;
+  sales_order_id: string;
+  invoice_number: string;
+  pdf_url: string | null;
+}
+
+interface RollUsage {
+  order_id: string;
+  used_m2: number | null;
+  used_mb: number | null;
+  sales_rolls: {
+    product_name: string | null;
+    product_code: string | null;
+    width_mm: number | null;
+  } | null;
+}
+
+interface Order {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total_net: number | null;
+  currency: string;
+  status: string;
+  delivery_type: string | null;
+  payment_method: string | null;
+  tracking_number: string | null;
+  apaczka_tracking_url: string | null;
+  items: OrderItem[];
+  invoice: Invoice | null;
+  rolls: RollUsage[];
+}
+
 interface SalesCustomer {
   id: string;
   name: string;
@@ -103,52 +144,52 @@ const AddEditSalesCustomerDrawer = ({
 
   const [form, setForm] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState('orders');
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const { lookupNip, loading: gusLoading } = useGusLookup();
 
   const fetchOrders = useCallback(async () => {
     if (!customer?.id) return;
     setOrdersLoading(true);
-    const { data } = await (supabase
+    const { data } = await supabase
       .from('sales_orders')
       .select(
         'id, order_number, created_at, total_net, currency, status, delivery_type, payment_method, tracking_number, apaczka_tracking_url, sales_order_items(name, quantity, price_net, price_unit)',
       )
       .eq('customer_id', customer.id)
-      .order('created_at', { ascending: false }) as any);
+      .order('created_at', { ascending: false });
 
-    // Fetch invoices and roll usages for these orders
-    const orderIds = (data || []).map((o: any) => o.id);
-    const invoiceMap: Record<string, any> = {};
-    const rollMap: Record<string, any[]> = {};
+    type OrderRow = NonNullable<typeof data>[number];
+    const orderIds = (data || []).map((o: OrderRow) => o.id);
+    const invoiceMap: Record<string, Invoice> = {};
+    const rollMap: Record<string, RollUsage[]> = {};
     if (orderIds.length > 0) {
       const [invRes, rollRes] = await Promise.all([
         supabase
           .from('invoices')
           .select('id, sales_order_id, invoice_number, pdf_url')
-          .in('sales_order_id', orderIds) as any,
+          .in('sales_order_id', orderIds),
         supabase
           .from('sales_roll_usages')
           .select('order_id, used_m2, used_mb, sales_rolls(product_name, product_code, width_mm)')
-          .in('order_id', orderIds) as any,
+          .in('order_id', orderIds),
       ]);
       for (const inv of invRes.data || []) {
-        invoiceMap[inv.sales_order_id] = inv;
+        invoiceMap[inv.sales_order_id] = inv as Invoice;
       }
       for (const ru of rollRes.data || []) {
         if (!rollMap[ru.order_id]) rollMap[ru.order_id] = [];
-        rollMap[ru.order_id].push(ru);
+        rollMap[ru.order_id].push(ru as unknown as RollUsage);
       }
     }
 
     setOrders(
-      (data || []).map((o: any) => ({
+      (data || []).map((o: OrderRow) => ({
         ...o,
-        items: o.sales_order_items || [],
+        items: (o.sales_order_items || []) as OrderItem[],
         invoice: invoiceMap[o.id] || null,
         rolls: rollMap[o.id] || [],
-      })),
+      })) as Order[],
     );
     setOrdersLoading(false);
   }, [customer?.id]);
@@ -200,6 +241,7 @@ const AddEditSalesCustomerDrawer = ({
       resetDirty();
       setEditMode(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, customer]);
 
   const handleGusLookup = async () => {
@@ -232,7 +274,7 @@ const AddEditSalesCustomerDrawer = ({
 
     setSaving(true);
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, string | number | boolean | null> = {
         instance_id: instanceId,
         name: form.name.trim(),
         contact_person: form.contactPerson.trim() || null,
@@ -267,14 +309,14 @@ const AddEditSalesCustomerDrawer = ({
       }
 
       if (customer?.id) {
-        const { error } = await (supabase
+        const { error } = await supabase
           .from('sales_customers')
           .update(payload)
-          .eq('id', customer.id) as any);
+          .eq('id', customer.id);
         if (error) throw error;
         toast.success('Klient zaktualizowany');
       } else {
-        const { error } = await (supabase.from('sales_customers').insert(payload as any) as any);
+        const { error } = await supabase.from('sales_customers').insert(payload);
         if (error) throw error;
         toast.success('Klient dodany');
       }
@@ -282,9 +324,9 @@ const AddEditSalesCustomerDrawer = ({
       onSaved();
       resetDirty();
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error('Błąd zapisu: ' + (err.message || 'Nieznany błąd'));
+      toast.error('Błąd zapisu: ' + ((err as Error).message || 'Nieznany błąd'));
     } finally {
       setSaving(false);
     }
@@ -401,7 +443,7 @@ const AddEditSalesCustomerDrawer = ({
           <p className="text-sm text-muted-foreground text-center py-8">Brak zamówień</p>
         ) : (
           <div className="space-y-2">
-            {orders.map((o: any) => (
+            {orders.map((o) => (
               <div key={o.id} className="border rounded-md p-3 text-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{o.order_number}</span>
@@ -456,7 +498,7 @@ const AddEditSalesCustomerDrawer = ({
                 {/* Products */}
                 {o.items.length > 0 && (
                   <div className="text-xs space-y-0.5 mt-1">
-                    {o.items.map((item: any, idx: number) => (
+                    {o.items.map((item, idx: number) => (
                       <div key={idx} className="flex justify-between">
                         <span className="truncate mr-2">
                           {item.quantity > 1 ? `${item.quantity}× ` : ''}
@@ -476,7 +518,7 @@ const AddEditSalesCustomerDrawer = ({
                 {/* Rolls */}
                 {o.rolls.length > 0 && (
                   <div className="text-xs mt-1">
-                    {o.rolls.map((r: any, idx: number) => (
+                    {o.rolls.map((r, idx: number) => (
                       <div key={idx} className="flex justify-between">
                         <span>
                           {r.sales_rolls?.product_name || r.sales_rolls?.product_code || 'Rolka'}

@@ -35,3 +35,10 @@ dist-ssr
 # Supabase CLI temp files
 supabase/.temp/
 .mcp.json
+
+# Supabase pentest audit files
+.sb-pentest-context.json
+.sb-pentest-audit.log
+.sb-pentest-evidence/
+supabase-audit-report.md
+supabase-audit-comparison.md
