@@ -9,14 +9,15 @@ import ReservationsView from './ReservationsView';
 let mockVehicleData: Array<{ plate: string | null; phone: string | null; vin: string }> = [];
 
 const chainable = () => {
-  const self: Record<string, any> = {};
+  const self: Record<string, unknown> = {};
   self.select = () => self;
   self.eq = () => self;
   self.not = () => self;
   self.in = () => Promise.resolve({ data: [] });
   self.maybeSingle = () => Promise.resolve({ data: null });
   self.single = () => Promise.resolve({ data: null });
-  self.then = (resolve: any) => resolve({ data: mockVehicleData });
+  self.then = (resolve: (val: { data: typeof mockVehicleData }) => void) =>
+    resolve({ data: mockVehicleData });
   return self;
 };
 
@@ -117,8 +118,7 @@ const defaultProps = {
 };
 
 // ---- Render helper ----
-const createQueryClient = () =>
-  new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const createQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 const renderView = (props: Partial<typeof defaultProps> = {}) =>
   render(
@@ -398,8 +398,18 @@ describe('ReservationsView', () => {
       const user = userEvent.setup();
       mockVehicleData = [{ plate: 'WA 12345', phone: '+48600111333', vin: 'WVWZZZ3CZWE123456' }];
       const reservations = [
-        makeReservation({ id: 'r1', vehicle_plate: 'WA 12345', customer_phone: '+48600111333', customer_name: 'Jan Kowalski' }),
-        makeReservation({ id: 'r2', vehicle_plate: 'KR 99999', customer_phone: '+48500000000', customer_name: 'Anna Nowak' }),
+        makeReservation({
+          id: 'r1',
+          vehicle_plate: 'WA 12345',
+          customer_phone: '+48600111333',
+          customer_name: 'Jan Kowalski',
+        }),
+        makeReservation({
+          id: 'r2',
+          vehicle_plate: 'KR 99999',
+          customer_phone: '+48500000000',
+          customer_name: 'Anna Nowak',
+        }),
       ];
       renderView({ reservations });
 
@@ -419,7 +429,11 @@ describe('ReservationsView', () => {
       const user = userEvent.setup();
       mockVehicleData = [{ plate: null, phone: '+48600111222', vin: '4Y1SL65848Z411439' }];
       const reservations = [
-        makeReservation({ id: 'r1', customer_phone: '+48600111222', customer_name: 'Jan Kowalski' }),
+        makeReservation({
+          id: 'r1',
+          customer_phone: '+48600111222',
+          customer_name: 'Jan Kowalski',
+        }),
         makeReservation({ id: 'r2', customer_phone: '+48500000000', customer_name: 'Anna Nowak' }),
       ];
       renderView({ reservations });

@@ -45,94 +45,20 @@ import {
   ReservationSlotsSection,
   NotesAndPriceSection,
 } from './reservation-form';
-import type { ReservationSlot } from './reservation-form';
-
-type CarSize = 'small' | 'medium' | 'large';
-type DialogMode = 'reservation' | 'yard';
-
-interface Service {
-  id: string;
-  name: string;
-  short_name?: string | null;
-  category_id?: string | null;
-  duration_minutes: number | null;
-  duration_small: number | null;
-  duration_medium: number | null;
-  duration_large: number | null;
-  price_from: number | null;
-  price_small: number | null;
-  price_medium: number | null;
-  price_large: number | null;
-  station_type: string | null;
-  is_popular?: boolean | null;
-}
-
-interface CustomerVehicle {
-  id: string;
-  phone: string;
-  model: string;
-  plate: string | null;
-  customer_id: string | null;
-  customer_name?: string;
-  car_size?: string | null;
-  last_used_at?: string | null;
-}
-
-interface Customer {
-  id: string;
-  phone: string;
-  name: string;
-  email: string | null;
-}
-
-interface Station {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface WorkingHours {
-  open: string;
-  close: string;
-}
-
-interface EditingReservation {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  car_size?: CarSize | null;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  service_ids?: string[];
-  service_id?: string;
-  service_items?: ServiceItem[] | null;
-  customer_notes?: string | null;
-  admin_notes?: string | null;
-  price?: number | null;
-  confirmation_code?: string;
-  offer_number?: string | null;
-  has_unified_services?: boolean | null;
-  assigned_employee_ids?: string[] | null;
-}
-
-export interface YardVehicle {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  car_size: CarSize | null;
-  service_ids: string[];
-  arrival_date: string;
-  pickup_date: string | null;
-  deadline_time: string | null;
-  notes: string | null;
-  status: string;
-  created_at: string;
-}
+import type {
+  ReservationSlot,
+  CarSize,
+  DialogMode,
+  Service,
+  CustomerVehicle,
+  Customer,
+  Station,
+  WorkingHours,
+  EditingReservation,
+  YardVehicle,
+} from './reservation-form';
+export type { YardVehicle };
+import { mergeVehiclesByPhone } from '@/lib/mergeVehiclesByPhone';
 
 interface AddReservationDialogV2Props {
   open: boolean;
@@ -988,6 +914,7 @@ const AddReservationDialogV2 = ({
             const { data: customersData } = await supabase
               .from('customers')
               .select('id, name')
+              .eq('instance_id', instanceId)
               .in('id', customerIds);
 
             if (customersData) {
@@ -1002,8 +929,10 @@ const AddReservationDialogV2 = ({
             customer_name: v.customer_id ? customerNames[v.customer_id] : undefined,
           }));
 
-          setFoundVehicles(vehiclesWithNames);
-          setShowPhoneDropdown(vehiclesWithNames.length > 0);
+          // Merge vehicles by phone — one entry per customer, models joined
+          const merged = mergeVehiclesByPhone(vehiclesWithNames);
+          setFoundVehicles(merged);
+          setShowPhoneDropdown(merged.length > 0);
         }
       } finally {
         setSearchingCustomer(false);
@@ -1688,6 +1617,7 @@ const AddReservationDialogV2 = ({
             setCarModel={setCarModel}
             setCarSize={setCarSize}
             noShowWarning={noShowWarning}
+            selectedCustomerId={selectedCustomerId}
           />
 
           {/* Vehicle Section */}

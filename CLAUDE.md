@@ -20,6 +20,8 @@
 - Pliki testów: \*.test.tsx obok komponentów
 - Mockowanie Supabase: vi.mock('@supabase/supabase-js')
 - Async: zawsze userEvent.setup() przed testem
+- **Każdy nowy komponent MUSI mieć testy** — nie commituj komponentu bez pliku testowego
+- Testy pisz od razu razem z komponentem, nie "potem"
 
 ## Skills
 
