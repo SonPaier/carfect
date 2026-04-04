@@ -4,20 +4,8 @@ import { GraduationCap, Plus, Pencil, Trash2, Loader2, GripVertical } from 'luci
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
 import { ConfirmDialog } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -111,17 +99,14 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
         if (error) throw error;
         toast.success('Typ szkolenia zaktualizowany');
       } else {
-        const maxOrder = trainingTypes.length > 0
-          ? Math.max(...trainingTypes.map(t => t.sort_order)) + 1
-          : 0;
-        const { error } = await supabase
-          .from('training_types')
-          .insert({
-            instance_id: instanceId,
-            name: formName.trim(),
-            duration_days: parseFloat(formDuration),
-            sort_order: maxOrder,
-          } as any);
+        const maxOrder =
+          trainingTypes.length > 0 ? Math.max(...trainingTypes.map((t) => t.sort_order)) + 1 : 0;
+        const { error } = await supabase.from('training_types').insert({
+          instance_id: instanceId,
+          name: formName.trim(),
+          duration_days: parseFloat(formDuration),
+          sort_order: maxOrder,
+        } as any);
         if (error) throw error;
         toast.success('Typ szkolenia dodany');
       }
@@ -157,7 +142,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
   };
 
   const getDurationLabel = (days: number) => {
-    const opt = DURATION_OPTIONS.find(o => parseFloat(o.value) === days);
+    const opt = DURATION_OPTIONS.find((o) => parseFloat(o.value) === days);
     return opt?.label || `${days} dni`;
   };
 
@@ -198,7 +183,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
           {trainingTypes.map((type) => (
             <div
               key={type.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-border bg-background hover:bg-hover transition-colors"
+              className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-white hover:bg-hover transition-colors"
             >
               <div className="flex items-center gap-3">
                 <GripVertical className="w-4 h-4 text-muted-foreground" />

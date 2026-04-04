@@ -107,7 +107,9 @@ export default function NotificationsView({
       if (reservationData) {
         // Resolve service names from service_items JSONB or service_ids via unified_services
         let servicesData: { name: string; shortcut: string | null }[] | null = null;
-        const serviceItems = reservationData.service_items as { name?: string; short_name?: string }[] | null;
+        const serviceItems = reservationData.service_items as
+          | { name?: string; short_name?: string }[]
+          | null;
         const serviceIds = reservationData.service_ids as string[] | null;
 
         if (serviceItems && Array.isArray(serviceItems) && serviceItems.length > 0) {
@@ -283,7 +285,7 @@ export default function NotificationsView({
     <div className="max-w-3xl mx-auto">
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Powiadomienia</h1>
+          <h1 className="text-2xl font-medium">Powiadomienia</h1>
           <div className="hidden sm:flex gap-2">
             {unreadCount > 0 && (
               <Button variant="outline" size="sm" onClick={handleMarkAllRead}>

@@ -217,7 +217,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
 
   if (loading) {
     return (
-      <div className="bg-white border border-border p-8 text-center text-muted-foreground">
+      <div className="bg-white border border-border/50 p-8 text-center text-muted-foreground rounded-lg">
         {t('common.loading')}
       </div>
     );
@@ -244,7 +244,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
                     setIsAddMode(false);
                     setSelectedCustomer(customer);
                   }}
-                  className="p-4 flex items-center justify-between gap-4 transition-shadow cursor-pointer bg-white border border-border rounded-lg hover:shadow-md"
+                  className="p-4 flex items-center justify-between gap-4 transition-shadow cursor-pointer bg-white border border-border/50 rounded-lg hover:shadow-md"
                 >
                   <div className="min-w-0 flex-1 space-y-0.5">
                     {/* Line 1: Name */}
@@ -347,12 +347,12 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
     <div className="space-y-4 max-w-3xl mx-auto pb-28">
       {/* Header with title and add button */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('customers.title')}</h1>
-        <Button onClick={handleAddCustomer}>{t('common.add')}</Button>
+        <h1 className="text-2xl font-medium text-foreground">{t('customers.title')}</h1>
+        <Button onClick={handleAddCustomer}>Dodaj klienta</Button>
       </div>
 
       {/* Sticky header on mobile */}
-      <div className="sm:static sticky top-0 z-20 bg-background pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="sm:static sticky top-0 z-20 bg-background -mx-4 px-4 sm:mx-0 sm:px-0">
         {/* Search bar - full width */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

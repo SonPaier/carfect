@@ -144,7 +144,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
           return (
             <div
               key={key}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-muted/30 border border-border/50"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-white border border-border/50"
             >
               <div className="flex items-center justify-between sm:justify-start gap-3 sm:w-36">
                 <div className="flex items-center gap-3">

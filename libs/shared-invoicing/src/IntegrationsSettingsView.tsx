@@ -279,7 +279,7 @@ export function IntegrationsSettingsView({
     <div className="space-y-4">
       {/* Fakturownia Card */}
       {showFakturownia && (
-        <Card>
+        <Card className="border-border/50">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
@@ -308,7 +308,7 @@ export function IntegrationsSettingsView({
 
       {/* iFirma Card */}
       {showIfirma && (
-        <Card>
+        <Card className="border-border/50">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>

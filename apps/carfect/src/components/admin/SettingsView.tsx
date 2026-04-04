@@ -593,7 +593,7 @@ const SettingsView = ({
                     'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
                     activeTab === tab.key
                       ? 'bg-hover text-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                      : 'text-foreground hover:bg-hover',
                   )}
                 >
                   {tab.icon}
@@ -614,26 +614,26 @@ const SettingsView = ({
                   'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
                   activeTab === tab.key
                     ? 'bg-hover text-foreground font-medium'
-                    : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                    : 'text-foreground hover:bg-hover',
                 )}
               >
                 {tab.icon}
                 {tab.label}
               </button>
             ))}
-            {/* Version info */}
-            {currentVersion && (
-              <p className="text-xs text-muted-foreground py-3 px-4">
-                Panel Admina v{currentVersion}
-              </p>
-            )}
           </div>
+          {/* Version info — outside menu border */}
+          {currentVersion && (
+            <p className="text-xs text-muted-foreground py-3 px-4">
+              Panel Admina v{currentVersion}
+            </p>
+          )}
         </div>
       )}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="bg-white border border-border p-6 pb-24 md:pb-6 bg-secondary-foreground">
+        <div className="bg-white border border-border/50 rounded-lg p-6 pb-24 md:pb-6 bg-secondary-foreground">
           {renderTabContent()}
         </div>
       </div>

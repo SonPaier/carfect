@@ -522,7 +522,7 @@ export default function OffersView({
           </title>
         </Helmet>
         <div>
-          <h1 className="text-2xl font-bold mb-4">
+          <h1 className="text-2xl font-medium mb-4">
             {duplicatingOfferId
               ? t('offers.duplicateOffer')
               : editingOfferId
@@ -578,8 +578,8 @@ export default function OffersView({
         </title>
       </Helmet>
       <div className="max-w-3xl mx-auto pb-24">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-          <h1 className="text-2xl font-bold">{t('offers.title')}</h1>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+          <h1 className="text-2xl font-medium">{t('offers.title')}</h1>
           <div className="flex items-center gap-2">
             {/* Legacy templates button — hidden, accessible via URL ?action=services */}
             <Button
@@ -595,7 +595,7 @@ export default function OffersView({
         </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input

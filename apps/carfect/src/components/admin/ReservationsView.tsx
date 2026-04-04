@@ -17,12 +17,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { normalizeSearchQuery, formatPhoneDisplay } from '@shared/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@shared/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Tabs } from '@shared/ui';
@@ -44,15 +39,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  PaginationFooter,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@shared/ui';
-import { PaginationFooter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { EmptyState } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import ServiceTag from './ServiceTag';
@@ -148,7 +143,10 @@ const DEBOUNCE_MS = 300;
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   pending: { label: 'Oczekuje', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-  confirmed: { label: 'Potwierdzona', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  confirmed: {
+    label: 'Potwierdzona',
+    className: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  },
   in_progress: { label: 'W trakcie', className: 'bg-orange-100 text-orange-800 border-orange-200' },
   completed: { label: 'Zakończona', className: 'bg-slate-100 text-slate-800 border-slate-200' },
   cancelled: { label: 'Anulowana', className: 'bg-red-100 text-red-800 border-red-200' },
@@ -182,7 +180,9 @@ const ReservationsView = ({
       <div>
         <div className="font-medium">{Number(r.price).toFixed(2)} zł</div>
         {r.price_netto != null && (
-          <div className="text-xs text-muted-foreground">{Number(r.price_netto).toFixed(2)} zł netto</div>
+          <div className="text-xs text-muted-foreground">
+            {Number(r.price_netto).toFixed(2)} zł netto
+          </div>
         )}
       </div>
     );
@@ -238,7 +238,8 @@ const ReservationsView = ({
   const { data: vinMaps } = useQuery({
     queryKey: ['vin_search_maps', instanceId],
     queryFn: async () => {
-      if (!instanceId) return { byPlate: new Map<string, string>(), byPhone: new Map<string, string[]>() };
+      if (!instanceId)
+        return { byPlate: new Map<string, string>(), byPhone: new Map<string, string[]>() };
       const { data } = await supabase
         .from('customer_vehicles')
         .select('plate, phone, vin')
@@ -330,7 +331,9 @@ const ReservationsView = ({
         const serviceNames = (r.services_data || (r.service ? [r.service] : []))
           .map((s) => s.name.toLowerCase())
           .join(' ');
-        const vinByPlate = r.vehicle_plate ? vinMaps?.byPlate.get(r.vehicle_plate.toLowerCase()) : undefined;
+        const vinByPlate = r.vehicle_plate
+          ? vinMaps?.byPlate.get(r.vehicle_plate.toLowerCase())
+          : undefined;
         const vinsByPhone = r.customer_phone ? vinMaps?.byPhone.get(r.customer_phone) : undefined;
         const vinMatch = vinByPlate?.includes(query) || vinsByPhone?.some((v) => v.includes(query));
         return (
@@ -381,8 +384,14 @@ const ReservationsView = ({
         aVal = a.date + (a.start_time || '');
         bVal = b.date + (b.start_time || '');
       } else if (sortField === 'customer_name') {
-        aVal = a.type === 'reservation' ? (a.data as Reservation).customer_name || '' : (a.data as Training).title || '';
-        bVal = b.type === 'reservation' ? (b.data as Reservation).customer_name || '' : (b.data as Training).title || '';
+        aVal =
+          a.type === 'reservation'
+            ? (a.data as Reservation).customer_name || ''
+            : (a.data as Training).title || '';
+        bVal =
+          b.type === 'reservation'
+            ? (b.data as Reservation).customer_name || ''
+            : (b.data as Training).title || '';
       } else if (sortField === 'vehicle_plate') {
         aVal = a.type === 'reservation' ? (a.data as Reservation).vehicle_plate || '' : '';
         bVal = b.type === 'reservation' ? (b.data as Reservation).vehicle_plate || '' : '';
@@ -409,11 +418,14 @@ const ReservationsView = ({
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
 
   // Counts for tabs
-  const counts = useMemo(() => ({
-    all: reservations.length + trainings.length,
-    reservations: reservations.length,
-    trainings: trainings.length,
-  }), [reservations, trainings]);
+  const counts = useMemo(
+    () => ({
+      all: reservations.length + trainings.length,
+      reservations: reservations.length,
+      trainings: trainings.length,
+    }),
+    [reservations, trainings],
+  );
 
   const handleRejectClick = (e: React.MouseEvent, reservation: Reservation) => {
     e.stopPropagation();
@@ -682,7 +694,7 @@ const ReservationsView = ({
   return (
     <div className="space-y-4 max-w-[1000px] mx-auto pb-28">
       {/* Title */}
-      <h1 className="text-2xl font-bold text-foreground">Realizacje</h1>
+      <h1 className="text-2xl font-medium text-foreground">Realizacje</h1>
 
       {/* Sticky header on mobile */}
       <div className="sm:static sticky top-0 z-20 bg-background pb-4 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -706,11 +718,13 @@ const ReservationsView = ({
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Wszystkie statusy</SelectItem>
+              <SelectItem value="all">Wszystkie</SelectItem>
               {Object.entries(statusConfig)
                 .filter(([key]) => !['pending', 'change_requested', 'released'].includes(key))
                 .map(([key, cfg]) => (
-                  <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
+                  <SelectItem key={key} value={key}>
+                    {cfg.label}
+                  </SelectItem>
                 ))}
             </SelectContent>
           </Select>
@@ -769,7 +783,9 @@ const ReservationsView = ({
                   <SortableHeader field="vehicle_plate">Pojazd</SortableHeader>
                   <TableHead>Usługi</TableHead>
                   <SortableHeader field="reservation_date">Data realizacji</SortableHeader>
-                  <SortableHeader field="price" className="text-right">Cena brutto / netto</SortableHeader>
+                  <SortableHeader field="price" className="text-right">
+                    Cena brutto / netto
+                  </SortableHeader>
                   <SortableHeader field="status">Status</SortableHeader>
                   <TableHead className="w-10" />
                 </TableRow>
@@ -793,7 +809,9 @@ const ReservationsView = ({
                               {r.customer_name}
                             </button>
                             {r.customer_phone && (
-                              <div className="text-xs text-muted-foreground">{formatPhoneDisplay(r.customer_phone)}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatPhoneDisplay(r.customer_phone)}
+                              </div>
                             )}
                           </div>
                         </TableCell>
@@ -879,15 +897,15 @@ const ReservationsView = ({
                         {r.customer_name}
                       </button>
                       {r.customer_phone && (
-                        <div className="text-xs text-muted-foreground">{formatPhoneDisplay(r.customer_phone)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatPhoneDisplay(r.customer_phone)}
+                        </div>
                       )}
                     </div>
                     {/* Services + price */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm">{renderServices(r)}</div>
-                      <div className="text-right shrink-0">
-                        {formatDisplayPrice(r)}
-                      </div>
+                      <div className="text-right shrink-0">{formatDisplayPrice(r)}</div>
                     </div>
                     {/* Date + actions */}
                     <div className="flex items-center justify-between pt-1">
@@ -897,9 +915,7 @@ const ReservationsView = ({
                           <span> – {format(parseISO(r.end_date), 'dd.MM.yyyy')}</span>
                         )}
                       </div>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        {renderReservationActions(r)}
-                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>{renderReservationActions(r)}</div>
                     </div>
                   </div>
                 );
@@ -935,9 +951,7 @@ const ReservationsView = ({
                       <div className="text-sm text-muted-foreground">
                         {format(parseISO(tr.start_date), 'dd.MM.yyyy')}
                       </div>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        {renderTrainingActions(tr)}
-                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>{renderTrainingActions(tr)}</div>
                     </div>
                   </div>
                 );
@@ -1047,17 +1061,23 @@ const ReservationsView = ({
           customerEmail={null}
           positions={
             invoiceTarget
-              ? (invoiceTarget.services_data || (invoiceTarget.service ? [invoiceTarget.service] : []))
-                  .map((s) => ({
-                    name: s.name,
-                    quantity: 1,
-                    unit_price_gross: invoiceTarget.price_netto
-                      ? Math.round(invoiceTarget.price_netto / Math.max(1, (invoiceTarget.services_data || []).length) * 100) / 100
-                      : 0,
-                    vat_rate: 23,
-                    unit: 'szt.',
-                    discount: 0,
-                  }))
+              ? (
+                  invoiceTarget.services_data ||
+                  (invoiceTarget.service ? [invoiceTarget.service] : [])
+                ).map((s) => ({
+                  name: s.name,
+                  quantity: 1,
+                  unit_price_gross: invoiceTarget.price_netto
+                    ? Math.round(
+                        (invoiceTarget.price_netto /
+                          Math.max(1, (invoiceTarget.services_data || []).length)) *
+                          100,
+                      ) / 100
+                    : 0,
+                  vat_rate: 23,
+                  unit: 'szt.',
+                  discount: 0,
+                }))
               : []
           }
           supabaseClient={supabase}

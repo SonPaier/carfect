@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Smartphone, Check } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 import { Switch, Label, Input, Button, RadioGroup, RadioGroupItem } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -197,7 +197,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="space-y-4">
         <h3 className="font-semibold">Tryb cen</h3>
 
-        <div className="p-4 rounded-lg border-border bg-white border-0">
+        <div className="p-4 rounded-lg border border-border/50 bg-white">
           <div className="space-y-3">
             <div className="space-y-1">
               <Label className="font-medium">Domyślny tryb cen</Label>
@@ -227,7 +227,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="space-y-4">
         <h3 className="font-semibold">Potwierdzanie rezerwacji</h3>
 
-        <div className="p-4 rounded-lg border-border space-y-3 bg-white border-0">
+        <div className="p-4 rounded-lg border border-border/50 space-y-3 bg-white">
           <div className="space-y-1">
             <Label htmlFor="auto-confirm" className="font-medium">
               Automatyczne potwierdzanie
@@ -251,7 +251,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="space-y-4">
         <h3 className="font-semibold">Edycja przez klienta</h3>
 
-        <div className="p-4 rounded-lg border-border bg-white border-0">
+        <div className="p-4 rounded-lg border border-border/50 bg-white">
           <div className="space-y-3">
             <Label htmlFor="cutoff-hours" className="font-medium">
               Limit edycji rezerwacji
@@ -281,7 +281,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="space-y-4">
         <h3 className="font-semibold">Przypisywanie pracowników</h3>
 
-        <div className="p-4 rounded-lg border-border space-y-4 bg-white border-0">
+        <div className="p-4 rounded-lg border border-border/50 space-y-4 bg-white">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <Label htmlFor="assign-stations" className="font-medium">
@@ -324,10 +324,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
 
       {/* Push Notifications Section - moved to bottom */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Smartphone className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold">Powiadomienia push</h3>
-        </div>
+        <h3 className="font-semibold">Powiadomienia push</h3>
 
         {!isPushSupported ? (
           <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
@@ -348,7 +345,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
             </p>
           </div>
         ) : (
-          <div className="p-4 rounded-lg border-border space-y-3 bg-white border-0">
+          <div className="p-4 rounded-lg border border-border/50 space-y-3 bg-white">
             <div className="space-y-1">
               <Label className="font-medium">Powiadomienia na tym urządzeniu</Label>
               <p className="text-sm text-muted-foreground">
@@ -375,31 +372,33 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       {/* Protokoły */}
       <div className="space-y-4">
         <h3 className="font-semibold">Protokoły i pojazdy</h3>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label>Numer VIN pojazdu</Label>
-            <p className="text-sm text-muted-foreground">
-              Dodaj pole VIN przy pojazdach klienta i w protokole
-            </p>
+        <div className="p-4 rounded-lg border border-border/50 bg-white space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Numer VIN pojazdu</Label>
+              <p className="text-sm text-muted-foreground">
+                Dodaj pole VIN przy pojazdach klienta i w protokole
+              </p>
+            </div>
+            <Switch
+              checked={vinEnabled}
+              onCheckedChange={(v) => handleFeatureToggle('vehicle_vin', v, setVinEnabled)}
+            />
           </div>
-          <Switch
-            checked={vinEnabled}
-            onCheckedChange={(v) => handleFeatureToggle('vehicle_vin', v, setVinEnabled)}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label>Usługi i kwoty na protokole</Label>
-            <p className="text-sm text-muted-foreground">
-              Wyświetlaj listę usług z cenami na protokole (jak rachunek)
-            </p>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Usługi i kwoty na protokole</Label>
+              <p className="text-sm text-muted-foreground">
+                Wyświetlaj listę usług z cenami na protokole (jak rachunek)
+              </p>
+            </div>
+            <Switch
+              checked={protocolServicesEnabled}
+              onCheckedChange={(v) =>
+                handleFeatureToggle('protocol_services', v, setProtocolServicesEnabled)
+              }
+            />
           </div>
-          <Switch
-            checked={protocolServicesEnabled}
-            onCheckedChange={(v) =>
-              handleFeatureToggle('protocol_services', v, setProtocolServicesEnabled)
-            }
-          />
         </div>
       </div>
     </div>
