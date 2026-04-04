@@ -95,33 +95,19 @@ const SalesCustomersView = () => {
 
   const fetchLastOrderDates = useCallback(async () => {
     if (!instanceId) return;
-    const { data, error } = await (supabase.rpc('get_latest_order_dates', {
-      _instance_id: instanceId,
-    }) as any);
+    const { data, error } = await supabase
+      .from('sales_orders')
+      .select('customer_id, created_at')
+      .eq('instance_id', instanceId)
+      .order('created_at', { ascending: false });
     if (!error && data) {
       const map: Record<string, string> = {};
-      for (const row of data as { customer_id: string; last_order: string }[]) {
-        if (row.customer_id) {
-          map[row.customer_id] = row.last_order;
+      for (const row of data as { customer_id: string; created_at: string }[]) {
+        if (row.customer_id && !map[row.customer_id]) {
+          map[row.customer_id] = row.created_at;
         }
       }
       setLastOrderDates(map);
-    } else {
-      // Fallback: fetch last order per customer client-side
-      const { data: fallbackData } = await supabase
-        .from('sales_orders')
-        .select('customer_id, created_at')
-        .eq('instance_id', instanceId)
-        .order('created_at', { ascending: false });
-      if (fallbackData) {
-        const map: Record<string, string> = {};
-        for (const row of fallbackData as { customer_id: string; created_at: string }[]) {
-          if (row.customer_id && !map[row.customer_id]) {
-            map[row.customer_id] = row.created_at;
-          }
-        }
-        setLastOrderDates(map);
-      }
     }
   }, [instanceId]);
 
