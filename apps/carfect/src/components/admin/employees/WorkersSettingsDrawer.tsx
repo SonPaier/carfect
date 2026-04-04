@@ -87,6 +87,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
                 <div className="flex items-center justify-between">
                   <Label htmlFor="start-stop">Włączona rejestracja Start/Stop</Label>
                   <Switch
+                    size="sm"
                     id="start-stop"
                     checked={startStopEnabled}
                     onCheckedChange={setStartStopEnabled}
@@ -139,6 +140,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
                 <div className="flex items-center justify-between">
                   <Label htmlFor="overtime">Naliczanie nadgodzin</Label>
                   <Switch
+                    size="sm"
                     id="overtime"
                     checked={overtimeEnabled}
                     onCheckedChange={setOvertimeEnabled}

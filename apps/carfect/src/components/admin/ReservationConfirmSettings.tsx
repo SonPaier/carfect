@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Switch, Label, Input, Button, RadioGroup, RadioGroupItem } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -192,45 +192,37 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
   }
 
   return (
-    <div className="space-y-6 pb-24 md:pb-0">
-      {/* Pricing Mode */}
-      <div className="space-y-4">
-        <h3 className="font-semibold">Tryb cen</h3>
-
-        <div className="p-4 rounded-lg border border-border/50 bg-white">
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="font-medium">Domyślny tryb cen</Label>
-              <p className="text-sm text-muted-foreground">
-                Określa, czy ceny w aplikacji są wyświetlane i wprowadzane jako netto czy brutto
-              </p>
-            </div>
-            <RadioGroup
-              value={pricingMode}
-              onValueChange={(v) => handlePricingModeChange(v as 'netto' | 'brutto')}
-              className="flex gap-4"
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="brutto" id="pricing-brutto" />
-                <Label htmlFor="pricing-brutto">Brutto</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="netto" id="pricing-netto" />
-                <Label htmlFor="pricing-netto">Netto</Label>
-              </div>
-            </RadioGroup>
+    <div className="space-y-4 pb-24 md:pb-0">
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label className="font-medium">Domyślny tryb cen</Label>
+            <p className="text-sm text-muted-foreground">
+              Określa, czy ceny w aplikacji są wyświetlane i wprowadzane jako netto czy brutto
+            </p>
           </div>
+          <RadioGroup
+            value={pricingMode}
+            onValueChange={(v) => handlePricingModeChange(v as 'netto' | 'brutto')}
+            className="flex gap-4 shrink-0"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="brutto" id="pricing-brutto" />
+              <Label htmlFor="pricing-brutto">Brutto</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="netto" id="pricing-netto" />
+              <Label htmlFor="pricing-netto">Netto</Label>
+            </div>
+          </RadioGroup>
         </div>
       </div>
 
-      {/* Reservation Confirmation Settings - moved up */}
-      <div className="space-y-4">
-        <h3 className="font-semibold">Potwierdzanie rezerwacji</h3>
-
-        <div className="p-4 rounded-lg border border-border/50 space-y-3 bg-white">
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label htmlFor="auto-confirm" className="font-medium">
-              Automatyczne potwierdzanie
+              Automatyczne potwierdzanie rezerwacji
             </Label>
             <p className="text-sm text-muted-foreground">
               {autoConfirm
@@ -239,6 +231,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
             </p>
           </div>
           <Switch
+            size="sm"
             id="auto-confirm"
             checked={autoConfirm}
             onCheckedChange={handleToggleAutoConfirm}
@@ -247,158 +240,148 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         </div>
       </div>
 
-      {/* Customer Edit Cutoff Settings */}
-      <div className="space-y-4">
-        <h3 className="font-semibold">Edycja przez klienta</h3>
-
-        <div className="p-4 rounded-lg border border-border/50 bg-white">
-          <div className="space-y-3">
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
             <Label htmlFor="cutoff-hours" className="font-medium">
-              Limit edycji rezerwacji
+              Limit edycji rezerwacji przez klienta
             </Label>
             <p className="text-sm text-muted-foreground">
               Klient może zmienić lub anulować rezerwację do X godzin przed wizytą
             </p>
-            <div className="flex items-center gap-3">
-              <Input
-                id="cutoff-hours"
-                type="number"
-                min={0}
-                max={48}
-                value={customerEditCutoffHours}
-                onChange={(e) => handleCutoffHoursChange(parseInt(e.target.value) || 0)}
-                className="w-20"
-                disabled={saving}
-              />
-
-              <span className="text-sm text-muted-foreground">godzin przed wizytą</span>
-            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Input
+              id="cutoff-hours"
+              type="number"
+              min={0}
+              max={48}
+              value={customerEditCutoffHours}
+              onChange={(e) => handleCutoffHoursChange(parseInt(e.target.value) || 0)}
+              className="w-20"
+              disabled={saving}
+            />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">godzin</span>
           </div>
         </div>
       </div>
 
-      {/* Employee Assignment Settings */}
-      <div className="space-y-4">
-        <h3 className="font-semibold">Przypisywanie pracowników</h3>
-
-        <div className="p-4 rounded-lg border border-border/50 space-y-4 bg-white">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="assign-stations" className="font-medium">
-                Przypisanie do stanowisk
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Pozwala przypisać pracowników do konkretnych stanowisk
-              </p>
-            </div>
-            <Switch
-              id="assign-stations"
-              checked={instanceSettings?.assign_employees_to_stations ?? false}
-              onCheckedChange={(checked) =>
-                handleToggleEmployeeSetting('assign_employees_to_stations', checked)
-              }
-              disabled={savingEmployeeSettings || isSettingsLoading}
-            />
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="assign-stations" className="font-medium">
+              Przypisanie pracowników do stanowisk
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Pozwala przypisać pracowników do konkretnych stanowisk
+            </p>
           </div>
-
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="assign-reservations" className="font-medium">
-                Przypisanie do rezerwacji
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Pozwala przypisać pracowników wykonujących usługę do rezerwacji
-              </p>
-            </div>
-            <Switch
-              id="assign-reservations"
-              checked={instanceSettings?.assign_employees_to_reservations ?? false}
-              onCheckedChange={(checked) =>
-                handleToggleEmployeeSetting('assign_employees_to_reservations', checked)
-              }
-              disabled={savingEmployeeSettings || isSettingsLoading}
-            />
-          </div>
+          <Switch
+            size="sm"
+            id="assign-stations"
+            checked={instanceSettings?.assign_employees_to_stations ?? false}
+            onCheckedChange={(checked) =>
+              handleToggleEmployeeSetting('assign_employees_to_stations', checked)
+            }
+            disabled={savingEmployeeSettings || isSettingsLoading}
+          />
         </div>
       </div>
 
-      {/* Push Notifications Section - moved to bottom */}
-      <div className="space-y-4">
-        <h3 className="font-semibold">Powiadomienia push</h3>
-
-        {!isPushSupported ? (
-          <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
-            <p className="text-sm text-muted-foreground font-medium">
-              Powiadomienia push nie są wspierane
-            </p>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>
-                <strong>iPhone:</strong> Otwórz w Safari → Dodaj do ekranu głównego → Otwórz
-                zainstalowaną aplikację
-              </p>
-              <p>
-                <strong>Android:</strong> Chrome/Edge → Zainstaluj aplikację
-              </p>
-            </div>
-            <p className="text-xs text-muted-foreground/60 mt-2">
-              Chrome na iOS nie wspiera push (ograniczenie Apple)
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="assign-reservations" className="font-medium">
+              Przypisanie pracowników do rezerwacji
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Pozwala przypisać pracowników wykonujących usługę do rezerwacji
             </p>
           </div>
-        ) : (
-          <div className="p-4 rounded-lg border border-border/50 space-y-3 bg-white">
+          <Switch
+            size="sm"
+            id="assign-reservations"
+            checked={instanceSettings?.assign_employees_to_reservations ?? false}
+            onCheckedChange={(checked) =>
+              handleToggleEmployeeSetting('assign_employees_to_reservations', checked)
+            }
+            disabled={savingEmployeeSettings || isSettingsLoading}
+          />
+        </div>
+      </div>
+
+      {!isPushSupported ? (
+        <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
+          <p className="text-sm text-muted-foreground font-medium">
+            Powiadomienia push nie są wspierane
+          </p>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>
+              <strong>iPhone:</strong> Otwórz w Safari → Dodaj do ekranu głównego → Otwórz
+              zainstalowaną aplikację
+            </p>
+            <p>
+              <strong>Android:</strong> Chrome/Edge → Zainstaluj aplikację
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground/60 mt-2">
+            Chrome na iOS nie wspiera push (ograniczenie Apple)
+          </p>
+        </div>
+      ) : (
+        <div className="p-4 rounded-lg border border-border/50 bg-white">
+          <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <Label className="font-medium">Powiadomienia na tym urządzeniu</Label>
+              <Label className="font-medium">Powiadomienia push na tym urządzeniu</Label>
               <p className="text-sm text-muted-foreground">
                 {isSubscribed
                   ? 'Otrzymasz powiadomienia o nowych rezerwacjach'
                   : 'Włącz, aby otrzymywać powiadomienia o nowych rezerwacjach'}
               </p>
             </div>
-            {isSubscribed ? (
-              <div className="flex items-center gap-2 text-emerald-600">
-                <Check className="w-5 h-5" />
-                <span className="text-sm font-medium">{t('pushNotifications.enabled')}</span>
-              </div>
-            ) : (
-              <Button onClick={handleEnablePush} disabled={isPushLoading} size="sm">
-                {isPushLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {t('pushNotifications.enable')}
-              </Button>
-            )}
+            <Switch
+              size="sm"
+              checked={isSubscribed}
+              onCheckedChange={(checked) => {
+                if (checked && !isSubscribed) handleEnablePush();
+              }}
+              disabled={isPushLoading || isSubscribed}
+            />
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label>Numer VIN pojazdu</Label>
+            <p className="text-sm text-muted-foreground">
+              Dodaj pole VIN przy pojazdach klienta i w protokole
+            </p>
+          </div>
+          <Switch
+            size="sm"
+            checked={vinEnabled}
+            onCheckedChange={(v) => handleFeatureToggle('vehicle_vin', v, setVinEnabled)}
+          />
+        </div>
       </div>
 
-      {/* Protokoły */}
-      <div className="space-y-4">
-        <h3 className="font-semibold">Protokoły i pojazdy</h3>
-        <div className="p-4 rounded-lg border border-border/50 bg-white space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Numer VIN pojazdu</Label>
-              <p className="text-sm text-muted-foreground">
-                Dodaj pole VIN przy pojazdach klienta i w protokole
-              </p>
-            </div>
-            <Switch
-              checked={vinEnabled}
-              onCheckedChange={(v) => handleFeatureToggle('vehicle_vin', v, setVinEnabled)}
-            />
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label>Usługi i kwoty na protokole</Label>
+            <p className="text-sm text-muted-foreground">
+              Wyświetlaj listę usług z cenami na protokole (jak rachunek)
+            </p>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Usługi i kwoty na protokole</Label>
-              <p className="text-sm text-muted-foreground">
-                Wyświetlaj listę usług z cenami na protokole (jak rachunek)
-              </p>
-            </div>
-            <Switch
-              checked={protocolServicesEnabled}
-              onCheckedChange={(v) =>
-                handleFeatureToggle('protocol_services', v, setProtocolServicesEnabled)
-              }
-            />
-          </div>
+          <Switch
+            size="sm"
+            checked={protocolServicesEnabled}
+            onCheckedChange={(v) =>
+              handleFeatureToggle('protocol_services', v, setProtocolServicesEnabled)
+            }
+          />
         </div>
       </div>
     </div>

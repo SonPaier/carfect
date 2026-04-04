@@ -5,20 +5,8 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { Switch } from '@shared/ui';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -56,7 +44,8 @@ const SERVICE_TYPES = [
   { value: 'odswiezenie_powloki', label: 'Odświeżenie powłoki' },
 ];
 
-const DEFAULT_SMS_TEMPLATE = '{short_name}: Przypominamy o {service_type} dla {vehicle_info}. {paid_info}. Zadzwon: {reservation_phone}';
+const DEFAULT_SMS_TEMPLATE =
+  '{short_name}: Przypominamy o {service_type} dla {vehicle_info}. {paid_info}. Zadzwon: {reservation_phone}';
 
 export function AddReminderTemplateDialog({
   open,
@@ -103,7 +92,11 @@ export function AddReminderTemplateDialog({
     setItems([...items, { months: 12, is_paid: true, service_type: 'serwis' }]);
   };
 
-  const updateItem = (index: number, field: keyof ReminderTemplateItem, value: number | boolean | string) => {
+  const updateItem = (
+    index: number,
+    field: keyof ReminderTemplateItem,
+    value: number | boolean | string,
+  ) => {
     const updated = [...items];
     if (field === 'months') {
       updated[index] = { ...updated[index], months: value as number };
@@ -121,7 +114,7 @@ export function AddReminderTemplateDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       toast.error(t('reminderTemplates.nameRequired'));
       return;
@@ -141,7 +134,7 @@ export function AddReminderTemplateDialog({
 
     try {
       // Cast items to JSON-compatible format for Supabase
-      const itemsJson = items.map(item => ({
+      const itemsJson = items.map((item) => ({
         months: item.months,
         is_paid: item.is_paid,
         service_type: item.service_type,
@@ -161,15 +154,13 @@ export function AddReminderTemplateDialog({
         if (error) throw error;
         toast.success(t('reminderTemplates.updated'));
       } else {
-        const { error } = await supabase
-          .from('reminder_templates')
-          .insert({
-            instance_id: instanceId,
-            name: name.trim(),
-            description: description.trim() || null,
-            sms_template: smsTemplate.trim(),
-            items: itemsJson,
-          });
+        const { error } = await supabase.from('reminder_templates').insert({
+          instance_id: instanceId,
+          name: name.trim(),
+          description: description.trim() || null,
+          sms_template: smsTemplate.trim(),
+          items: itemsJson,
+        });
 
         if (error) throw error;
         toast.success(t('reminderTemplates.created'));
@@ -179,7 +170,9 @@ export function AddReminderTemplateDialog({
       onSaved();
     } catch (error) {
       console.error('Error saving template:', error);
-      toast.error(isEditMode ? t('reminderTemplates.updateError') : t('reminderTemplates.createError'));
+      toast.error(
+        isEditMode ? t('reminderTemplates.updateError') : t('reminderTemplates.createError'),
+      );
     } finally {
       setSaving(false);
     }
@@ -238,7 +231,13 @@ export function AddReminderTemplateDialog({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>{t('reminderTemplates.schedule')} *</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addItem} className="gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addItem}
+                  className="gap-1"
+                >
                   <Plus className="h-3 w-3" />
                   {t('reminderTemplates.addReminder')}
                 </Button>
@@ -276,7 +275,9 @@ export function AddReminderTemplateDialog({
                             min="1"
                             max="120"
                             value={item.months}
-                            onChange={(e) => updateItem(index, 'months', parseInt(e.target.value) || 1)}
+                            onChange={(e) =>
+                              updateItem(index, 'months', parseInt(e.target.value) || 1)
+                            }
                             className="h-9"
                           />
                         </div>
@@ -284,15 +285,15 @@ export function AddReminderTemplateDialog({
                         {/* Service Type */}
                         <div className="space-y-1">
                           <Label className="text-xs">{t('reminderTemplates.serviceType')}</Label>
-                          <Select 
-                            value={item.service_type} 
+                          <Select
+                            value={item.service_type}
                             onValueChange={(v) => updateItem(index, 'service_type', v)}
                           >
                             <SelectTrigger className="h-9">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {SERVICE_TYPES.map(type => (
+                              {SERVICE_TYPES.map((type) => (
                                 <SelectItem key={type.value} value={type.value}>
                                   {t(`reminderTemplates.serviceTypes.${type.value}`)}
                                 </SelectItem>
@@ -306,11 +307,14 @@ export function AddReminderTemplateDialog({
                           <Label className="text-xs">{t('reminderTemplates.isPaid')}</Label>
                           <div className="flex items-center h-9">
                             <Switch
+                              size="sm"
                               checked={item.is_paid}
                               onCheckedChange={(checked) => updateItem(index, 'is_paid', checked)}
                             />
                             <span className="ml-2 text-sm text-muted-foreground">
-                              {item.is_paid ? t('reminderTemplates.paid') : t('reminderTemplates.free')}
+                              {item.is_paid
+                                ? t('reminderTemplates.paid')
+                                : t('reminderTemplates.free')}
                             </span>
                           </div>
                         </div>

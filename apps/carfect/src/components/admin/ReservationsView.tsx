@@ -692,7 +692,7 @@ const ReservationsView = ({
   const showTabs = trainingsEnabled;
 
   return (
-    <div className="space-y-4 max-w-[1000px] mx-auto pb-28">
+    <div className="space-y-4 pb-28">
       {/* Title */}
       <h1 className="text-2xl font-medium text-foreground">Realizacje</h1>
 

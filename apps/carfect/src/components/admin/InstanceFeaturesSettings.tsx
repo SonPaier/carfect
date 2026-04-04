@@ -6,7 +6,15 @@ import { Label } from '@shared/ui';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { Input } from '@shared/ui';
-import { Building2, Car, ClipboardCheck, FileText, GraduationCap, Link2, TrendingUp } from 'lucide-react';
+import {
+  Building2,
+  Car,
+  ClipboardCheck,
+  FileText,
+  GraduationCap,
+  Link2,
+  TrendingUp,
+} from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInstancePlan } from '@/hooks/useInstancePlan';
@@ -56,20 +64,23 @@ const AVAILABLE_FEATURES: FeatureDefinition[] = [
     isPaid: false,
     hasParameters: true,
     parameterLabel: 'Numery telefonów (opcjonalne)',
-    parameterDescription: 'Wpisz numery telefonów (po przecinku), które otrzymają link. Puste = wszyscy.',
+    parameterDescription:
+      'Wpisz numery telefonów (po przecinku), które otrzymają link. Puste = wszyscy.',
     parameterPlaceholder: '+48501234567, +48600111222',
   },
   {
     key: 'hall_view',
     name: 'Widok Hali',
-    description: 'Uproszczony widok kalendarza dla pracowników hali z konfigurowalnymi stanowiskami',
+    description:
+      'Uproszczony widok kalendarza dla pracowników hali z konfigurowalnymi stanowiskami',
     icon: Building2,
     isPaid: false,
   },
   {
     key: 'vehicle_reception_protocol',
     name: 'Protokół przyjęcia pojazdu',
-    description: 'Formularz do dokumentowania stanu pojazdu przy przyjęciu z zaznaczaniem uszkodzeń na diagramie',
+    description:
+      'Formularz do dokumentowania stanu pojazdu przy przyjęciu z zaznaczaniem uszkodzeń na diagramie',
     icon: ClipboardCheck,
     isPaid: true,
   },
@@ -116,7 +127,7 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [parameterInputs, setParameterInputs] = useState<Record<string, string>>({});
-  
+
   // Get plan data to check which features are included
   const { includedFeatures, loading: planLoading } = useInstancePlan(instanceId);
 
@@ -130,17 +141,17 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
         .from('instance_features')
         .select('feature_key, enabled, parameters')
         .eq('instance_id', instanceId);
-      
+
       if (error) throw error;
-      
-      const mappedFeatures: InstanceFeature[] = (data || []).map(f => ({
+
+      const mappedFeatures: InstanceFeature[] = (data || []).map((f) => ({
         feature_key: f.feature_key,
         enabled: f.enabled,
         parameters: f.parameters as Record<string, unknown> | null,
       }));
-      
+
       setFeatures(mappedFeatures);
-      
+
       // Initialize parameter inputs from existing data
       const inputs: Record<string, string> = {};
       for (const f of mappedFeatures) {
@@ -159,25 +170,26 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
   const toggleFeature = async (featureKey: string, currentEnabled: boolean) => {
     setSaving(featureKey);
     try {
-      const currentFeature = features.find(f => f.feature_key === featureKey);
-      const { error } = await supabase
-        .from('instance_features')
-        .upsert({
+      const currentFeature = features.find((f) => f.feature_key === featureKey);
+      const { error } = await supabase.from('instance_features').upsert(
+        {
           instance_id: instanceId,
           feature_key: featureKey,
           enabled: !currentEnabled,
           parameters: currentFeature?.parameters || null,
-        }, {
+        },
+        {
           onConflict: 'instance_id,feature_key',
-        });
+        },
+      );
 
       if (error) throw error;
 
-      setFeatures(prev => {
-        const existing = prev.find(f => f.feature_key === featureKey);
+      setFeatures((prev) => {
+        const existing = prev.find((f) => f.feature_key === featureKey);
         if (existing) {
-          return prev.map(f =>
-            f.feature_key === featureKey ? { ...f, enabled: !currentEnabled } : f
+          return prev.map((f) =>
+            f.feature_key === featureKey ? { ...f, enabled: !currentEnabled } : f,
           );
         }
         return [...prev, { feature_key: featureKey, enabled: !currentEnabled, parameters: null }];
@@ -185,7 +197,7 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
 
       // Invalidate features cache
       queryClient.invalidateQueries({ queryKey: ['instance_features', instanceId] });
-      
+
       toast.success(`Funkcja ${!currentEnabled ? 'włączona' : 'wyłączona'}`);
     } catch (error) {
       console.error('Error toggling feature:', error);
@@ -201,38 +213,37 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
       const inputValue = parameterInputs[featureKey] || '';
       const phones = inputValue
         .split(',')
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
-      
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+
       const parameters = phones.length > 0 ? { phones } : null;
-      
-      const currentFeature = features.find(f => f.feature_key === featureKey);
-      const { error } = await supabase
-        .from('instance_features')
-        .upsert({
+
+      const currentFeature = features.find((f) => f.feature_key === featureKey);
+      const { error } = await supabase.from('instance_features').upsert(
+        {
           instance_id: instanceId,
           feature_key: featureKey,
           enabled: currentFeature?.enabled ?? false,
           parameters,
-        }, {
+        },
+        {
           onConflict: 'instance_id,feature_key',
-        });
-      
+        },
+      );
+
       if (error) throw error;
 
-      setFeatures(prev => {
-        const existing = prev.find(f => f.feature_key === featureKey);
+      setFeatures((prev) => {
+        const existing = prev.find((f) => f.feature_key === featureKey);
         if (existing) {
-          return prev.map(f => 
-            f.feature_key === featureKey ? { ...f, parameters } : f
-          );
+          return prev.map((f) => (f.feature_key === featureKey ? { ...f, parameters } : f));
         }
         return [...prev, { feature_key: featureKey, enabled: false, parameters }];
       });
 
       // Invalidate features cache
       queryClient.invalidateQueries({ queryKey: ['instance_features', instanceId] });
-      
+
       toast.success('Parametry zapisane');
     } catch (error) {
       console.error('Error saving parameters:', error);
@@ -243,11 +254,11 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
   };
 
   const isFeatureEnabled = (featureKey: string) => {
-    return features.find(f => f.feature_key === featureKey)?.enabled ?? false;
+    return features.find((f) => f.feature_key === featureKey)?.enabled ?? false;
   };
 
   const getFeatureParameters = (featureKey: string) => {
-    return features.find(f => f.feature_key === featureKey)?.parameters || null;
+    return features.find((f) => f.feature_key === featureKey)?.parameters || null;
   };
 
   const isFeatureFromPlan = (featureKey: string) => {
@@ -266,9 +277,7 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
     <Card>
       <CardHeader>
         <CardTitle>Funkcje dodatkowe</CardTitle>
-        <CardDescription>
-          Zarządzaj funkcjami dla tej instancji
-        </CardDescription>
+        <CardDescription>Zarządzaj funkcjami dla tej instancji</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {AVAILABLE_FEATURES.map((feature) => {
@@ -278,10 +287,7 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
           const isSaving = saving === feature.key;
 
           return (
-            <div 
-              key={feature.key}
-              className="p-4 border rounded-lg space-y-3"
-            >
+            <div key={feature.key} className="p-4 border rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -291,11 +297,16 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
                     <div className="flex items-center gap-2 flex-wrap">
                       <Label className="font-medium">{feature.name}</Label>
                       {isFromPlan ? (
-                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-green-50 text-green-700 border-green-200"
+                        >
                           W planie
                         </Badge>
                       ) : feature.isPaid ? (
-                        <Badge variant="secondary" className="text-xs">Dodatkowe</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Dodatkowe
+                        </Badge>
                       ) : null}
                     </div>
                     <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -304,30 +315,31 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
                 <div className="flex items-center gap-2">
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <Switch
+                    size="sm"
                     checked={isEnabled}
                     onCheckedChange={() => toggleFeature(feature.key, isEnabled)}
                     disabled={isSaving || isFromPlan}
                   />
                 </div>
               </div>
-              
+
               {feature.hasParameters && isEnabled && (
                 <div className="ml-14 space-y-2">
                   <div className="flex items-center gap-2">
                     <Input
                       value={parameterInputs[feature.key] || ''}
-                      onChange={(e) => setParameterInputs(prev => ({
-                        ...prev,
-                        [feature.key]: e.target.value
-                      }))}
+                      onChange={(e) =>
+                        setParameterInputs((prev) => ({
+                          ...prev,
+                          [feature.key]: e.target.value,
+                        }))
+                      }
                       placeholder={feature.parameterPlaceholder}
                       className="flex-1"
                       onBlur={() => saveParameters(feature.key)}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {feature.parameterDescription}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{feature.parameterDescription}</p>
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -125,18 +125,14 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">{t('workingHours.title')}</h3>
-        </div>
-        <Button onClick={handleSave} disabled={saving} size="sm">
-          {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          {t('common.save')}
-        </Button>
+      <div>
+        <h3 className="text-lg font-semibold">{t('workingHours.title')}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Ustaw godziny otwarcia dla każdego dnia tygodnia
+        </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {DAYS.map(({ key, labelKey }) => {
           const dayHours = workingHours[key];
           const isOpen = dayHours !== null;
@@ -149,6 +145,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
               <div className="flex items-center justify-between sm:justify-start gap-3 sm:w-36">
                 <div className="flex items-center gap-3">
                   <Switch
+                    size="sm"
                     checked={isOpen}
                     onCheckedChange={(checked) => handleDayToggle(key, checked)}
                   />
@@ -162,19 +159,19 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
               </div>
 
               {isOpen ? (
-                <div className="flex items-center gap-2 flex-1 pl-10 sm:pl-0">
+                <div className="flex items-center gap-2 flex-1 justify-end pl-10 sm:pl-0">
                   <Input
                     type="time"
                     value={dayHours?.open || '09:00'}
                     onChange={(e) => handleTimeChange(key, 'open', e.target.value)}
-                    className="flex-1 sm:w-24 sm:flex-none text-sm"
+                    className="w-24 text-sm"
                   />
                   <span className="text-muted-foreground">-</span>
                   <Input
                     type="time"
                     value={dayHours?.close || '19:00'}
                     onChange={(e) => handleTimeChange(key, 'close', e.target.value)}
-                    className="flex-1 sm:w-24 sm:flex-none text-sm"
+                    className="w-24 text-sm"
                   />
                 </div>
               ) : (
@@ -186,6 +183,11 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
           );
         })}
       </div>
+
+      <Button onClick={handleSave} disabled={saving} size="sm">
+        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        {t('common.save')}
+      </Button>
     </div>
   );
 };

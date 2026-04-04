@@ -199,6 +199,7 @@ export function TrainingDetailsDrawer({
                   </Badge>
                   {!readOnly && (
                     <Switch
+                      size="sm"
                       checked={isSoldOut}
                       onCheckedChange={handleToggleStatus}
                       disabled={togglingStatus}

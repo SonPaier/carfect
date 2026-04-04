@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GraduationCap, Plus, Pencil, Trash2, Loader2, GripVertical } from 'lucide-react';
+import { GraduationCap, Pencil, Trash2, Loader2, GripVertical } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -158,16 +158,12 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <GraduationCap className="w-5 h-5" />
-            Typy szkoleń
-          </h3>
+          <h3 className="text-lg font-semibold">Typy szkoleń</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Zarządzaj typami szkoleń dostępnymi w kalendarzu
           </p>
         </div>
         <Button onClick={openAdd} size="sm">
-          <Plus className="w-4 h-4 mr-2" />
           Dodaj typ
         </Button>
       </div>

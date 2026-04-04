@@ -674,6 +674,7 @@ const AddEditSalesCustomerDrawer = ({
         <div className="flex items-center justify-between">
           <Label htmlFor="discount-toggle">Rabat</Label>
           <Switch
+            size="sm"
             id="discount-toggle"
             checked={form.discountEnabled}
             onCheckedChange={(checked) => {
@@ -701,6 +702,7 @@ const AddEditSalesCustomerDrawer = ({
         <div className="flex items-center justify-between">
           <Label htmlFor="net-payer-toggle">Płatnik netto</Label>
           <Switch
+            size="sm"
             id="net-payer-toggle"
             checked={form.isNetPayer}
             onCheckedChange={(checked) => {

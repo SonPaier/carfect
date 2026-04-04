@@ -1438,10 +1438,10 @@ const AdminCalendar = ({
         <div className="flex items-center justify-between gap-2">
           {/* Navigation */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev} className="h-9 w-9">
+            <Button variant="outline" size="icon" onClick={handlePrev} className="h-8 w-8">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={handleNext} className="h-9 w-9">
+            <Button variant="outline" size="icon" onClick={handleNext} className="h-8 w-8">
               <ChevronRight className="w-4 h-4" />
             </Button>
             <Button

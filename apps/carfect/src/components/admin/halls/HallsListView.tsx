@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Loader2, Building2 } from 'lucide-react';
+import { Plus, Loader2, Building2, Warehouse } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -139,7 +139,7 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-medium">{t('halls.title')}</h1>
+          <h3 className="text-lg font-semibold">{t('halls.title')}</h3>
           <p className="text-muted-foreground text-sm mt-1">{t('halls.description')}</p>
         </div>
         {halls.length > 0 && <Button onClick={handleAddNew}>{t('halls.add')}</Button>}
@@ -147,13 +147,13 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
 
       {halls.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Building2 className="w-16 h-16 text-muted-foreground/30 mb-4" />
+          <Warehouse className="w-16 h-16 text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-medium">{t('halls.noHalls')}</h3>
           <p className="text-muted-foreground text-sm mt-1 max-w-sm">
             {t('halls.noHallsDescription')}
           </p>
           <Button onClick={handleAddNew} className="mt-4">
-            {t('halls.addFirst')}
+            Dodaj halę
           </Button>
         </div>
       ) : (

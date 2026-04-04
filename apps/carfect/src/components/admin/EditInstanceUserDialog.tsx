@@ -13,13 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,16 +43,24 @@ interface EditInstanceUserDialogProps {
 }
 
 const getEmployeeFeatures = (t: (key: string) => string) => [
-  { key: 'offers', label: t('editUser.features.offers'), description: t('editUser.features.offersDesc') },
-  { key: 'followup', label: t('editUser.features.followup'), description: t('editUser.features.followupDesc') },
+  {
+    key: 'offers',
+    label: t('editUser.features.offers'),
+    description: t('editUser.features.offersDesc'),
+  },
+  {
+    key: 'followup',
+    label: t('editUser.features.followup'),
+    description: t('editUser.features.followupDesc'),
+  },
 ];
 
-const EditInstanceUserDialog = ({ 
-  open, 
-  onOpenChange, 
-  instanceId, 
+const EditInstanceUserDialog = ({
+  open,
+  onOpenChange,
+  instanceId,
   user,
-  onSuccess 
+  onSuccess,
 }: EditInstanceUserDialogProps) => {
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
@@ -94,7 +96,7 @@ const EditInstanceUserDialog = ({
       if (error) throw error;
 
       const perms: Record<string, boolean> = {};
-      data?.forEach(p => {
+      data?.forEach((p) => {
         perms[p.feature_key] = p.enabled;
       });
       setPermissions(perms);
@@ -134,24 +136,25 @@ const EditInstanceUserDialog = ({
   };
 
   const handlePermissionChange = (featureKey: string, enabled: boolean) => {
-    setPermissions(prev => ({ ...prev, [featureKey]: enabled }));
+    setPermissions((prev) => ({ ...prev, [featureKey]: enabled }));
   };
 
   const savePermissions = async (userId: string) => {
     const employeeFeatures = getEmployeeFeatures(t);
     for (const feature of employeeFeatures) {
       const enabled = permissions[feature.key] || false;
-      
-      const { error } = await supabase
-        .from('employee_permissions')
-        .upsert({
+
+      const { error } = await supabase.from('employee_permissions').upsert(
+        {
           user_id: userId,
           instance_id: instanceId,
           feature_key: feature.key,
           enabled,
-        }, {
+        },
+        {
           onConflict: 'user_id,instance_id,feature_key',
-        });
+        },
+      );
 
       if (error) {
         console.error('Error saving permission:', error);
@@ -178,7 +181,9 @@ const EditInstanceUserDialog = ({
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error(t('auth.sessionExpired'));
         return;
@@ -222,7 +227,9 @@ const EditInstanceUserDialog = ({
   if (!user) return null;
 
   const employeeFeatures = getEmployeeFeatures(t);
-  const availableFeatures = employeeFeatures.filter(f => hasFeature(f.key as 'offers' | 'followup'));
+  const availableFeatures = employeeFeatures.filter((f) =>
+    hasFeature(f.key as 'offers' | 'followup'),
+  );
 
   return (
     <>
@@ -234,7 +241,7 @@ const EditInstanceUserDialog = ({
               {t('editUser.description', { username: user.username })}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">{t('editUser.username')}</Label>
@@ -255,8 +262,12 @@ const EditInstanceUserDialog = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">{t('editUser.roleEmployee')}</SelectItem>
-                  <SelectItem value="hall">{t('editUser.roleHall') || 'Widok Hali (Kiosk)'}</SelectItem>
-                  <SelectItem value="sales">{t('editUser.roleSales') || 'Sprzedaż (CRM)'}</SelectItem>
+                  <SelectItem value="hall">
+                    {t('editUser.roleHall') || 'Widok Hali (Kiosk)'}
+                  </SelectItem>
+                  <SelectItem value="sales">
+                    {t('editUser.roleSales') || 'Sprzedaż (CRM)'}
+                  </SelectItem>
                   <SelectItem value="admin">{t('editUser.roleAdmin')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -264,10 +275,10 @@ const EditInstanceUserDialog = ({
                 {role === 'admin'
                   ? t('editUser.adminHint')
                   : role === 'hall'
-                  ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
-                  : role === 'sales'
-                  ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
-                  : t('editUser.employeeHint')}
+                    ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
+                    : role === 'sales'
+                      ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
+                      : t('editUser.employeeHint')}
               </p>
             </div>
 
@@ -282,7 +293,7 @@ const EditInstanceUserDialog = ({
                 ) : (
                   <div className="space-y-3">
                     {availableFeatures.map((feature) => (
-                      <div 
+                      <div
                         key={feature.key}
                         className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50"
                       >
@@ -291,8 +302,11 @@ const EditInstanceUserDialog = ({
                           <p className="text-xs text-muted-foreground">{feature.description}</p>
                         </div>
                         <Switch
+                          size="sm"
                           checked={permissions[feature.key] || false}
-                          onCheckedChange={(checked) => handlePermissionChange(feature.key, checked)}
+                          onCheckedChange={(checked) =>
+                            handlePermissionChange(feature.key, checked)
+                          }
                         />
                       </div>
                     ))}
@@ -302,9 +316,9 @@ const EditInstanceUserDialog = ({
             )}
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
@@ -327,9 +341,7 @@ const EditInstanceUserDialog = ({
               {t('editUser.adminConfirm.title')}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>
-                {t('editUser.adminConfirm.description')}
-              </p>
+              <p>{t('editUser.adminConfirm.description')}</p>
               <ul className="list-disc list-inside text-left space-y-1 text-sm">
                 <li>{t('editUser.adminConfirm.access1')}</li>
                 <li>{t('editUser.adminConfirm.access2')}</li>
@@ -343,9 +355,7 @@ const EditInstanceUserDialog = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelAdminRole}>
-              {t('common.cancel')}
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={cancelAdminRole}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAdminRole}>
               {t('editUser.adminConfirm.confirm')}
             </AlertDialogAction>

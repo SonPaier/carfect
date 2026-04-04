@@ -4,7 +4,7 @@ import { Loader2, MessageSquare, Clock, History } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Label } from '@shared/ui';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -273,56 +273,55 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
         </div>
 
         {settings.map((setting) => (
-          <Card key={setting.type} className="bg-white">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-base font-medium">
-                    {getMessageTypeLabel(setting.type)}
-                  </CardTitle>
-                  <CardDescription>{getMessageTypeDescription(setting.type)}</CardDescription>
+          <div
+            key={setting.type}
+            className="bg-white border border-border/50 rounded-lg p-4 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="font-medium text-sm">{getMessageTypeLabel(setting.type)}</div>
+                <div className="text-xs text-muted-foreground">
+                  {getMessageTypeDescription(setting.type)}
                 </div>
-                <Switch
-                  checked={setting.enabled}
-                  onCheckedChange={(checked) => handleToggle(setting.type, checked)}
+              </div>
+              <Switch
+                size="sm"
+                checked={setting.enabled}
+                onCheckedChange={(checked) => handleToggle(setting.type, checked)}
+              />
+            </div>
+
+            {/* Time picker for 1-day reminder */}
+            {setting.type === 'reminder_1day' && setting.enabled && (
+              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                <div className="flex-1">
+                  <Label className="text-sm font-medium text-blue-900">{t('sms.sendAtTime')}</Label>
+                  <p className="text-xs text-blue-700 mt-0.5">{t('sms.sendAtTimeDescription')}</p>
+                </div>
+                <Input
+                  type="time"
+                  value={setting.sendAtTime || '19:00'}
+                  onChange={(e) => handleTimeChange(setting.type, e.target.value)}
+                  className="w-24 bg-white"
                 />
               </div>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-3">
-              {/* Time picker for 1-day reminder */}
-              {setting.type === 'reminder_1day' && setting.enabled && (
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium text-blue-900">
-                      {t('sms.sendAtTime')}
-                    </Label>
-                    <p className="text-xs text-blue-700 mt-0.5">{t('sms.sendAtTimeDescription')}</p>
-                  </div>
-                  <Input
-                    type="time"
-                    value={setting.sendAtTime || '19:00'}
-                    onChange={(e) => handleTimeChange(setting.type, e.target.value)}
-                    className="w-24 bg-white"
-                  />
-                </div>
-              )}
+            )}
 
-              <div className="bg-slate-100 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-start gap-2">
-                  <MessageSquare className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" />
-                  <div className="space-y-1">
-                    <Label className="text-xs text-slate-500 font-medium">
-                      {t('sms.exampleMessage')}
-                    </Label>
-                    <p className="text-sm text-slate-900 font-mono whitespace-pre-wrap">
-                      {getExampleMessage(setting.type)}
-                    </p>
-                  </div>
+            <div className="bg-slate-100 rounded-lg p-3 border border-slate-200">
+              <div className="flex items-start gap-2">
+                <MessageSquare className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" />
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500 font-medium">
+                    {t('sms.exampleMessage')}
+                  </Label>
+                  <p className="text-sm text-slate-900 font-mono whitespace-pre-wrap">
+                    {getExampleMessage(setting.type)}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 

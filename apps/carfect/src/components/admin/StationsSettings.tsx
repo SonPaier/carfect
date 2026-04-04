@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Loader2, Droplets, Check, X, GripVertical } from 'lucide-react';
+import { Edit2, Trash2, Loader2, Check, X, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -69,41 +69,32 @@ function SortableStationItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-border/50 rounded-lg bg-white dark:bg-card',
+        'flex items-center justify-between p-3 rounded-lg border border-border/50 bg-white hover:bg-hover transition-colors',
         isDragging && 'opacity-50 shadow-lg',
       )}
     >
-      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
-          className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground"
+          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground"
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="w-5 h-5" />
+          <GripVertical className="w-4 h-4" />
         </button>
-        <div
-          className={cn('p-2 rounded-lg shrink-0', !station.color && 'bg-primary/10')}
-          style={station.color ? { backgroundColor: station.color } : undefined}
-        >
-          <Droplets
-            className={cn('w-5 h-5', !station.color && 'text-primary')}
-            style={station.color ? { color: '#475569' } : undefined}
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <span className="font-medium text-sm sm:text-base">{station.name}</span>
+        <div className="min-w-0">
+          <div className="font-medium text-sm">{station.name}</div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 justify-end sm:justify-start pl-10 sm:pl-0 shrink-0">
-        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={onEdit}>
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
           <Edit2 className="w-4 h-4" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 sm:h-10 sm:w-10 text-destructive"
+          className="h-8 w-8 text-destructive hover:text-destructive"
           onClick={onDelete}
         >
           <Trash2 className="w-4 h-4" />
@@ -345,7 +336,6 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
           disabled={isAtLimit}
           title={isAtLimit ? 'Osiągnięto limit stanowisk' : undefined}
         >
-          <Plus className="w-4 h-4" />
           {t('stationsSettings.addStation')}
         </Button>
       </div>
@@ -357,7 +347,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={stations.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               {stations.map((station) => (
                 <SortableStationItem
                   key={station.id}

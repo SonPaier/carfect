@@ -279,6 +279,10 @@ const SettingsView = ({
       case 'company':
         return (
           <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Dane firmy</h3>
+              <p className="text-sm text-muted-foreground mt-1">Podstawowe informacje o firmie</p>
+            </div>
             {/* Logo */}
             <div className="space-y-3">
               <Label>{t('instanceSettings.logo')}</Label>
@@ -543,17 +547,45 @@ const SettingsView = ({
         return <TrainingTypesSettings instanceId={instanceId} />;
 
       case 'integrations':
-        return <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />;
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Integracje</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Połącz z systemami do fakturowania
+              </p>
+            </div>
+            <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />
+          </div>
+        );
 
       case 'app':
-        return <ReservationConfirmSettings instanceId={instanceId} />;
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Ustawienia aplikacji</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Dostosuj aplikację Carfect pod potrzeby Twojego studia
+              </p>
+            </div>
+            <ReservationConfirmSettings instanceId={instanceId} />
+          </div>
+        );
 
       case 'sms':
         return (
-          <SmsMessageSettings
-            instanceId={instanceId}
-            instanceName={instanceData?.short_name || instanceData?.name}
-          />
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Wiadomości SMS</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Zarządzaj treścią wiadomości SMS wysyłanych do klientów
+              </p>
+            </div>
+            <SmsMessageSettings
+              instanceId={instanceId}
+              instanceName={instanceData?.short_name || instanceData?.name}
+            />
+          </div>
         );
 
       case 'users':
@@ -605,7 +637,7 @@ const SettingsView = ({
         </Collapsible>
       ) : (
         <div className="w-56 shrink-0">
-          <div className="bg-white rounded-lg border border-border/50 overflow-hidden sticky top-4">
+          <div className="bg-white rounded-lg border border-border/50 overflow-hidden sticky top-0">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -624,9 +656,7 @@ const SettingsView = ({
           </div>
           {/* Version info — outside menu border */}
           {currentVersion && (
-            <p className="text-xs text-muted-foreground py-3 px-4">
-              Panel Admina v{currentVersion}
-            </p>
+            <p className="text-xs text-muted-foreground py-3 px-4">Wersja: {currentVersion}</p>
           )}
         </div>
       )}
