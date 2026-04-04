@@ -25,10 +25,11 @@ Deno.test("PHU-003: normalizePhone - +00 prefix → +", () => {
   assertEquals(result.isValid, true);
 });
 
-Deno.test("PHU-004: normalizePhone - trunk zero removal (+48 (0))", () => {
+Deno.test("PHU-004: normalizePhone - Polish numbers don't use trunk zero", () => {
+  // +48 (0) is not valid for Poland — trunk zero removal only applies to DE/AT/CH/IT
   const result = normalizePhone("+48 (0) 733 854 184");
-  assertEquals(result.phone, "+48733854184");
-  assertEquals(result.isValid, true);
+  assertEquals(result.phone, "+480733854184");
+  assertEquals(result.isValid, false);
 });
 
 Deno.test("PHU-005: normalizePhoneOrFallback - double prefix fix (+4848...)", () => {

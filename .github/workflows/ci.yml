@@ -16,6 +16,7 @@ jobs:
       carfect: ${{ steps.filter.outputs.carfect }}
       hiservice: ${{ steps.filter.outputs.hiservice }}
       shared: ${{ steps.filter.outputs.shared }}
+      edge-functions: ${{ steps.filter.outputs.edge-functions }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -28,6 +29,8 @@ jobs:
               - 'apps/hiservice/**'
             shared:
               - 'libs/**'
+            edge-functions:
+              - 'supabase/functions/**'
 
   lint:
     name: Lint
@@ -125,3 +128,16 @@ jobs:
           version: 10
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter hiservice test -- --run --reporter=default --reporter=github-actions
+
+  test-edge-functions:
+    name: Tests — Edge Functions (Deno)
+    needs: changes
+    if: needs.changes.outputs.edge-functions == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test supabase/functions/ --no-check --allow-env --allow-net --allow-read

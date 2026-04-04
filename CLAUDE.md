@@ -23,6 +23,14 @@
 - **Każdy nowy komponent MUSI mieć testy** — nie commituj komponentu bez pliku testowego
 - Testy pisz od razu razem z komponentem, nie "potem"
 
+## Edge Functions (Deno)
+
+- Każda nowa/zmieniona edge function MUSI mieć unit testy
+- Pliki testów: `*_test.ts` obok kodu (konwencja Deno, nie `.test.ts`)
+- Framework: `Deno.test` + `jsr:@std/assert` + `jsr:@std/testing/mock`
+- Pure logic wydzielaj do osobnych plików (np. `helpers.ts`) — `index.ts` odpala `serve()` i nie da się go importować w testach
+- CI: `deno test supabase/functions/ --no-check --allow-env --allow-net --allow-read`
+
 ## Skills
 
 Zainstaluj superpowers przed rozpoczęciem pracy:

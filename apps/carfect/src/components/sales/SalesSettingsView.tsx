@@ -63,10 +63,10 @@ const SalesSettingsView = () => {
       });
       const accounts = settingsData.bank_accounts;
       if (Array.isArray(accounts) && accounts.length > 0) {
-        const normalized = (accounts as any[]).map((a: any) =>
+        const normalized = accounts.map((a: unknown) =>
           typeof a === 'string'
             ? { name: '', number: a }
-            : { name: a.name || '', number: a.number || '' },
+            : { name: (a as { name?: string }).name || '', number: (a as { number?: string }).number || '' },
         );
         setBankAccounts(normalized);
       } else {
@@ -124,7 +124,7 @@ const SalesSettingsView = () => {
         .upsert(
           { instance_id: instanceId, logo_url: publicUrl, updated_at: new Date().toISOString() },
           { onConflict: 'instance_id' },
-        ) as any);
+        ) as unknown);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
       toast.success('Logo zostało załadowane');
@@ -152,7 +152,7 @@ const SalesSettingsView = () => {
         .upsert(
           { instance_id: instanceId, logo_url: null, updated_at: new Date().toISOString() },
           { onConflict: 'instance_id' },
-        ) as any);
+        ) as unknown);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
       toast.success('Logo zostało usunięte');
