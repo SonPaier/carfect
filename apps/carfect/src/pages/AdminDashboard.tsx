@@ -2897,7 +2897,7 @@ const AdminDashboard = () => {
           className={cn(
             'fixed lg:sticky top-0 inset-y-0 left-0 z-50 h-screen bg-card border-r border-border/50 transition-all duration-300 flex-shrink-0',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-            sidebarCollapsed || userRole === 'hall' ? 'lg:w-16' : 'w-64',
+            sidebarCollapsed || userRole === 'hall' ? 'lg:w-16' : 'w-52',
             protocolEditMode && 'hidden',
           )}
         >
@@ -2905,8 +2905,8 @@ const AdminDashboard = () => {
             {/* Logo */}
             <div
               className={cn(
-                'border-b border-border/50 flex items-center justify-between',
-                sidebarCollapsed || userRole === 'hall' ? 'p-3' : 'p-6',
+                'border-b border-border/50 flex items-center justify-center',
+                sidebarCollapsed || userRole === 'hall' ? 'p-3' : 'py-2 px-3',
               )}
             >
               <button
@@ -2929,16 +2929,9 @@ const AdminDashboard = () => {
                     className={cn(
                       'object-contain shrink-0 bg-white',
 
-                      sidebarCollapsed || userRole === 'hall' ? 'w-10 h-10' : 'w-[40%] max-h-10',
+                      sidebarCollapsed || userRole === 'hall' ? 'w-10 h-10' : 'max-h-8',
                     )}
                   />
-                )}
-                {!(sidebarCollapsed || userRole === 'hall') && (
-                  <div className="text-left min-w-0 flex-1 pr-2">
-                    <h1 className="font-bold text-foreground leading-tight">
-                      {instanceData?.name || 'Panel Admina'}
-                    </h1>
-                  </div>
                 )}
               </button>
             </div>
