@@ -181,7 +181,7 @@ describe('IntegrationsSettingsView', () => {
     await user.click(toggle);
 
     // Click save
-    await user.click(screen.getByText('Zapisz ustawienia'));
+    await user.click(screen.getByText('Zapisz'));
 
     await waitFor(() => {
       expect(supabaseClient.from).toHaveBeenCalledWith('invoicing_settings');
@@ -216,7 +216,7 @@ describe('IntegrationsSettingsView', () => {
     });
 
     // Save without toggling any provider
-    await user.click(screen.getByText('Zapisz ustawienia'));
+    await user.click(screen.getByText('Zapisz'));
 
     await waitFor(() => {
       expect(upsertChain.upsert).toHaveBeenCalled();
