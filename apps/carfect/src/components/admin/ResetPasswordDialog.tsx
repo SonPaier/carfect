@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import { Loader2, KeyRound, ShieldCheck } from 'lucide-react';
+import { Loader2, KeyRound } from 'lucide-react';
 import { Button } from '@shared/ui';
-import { Input } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -28,16 +25,13 @@ interface ResetPasswordDialogProps {
   user: InstanceUser | null;
 }
 
-const ResetPasswordDialog = ({ 
-  open, 
-  onOpenChange, 
-  instanceId, 
-  user 
+const ResetPasswordDialog = ({
+  open,
+  onOpenChange,
+  instanceId,
+  user
 }: ResetPasswordDialogProps) => {
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminPasswordError, setAdminPasswordError] = useState('');
   const {
     password,
     confirmPassword,
@@ -52,23 +46,15 @@ const ResetPasswordDialog = ({
 
   const handleReset = () => {
     reset();
-    setAdminPassword('');
-    setAdminPasswordError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAdminPasswordError('');
 
     if (!user) return;
 
-    if (!adminPassword) {
-      setAdminPasswordError(t('password.adminConfirm.required'));
-      return;
-    }
-
     if (!isFormValid) {
-      toast.error(t('password.req.minLength'));
+      toast.error('Hasło nie spełnia wymagań');
       return;
     }
 
@@ -87,7 +73,6 @@ const ResetPasswordDialog = ({
           instanceId,
           userId: user.id,
           password,
-          adminPassword,
         },
       });
 
@@ -96,10 +81,6 @@ const ResetPasswordDialog = ({
       }
 
       if (response.data?.error) {
-        if (response.data.error.includes('hasło administratora') || response.data.error.includes('admin password')) {
-          setAdminPasswordError(t('password.adminConfirm.invalid'));
-          return;
-        }
         throw new Error(response.data.error);
       }
 
@@ -131,41 +112,17 @@ const ResetPasswordDialog = ({
             Ustaw nowe hasło dla użytkownika <strong>{user.username}</strong>.
           </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Admin password confirmation */}
-          <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
-            <Label htmlFor="admin-password" className="flex items-center gap-1.5 text-sm font-medium">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              {t('password.adminConfirm.label')}
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {t('password.adminConfirm.hint')}
-            </p>
-            <Input
-              id="admin-password"
-              type="password"
-              value={adminPassword}
-              onChange={(e) => {
-                setAdminPassword(e.target.value);
-                if (adminPasswordError) setAdminPasswordError('');
-              }}
-              placeholder={t('password.adminConfirm.placeholder')}
-              autoComplete="current-password"
-              className={adminPasswordError ? 'border-destructive' : ''}
-            />
-            {adminPasswordError && (
-              <p className="text-sm text-destructive">{adminPasswordError}</p>
-            )}
-          </div>
 
-          {/* New password */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* New password — always visible, no eye toggle */}
           <PasswordInput
             label="Nowe hasło"
             value={password}
             onChange={setPassword}
             validation={validation}
             strength={strength}
+            showRequirements={false}
+            alwaysVisible
           />
 
           <PasswordConfirmInput
@@ -173,18 +130,29 @@ const ResetPasswordDialog = ({
             value={confirmPassword}
             onChange={setConfirmPassword}
             match={confirmMatch}
+            alwaysVisible
+          />
+
+          {/* Requirements checklist — below confirm */}
+          <PasswordInput
+            value={password}
+            onChange={setPassword}
+            validation={validation}
+            strength={strength}
+            showStrength={false}
+            showInput={false}
           />
 
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Anuluj
             </Button>
-            <Button type="submit" disabled={loading || !isFormValid || !adminPassword}>
+            <Button type="submit" disabled={loading || !isFormValid}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Resetuj hasło
             </Button>

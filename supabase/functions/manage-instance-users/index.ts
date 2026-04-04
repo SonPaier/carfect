@@ -419,27 +419,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Require admin's own password for identity confirmation
-        if (!adminPassword) {
-          return new Response(
-            JSON.stringify({ error: 'Wymagane potwierdzenie hasłem administratora' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-          );
-        }
-
-        // Verify admin's password by attempting sign-in
-        const { error: verifyError } = await supabase.auth.signInWithPassword({
-          email: caller.email!,
-          password: adminPassword,
-        });
-
-        if (verifyError) {
-          return new Response(JSON.stringify({ error: 'Nieprawidłowe hasło administratora' }), {
-            status: 403,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
         // Verify user belongs to this instance (check both profiles and user_roles)
         const { data: resetTargetProfile } = await supabase
           .from('profiles')
