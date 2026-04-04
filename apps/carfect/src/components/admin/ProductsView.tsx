@@ -358,7 +358,7 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
     <div>
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold">{t('products.title')}</h1>
+          <h1 className="text-2xl font-medium">{t('products.title')}</h1>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

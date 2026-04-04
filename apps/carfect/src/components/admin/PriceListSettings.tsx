@@ -77,11 +77,11 @@ interface PriceListSettingsProps {
 }
 
 // Inline editable price component
-const InlineEditablePrice = ({ 
-  service, 
-  onPriceUpdate 
-}: { 
-  service: Service; 
+const InlineEditablePrice = ({
+  service,
+  onPriceUpdate,
+}: {
+  service: Service;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -89,10 +89,14 @@ const InlineEditablePrice = ({
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const hasSizePrices = [service.price_small, service.price_medium, service.price_large].some(p => p != null && p > 0);
+  const hasSizePrices = [service.price_small, service.price_medium, service.price_large].some(
+    (p) => p != null && p > 0,
+  );
 
   const formatDisplayPrice = () => {
-    const prices = [service.price_small, service.price_medium, service.price_large].filter(p => p != null && p > 0) as number[];
+    const prices = [service.price_small, service.price_medium, service.price_large].filter(
+      (p) => p != null && p > 0,
+    ) as number[];
     if (prices.length > 0) {
       const minPrice = Math.min(...prices);
       return `od ${minPrice} zł`;
@@ -104,7 +108,7 @@ const InlineEditablePrice = ({
     e.stopPropagation();
     // Only allow inline edit for simple price_from (no size-based prices)
     if (hasSizePrices) return;
-    
+
     setEditValue(service.price_from?.toString() || '');
     setIsEditing(true);
   };
@@ -118,9 +122,9 @@ const InlineEditablePrice = ({
 
   const handleSave = async () => {
     if (saving) return;
-    
+
     const numValue = editValue.trim() === '' ? null : parseFloat(editValue.replace(',', '.'));
-    
+
     if (editValue.trim() !== '' && (isNaN(numValue!) || numValue! < 0)) {
       toast.error('Nieprawidłowa cena');
       setIsEditing(false);
@@ -155,7 +159,7 @@ const InlineEditablePrice = ({
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
@@ -173,13 +177,15 @@ const InlineEditablePrice = ({
   }
 
   return (
-    <span 
+    <span
       onClick={handleClick}
       className={cn(
-        "text-sm font-semibold text-primary whitespace-nowrap",
-        !hasSizePrices && "cursor-pointer hover:bg-primary/10 px-2 py-1 rounded -mx-2 -my-1"
+        'text-sm font-semibold text-primary whitespace-nowrap',
+        !hasSizePrices && 'cursor-pointer hover:bg-primary/10 px-2 py-1 rounded -mx-2 -my-1',
       )}
-      title={hasSizePrices ? 'Edytuj w dialogu (ceny zależne od rozmiaru)' : 'Kliknij aby edytować cenę'}
+      title={
+        hasSizePrices ? 'Edytuj w dialogu (ceny zależne od rozmiaru)' : 'Kliknij aby edytować cenę'
+      }
     >
       {formatDisplayPrice()}
     </span>
@@ -187,25 +193,21 @@ const InlineEditablePrice = ({
 };
 
 // Sortable service row component for desktop
-const SortableServiceRow = ({ 
-  service, 
+const SortableServiceRow = ({
+  service,
   onEdit,
   onPriceUpdate,
   disabled,
-}: { 
-  service: Service; 
-  onEdit: () => void; 
+}: {
+  service: Service;
+  onEdit: () => void;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
   disabled: boolean;
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: service.id, disabled });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: service.id,
+    disabled,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -220,19 +222,19 @@ const SortableServiceRow = ({
       {...listeners}
       onClick={onEdit}
       className={cn(
-        "flex items-center gap-2 px-4 py-3 border-b border-border/30 last:border-b-0 w-full text-left hover:bg-hover-strong transition-colors cursor-pointer",
-        !service.active && "opacity-50",
-        isDragging && "opacity-50 bg-muted z-50",
-        !disabled && "cursor-grab active:cursor-grabbing"
+        'flex items-center gap-2 px-4 py-3 border-b border-border/30 last:border-b-0 w-full text-left hover:bg-hover-strong transition-colors cursor-pointer',
+        !service.active && 'opacity-50',
+        isDragging && 'opacity-50 bg-muted z-50',
+        !disabled && 'cursor-grab active:cursor-grabbing',
       )}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className={cn("truncate", !service.active && "line-through")}>{service.name}</span>
+        <span className={cn('truncate', !service.active && 'line-through')}>{service.name}</span>
         {!service.active && (
           <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">nieaktywna</span>
         )}
       </div>
-      
+
       <div className="flex items-center gap-2 shrink-0">
         <InlineEditablePrice service={service} onPriceUpdate={onPriceUpdate} />
       </div>
@@ -241,13 +243,13 @@ const SortableServiceRow = ({
 };
 
 // Simple service row for mobile (no drag)
-const ServiceRow = ({ 
-  service, 
+const ServiceRow = ({
+  service,
   onEdit,
   onPriceUpdate,
-}: { 
-  service: Service; 
-  onEdit: () => void; 
+}: {
+  service: Service;
+  onEdit: () => void;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
 }) => {
   return (
@@ -255,22 +257,21 @@ const ServiceRow = ({
       type="button"
       onClick={onEdit}
       className={cn(
-        "flex items-center gap-2 px-4 py-2.5 border-b border-border/30 last:border-b-0 w-full text-left hover:bg-hover-strong transition-colors",
-        !service.active && "opacity-50"
+        'flex items-center gap-2 px-4 py-2.5 border-b border-border/30 last:border-b-0 w-full text-left hover:bg-hover-strong transition-colors',
+        !service.active && 'opacity-50',
       )}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className={cn(
-          "text-sm leading-tight line-clamp-2",
-          !service.active && "line-through"
-        )}>
+        <span
+          className={cn('text-sm leading-tight line-clamp-2', !service.active && 'line-through')}
+        >
           {service.name}
         </span>
         {!service.active && (
           <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">nieaktywna</span>
         )}
       </div>
-      
+
       <div className="flex items-center gap-2 shrink-0">
         <InlineEditablePrice service={service} onPriceUpdate={onPriceUpdate} />
       </div>
@@ -291,25 +292,27 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [defaultCategoryId, setDefaultCategoryId] = useState<string>('');
-  
+
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmData, setConfirmData] = useState<{ id: string; isDeactivate: boolean } | null>(null);
-  
+  const [confirmData, setConfirmData] = useState<{ id: string; isDeactivate: boolean } | null>(
+    null,
+  );
+
   // Category management dialog state
   const [categoryManagementOpen, setCategoryManagementOpen] = useState(false);
-  
+
   // State for forcing advanced section open after returning from reminder template creation
   const [forceAdvancedOpen, setForceAdvancedOpen] = useState(false);
-  
+
   // Handle template assignment from reminder creation (legacy support for assignTemplate)
   useEffect(() => {
     const assignTemplate = searchParams.get('assignTemplate');
     const serviceId = searchParams.get('serviceId');
-    
+
     if (assignTemplate && serviceId && services.length > 0) {
       // Find the service and update it with the new template
-      const service = services.find(s => s.id === serviceId);
+      const service = services.find((s) => s.id === serviceId);
       if (service) {
         (async () => {
           try {
@@ -317,10 +320,12 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
               .from('unified_services')
               .update({ reminder_template_id: assignTemplate })
               .eq('id', serviceId);
-            
+
             if (error) throw error;
-            
-            toast.success(t('reminderTemplates.templateAssigned', 'Szablon przypomnień przypisany'));
+
+            toast.success(
+              t('reminderTemplates.templateAssigned', 'Szablon przypomnień przypisany'),
+            );
             fetchServices();
           } catch (error) {
             console.error('Error assigning template:', error);
@@ -328,19 +333,19 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           }
         })();
       }
-      
+
       // Clear the URL params
       setSearchParams({});
     }
   }, [searchParams, services]);
-  
+
   // Handle return from reminder template creation with new params format
   useEffect(() => {
     const serviceId = searchParams.get('serviceId');
     const assignedReminderId = searchParams.get('assignedReminderId');
-    
+
     if (serviceId && assignedReminderId && services.length > 0 && !editDialogOpen) {
-      const service = services.find(s => s.id === serviceId);
+      const service = services.find((s) => s.id === serviceId);
       if (service) {
         (async () => {
           try {
@@ -349,34 +354,36 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
               .from('unified_services')
               .update({ reminder_template_id: assignedReminderId })
               .eq('id', serviceId);
-            
+
             if (error) throw error;
-            
+
             // 2. Refresh services to get updated data
             await fetchServices();
-            
+
             // 3. Find updated service and open dialog
             const { data: updatedService } = await supabase
               .from('unified_services')
               .select('*')
               .eq('id', serviceId)
               .single();
-            
+
             if (updatedService) {
               setEditingService(updatedService as Service);
               setDefaultCategoryId(updatedService.category_id || '');
               setForceAdvancedOpen(true);
               setEditDialogOpen(true);
             }
-            
-            toast.success(t('reminderTemplates.templateAssigned', 'Szablon przypomnień przypisany'));
+
+            toast.success(
+              t('reminderTemplates.templateAssigned', 'Szablon przypomnień przypisany'),
+            );
           } catch (error) {
             console.error('Error assigning template:', error);
             toast.error(t('reminderTemplates.assignError', 'Błąd podczas przypisywania szablonu'));
           }
         })();
       }
-      
+
       // Clear the URL params
       setSearchParams({});
     }
@@ -391,21 +398,21 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const fetchCategories = async () => {
     if (!instanceId) return;
-    
+
     try {
-      const { data, error } = await supabase
+      const { data, error } = (await supabase
         .from('unified_categories')
         .select('*')
         .eq('instance_id', instanceId)
         .eq('category_type', 'both')
         .eq('active', true)
-        .order('sort_order') as unknown as { data: ServiceCategory[] | null; error: Error | null };
-      
+        .order('sort_order')) as unknown as { data: ServiceCategory[] | null; error: Error | null };
+
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
@@ -415,16 +422,16 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
 
   const fetchServices = async () => {
     if (!instanceId) return;
-    
+
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = (await supabase
         .from('unified_services')
         .select('*')
         .eq('instance_id', instanceId)
         .eq('service_type', 'both')
-        .order('sort_order') as unknown as { data: Service[] | null; error: Error | null };
-      
+        .order('sort_order')) as unknown as { data: Service[] | null; error: Error | null };
+
       if (error) throw error;
       setServices(data || []);
     } catch (error) {
@@ -448,9 +455,10 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
     let result = services;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      result = result.filter(s =>
-        s.name.toLowerCase().includes(query) ||
-        (s.shortcut && s.shortcut.toLowerCase().includes(query))
+      result = result.filter(
+        (s) =>
+          s.name.toLowerCase().includes(query) ||
+          (s.shortcut && s.shortcut.toLowerCase().includes(query)),
       );
     }
     return [...result].sort((a, b) => {
@@ -461,9 +469,11 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
 
   const getServicesByCategory = (categoryId: string | null) => {
     if (categoryId === null) {
-      return filteredServices.filter(s => !s.category_id || !categories.some(c => c.id === s.category_id));
+      return filteredServices.filter(
+        (s) => !s.category_id || !categories.some((c) => c.id === s.category_id),
+      );
     }
-    return filteredServices.filter(s => s.category_id === categoryId);
+    return filteredServices.filter((s) => s.category_id === categoryId);
   };
 
   const openEditDialog = (service?: Service, preselectedCategoryId?: string) => {
@@ -480,13 +490,13 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
   const handleDeleteClick = async (serviceId: string) => {
     // Close the edit dialog before showing confirm
     setEditDialogOpen(false);
-    
+
     try {
       const { count } = await supabase
         .from('reservations')
         .select('id', { count: 'exact', head: true })
         .or(`service_id.eq.${serviceId},service_ids.cs.["${serviceId}"]`);
-      
+
       const hasReservations = (count || 0) > 0;
       setConfirmData({ id: serviceId, isDeactivate: hasReservations });
       setConfirmOpen(true);
@@ -498,26 +508,23 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
 
   const handleConfirmDelete = async () => {
     if (!confirmData) return;
-    
+
     try {
       if (confirmData.isDeactivate) {
         const { error } = await supabase
           .from('unified_services')
           .update({ active: false })
           .eq('id', confirmData.id);
-        
+
         if (error) throw error;
         toast.success(t('priceList.serviceDeactivated'));
       } else {
-        const { error } = await supabase
-          .from('unified_services')
-          .delete()
-          .eq('id', confirmData.id);
-        
+        const { error } = await supabase.from('unified_services').delete().eq('id', confirmData.id);
+
         if (error) throw error;
         toast.success(t('priceList.serviceDeleted'));
       }
-      
+
       fetchServices();
     } catch (error) {
       console.error('Error deleting service:', error);
@@ -528,37 +535,38 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
   // Handle drag end for reordering services
   const handleDragEnd = async (event: DragEndEvent, categoryId: string | null) => {
     const { active, over } = event;
-    
+
     if (!over || active.id === over.id) return;
-    
-    const categoryServices = categoryId === null 
-      ? services.filter(s => !s.category_id || !categories.some(c => c.id === s.category_id))
-      : services.filter(s => s.category_id === categoryId);
-    
-    const oldIndex = categoryServices.findIndex(s => s.id === active.id);
-    const newIndex = categoryServices.findIndex(s => s.id === over.id);
-    
+
+    const categoryServices =
+      categoryId === null
+        ? services.filter((s) => !s.category_id || !categories.some((c) => c.id === s.category_id))
+        : services.filter((s) => s.category_id === categoryId);
+
+    const oldIndex = categoryServices.findIndex((s) => s.id === active.id);
+    const newIndex = categoryServices.findIndex((s) => s.id === over.id);
+
     if (oldIndex === -1 || newIndex === -1) return;
-    
+
     const reorderedCategoryServices = arrayMove(categoryServices, oldIndex, newIndex);
-    
+
     // Update local state immediately for smooth UX
-    const newServices = services.map(s => {
-      const reorderedIdx = reorderedCategoryServices.findIndex(rs => rs.id === s.id);
+    const newServices = services.map((s) => {
+      const reorderedIdx = reorderedCategoryServices.findIndex((rs) => rs.id === s.id);
       if (reorderedIdx !== -1) {
         return { ...s, sort_order: reorderedIdx };
       }
       return s;
     });
     setServices(newServices);
-    
+
     // Persist to database
     try {
       const updates = reorderedCategoryServices.map((s, idx) => ({
         id: s.id,
         sort_order: idx,
       }));
-      
+
       for (const update of updates) {
         await supabase
           .from('unified_services')
@@ -573,34 +581,37 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
   };
 
   // Inline price update handler
-  const handleInlinePriceUpdate = useCallback(async (serviceId: string, newPrice: number | null) => {
-    // Optimistic update
-    setServices(prev => prev.map(s => 
-      s.id === serviceId ? { ...s, price_from: newPrice } : s
-    ));
+  const handleInlinePriceUpdate = useCallback(
+    async (serviceId: string, newPrice: number | null) => {
+      // Optimistic update
+      setServices((prev) =>
+        prev.map((s) => (s.id === serviceId ? { ...s, price_from: newPrice } : s)),
+      );
 
-    try {
-      const { error } = await supabase
-        .from('unified_services')
-        .update({ price_from: newPrice })
-        .eq('id', serviceId);
-      
-      if (error) throw error;
-      toast.success('Cena zaktualizowana');
-    } catch (error) {
-      console.error('Error updating price:', error);
-      toast.error('Błąd aktualizacji ceny');
-      // Revert on error
-      fetchServices();
-      throw error;
-    }
-  }, []);
+      try {
+        const { error } = await supabase
+          .from('unified_services')
+          .update({ price_from: newPrice })
+          .eq('id', serviceId);
+
+        if (error) throw error;
+        toast.success('Cena zaktualizowana');
+      } catch (error) {
+        console.error('Error updating price:', error);
+        toast.error('Błąd aktualizacji ceny');
+        // Revert on error
+        fetchServices();
+        throw error;
+      }
+    },
+    [],
+  );
 
   // Compute service counts per category for the management dialog
   const serviceCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    categories.forEach(cat => {
-      counts[cat.id] = services.filter(s => s.category_id === cat.id).length;
+    categories.forEach((cat) => {
+      counts[cat.id] = services.filter((s) => s.category_id === cat.id).length;
     });
     return counts;
   }, [categories, services]);
@@ -621,31 +632,33 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       {/* Header with buttons inline on desktop */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Usługi</h2>
+          <h2 className="text-2xl font-medium">Usługi</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Usługi będą widoczne do wyboru w rezerwacjach i przy tworzeniu szablonów ofert. Kategorie są opcjonalne.
+            Usługi będą widoczne do wyboru w rezerwacjach i przy tworzeniu szablonów ofert.
+            Kategorie są opcjonalne.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <Button 
+          <Button
             onClick={() => {
               const isAdminPath = location.pathname.startsWith('/admin');
               navigate(isAdminPath ? '/admin/reminders' : '/reminders');
-            }} 
-            variant="outline" 
+            }}
+            variant="outline"
             className="gap-2 bg-white"
           >
             <Bell className="w-4 h-4" />
             {t('reminders.title')}
           </Button>
-          <Button onClick={() => setCategoryManagementOpen(true)} variant="outline" className="gap-2 bg-white">
+          <Button
+            onClick={() => setCategoryManagementOpen(true)}
+            variant="outline"
+            className="gap-2 bg-white"
+          >
             <Settings2 className="w-4 h-4" />
             {t('priceList.manageCategories')}
           </Button>
-          <Button onClick={() => openEditDialog()} className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t('priceList.addService')}
-          </Button>
+          <Button onClick={() => openEditDialog()}>{t('priceList.addService')}</Button>
         </div>
       </div>
 
@@ -665,13 +678,18 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
         <div>
           <div className="flex items-center justify-between py-3">
             <h3 className="font-semibold text-foreground uppercase">{t('priceList.noCategory')}</h3>
-            <Button variant="ghost" size="icon" onClick={() => openEditDialog(undefined, '')} className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openEditDialog(undefined, '')}
+              className="h-8 w-8"
+            >
               <Plus className="w-4 h-4" />
             </Button>
           </div>
-          <div className="bg-white rounded-lg">
+          <div className="bg-white rounded-lg border border-border/50">
             {isMobile ? (
-              uncategorizedServices.map(service => (
+              uncategorizedServices.map((service) => (
                 <ServiceRow
                   key={service.id}
                   service={service}
@@ -685,8 +703,11 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
                 collisionDetection={closestCenter}
                 onDragEnd={(e) => handleDragEnd(e, null)}
               >
-                <SortableContext items={uncategorizedServices.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                  {uncategorizedServices.map(service => (
+                <SortableContext
+                  items={uncategorizedServices.map((s) => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {uncategorizedServices.map((service) => (
                     <SortableServiceRow
                       key={service.id}
                       service={service}
@@ -703,7 +724,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       )}
 
       {/* Categories */}
-      {categories.map(category => {
+      {categories.map((category) => {
         const categoryServices = getServicesByCategory(category.id);
 
         // Hide category when searching and no matching services
@@ -715,17 +736,22 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           <div key={category.id}>
             <div className="flex items-center justify-between py-3">
               <h3 className="font-semibold text-foreground uppercase">{category.name}</h3>
-              <Button variant="ghost" size="icon" onClick={() => openEditDialog(undefined, category.id)} className="h-8 w-8">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => openEditDialog(undefined, category.id)}
+                className="h-8 w-8"
+              >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-            <div className="bg-white rounded-lg">
+            <div className="bg-white rounded-lg border border-border/50">
               {categoryServices.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-4 text-center">
                   {t('priceList.noServicesInCategory')}
                 </p>
               ) : isMobile ? (
-                categoryServices.map(service => (
+                categoryServices.map((service) => (
                   <ServiceRow
                     key={service.id}
                     service={service}
@@ -739,8 +765,11 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
                   collisionDetection={closestCenter}
                   onDragEnd={(e) => handleDragEnd(e, category.id)}
                 >
-                  <SortableContext items={categoryServices.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                    {categoryServices.map(service => (
+                  <SortableContext
+                    items={categoryServices.map((s) => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {categoryServices.map((service) => (
                       <SortableServiceRow
                         key={service.id}
                         service={service}
@@ -756,7 +785,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           </div>
         );
       })}
-      
+
       {/* Empty state */}
       {categories.length === 0 && uncategorizedServices.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
@@ -775,33 +804,47 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           }
         }}
         instanceId={instanceId || ''}
-        service={editingService ? {
-          id: editingService.id,
-          name: editingService.name,
-          short_name: (editingService.short_name ?? editingService.shortcut) || null,
-          description: editingService.description,
-          price_from: editingService.price_from,
-          price_small: editingService.price_small,
-          price_medium: editingService.price_medium,
-          price_large: editingService.price_large,
-          prices_are_net: editingService.prices_are_net ?? true,
-          duration_minutes: editingService.duration_minutes,
-          duration_small: editingService.duration_small,
-          duration_medium: editingService.duration_medium,
-          duration_large: editingService.duration_large,
-          category_id: editingService.category_id,
-          service_type: (editingService.service_type || 'both') as 'both' | 'offer' | 'reservation',
-          visibility: (editingService.visibility ?? 'everywhere') as 'everywhere' | 'only_reservations' | 'only_offers',
-          reminder_template_id: editingService.reminder_template_id || null,
-          is_popular: editingService.is_popular ?? false,
-          metadata: editingService.metadata ?? null,
-        } : null}
+        service={
+          editingService
+            ? {
+                id: editingService.id,
+                name: editingService.name,
+                short_name: (editingService.short_name ?? editingService.shortcut) || null,
+                description: editingService.description,
+                price_from: editingService.price_from,
+                price_small: editingService.price_small,
+                price_medium: editingService.price_medium,
+                price_large: editingService.price_large,
+                prices_are_net: editingService.prices_are_net ?? true,
+                duration_minutes: editingService.duration_minutes,
+                duration_small: editingService.duration_small,
+                duration_medium: editingService.duration_medium,
+                duration_large: editingService.duration_large,
+                category_id: editingService.category_id,
+                service_type: (editingService.service_type || 'both') as
+                  | 'both'
+                  | 'offer'
+                  | 'reservation',
+                visibility: (editingService.visibility ?? 'everywhere') as
+                  | 'everywhere'
+                  | 'only_reservations'
+                  | 'only_offers',
+                reminder_template_id: editingService.reminder_template_id || null,
+                is_popular: editingService.is_popular ?? false,
+                metadata: editingService.metadata ?? null,
+              }
+            : null
+        }
         categories={categories}
         onSaved={fetchServices}
         defaultCategoryId={defaultCategoryId}
         totalServicesCount={services.length}
         onDelete={editingService ? () => handleDeleteClick(editingService.id) : undefined}
-        existingServices={services.map(s => ({ id: s.id, name: s.name, short_name: (s.short_name ?? s.shortcut) || null }))}
+        existingServices={services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          short_name: (s.short_name ?? s.shortcut) || null,
+        }))}
         forceAdvancedOpen={forceAdvancedOpen}
       />
 
@@ -818,15 +861,21 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title={confirmData?.isDeactivate 
-          ? t('priceList.confirmDeactivateTitle', 'Dezaktywować usługę?')
-          : t('priceList.confirmDeleteTitle', 'Usunąć usługę?')
+        title={
+          confirmData?.isDeactivate
+            ? t('priceList.confirmDeactivateTitle', 'Dezaktywować usługę?')
+            : t('priceList.confirmDeleteTitle', 'Usunąć usługę?')
         }
-        description={confirmData?.isDeactivate 
-          ? t('priceList.confirmDeactivate')
-          : t('priceList.confirmDelete')
+        description={
+          confirmData?.isDeactivate
+            ? t('priceList.confirmDeactivate')
+            : t('priceList.confirmDelete')
         }
-        confirmLabel={confirmData?.isDeactivate ? t('common.deactivate', 'Dezaktywuj') : t('common.delete', 'Usuń')}
+        confirmLabel={
+          confirmData?.isDeactivate
+            ? t('common.deactivate', 'Dezaktywuj')
+            : t('common.delete', 'Usuń')
+        }
         onConfirm={handleConfirmDelete}
         variant="destructive"
       />

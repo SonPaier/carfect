@@ -23,7 +23,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
 
   const startLiveRecognition = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
       toast.error('Przeglądarka nie wspiera rozpoznawania mowy. Użyj Chrome lub Edge.');
       return;
@@ -71,7 +71,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
     recognition.onend = () => {
       recognitionRef.current = null;
       setIsRecording(false);
-      
+
       const rawTranscript = transcriptRef.current;
       if (rawTranscript) {
         onTranscript(rawTranscript);
@@ -100,11 +100,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
       className={`shrink-0 ${isRecording ? 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30' : 'bg-white'}`}
       title={isRecording ? 'Zatrzymaj nagrywanie' : 'Nagraj notatkę głosową'}
     >
-      {isRecording ? (
-        <MicOff className="w-4 h-4" />
-      ) : (
-        <Mic className="w-4 h-4" />
-      )}
+      {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
     </Button>
   );
 };

@@ -10,21 +10,41 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@shared/ui';
 import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import { Textarea } from '@shared/ui';
-import { CalendarIcon, Loader2, PenLine, Mail, Settings, ArrowLeft, Camera, AlertTriangle, Car } from 'lucide-react';
+import {
+  CalendarIcon,
+  Loader2,
+  PenLine,
+  Mail,
+  Settings,
+  ArrowLeft,
+  Camera,
+  AlertTriangle,
+  Car,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { normalizePhone } from '@shared/utils';
-import { VehicleDiagram, type BodyType, type VehicleView, type DamagePoint } from './VehicleDiagram';
+import {
+  VehicleDiagram,
+  type BodyType,
+  type VehicleView,
+  type DamagePoint,
+} from './VehicleDiagram';
 import { DamagePointDrawer } from './DamagePointDrawer';
 import { PhotoFullscreenDialog } from './PhotoFullscreenDialog';
 import { OfferSearchAutocomplete } from './OfferSearchAutocomplete';
 import { SignatureDialog } from './SignatureDialog';
 import { SendProtocolEmailDialog } from './SendProtocolEmailDialog';
 import { ProtocolPhotosUploader } from './ProtocolPhotosUploader';
-import ClientSearchAutocomplete, { type ClientSearchValue } from '@/components/ui/client-search-autocomplete';
-import { CarSearchAutocomplete, type CarSearchValue } from '@/components/ui/car-search-autocomplete';
+import ClientSearchAutocomplete, {
+  type ClientSearchValue,
+} from '@/components/ui/client-search-autocomplete';
+import {
+  CarSearchAutocomplete,
+  type CarSearchValue,
+} from '@/components/ui/car-search-autocomplete';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,7 +95,12 @@ const DAMAGE_TYPE_LABELS: Record<string, string> = {
   custom: 'inne',
 };
 
-export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSettings }: CreateProtocolFormProps) => {
+export const CreateProtocolForm = ({
+  instanceId,
+  protocolId,
+  onBack,
+  onOpenSettings,
+}: CreateProtocolFormProps) => {
   const [searchParams] = useSearchParams();
   const { hasFeature } = useInstanceFeatures(instanceId);
   const showVin = hasFeature('vehicle_vin');
@@ -86,17 +111,17 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   const [saving, setSaving] = useState(false);
   const [savingAndSending, setSavingAndSending] = useState(false);
   const isEditMode = !!protocolId;
-  
+
   // URL params for reservation pre-fill
   const reservationIdFromUrl = searchParams.get('reservationId');
   const customerNameFromUrl = searchParams.get('customerName');
   const customerPhoneFromUrl = searchParams.get('customerPhone');
   const vehiclePlateFromUrl = searchParams.get('vehiclePlate');
   const emailFromUrl = searchParams.get('email');
-  
+
   // Suppress auto-search when pre-filled from reservation URL
   const hasPrefilledData = !!(customerNameFromUrl || customerPhoneFromUrl);
-  
+
   // Refs for scroll-to-error
   const customerNameRef = useRef<HTMLDivElement>(null);
   const customerEmailRef = useRef<HTMLInputElement>(null);
@@ -114,7 +139,9 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   const [reservationId, setReservationId] = useState<string | null>(reservationIdFromUrl);
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [vin, setVin] = useState('');
-  const [serviceItems, setServiceItems] = useState<Array<{ name: string; quantity: number; unit_price: number }>>([]);
+  const [serviceItems, setServiceItems] = useState<
+    Array<{ name: string; quantity: number; unit_price: number }>
+  >([]);
   const [fuelLevel, setFuelLevel] = useState('');
   const [odometerReading, setOdometerReading] = useState('');
   const [bodyType, setBodyType] = useState<BodyType>('sedan');
@@ -122,17 +149,21 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   const [receivedBy, setReceivedBy] = useState('');
   const [notes, setNotes] = useState('');
   const [protocolType, setProtocolType] = useState<ProtocolType>('reception');
-  
+
   // Protocol photos (general, not per-damage)
   const [protocolPhotoUrls, setProtocolPhotoUrls] = useState<string[]>([]);
-  
+
   // Collapsible sections
   const [showPhotosSection, setShowPhotosSection] = useState(false);
   const [showDamageSection, setShowDamageSection] = useState(false);
 
   // Damage points
   const [damagePoints, setDamagePoints] = useState<DamagePoint[]>([]);
-  const [pendingPoint, setPendingPoint] = useState<{ view: VehicleView; x_percent: number; y_percent: number } | null>(null);
+  const [pendingPoint, setPendingPoint] = useState<{
+    view: VehicleView;
+    x_percent: number;
+    y_percent: number;
+  } | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<DamagePoint | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
@@ -151,10 +182,10 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   // Email dialog
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [savedProtocolIdForEmail, setSavedProtocolIdForEmail] = useState<string | null>(null);
-  
+
   // Date picker
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  
+
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<{ customerName?: boolean }>({});
   // Unsaved changes dialog
@@ -181,14 +212,18 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
   // Generate notes from damage points (exclude unsaved points with isNew flag)
   const generatedNotes = useMemo(() => {
-    const savedPoints = damagePoints.filter(p => !p.isNew);
+    const savedPoints = damagePoints.filter((p) => !p.isNew);
     if (savedPoints.length === 0) return '';
-    return savedPoints.map(point => {
-      const viewLabel = VIEW_LABELS[point.view];
-      const damageLabel = point.damage_type ? DAMAGE_TYPE_LABELS[point.damage_type] || point.damage_type : 'usterka';
-      const customNote = point.custom_note ? ` - ${point.custom_note}` : '';
-      return `- ${viewLabel}: ${damageLabel}${customNote}`;
-    }).join('\n');
+    return savedPoints
+      .map((point) => {
+        const viewLabel = VIEW_LABELS[point.view];
+        const damageLabel = point.damage_type
+          ? DAMAGE_TYPE_LABELS[point.damage_type] || point.damage_type
+          : 'usterka';
+        const customNote = point.custom_note ? ` - ${point.custom_note}` : '';
+        return `- ${viewLabel}: ${damageLabel}${customNote}`;
+      })
+      .join('\n');
   }, [damagePoints]);
 
   // Check if form is dirty (has unsaved changes)
@@ -206,13 +241,23 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
       protocolPhotoUrls.length !== initial.protocolPhotoUrls.length ||
       uploadedPhotosInSession.length > 0
     );
-  }, [customerName, customerEmail, vehicleModel, registrationNumber, damagePoints.length, customerSignature, notes, protocolPhotoUrls.length, uploadedPhotosInSession.length]);
+  }, [
+    customerName,
+    customerEmail,
+    vehicleModel,
+    registrationNumber,
+    damagePoints.length,
+    customerSignature,
+    notes,
+    protocolPhotoUrls.length,
+    uploadedPhotosInSession.length,
+  ]);
 
   // Auto-generate notes from damage points ONLY during creation (not edit mode) and ONLY if notes are empty
   useEffect(() => {
     // Skip auto-generation entirely in edit mode
     if (isEditMode) return;
-    
+
     // Only set notes if field is completely empty
     setNotes((current) => {
       if (current.trim() === '') {
@@ -232,7 +277,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   // Cleanup orphaned photos from storage
   const cleanupOrphanedPhotos = useCallback(async () => {
     if (uploadedPhotosInSession.length === 0) return;
-    
+
     try {
       for (const url of uploadedPhotosInSession) {
         // Extract file name from URL
@@ -250,7 +295,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
   // Handle photo uploaded callback from DamagePointDrawer
   const handlePhotoUploaded = useCallback((url: string) => {
-    setUploadedPhotosInSession(prev => [...prev, url]);
+    setUploadedPhotosInSession((prev) => [...prev, url]);
   }, []);
 
   // Browser beforeunload guard
@@ -281,7 +326,6 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
     setShowUnsavedDialog(false);
     onBack();
   }, [cleanupOrphanedPhotos, onBack]);
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -317,7 +361,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setRegistrationNumber(protocolData.registration_number || '');
           setVin(protocolData.vin || '');
           if (protocolData.service_items) {
-            setServiceItems(protocolData.service_items as Array<{ name: string; quantity: number; unit_price: number }>);
+            setServiceItems(
+              protocolData.service_items as Array<{
+                name: string;
+                quantity: number;
+                unit_price: number;
+              }>,
+            );
           }
           setProtocolType((protocolData.protocol_type as ProtocolType) || 'reception');
           setCustomerSignature(protocolData.customer_signature || null);
@@ -327,17 +377,20 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           setProtocolDate(new Date(protocolData.protocol_date));
           setReceivedBy(protocolData.received_by || '');
           setNotes(protocolData.notes || '');
-          
+
           // Load protocol photos
-          const loadedPhotos = (protocolData as Record<string, unknown>).photo_urls as string[] || [];
+          const loadedPhotos =
+            ((protocolData as Record<string, unknown>).photo_urls as string[]) || [];
           setProtocolPhotoUrls(loadedPhotos);
           if (loadedPhotos.length > 0) {
             setShowPhotosSection(true);
           }
 
           // Load release fields
-          const releaseSignatureData = (protocolData as Record<string, unknown>).release_signature as string | null || null;
-          const releaseNotesData = (protocolData as Record<string, unknown>).release_notes as string | null || null;
+          const releaseSignatureData =
+            ((protocolData as Record<string, unknown>).release_signature as string | null) || null;
+          const releaseNotesData =
+            ((protocolData as Record<string, unknown>).release_notes as string | null) || null;
           if (releaseSignatureData) {
             setReleaseSignature(releaseSignatureData);
             setShowReleaseSection(true);
@@ -371,14 +424,14 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
             }
           }
         }
-        
+
         // Set initial state for dirty checking (after data is loaded)
         setTimeout(() => {
           initialStateRef.current = {
-            customerName: protocolId ? (customerName || '') : '',
-            customerEmail: protocolId ? (customerEmail || '') : '',
-            vehicleModel: protocolId ? (vehicleModel || '') : '',
-            registrationNumber: protocolId ? (registrationNumber || '') : '',
+            customerName: protocolId ? customerName || '' : '',
+            customerEmail: protocolId ? customerEmail || '' : '',
+            vehicleModel: protocolId ? vehicleModel || '' : '',
+            registrationNumber: protocolId ? registrationNumber || '' : '',
             damagePointsCount: protocolId ? damagePoints.length : 0,
             customerSignature: protocolId ? customerSignature : null,
             notes: protocolId ? notes : '',
@@ -406,7 +459,11 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         .single();
       if (!res) return;
 
-      const items = res.service_items as Array<{ service_id: string; custom_price?: number | null; name?: string }> | null;
+      const items = res.service_items as Array<{
+        service_id: string;
+        custom_price?: number | null;
+        name?: string;
+      }> | null;
       if (items && items.length > 0) {
         // Fetch service names for items that don't have embedded names
         const serviceIds = items.map((i) => i.service_id).filter(Boolean);
@@ -419,11 +476,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         const totalPrice = res.price ?? 0;
         const perServicePrice = items.length > 0 ? Math.round(totalPrice / items.length) : 0;
 
-        setServiceItems(items.map((item) => ({
-          name: item.name || nameMap.get(item.service_id) || 'Usługa',
-          quantity: 1,
-          unit_price: item.custom_price ?? perServicePrice,
-        })));
+        setServiceItems(
+          items.map((item) => ({
+            name: item.name || nameMap.get(item.service_id) || 'Usługa',
+            quantity: 1,
+            unit_price: item.custom_price ?? perServicePrice,
+          })),
+        );
       }
     };
     loadReservationServices();
@@ -455,11 +514,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         .eq('is_selected', true)
         .order('sort_order');
       if (options && options.length > 0) {
-        setServiceItems(options.map((opt) => ({
-          name: opt.name,
-          quantity: 1,
-          unit_price: Math.round((opt.subtotal_net || 0) * 1.23),
-        })));
+        setServiceItems(
+          options.map((opt) => ({
+            name: opt.name,
+            quantity: 1,
+            unit_price: Math.round((opt.subtotal_net || 0) * 1.23),
+          })),
+        );
       }
     }
   };
@@ -485,7 +546,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
       y_percent: yPercent,
       isNew: true, // Mark as new/unsaved
     };
-    setDamagePoints(prev => [...prev, newPoint]);
+    setDamagePoints((prev) => [...prev, newPoint]);
   };
 
   const handleSelectPoint = (point: DamagePoint) => {
@@ -495,18 +556,21 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
   };
 
   const handleUpdatePointPosition = (pointId: string, xPercent: number, yPercent: number) => {
-    setDamagePoints(prev => 
-      prev.map(p => p.id === pointId ? { ...p, x_percent: xPercent, y_percent: yPercent } : p)
+    setDamagePoints((prev) =>
+      prev.map((p) => (p.id === pointId ? { ...p, x_percent: xPercent, y_percent: yPercent } : p)),
     );
   };
 
-  const handleSavePoint = async (data: { damage_type: string; custom_note: string; photo_url: string | null; photo_urls: string[] }) => {
+  const handleSavePoint = async (data: {
+    damage_type: string;
+    custom_note: string;
+    photo_url: string | null;
+    photo_urls: string[];
+  }) => {
     if (selectedPoint) {
       // Update existing point - remove isNew flag
       const updatedPoint = { ...selectedPoint, ...data, isNew: false };
-      setDamagePoints(prev => 
-        prev.map(p => p.id === selectedPoint.id ? updatedPoint : p)
-      );
+      setDamagePoints((prev) => prev.map((p) => (p.id === selectedPoint.id ? updatedPoint : p)));
       // Auto-persist to database in edit mode
       if (isEditMode && protocolId && selectedPoint.id && !selectedPoint.id.startsWith('temp-')) {
         try {
@@ -532,7 +596,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         y_percent: pendingPoint.y_percent,
         ...data,
       };
-      setDamagePoints(prev => [...prev, newPoint]);
+      setDamagePoints((prev) => [...prev, newPoint]);
       // Auto-persist new point to database in edit mode
       if (isEditMode && protocolId) {
         try {
@@ -552,7 +616,9 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
             .single();
           // Update the temp ID with the real one
           if (inserted) {
-            setDamagePoints(prev => prev.map(p => p.id === newPoint.id ? { ...p, id: inserted.id } : p));
+            setDamagePoints((prev) =>
+              prev.map((p) => (p.id === newPoint.id ? { ...p, id: inserted.id } : p)),
+            );
           }
         } catch (err) {
           console.error('Error auto-saving new damage point:', err);
@@ -566,14 +632,11 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
   const handleDeletePoint = async () => {
     if (selectedPoint) {
-      setDamagePoints(prev => prev.filter(p => p.id !== selectedPoint.id));
+      setDamagePoints((prev) => prev.filter((p) => p.id !== selectedPoint.id));
       // Auto-persist deletion in edit mode
       if (isEditMode && protocolId && selectedPoint.id && !selectedPoint.id.startsWith('temp-')) {
         try {
-          await supabase
-            .from('protocol_damage_points')
-            .delete()
-            .eq('id', selectedPoint.id);
+          await supabase.from('protocol_damage_points').delete().eq('id', selectedPoint.id);
         } catch (err) {
           console.error('Error auto-deleting damage point:', err);
         }
@@ -594,7 +657,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
       }, 100);
       return null;
     }
-    
+
     // Validate email if sending
     if (openEmailAfter && !customerEmail.trim()) {
       toast.error('Aby wysłać protokół podaj email Klienta');
@@ -605,7 +668,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
       }, 100);
       return null;
     }
-    
+
     setValidationErrors({});
 
     if (openEmailAfter) {
@@ -616,8 +679,8 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
     try {
       // Filter out unsaved damage points (those with isNew flag)
-      const savedDamagePoints = damagePoints.filter(p => !p.isNew);
-      
+      const savedDamagePoints = damagePoints.filter((p) => !p.isNew);
+
       const protocolPayload: Record<string, unknown> = {
         instance_id: instanceId,
         offer_id: offerId,
@@ -657,15 +720,12 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         if (protocolError) throw protocolError;
 
         // Delete old damage points and re-insert
-        await supabase
-          .from('protocol_damage_points')
-          .delete()
-          .eq('protocol_id', protocolId);
+        await supabase.from('protocol_damage_points').delete().eq('protocol_id', protocolId);
       } else {
         // Create new protocol with current time
         const now = new Date();
         const currentTime = format(now, 'HH:mm:ss');
-        
+
         // Generate a short public token for public access
         const generateShortToken = () => {
           const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -692,7 +752,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
       // Save damage points (only the saved ones, not isNew)
       if (savedDamagePoints.length > 0 && savedProtocolId) {
-        const pointsToInsert = savedDamagePoints.map(p => ({
+        const pointsToInsert = savedDamagePoints.map((p) => ({
           protocol_id: savedProtocolId,
           view: p.view,
           x_percent: p.x_percent,
@@ -781,8 +841,11 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Typ protokołu</Label>
-              <Select value={protocolType} onValueChange={(v) => setProtocolType(v as ProtocolType)}>
-                <SelectTrigger className="bg-white border-foreground/60">
+              <Select
+                value={protocolType}
+                onValueChange={(v) => setProtocolType(v as ProtocolType)}
+              >
+                <SelectTrigger className="bg-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -798,7 +861,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 value={offerNumber}
                 onChange={setOfferNumber}
                 onOfferSelect={handleOfferSelect}
-                inputClassName="border-foreground/60"
+                inputClassName=""
               />
             </div>
           </div>
@@ -812,12 +875,12 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 value={customerName}
                 onChange={(val) => {
                   setCustomerName(val);
-                  if (val.trim()) setValidationErrors(prev => ({ ...prev, customerName: false }));
+                  if (val.trim()) setValidationErrors((prev) => ({ ...prev, customerName: false }));
                 }}
                 onSelect={handleCustomerSelect}
                 onClear={handleCustomerClear}
                 placeholder=""
-                className={cn("bg-white border-foreground/60", validationErrors.customerName && "border-destructive")}
+                className={cn('bg-white', validationErrors.customerName && 'border-destructive')}
                 suppressAutoSearch={isEditMode || hasPrefilledData}
               />
               {validationErrors.customerName && (
@@ -834,7 +897,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 onSelect={handleCustomerSelect}
                 onClear={handleCustomerClear}
                 placeholder=""
-                className="bg-white border-foreground/60"
+                className="bg-white"
               />
             </div>
             <div className="space-y-2">
@@ -844,7 +907,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 type="email"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                className="border-foreground/60"
+                className=""
               />
             </div>
             <div className="space-y-2">
@@ -860,23 +923,19 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 }}
                 onClear={() => setVehicleModel('')}
                 className="bg-white"
-                inputClassName="border-foreground/60"
+                inputClassName=""
               />
             </div>
             <div className="space-y-2">
               <Label>NIP firmy</Label>
-              <Input
-                value={nip}
-                onChange={(e) => setNip(e.target.value)}
-                className="border-foreground/60"
-              />
+              <Input value={nip} onChange={(e) => setNip(e.target.value)} className="" />
             </div>
             <div className="space-y-2">
               <Label>Numer rejestracyjny</Label>
               <Input
                 value={registrationNumber}
                 onChange={(e) => setRegistrationNumber(e.target.value)}
-                className="border-foreground/60"
+                className=""
               />
             </div>
             {showVin && (
@@ -887,7 +946,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                   onChange={(e) => setVin(e.target.value.toUpperCase())}
                   maxLength={17}
                   placeholder="np. WBA1234567890ABCD"
-                  className="border-foreground/60 font-mono"
+                  className="font-mono"
                 />
               </div>
             )}
@@ -899,7 +958,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 max="100"
                 value={fuelLevel}
                 onChange={(e) => setFuelLevel(e.target.value)}
-                className="border-foreground/60"
+                className=""
               />
             </div>
             <div className="space-y-2">
@@ -909,7 +968,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 min="0"
                 value={odometerReading}
                 onChange={(e) => setOdometerReading(e.target.value)}
-                className="border-foreground/60"
+                className=""
               />
             </div>
           </div>
@@ -954,7 +1013,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
               <div className="space-y-2">
                 <Label>Typ nadwozia</Label>
                 <Select value={bodyType} onValueChange={(v) => setBodyType(v as BodyType)}>
-                  <SelectTrigger className="bg-white border-foreground/60">
+                  <SelectTrigger className="bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -969,7 +1028,10 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
               {/* Vehicle diagram */}
               <div className="space-y-2">
-                <Label>Zaznacz ewentualne usterki na diagramie pojazdu przetrzymując palec w danym miejscu</Label>
+                <Label>
+                  Zaznacz ewentualne usterki na diagramie pojazdu przetrzymując palec w danym
+                  miejscu
+                </Label>
                 <VehicleDiagram
                   bodyType={bodyType}
                   damagePoints={damagePoints}
@@ -981,11 +1043,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
               </div>
 
               {/* Damage photos - collected from all damage points */}
-              {damagePoints.some(p => (p.photo_urls && p.photo_urls.length > 0) || p.photo_url) && (
+              {damagePoints.some(
+                (p) => (p.photo_urls && p.photo_urls.length > 0) || p.photo_url,
+              ) && (
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">Zdjęcia usterek</Label>
                   <div className="grid grid-cols-4 gap-2">
-                    {damagePoints.flatMap(p => {
+                    {damagePoints.flatMap((p) => {
                       const urls = p.photo_urls || (p.photo_url ? [p.photo_url] : []);
                       return urls.map((url, idx) => (
                         <div key={`${p.id}-${idx}`} className="relative aspect-square">
@@ -1008,9 +1072,12 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           {showServices && serviceItems.length > 0 && (
             <div className="space-y-2">
               <Label>Usługi</Label>
-              <div className="border border-foreground/60 rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden">
                 {serviceItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between px-3 py-2 border-b border-foreground/20 last:border-b-0">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between px-3 py-2 border-b border-foreground/20 last:border-b-0"
+                  >
                     <div className="flex-1 min-w-0">
                       <Input
                         value={item.name}
@@ -1028,7 +1095,10 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                         value={item.unit_price}
                         onChange={(e) => {
                           const updated = [...serviceItems];
-                          updated[idx] = { ...updated[idx], unit_price: Number(e.target.value) || 0 };
+                          updated[idx] = {
+                            ...updated[idx],
+                            unit_price: Number(e.target.value) || 0,
+                          };
                           setServiceItems(updated);
                         }}
                         className="w-24 text-right border-0 p-0 h-auto text-sm bg-transparent focus-visible:ring-0"
@@ -1046,12 +1116,16 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 ))}
                 <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
                   <span>Suma</span>
-                  <span>{serviceItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
+                  <span>
+                    {serviceItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł
+                  </span>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setServiceItems([...serviceItems, { name: '', quantity: 1, unit_price: 0 }])}
+                onClick={() =>
+                  setServiceItems([...serviceItems, { name: '', quantity: 1, unit_price: 0 }])
+                }
                 className="text-sm text-primary hover:underline"
               >
                 + Dodaj pozycję
@@ -1078,7 +1152,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder=""
-              className="resize-none overflow-hidden border-foreground/60"
+              className="resize-none overflow-hidden"
               style={{ minHeight: '150px' }}
             />
           </div>
@@ -1092,8 +1166,8 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full justify-start text-left font-normal bg-white border-foreground/60',
-                      !protocolDate && "text-muted-foreground"
+                      'w-full justify-start text-left font-normal bg-white',
+                      !protocolDate && 'text-muted-foreground',
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -1121,7 +1195,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
               <Input
                 value={receivedBy}
                 onChange={(e) => setReceivedBy(e.target.value)}
-                className="border-foreground/60"
+                className=""
               />
             </div>
           </div>
@@ -1130,13 +1204,13 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
           <div className="space-y-2">
             <Label>Podpis klienta</Label>
             {customerSignature ? (
-              <div 
+              <div
                 className="h-24 border rounded-lg bg-white flex items-center justify-center cursor-pointer hover:bg-hover transition-colors"
                 onClick={() => setSignatureDialogOpen(true)}
               >
-                <img 
-                  src={customerSignature} 
-                  alt="Podpis klienta" 
+                <img
+                  src={customerSignature}
+                  alt="Podpis klienta"
                   className="max-h-20 max-w-full object-contain"
                 />
               </div>
@@ -1155,7 +1229,10 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
 
           {/* Release section */}
           {showReleaseSection && (
-            <div ref={releaseSectionRef} className="border-t-2 border-primary/30 pt-8 mt-8 space-y-4">
+            <div
+              ref={releaseSectionRef}
+              className="border-t-2 border-primary/30 pt-8 mt-8 space-y-4"
+            >
               <h2 className="text-2xl font-bold text-center">Wydanie pojazdu</h2>
 
               <div className="space-y-2">
@@ -1164,7 +1241,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                   value={releaseNotes}
                   onChange={(e) => setReleaseNotes(e.target.value)}
                   rows={3}
-                  className="border-foreground/60"
+                  className=""
                   placeholder="Oświadczam, że odbieram pojazd bez zastrzeżeń"
                 />
               </div>
@@ -1214,7 +1291,10 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 onClick={() => {
                   setShowReleaseSection(true);
                   setTimeout(() => {
-                    releaseSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    releaseSectionRef.current?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    });
                   }, 100);
                 }}
                 className="bg-white"
@@ -1306,9 +1386,7 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
             >
               Nie zapisuj
             </Button>
-            <AlertDialogAction onClick={handleSaveAndExit}>
-              Zapisz
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleSaveAndExit}>Zapisz</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1317,19 +1395,25 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
         open={!!fullscreenPhoto}
         onOpenChange={(open) => !open && setFullscreenPhoto(null)}
         photoUrl={fullscreenPhoto}
-        allPhotos={[...protocolPhotoUrls, ...damagePoints.flatMap(p => p.photo_urls || [])]}
-        initialIndex={fullscreenPhoto ? [...protocolPhotoUrls, ...damagePoints.flatMap(p => p.photo_urls || [])].indexOf(fullscreenPhoto) : 0}
+        allPhotos={[...protocolPhotoUrls, ...damagePoints.flatMap((p) => p.photo_urls || [])]}
+        initialIndex={
+          fullscreenPhoto
+            ? [...protocolPhotoUrls, ...damagePoints.flatMap((p) => p.photo_urls || [])].indexOf(
+                fullscreenPhoto,
+              )
+            : 0
+        }
         onAnnotate={async (newUrl) => {
           const oldUrl = fullscreenPhoto;
           if (!oldUrl) return;
           // Replace URL in protocol photos
-          const newPhotos = protocolPhotoUrls.map(u => u === oldUrl ? newUrl : u);
+          const newPhotos = protocolPhotoUrls.map((u) => (u === oldUrl ? newUrl : u));
           setProtocolPhotoUrls(newPhotos);
           // Replace URL in damage points
-          const newPoints = damagePoints.map(p => ({
+          const newPoints = damagePoints.map((p) => ({
             ...p,
             photo_url: p.photo_url === oldUrl ? newUrl : p.photo_url,
-            photo_urls: p.photo_urls?.map(u => u === oldUrl ? newUrl : u),
+            photo_urls: p.photo_urls?.map((u) => (u === oldUrl ? newUrl : u)),
           }));
           setDamagePoints(newPoints);
           setFullscreenPhoto(newUrl);
@@ -1341,7 +1425,9 @@ export const CreateProtocolForm = ({ instanceId, protocolId, onBack, onOpenSetti
                 .update({ photo_urls: newPhotos })
                 .eq('id', protocolId);
               // Update damage points photo URLs in DB
-              const savedPoints = newPoints.filter(p => !('isNew' in p && (p as Record<string, unknown>).isNew));
+              const savedPoints = newPoints.filter(
+                (p) => !('isNew' in p && (p as Record<string, unknown>).isNew),
+              );
               for (const p of savedPoints) {
                 if ('id' in p && p.id) {
                   await supabase

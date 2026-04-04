@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { mergeVehiclesByPhone } from './mergeVehiclesByPhone';
 
-const vehicle = (overrides: Partial<{ id: string; phone: string; model: string; customer_id: string | null; customer_name: string; plate: string | null }> = {}) => ({
+const vehicle = (
+  overrides: Partial<{
+    id: string;
+    phone: string;
+    model: string;
+    customer_id: string | null;
+    customer_name: string;
+    plate: string | null;
+  }> = {},
+) => ({
   id: 'v1',
   phone: '+48503011126',
   model: 'Porsche Panamera',
@@ -56,9 +65,7 @@ describe('mergeVehiclesByPhone', () => {
   });
 
   it('handles single vehicle without changes', () => {
-    const result = mergeVehiclesByPhone([
-      vehicle({ id: 'v1', model: 'Tesla Model 3' }),
-    ]);
+    const result = mergeVehiclesByPhone([vehicle({ id: 'v1', model: 'Tesla Model 3' })]);
 
     expect(result).toHaveLength(1);
     expect(result[0].model).toBe('Tesla Model 3');

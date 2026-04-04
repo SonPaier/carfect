@@ -92,7 +92,7 @@ const SelectedServicesList = ({
 
   // Get displayed price (custom or calculated)
   const getDisplayedPrice = (serviceId: string, service: ServiceWithCategory): number => {
-    const item = serviceItems.find(si => si.service_id === serviceId);
+    const item = serviceItems.find((si) => si.service_id === serviceId);
     if (item?.custom_price !== null && item?.custom_price !== undefined) {
       return item.custom_price;
     }
@@ -101,7 +101,7 @@ const SelectedServicesList = ({
 
   // Get selected services with details
   const selectedServices = selectedServiceIds
-    .map(id => services.find(s => s.id === id))
+    .map((id) => services.find((s) => s.id === id))
     .filter((s): s is ServiceWithCategory => s !== undefined);
 
   // Calculate totals
@@ -135,7 +135,8 @@ const SelectedServicesList = ({
       <div className="flex flex-col gap-1 rounded-lg overflow-hidden">
         {selectedServices.map((service) => {
           const displayedPrice = getDisplayedPrice(service.id, service);
-          const hasCustomPrice = serviceItems.find(si => si.service_id === service.id)?.custom_price !== null;
+          const hasCustomPrice =
+            serviceItems.find((si) => si.service_id === service.id)?.custom_price !== null;
           const duration = getDuration(service);
           const isEditing = editingPriceId === service.id;
 
@@ -151,9 +152,7 @@ const SelectedServicesList = ({
                     )}
                     {service.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDuration(duration)}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>
                 </div>
 
                 {/* Price - click to edit */}
@@ -165,11 +164,11 @@ const SelectedServicesList = ({
                       onChange={(e) => {
                         const rawValue = e.target.value;
                         setEditingValue(rawValue);
-                        
+
                         // Notify parent of price change
                         const value = rawValue === '' ? null : parseFloat(rawValue);
                         onPriceChange(service.id, value);
-                        
+
                         // Calculate new total and notify parent
                         if (onTotalPriceChange) {
                           const newTotal = selectedServices.reduce((total, s) => {
@@ -199,8 +198,8 @@ const SelectedServicesList = ({
                         }
                       }}
                       className={cn(
-                        "w-20 h-8 text-right text-sm font-semibold bg-white",
-                        hasCustomPrice && "bg-accent border-primary/30"
+                        'w-20 h-8 text-right text-sm font-semibold bg-white',
+                        hasCustomPrice && 'bg-accent border-primary/30',
                       )}
                       min={0}
                       step={5}
@@ -214,8 +213,8 @@ const SelectedServicesList = ({
                         setEditingValue(displayedPrice.toString());
                       }}
                       className={cn(
-                        "px-2 py-1 rounded text-sm font-semibold text-right min-w-[60px] hover:bg-hover transition-colors",
-                        hasCustomPrice && "text-primary"
+                        'px-2 py-1 rounded text-sm font-semibold text-right min-w-[60px] hover:bg-hover transition-colors',
+                        hasCustomPrice && 'text-primary',
                       )}
                     >
                       {displayedPrice}
@@ -240,18 +239,17 @@ const SelectedServicesList = ({
 
       {/* Footer with totals and add button */}
       <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={onAddMore}
-        >
+        <Button type="button" variant="secondary" size="sm" onClick={onAddMore}>
           <Plus className="w-4 h-4 mr-1" />
           {t('common.add')}
         </Button>
 
         <div className="text-right">
           <p className="text-sm text-muted-foreground">
-            {t('addReservation.totalDuration')}: <span className="font-bold text-base text-foreground">{formatDuration(totalDuration)}</span>
+            {t('addReservation.totalDuration')}:{' '}
+            <span className="font-bold text-base text-foreground">
+              {formatDuration(totalDuration)}
+            </span>
           </p>
           <p className="text-lg font-bold">
             {totalPrice} zł {pricingMode === 'netto' ? 'netto' : 'brutto'}

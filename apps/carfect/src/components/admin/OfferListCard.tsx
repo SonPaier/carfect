@@ -62,7 +62,7 @@ function ApprovedPrice({ offer }: { offer: OfferWithOptions }) {
 function CustomerLine({ offer }: { offer: OfferWithOptions }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-baseline gap-1 font-semibold text-base leading-tight">
+    <div className="flex items-baseline gap-1 font-semibold text-sm leading-tight">
       <span className="truncate">
         {offer.customer_data?.name || offer.customer_data?.company || t('offers.noCustomer')}
       </span>
@@ -185,7 +185,7 @@ export function OfferListCard({
 
   return (
     <div
-      className="bg-white border border-border p-4 hover:border-primary/30 transition-colors cursor-pointer relative"
+      className="bg-white border border-border/50 p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer relative"
       onClick={() => onEdit(offer.id)}
     >
       {/* MOBILE LAYOUT */}

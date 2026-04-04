@@ -8,7 +8,6 @@ import {
   Users,
   MessageSquare,
   Loader2,
-  Save,
   Upload,
   Trash2,
   Image as ImageIcon,
@@ -280,6 +279,10 @@ const SettingsView = ({
       case 'company':
         return (
           <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Dane firmy</h3>
+              <p className="text-sm text-muted-foreground mt-1">Podstawowe informacje o firmie</p>
+            </div>
             {/* Logo */}
             <div className="space-y-3">
               <Label>{t('instanceSettings.logo')}</Label>
@@ -525,11 +528,7 @@ const SettingsView = ({
 
             {/* Save Button */}
             <Button onClick={handleSaveCompany} disabled={loading}>
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
+              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {t('common.save')}
             </Button>
           </div>
@@ -549,21 +548,44 @@ const SettingsView = ({
 
       case 'integrations':
         return (
-          <IntegrationsSettingsView
-            instanceId={instanceId}
-            supabaseClient={supabase}
-          />
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Integracje</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Połącz z systemami do fakturowania
+              </p>
+            </div>
+            <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />
+          </div>
         );
 
       case 'app':
-        return <ReservationConfirmSettings instanceId={instanceId} />;
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Ustawienia aplikacji</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Dostosuj aplikację Carfect pod potrzeby Twojego studia
+              </p>
+            </div>
+            <ReservationConfirmSettings instanceId={instanceId} />
+          </div>
+        );
 
       case 'sms':
         return (
-          <SmsMessageSettings
-            instanceId={instanceId}
-            instanceName={instanceData?.short_name || instanceData?.name}
-          />
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold">Wiadomości SMS</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Zarządzaj treścią wiadomości SMS wysyłanych do klientów
+              </p>
+            </div>
+            <SmsMessageSettings
+              instanceId={instanceId}
+              instanceName={instanceData?.short_name || instanceData?.name}
+            />
+          </div>
         );
 
       case 'users':
@@ -575,7 +597,7 @@ const SettingsView = ({
   };
 
   return (
-    <div className="space-y-6 lg:space-y-0 lg:flex lg:flex-row lg:gap-6">
+    <div className="space-y-4 lg:space-y-0 lg:flex lg:flex-row lg:gap-4">
       {/* Sidebar / Mobile Dropdown */}
       {isMobile ? (
         <Collapsible open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} className="w-full">
@@ -603,7 +625,7 @@ const SettingsView = ({
                     'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
                     activeTab === tab.key
                       ? 'bg-hover text-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                      : 'text-foreground hover:bg-hover',
                   )}
                 >
                   {tab.icon}
@@ -615,35 +637,35 @@ const SettingsView = ({
         </Collapsible>
       ) : (
         <div className="w-56 shrink-0">
-          <div className="bg-white rounded-lg border border-border/50 overflow-hidden sticky top-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
-                  activeTab === tab.key
-                    ? 'bg-hover text-foreground font-medium'
-                    : 'text-muted-foreground hover:bg-hover hover:text-foreground',
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+          <div className="sticky top-0">
+            <div className="bg-white rounded-lg border border-border/50 overflow-hidden">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors border-b border-border/30 last:border-0',
+                    activeTab === tab.key
+                      ? 'bg-hover text-foreground font-medium'
+                      : 'text-foreground hover:bg-hover',
+                  )}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {/* Version info — fixed below menu */}
+            {currentVersion && (
+              <p className="text-xs text-muted-foreground py-3 px-4">Wersja: {currentVersion}</p>
+            )}
           </div>
-          {/* Version info */}
-          {currentVersion && (
-            <p className="text-xs text-muted-foreground mt-3 px-1">
-              Panel Admina v{currentVersion}
-            </p>
-          )}
         </div>
       )}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="bg-white border border-border p-6 pb-24 md:pb-6 bg-secondary-foreground">
+        <div className="bg-white border border-border/50 rounded-lg p-6 pb-24 md:pb-6 bg-secondary-foreground">
           {renderTabContent()}
         </div>
       </div>

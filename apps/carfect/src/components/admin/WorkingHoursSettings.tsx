@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Save, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -51,30 +51,37 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
       if (!instanceId) return;
 
       setLoading(true);
-      const { data, error } = await supabase
-        .from('instances')
-        .select('working_hours')
-        .eq('id', instanceId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('instances')
+          .select('working_hours')
+          .eq('id', instanceId)
+          .maybeSingle();
 
-      if (data?.working_hours) {
-        setWorkingHours(data.working_hours as unknown as WorkingHours);
+        if (error) {
+          console.error('Error fetching working hours:', error);
+        } else if (data?.working_hours) {
+          setWorkingHours(data.working_hours as unknown as WorkingHours);
+        }
+      } catch (e) {
+        console.error('Error fetching working hours:', e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchWorkingHours();
   }, [instanceId]);
 
   const handleDayToggle = (dayKey: string, enabled: boolean) => {
-    setWorkingHours(prev => ({
+    setWorkingHours((prev) => ({
       ...prev,
       [dayKey]: enabled ? { open: '09:00', close: '19:00' } : null,
     }));
   };
 
   const handleTimeChange = (dayKey: string, field: 'open' | 'close', value: string) => {
-    setWorkingHours(prev => {
+    setWorkingHours((prev) => {
       const currentDay = prev[dayKey];
       if (!currentDay) return prev;
       return {
@@ -90,10 +97,10 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
     setSaving(true);
     try {
       console.log('[WorkingHoursSettings] Saving working hours via RPC:', workingHours);
-      
+
       const { data, error } = await supabase.rpc('update_instance_working_hours', {
         _instance_id: instanceId,
-        _working_hours: JSON.parse(JSON.stringify(workingHours))
+        _working_hours: JSON.parse(JSON.stringify(workingHours)),
       });
 
       console.log('[WorkingHoursSettings] RPC response:', { data, error });
@@ -111,9 +118,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
 
   if (!instanceId) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        {t('workingHours.noInstance')}
-      </div>
+      <div className="text-center py-8 text-muted-foreground">{t('workingHours.noInstance')}</div>
     );
   }
 
@@ -127,22 +132,14 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">{t('workingHours.title')}</h3>
-        </div>
-        <Button onClick={handleSave} disabled={saving} size="sm">
-          {saving ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4 mr-2" />
-          )}
-          {t('common.save')}
-        </Button>
+      <div>
+        <h3 className="text-lg font-semibold">{t('workingHours.title')}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Ustaw godziny otwarcia dla każdego dnia tygodnia
+        </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {DAYS.map(({ key, labelKey }) => {
           const dayHours = workingHours[key];
           const isOpen = dayHours !== null;
@@ -150,44 +147,54 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
           return (
             <div
               key={key}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-muted/30 border border-border/50"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-white border border-border/50"
             >
               <div className="flex items-center justify-between sm:justify-start gap-3 sm:w-36">
                 <div className="flex items-center gap-3">
                   <Switch
+                    size="sm"
                     checked={isOpen}
                     onCheckedChange={(checked) => handleDayToggle(key, checked)}
                   />
                   <Label className="font-medium text-sm sm:text-base">{t(labelKey)}</Label>
                 </div>
                 {!isOpen && (
-                  <span className="text-muted-foreground text-xs sm:hidden">{t('workingHours.closed')}</span>
+                  <span className="text-muted-foreground text-xs sm:hidden">
+                    {t('workingHours.closed')}
+                  </span>
                 )}
               </div>
 
               {isOpen ? (
-                <div className="flex items-center gap-2 flex-1 pl-10 sm:pl-0">
+                <div className="flex items-center gap-2 flex-1 justify-end pl-10 sm:pl-0">
                   <Input
                     type="time"
                     value={dayHours?.open || '09:00'}
                     onChange={(e) => handleTimeChange(key, 'open', e.target.value)}
-                    className="flex-1 sm:w-24 sm:flex-none text-sm"
+                    className="w-24 text-sm"
                   />
                   <span className="text-muted-foreground">-</span>
                   <Input
                     type="time"
                     value={dayHours?.close || '19:00'}
                     onChange={(e) => handleTimeChange(key, 'close', e.target.value)}
-                    className="flex-1 sm:w-24 sm:flex-none text-sm"
+                    className="w-24 text-sm"
                   />
                 </div>
               ) : (
-                <span className="text-muted-foreground text-sm hidden sm:inline">{t('workingHours.closed')}</span>
+                <span className="text-muted-foreground text-sm hidden sm:inline">
+                  {t('workingHours.closed')}
+                </span>
               )}
             </div>
           );
         })}
       </div>
+
+      <Button onClick={handleSave} disabled={saving} size="sm">
+        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        {t('common.save')}
+      </Button>
     </div>
   );
 };

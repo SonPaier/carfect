@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   FileText,
   Loader2,
-  Filter,
   Search,
   Settings,
   ChevronLeft,
@@ -120,7 +119,6 @@ export default function OffersView({
   );
 
   const [showScopesSettings, setShowScopesSettings] = useState(false);
-
 
   // Email dialog state
   const [sendEmailDialogOpen, setSendEmailDialogOpen] = useState(false);
@@ -271,7 +269,6 @@ export default function OffersView({
   useEffect(() => {
     fetchOffers();
   }, [instanceId]);
-
 
   const handleDeleteOffer = async (offerId: string) => {
     try {
@@ -525,7 +522,7 @@ export default function OffersView({
           </title>
         </Helmet>
         <div>
-          <h1 className="text-2xl font-bold mb-4">
+          <h1 className="text-2xl font-medium mb-4">
             {duplicatingOfferId
               ? t('offers.duplicateOffer')
               : editingOfferId
@@ -581,25 +578,24 @@ export default function OffersView({
         </title>
       </Helmet>
       <div className="max-w-3xl mx-auto pb-24">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-          <h1 className="text-2xl font-bold">{t('offers.title')}</h1>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+          <h1 className="text-2xl font-medium">{t('offers.title')}</h1>
           <div className="flex items-center gap-2">
             {/* Legacy templates button — hidden, accessible via URL ?action=services */}
             <Button
               variant="outline"
               size="icon"
               onClick={() => setShowScopesSettings(true)}
-              className="sm:w-auto sm:px-4 bg-white"
+              className="bg-white"
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline ml-2">{t('offers.settings')}</span>
             </Button>
-            <Button onClick={() => navigateTo('new')}>{t('offers.newOffer')}</Button>
+            <Button onClick={() => navigateTo('new')}>Dodaj ofertę</Button>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -610,7 +606,6 @@ export default function OffersView({
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder={t('offers.status')} />
@@ -646,7 +641,7 @@ export default function OffersView({
           />
         ) : (
           <>
-            <div className="space-y-3 pb-24 lg:pb-0">
+            <div className="space-y-2 pb-24 lg:pb-0">
               {paginatedOffers.map((offer) => (
                 <OfferListCard
                   key={offer.id}

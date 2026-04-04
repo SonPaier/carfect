@@ -90,76 +90,74 @@ export const CustomersList = ({
   }
 
   return (
-    <div className="bg-white border border-border overflow-hidden">
-      <div className="divide-y divide-border/50">
-        {customers.map((customer) => {
-          const customerVehicles = getVehiclesForCustomer(customer.phone);
-          return (
-            <div
-              key={customer.id || customer.phone}
-              onClick={() => onCustomerClick(customer)}
-              className="p-4 flex items-center justify-between gap-4 transition-colors cursor-pointer bg-primary-foreground hover:bg-accent/30"
-            >
-              <div className="min-w-0 flex-1 space-y-0.5">
-                {/* Line 1: Name */}
-                <div className="font-medium text-foreground">{customer.name}</div>
-                {/* Line 2: Phone */}
-                <div className="text-sm text-muted-foreground">
-                  {formatPhoneDisplay(customer.phone)}
-                </div>
-                {/* Line 3: Vehicles */}
-                {customerVehicles.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                    {customerVehicles.slice(0, 3).map((v, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground/80 text-background rounded-full text-xs"
-                      >
-                        {v.model}
-                      </span>
-                    ))}
-                    {customerVehicles.length > 3 && (
-                      <span className="text-xs text-muted-foreground">
-                        +{customerVehicles.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
+    <div className="space-y-3">
+      {customers.map((customer) => {
+        const customerVehicles = getVehiclesForCustomer(customer.phone);
+        return (
+          <div
+            key={customer.id || customer.phone}
+            onClick={() => onCustomerClick(customer)}
+            className="p-4 flex items-center justify-between gap-4 cursor-pointer bg-white border border-border rounded-lg hover:shadow-md transition-shadow"
+          >
+            <div className="min-w-0 flex-1 space-y-0.5">
+              {/* Line 1: Name */}
+              <div className="font-medium text-foreground">{customer.name}</div>
+              {/* Line 2: Phone */}
+              <div className="text-sm text-muted-foreground">
+                {formatPhoneDisplay(customer.phone)}
               </div>
-              {showActions && (
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-                    onClick={(e) => handleSms(customer, e)}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
-                    onClick={(e) => handleCall(customer.phone, e)}
-                  >
-                    <Phone className="w-4 h-4" />
-                  </Button>
-                  {onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-hover"
-                      onClick={(e) => handleDelete(customer, e)}
+              {/* Line 3: Vehicles */}
+              {customerVehicles.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  {customerVehicles.slice(0, 3).map((v, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground/80 text-background rounded-full text-xs"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                      {v.model}
+                    </span>
+                  ))}
+                  {customerVehicles.length > 3 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{customerVehicles.length - 3}
+                    </span>
                   )}
                 </div>
               )}
             </div>
-          );
-        })}
-      </div>
+            {showActions && (
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+                  onClick={(e) => handleSms(customer, e)}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+                  onClick={(e) => handleCall(customer.phone, e)}
+                >
+                  <Phone className="w-4 h-4" />
+                </Button>
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-hover"
+                    onClick={(e) => handleDelete(customer, e)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

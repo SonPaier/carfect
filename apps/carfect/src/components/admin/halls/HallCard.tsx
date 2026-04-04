@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Check, Pencil, Trash2, MoreVertical, Eye, Columns, ExternalLink, Settings } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Eye,
+  Columns,
+  ExternalLink,
+  Settings,
+} from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
 import { Badge } from '@shared/ui';
@@ -60,7 +70,14 @@ interface HallCardProps {
   onDelete: (hallId: string) => void;
 }
 
-const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }: HallCardProps) => {
+const HallCard = ({
+  hall,
+  hallNumber,
+  instanceSlug,
+  stations,
+  onEdit,
+  onDelete,
+}: HallCardProps) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -107,12 +124,12 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
 
   // Get station names for this hall
   const hallStationNames = stations
-    .filter(s => hall.station_ids.includes(s.id))
-    .map(s => s.name);
+    .filter((s) => hall.station_ids.includes(s.id))
+    .map((s) => s.name);
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow flex flex-col">
+      <Card className="shadow-none border-border/50 flex flex-col">
         <CardContent className="p-4 flex flex-col flex-1">
           <div className="flex items-start justify-between gap-4">
             <h3 className="font-semibold text-lg truncate flex-1">{hall.name}</h3>
@@ -140,13 +157,9 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
 
           {/* URL field - white background, full width */}
           <div className="mt-3 space-y-1">
-            <span className="text-xs text-muted-foreground">
-              {t('halls.calendarLinkLabel')}
-            </span>
+            <span className="text-xs text-muted-foreground">{t('halls.calendarLinkLabel')}</span>
             <div className="flex items-center gap-2 bg-white border rounded-md px-3 py-2">
-              <code className="text-xs text-muted-foreground truncate flex-1">
-                {getHallUrl()}
-              </code>
+              <code className="text-xs text-muted-foreground truncate flex-1">{getHallUrl()}</code>
               <Button
                 variant="ghost"
                 size="icon"
@@ -176,7 +189,9 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
                   </Badge>
                 ))
               ) : (
-                <span className="text-xs text-muted-foreground">{t('halls.noStationsSelected')}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t('halls.noStationsSelected')}
+                </span>
               )}
             </div>
           </div>
@@ -214,7 +229,9 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
                   </Badge>
                 ))
               ) : (
-                <span className="text-xs text-muted-foreground">{t('halls.noActionsSelected')}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t('halls.noActionsSelected')}
+                </span>
               )}
             </div>
           </div>
@@ -223,12 +240,7 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
           <div className="flex-1" />
 
           {/* Preview button - pinned to bottom, full width */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4 w-full"
-            onClick={handlePreview}
-          >
+          <Button variant="outline" size="sm" className="mt-4 w-full" onClick={handlePreview}>
             <ExternalLink className="h-4 w-4 mr-2" />
             {t('halls.preview')}
           </Button>
@@ -245,7 +257,10 @@ const HallCard = ({ hall, hallNumber, instanceSlug, stations, onEdit, onDelete }
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>

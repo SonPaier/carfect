@@ -199,6 +199,7 @@ export function TrainingDetailsDrawer({
                   </Badge>
                   {!readOnly && (
                     <Switch
+                      size="sm"
                       checked={isSoldOut}
                       onCheckedChange={handleToggleStatus}
                       disabled={togglingStatus}
@@ -273,7 +274,7 @@ export function TrainingDetailsDrawer({
                     onBlur={() => setTimeout(handleSaveNotes, 100)}
                     rows={3}
                     disabled={savingNotes}
-                    className="text-sm bg-white dark:bg-card border-foreground/60"
+                    className="text-sm bg-white dark:bg-card"
                   />
                 ) : (
                   <p

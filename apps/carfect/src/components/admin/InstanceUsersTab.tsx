@@ -1,19 +1,8 @@
 import { useState, useEffect } from 'react';
-import {
-  Loader2,
-  UserPlus,
-  MoreVertical,
-  Shield,
-  User,
-  Lock,
-  Unlock,
-  Trash2,
-  KeyRound,
-} from 'lucide-react';
+import { Loader2, MoreVertical, User, Lock, Unlock, Trash2, KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
-import { Badge } from '@shared/ui';
-import { Card, CardContent } from '@shared/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,48 +144,11 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
     setDeleteDialogOpen(true);
   };
 
-  const getRoleBadge = (role: 'admin' | 'employee' | 'hall' | 'sales') => {
-    if (role === 'admin') {
-      return (
-        <Badge variant="default" className="gap-1">
-          <Shield className="w-3 h-3" />
-          {t('instanceUsers.admin')}
-        </Badge>
-      );
-    }
-    if (role === 'sales') {
-      return (
-        <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-800">
-          <User className="w-3 h-3" />
-          Sprzedaż
-        </Badge>
-      );
-    }
-    if (role === 'hall') {
-      return (
-        <Badge variant="secondary" className="gap-1 bg-purple-100 text-purple-800">
-          <User className="w-3 h-3" />
-          Hala
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="secondary" className="gap-1">
-        <User className="w-3 h-3" />
-        {t('instanceUsers.employee')}
-      </Badge>
-    );
-  };
-
-  const getStatusBadge = (isBlocked: boolean) => {
-    if (isBlocked) {
-      return <Badge variant="destructive">{t('instanceUsers.blocked')}</Badge>;
-    }
-    return (
-      <Badge variant="outline" className="border-green-500 text-green-700">
-        {t('instanceUsers.active')}
-      </Badge>
-    );
+  const getRoleLabel = (role: 'admin' | 'employee' | 'hall' | 'sales') => {
+    if (role === 'admin') return t('instanceUsers.admin');
+    if (role === 'sales') return 'Sprzedaż';
+    if (role === 'hall') return 'Hala';
+    return t('instanceUsers.employee');
   };
 
   if (loading) {
@@ -210,10 +162,14 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
   return (
     <div className="space-y-4 pb-24 md:pb-0">
       {/* Header */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-medium">{t('instanceUsers.title')}</h3>
-        <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
-          <UserPlus className="w-4 h-4" />
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">{t('instanceUsers.title')}</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Zarządzaj kontami użytkowników z dostępem do panelu
+          </p>
+        </div>
+        <Button onClick={() => setAddDialogOpen(true)} size="sm">
           {t('instanceUsers.addUser')}
         </Button>
       </div>
@@ -227,73 +183,86 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {users.map((user) => (
-            <Card key={user.id} className="bg-white">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0 space-y-2">
-                    {/* Username */}
-                    <div className="font-medium truncate">{user.username}</div>
-                    {/* Badges */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {getRoleBadge(user.role)}
-                      {getStatusBadge(user.is_blocked)}
-                    </div>
-                    {/* Date */}
-                    <div className="text-sm text-muted-foreground">
-                      {format(new Date(user.created_at), 'd MMM yyyy', { locale: pl })}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" disabled={actionLoading === user.id}>
-                        {actionLoading === user.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <MoreVertical className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(user)}>
-                        <User className="w-4 h-4 mr-2" />
-                        {t('instanceUsers.edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleResetPassword(user)}>
-                        <KeyRound className="w-4 h-4 mr-2" />
-                        {t('instanceUsers.resetPassword')}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleBlockUnblock(user)}>
-                        {user.is_blocked ? (
-                          <>
-                            <Unlock className="w-4 h-4 mr-2" />
-                            {t('instanceUsers.unblock')}
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-4 h-4 mr-2" />
-                            {t('instanceUsers.block')}
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(user)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('instanceUsers.delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="border border-border/50 rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nazwa</TableHead>
+                <TableHead>Rola</TableHead>
+                <TableHead>Utworzono</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell>{getRoleLabel(user.role)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {format(new Date(user.created_at), 'd MMM yyyy', { locale: pl })}
+                  </TableCell>
+                  <TableCell>
+                    {user.is_blocked ? (
+                      <span className="text-destructive">{t('instanceUsers.blocked')}</span>
+                    ) : (
+                      <span className="text-emerald-600">{t('instanceUsers.active')}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={actionLoading === user.id}
+                        >
+                          {actionLoading === user.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <MoreVertical className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(user)}>
+                          <User className="w-4 h-4 mr-2" />
+                          {t('instanceUsers.edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                          <KeyRound className="w-4 h-4 mr-2" />
+                          {t('instanceUsers.resetPassword')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleBlockUnblock(user)}>
+                          {user.is_blocked ? (
+                            <>
+                              <Unlock className="w-4 h-4 mr-2" />
+                              {t('instanceUsers.unblock')}
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-4 h-4 mr-2" />
+                              {t('instanceUsers.block')}
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(user)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {t('instanceUsers.delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 

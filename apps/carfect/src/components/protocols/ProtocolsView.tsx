@@ -38,13 +38,6 @@ import { ConfirmDialog } from '@shared/ui';
 import { toast } from 'sonner';
 import { SendProtocolEmailDialog } from './SendProtocolEmailDialog';
 import { ProtocolSettingsDialog } from './ProtocolSettingsDialog';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationEllipsis,
-} from '@shared/ui';
 
 interface Protocol {
   id: string;
@@ -165,37 +158,6 @@ export const ProtocolsView = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const getPageNumbers = () => {
-    const pages: (number | 'ellipsis')[] = [];
-
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-
-      if (currentPage > 3) {
-        pages.push('ellipsis');
-      }
-
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (currentPage < totalPages - 2) {
-        pages.push('ellipsis');
-      }
-
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
-
   const handleCopyLink = (protocol: Protocol) => {
     const baseUrl = window.location.origin;
     const url = `${baseUrl}/protocols/${protocol.public_token}`;
@@ -258,7 +220,7 @@ export const ProtocolsView = ({
             <span className="hidden sm:inline">Wróć</span>
           </Button>
         )}
-        <h1 className="text-2xl font-bold flex-1">Protokoły</h1>
+        <h1 className="text-2xl font-medium flex-1">Protokoły</h1>
         <div className="flex items-center gap-2">
           {!kioskMode && (
             <Button variant="outline" size="icon" onClick={() => setSettingsDialogOpen(true)}>
@@ -269,7 +231,7 @@ export const ProtocolsView = ({
         </div>
       </div>
 
-      <div className="relative mt-4">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           value={searchQuery}
@@ -295,16 +257,12 @@ export const ProtocolsView = ({
         />
       ) : (
         <>
-          {/* Results count */}
-          <p className="text-sm text-muted-foreground py-3">
-            Wyświetlanie {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredProtocols.length)} z{' '}
-            {filteredProtocols.length}
-          </p>
-
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {paginatedProtocols.map((protocol) => (
-              <Card key={protocol.id} className="hover:shadow-md transition-shadow">
+              <Card
+                key={protocol.id}
+                className="shadow-none border-border/50 hover:shadow-md transition-shadow"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 sm:gap-4">
                     <div
@@ -314,7 +272,9 @@ export const ProtocolsView = ({
                       {/* Line 1: Customer name */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <User className="h-4 w-4 text-muted-foreground flex-shrink-0 hidden sm:block" />
-                        <span className="font-medium truncate">{protocol.customer_name}</span>
+                        <span className="font-semibold text-sm truncate">
+                          {protocol.customer_name}
+                        </span>
                       </div>
 
                       {/* Line 2: Car */}
@@ -435,49 +395,36 @@ export const ProtocolsView = ({
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <Pagination className="mt-6">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationLink
-                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                    className={
-                      currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                    }
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </PaginationLink>
-                </PaginationItem>
-
-                {getPageNumbers().map((page, index) => (
-                  <PaginationItem key={index}>
-                    {page === 'ellipsis' ? (
-                      <PaginationEllipsis />
-                    ) : (
-                      <PaginationLink
-                        isActive={currentPage === page}
-                        onClick={() => handlePageChange(page)}
-                        className="cursor-pointer"
-                      >
-                        {page}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-
-                <PaginationItem>
-                  <PaginationLink
-                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                    className={
-                      currentPage === totalPages
-                        ? 'pointer-events-none opacity-50'
-                        : 'cursor-pointer'
-                    }
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </PaginationLink>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Wyświetlanie {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredProtocols.length)} z{' '}
+                {filteredProtocols.length}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm px-3 min-w-[60px] text-center">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           )}
 
           <ConfirmDialog

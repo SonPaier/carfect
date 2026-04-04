@@ -61,21 +61,18 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
       saveAll: async () => {
         try {
           // Handle scope deletions
-          const deletedScopes = scopes.filter(s => s.isDeleted);
+          const deletedScopes = scopes.filter((s) => s.isDeleted);
           for (const scope of deletedScopes) {
             if (!scope.isNew) {
-              const { error } = await supabase
-                .from('offer_scopes')
-                .delete()
-                .eq('id', scope.id);
+              const { error } = await supabase.from('offer_scopes').delete().eq('id', scope.id);
               if (error) throw error;
             }
           }
 
           // Handle new scopes - need to insert and get the real ID
-          const newScopes = scopes.filter(s => s.isNew && !s.isDeleted);
+          const newScopes = scopes.filter((s) => s.isNew && !s.isDeleted);
           const scopeIdMap = new Map<string, string>(); // temp id -> real id
-          
+
           for (const scope of newScopes) {
             const { data, error } = await supabase
               .from('offer_scopes')
@@ -95,7 +92,7 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
           }
 
           // Handle scope updates
-          const dirtyScopes = scopes.filter(s => s.isDirty && !s.isNew && !s.isDeleted);
+          const dirtyScopes = scopes.filter((s) => s.isDirty && !s.isNew && !s.isDeleted);
           for (const scope of dirtyScopes) {
             const { error } = await supabase
               .from('offer_scopes')
@@ -111,37 +108,32 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
           }
 
           // Handle extras for all scopes
-          for (const scope of scopes.filter(s => !s.isDeleted)) {
+          for (const scope of scopes.filter((s) => !s.isDeleted)) {
             const realScopeId = scope.isNew ? scopeIdMap.get(scope.id) : scope.id;
             if (!realScopeId) continue;
 
             // Handle extras
             // Delete removed extras
-            const deletedExtras = scope.extras.filter(e => e.isDeleted && !e.isNew);
+            const deletedExtras = scope.extras.filter((e) => e.isDeleted && !e.isNew);
             for (const extra of deletedExtras) {
-              await supabase
-                .from('offer_scope_extras')
-                .delete()
-                .eq('id', extra.id);
+              await supabase.from('offer_scope_extras').delete().eq('id', extra.id);
             }
 
             // Add new extras
-            const newExtras = scope.extras.filter(e => e.isNew && !e.isDeleted);
+            const newExtras = scope.extras.filter((e) => e.isNew && !e.isDeleted);
             for (const extra of newExtras) {
-              await supabase
-                .from('offer_scope_extras')
-                .insert({
-                  scope_id: realScopeId,
-                  instance_id: instanceId,
-                  name: extra.name,
-                  description: extra.description,
-                  is_upsell: extra.is_upsell,
-                  sort_order: extra.sort_order,
-                });
+              await supabase.from('offer_scope_extras').insert({
+                scope_id: realScopeId,
+                instance_id: instanceId,
+                name: extra.name,
+                description: extra.description,
+                is_upsell: extra.is_upsell,
+                sort_order: extra.sort_order,
+              });
             }
 
             // Update dirty extras
-            const dirtyExtras = scope.extras.filter(e => e.isDirty && !e.isNew && !e.isDeleted);
+            const dirtyExtras = scope.extras.filter((e) => e.isDirty && !e.isNew && !e.isDeleted);
             for (const extra of dirtyExtras) {
               await supabase
                 .from('offer_scope_extras')
@@ -187,25 +179,30 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
         if (extrasError) throw extrasError;
 
         // Map extras to scopes
-        const extrasByScope = (extrasData || []).reduce((acc, extra) => {
-          if (!acc[extra.scope_id]) acc[extra.scope_id] = [];
-          acc[extra.scope_id].push({
-            id: extra.id,
-            name: extra.name,
-            description: extra.description,
-            is_upsell: extra.is_upsell,
-            sort_order: extra.sort_order || 0,
-          });
-          return acc;
-        }, {} as Record<string, ScopeExtra[]>);
+        const extrasByScope = (extrasData || []).reduce(
+          (acc, extra) => {
+            if (!acc[extra.scope_id]) acc[extra.scope_id] = [];
+            acc[extra.scope_id].push({
+              id: extra.id,
+              name: extra.name,
+              description: extra.description,
+              is_upsell: extra.is_upsell,
+              sort_order: extra.sort_order || 0,
+            });
+            return acc;
+          },
+          {} as Record<string, ScopeExtra[]>,
+        );
 
-        setScopes((scopesData || []).map(s => ({ 
-          ...s, 
-          extras: extrasByScope[s.id] || [],
-          isNew: false, 
-          isDeleted: false, 
-          isDirty: false 
-        })));
+        setScopes(
+          (scopesData || []).map((s) => ({
+            ...s,
+            extras: extrasByScope[s.id] || [],
+            isNew: false,
+            isDeleted: false,
+            isDirty: false,
+          })),
+        );
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error(t('offerSettings.scopes.fetchError'));
@@ -219,7 +216,7 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
         id: crypto.randomUUID(),
         name: t('offerSettings.scopes.newService'),
         description: null,
-        sort_order: scopes.filter(s => !s.isDeleted).length,
+        sort_order: scopes.filter((s) => !s.isDeleted).length,
         active: true,
         has_coating_upsell: false,
         is_extras_scope: false,
@@ -232,84 +229,86 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
     };
 
     const handleUpdateScope = (id: string, updates: Partial<OfferScope>) => {
-      setScopes(scopes.map(s => 
-        s.id === id ? { ...s, ...updates, isDirty: true } : s
-      ));
+      setScopes(scopes.map((s) => (s.id === id ? { ...s, ...updates, isDirty: true } : s)));
       onChange?.();
     };
 
     const handleDeleteScope = (id: string) => {
       if (!confirm(t('offerSettings.scopes.confirmDelete'))) return;
-      
-      const scope = scopes.find(s => s.id === id);
+
+      const scope = scopes.find((s) => s.id === id);
       if (scope?.isNew) {
-        setScopes(scopes.filter(s => s.id !== id));
+        setScopes(scopes.filter((s) => s.id !== id));
       } else {
-        setScopes(scopes.map(s => s.id === id ? { ...s, isDeleted: true } : s));
+        setScopes(scopes.map((s) => (s.id === id ? { ...s, isDeleted: true } : s)));
       }
       onChange?.();
     };
 
     const handleAddExtra = (scopeId: string) => {
-      setScopes(scopes.map(scope => {
-        if (scope.id !== scopeId) return scope;
-        
-        const newExtra: ScopeExtra = {
-          id: crypto.randomUUID(),
-          name: t('offerSettings.scopes.newOption'),
-          description: null,
-          is_upsell: true,
-          sort_order: scope.extras.filter(e => !e.isDeleted).length,
-          isNew: true,
-          isDirty: true,
-        };
-        
-        return { ...scope, extras: [...scope.extras, newExtra], isDirty: true };
-      }));
+      setScopes(
+        scopes.map((scope) => {
+          if (scope.id !== scopeId) return scope;
+
+          const newExtra: ScopeExtra = {
+            id: crypto.randomUUID(),
+            name: t('offerSettings.scopes.newOption'),
+            description: null,
+            is_upsell: true,
+            sort_order: scope.extras.filter((e) => !e.isDeleted).length,
+            isNew: true,
+            isDirty: true,
+          };
+
+          return { ...scope, extras: [...scope.extras, newExtra], isDirty: true };
+        }),
+      );
       onChange?.();
     };
 
     const handleUpdateExtra = (scopeId: string, extraId: string, updates: Partial<ScopeExtra>) => {
-      setScopes(scopes.map(scope => {
-        if (scope.id !== scopeId) return scope;
-        
-        return {
-          ...scope,
-          extras: scope.extras.map(e => 
-            e.id === extraId ? { ...e, ...updates, isDirty: true } : e
-          ),
-          isDirty: true,
-        };
-      }));
+      setScopes(
+        scopes.map((scope) => {
+          if (scope.id !== scopeId) return scope;
+
+          return {
+            ...scope,
+            extras: scope.extras.map((e) =>
+              e.id === extraId ? { ...e, ...updates, isDirty: true } : e,
+            ),
+            isDirty: true,
+          };
+        }),
+      );
       onChange?.();
     };
 
     const handleDeleteExtra = (scopeId: string, extraId: string) => {
-      setScopes(scopes.map(scope => {
-        if (scope.id !== scopeId) return scope;
-        
-        const extra = scope.extras.find(e => e.id === extraId);
-        let newExtras: ScopeExtra[];
-        
-        if (extra?.isNew) {
-          newExtras = scope.extras.filter(e => e.id !== extraId);
-        } else {
-          newExtras = scope.extras.map(e => 
-            e.id === extraId ? { ...e, isDeleted: true } : e
-          );
-        }
-        
-        return { ...scope, extras: newExtras, isDirty: true };
-      }));
+      setScopes(
+        scopes.map((scope) => {
+          if (scope.id !== scopeId) return scope;
+
+          const extra = scope.extras.find((e) => e.id === extraId);
+          let newExtras: ScopeExtra[];
+
+          if (extra?.isNew) {
+            newExtras = scope.extras.filter((e) => e.id !== extraId);
+          } else {
+            newExtras = scope.extras.map((e) => (e.id === extraId ? { ...e, isDeleted: true } : e));
+          }
+
+          return { ...scope, extras: newExtras, isDirty: true };
+        }),
+      );
       onChange?.();
     };
 
     const getExtrasCount = (scope: OfferScope): number => {
-      return scope.extras.filter(e => !e.isDeleted).length;
+      return scope.extras.filter((e) => !e.isDeleted).length;
     };
 
     const toggleExpanded = (scopeId: string) => {
-      setExpandedScopes(prev => {
+      setExpandedScopes((prev) => {
         const next = new Set(prev);
         if (next.has(scopeId)) {
           next.delete(scopeId);
@@ -324,16 +323,14 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
       return <div className="text-muted-foreground">{t('common.loading')}</div>;
     }
 
-    const visibleScopes = scopes.filter(s => !s.isDeleted);
+    const visibleScopes = scopes.filter((s) => !s.isDeleted);
 
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-medium">{t('offerSettings.scopes.title')}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t('offerSettings.scopes.description')}
-            </p>
+            <p className="text-sm text-muted-foreground">{t('offerSettings.scopes.description')}</p>
           </div>
           <Button onClick={handleAddScope} size="sm">
             <Plus className="h-4 w-4 mr-2" />
@@ -366,37 +363,51 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
                         />
                         <div className="flex items-center gap-2">
                           <Switch
+                            size="sm"
                             checked={scope.active}
-                            onCheckedChange={(checked) => handleUpdateScope(scope.id, { active: checked })}
+                            onCheckedChange={(checked) =>
+                              handleUpdateScope(scope.id, { active: checked })
+                            }
                           />
-                          <span className="text-sm text-muted-foreground">{t('common.active')}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {t('common.active')}
+                          </span>
                         </div>
                       </div>
                       <Textarea
                         value={scope.description || ''}
-                        onChange={(e) => handleUpdateScope(scope.id, { description: e.target.value })}
+                        onChange={(e) =>
+                          handleUpdateScope(scope.id, { description: e.target.value })
+                        }
                         placeholder={t('offerSettings.scopes.descriptionPlaceholder')}
                         rows={5}
                         className="min-h-[120px]"
                       />
-                      
+
                       {/* Extras scope toggle */}
                       <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
                         <Checkbox
                           id={`extras-${scope.id}`}
                           checked={scope.is_extras_scope}
-                          onCheckedChange={(checked) => handleUpdateScope(scope.id, { is_extras_scope: !!checked })}
+                          onCheckedChange={(checked) =>
+                            handleUpdateScope(scope.id, { is_extras_scope: !!checked })
+                          }
                         />
                         <label htmlFor={`extras-${scope.id}`} className="text-sm cursor-pointer">
-                          <span className="font-medium">{t('offerSettings.scopes.extrasType')}</span>
+                          <span className="font-medium">
+                            {t('offerSettings.scopes.extrasType')}
+                          </span>
                           <span className="text-muted-foreground ml-2">
                             — {t('offerSettings.scopes.extrasTypeDescription')}
                           </span>
                         </label>
                       </div>
-                      
+
                       {/* Extras */}
-                      <Collapsible open={expandedScopes.has(scope.id)} onOpenChange={() => toggleExpanded(scope.id)}>
+                      <Collapsible
+                        open={expandedScopes.has(scope.id)}
+                        onOpenChange={() => toggleExpanded(scope.id)}
+                      >
                         <div className="flex items-center justify-between">
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="sm" className="gap-2 px-2">
@@ -405,7 +416,9 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
                               <Badge variant="secondary" className="ml-1">
                                 {getExtrasCount(scope)}
                               </Badge>
-                              <ChevronDown className={`h-4 w-4 transition-transform ${expandedScopes.has(scope.id) ? 'rotate-180' : ''}`} />
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${expandedScopes.has(scope.id) ? 'rotate-180' : ''}`}
+                              />
                             </Button>
                           </CollapsibleTrigger>
                           <Button
@@ -434,36 +447,49 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
                                 {t('offerSettings.scopes.addOption')}
                               </Button>
                             </div>
-                            {scope.extras.filter(e => !e.isDeleted).length === 0 ? (
+                            {scope.extras.filter((e) => !e.isDeleted).length === 0 ? (
                               <p className="text-sm text-muted-foreground">
                                 {t('offerSettings.scopes.noExtras')}
                               </p>
                             ) : (
                               <div className="space-y-2">
-                                {scope.extras.filter(e => !e.isDeleted).map((extra) => (
-                                  <div key={extra.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-                                    <Input
-                                      value={extra.name}
-                                      onChange={(e) => handleUpdateExtra(scope.id, extra.id, { name: e.target.value })}
-                                      placeholder={t('offerSettings.scopes.optionName')}
-                                      className="flex-1"
-                                    />
-                                    <Input
-                                      value={extra.description || ''}
-                                      onChange={(e) => handleUpdateExtra(scope.id, extra.id, { description: e.target.value })}
-                                      placeholder={t('offerSettings.scopes.optionDescription')}
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleDeleteExtra(scope.id, extra.id)}
-                                      className="text-destructive hover:text-destructive shrink-0"
+                                {scope.extras
+                                  .filter((e) => !e.isDeleted)
+                                  .map((extra) => (
+                                    <div
+                                      key={extra.id}
+                                      className="flex items-center gap-2 p-2 bg-muted/50 rounded-md"
                                     >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                      <Input
+                                        value={extra.name}
+                                        onChange={(e) =>
+                                          handleUpdateExtra(scope.id, extra.id, {
+                                            name: e.target.value,
+                                          })
+                                        }
+                                        placeholder={t('offerSettings.scopes.optionName')}
+                                        className="flex-1"
+                                      />
+                                      <Input
+                                        value={extra.description || ''}
+                                        onChange={(e) =>
+                                          handleUpdateExtra(scope.id, extra.id, {
+                                            description: e.target.value,
+                                          })
+                                        }
+                                        placeholder={t('offerSettings.scopes.optionDescription')}
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteExtra(scope.id, extra.id)}
+                                        className="text-destructive hover:text-destructive shrink-0"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
                               </div>
                             )}
                           </div>
@@ -478,7 +504,7 @@ export const OfferScopesSettings = forwardRef<OfferScopesSettingsRef, OfferScope
         )}
       </div>
     );
-  }
+  },
 );
 
 OfferScopesSettings.displayName = 'OfferScopesSettings';

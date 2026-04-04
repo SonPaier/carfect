@@ -41,17 +41,13 @@ describe('CustomerVisitHistory', () => {
 
   it('shows loading state initially', () => {
     mockSupabaseQuery('reservations', { data: [], error: null });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     expect(screen.getByText('Ładowanie...')).toBeInTheDocument();
   });
 
   it('shows empty state when no visits exist', async () => {
     mockSupabaseQuery('reservations', { data: [], error: null });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText('Brak historii wizyt')).toBeInTheDocument();
     });
@@ -62,9 +58,7 @@ describe('CustomerVisitHistory', () => {
       data: [makeReservation()],
       error: null,
     });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText(/15 marca 2026/)).toBeInTheDocument();
     });
@@ -79,9 +73,7 @@ describe('CustomerVisitHistory', () => {
       data: [makeReservation({ status: 'no_show' })],
       error: null,
     });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText('Nieobecny')).toBeInTheDocument();
     });
@@ -92,9 +84,7 @@ describe('CustomerVisitHistory', () => {
       data: [makeReservation({ status: 'completed' })],
       error: null,
     });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText('WA 12345')).toBeInTheDocument();
     });
@@ -107,11 +97,7 @@ describe('CustomerVisitHistory', () => {
       error: null,
     });
     render(
-      <CustomerVisitHistory
-        customerPhone="+48500100200"
-        instanceId="inst-1"
-        showNotes={true}
-      />,
+      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" showNotes={true} />,
     );
     await waitFor(() => {
       expect(screen.getByText('Klient prosił o dodatkowe woskowanie')).toBeInTheDocument();
@@ -123,9 +109,7 @@ describe('CustomerVisitHistory', () => {
       data: [makeReservation({ admin_notes: 'Notatka ukryta' })],
       error: null,
     });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText('WA 12345')).toBeInTheDocument();
     });
@@ -143,11 +127,7 @@ describe('CustomerVisitHistory', () => {
       error: null,
     });
     render(
-      <CustomerVisitHistory
-        customerPhone="+48500100200"
-        instanceId="inst-1"
-        showDuration={true}
-      />,
+      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" showDuration={true} />,
     );
     await waitFor(() => {
       expect(screen.getByText('Czas wykonania: 1h 35min')).toBeInTheDocument();
@@ -165,11 +145,7 @@ describe('CustomerVisitHistory', () => {
       error: null,
     });
     render(
-      <CustomerVisitHistory
-        customerPhone="+48500100200"
-        instanceId="inst-1"
-        showDuration={true}
-      />,
+      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" showDuration={true} />,
     );
     await waitFor(() => {
       expect(screen.getByText('WA 12345')).toBeInTheDocument();
@@ -206,9 +182,7 @@ describe('CustomerVisitHistory', () => {
       ],
       error: null,
     });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText('BMW 1')).toBeInTheDocument();
       expect(screen.getByText('BMW 2')).toBeInTheDocument();
@@ -232,9 +206,7 @@ describe('CustomerVisitHistory', () => {
       ],
       error: null,
     });
-    render(
-      <CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />,
-    );
+    render(<CustomerVisitHistory customerPhone="+48500100200" instanceId="inst-1" />);
     await waitFor(() => {
       expect(screen.getByText('MYC, Polerowanie')).toBeInTheDocument();
     });

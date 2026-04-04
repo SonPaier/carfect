@@ -234,7 +234,7 @@ export function OfferServicesListView({
 
         <div className="flex flex-col gap-2 mb-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Twoje Szablony</h1>
+            <h1 className="text-2xl font-medium">Twoje Szablony</h1>
             <Button onClick={onCreate} className="gap-2">
               <Plus className="w-4 h-4" />
               Dodaj szablon

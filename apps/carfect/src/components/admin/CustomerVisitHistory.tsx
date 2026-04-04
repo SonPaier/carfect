@@ -110,13 +110,18 @@ export const CustomerVisitHistory = ({
       setVisits(
         data.map((v) => {
           let serviceName: string | null = null;
-          const items = v.service_items as { service_id?: string; short_name?: string; name?: string }[] | null;
+          const items = v.service_items as
+            | { service_id?: string; short_name?: string; name?: string }[]
+            | null;
           if (items?.length) {
             serviceName =
               items
                 .map(
                   (item) =>
-                    item.short_name || item.name || (item.service_id ? serviceNamesMap.get(item.service_id) : null) || null,
+                    item.short_name ||
+                    item.name ||
+                    (item.service_id ? serviceNamesMap.get(item.service_id) : null) ||
+                    null,
                 )
                 .filter(Boolean)
                 .join(', ') || null;
@@ -151,7 +156,9 @@ export const CustomerVisitHistory = ({
     };
 
     fetchVisitHistory();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [customerPhone, instanceId]);
 
   if (loading) {
@@ -180,7 +187,8 @@ export const CustomerVisitHistory = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-foreground">
-                  {format(new Date(visit.reservation_date), 'd MMMM yyyy', { locale: pl })}, {visit.start_time?.slice(0, 5)}
+                  {format(new Date(visit.reservation_date), 'd MMMM yyyy', { locale: pl })},{' '}
+                  {visit.start_time?.slice(0, 5)}
                 </span>
                 {visit.status === 'no_show' && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">
@@ -202,9 +210,7 @@ export const CustomerVisitHistory = ({
             {visit.service_name && (
               <div className="text-sm text-foreground">{visit.service_name}</div>
             )}
-            {duration && (
-              <div className="text-sm text-foreground">Czas wykonania: {duration}</div>
-            )}
+            {duration && <div className="text-sm text-foreground">Czas wykonania: {duration}</div>}
             {showNotes && visit.admin_notes && (
               <div className="mt-2 text-sm text-foreground">
                 <span className="whitespace-pre-wrap">{visit.admin_notes}</span>

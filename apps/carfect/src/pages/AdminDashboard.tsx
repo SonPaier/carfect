@@ -391,7 +391,9 @@ const AdminDashboard = () => {
       try {
         const parsed = new Date(saved);
         if (!isNaN(parsed.getTime())) return parsed;
-      } catch { /* invalid date in localStorage */ }
+      } catch {
+        /* invalid date in localStorage */
+      }
     }
     return new Date();
   });
@@ -3286,11 +3288,6 @@ const AdminDashboard = () => {
                   ),
             )}
           >
-            {/* Header - only shown for settings view */}
-            {currentView === 'settings' && (
-              <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
-            )}
-
             {/* Free Time Ranges Per Station - Hidden on desktop, shown via bottom sheet on mobile */}
 
             {/* View Content */}

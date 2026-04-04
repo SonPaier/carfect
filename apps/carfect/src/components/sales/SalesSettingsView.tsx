@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Loader2, Save, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -399,11 +399,7 @@ const SalesSettingsView = () => {
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={saveMutation.isPending}>
-        {saveMutation.isPending ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <Save className="w-4 h-4 mr-2" />
-        )}
+        {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Zapisz
       </Button>
     </div>

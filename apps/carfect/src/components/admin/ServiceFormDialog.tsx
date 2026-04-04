@@ -596,14 +596,22 @@ const ServiceFormContent = ({
                   />
                 </div>
               </div>
-              {(formData.price_small != null || formData.price_medium != null || formData.price_large != null) && (
+              {(formData.price_small != null ||
+                formData.price_medium != null ||
+                formData.price_large != null) && (
                 <p className="text-xs text-muted-foreground">
                   Netto:{' '}
                   {[
-                    formData.price_small != null && `S: ${bruttoToNetto(formData.price_small).toFixed(2)}`,
-                    formData.price_medium != null && `M: ${bruttoToNetto(formData.price_medium).toFixed(2)}`,
-                    formData.price_large != null && `L: ${bruttoToNetto(formData.price_large).toFixed(2)}`,
-                  ].filter(Boolean).join(', ')} zł
+                    formData.price_small != null &&
+                      `S: ${bruttoToNetto(formData.price_small).toFixed(2)}`,
+                    formData.price_medium != null &&
+                      `M: ${bruttoToNetto(formData.price_medium).toFixed(2)}`,
+                    formData.price_large != null &&
+                      `L: ${bruttoToNetto(formData.price_large).toFixed(2)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}{' '}
+                  zł
                 </p>
               )}
               <button
@@ -976,7 +984,7 @@ export const ServiceFormDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[80vw] max-w-[1000px] h-[80vh] max-h-[80vh] flex flex-col p-0 gap-0 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-full [&>button]:bg-transparent [&>button]:hover:bg-hover [&>button]:absolute [&>button]:right-4 [&>button]:top-4"
+        className="w-[80vw] max-w-[1000px] h-[80vh] max-h-[80vh] flex flex-col p-0 gap-0 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-lg [&>button]:bg-transparent [&>button]:hover:bg-hover [&>button]:absolute [&>button]:right-4 [&>button]:top-4"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >

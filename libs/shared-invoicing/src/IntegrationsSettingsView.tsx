@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInvoicingSettings } from './useInvoicingSettings';
 import { FakturowniaConfigForm } from './FakturowniaConfigForm';
@@ -270,30 +269,34 @@ export function IntegrationsSettingsView({
 
       <div className="flex items-center justify-between">
         <Label htmlFor="auto-send">Automatycznie wysylaj mailem</Label>
-        <Switch id="auto-send" checked={autoSendEmail} onCheckedChange={setAutoSendEmail} />
+        <Switch
+          size="sm"
+          id="auto-send"
+          checked={autoSendEmail}
+          onCheckedChange={setAutoSendEmail}
+        />
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-4">
-      {/* Fakturownia Card */}
+    <div className="space-y-2">
+      {/* Fakturownia */}
       {showFakturownia && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">Fakturownia</CardTitle>
-                <CardDescription>Integracja z fakturownia.pl</CardDescription>
-              </div>
-              <Switch
-                checked={activeProvider === 'fakturownia'}
-                onCheckedChange={(v) => handleToggleProvider('fakturownia', v)}
-              />
+        <div className="bg-white border border-border/50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium text-sm">Fakturownia</div>
+              <div className="text-xs text-muted-foreground">Integracja z fakturownia.pl</div>
             </div>
-          </CardHeader>
+            <Switch
+              size="sm"
+              checked={activeProvider === 'fakturownia'}
+              onCheckedChange={(v) => handleToggleProvider('fakturownia', v)}
+            />
+          </div>
           {activeProvider === 'fakturownia' && (
-            <CardContent className="pt-0">
+            <div>
               <FakturowniaConfigForm
                 config={fakturowniaConfig}
                 onChange={setFakturowniaConfig}
@@ -301,28 +304,27 @@ export function IntegrationsSettingsView({
                 supabaseClient={supabaseClient}
               />
               {renderCommonSettings()}
-            </CardContent>
+            </div>
           )}
-        </Card>
+        </div>
       )}
 
-      {/* iFirma Card */}
+      {/* iFirma */}
       {showIfirma && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">iFirma</CardTitle>
-                <CardDescription>Integracja z ifirma.pl</CardDescription>
-              </div>
-              <Switch
-                checked={activeProvider === 'ifirma'}
-                onCheckedChange={(v) => handleToggleProvider('ifirma', v)}
-              />
+        <div className="bg-white border border-border/50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium text-sm">iFirma</div>
+              <div className="text-xs text-muted-foreground">Integracja z ifirma.pl</div>
             </div>
-          </CardHeader>
+            <Switch
+              size="sm"
+              checked={activeProvider === 'ifirma'}
+              onCheckedChange={(v) => handleToggleProvider('ifirma', v)}
+            />
+          </div>
           {activeProvider === 'ifirma' && (
-            <CardContent className="pt-0">
+            <div>
               <IfirmaConfigForm
                 config={ifirmaConfig}
                 onChange={setIfirmaConfig}
@@ -330,19 +332,15 @@ export function IntegrationsSettingsView({
                 supabaseClient={supabaseClient}
               />
               {renderCommonSettings()}
-            </CardContent>
+            </div>
           )}
-        </Card>
+        </div>
       )}
 
       {/* Save Button */}
-      <Button onClick={handleSave} disabled={isSaving} className="w-full">
-        {isSaving ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <Save className="w-4 h-4 mr-2" />
-        )}
-        Zapisz ustawienia
+      <Button onClick={handleSave} disabled={isSaving}>
+        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Zapisz
       </Button>
     </div>
   );

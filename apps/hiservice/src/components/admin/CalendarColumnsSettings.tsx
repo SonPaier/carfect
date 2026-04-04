@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Loader2, Save, Calendar, Check, X, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Calendar, Check, X, GripVertical } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,12 +44,28 @@ interface CalendarColumnsSettingsProps {
 }
 
 const COLUMN_COLORS = [
-  '#E2EFFF', '#E5D5F1', '#FEE0D6', '#FEF1D6',
-  '#D8EBE4', '#F5E6D0', '#E8E8E8', '#FDDEDE',
+  '#E2EFFF',
+  '#E5D5F1',
+  '#FEE0D6',
+  '#FEF1D6',
+  '#D8EBE4',
+  '#F5E6D0',
+  '#E8E8E8',
+  '#FDDEDE',
 ];
 
-function SortableColumnItem({ column, onEdit, onDelete }: { column: CalendarColumn; onEdit: () => void; onDelete: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: column.id });
+function SortableColumnItem({
+  column,
+  onEdit,
+  onDelete,
+}: {
+  column: CalendarColumn;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: column.id,
+  });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
@@ -45,16 +73,27 @@ function SortableColumnItem({ column, onEdit, onDelete }: { column: CalendarColu
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-border/50 rounded-lg bg-card",
-        isDragging && "opacity-50 shadow-lg"
+        'flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-border/50 rounded-lg bg-card',
+        isDragging && 'opacity-50 shadow-lg',
       )}
     >
       <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-        <button type="button" className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground"
+          {...attributes}
+          {...listeners}
+        >
           <GripVertical className="w-5 h-5" />
         </button>
-        <div className={cn("p-2 rounded-lg shrink-0", !column.color && "bg-primary/10")} style={column.color ? { backgroundColor: column.color } : undefined}>
-          <Calendar className={cn("w-5 h-5", !column.color && "text-primary")} style={column.color ? { color: '#475569' } : undefined} />
+        <div
+          className={cn('p-2 rounded-lg shrink-0', !column.color && 'bg-primary/10')}
+          style={column.color ? { backgroundColor: column.color } : undefined}
+        >
+          <Calendar
+            className={cn('w-5 h-5', !column.color && 'text-primary')}
+            style={column.color ? { color: '#475569' } : undefined}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <span className="font-medium text-sm sm:text-base">{column.name}</span>
@@ -64,7 +103,12 @@ function SortableColumnItem({ column, onEdit, onDelete }: { column: CalendarColu
         <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={onEdit}>
           <Edit2 className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-destructive" onClick={onDelete}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 sm:h-10 sm:w-10 text-destructive"
+          onClick={onDelete}
+        >
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
@@ -101,7 +145,9 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
     }
   };
 
-  useEffect(() => { fetchColumns(); }, [instanceId]);
+  useEffect(() => {
+    fetchColumns();
+  }, [instanceId]);
 
   const openEditDialog = (column?: CalendarColumn) => {
     if (column) {
@@ -129,14 +175,12 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
         if (error) throw error;
         toast.success('Kolumna zaktualizowana');
       } else {
-        const { error } = await supabase
-          .from('calendar_columns')
-          .insert({
-            instance_id: instanceId,
-            name: formData.name.trim(),
-            color: formData.color,
-            sort_order: columns.length,
-          });
+        const { error } = await supabase.from('calendar_columns').insert({
+          instance_id: instanceId,
+          name: formData.name.trim(),
+          color: formData.color,
+          sort_order: columns.length,
+        });
         if (error) throw error;
         toast.success('Kolumna dodana');
       }
@@ -155,14 +199,16 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = columns.findIndex(c => c.id === active.id);
-    const newIndex = columns.findIndex(c => c.id === over.id);
+    const oldIndex = columns.findIndex((c) => c.id === active.id);
+    const newIndex = columns.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(columns, oldIndex, newIndex);
     setColumns(reordered);
     try {
-      await Promise.all(reordered.map((c, i) =>
-        supabase.from('calendar_columns').update({ sort_order: i }).eq('id', c.id)
-      ));
+      await Promise.all(
+        reordered.map((c, i) =>
+          supabase.from('calendar_columns').update({ sort_order: i }).eq('id', c.id),
+        ),
+      );
       queryClient.invalidateQueries({ queryKey: ['calendar_columns', instanceId] });
       onColumnsChange?.();
     } catch (error) {
@@ -200,7 +246,9 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-lg font-semibold">Kolumny kalendarza</h3>
-          <p className="text-sm text-muted-foreground">Zarządzaj kolumnami widocznymi w kalendarzu</p>
+          <p className="text-sm text-muted-foreground">
+            Zarządzaj kolumnami widocznymi w kalendarzu
+          </p>
         </div>
         <Button onClick={() => openEditDialog()} size="sm" className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
@@ -214,9 +262,9 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={columns.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={columns.map((c) => c.id)} strategy={verticalListSortingStrategy}>
             <div className="grid gap-3">
-              {columns.map(column => (
+              {columns.map((column) => (
                 <SortableColumnItem
                   key={column.id}
                   column={column}
@@ -239,7 +287,7 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
               <Label>Nazwa kolumny *</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="np. Dostawy, Montaż, Serwis"
               />
             </div>
@@ -248,23 +296,31 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
               <div className="flex flex-wrap gap-2 items-center">
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, color: null }))}
+                  onClick={() => setFormData((prev) => ({ ...prev, color: null }))}
                   className={cn(
-                    "w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all",
-                    formData.color === null ? "border-foreground ring-2 ring-foreground/20" : "border-border hover:border-foreground/50"
+                    'w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all',
+                    formData.color === null
+                      ? 'border-foreground ring-2 ring-foreground/20'
+                      : 'border-border hover:border-foreground/50',
                   )}
                   title="Brak koloru"
                 >
-                  {formData.color === null ? <X className="w-3.5 h-3.5 text-muted-foreground" /> : <X className="w-3 h-3 text-muted-foreground/40" />}
+                  {formData.color === null ? (
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  ) : (
+                    <X className="w-3 h-3 text-muted-foreground/40" />
+                  )}
                 </button>
                 {COLUMN_COLORS.map((color) => (
                   <button
                     key={color}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, color }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, color }))}
                     className={cn(
-                      "w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all",
-                      formData.color === color ? "border-foreground ring-2 ring-foreground/20" : "border-border hover:border-foreground/50"
+                      'w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all',
+                      formData.color === color
+                        ? 'border-foreground ring-2 ring-foreground/20'
+                        : 'border-border hover:border-foreground/50',
                     )}
                     style={{ backgroundColor: color }}
                   >
@@ -275,10 +331,11 @@ const CalendarColumnsSettings = ({ instanceId, onColumnsChange }: CalendarColumn
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Anuluj</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Anuluj
+            </Button>
             <Button onClick={handleSave} disabled={saving} className="gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              <Save className="w-4 h-4" />
               Zapisz
             </Button>
           </DialogFooter>

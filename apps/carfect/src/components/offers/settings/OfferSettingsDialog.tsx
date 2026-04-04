@@ -11,7 +11,7 @@ import { ScrollArea } from '@shared/ui';
 import { OfferBrandingSettings, OfferBrandingSettingsRef } from './OfferBrandingSettings';
 import { OfferTrustHeaderSettings, OfferTrustHeaderSettingsRef } from './OfferTrustHeaderSettings';
 import { WidgetSettingsTab } from './WidgetSettingsTab';
-import { Settings, Save, Loader2, FileText, Palette, Award, Code } from 'lucide-react';
+import { Settings, Loader2, FileText, Palette, Award, Code } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,7 +26,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
   const [activeTab, setActiveTab] = useState('general');
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   // General settings state
   const [defaultPaymentTerms, setDefaultPaymentTerms] = useState('');
   const [bankName, setBankName] = useState('');
@@ -42,13 +42,15 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
     const fetchSettings = async () => {
       if (!open || !instanceId) return;
       setLoadingSettings(true);
-      
+
       const { data } = await supabase
         .from('instances')
-        .select('offer_default_payment_terms, offer_bank_name, offer_bank_account_number, offer_bank_company_name')
+        .select(
+          'offer_default_payment_terms, offer_bank_name, offer_bank_account_number, offer_bank_company_name',
+        )
         .eq('id', instanceId)
         .single();
-      
+
       if (data) {
         setDefaultPaymentTerms(data.offer_default_payment_terms || '');
         setBankName(data.offer_bank_name || '');
@@ -67,7 +69,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
       // Save general settings
       const { error: settingsError } = await supabase
         .from('instances')
-        .update({ 
+        .update({
           offer_default_payment_terms: defaultPaymentTerms || null,
           offer_bank_name: bankName || null,
           offer_bank_account_number: bankAccountNumber || null,
@@ -160,48 +162,60 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       <p className="text-sm text-muted-foreground">
                         Te dane będą widoczne w sekcji płatności na ofercie.
                       </p>
-                      
+
                       <div className="space-y-2">
                         <Label>Nazwa firmy na fakturę</Label>
                         <Input
                           value={bankCompanyName}
-                          onChange={(e) => { setBankCompanyName(e.target.value); handleChange(); }}
+                          onChange={(e) => {
+                            setBankCompanyName(e.target.value);
+                            handleChange();
+                          }}
                           disabled={saving}
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label>Nazwa banku</Label>
                         <Input
                           value={bankName}
-                          onChange={(e) => { setBankName(e.target.value); handleChange(); }}
+                          onChange={(e) => {
+                            setBankName(e.target.value);
+                            handleChange();
+                          }}
                           disabled={saving}
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label>Numer konta</Label>
                         <Input
                           value={bankAccountNumber}
-                          onChange={(e) => { setBankAccountNumber(e.target.value); handleChange(); }}
+                          onChange={(e) => {
+                            setBankAccountNumber(e.target.value);
+                            handleChange();
+                          }}
                           disabled={saving}
                           className="font-mono"
                         />
                       </div>
                     </div>
-                    
+
                     {/* Default payment terms */}
                     <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
                       <h4 className="font-medium">{t('offerSettings.defaultValues')}</h4>
                       <p className="text-sm text-muted-foreground">
                         Te ustawienia będą dziedziczone przez każdą nowo utworzoną usługę.
                       </p>
-                      
+
                       <div className="space-y-2">
                         <Label>{t('offerSettings.defaultPaymentTerms')}</Label>
                         <Textarea
                           value={defaultPaymentTerms}
-                          onChange={(e) => { setDefaultPaymentTerms(e.target.value); handleChange(); }}
+                          onChange={(e) => {
+                            setDefaultPaymentTerms(e.target.value);
+                            handleChange();
+                          }}
                           rows={5}
                           disabled={saving}
                         />
@@ -212,11 +226,19 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
               </TabsContent>
 
               <TabsContent value="branding" className="mt-6 mb-6">
-                <OfferBrandingSettings ref={brandingRef} instanceId={instanceId} onChange={handleChange} />
+                <OfferBrandingSettings
+                  ref={brandingRef}
+                  instanceId={instanceId}
+                  onChange={handleChange}
+                />
               </TabsContent>
 
               <TabsContent value="trustHeader" className="mt-6 mb-6">
-                <OfferTrustHeaderSettings ref={trustHeaderRef} instanceId={instanceId} onChange={handleChange} />
+                <OfferTrustHeaderSettings
+                  ref={trustHeaderRef}
+                  instanceId={instanceId}
+                  onChange={handleChange}
+                />
               </TabsContent>
 
               <TabsContent value="widget" className="mt-6 mb-6">
@@ -238,10 +260,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                 {t('common.saving')}
               </>
             ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {t('common.save')}
-              </>
+              <>{t('common.save')}</>
             )}
           </Button>
         </DialogFooter>

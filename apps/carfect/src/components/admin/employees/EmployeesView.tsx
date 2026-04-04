@@ -195,7 +195,9 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   }, [timeEntries, workingHours]);
 
   // Filter only active (not soft-deleted) employees
-  const activeEmployees = employees.filter((e) => e.active && !(e as Record<string, unknown>).deleted_at);
+  const activeEmployees = employees.filter(
+    (e) => e.active && !(e as Record<string, unknown>).deleted_at,
+  );
 
   // Calculate period totals (works for both weekly and monthly)
   const periodSummary = useMemo(() => calculateMonthlySummary(timeEntries), [timeEntries]);
@@ -446,14 +448,14 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Pracownicy i czas pracy</h1>
+        <h1 className="text-2xl font-medium">Pracownicy</h1>
         {isAdmin && (
           <div className="flex gap-2">
             <Button
               onClick={() => setSettingsDrawerOpen(true)}
               variant="outline"
               size="icon"
-              className="bg-white h-10 w-10"
+              className="bg-white"
               title="Ustawienia czasu pracy"
             >
               <Settings2 className="w-5 h-5" />
@@ -462,13 +464,12 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               onClick={() => setDayOffDialogOpen(true)}
               variant="outline"
               size="icon"
-              className="bg-white h-10 w-10"
+              className="bg-white"
               title="Dodaj nieobecność"
             >
               <CalendarOff className="w-5 h-5" />
             </Button>
-            <Button onClick={handleAddEmployee} className="h-10" title="Dodaj pracownika">
-              <Plus className="w-5 h-5" />
+            <Button onClick={handleAddEmployee} title="Dodaj pracownika">
               Dodaj pracownika
             </Button>
           </div>
@@ -500,7 +501,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       ) : (
         <>
           {/* Table layout */}
-          <div className="overflow-hidden rounded-lg max-w-full">
+          <div className="overflow-hidden rounded-lg border border-border/50 max-w-full">
             <Table className="bg-white w-full table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">

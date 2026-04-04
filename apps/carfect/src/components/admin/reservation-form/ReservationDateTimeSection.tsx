@@ -5,18 +5,8 @@ import { pl } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { cn } from '@/lib/utils';
@@ -99,7 +89,7 @@ export const ReservationDateTimeSection = ({
   showStationSelector = false,
 }: ReservationDateTimeSectionProps) => {
   const { t } = useTranslation();
-  
+
   // Calendar months logic:
   // - Single day: always 1 month
   // - Multi day: 1 on mobile, 2 on desktop
@@ -123,8 +113,22 @@ export const ReservationDateTimeSection = ({
               setDateRange({ from: dateRange.from, to: dateRange.from });
             }
             // When switching to multi and no times set, prefill from working hours
-            if (val === 'multi' && !manualStartTime && !manualEndTime && workingHours && dateRange?.from) {
-              const dayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][dateRange.from.getDay()];
+            if (
+              val === 'multi' &&
+              !manualStartTime &&
+              !manualEndTime &&
+              workingHours &&
+              dateRange?.from
+            ) {
+              const dayName = [
+                'sunday',
+                'monday',
+                'tuesday',
+                'wednesday',
+                'thursday',
+                'friday',
+                'saturday',
+              ][dateRange.from.getDay()];
               const dayHours = workingHours[dayName];
               if (dayHours) {
                 setManualStartTime(dayHours.open.substring(0, 5));
@@ -160,9 +164,9 @@ export const ReservationDateTimeSection = ({
             <Button
               variant="outline"
               className={cn(
-                'w-full justify-start text-left font-normal bg-white dark:bg-card border-foreground/60',
+                'w-full justify-start text-left font-normal bg-white dark:bg-card',
                 !dateRange?.from && 'text-muted-foreground',
-                dateRangeError && 'border-destructive'
+                dateRangeError && 'border-destructive',
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -218,7 +222,15 @@ export const ReservationDateTimeSection = ({
                   setDateRange(range);
                   // Prefill times from working hours when selecting date in multi mode
                   if (range?.from && !manualStartTime && !manualEndTime && workingHours) {
-                    const dayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][range.from.getDay()];
+                    const dayName = [
+                      'sunday',
+                      'monday',
+                      'tuesday',
+                      'wednesday',
+                      'thursday',
+                      'friday',
+                      'saturday',
+                    ][range.from.getDay()];
                     const dayHours = workingHours[dayName];
                     if (dayHours) {
                       setManualStartTime(dayHours.open.substring(0, 5));
@@ -260,7 +272,7 @@ export const ReservationDateTimeSection = ({
                 setManualStartTime(val);
               }}
             >
-              <SelectTrigger id="manualStartTime" className="bg-white border-foreground/60">
+              <SelectTrigger id="manualStartTime" className="bg-white">
                 <SelectValue placeholder="--:--" />
               </SelectTrigger>
               <SelectContent className="bg-white max-h-60">
@@ -282,7 +294,7 @@ export const ReservationDateTimeSection = ({
                 setManualEndTime(val);
               }}
             >
-              <SelectTrigger id="manualEndTime" className="bg-white border-foreground/60">
+              <SelectTrigger id="manualEndTime" className="bg-white">
                 <SelectValue placeholder="--:--" />
               </SelectTrigger>
               <SelectContent className="bg-white max-h-60">
@@ -302,8 +314,19 @@ export const ReservationDateTimeSection = ({
             <Label htmlFor="manualStation">
               {t('addReservation.selectStation')} <span className="text-destructive">*</span>
             </Label>
-            <Select value={manualStationId || ''} onValueChange={(val) => { markUserEditing(); setManualStationId(val); }}>
-              <SelectTrigger className={cn("bg-white dark:bg-card border-foreground/60", !manualStationId && timeError && 'border-destructive')}>
+            <Select
+              value={manualStationId || ''}
+              onValueChange={(val) => {
+                markUserEditing();
+                setManualStationId(val);
+              }}
+            >
+              <SelectTrigger
+                className={cn(
+                  'bg-white dark:bg-card',
+                  !manualStationId && timeError && 'border-destructive',
+                )}
+              >
                 <SelectValue placeholder={t('addReservation.selectStation')} />
               </SelectTrigger>
               <SelectContent className="bg-white">

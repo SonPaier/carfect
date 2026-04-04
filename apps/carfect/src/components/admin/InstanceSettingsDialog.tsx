@@ -9,7 +9,6 @@ import {
   Palette,
   Upload,
   Loader2,
-  Save,
   Trash2,
   Image as ImageIcon,
   Users,
@@ -532,11 +531,7 @@ const InstanceSettingsDialog = ({
             {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={loading}>
-            {loading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {t('instanceSettings.saveChanges')}
           </Button>
         </div>

@@ -90,7 +90,9 @@ export const CustomerSection = ({
     };
 
     fetchCount();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [customerPhone, instanceId]);
 
   const handleCustomerSelect = async (customer: {

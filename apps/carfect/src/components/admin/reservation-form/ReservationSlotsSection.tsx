@@ -5,13 +5,7 @@ import { format, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { Station, WorkingHours, ReservationSlot } from './types';
@@ -35,9 +29,7 @@ function formatSlotSummary(slot: ReservationSlot, stations: Station[]): string {
   const parts: string[] = [];
   if (slot.dateRange?.from) {
     if (slot.dateRange.to && !isSameDay(slot.dateRange.from, slot.dateRange.to)) {
-      parts.push(
-        `${format(slot.dateRange.from, 'd.MM')} – ${format(slot.dateRange.to, 'd.MM')}`
-      );
+      parts.push(`${format(slot.dateRange.from, 'd.MM')} – ${format(slot.dateRange.to, 'd.MM')}`);
     } else {
       parts.push(format(slot.dateRange.from, 'd.MM'));
     }
@@ -90,7 +82,6 @@ const SlotCard = ({
   const dateToRef = useRef<HTMLDivElement>(null);
   const isMultiSlot = totalSlots > 1;
 
-
   // Close calendar when clicking outside the date section
   useEffect(() => {
     if (!dateFromOpen && !dateToOpen) return;
@@ -108,13 +99,20 @@ const SlotCard = ({
     if (!date) return;
     const newFrom = date;
     // If "to" is before new "from", sync to = from
-    const newTo = slot.dateRange?.to && !isBefore(slot.dateRange.to, newFrom)
-      ? slot.dateRange.to
-      : newFrom;
+    const newTo =
+      slot.dateRange?.to && !isBefore(slot.dateRange.to, newFrom) ? slot.dateRange.to : newFrom;
     const newRange = { from: newFrom, to: newTo };
     // Prefill times from working hours when selecting date
     if (!slot.startTime && !slot.endTime && workingHours) {
-      const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][newFrom.getDay()];
+      const dayName = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ][newFrom.getDay()];
       const dayHours = workingHours[dayName];
       if (dayHours) {
         onUpdate({
@@ -156,10 +154,12 @@ const SlotCard = ({
   };
 
   return (
-    <div className={cn(
-      'space-y-3',
-      isMultiSlot && 'rounded-lg border border-border p-3 bg-white dark:bg-card'
-    )}>
+    <div
+      className={cn(
+        'space-y-3',
+        isMultiSlot && 'rounded-lg border border-border p-3 bg-white dark:bg-card',
+      )}
+    >
       {/* Header for multi-slot mode */}
       {isMultiSlot && (
         <div className="flex items-center justify-between">
@@ -192,11 +192,14 @@ const SlotCard = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => { setDateFromOpen(!dateFromOpen); setDateToOpen(false); }}
+              onClick={() => {
+                setDateFromOpen(!dateFromOpen);
+                setDateToOpen(false);
+              }}
               className={cn(
-                'w-full justify-start text-left font-normal bg-white dark:bg-card border-foreground/60',
+                'w-full justify-start text-left font-normal bg-white dark:bg-card',
                 !slot.dateRange?.from && 'text-muted-foreground',
-                error && !slot.dateRange?.from && 'border-destructive'
+                error && !slot.dateRange?.from && 'border-destructive',
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -213,11 +216,14 @@ const SlotCard = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => { setDateToOpen(!dateToOpen); setDateFromOpen(false); }}
+              onClick={() => {
+                setDateToOpen(!dateToOpen);
+                setDateFromOpen(false);
+              }}
               className={cn(
-                'w-full justify-start text-left font-normal bg-white dark:bg-card border-foreground/60',
+                'w-full justify-start text-left font-normal bg-white dark:bg-card',
                 !slot.dateRange?.to && 'text-muted-foreground',
-                error && !slot.dateRange?.to && 'border-destructive'
+                error && !slot.dateRange?.to && 'border-destructive',
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -229,7 +235,7 @@ const SlotCard = ({
         </div>
         {/* Calendar renders below both date buttons, full width */}
         {dateFromOpen && (
-          <div className="mt-2 w-fit rounded-md border border-foreground/60 bg-input shadow-md">
+          <div className="mt-2 w-fit rounded-md border bg-input shadow-md">
             <Calendar
               mode="single"
               defaultMonth={slot.dateRange?.from || new Date()}
@@ -242,7 +248,7 @@ const SlotCard = ({
           </div>
         )}
         {dateToOpen && (
-          <div className="mt-2 w-fit rounded-md border border-foreground/60 bg-input shadow-md">
+          <div className="mt-2 w-fit rounded-md border bg-input shadow-md">
             <Calendar
               mode="single"
               defaultMonth={slot.dateRange?.to || slot.dateRange?.from || new Date()}
@@ -264,7 +270,7 @@ const SlotCard = ({
             value={slot.startTime}
             onValueChange={(val) => onUpdate({ ...slot, startTime: val })}
           >
-            <SelectTrigger className="bg-white border-foreground/60">
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="--:--" />
             </SelectTrigger>
             <SelectContent className="bg-white max-h-60 z-[60]">
@@ -285,7 +291,7 @@ const SlotCard = ({
               onUserModifiedEndTime?.();
             }}
           >
-            <SelectTrigger className="bg-white border-foreground/60">
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="--:--" />
             </SelectTrigger>
             <SelectContent className="bg-white max-h-60 z-[60]">
@@ -309,10 +315,12 @@ const SlotCard = ({
             value={slot.stationId || ''}
             onValueChange={(val) => onUpdate({ ...slot, stationId: val })}
           >
-            <SelectTrigger className={cn(
-              'bg-white dark:bg-card border-foreground/60',
-              !slot.stationId && error && 'border-destructive'
-            )}>
+            <SelectTrigger
+              className={cn(
+                'bg-white dark:bg-card',
+                !slot.stationId && error && 'border-destructive',
+              )}
+            >
               <SelectValue placeholder={t('addReservation.selectStation')} />
             </SelectTrigger>
             <SelectContent className="bg-white z-[60]">
@@ -378,7 +386,7 @@ export const ReservationSlotsSection = ({
           workingHours={workingHours}
           startTimeOptions={startTimeOptions}
           endTimeOptions={endTimeOptions}
-          error={index === 0 ? (errors?.dateRange || errors?.time || errors?.station) : undefined}
+          error={index === 0 ? errors?.dateRange || errors?.time || errors?.station : undefined}
           isMobile={isMobile}
           showStationSelector={showStationSelector}
           onUpdate={(updated) => handleUpdateSlot(index, updated)}
