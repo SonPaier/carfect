@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface ProtocolSettingsDialogProps {
   open: boolean;
@@ -117,11 +111,7 @@ export const ProtocolSettingsDialog = ({
             Anuluj
           </Button>
           <Button onClick={handleSave} disabled={saving || loading}>
-            {saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Zapisz
           </Button>
         </DialogFooter>

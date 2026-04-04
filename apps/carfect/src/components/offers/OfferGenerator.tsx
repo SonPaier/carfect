@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import {
-  ChevronLeft,
-  Save,
-  Send,
-  Loader2,
-  Eye,
-} from 'lucide-react';
+import { ChevronLeft, Send, Loader2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOffer } from '@/hooks/useOffer';
 import { CustomerDataStep, CustomerDataStepHandle, ValidationErrors } from './CustomerDataStep';
@@ -444,9 +438,7 @@ export const OfferGenerator = ({
       {!isMobile ? (
         <div className="flex gap-6 h-[calc(100vh-12rem)]">
           {/* Left: Form */}
-          <div className="w-[540px] shrink-0 overflow-y-auto pr-2">
-            {formContent}
-          </div>
+          <div className="w-[540px] shrink-0 overflow-y-auto pr-2">{formContent}</div>
 
           {/* Right: Live Preview */}
           <div className="flex-1 min-w-0 border rounded-lg overflow-hidden bg-white">
@@ -461,9 +453,7 @@ export const OfferGenerator = ({
         </div>
       ) : (
         /* Mobile: single-column layout */
-        <div className="space-y-6">
-          {formContent}
-        </div>
+        <div className="space-y-6">{formContent}</div>
       )}
 
       {/* Fixed Footer */}
@@ -488,7 +478,6 @@ export const OfferGenerator = ({
               onClick={handleSave}
               className="gap-2 h-12 w-12 sm:w-auto sm:px-4 bg-white"
             >
-              <Save className="w-5 h-5" />
               <span className="hidden sm:inline">{t('common.save')}</span>
             </Button>
 

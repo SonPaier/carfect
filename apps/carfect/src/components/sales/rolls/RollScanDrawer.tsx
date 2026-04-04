@@ -1,4 +1,4 @@
-import { X, Loader2, Save, ScanLine } from 'lucide-react';
+import { X, Loader2, ScanLine } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Button, EmptyState } from '@shared/ui';
 import { toast } from 'sonner';
@@ -96,9 +96,10 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
         barcode: item.extractedData.barcode,
         widthMm: Number(item.extractedData.widthMm),
         lengthM: Number(item.extractedData.lengthM),
-        initialRemainingMb: item.extractedData.remainingMb != null
-          ? Number(item.extractedData.remainingMb)
-          : undefined,
+        initialRemainingMb:
+          item.extractedData.remainingMb != null
+            ? Number(item.extractedData.remainingMb)
+            : undefined,
         photoUrl: item.photoUrl,
         extractionConfidence: item.confidence,
         createdBy: user?.id ?? null,
@@ -188,11 +189,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
           </Button>
           {savableResults.length > 0 && (
             <Button onClick={handleSave} disabled={saving || scan.processing}>
-              {saving ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Zapisz {savableResults.length} {savableResults.length === 1 ? 'rolkę' : 'rolek'}
             </Button>
           )}

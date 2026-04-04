@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Package, X, Star, GripVertical, Pencil, Save } from 'lucide-react';
+import { ArrowLeft, Package, X, Star, GripVertical, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -717,7 +717,6 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
               <span className="hidden sm:inline">Wróć</span>
             </Button>
             <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-12">
-              <Save className="w-5 h-5" />
               <span className="hidden sm:inline">
                 {isSaving ? 'Zapisywanie...' : 'Zapisz szablon'}
               </span>

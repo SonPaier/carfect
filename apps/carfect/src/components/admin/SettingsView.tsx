@@ -8,7 +8,6 @@ import {
   Users,
   MessageSquare,
   Loader2,
-  Save,
   Upload,
   Trash2,
   Image as ImageIcon,
@@ -525,11 +524,7 @@ const SettingsView = ({
 
             {/* Save Button */}
             <Button onClick={handleSaveCompany} disabled={loading}>
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
+              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {t('common.save')}
             </Button>
           </div>
@@ -548,12 +543,7 @@ const SettingsView = ({
         return <TrainingTypesSettings instanceId={instanceId} />;
 
       case 'integrations':
-        return (
-          <IntegrationsSettingsView
-            instanceId={instanceId}
-            supabaseClient={supabase}
-          />
-        );
+        return <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />;
 
       case 'app':
         return <ReservationConfirmSettings instanceId={instanceId} />;
@@ -631,13 +621,13 @@ const SettingsView = ({
                 {tab.label}
               </button>
             ))}
+            {/* Version info */}
+            {currentVersion && (
+              <p className="text-xs text-muted-foreground py-3 px-4">
+                Panel Admina v{currentVersion}
+              </p>
+            )}
           </div>
-          {/* Version info */}
-          {currentVersion && (
-            <p className="text-xs text-muted-foreground mt-3 px-1">
-              Panel Admina v{currentVersion}
-            </p>
-          )}
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Save, MessageSquare, Clock, History } from 'lucide-react';
+import { Loader2, MessageSquare, Clock, History } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -328,11 +328,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={saving || loading || settings.length === 0}>
-        {saving ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <Save className="w-4 h-4 mr-2" />
-        )}
+        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         {t('common.save')}
       </Button>
     </div>

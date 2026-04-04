@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Save, Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,14 +62,14 @@ const WorkingHoursSettings = ({ instanceId }: WorkingHoursSettingsProps) => {
   }, [instanceId]);
 
   const handleDayToggle = (dayKey: string, enabled: boolean) => {
-    setWorkingHours(prev => ({
+    setWorkingHours((prev) => ({
       ...prev,
       [dayKey]: enabled ? { open: '06:00', close: '19:00' } : null,
     }));
   };
 
   const handleTimeChange = (dayKey: string, field: 'open' | 'close', value: string) => {
-    setWorkingHours(prev => {
+    setWorkingHours((prev) => {
       const currentDay = prev[dayKey];
       if (!currentDay) return prev;
       return { ...prev, [dayKey]: { ...currentDay, [field]: value } };
@@ -113,7 +113,7 @@ const WorkingHoursSettings = ({ instanceId }: WorkingHoursSettingsProps) => {
           <h3 className="text-lg font-semibold">Godziny w kalendarzu</h3>
         </div>
         <Button onClick={handleSave} disabled={saving} size="sm">
-          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Zapisz
         </Button>
       </div>

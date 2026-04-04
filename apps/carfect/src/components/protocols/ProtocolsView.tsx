@@ -304,7 +304,7 @@ export const ProtocolsView = ({
 
           <div className="grid gap-3">
             {paginatedProtocols.map((protocol) => (
-              <Card key={protocol.id} className="hover:shadow-md transition-shadow">
+              <Card key={protocol.id} className="shadow-none hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 sm:gap-4">
                     <div

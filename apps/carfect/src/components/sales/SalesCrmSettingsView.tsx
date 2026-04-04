@@ -11,7 +11,6 @@ import {
   FileText,
   Truck,
   Loader2,
-  Save,
   ChevronDown,
   Trash2,
   RefreshCw,
@@ -374,11 +373,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
                 </div>
 
                 <Button onClick={handleSaveApaczka} disabled={savingApaczka}>
-                  {savingApaczka ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
+                  {savingApaczka && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Zapisz ustawienia Apaczka
                 </Button>
               </CardContent>

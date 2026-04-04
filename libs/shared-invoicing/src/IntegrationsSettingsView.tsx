@@ -6,7 +6,7 @@ import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInvoicingSettings } from './useInvoicingSettings';
 import { FakturowniaConfigForm } from './FakturowniaConfigForm';
@@ -336,13 +336,9 @@ export function IntegrationsSettingsView({
       )}
 
       {/* Save Button */}
-      <Button onClick={handleSave} disabled={isSaving} className="w-full">
-        {isSaving ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <Save className="w-4 h-4 mr-2" />
-        )}
-        Zapisz ustawienia
+      <Button onClick={handleSave} disabled={isSaving}>
+        {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Zapisz
       </Button>
     </div>
   );

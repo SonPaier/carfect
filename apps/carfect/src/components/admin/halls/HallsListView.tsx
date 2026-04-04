@@ -136,13 +136,13 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto px-4 sm:px-0">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t('halls.title')}</h1>
           <p className="text-muted-foreground text-sm mt-1">{t('halls.description')}</p>
         </div>
-        <Button onClick={handleAddNew}>{t('halls.add')}</Button>
+        {halls.length > 0 && <Button onClick={handleAddNew}>{t('halls.add')}</Button>}
       </div>
 
       {halls.length === 0 ? (

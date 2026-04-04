@@ -1437,7 +1437,7 @@ const AdminCalendar = ({
         {/* First line on mobile: navigation + actions, on desktop: full layout */}
         <div className="flex items-center justify-between gap-2">
           {/* Navigation */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={handlePrev} className="h-9 w-9">
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -1448,7 +1448,7 @@ const AdminCalendar = ({
               variant="outline"
               size="sm"
               onClick={handleToday}
-              className={cn('ml-1', hallMode && 'hidden sm:flex')}
+              className={cn(hallMode && 'hidden sm:flex')}
             >
               Dziś
             </Button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Save, Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -67,14 +67,14 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
   }, [instanceId]);
 
   const handleDayToggle = (dayKey: string, enabled: boolean) => {
-    setWorkingHours(prev => ({
+    setWorkingHours((prev) => ({
       ...prev,
       [dayKey]: enabled ? { open: '09:00', close: '19:00' } : null,
     }));
   };
 
   const handleTimeChange = (dayKey: string, field: 'open' | 'close', value: string) => {
-    setWorkingHours(prev => {
+    setWorkingHours((prev) => {
       const currentDay = prev[dayKey];
       if (!currentDay) return prev;
       return {
@@ -90,10 +90,10 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
     setSaving(true);
     try {
       console.log('[WorkingHoursSettings] Saving working hours via RPC:', workingHours);
-      
+
       const { data, error } = await supabase.rpc('update_instance_working_hours', {
         _instance_id: instanceId,
-        _working_hours: JSON.parse(JSON.stringify(workingHours))
+        _working_hours: JSON.parse(JSON.stringify(workingHours)),
       });
 
       console.log('[WorkingHoursSettings] RPC response:', { data, error });
@@ -111,9 +111,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
 
   if (!instanceId) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        {t('workingHours.noInstance')}
-      </div>
+      <div className="text-center py-8 text-muted-foreground">{t('workingHours.noInstance')}</div>
     );
   }
 
@@ -133,11 +131,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
           <h3 className="text-lg font-semibold">{t('workingHours.title')}</h3>
         </div>
         <Button onClick={handleSave} disabled={saving} size="sm">
-          {saving ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4 mr-2" />
-          )}
+          {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {t('common.save')}
         </Button>
       </div>
@@ -161,7 +155,9 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
                   <Label className="font-medium text-sm sm:text-base">{t(labelKey)}</Label>
                 </div>
                 {!isOpen && (
-                  <span className="text-muted-foreground text-xs sm:hidden">{t('workingHours.closed')}</span>
+                  <span className="text-muted-foreground text-xs sm:hidden">
+                    {t('workingHours.closed')}
+                  </span>
                 )}
               </div>
 
@@ -182,7 +178,9 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
                   />
                 </div>
               ) : (
-                <span className="text-muted-foreground text-sm hidden sm:inline">{t('workingHours.closed')}</span>
+                <span className="text-muted-foreground text-sm hidden sm:inline">
+                  {t('workingHours.closed')}
+                </span>
               )}
             </div>
           );
