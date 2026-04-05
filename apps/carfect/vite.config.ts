@@ -33,6 +33,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: '::',
     port: 8080,
+    proxy: {
+      '/api': {
+        target: 'https://carfect-bk87-git-feature-offer-print-view-sonpaiers-projects.vercel.app',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),
@@ -77,8 +83,7 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
       },
       devOptions: {
-        enabled: true,
-        type: 'module',
+        enabled: false,
       },
     }),
   ].filter(Boolean),
