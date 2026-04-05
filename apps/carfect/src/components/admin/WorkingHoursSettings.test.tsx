@@ -259,4 +259,56 @@ describe('WorkingHoursSettings', () => {
       });
     });
   });
+
+  it('shows toast.error when save RPC fails', async () => {
+    const user = userEvent.setup();
+    mockRpc.mockResolvedValue({ error: new Error('RPC failed') });
+    renderComponent();
+
+    await waitFor(() => screen.getByText('Poniedziałek'));
+
+    await user.click(screen.getByRole('button', { name: /zapisz/i }));
+
+    await waitFor(() => {
+      expect(mockToast.error).toHaveBeenCalled();
+    });
+  });
+
+  it('ignores empty time input value', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    await waitFor(() => screen.getByText('Poniedziałek'));
+
+    const timeInputs = screen.getAllByDisplayValue('09:00');
+    const firstOpenInput = timeInputs[0];
+
+    // Clear the input (simulates browser clearing time field)
+    await user.clear(firstOpenInput);
+
+    // The value should fall back, not store empty string
+    // When saved, the RPC should still have a valid time
+    await user.click(screen.getByRole('button', { name: /zapisz/i }));
+
+    await waitFor(() => {
+      const rpcCall = mockRpc.mock.calls[0];
+      const hours = rpcCall[1]._working_hours;
+      // Monday should still have a non-empty open value
+      expect(hours.monday.open).not.toBe('');
+    });
+  });
+
+  it('treats empty working_hours object from DB as all days closed', async () => {
+    // DB returns {} — no day keys at all
+    setupFetchSuccess({} as Record<string, null>);
+    renderComponent();
+
+    await waitFor(() => screen.getByText('Poniedziałek'));
+
+    // All day switches should be off (unchecked) since no day data exists
+    const switches = screen.getAllByRole('switch');
+    switches.forEach((sw) => {
+      expect(sw).toHaveAttribute('aria-checked', 'false');
+    });
+  });
 });
