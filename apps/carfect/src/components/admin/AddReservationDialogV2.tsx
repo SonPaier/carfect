@@ -1925,6 +1925,16 @@ const AddReservationDialogV2 = ({
   );
 
   // Inline mode: render as a plain div (no Sheet portal)
+  // ESC to close inline mode
+  useEffect(() => {
+    if (!inline || !open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [inline, open, onClose]);
+
   if (inline) {
     if (!open) return null;
     return (
@@ -1958,7 +1968,7 @@ const AddReservationDialogV2 = ({
           hideOverlay
           hideCloseButton
           onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onEscapeKeyDown={onClose}
         >
           {formContent}
         </SheetContent>

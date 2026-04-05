@@ -168,6 +168,7 @@ interface ReservationDetailsDrawerProps {
   onSendPickupSms?: (reservationId: string) => Promise<void>;
   onSendConfirmationSms?: (reservationId: string) => Promise<void>;
   onStatusChange?: (reservationId: string, newStatus: string) => Promise<void>;
+  onCreateOffer?: (data: { name: string; phone: string; plate: string }) => void;
   // Hall mode props
   mode?: 'admin' | 'hall';
   hallConfig?: HallConfig;
@@ -191,6 +192,7 @@ const ReservationDetailsDrawer = ({
   onSendPickupSms,
   onSendConfirmationSms,
   onStatusChange,
+  onCreateOffer,
   mode = 'admin',
   hallConfig,
 }: ReservationDetailsDrawerProps) => {
@@ -502,7 +504,13 @@ const ReservationDetailsDrawer = ({
     // Small delay to allow button clicks to register first
     setTimeout(() => {
       if (editingNotes) {
-        handleSaveAdminNotes();
+        const original = reservation?.admin_notes || '';
+        const current = adminNotes || '';
+        if (current !== original) {
+          handleSaveAdminNotes();
+        } else {
+          setEditingNotes(false);
+        }
       }
     }, 100);
   };
@@ -740,7 +748,7 @@ const ReservationDetailsDrawer = ({
           hideOverlay
           // Keep drawer open; allow clicking calendar behind
           onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onEscapeKeyDown={onClose}
         >
           {/* Header with time/date and X button */}
           <SheetHeader className="flex-shrink-0 border-b pb-4">
@@ -1087,7 +1095,7 @@ const ReservationDetailsDrawer = ({
               <div className="border-t border-border/30 pt-3">
                 <div className="text-xs text-foreground mb-1">{t('reservations.adminNotes')}</div>
                 {editingNotes ? (
-                  <div className="relative">
+                  <div className="relative -mx-0.5 px-0.5">
                     <textarea
                       ref={notesTextareaRef}
                       value={adminNotes}
@@ -1430,6 +1438,22 @@ const ReservationDetailsDrawer = ({
                           Zobacz historię
                         </DropdownMenuItem>
 
+                        {onCreateOffer && reservation && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setActionsMenuOpen(false);
+                              onCreateOffer({
+                                name: reservation.customer_name,
+                                phone: reservation.customer_phone,
+                                plate: reservation.vehicle_plate,
+                              });
+                            }}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Przygotuj ofertę
+                          </DropdownMenuItem>
+                        )}
+
                         {onNoShow && (
                           <>
                             <DropdownMenuSeparator />
@@ -1619,6 +1643,20 @@ const ReservationDetailsDrawer = ({
                         <History className="w-4 h-4 mr-2" />
                         Zobacz historię
                       </DropdownMenuItem>
+                      {onCreateOffer && reservation && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            onCreateOffer({
+                              name: reservation.customer_name,
+                              phone: reservation.customer_phone,
+                              plate: reservation.vehicle_plate,
+                            });
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Przygotuj ofertę
+                        </DropdownMenuItem>
+                      )}
                       {onNoShow && (
                         <>
                           <DropdownMenuSeparator />
