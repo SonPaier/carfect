@@ -166,9 +166,13 @@ const ReservationsView = ({
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
 
-  // Request full history on mount
+  // Request full history once
+  const historyLoadedRef = useRef(false);
   useEffect(() => {
-    onRequestAllHistory?.();
+    if (!historyLoadedRef.current) {
+      historyLoadedRef.current = true;
+      onRequestAllHistory?.();
+    }
   }, []);
   const instanceId = reservations[0]?.instance_id ?? null;
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);

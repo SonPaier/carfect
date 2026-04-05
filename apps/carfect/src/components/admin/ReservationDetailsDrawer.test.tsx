@@ -847,6 +847,146 @@ describe('ReservationDetailsDrawer', () => {
     });
   });
 
+  describe('Admin Notes Blur Behavior', () => {
+    it('RDD-U-200: does not save when notes are focused and blurred without changes', async () => {
+      const user = userEvent.setup({ delay: null });
+      const { supabase } = await import('@/integrations/supabase/client');
+      const fromSpy = vi.mocked(supabase.from);
+      fromSpy.mockClear();
+
+      renderDrawer({
+        reservation: { ...mockBaseReservation, admin_notes: 'Stały klient VIP' },
+      });
+
+      // Click on notes area to start editing
+      const notesDisplay = screen.getByText('Stały klient VIP');
+      await user.click(notesDisplay);
+
+      // Textarea should be visible now
+      const textarea = await screen.findByRole('textbox');
+      expect(textarea).toBeInTheDocument();
+
+      // Blur without changing value
+      fireEvent.blur(textarea);
+
+      // Wait for the setTimeout(100ms) in handleNotesBlur
+      await waitFor(() => {
+        // Textarea should be gone (editingNotes set to false)
+        expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      });
+
+      // No update call should have been made to 'reservations'
+      const reservationUpdateCalls = fromSpy.mock.calls.filter(
+        ([table]) => table === 'reservations'
+      );
+      expect(reservationUpdateCalls).toHaveLength(0);
+    });
+
+    it('RDD-U-201: saves when notes are changed and then blurred', async () => {
+      const user = userEvent.setup({ delay: null });
+      const updateChain = createChainMock(null);
+      const { supabase } = await import('@/integrations/supabase/client');
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'reservations') {
+          return updateChain as ReturnType<typeof supabase.from>;
+        }
+        if (table === 'instances') {
+          return createChainMock({ public_token: 'test-token-123' }) as ReturnType<typeof supabase.from>;
+        }
+        return createChainMock(null) as ReturnType<typeof supabase.from>;
+      });
+
+      renderDrawer({
+        reservation: { ...mockBaseReservation, admin_notes: 'Stały klient VIP' },
+      });
+
+      // Click on notes area to start editing
+      const notesDisplay = screen.getByText('Stały klient VIP');
+      await user.click(notesDisplay);
+
+      // Textarea should be visible now
+      const textarea = await screen.findByRole('textbox');
+      expect(textarea).toBeInTheDocument();
+
+      // Change the value
+      await user.clear(textarea);
+      await user.type(textarea, 'Zmieniona notatka');
+
+      // Blur to trigger save
+      fireEvent.blur(textarea);
+
+      // Wait for supabase update to be called
+      await waitFor(() => {
+        expect(vi.mocked(supabase.from)).toHaveBeenCalledWith('reservations');
+      });
+
+      // The update chain should have been triggered
+      expect(updateChain.update).toHaveBeenCalledWith({ admin_notes: 'Zmieniona notatka' });
+    });
+  });
+
+  describe('create offer from reservation', () => {
+    it('shows "Przygotuj ofertę" menu item when onCreateOffer prop is provided', async () => {
+      const user = userEvent.setup();
+      const onCreateOffer = vi.fn();
+      renderDrawer({ onCreateOffer });
+
+      // Open the "more actions" dropdown
+      const moreButton = screen.getAllByRole('button').find(btn =>
+        btn.querySelector('svg.lucide-ellipsis-vertical') !== null
+      );
+      expect(moreButton).toBeDefined();
+      await user.click(moreButton!);
+
+      await waitFor(() => {
+        expect(screen.getByText('Przygotuj ofertę')).toBeInTheDocument();
+      });
+    });
+
+    it('calls onCreateOffer with reservation customer data when clicked', async () => {
+      const user = userEvent.setup();
+      const onCreateOffer = vi.fn();
+      renderDrawer({ onCreateOffer });
+
+      // Open the "more actions" dropdown
+      const moreButton = screen.getAllByRole('button').find(btn =>
+        btn.querySelector('svg.lucide-ellipsis-vertical') !== null
+      );
+      await user.click(moreButton!);
+
+      await waitFor(() => {
+        expect(screen.getByText('Przygotuj ofertę')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Przygotuj ofertę'));
+
+      expect(onCreateOffer).toHaveBeenCalledWith({
+        name: 'Jan Kowalski',
+        phone: '+48733854184',
+        plate: 'BMW X5 WA12345',
+      });
+    });
+
+    it('does not show "Przygotuj ofertę" when onCreateOffer is not provided', async () => {
+      const user = userEvent.setup();
+      renderDrawer(); // no onCreateOffer prop
+
+      // Open the "more actions" dropdown
+      const moreButton = screen.getAllByRole('button').find(btn =>
+        btn.querySelector('svg.lucide-ellipsis-vertical') !== null
+      );
+      expect(moreButton).toBeDefined();
+      await user.click(moreButton!);
+
+      await waitFor(() => {
+        // Wait for dropdown to open - history item should be visible
+        expect(screen.getByText('Zobacz historię')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('Przygotuj ofertę')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Protocol Link', () => {
     it('RDD-U-028: shows protocol link button when protocol exists for reservation', async () => {
       // Override supabase mock to return a protocol for vehicle_protocols table

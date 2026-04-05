@@ -212,6 +212,28 @@ describe('OfferGenerator', () => {
     });
   });
 
+  describe('prefill from initialCustomerData', () => {
+    it('pre-fills customer name, phone, and brandModel from initialCustomerData', async () => {
+      const initialCustomerData = {
+        name: 'Anna Nowak',
+        phone: '+48600100200',
+        plate: 'Toyota Yaris WA99999',
+      };
+
+      renderGenerator({ initialCustomerData });
+
+      await waitFor(() => {
+        expect(mockUpdateCustomerData).toHaveBeenCalledWith({
+          name: 'Anna Nowak',
+          phone: '+48600100200',
+        });
+        expect(mockUpdateVehicleData).toHaveBeenCalledWith({
+          brandModel: 'Toyota Yaris WA99999',
+        });
+      });
+    });
+  });
+
   describe('v1 offer format', () => {
     it('does not advance from step 2 without selected scopes', async () => {
       // v1 offers show ScopesStep + SummaryStepV2 in the single-page layout

@@ -1654,7 +1654,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <FileText className="w-4 h-4 mr-2" />
-                          Zrób ofertę
+                          Przygotuj ofertę
                         </DropdownMenuItem>
                       )}
                       {onNoShow && (
