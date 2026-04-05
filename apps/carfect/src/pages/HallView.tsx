@@ -239,9 +239,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
       setSelectedReservation(null);
 
-      // Same behaviour as ReservationDetailsDrawer: go to Protocols view and let it open the Create form from URL.
-      const protocolsPath = isAdminPath ? '/admin/protocols' : '/protocols';
-      navigate(`${protocolsPath}?${params.toString()}`);
+      // Always use /admin/protocols — /protocols is only for public token views
+      navigate(`/admin/protocols?${params.toString()}`);
     })();
   };
 
@@ -552,6 +551,19 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         return;
       }
 
+      // Access control: hall-role users can only view their assigned calendar
+      if (hasHallRole && !hasAdminOrEmployeeRole) {
+        const hallRole = roles.find(r => r.role === 'hall');
+        if (hallRole?.hall_id && hallData.id !== hallRole.hall_id) {
+          toast.error(t('halls.notFound'));
+          navigate(
+            isAdminPath ? `/admin/halls/${hallRole.hall_id}` : `/halls/${hallRole.hall_id}`,
+            { replace: true },
+          );
+          return;
+        }
+      }
+
       const mappedHall: Hall = {
         id: hallData.id,
         instance_id: hallData.instance_id,
@@ -564,6 +576,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           vehicle_plate: true,
           services: true,
           admin_notes: false,
+          price: false,
         },
         allowed_actions: (hallData.allowed_actions as Hall['allowed_actions']) || {
           add_services: false,
@@ -641,6 +654,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           admin_notes,
           photo_urls,
           checked_service_ids,
+          assigned_employee_ids,
           stations:station_id (name, type)
         `)
         .eq('instance_id', instanceId);
@@ -1638,6 +1652,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       {selectedReservationWithServices && (
         <HallReservationCard
           reservation={selectedReservationWithServices}
+          visibleFields={hall?.visible_fields}
+          allowedActions={hall?.allowed_actions}
           open={!!selectedReservation}
           onClose={() => setSelectedReservation(null)}
           onStartWork={async (id) => {

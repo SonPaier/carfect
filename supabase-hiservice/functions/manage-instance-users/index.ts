@@ -5,14 +5,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ALLOWED_ROLES = ['admin', 'employee', 'hall', 'sales'] as const;
+
+const jsonError = (message: string, status: number) =>
+  new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+async function validateHallForInstance(
+  supabase: ReturnType<typeof createClient>,
+  hallId: string,
+  instanceId: string,
+): Promise<Response | null> {
+  const { data } = await supabase
+    .from('halls')
+    .select('id')
+    .eq('id', hallId)
+    .eq('instance_id', instanceId)
+    .maybeSingle();
+  if (!data) {
+    return jsonError('Nieprawidłowy kalendarz', 400);
+  }
+  return null;
+}
+
 interface ManageUserRequest {
   action: 'list' | 'create' | 'update' | 'delete' | 'block' | 'unblock' | 'reset-password';
   instanceId: string;
   userId?: string;
   username?: string;
   password?: string;
-  role?: 'admin' | 'employee' | 'hall';
+  role?: 'admin' | 'employee' | 'hall' | 'sales';
   employeeId?: string;
+  hallId?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -54,7 +80,7 @@ Deno.serve(async (req) => {
     const isSuperAdmin = callerRoles?.some((r) => r.role === 'super_admin');
 
     const body: ManageUserRequest = await req.json();
-    const { action, instanceId, userId, username, password, role, employeeId } = body;
+    const { action, instanceId, userId, username, password, role, employeeId, hallId } = body;
 
     if (!instanceId) {
       return new Response(JSON.stringify({ error: 'Brak ID instancji' }), {
@@ -94,7 +120,7 @@ Deno.serve(async (req) => {
         const { data: roles, error: rolesError } = userIds.length
           ? await supabase
               .from('user_roles')
-              .select('user_id, role')
+              .select('user_id, role, hall_id')
               .eq('instance_id', instanceId)
               .in('user_id', userIds)
           : { data: [], error: null };
@@ -107,12 +133,16 @@ Deno.serve(async (req) => {
         }
 
         const users = (profiles || []).map((profile: any) => {
-          const userRoles = (roles || [])
-            .filter((r: any) => r.user_id === profile.id)
-            .map((r: any) => r.role);
+          const userRoleRecords = (roles || []).filter((r: any) => r.user_id === profile.id);
+          const userRoles = userRoleRecords.map((r: any) => r.role);
           let userRole = 'employee';
+          let userHallId = null;
           if (userRoles.includes('admin')) userRole = 'admin';
-          else if (userRoles.includes('hall')) userRole = 'hall';
+          else if (userRoles.includes('sales')) userRole = 'sales';
+          else if (userRoles.includes('hall')) {
+            userRole = 'hall';
+            userHallId = userRoleRecords.find((r: any) => r.role === 'hall')?.hall_id || null;
+          }
           return {
             id: profile.id,
             username: profile.username || '',
@@ -120,6 +150,7 @@ Deno.serve(async (req) => {
             is_blocked: !!profile.is_blocked,
             created_at: profile.created_at || new Date().toISOString(),
             role: userRole,
+            hall_id: userHallId,
           };
         });
 
@@ -137,11 +168,13 @@ Deno.serve(async (req) => {
           });
         }
 
-        if (role !== 'admin' && role !== 'employee' && role !== 'hall') {
-          return new Response(
-            JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-          );
+        if (!ALLOWED_ROLES.includes(role as typeof ALLOWED_ROLES[number])) {
+          return jsonError(`Nieprawidłowa rola. Dozwolone: ${ALLOWED_ROLES.join(', ')}`, 400);
+        }
+
+        if (role === 'hall' && hallId) {
+          const hallError = await validateHallForInstance(supabase, hallId, instanceId);
+          if (hallError) return hallError;
         }
 
         const { data: existingUser } = await supabase
@@ -186,9 +219,18 @@ Deno.serve(async (req) => {
           );
         }
 
+        const roleInsert: Record<string, unknown> = {
+          user_id: newUser.user.id,
+          role,
+          instance_id: instanceId,
+        };
+        if (role === 'hall' && hallId) {
+          roleInsert.hall_id = hallId;
+        }
+
         const { error: roleError } = await supabase
           .from('user_roles')
-          .insert({ user_id: newUser.user.id, role, instance_id: instanceId });
+          .insert(roleInsert);
 
         if (roleError) {
           await supabase.auth.admin.deleteUser(newUser.user.id);
@@ -309,16 +351,25 @@ Deno.serve(async (req) => {
         }
 
         if (role) {
-          if (role !== 'admin' && role !== 'employee' && role !== 'hall') {
-            return new Response(
-              JSON.stringify({ error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall' }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-            );
+          if (!ALLOWED_ROLES.includes(role as typeof ALLOWED_ROLES[number])) {
+            return jsonError(`Nieprawidłowa rola. Dozwolone: ${ALLOWED_ROLES.join(', ')}`, 400);
+          }
+
+          if (role === 'hall' && hallId) {
+            const hallError = await validateHallForInstance(supabase, hallId, instanceId);
+            if (hallError) return hallError;
+          }
+
+          const roleUpdate: Record<string, unknown> = { role };
+          if (role === 'hall') {
+            roleUpdate.hall_id = hallId || null;
+          } else {
+            roleUpdate.hall_id = null;
           }
 
           const { error: roleError } = await supabase
             .from('user_roles')
-            .update({ role })
+            .update(roleUpdate)
             .eq('user_id', userId)
             .eq('instance_id', instanceId);
 

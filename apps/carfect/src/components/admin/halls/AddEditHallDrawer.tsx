@@ -63,20 +63,15 @@ const AddEditHallDrawer = ({
   // Form state
   const [name, setName] = useState('');
   const [selectedStationIds, setSelectedStationIds] = useState<string[]>([]);
-  const [visibleFields, setVisibleFields] = useState({
+  const [visibleFields, setVisibleFields] = useState<Hall['visible_fields']>({
     customer_name: true,
     customer_phone: false,
     vehicle_plate: true,
     services: true,
     admin_notes: false,
+    price: false,
   });
-  const [allowedActions, setAllowedActions] = useState({
-    add_services: false,
-    change_time: false,
-    change_station: false,
-    edit_reservation: false,
-    delete_reservation: false,
-  });
+  const [allowedActions, setAllowedActions] = useState({ add_services: false });
 
   const isEditing = !!hall;
 
@@ -102,22 +97,16 @@ const AddEditHallDrawer = ({
     }
   }, [open, instanceId]);
 
-  // Default values for fields
   const defaultVisibleFields = {
     customer_name: true,
     customer_phone: false,
     vehicle_plate: true,
     services: true,
     admin_notes: false,
+    price: false,
   };
 
-  const defaultAllowedActions = {
-    add_services: false,
-    change_time: false,
-    change_station: false,
-    edit_reservation: false,
-    delete_reservation: false,
-  };
+  const defaultAllowedActions = { add_services: false };
 
   // Initialize form when editing
   useEffect(() => {
@@ -125,20 +114,15 @@ const AddEditHallDrawer = ({
       setName(hall.name);
       setSelectedStationIds(hall.station_ids || []);
       // Merge with defaults to ensure new fields are present
-      setVisibleFields({
-        ...defaultVisibleFields,
-        ...(hall.visible_fields || {}),
-      });
-      setAllowedActions({
-        ...defaultAllowedActions,
-        ...(hall.allowed_actions || {}),
-      });
+      setVisibleFields({ ...defaultVisibleFields, ...(hall.visible_fields || {}) });
+      setAllowedActions({ ...defaultAllowedActions, ...(hall.allowed_actions || {}) });
     } else {
       setName('');
       setSelectedStationIds([]);
       setVisibleFields(defaultVisibleFields);
       setAllowedActions(defaultAllowedActions);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hall, open]);
 
   const handleStationToggle = (stationId: string) => {
@@ -304,22 +288,18 @@ const AddEditHallDrawer = ({
             <Label>{t('halls.visibleFields')}</Label>
             <p className="text-xs text-muted-foreground">{t('halls.visibleFieldsDesc')}</p>
             <div className="space-y-2">
-              {Object.entries(visibleFields).map(([key, value]) => (
+              {Object.entries(visibleFields)
+                .filter(([key]) => key !== 'vehicle_plate' && key !== 'services')
+                .map(([key, value]) => (
                 <label
                   key={key}
-                   className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-hover-strong transition-colors"
+                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-hover-strong transition-colors"
                 >
                   <Checkbox
                     checked={value}
                     onCheckedChange={() => handleVisibleFieldToggle(key as keyof typeof visibleFields)}
-                    disabled={key === 'vehicle_plate' || key === 'services'} // Always required
                   />
-                  <span className="text-sm">
-                    {t(`halls.fields.${key}`)}
-                    {(key === 'vehicle_plate' || key === 'services') && (
-                      <span className="text-xs text-muted-foreground ml-1">({t('common.required')})</span>
-                    )}
-                  </span>
+                  <span className="text-sm">{t(`halls.fields.${key}`)}</span>
                 </label>
               ))}
             </div>
@@ -328,21 +308,13 @@ const AddEditHallDrawer = ({
           {/* Allowed Actions */}
           <div className="space-y-3">
             <Label>{t('halls.allowedActions')}</Label>
-            <p className="text-xs text-muted-foreground">{t('halls.allowedActionsDesc')}</p>
-            <div className="space-y-2">
-              {Object.entries(allowedActions).map(([key, value]) => (
-                <label
-                  key={key}
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-hover-strong transition-colors"
-                >
-                  <Checkbox
-                    checked={value}
-                    onCheckedChange={() => handleAllowedActionToggle(key as keyof typeof allowedActions)}
-                  />
-                  <span className="text-sm">{t(`halls.actions.${key}`)}</span>
-                </label>
-              ))}
-            </div>
+            <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-hover-strong transition-colors">
+              <Checkbox
+                checked={allowedActions.add_services}
+                onCheckedChange={() => handleAllowedActionToggle('add_services')}
+              />
+              <span className="text-sm">{t('halls.actions.add_services')}</span>
+            </label>
           </div>
 
           {/* Save Button */}

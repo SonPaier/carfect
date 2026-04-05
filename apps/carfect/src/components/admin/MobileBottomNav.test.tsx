@@ -277,18 +277,18 @@ describe("MobileBottomNav", () => {
       expect(screen.queryByText(/Oferty/i)).not.toBeInTheDocument();
     });
 
-    it("NAV-U-023: Hale widoczne gdy hallViewEnabled=true i userRole=admin", async () => {
+    it("NAV-U-023: Kalendarze visible when hallViewEnabled=true and userRole=admin", async () => {
       renderNav({ hallViewEnabled: true, userRole: "admin" });
       await openMoreMenu();
-      
-      expect(screen.getByText(/Hale/i)).toBeInTheDocument();
+
+      expect(screen.getByText(/Kalendarze/i)).toBeInTheDocument();
     });
 
-    it("NAV-U-024: Hale ukryte gdy hallViewEnabled=false", async () => {
+    it("NAV-U-024: Kalendarze hidden when hallViewEnabled=false", async () => {
       renderNav({ hallViewEnabled: false, userRole: "admin" });
       await openMoreMenu();
-      
-      expect(screen.queryByText(/Hale/i)).not.toBeInTheDocument();
+
+      expect(screen.queryByText(/Kalendarze/i)).not.toBeInTheDocument();
     });
 
     it("NAV-U-026: Protokoły widoczne gdy protocolsEnabled=true i userRole=admin", async () => {

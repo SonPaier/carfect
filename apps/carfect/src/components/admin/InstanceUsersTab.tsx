@@ -26,6 +26,7 @@ interface InstanceUser {
   is_blocked: boolean;
   created_at: string;
   role: 'admin' | 'employee' | 'hall' | 'sales';
+  hall_id?: string | null;
 }
 
 interface InstanceUsersTabProps {
@@ -88,6 +89,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
     if (instanceId) {
       fetchUsers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   const handleBlockUnblock = async (user: InstanceUser) => {
@@ -147,7 +149,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
   const getRoleLabel = (role: 'admin' | 'employee' | 'hall' | 'sales') => {
     if (role === 'admin') return t('instanceUsers.admin');
     if (role === 'sales') return 'Sprzedaż';
-    if (role === 'hall') return 'Hala';
+    if (role === 'hall') return 'Kalendarz';
     return t('instanceUsers.employee');
   };
 
@@ -289,9 +291,9 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-medium">Hala</TableCell>
+              <TableCell className="font-medium">Kalendarz</TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                Tylko widok kalendarza (tryb kiosk, bez sidebara)
+                Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)
               </TableCell>
             </TableRow>
             <TableRow>
