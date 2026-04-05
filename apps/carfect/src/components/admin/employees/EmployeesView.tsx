@@ -1,16 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useEmployees, Employee } from '@/hooks/useEmployees';
+import { useEmployees, useDeleteEmployee, Employee } from '@/hooks/useEmployees';
 import {
-  useTimeEntriesForMonth,
   useTimeEntriesForDateRange,
   calculateMonthlySummary,
-  formatMinutesToTime,
   TimeEntry,
 } from '@/hooks/useTimeEntries';
 import {
   useEmployeeDaysOff,
-  DAY_OFF_TYPE_LABELS,
-  DayOffType,
   EmployeeDayOff,
 } from '@/hooks/useEmployeeDaysOff';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
@@ -25,10 +21,15 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  TableFooter,
 } from '@shared/ui';
 import {
-  Plus,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@shared/ui';
+import { ConfirmDialog } from '@shared/ui';
+import {
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -36,6 +37,9 @@ import {
   Pencil,
   CalendarOff,
   Settings2,
+  MoreVertical,
+  Trash2,
+  KeyRound,
 } from 'lucide-react';
 import {
   format,
@@ -47,14 +51,16 @@ import {
   getISOWeek,
   addWeeks,
   subWeeks,
-  isWithinInterval,
   eachDayOfInterval,
   isSameMonth,
   isSameWeek,
   getDay,
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import AddEditEmployeeDialog from './AddEditEmployeeDialog';
+import GrantAccessDialog from './GrantAccessDialog';
 import WorkerTimeDialog from './WorkerTimeDialog';
 import AddEmployeeDayOffDialog from './AddEmployeeDayOffDialog';
 import WorkersSettingsDrawer from './WorkersSettingsDrawer';
@@ -85,6 +91,7 @@ const WEEKDAY_SHORT: Record<number, string> = {
 };
 
 const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
+  const { t } = useTranslation();
   const { hasRole } = useAuth();
   const isAdmin = hasRole('admin') || hasRole('super_admin');
 
@@ -94,9 +101,12 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const [workerDialogEmployee, setWorkerDialogEmployee] = useState<Employee | null>(null);
   const [dayOffDialogOpen, setDayOffDialogOpen] = useState(false);
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
+  const [grantAccessEmployee, setGrantAccessEmployee] = useState<Employee | null>(null);
 
   // Fetch workers settings to determine if we're in weekly or monthly mode
   const { data: workersSettings, isLoading: loadingSettings } = useWorkersSettings(instanceId);
+  const timeTrackingEnabled = workersSettings?.time_tracking_enabled ?? false;
   const isWeeklyMode = workersSettings?.report_frequency === 'weekly';
 
   const year = currentDate.getFullYear();
@@ -122,6 +132,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const periodEnd = isWeeklyMode ? weekEnd : monthEnd;
 
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees(instanceId);
+  const deleteEmployee = useDeleteEmployee(instanceId);
   const { data: timeEntries = [], isLoading: loadingEntries } = useTimeEntriesForDateRange(
     instanceId,
     dateFrom,
@@ -205,24 +216,6 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   // Time calculation mode from settings (default: start_to_stop)
   const timeCalculationMode = workersSettings?.time_calculation_mode ?? 'start_to_stop';
 
-  // Calculate total earnings (admin only) - based on time calculation mode
-  const totalEarnings = useMemo(() => {
-    return activeEmployees.reduce((sum, employee) => {
-      const summary = periodSummary.get(employee.id);
-      if (summary && employee.hourly_rate) {
-        const preOpeningMinutes = preOpeningByEmployee.get(employee.id) || 0;
-        // If mode is opening_to_stop and we have pre-opening time, use real time
-        // Edge case: if preOpeningMinutes is 0 in opening_to_stop mode, it might be because
-        // there were no opening hours defined - in that case, use total time
-        const displayMinutes =
-          timeCalculationMode === 'opening_to_stop'
-            ? Math.max(0, summary.total_minutes - preOpeningMinutes)
-            : summary.total_minutes;
-        return sum + (displayMinutes / 60) * employee.hourly_rate;
-      }
-      return sum;
-    }, 0);
-  }, [activeEmployees, periodSummary, preOpeningByEmployee, timeCalculationMode]);
 
   // Get days off for this period
   const getDaysOffForEmployee = (employeeId: string) => {
@@ -237,89 +230,6 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   };
 
   // Format days off for display on the card
-  const formatDaysOffForPeriod = (employeeDaysOff: EmployeeDayOff[]) => {
-    const result: { type: DayOffType; label: string; dates: string }[] = [];
-
-    // Group by type
-    const byType = new Map<DayOffType, EmployeeDayOff[]>();
-    employeeDaysOff.forEach((d) => {
-      const type = d.day_off_type as DayOffType;
-      if (!byType.has(type)) byType.set(type, []);
-      byType.get(type)!.push(d);
-    });
-
-    byType.forEach((items, type) => {
-      const allDates: { date: Date; dayOfWeek: number }[] = [];
-
-      items.forEach((item) => {
-        const from = parseISO(item.date_from);
-        const to = parseISO(item.date_to);
-
-        // Get all days in the range that fall within the current period
-        const daysInRange = eachDayOfInterval({ start: from, end: to });
-        daysInRange.forEach((day) => {
-          const isInPeriod = isWeeklyMode
-            ? isSameWeek(day, currentDate, { weekStartsOn: 1 })
-            : isSameMonth(day, currentDate);
-          if (isInPeriod) {
-            allDates.push({ date: day, dayOfWeek: getDay(day) });
-          }
-        });
-      });
-
-      // Sort by date
-      allDates.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-      if (allDates.length === 0) return;
-
-      // Format dates - group consecutive ranges
-      const formattedParts: string[] = [];
-      let rangeStart: Date | null = null;
-      let rangeEnd: Date | null = null;
-
-      allDates.forEach((item, idx) => {
-        const prevItem = allDates[idx - 1];
-        const isConsecutive =
-          prevItem && item.date.getTime() - prevItem.date.getTime() === 24 * 60 * 60 * 1000;
-
-        if (isConsecutive && rangeStart) {
-          rangeEnd = item.date;
-        } else {
-          // Close previous range
-          if (rangeStart) {
-            if (rangeEnd) {
-              formattedParts.push(`${format(rangeStart, 'd')}-${format(rangeEnd, 'd.MM')}`);
-            } else {
-              const wd = WEEKDAY_SHORT[getDay(rangeStart)];
-              formattedParts.push(`${format(rangeStart, 'd.MM')} (${wd})`);
-            }
-          }
-          rangeStart = item.date;
-          rangeEnd = null;
-        }
-      });
-
-      // Close last range
-      if (rangeStart) {
-        if (rangeEnd) {
-          formattedParts.push(`${format(rangeStart, 'd')}-${format(rangeEnd, 'd.MM')}`);
-        } else {
-          const wd = WEEKDAY_SHORT[getDay(rangeStart)];
-          formattedParts.push(`${format(rangeStart, 'd.MM')} (${wd})`);
-        }
-      }
-
-      const label = DAY_OFF_TYPE_LABELS[type]?.split(' ')[0] || 'Wolne';
-      result.push({
-        type,
-        label,
-        dates: formattedParts.join(', '),
-      });
-    });
-
-    return result;
-  };
-
   // Format days off as array of objects with from/to dates for display
   type DayOffLine = { from: string; to: string | null };
 
@@ -420,6 +330,17 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     setWorkerDialogEmployee(employee);
   };
 
+  const handleDeleteEmployee = async () => {
+    if (!deletingEmployee) return;
+    try {
+      await deleteEmployee.mutateAsync(deletingEmployee.id);
+      toast.success(t('employeeDialog.employeeDeleted'));
+      setDeletingEmployee(null);
+    } catch (error) {
+      toast.error(t('employeeDialog.deleteError'));
+    }
+  };
+
   const handleDialogClose = () => {
     setDialogOpen(false);
     setEditingEmployee(null);
@@ -460,15 +381,17 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
             >
               <Settings2 className="w-5 h-5" />
             </Button>
-            <Button
-              onClick={() => setDayOffDialogOpen(true)}
-              variant="outline"
-              size="icon"
-              className="bg-white"
-              title="Dodaj nieobecność"
-            >
-              <CalendarOff className="w-5 h-5" />
-            </Button>
+            {timeTrackingEnabled && (
+              <Button
+                onClick={() => setDayOffDialogOpen(true)}
+                variant="outline"
+                size="icon"
+                className="bg-white"
+                title="Dodaj nieobecność"
+              >
+                <CalendarOff className="w-5 h-5" />
+              </Button>
+            )}
             <Button onClick={handleAddEmployee} title="Dodaj pracownika">
               Dodaj pracownika
             </Button>
@@ -476,8 +399,8 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         )}
       </div>
 
-      {/* Period picker (Month or Week) - only show when there are employees */}
-      {activeEmployees.length > 0 && (
+      {/* Period picker (Month or Week) - only when time tracking enabled */}
+      {timeTrackingEnabled && activeEmployees.length > 0 && (
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={handlePrevPeriod} className="bg-white">
             <ChevronLeft className="w-4 h-4" />
@@ -505,9 +428,11 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
             <Table className="bg-white w-full table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[47%]">Imię</TableHead>
-                  <TableHead className="text-center w-[23%]">Przepracowano</TableHead>
-                  <TableHead className="text-right w-[30%]">Wypłata</TableHead>
+                  <TableHead>Pracownik</TableHead>
+                  {timeTrackingEnabled && (
+                    <TableHead className="text-center w-[30%]">Przepracowano</TableHead>
+                  )}
+                  {isAdmin && <TableHead className="w-[50px]" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -516,18 +441,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                   const totalMinutes = summary?.total_minutes || 0;
                   const preOpeningMinutes = preOpeningByEmployee.get(employee.id) || 0;
 
-                  // Calculate display minutes based on time calculation mode
                   const displayMinutes =
                     timeCalculationMode === 'opening_to_stop'
                       ? Math.max(0, totalMinutes - preOpeningMinutes)
                       : totalMinutes;
-
-                  const displayHours = formatMinutesToTime(displayMinutes);
-
-                  // Earnings based on display time
-                  const earnings = employee.hourly_rate
-                    ? ((displayMinutes / 60) * employee.hourly_rate).toFixed(2)
-                    : null;
 
                   const hours = Math.floor(displayMinutes / 60);
                   const mins = displayMinutes % 60;
@@ -535,61 +452,75 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                   return (
                     <TableRow
                       key={employee.id}
-                      className="cursor-pointer hover:bg-hover-strong"
-                      onClick={() => handleTileClick(employee)}
+                      className={timeTrackingEnabled ? 'cursor-pointer hover:bg-hover-strong' : ''}
+                      onClick={timeTrackingEnabled ? () => handleTileClick(employee) : undefined}
                     >
-                      <TableCell className="py-3 w-[47%]">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarImage
-                              src={employee.photo_url || undefined}
-                              alt={employee.name}
-                            />
-                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                              {employee.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium truncate">{employee.name}</span>
-                        </div>
+                      <TableCell className="py-3">
+                        <span className="font-medium truncate">{employee.name}</span>
                       </TableCell>
-                      <TableCell className="text-center py-3 w-[23%]">
-                        <div className="text-sm leading-tight">
-                          {hours > 0 && <div>{hours}h</div>}
-                          <div>{mins}min</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right py-3 whitespace-nowrap font-medium w-[30%]">
-                        {earnings ? `${earnings} zł` : '-'}
-                      </TableCell>
+                      {timeTrackingEnabled && (
+                        <TableCell className="text-center py-3">
+                          <div className="text-sm leading-tight">
+                            {hours > 0 && <div>{hours}h</div>}
+                            <div>{mins}min</div>
+                          </div>
+                        </TableCell>
+                      )}
+                      {isAdmin && (
+                        <TableCell className="text-right py-3">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditEmployee(e as unknown as React.MouseEvent, employee);
+                                }}
+                              >
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Edytuj
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setGrantAccessEmployee(employee);
+                                }}
+                              >
+                                <KeyRound className="w-4 h-4 mr-2" />
+                                Daj dostęp
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingEmployee(employee);
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Usuń
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
               </TableBody>
-              {isAdmin && totalEarnings > 0 && (
-                <TableFooter className="bg-white">
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="py-3 text-right text-xs text-muted-foreground"
-                    >
-                      Suma wypłat{' '}
-                      {isWeeklyMode ? 'tydzień' : format(currentDate, 'LLLL', { locale: pl })}:
-                    </TableCell>
-                    <TableCell className="text-right py-3 font-bold whitespace-nowrap w-[30%]">
-                      {totalEarnings.toLocaleString('pl-PL', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}{' '}
-                      zł
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              )}
             </Table>
           </div>
 
-          {/* Vacations/Days off section */}
-          {(() => {
+          {/* Vacations/Days off section - only when time tracking enabled */}
+          {timeTrackingEnabled && (() => {
             // Collect all employees with days off in this period
             const employeesWithDaysOff = activeEmployees
               .map((emp) => ({
@@ -678,6 +609,25 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         onOpenChange={setSettingsDrawerOpen}
         instanceId={instanceId}
       />
+
+      <ConfirmDialog
+        open={!!deletingEmployee}
+        onOpenChange={(open) => !open && setDeletingEmployee(null)}
+        title={t('employeeDialog.deleteTitle')}
+        description={t('employeeDialog.deleteDescription', { name: deletingEmployee?.name })}
+        confirmLabel={t('common.delete')}
+        onConfirm={handleDeleteEmployee}
+        variant="destructive"
+      />
+
+      {grantAccessEmployee && instanceId && (
+        <GrantAccessDialog
+          open={!!grantAccessEmployee}
+          onOpenChange={(open) => !open && setGrantAccessEmployee(null)}
+          instanceId={instanceId}
+          employeeName={grantAccessEmployee.name}
+        />
+      )}
     </div>
   );
 };
