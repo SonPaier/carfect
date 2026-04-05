@@ -61,6 +61,7 @@ interface OffersViewProps {
   instanceData?: InstanceData | null;
   onReserveFromOffer?: (offerData: OfferWithOptions) => void;
   onEditModeChange?: (editing: boolean) => void;
+  initialCustomerData?: { name: string; phone: string; plate?: string } | null;
 }
 
 export default function OffersView({
@@ -68,6 +69,7 @@ export default function OffersView({
   instanceData,
   onReserveFromOffer,
   onEditModeChange,
+  initialCustomerData,
 }: OffersViewProps) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,6 +105,13 @@ export default function OffersView({
       { replace: true },
     );
   };
+
+  // Auto-open new offer when initialCustomerData is provided
+  useEffect(() => {
+    if (initialCustomerData && action !== 'new') {
+      navigateTo('new');
+    }
+  }, [initialCustomerData]);
 
   const [offers, setOffers] = useState<OfferWithOptions[]>([]);
   const [loading, setLoading] = useState(true);
@@ -546,6 +555,7 @@ export default function OffersView({
               await fetchOffers();
               navigateBack();
             }}
+            initialCustomerData={!editingOfferId && !duplicatingOfferId ? initialCustomerData : null}
           />
         </div>
       </>

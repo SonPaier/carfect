@@ -168,6 +168,7 @@ interface ReservationDetailsDrawerProps {
   onSendPickupSms?: (reservationId: string) => Promise<void>;
   onSendConfirmationSms?: (reservationId: string) => Promise<void>;
   onStatusChange?: (reservationId: string, newStatus: string) => Promise<void>;
+  onCreateOffer?: (data: { name: string; phone: string; plate: string }) => void;
   // Hall mode props
   mode?: 'admin' | 'hall';
   hallConfig?: HallConfig;
@@ -191,6 +192,7 @@ const ReservationDetailsDrawer = ({
   onSendPickupSms,
   onSendConfirmationSms,
   onStatusChange,
+  onCreateOffer,
   mode = 'admin',
   hallConfig,
 }: ReservationDetailsDrawerProps) => {
@@ -1436,6 +1438,22 @@ const ReservationDetailsDrawer = ({
                           Zobacz historię
                         </DropdownMenuItem>
 
+                        {onCreateOffer && reservation && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setActionsMenuOpen(false);
+                              onCreateOffer({
+                                name: reservation.customer_name,
+                                phone: reservation.customer_phone,
+                                plate: reservation.vehicle_plate,
+                              });
+                            }}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Zrób ofertę
+                          </DropdownMenuItem>
+                        )}
+
                         {onNoShow && (
                           <>
                             <DropdownMenuSeparator />
@@ -1625,6 +1643,20 @@ const ReservationDetailsDrawer = ({
                         <History className="w-4 h-4 mr-2" />
                         Zobacz historię
                       </DropdownMenuItem>
+                      {onCreateOffer && reservation && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            onCreateOffer({
+                              name: reservation.customer_name,
+                              phone: reservation.customer_phone,
+                              plate: reservation.vehicle_plate,
+                            });
+                          }}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Zrób ofertę
+                        </DropdownMenuItem>
+                      )}
                       {onNoShow && (
                         <>
                           <DropdownMenuSeparator />

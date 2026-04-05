@@ -26,12 +26,19 @@ import {
   AlertDialogTitle,
 } from '@shared/ui';
 
+export interface OfferCustomerPrefill {
+  name: string;
+  phone: string;
+  plate?: string;
+}
+
 interface OfferGeneratorProps {
   instanceId: string;
   offerId?: string;
   duplicateFromId?: string;
   onClose?: () => void;
   onSaved?: (offerId: string) => void;
+  initialCustomerData?: OfferCustomerPrefill | null;
 }
 
 // Steps defined inside component for i18n
@@ -42,6 +49,7 @@ export const OfferGenerator = ({
   duplicateFromId,
   onClose,
   onSaved,
+  initialCustomerData,
 }: OfferGeneratorProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -90,6 +98,19 @@ export const OfferGenerator = ({
   } = useOffer(instanceId);
 
   const isV2 = offer.offerFormat === 'v2';
+
+  // Pre-fill customer data from reservation (new offers only)
+  useEffect(() => {
+    if (initialCustomerData && !offerId && !duplicateFromId) {
+      updateCustomerData({
+        name: initialCustomerData.name,
+        phone: initialCustomerData.phone,
+      });
+      if (initialCustomerData.plate) {
+        updateVehicleData({ plate: initialCustomerData.plate });
+      }
+    }
+  }, []);
 
   // Fetch instance settings for unit prices visibility and email dialog
   useEffect(() => {
