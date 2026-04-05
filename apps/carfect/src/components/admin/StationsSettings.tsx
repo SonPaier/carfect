@@ -50,17 +50,34 @@ interface SubscriptionData {
   } | null;
 }
 
+// Module-level constant — doesn't change between renders
+const STATION_COLORS = [
+  '#E2EFFF',
+  '#E5D5F1',
+  '#FEE0D6',
+  '#FEF1D6',
+  '#D8EBE4',
+  '#F5E6D0',
+  '#E8E8E8',
+  '#FDDEDE',
+];
+
 function SortableStationItem({
   station,
   onEdit,
   onDelete,
+  disabled,
+  deleting,
 }: {
   station: Station;
   onEdit: () => void;
   onDelete: () => void;
+  disabled?: boolean;
+  deleting?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: station.id,
+    disabled,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -76,7 +93,10 @@ function SortableStationItem({
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
-          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground"
+          className={cn(
+            'touch-none text-muted-foreground hover:text-foreground',
+            disabled ? 'cursor-not-allowed opacity-50' : 'cursor-grab active:cursor-grabbing',
+          )}
           {...attributes}
           {...listeners}
         >
@@ -96,8 +116,9 @@ function SortableStationItem({
           size="icon"
           className="h-8 w-8 text-destructive hover:text-destructive"
           onClick={onDelete}
+          disabled={deleting}
         >
-          <Trash2 className="w-4 h-4" />
+          {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
         </Button>
       </div>
     </div>
@@ -111,9 +132,12 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingStation, setEditingStation] = useState<Station | null>(null);
   const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<{ name?: string }>({});
 
   // Employee assignment settings and data
   const { data: instanceSettings } = useInstanceSettings(instanceId);
@@ -125,17 +149,6 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
   // Subscription limit state
   const [maxStations, setMaxStations] = useState<number>(2);
   const [currentPlanName, setCurrentPlanName] = useState<string>('');
-
-  const STATION_COLORS = [
-    '#E2EFFF',
-    '#E5D5F1',
-    '#FEE0D6',
-    '#FEF1D6',
-    '#D8EBE4',
-    '#F5E6D0',
-    '#E8E8E8',
-    '#FDDEDE',
-  ];
 
   const [formData, setFormData] = useState({
     name: '',
@@ -175,8 +188,8 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      if (data) {
-        const subData = data as unknown as SubscriptionData;
+      if (data && typeof data === 'object' && 'station_limit' in data) {
+        const subData = data as SubscriptionData;
         setMaxStations(subData.station_limit);
         setCurrentPlanName(subData.subscription_plans?.name || '');
       }
@@ -191,6 +204,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
   }, [instanceId]);
 
   const openEditDialog = (station?: Station) => {
+    setFormErrors({});
     if (station) {
       setEditingStation(station);
       setFormData({
@@ -213,31 +227,64 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
 
   const handleSave = async () => {
     if (!instanceId) return;
-    if (!formData.name.trim()) {
-      toast.error(t('stationsSettings.stationNameRequired'));
+
+    // Validate
+    const errors: { name?: string } = {};
+    const trimmedName = formData.name.trim();
+
+    if (!trimmedName) {
+      errors.name = t('stationsSettings.stationNameRequired');
+    } else if (trimmedName.length > 50) {
+      errors.name = 'Nazwa może mieć maksymalnie 50 znaków';
+    } else {
+      const isDuplicate = stations.some(
+        (s) =>
+          s.name.trim().toLowerCase() === trimmedName.toLowerCase() &&
+          s.id !== editingStation?.id,
+      );
+      if (isDuplicate) {
+        errors.name = 'Stanowisko o tej nazwie już istnieje';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
     setSaving(true);
     try {
-      const stationData = {
-        instance_id: instanceId,
-        name: formData.name.trim(),
-        type: 'universal' as const,
-        active: true,
-        sort_order: editingStation?.sort_order ?? stations.length,
-        color: formData.color,
-      };
-
       if (editingStation) {
+        // Save employee assignments BEFORE closing dialog
+        if (instanceSettings?.assign_employees_to_stations) {
+          try {
+            await updateStationEmployees({
+              stationId: editingStation.id,
+              employeeIds: selectedEmployeeIds,
+            });
+          } catch (employeeError) {
+            console.error('Error updating station employees:', employeeError);
+            toast.error('Zapisano stanowisko, ale nie udało się przypisać pracowników');
+          }
+        }
+
         const { error } = await supabase
           .from('stations')
-          .update({ name: formData.name.trim(), color: formData.color })
+          .update({ name: trimmedName, color: formData.color })
           .eq('id', editingStation.id);
 
         if (error) throw error;
         toast.success(t('stationsSettings.stationUpdated'));
       } else {
+        const stationData = {
+          instance_id: instanceId,
+          name: trimmedName,
+          type: 'universal' as const,
+          active: true,
+          sort_order: stations.length,
+          color: formData.color,
+        };
+
         const { error } = await supabase.from('stations').insert(stationData);
 
         if (error) throw error;
@@ -248,14 +295,6 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       fetchStations();
       // Invalidate stations cache
       queryClient.invalidateQueries({ queryKey: ['stations', instanceId] });
-
-      // Save employee assignments if editing and feature is enabled
-      if (editingStation && instanceSettings?.assign_employees_to_stations) {
-        await updateStationEmployees({
-          stationId: editingStation.id,
-          employeeIds: selectedEmployeeIds,
-        });
-      }
     } catch (error: unknown) {
       console.error('Error saving station:', error);
       // Handle station limit error from trigger
@@ -278,6 +317,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
     const reordered = arrayMove(stations, oldIndex, newIndex);
     setStations(reordered);
 
+    setReordering(true);
     // Persist new sort_order
     try {
       const updates = reordered.map((s, i) =>
@@ -289,12 +329,15 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       console.error('Error reordering stations:', error);
       toast.error('Błąd zmiany kolejności');
       fetchStations();
+    } finally {
+      setReordering(false);
     }
   };
 
   const handleDelete = async (stationId: string) => {
     if (!confirm(t('stationsSettings.deleteConfirm'))) return;
 
+    setDeletingId(stationId);
     try {
       const { error } = await supabase.from('stations').delete().eq('id', stationId);
 
@@ -306,6 +349,8 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
     } catch (error) {
       console.error('Error deleting station:', error);
       toast.error(t('stationsSettings.deleteError'));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -354,6 +399,8 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
                   station={station}
                   onEdit={() => openEditDialog(station)}
                   onDelete={() => handleDelete(station.id)}
+                  disabled={reordering}
+                  deleting={deletingId === station.id}
                 />
               ))}
             </div>
@@ -377,9 +424,17 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
               <Label>{t('stationsSettings.stationName')} *</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, name: e.target.value }));
+                  setFormErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder={t('stationsSettings.stationNamePlaceholder')}
+                maxLength={50}
+                className={cn(formErrors.name && 'border-destructive')}
               />
+              {formErrors.name && (
+                <p className="text-xs text-destructive mt-1">{formErrors.name}</p>
+              )}
             </div>
             {/* Color picker */}
             <div className="space-y-2">
