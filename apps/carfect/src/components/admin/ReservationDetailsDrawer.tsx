@@ -502,7 +502,13 @@ const ReservationDetailsDrawer = ({
     // Small delay to allow button clicks to register first
     setTimeout(() => {
       if (editingNotes) {
-        handleSaveAdminNotes();
+        const original = reservation?.admin_notes || '';
+        const current = adminNotes || '';
+        if (current !== original) {
+          handleSaveAdminNotes();
+        } else {
+          setEditingNotes(false);
+        }
       }
     }, 100);
   };
@@ -740,7 +746,7 @@ const ReservationDetailsDrawer = ({
           hideOverlay
           // Keep drawer open; allow clicking calendar behind
           onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onEscapeKeyDown={onClose}
         >
           {/* Header with time/date and X button */}
           <SheetHeader className="flex-shrink-0 border-b pb-4">
@@ -1087,7 +1093,7 @@ const ReservationDetailsDrawer = ({
               <div className="border-t border-border/30 pt-3">
                 <div className="text-xs text-foreground mb-1">{t('reservations.adminNotes')}</div>
                 {editingNotes ? (
-                  <div className="relative">
+                  <div className="relative -mx-0.5 px-0.5">
                     <textarea
                       ref={notesTextareaRef}
                       value={adminNotes}

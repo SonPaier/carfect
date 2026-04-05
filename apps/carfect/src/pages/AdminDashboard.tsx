@@ -3410,6 +3410,7 @@ const AdminDashboard = () => {
                 }}
                 employees={cachedEmployees}
                 onOpenReservation={handleOpenReservationById}
+                onRequestAllHistory={() => fetchReservations(new Date('2020-01-01'))}
               />
             )}
 

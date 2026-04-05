@@ -53,11 +53,11 @@ export const getNextOrderNumber = async (
   const monthStr = String(month).padStart(2, '0');
   const suffix = `/${monthStr}/${year}`;
 
-  const { count } = await (supabase
+  const { count } = await supabase
     .from('sales_orders')
     .select('id', { count: 'exact', head: true })
     .eq('instance_id', instanceId)
-    .like('order_number', `%${suffix}`) as any);
+    .like('order_number', `%${suffix}`);
 
   return `${(count || 0) + 1}/${monthStr}/${year}`;
 };
@@ -87,8 +87,9 @@ const SalesOrdersView = () => {
       .select('bank_accounts')
       .eq('id', instanceId)
       .single()
-      .then(({ data }: any) => {
-        if (data?.bank_accounts) setBankAccounts(data.bank_accounts);
+      .then(({ data }) => {
+        if (data?.bank_accounts)
+          setBankAccounts(data.bank_accounts as { name: string; number: string }[]);
       });
   }, [instanceId]);
 
@@ -99,7 +100,7 @@ const SalesOrdersView = () => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editOrder, setEditOrder] = useState<any>(null);
+  const [editOrder, setEditOrder] = useState<EditOrderData | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
     orderId: string;
@@ -160,7 +161,7 @@ const SalesOrdersView = () => {
 
     query = query.order(dbSortCol, { ascending: sortDirection === 'asc' }).range(from, to);
 
-    const { data, error, count } = await (query as any);
+    const { data, error, count } = await query;
 
     if (error) {
       console.error('Error fetching orders:', error);
@@ -170,13 +171,13 @@ const SalesOrdersView = () => {
     setTotalCount(count || 0);
 
     // Fetch invoices separately
-    const orderIds = (data || []).map((o: any) => o.id);
-    const invoiceMap: Record<string, any> = {};
+    const orderIds = (data || []).map((o) => o.id);
+    const invoiceMap: Record<string, { id: string; invoice_number: string; status: string; pdf_url: string }> = {};
     if (orderIds.length > 0) {
-      const { data: invoices, error: invError } = await (supabase
+      const { data: invoices, error: invError } = await supabase
         .from('invoices')
         .select('id, sales_order_id, invoice_number, status, pdf_url')
-        .in('sales_order_id', orderIds) as any);
+        .in('sales_order_id', orderIds);
       if (!invError && invoices) {
         for (const inv of invoices) {
           invoiceMap[inv.sales_order_id] = inv;
@@ -184,7 +185,7 @@ const SalesOrdersView = () => {
       }
     }
 
-    const mapped: SalesOrder[] = (data || []).map((o: any) => {
+    const mapped: SalesOrder[] = (data || []).map((o) => {
       const inv = invoiceMap[o.id];
       return {
         id: o.id,
@@ -198,7 +199,7 @@ const SalesOrdersView = () => {
         totalNet: Number(o.total_net),
         totalGross: Number(o.total_gross),
         currency: (o.currency || 'PLN') as 'PLN' | 'EUR',
-        products: (o.sales_order_items || []).map((item: any) => ({
+        products: ((o.sales_order_items || []) as { name: string; quantity: number; price_net: number; price_unit?: string; discount_percent?: number }[]).map((item) => ({
           name: item.name,
           quantity: item.quantity,
           priceNet: Number(item.price_net),
@@ -207,7 +208,7 @@ const SalesOrdersView = () => {
           discountPercent:
             item.discount_percent != null ? Number(item.discount_percent) : undefined,
         })),
-        packages: (o.packages || []).map((pkg: any) => ({
+        packages: ((o.packages || []) as { shippingMethod?: string; shippingCost?: number }[]).map((pkg) => ({
           shippingMethod: pkg.shippingMethod || 'shipping',
           shippingCost: pkg.shippingCost ?? undefined,
         })),
@@ -255,10 +256,10 @@ const SalesOrdersView = () => {
   };
 
   const changePaymentStatus = async (id: string, newStatus: 'unpaid' | 'paid') => {
-    const { error } = await (supabase
+    const { error } = await supabase
       .from('sales_orders')
       .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
-      .eq('id', id) as any);
+      .eq('id', id);
     if (error) {
       toast.error('Błąd zmiany statusu płatności');
       return;
@@ -267,7 +268,7 @@ const SalesOrdersView = () => {
   };
 
   const changeStatus = async (id: string, newStatus: SalesOrder['status']) => {
-    const updates: any = { status: newStatus, updated_at: new Date().toISOString() };
+    const updates: Record<string, string | null> = { status: newStatus, updated_at: new Date().toISOString() };
     if (newStatus === 'wysłany') {
       updates.shipped_at = new Date().toISOString();
     } else {
@@ -279,7 +280,7 @@ const SalesOrdersView = () => {
       updates.tracking_number = null;
       updates.apaczka_tracking_url = null;
     }
-    const { error } = await (supabase.from('sales_orders').update(updates).eq('id', id) as any);
+    const { error } = await supabase.from('sales_orders').update(updates).eq('id', id);
     if (error) {
       toast.error('Błąd zmiany statusu');
       return;
@@ -302,24 +303,24 @@ const SalesOrdersView = () => {
 
   const handleDeleteOrder = async (orderId: string) => {
     try {
-      await (supabase.from('sales_roll_usages').delete().eq('order_id', orderId) as any);
-      await (supabase.from('sales_order_items').delete().eq('order_id', orderId) as any);
-      await (supabase.from('sales_orders').delete().eq('id', orderId) as any);
+      await supabase.from('sales_roll_usages').delete().eq('order_id', orderId);
+      await supabase.from('sales_order_items').delete().eq('order_id', orderId);
+      await supabase.from('sales_orders').delete().eq('id', orderId);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
       toast.success('Zamówienie usunięte');
-    } catch (err: any) {
-      toast.error('Błąd usuwania: ' + (err.message || ''));
+    } catch (err: unknown) {
+      toast.error('Błąd usuwania: ' + ((err as Error).message || ''));
     }
   };
 
   const handleOpenInvoiceDrawer = async (order: SalesOrder) => {
     let customerDiscount = 0;
     if (order.customerId) {
-      const { data: cust } = await (supabase
+      const { data: cust } = await supabase
         .from('sales_customers')
         .select('discount_percent')
         .eq('id', order.customerId)
-        .single() as any);
+        .single();
       customerDiscount = cust?.discount_percent ?? 0;
     }
     setInvoiceDrawerState({ open: true, order: { ...order, customerDiscount } });

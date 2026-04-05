@@ -312,7 +312,7 @@ export function AddTrainingDrawer({
           hideOverlay
           hideCloseButton
           onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onEscapeKeyDown={onClose}
         >
           <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0 bg-white dark:bg-card">
             <div className="flex items-center justify-between">

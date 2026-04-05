@@ -127,6 +127,7 @@ interface ReservationsViewProps {
   onDeleteTraining?: (trainingId: string) => void;
   employees?: Employee[];
   onOpenReservation?: (reservationId: string) => void;
+  onRequestAllHistory?: () => void;
 }
 
 type TabValue = 'all' | 'reservations' | 'trainings';
@@ -161,8 +162,14 @@ const ReservationsView = ({
   onDeleteTraining,
   employees = [],
   onOpenReservation,
+  onRequestAllHistory,
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
+
+  // Request full history on mount
+  useEffect(() => {
+    onRequestAllHistory?.();
+  }, []);
   const instanceId = reservations[0]?.instance_id ?? null;
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
   const invoicingActive = invoicingSettings?.active ?? false;
