@@ -54,13 +54,13 @@ const SalesProductsView = () => {
   const fetchProducts = useCallback(async () => {
     if (!instanceId) return;
     setLoading(true);
-    const { data } = await (supabase
+    const { data } = await supabase
       .from('sales_products')
       .select(
         'id, short_name, full_name, description, price_net, price_unit, category_id, has_variants, exclude_from_discount',
       )
       .eq('instance_id', instanceId)
-      .order('created_at', { ascending: false }) as any);
+      .order('created_at', { ascending: false });
 
     // Fetch categories to map names
     const { data: cats } = await supabase
@@ -68,10 +68,10 @@ const SalesProductsView = () => {
       .select('id, name')
       .eq('instance_id', instanceId)
       .eq('category_type', 'sales');
-    const catMap = new Map((cats || []).map((c: any) => [c.id, c.name]));
+    const catMap = new Map((cats || []).map((c) => [c.id, c.name]));
 
     setProducts(
-      (data || []).map((p: any) => ({
+      (data || []).map((p) => ({
         id: p.id,
         shortName: p.short_name,
         fullName: p.full_name,
@@ -140,7 +140,7 @@ const SalesProductsView = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await (supabase.from('sales_products').delete().eq('id', id) as any);
+    const { error } = await supabase.from('sales_products').delete().eq('id', id);
     if (error) {
       toast.error('Błąd usuwania');
       return;

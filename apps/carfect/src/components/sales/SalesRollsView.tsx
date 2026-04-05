@@ -249,8 +249,8 @@ const SalesRollsView = () => {
       await deleteRoll(deleteConfirm.rollId);
       toast.success('Rolka usunięta');
       loadRolls();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     } finally {
       setDeleteConfirm({ open: false, rollId: '', rollName: '' });
     }
@@ -266,8 +266,8 @@ const SalesRollsView = () => {
       await archiveRoll(roll.id);
       toast.success('Rolka oznaczona jako wykorzystana');
       loadRolls();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     }
   };
 
@@ -276,8 +276,8 @@ const SalesRollsView = () => {
       await restoreRoll(roll.id);
       toast.success('Rolka przywrócona na stan');
       loadRolls();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     }
   };
 
