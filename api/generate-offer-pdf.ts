@@ -11,6 +11,14 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
 };
 
+// Trick to prevent Vercel/ncc bundler from converting dynamic import() to require()
+// The bundler statically analyzes import() calls and replaces them with require(),
+// which breaks ESM-only packages like @react-pdf/renderer.
+// Using Function constructor hides the import from static analysis.
+const dynamicImport = new Function('specifier', 'return import(specifier)') as (
+  specifier: string,
+) => Promise<Record<string, unknown>>;
+
 async function fetchLogoBuffer(logoUrl: string): Promise<Buffer | null> {
   try {
     const response = await fetch(logoUrl);
@@ -29,13 +37,18 @@ export default async function handler(req: Request) {
   }
 
   try {
-    // Dynamic imports for ESM-only packages
-    const [{ renderToBuffer }, React, pdfLib] = await Promise.all([
-      import('@react-pdf/renderer'),
-      import('react'),
-      import('../libs/pdf/src/index.js'),
+    // Dynamic imports hidden from bundler for ESM-only packages
+    const [reactPdf, React, pdfLib] = await Promise.all([
+      dynamicImport('@react-pdf/renderer') as Promise<
+        typeof import('@react-pdf/renderer')
+      >,
+      dynamicImport('react') as Promise<typeof import('react')>,
+      dynamicImport('../libs/pdf/src/index.js') as Promise<
+        typeof import('../libs/pdf/src/index.js')
+      >,
     ]);
 
+    const { renderToBuffer } = reactPdf;
     const { registerFonts, OfferPdfDocument, transformOfferData, transformInstanceData } = pdfLib;
     type PdfConfig = import('../libs/pdf/src/styles').PdfConfig;
 

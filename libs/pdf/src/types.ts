@@ -16,6 +16,8 @@ export interface PdfVehicleData {
   plate?: string;
   vin?: string;
   year?: number;
+  paintColor?: string;
+  paintType?: string;
 }
 
 /** A single line item within a scope */

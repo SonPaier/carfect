@@ -1,6 +1,8 @@
 import { toast } from 'sonner';
 
-const PDF_API_URL = '/api/generate-offer-pdf';
+const PDF_API_URL = import.meta.env.DEV
+  ? 'http://localhost:3333/api/generate-offer-pdf'
+  : '/api/generate-offer-pdf';
 
 export async function openOfferPdf(publicToken: string): Promise<void> {
   try {
