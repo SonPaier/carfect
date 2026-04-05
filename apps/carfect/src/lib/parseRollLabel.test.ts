@@ -176,7 +176,7 @@ const DESCRIPTION_PATTERNS = [
 ];
 
 function isDateString(s: string): boolean {
-  const clean = s.replace(/[\s./\-]/g, '');
+  const clean = s.replace(/[\s./-]/g, '');
   if (/^\d{8}$/.test(clean)) {
     const day = parseInt(clean.slice(0, 2));
     const month = parseInt(clean.slice(2, 4));
