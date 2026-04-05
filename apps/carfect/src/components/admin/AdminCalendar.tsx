@@ -298,7 +298,7 @@ const AdminCalendar = ({
   onConfirmReservation,
   onYardVehicleDrop,
   onDateChange,
-  allowedViews = ['day', 'two-days', 'week', 'month'],
+  allowedViews = ['day', 'week', 'month'],
   readOnly = false,
   showStationFilter = true,
   showWeekView = true,
@@ -3169,24 +3169,16 @@ const AdminCalendar = ({
       {/* Color Legend */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t border-border/50 mt-4">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-amber-400/80 border border-amber-500/70" />
-          <span className="text-xs text-muted-foreground">Do potwierdzenia</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-red-300/80 border border-red-400/70" />
-          <span className="text-xs text-muted-foreground">Prośba o zmianę</span>
-        </div>
-        <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-orange-400/80 border border-orange-500/70" />
           <span className="text-xs text-muted-foreground">W trakcie</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-green-400/80 border border-green-500/70" />
-          <span className="text-xs text-muted-foreground">Potwierdzony</span>
+          <span className="text-xs text-muted-foreground">Potwierdzona</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-slate-400/80 border border-slate-500/70" />
-          <span className="text-xs text-muted-foreground">Zakończony</span>
+          <span className="text-xs text-muted-foreground">Zakończona</span>
         </div>
         {trainingsEnabled && (
           <>
