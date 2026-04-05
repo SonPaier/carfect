@@ -192,7 +192,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
   }
 
   return (
-    <div className="space-y-4 pb-24 md:pb-0">
+    <div className="space-y-2 pb-24 md:pb-0">
       <div className="p-4 rounded-lg border border-border/50 bg-white">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">

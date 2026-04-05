@@ -1322,9 +1322,9 @@ const ReservationDetailsDrawer = ({
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-10 w-10 bg-white dark:bg-card"
+                          className="h-9 w-9 bg-white dark:bg-card"
                         >
-                          <MoreVertical className="w-5 h-5" />
+                          <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent

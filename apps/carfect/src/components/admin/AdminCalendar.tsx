@@ -1673,7 +1673,7 @@ const AdminCalendar = ({
                 variant={isCompact ? 'secondary' : 'outline'}
                 size="sm"
                 onClick={toggleCompact}
-                className="gap-1"
+                className="gap-1 h-9"
                 title={isCompact ? 'Rozwiń kolumny' : 'Zwiń kolumny'}
               >
                 <ChevronsLeftRight className="w-4 h-4" />
@@ -1685,7 +1685,7 @@ const AdminCalendar = ({
               variant="outline"
               size="sm"
               onClick={() => setPlacDrawerOpen(true)}
-              className="gap-1 relative"
+              className="gap-1 h-9 relative"
             >
               <ParkingSquare className="w-4 h-4" />
               <span className="hidden md:inline">Plac</span>

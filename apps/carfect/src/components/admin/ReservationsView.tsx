@@ -13,7 +13,8 @@ import {
   GraduationCap,
   ArrowUp,
   ArrowDown,
-  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
   MoreHorizontal,
 } from 'lucide-react';
 import { normalizeSearchQuery, formatPhoneDisplay } from '@shared/utils';
@@ -40,14 +41,7 @@ import {
   DropdownMenuTrigger,
 } from '@shared/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui';
-import {
-  PaginationFooter,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { EmptyState } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import ServiceTag from './ServiceTag';
@@ -212,7 +206,7 @@ const ReservationsView = ({
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Sort state
@@ -518,15 +512,12 @@ const ReservationsView = ({
       >
         <span className="flex items-center gap-1">
           {children}
-          {isActive ? (
-            sortDirection === 'asc' ? (
+          {isActive &&
+            (sortDirection === 'asc' ? (
               <ArrowUp className="w-3.5 h-3.5 text-muted-foreground" />
             ) : (
               <ArrowDown className="w-3.5 h-3.5 text-muted-foreground" />
-            )
-          ) : (
-            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground opacity-40" />
-          )}
+            ))}
         </span>
       </TableHead>
     );
@@ -963,23 +954,43 @@ const ReservationsView = ({
           </div>
 
           {/* Pagination */}
-          <PaginationFooter
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={sortedItems.length}
-            pageSize={pageSize}
-            pageSizeOptions={[25, 50, 100]}
-            onPageChange={(page) => {
-              setCurrentPage(page);
-              tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-              tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-            itemLabel="rezerwacji"
-          />
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {(currentPage - 1) * pageSize + 1}-
+                {Math.min(currentPage * pageSize, sortedItems.length)} z {sortedItems.length}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === 1}
+                  onClick={() => {
+                    setCurrentPage((p) => p - 1);
+                    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm px-3 min-w-[60px] text-center">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === totalPages}
+                  onClick={() => {
+                    setCurrentPage((p) => p + 1);
+                    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

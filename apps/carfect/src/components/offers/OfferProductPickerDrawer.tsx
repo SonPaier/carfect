@@ -75,7 +75,9 @@ export function OfferProductPickerDrawer({
         const [servicesRes, categoriesRes] = await Promise.all([
           supabase
             .from('unified_services')
-            .select('id, name, short_name, description, category_id, price_from, price_small, price_medium, price_large')
+            .select(
+              'id, name, short_name, description, category_id, price_from, price_small, price_medium, price_large',
+            )
             .eq('instance_id', instanceId)
             .eq('active', true)
             .eq('service_type', 'both')
@@ -157,10 +159,7 @@ export function OfferProductPickerDrawer({
     return `${bruttoToNetto(raw).toFixed(0)} zł netto`;
   };
 
-  const alreadyAddedSet = useMemo(
-    () => new Set(alreadyAddedProductIds),
-    [alreadyAddedProductIds],
-  );
+  const alreadyAddedSet = useMemo(() => new Set(alreadyAddedProductIds), [alreadyAddedProductIds]);
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -255,7 +254,7 @@ export function OfferProductPickerDrawer({
                         <div className="flex-1 text-left">
                           {service.short_name ? (
                             <>
-                              <p className="font-bold text-primary">{service.short_name}</p>
+                              <p className="font-bold text-foreground">{service.short_name}</p>
                               <p className="text-muted-foreground text-[11px] leading-tight">
                                 {service.name}
                               </p>
