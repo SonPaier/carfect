@@ -23,15 +23,15 @@ describe('SmsUsageCard', () => {
     render(<SmsUsageCard smsCount={120} smsLimit={100} />);
     expect(screen.getByText('20 SMS ponad limit = 2,40 zł netto')).toBeInTheDocument();
     expect(
-      screen.getByText('1 SMS ponad limit = 0,12 zł netto. Zostanie doliczone do najbliższej faktury.'),
+      screen.getByText(
+        '1 SMS ponad limit = 0,12 zł netto. Zostanie doliczone do najbliższej faktury.',
+      ),
     ).toBeInTheDocument();
   });
 
   it('does not show invoice notice when under limit', () => {
     render(<SmsUsageCard smsCount={50} smsLimit={100} />);
-    expect(
-      screen.queryByText(/Zostanie doliczone/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Zostanie doliczone/)).not.toBeInTheDocument();
   });
 
   it('shows instance name when showInstanceName is true', () => {

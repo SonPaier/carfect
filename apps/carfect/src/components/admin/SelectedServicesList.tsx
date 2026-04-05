@@ -148,7 +148,7 @@ const SelectedServicesList = ({
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">
                     {service.shortcut && (
-                      <span className="text-primary font-bold mr-1.5">{service.shortcut}</span>
+                      <span className="text-foreground font-bold mr-1.5">{service.shortcut}</span>
                     )}
                     {service.name}
                   </p>

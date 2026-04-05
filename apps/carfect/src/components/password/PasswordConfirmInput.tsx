@@ -66,11 +66,7 @@ const PasswordConfirmInput = ({
             match ? 'text-green-600' : 'text-destructive',
           )}
         >
-          {match ? (
-            <Check className="h-3 w-3" />
-          ) : (
-            <X className="h-3 w-3" />
-          )}
+          {match ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
           {match ? t('password.match') : t('password.noMatch')}
         </p>
       )}

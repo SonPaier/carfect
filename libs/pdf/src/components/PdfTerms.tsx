@@ -10,7 +10,13 @@ interface PdfTermsProps {
   notes?: string;
 }
 
-export function PdfTerms({ validUntil, paymentTerms, warranty, serviceInfo, notes }: PdfTermsProps) {
+export function PdfTerms({
+  validUntil,
+  paymentTerms,
+  warranty,
+  serviceInfo,
+  notes,
+}: PdfTermsProps) {
   const hasAny = validUntil || paymentTerms || warranty || serviceInfo || notes;
   if (!hasAny) return null;
 

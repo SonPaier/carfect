@@ -96,16 +96,12 @@ const PasswordInput = ({
                 key={i}
                 className={cn(
                   'flex-1 rounded-full transition-colors',
-                  i < strength.score
-                    ? strength.color
-                    : 'bg-muted',
+                  i < strength.score ? strength.color : 'bg-muted',
                 )}
               />
             ))}
           </div>
-          <p className="text-sm font-medium text-foreground">
-            {t(strength.label)}
-          </p>
+          <p className="text-sm font-medium text-foreground">{t(strength.label)}</p>
         </div>
       )}
 

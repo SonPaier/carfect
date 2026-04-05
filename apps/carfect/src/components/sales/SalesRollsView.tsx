@@ -36,7 +36,13 @@ import { ConfirmDialog, Sheet, SheetContent, SheetHeader, SheetTitle } from '@sh
 import { useAuth } from '@/hooks/useAuth';
 import type { SalesRoll } from './types/rolls';
 import { formatRollSize, formatMbM2Lines, mbToM2 } from './types/rolls';
-import { fetchRolls, fetchRollById, deleteRoll, archiveRoll, restoreRoll } from './services/rollService';
+import {
+  fetchRolls,
+  fetchRollById,
+  deleteRoll,
+  archiveRoll,
+  restoreRoll,
+} from './services/rollService';
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
 import RollDetailsDrawer from './rolls/RollDetailsDrawer';
@@ -132,7 +138,14 @@ const SalesRollsView = () => {
   const summary = useMemo(() => {
     const map = new Map<
       string,
-      { name: string; widthMm: number; count: number; unopened: number; totalRemainingMb: number; totalRemainingM2: number }
+      {
+        name: string;
+        widthMm: number;
+        count: number;
+        unopened: number;
+        totalRemainingMb: number;
+        totalRemainingM2: number;
+      }
     >();
     let totalUnopened = 0;
 

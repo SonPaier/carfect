@@ -56,8 +56,18 @@ const HIDDEN_SMS_TYPES: SmsMessageType[] = [
 ];
 
 const MONTH_NAMES_PL = [
-  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
+  'Styczeń',
+  'Luty',
+  'Marzec',
+  'Kwiecień',
+  'Maj',
+  'Czerwiec',
+  'Lipiec',
+  'Sierpień',
+  'Wrzesień',
+  'Październik',
+  'Listopad',
+  'Grudzień',
 ];
 
 const MESSAGE_TYPE_LABELS: Record<string, string> = {
@@ -306,9 +316,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       </div>
 
       {/* SMS Usage */}
-      {instanceId && (
-        <SmsUsageCard smsCount={smsLogs.length} smsLimit={smsLimit} />
-      )}
+      {instanceId && <SmsUsageCard smsCount={smsLogs.length} smsLimit={smsLimit} />}
 
       {/* SMS History Table */}
       <div>
@@ -337,11 +345,17 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
                   const statusInfo = getLogStatus(log.status);
                   return (
                     <TableRow key={`${log.created_at}-${i}`}>
-                      <TableCell className="p-2 whitespace-nowrap">{formatLogDate(log.created_at)}</TableCell>
-                      <TableCell className="p-2 whitespace-nowrap font-mono">{log.phone}</TableCell>
-                      <TableCell className="p-2 whitespace-nowrap">{getLogTypeLabel(log.message_type)}</TableCell>
                       <TableCell className="p-2 whitespace-nowrap">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusInfo.className}`}>
+                        {formatLogDate(log.created_at)}
+                      </TableCell>
+                      <TableCell className="p-2 whitespace-nowrap font-mono">{log.phone}</TableCell>
+                      <TableCell className="p-2 whitespace-nowrap">
+                        {getLogTypeLabel(log.message_type)}
+                      </TableCell>
+                      <TableCell className="p-2 whitespace-nowrap">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusInfo.className}`}
+                        >
                           {statusInfo.label}
                         </span>
                       </TableCell>
@@ -363,26 +377,31 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
           <p className="text-sm text-muted-foreground">{t('sms.messageSettingsDescription')}</p>
         </div>
 
-        {settings.filter((setting) => !HIDDEN_SMS_TYPES.includes(setting.type)).map((setting) => (
-          <div key={setting.type} className="space-y-2 py-3 border-b border-border/30 last:border-0">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="font-medium text-sm">{getMessageTypeLabel(setting.type)}</div>
-                <div className="text-xs text-muted-foreground">
-                  {getMessageTypeDescription(setting.type)}
+        {settings
+          .filter((setting) => !HIDDEN_SMS_TYPES.includes(setting.type))
+          .map((setting) => (
+            <div
+              key={setting.type}
+              className="space-y-2 py-3 border-b border-border/30 last:border-0"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="font-medium text-sm">{getMessageTypeLabel(setting.type)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {getMessageTypeDescription(setting.type)}
+                  </div>
                 </div>
+                <Switch
+                  size="sm"
+                  checked={setting.enabled}
+                  onCheckedChange={(checked) => handleToggle(setting.type, checked)}
+                />
               </div>
-              <Switch
-                size="sm"
-                checked={setting.enabled}
-                onCheckedChange={(checked) => handleToggle(setting.type, checked)}
-              />
+              <p className="text-xs text-muted-foreground font-mono">
+                {getExampleMessage(setting.type)}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground font-mono">
-              {getExampleMessage(setting.type)}
-            </p>
-          </div>
-        ))}
+          ))}
       </div>
 
       {/* Save Button */}

@@ -276,17 +276,18 @@ describe('ReservationsView', () => {
       );
       renderView({ reservations });
 
-      // PaginationFooter renders "1–25 z 30 rezerwacji"
-      expect(screen.getByText(/1.+25.+z.+30.+rezerwacji/)).toBeInTheDocument();
+      // Inline pagination renders "1-20 z 30" (20 per page)
+      expect(screen.getByText(/1-20 z 30/)).toBeInTheDocument();
     });
 
-    it('shows "1–X z X rezerwacji" when all fit on one page', () => {
+    it('hides pagination when all results fit on one page', () => {
       const reservations = Array.from({ length: 3 }, (_, i) =>
         makeReservation({ id: `id-${i}`, customer_name: `Klient ${i}` }),
       );
       renderView({ reservations });
 
-      expect(screen.getByText(/1.+3.+z.+3.+rezerwacji/)).toBeInTheDocument();
+      // With <= 20 items (pageSize), pagination footer is not rendered
+      expect(screen.queryByText(/z 3$/)).not.toBeInTheDocument();
     });
   });
 

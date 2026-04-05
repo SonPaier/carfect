@@ -165,7 +165,8 @@ export function transformOfferData(rawOffer: RawOffer): PdfOfferData {
 
       // Parse variant label from name (format: "VariantName\nProductName")
       const nameParts = (item.custom_name ?? '').split('\n');
-      const displayName = nameParts.length > 1 ? nameParts.slice(1).join('\n') : item.custom_name ?? '';
+      const displayName =
+        nameParts.length > 1 ? nameParts.slice(1).join('\n') : (item.custom_name ?? '');
 
       scopeMap[key].items.push({
         id: item.id,

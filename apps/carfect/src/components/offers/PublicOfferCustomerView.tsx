@@ -240,7 +240,8 @@ export const PublicOfferCustomerView = ({
 
         const inferredScopeName = opt.scope_id
           ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
-          : (inferredNameFromTitle ?? (offer.offer_format === 'v2' ? 'Usługi' : t('publicOffer.otherFallback')));
+          : (inferredNameFromTitle ??
+            (offer.offer_format === 'v2' ? 'Usługi' : t('publicOffer.otherFallback')));
 
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
 
@@ -770,7 +771,12 @@ export const PublicOfferCustomerView = ({
                                 {!offer.hide_unit_prices && (
                                   <span
                                     className="font-semibold text-base whitespace-nowrap"
-                                    style={{ color: itemTotal === 0 ? branding.offer_primary_color : branding.offer_section_text_color }}
+                                    style={{
+                                      color:
+                                        itemTotal === 0
+                                          ? branding.offer_primary_color
+                                          : branding.offer_section_text_color,
+                                    }}
                                   >
                                     {itemTotal === 0 ? 'Gratis!' : `${itemTotal.toFixed(2)} zł`}
                                   </span>

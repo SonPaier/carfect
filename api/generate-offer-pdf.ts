@@ -43,7 +43,7 @@ export default async function handler(req: Request) {
     let publicToken: string | null = null;
 
     if (req.method === 'POST') {
-      const body = await req.json() as { publicToken?: unknown };
+      const body = (await req.json()) as { publicToken?: unknown };
       publicToken = typeof body.publicToken === 'string' ? body.publicToken : null;
     } else if (req.method === 'GET') {
       const url = new URL(req.url);
@@ -74,10 +74,7 @@ export default async function handler(req: Request) {
     }
 
     if (!rpcData) {
-      return Response.json(
-        { error: 'Offer not found' },
-        { status: 404, headers: CORS_HEADERS },
-      );
+      return Response.json({ error: 'Offer not found' }, { status: 404, headers: CORS_HEADERS });
     }
 
     const data = rpcData as Record<string, unknown>;
@@ -134,7 +131,9 @@ export default async function handler(req: Request) {
     };
 
     // Transform DB data into clean PDF types
-    const offerPdfData = transformOfferData(enrichedData as Parameters<typeof transformOfferData>[0]);
+    const offerPdfData = transformOfferData(
+      enrichedData as Parameters<typeof transformOfferData>[0],
+    );
     const instancePdfData = transformInstanceData(instanceData);
 
     // Build PdfConfig from instance data
@@ -147,7 +146,9 @@ export default async function handler(req: Request) {
       logoUrl: instancePdfData.logoUrl,
       showTrustTiles: Boolean(instancePdfData.trustTiles && instancePdfData.trustTiles.length > 0),
       showBankAccount: Boolean(instancePdfData.bankAccountNumber),
-      showExpertContact: Boolean(instancePdfData.contactPerson || instancePdfData.phone || instancePdfData.email),
+      showExpertContact: Boolean(
+        instancePdfData.contactPerson || instancePdfData.phone || instancePdfData.email,
+      ),
     };
 
     // Fetch logo as buffer if available

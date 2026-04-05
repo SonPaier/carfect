@@ -2,7 +2,7 @@ import { StyleSheet } from '@react-pdf/renderer';
 
 /** Configuration object for PDF rendering — future: stored per-instance in DB */
 export interface PdfConfig {
-  accentColor: string;      // branding accent (separator line, section headers)
+  accentColor: string; // branding accent (separator line, section headers)
   companyName: string;
   companyPhone?: string;
   companyEmail?: string;

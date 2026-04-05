@@ -21,9 +21,8 @@ export interface OfferPdfDocumentProps {
 }
 
 export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferPdfDocumentProps) {
-  const trustTiles = instance.trustTiles && instance.trustTiles.length > 0
-    ? instance.trustTiles
-    : null;
+  const trustTiles =
+    instance.trustTiles && instance.trustTiles.length > 0 ? instance.trustTiles : null;
 
   return (
     <Document title={`Oferta ${offer.offerNumber}`} language="pl">
@@ -35,15 +34,10 @@ export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferP
         />
 
         {offer.customerData && offer.vehicleData && (
-          <PdfCustomerSection
-            customer={offer.customerData}
-            vehicle={offer.vehicleData}
-          />
+          <PdfCustomerSection customer={offer.customerData} vehicle={offer.vehicleData} />
         )}
 
-        {config.showTrustTiles && trustTiles && (
-          <PdfTrustTiles tiles={trustTiles} />
-        )}
+        {config.showTrustTiles && trustTiles && <PdfTrustTiles tiles={trustTiles} />}
 
         {offer.scopes.map((scope, index) => (
           <PdfItemsTable

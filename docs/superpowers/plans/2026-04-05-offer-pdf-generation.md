@@ -51,6 +51,7 @@ apps/carfect/src/
 ### Task 1: Install dependencies and create libs/pdf package
 
 **Files:**
+
 - Create: `libs/pdf/package.json`
 - Create: `libs/pdf/tsconfig.json`
 - Modify: root `package.json` (pnpm workspace)
@@ -99,6 +100,7 @@ apps/carfect/src/
 Add `"@shared/pdf": "workspace:*"` to `apps/carfect/package.json` dependencies.
 
 Add path alias in `apps/carfect/tsconfig.json` and `vite.config.ts`:
+
 ```
 "@shared/pdf": ["../../libs/pdf/src"]
 ```
@@ -119,6 +121,7 @@ git commit -m "chore: add @shared/pdf package with react-pdf dependency"
 ### Task 2: Download Inter font and setup font registration
 
 **Files:**
+
 - Create: `libs/pdf/fonts/Inter-Regular.ttf`
 - Create: `libs/pdf/fonts/Inter-Bold.ttf`
 - Create: `libs/pdf/src/fonts.ts`
@@ -166,6 +169,7 @@ git commit -m "feat: add Inter font files and registration for PDF"
 ### Task 3: Create shared styles and PDF config type
 
 **Files:**
+
 - Create: `libs/pdf/src/styles.ts`
 
 - [ ] **Step 1: Create styles.ts with config type and base styles**
@@ -175,7 +179,7 @@ import { StyleSheet } from '@react-pdf/renderer';
 
 /** Configuration object for PDF rendering — future: stored per-instance in DB */
 export interface PdfConfig {
-  accentColor: string;      // branding accent (separator line, section headers)
+  accentColor: string; // branding accent (separator line, section headers)
   companyName: string;
   companyPhone?: string;
   companyEmail?: string;
@@ -272,6 +276,7 @@ git commit -m "feat: add PDF base styles and config type"
 ### Task 4: Create PDF section components
 
 **Files:**
+
 - Create: `libs/pdf/src/components/PdfHeader.tsx`
 - Create: `libs/pdf/src/components/PdfFooter.tsx`
 - Create: `libs/pdf/src/components/PdfCustomerSection.tsx`
@@ -317,11 +322,13 @@ git commit -m "feat: add PDF section components for offer generation"
 ### Task 5: Create the API endpoint
 
 **Files:**
+
 - Create: `api/generate-offer-pdf.ts`
 
 - [ ] **Step 1: Implement the serverless function**
 
 Key logic:
+
 1. Parse `publicToken` from POST body or GET query
 2. Create Supabase client with service role key
 3. Fetch offer via `get_public_offer` RPC (same as PublicOfferView uses)
@@ -365,6 +372,7 @@ git commit -m "feat: add Vercel API route for PDF generation"
 ### Task 6: Create OfferPdfDocument — the full document component
 
 **Files:**
+
 - Create: `libs/pdf/src/OfferPdfDocument.tsx`
 
 Composes all section components into a `<Document><Page>` structure:
@@ -381,7 +389,7 @@ Composes all section components into a `<Document><Page>` structure:
     {config.showTrustTiles && <PdfTrustTiles tiles={instance.offer_trust_tiles} />}
 
     {/* Scope groups */}
-    {scopeGroups.map(scope => (
+    {scopeGroups.map((scope) => (
       <PdfItemsTable key={scope.id} scope={scope} hideUnitPrices={data.hide_unit_prices} />
     ))}
 
@@ -411,6 +419,7 @@ git commit -m "feat: add OfferPdfDocument composing all sections"
 ### Task 7: Create pdfUtils helper
 
 **Files:**
+
 - Create: `apps/carfect/src/lib/pdfUtils.ts`
 
 ```tsx
@@ -439,6 +448,7 @@ export async function openOfferPdf(publicToken: string): Promise<void> {
 ### Task 8: Add "Drukuj PDF" to offer list dropdown
 
 **Files:**
+
 - Modify: `apps/carfect/src/components/admin/OfferListCard.tsx`
 
 - [ ] **Step 1: Add `onPrintPdf` callback to OfferListCard props**
@@ -449,6 +459,7 @@ export async function openOfferPdf(publicToken: string): Promise<void> {
 ### Task 9: Add "Pobierz PDF" button to public offer view
 
 **Files:**
+
 - Modify: `apps/carfect/src/pages/PublicOfferView.tsx`
 - Modify: `apps/carfect/src/components/offers/PublicOfferCustomerView.tsx`
 

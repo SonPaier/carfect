@@ -280,62 +280,64 @@ export function IntegrationsSettingsView({
   );
 
   return (
-    <div className="space-y-2">
-      {/* Fakturownia */}
-      {showFakturownia && (
-        <div className="bg-white border border-border/50 rounded-lg p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-sm">Fakturownia</div>
-              <div className="text-xs text-muted-foreground">Integracja z fakturownia.pl</div>
-            </div>
-            <Switch
-              size="sm"
-              checked={activeProvider === 'fakturownia'}
-              onCheckedChange={(v) => handleToggleProvider('fakturownia', v)}
-            />
-          </div>
-          {activeProvider === 'fakturownia' && (
-            <div>
-              <FakturowniaConfigForm
-                config={fakturowniaConfig}
-                onChange={setFakturowniaConfig}
-                instanceId={instanceId || ''}
-                supabaseClient={supabaseClient}
+    <div className="space-y-6">
+      <div className="space-y-2">
+        {/* Fakturownia */}
+        {showFakturownia && (
+          <div className="bg-white border border-border/50 rounded-lg p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-sm">Fakturownia</div>
+                <div className="text-xs text-muted-foreground">Integracja z fakturownia.pl</div>
+              </div>
+              <Switch
+                size="sm"
+                checked={activeProvider === 'fakturownia'}
+                onCheckedChange={(v) => handleToggleProvider('fakturownia', v)}
               />
-              {renderCommonSettings()}
             </div>
-          )}
-        </div>
-      )}
+            {activeProvider === 'fakturownia' && (
+              <div>
+                <FakturowniaConfigForm
+                  config={fakturowniaConfig}
+                  onChange={setFakturowniaConfig}
+                  instanceId={instanceId || ''}
+                  supabaseClient={supabaseClient}
+                />
+                {renderCommonSettings()}
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* iFirma */}
-      {showIfirma && (
-        <div className="bg-white border border-border/50 rounded-lg p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-sm">iFirma</div>
-              <div className="text-xs text-muted-foreground">Integracja z ifirma.pl</div>
-            </div>
-            <Switch
-              size="sm"
-              checked={activeProvider === 'ifirma'}
-              onCheckedChange={(v) => handleToggleProvider('ifirma', v)}
-            />
-          </div>
-          {activeProvider === 'ifirma' && (
-            <div>
-              <IfirmaConfigForm
-                config={ifirmaConfig}
-                onChange={setIfirmaConfig}
-                instanceId={instanceId || ''}
-                supabaseClient={supabaseClient}
+        {/* iFirma */}
+        {showIfirma && (
+          <div className="bg-white border border-border/50 rounded-lg p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-sm">iFirma</div>
+                <div className="text-xs text-muted-foreground">Integracja z ifirma.pl</div>
+              </div>
+              <Switch
+                size="sm"
+                checked={activeProvider === 'ifirma'}
+                onCheckedChange={(v) => handleToggleProvider('ifirma', v)}
               />
-              {renderCommonSettings()}
             </div>
-          )}
-        </div>
-      )}
+            {activeProvider === 'ifirma' && (
+              <div>
+                <IfirmaConfigForm
+                  config={ifirmaConfig}
+                  onChange={setIfirmaConfig}
+                  instanceId={instanceId || ''}
+                  supabaseClient={supabaseClient}
+                />
+                {renderCommonSettings()}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={isSaving}>

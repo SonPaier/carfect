@@ -53,22 +53,21 @@ export const useOffer = (instanceId: string) => {
   const saveInProgressRef = useRef(false);
 
   // Build options for given scopes (no state mutation)
-  const buildOptionsFromScopes = useCallback(
-    async (scopeIds: string[]): Promise<OfferOption[]> => {
-      if (scopeIds.length === 0) return [];
+  const buildOptionsFromScopes = useCallback(async (scopeIds: string[]): Promise<OfferOption[]> => {
+    if (scopeIds.length === 0) return [];
 
-      // Fetch scopes and products in parallel (#19)
-      const [scopesResult, productsResult] = await Promise.all([
-        supabase
-          .from('offer_scopes')
-          .select('*')
-          .in('id', scopeIds)
-          .eq('active', true)
-          .order('sort_order'),
-        supabase
-          .from('offer_scope_products')
-          .select(
-            `
+    // Fetch scopes and products in parallel (#19)
+    const [scopesResult, productsResult] = await Promise.all([
+      supabase
+        .from('offer_scopes')
+        .select('*')
+        .in('id', scopeIds)
+        .eq('active', true)
+        .order('sort_order'),
+      supabase
+        .from('offer_scope_products')
+        .select(
+          `
             id,
             scope_id,
             product_id,
@@ -77,81 +76,79 @@ export const useOffer = (instanceId: string) => {
             sort_order,
             product:unified_services!product_id(id, name, default_price, price_from, price_small, price_medium, price_large, unit, description)
           `,
-          )
-          .in('scope_id', scopeIds)
-          .order('sort_order'),
-      ]);
+        )
+        .in('scope_id', scopeIds)
+        .order('sort_order'),
+    ]);
 
-      if (scopesResult.error) throw scopesResult.error;
-      if (productsResult.error) throw productsResult.error;
+    if (scopesResult.error) throw scopesResult.error;
+    if (productsResult.error) throw productsResult.error;
 
-      const scopes = scopesResult.data;
-      const scopeProducts = productsResult.data;
+    const scopes = scopesResult.data;
+    const scopeProducts = productsResult.data;
 
-      // Generate one option per scope containing all its DEFAULT products
-      // (matches SummaryStepV2.buildDefaultSelected() expectations)
-      const newOptions: OfferOption[] = [];
-      let sortOrder = 0;
+    // Generate one option per scope containing all its DEFAULT products
+    // (matches SummaryStepV2.buildDefaultSelected() expectations)
+    const newOptions: OfferOption[] = [];
+    let sortOrder = 0;
 
-      // Sort scopes: extras last
-      const sortedScopes = [...(scopes || [])].sort((a, b) => {
-        if (a.is_extras_scope && !b.is_extras_scope) return 1;
-        if (!a.is_extras_scope && b.is_extras_scope) return -1;
-        return (a.sort_order || 0) - (b.sort_order || 0);
+    // Sort scopes: extras last
+    const sortedScopes = [...(scopes || [])].sort((a, b) => {
+      if (a.is_extras_scope && !b.is_extras_scope) return 1;
+      if (!a.is_extras_scope && b.is_extras_scope) return -1;
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+
+    for (const scope of sortedScopes) {
+      const products = (scopeProducts || [])
+        .filter((p) => p.scope_id === scope.id && p.is_default)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+      const items: OfferItem[] = products.map((p) => {
+        const product = (p as ScopeProductWithJoin).product as {
+          id: string;
+          name: string;
+          default_price: number | null;
+          price_from: number | null;
+          price_small: number | null;
+          price_medium: number | null;
+          price_large: number | null;
+          unit: string | null;
+          description: string | null;
+        } | null;
+
+        return {
+          id: crypto.randomUUID(),
+          productId: p.product_id || undefined,
+          customName: p.variant_name
+            ? `${p.variant_name}\n${product?.name || ''}`
+            : product?.name || '',
+          customDescription: '',
+          quantity: 1,
+          unitPrice: getLowestPrice(product),
+          unit: product?.unit || 'szt',
+          discountPercent: 0,
+          isOptional: false,
+          isCustom: !p.product_id,
+        };
       });
 
-      for (const scope of sortedScopes) {
-        const products = (scopeProducts || [])
-          .filter((p) => p.scope_id === scope.id && p.is_default)
-          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      newOptions.push({
+        id: crypto.randomUUID(),
+        name: scope.name,
+        description: scope.description || '',
+        items,
+        isSelected: true,
+        sortOrder,
+        scopeId: scope.id,
+        variantId: undefined,
+        isUpsell: scope.is_extras_scope || false,
+      });
+      sortOrder++;
+    }
 
-        const items: OfferItem[] = products.map((p) => {
-          const product = (p as ScopeProductWithJoin).product as {
-            id: string;
-            name: string;
-            default_price: number | null;
-            price_from: number | null;
-            price_small: number | null;
-            price_medium: number | null;
-            price_large: number | null;
-            unit: string | null;
-            description: string | null;
-          } | null;
-
-          return {
-            id: crypto.randomUUID(),
-            productId: p.product_id || undefined,
-            customName: p.variant_name
-              ? `${p.variant_name}\n${product?.name || ''}`
-              : product?.name || '',
-            customDescription: '',
-            quantity: 1,
-            unitPrice: getLowestPrice(product),
-            unit: product?.unit || 'szt',
-            discountPercent: 0,
-            isOptional: false,
-            isCustom: !p.product_id,
-          };
-        });
-
-        newOptions.push({
-          id: crypto.randomUUID(),
-          name: scope.name,
-          description: scope.description || '',
-          items,
-          isSelected: true,
-          sortOrder,
-          scopeId: scope.id,
-          variantId: undefined,
-          isUpsell: scope.is_extras_scope || false,
-        });
-        sortOrder++;
-      }
-
-      return newOptions;
-    },
-    [],
-  );
+    return newOptions;
+  }, []);
 
   // Generate options from selected scopes (state mutation)
   const generateOptionsFromScopes = useCallback(
@@ -844,7 +841,9 @@ export const useOffer = (instanceId: string) => {
 
               if (customerError) {
                 console.error('Error saving offer customer:', customerError);
-              } else { /* customer saved successfully, no action needed */ }
+              } else {
+                /* customer saved successfully, no action needed */
+              }
             }
           }
         } catch (customerSaveError) {
@@ -922,343 +921,344 @@ export const useOffer = (instanceId: string) => {
 
   // Load offer from database
   // isDuplicate: if true, regenerates all option/item IDs to prevent primary key conflicts
-  const loadOffer = useCallback(async (offerId: string, isDuplicate = false) => {
-    setLoading(true);
-    try {
-      const { data: offerData, error: offerError } = await supabase
-        .from('offers')
-        .select(
-          `
+  const loadOffer = useCallback(
+    async (offerId: string, isDuplicate = false) => {
+      setLoading(true);
+      try {
+        const { data: offerData, error: offerError } = await supabase
+          .from('offers')
+          .select(
+            `
           *,
           offer_options (
             *,
             offer_option_items (*)
           )
         `,
-        )
-        .eq('id', offerId)
-        .eq('instance_id', instanceId)
-        .single();
+          )
+          .eq('id', offerId)
+          .eq('instance_id', instanceId)
+          .single();
 
-      if (offerError) throw offerError;
+        if (offerError) throw offerError;
 
-      const allOptions = ((offerData.offer_options || []) as LoadedOption[]).sort(
-        (a, b) => a.sort_order - b.sort_order,
-      );
+        const allOptions = ((offerData.offer_options || []) as LoadedOption[]).sort(
+          (a, b) => a.sort_order - b.sort_order,
+        );
 
-      // Separate additions from regular options
-      // "Additions" option has name 'Dodatki' but NO scope_id - these are manually added items
-      // Options with scope_id (even if named 'Dodatki') are service-based and should be loaded as regular options
-      const additionsOption = allOptions.find(
-        (opt) => opt.name === 'Dodatki' && !opt.scope_id,
-      );
-      const regularOptions = allOptions.filter(
-        (opt) => !(opt.name === 'Dodatki' && !opt.scope_id),
-      );
+        // Separate additions from regular options
+        // "Additions" option has name 'Dodatki' but NO scope_id - these are manually added items
+        // Options with scope_id (even if named 'Dodatki') are service-based and should be loaded as regular options
+        const additionsOption = allOptions.find((opt) => opt.name === 'Dodatki' && !opt.scope_id);
+        const regularOptions = allOptions.filter(
+          (opt) => !(opt.name === 'Dodatki' && !opt.scope_id),
+        );
 
-      // Build ID mappings for duplication
-      const optionIdMap: Record<string, string> = {};
-      const itemIdMap: Record<string, string> = {};
+        // Build ID mappings for duplication
+        const optionIdMap: Record<string, string> = {};
+        const itemIdMap: Record<string, string> = {};
 
-      const options: OfferOption[] = regularOptions.map((opt) => {
-        const originalOptionId = opt.id;
-        const newOptionId = isDuplicate ? crypto.randomUUID() : originalOptionId;
+        const options: OfferOption[] = regularOptions.map((opt) => {
+          const originalOptionId = opt.id;
+          const newOptionId = isDuplicate ? crypto.randomUUID() : originalOptionId;
 
-        if (isDuplicate) {
-          optionIdMap[originalOptionId] = newOptionId;
-        }
-
-        return {
-          id: newOptionId,
-          name: opt.name,
-          description: opt.description,
-          isSelected: opt.is_selected,
-          sortOrder: opt.sort_order,
-          scopeId: opt.scope_id,
-          variantId: opt.variant_id,
-          isUpsell: opt.is_upsell,
-          items: (opt.offer_option_items || [])
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map((item) => {
-              const originalItemId = item.id;
-              const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
-
-              if (isDuplicate) {
-                itemIdMap[originalItemId] = newItemId;
-              }
-
-              return {
-                id: newItemId,
-                productId: item.product_id,
-                customName: item.custom_name,
-                customDescription: item.custom_description,
-                quantity: Number(item.quantity),
-                unitPrice: Number(item.unit_price),
-                unit: item.unit,
-                discountPercent: Number(item.discount_percent),
-                isOptional: item.is_optional,
-                isCustom: item.is_custom,
-              };
-            }),
-        };
-      });
-
-      // Extract unique scope IDs from options
-      const scopeIdsFromOptions = [
-        ...new Set(options.filter((opt) => opt.scopeId).map((opt) => opt.scopeId as string)),
-      ];
-
-      const additions: OfferItem[] = additionsOption
-        ? (additionsOption.offer_option_items || [])
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map((item) => {
-              const originalItemId = item.id;
-              const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
-
-              if (isDuplicate) {
-                itemIdMap[originalItemId] = newItemId;
-              }
-
-              return {
-                id: newItemId,
-                productId: item.product_id,
-                customName: item.custom_name,
-                customDescription: item.custom_description,
-                quantity: Number(item.quantity),
-                unitPrice: Number(item.unit_price),
-                unit: item.unit,
-                discountPercent: Number(item.discount_percent),
-                isOptional: item.is_optional,
-                isCustom: item.is_custom,
-              };
-            })
-        : [];
-
-      // Handle legacy vehicle data format
-      // Merge separate paint_color/paint_finish columns with vehicle_data JSONB
-      const vehicleDataRaw = (offerData.vehicle_data || defaultVehicleData) as Record<
-        string,
-        string
-      >;
-      const vehicleData: VehicleData = {
-        brandModel:
-          vehicleDataRaw.brandModel ||
-          [vehicleDataRaw.brand, vehicleDataRaw.model].filter(Boolean).join(' ') ||
-          '',
-        plate: vehicleDataRaw.plate || '',
-        paintColor: vehicleDataRaw.paintColor || offerData.paint_color || '',
-        paintType: vehicleDataRaw.paintType || offerData.paint_finish || '',
-      };
-
-      // Load widget selections for offer hydration in Step 3
-      const widgetSelectedExtras = offerData.widget_selected_extras || [];
-      const widgetDurationSelections = (offerData.widget_duration_selections || {}) as Record<
-        string,
-        number | null
-      >;
-
-      // Auto-generate inquiry content for website leads
-      let generatedInquiryContent: string | undefined;
-      const offerSource = offerData.source;
-      const customerDataRaw = (offerData.customer_data || {}) as Record<string, string>;
-      const existingInquiryContent = customerDataRaw.inquiryContent || '';
-
-      if (offerSource === 'website' && !existingInquiryContent) {
-        // Get all scope IDs from the offer (both from duration selections and from options)
-        const durationScopeIds = Object.keys(widgetDurationSelections);
-        const optionScopeIds = regularOptions
-          .filter((opt: { scope_id?: string }) => opt.scope_id)
-          .map((opt: { scope_id?: string }) => opt.scope_id as string);
-        const allScopeIds = [...new Set([...durationScopeIds, ...optionScopeIds])];
-
-        const scopeNamesMap: Record<string, string> = {};
-
-        if (allScopeIds.length > 0) {
-          const { data: scopesData } = await supabase
-            .from('offer_scopes')
-            .select('id, name, short_name, is_extras_scope')
-            .in('id', allScopeIds);
-
-          if (scopesData) {
-            scopesData
-              .filter((s) => !s.is_extras_scope) // Exclude extras scope from template list
-              .forEach((s) => {
-                scopeNamesMap[s.id] = s.short_name || s.name;
-              });
+          if (isDuplicate) {
+            optionIdMap[originalOptionId] = newOptionId;
           }
-        }
 
-        // Fetch service names for widget_selected_extras
-        let extrasNames: string[] = [];
-        if (widgetSelectedExtras.length > 0) {
-          const { data: extrasData } = await supabase
-            .from('unified_services')
-            .select('id, name, short_name')
-            .in('id', widgetSelectedExtras);
+          return {
+            id: newOptionId,
+            name: opt.name,
+            description: opt.description,
+            isSelected: opt.is_selected,
+            sortOrder: opt.sort_order,
+            scopeId: opt.scope_id,
+            variantId: opt.variant_id,
+            isUpsell: opt.is_upsell,
+            items: (opt.offer_option_items || [])
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map((item) => {
+                const originalItemId = item.id;
+                const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
 
-          if (extrasData) {
-            extrasNames = extrasData.map((e) => e.short_name || e.name);
-          }
-        }
+                if (isDuplicate) {
+                  itemIdMap[originalItemId] = newItemId;
+                }
 
-        // Helper to format duration in Polish
-        const formatDuration = (months: number): string => {
-          if (months < 12) {
-            if (months === 1) return '1 miesiąc';
-            if (months >= 2 && months <= 4) return `${months} miesiące`;
-            return `${months} miesięcy`;
-          }
-          if (months % 12 !== 0) {
-            const y = Math.floor(months / 12);
-            const m = months % 12;
-            const yearPart = y === 1 ? '1 rok' : y <= 4 ? `${y} lata` : `${y} lat`;
-            return `${yearPart} ${m} mies.`;
-          }
-          const years = months / 12;
-          if (years === 1) return '1 rok';
-          if (years <= 4) return `${years} lata`;
-          return `${years} lat`;
+                return {
+                  id: newItemId,
+                  productId: item.product_id,
+                  customName: item.custom_name,
+                  customDescription: item.custom_description,
+                  quantity: Number(item.quantity),
+                  unitPrice: Number(item.unit_price),
+                  unit: item.unit,
+                  discountPercent: Number(item.discount_percent),
+                  isOptional: item.is_optional,
+                  isCustom: item.is_custom,
+                };
+              }),
+          };
+        });
+
+        // Extract unique scope IDs from options
+        const scopeIdsFromOptions = [
+          ...new Set(options.filter((opt) => opt.scopeId).map((opt) => opt.scopeId as string)),
+        ];
+
+        const additions: OfferItem[] = additionsOption
+          ? (additionsOption.offer_option_items || [])
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map((item) => {
+                const originalItemId = item.id;
+                const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
+
+                if (isDuplicate) {
+                  itemIdMap[originalItemId] = newItemId;
+                }
+
+                return {
+                  id: newItemId,
+                  productId: item.product_id,
+                  customName: item.custom_name,
+                  customDescription: item.custom_description,
+                  quantity: Number(item.quantity),
+                  unitPrice: Number(item.unit_price),
+                  unit: item.unit,
+                  discountPercent: Number(item.discount_percent),
+                  isOptional: item.is_optional,
+                  isCustom: item.is_custom,
+                };
+              })
+          : [];
+
+        // Handle legacy vehicle data format
+        // Merge separate paint_color/paint_finish columns with vehicle_data JSONB
+        const vehicleDataRaw = (offerData.vehicle_data || defaultVehicleData) as Record<
+          string,
+          string
+        >;
+        const vehicleData: VehicleData = {
+          brandModel:
+            vehicleDataRaw.brandModel ||
+            [vehicleDataRaw.brand, vehicleDataRaw.model].filter(Boolean).join(' ') ||
+            '',
+          plate: vehicleDataRaw.plate || '',
+          paintColor: vehicleDataRaw.paintColor || offerData.paint_color || '',
+          paintType: vehicleDataRaw.paintType || offerData.paint_finish || '',
         };
 
-        // Build inquiry content
-        const parts: string[] = [];
-        const customerName = customerDataRaw.name || 'Klient';
-        parts.push(`Klient ${customerName} chce:`);
+        // Load widget selections for offer hydration in Step 3
+        const widgetSelectedExtras = offerData.widget_selected_extras || [];
+        const widgetDurationSelections = (offerData.widget_duration_selections || {}) as Record<
+          string,
+          number | null
+        >;
 
-        // Add selected templates - use scopeNamesMap keys to get all templates
-        for (const scopeId of Object.keys(scopeNamesMap)) {
-          const scopeName = scopeNamesMap[scopeId];
-          const months = widgetDurationSelections[scopeId];
+        // Auto-generate inquiry content for website leads
+        let generatedInquiryContent: string | undefined;
+        const offerSource = offerData.source;
+        const customerDataRaw = (offerData.customer_data || {}) as Record<string, string>;
+        const existingInquiryContent = customerDataRaw.inquiryContent || '';
 
-          if (months !== undefined && months !== null && typeof months === 'number') {
-            parts.push(`• ${scopeName} (${formatDuration(months)})`);
-          } else if (scopeId in widgetDurationSelections && months === null) {
-            // Customer explicitly chose "Nie wiem, proszę o propozycję"
-            parts.push(`• ${scopeName} – Nie wiem, proszę o propozycję`);
+        if (offerSource === 'website' && !existingInquiryContent) {
+          // Get all scope IDs from the offer (both from duration selections and from options)
+          const durationScopeIds = Object.keys(widgetDurationSelections);
+          const optionScopeIds = regularOptions
+            .filter((opt: { scope_id?: string }) => opt.scope_id)
+            .map((opt: { scope_id?: string }) => opt.scope_id as string);
+          const allScopeIds = [...new Set([...durationScopeIds, ...optionScopeIds])];
+
+          const scopeNamesMap: Record<string, string> = {};
+
+          if (allScopeIds.length > 0) {
+            const { data: scopesData } = await supabase
+              .from('offer_scopes')
+              .select('id, name, short_name, is_extras_scope')
+              .in('id', allScopeIds);
+
+            if (scopesData) {
+              scopesData
+                .filter((s) => !s.is_extras_scope) // Exclude extras scope from template list
+                .forEach((s) => {
+                  scopeNamesMap[s.id] = s.short_name || s.name;
+                });
+            }
+          }
+
+          // Fetch service names for widget_selected_extras
+          let extrasNames: string[] = [];
+          if (widgetSelectedExtras.length > 0) {
+            const { data: extrasData } = await supabase
+              .from('unified_services')
+              .select('id, name, short_name')
+              .in('id', widgetSelectedExtras);
+
+            if (extrasData) {
+              extrasNames = extrasData.map((e) => e.short_name || e.name);
+            }
+          }
+
+          // Helper to format duration in Polish
+          const formatDuration = (months: number): string => {
+            if (months < 12) {
+              if (months === 1) return '1 miesiąc';
+              if (months >= 2 && months <= 4) return `${months} miesiące`;
+              return `${months} miesięcy`;
+            }
+            if (months % 12 !== 0) {
+              const y = Math.floor(months / 12);
+              const m = months % 12;
+              const yearPart = y === 1 ? '1 rok' : y <= 4 ? `${y} lata` : `${y} lat`;
+              return `${yearPart} ${m} mies.`;
+            }
+            const years = months / 12;
+            if (years === 1) return '1 rok';
+            if (years <= 4) return `${years} lata`;
+            return `${years} lat`;
+          };
+
+          // Build inquiry content
+          const parts: string[] = [];
+          const customerName = customerDataRaw.name || 'Klient';
+          parts.push(`Klient ${customerName} chce:`);
+
+          // Add selected templates - use scopeNamesMap keys to get all templates
+          for (const scopeId of Object.keys(scopeNamesMap)) {
+            const scopeName = scopeNamesMap[scopeId];
+            const months = widgetDurationSelections[scopeId];
+
+            if (months !== undefined && months !== null && typeof months === 'number') {
+              parts.push(`• ${scopeName} (${formatDuration(months)})`);
+            } else if (scopeId in widgetDurationSelections && months === null) {
+              // Customer explicitly chose "Nie wiem, proszę o propozycję"
+              parts.push(`• ${scopeName} – Nie wiem, proszę o propozycję`);
+            } else {
+              parts.push(`• ${scopeName}`);
+            }
+          }
+
+          // Add selected extras
+          if (extrasNames.length > 0) {
+            parts.push('');
+            parts.push('Dodatki:');
+            extrasNames.forEach((name) => {
+              parts.push(`• ${name}`);
+            });
+          }
+
+          // Add budget if provided
+          const budgetSuggestion = offerData.budget_suggestion;
+          if (budgetSuggestion) {
+            parts.push('');
+            parts.push(`Budżet: ${budgetSuggestion.toLocaleString('pl-PL')} zł`);
+          }
+
+          // Add customer notes if provided
+          const inquiryNotes = offerData.inquiry_notes;
+          if (inquiryNotes) {
+            parts.push('');
+            parts.push(`Notatki klienta: ${inquiryNotes}`);
+          }
+
+          generatedInquiryContent = parts.join('\n');
+        }
+
+        // Parse defaultSelectedState from selected_state if it has isDefault marker
+        const loadedOptionIds = options.map((o: OfferOption) => o.id);
+        const loadedItemIds = options.flatMap((o: OfferOption) =>
+          o.items.map((i: OfferItem) => i.id),
+        );
+
+        const rawSelectedState = offerData.selected_state as unknown as
+          | (DefaultSelectedState & { isDefault?: boolean })
+          | null;
+        let defaultSelectedState: DefaultSelectedState | undefined;
+
+        if (rawSelectedState?.isDefault) {
+          if (isDuplicate) {
+            // Remap IDs in selected state for duplication
+            const { selectedVariants, selectedOptionalItems, selectedItemInOption } =
+              rawSelectedState;
+
+            // Map selectedVariants values (optionIds) to new IDs
+            const newSelectedVariants: Record<string, string> = {};
+            for (const [scopeId, oldOptionId] of Object.entries(selectedVariants || {})) {
+              newSelectedVariants[scopeId] =
+                optionIdMap[oldOptionId as string] || (oldOptionId as string);
+            }
+
+            // Map selectedOptionalItems keys (itemIds) to new IDs
+            const newSelectedOptionalItems: Record<string, boolean> = {};
+            for (const [oldItemId, value] of Object.entries(selectedOptionalItems || {})) {
+              const newItemId = itemIdMap[oldItemId] || oldItemId;
+              newSelectedOptionalItems[newItemId] = value as boolean;
+            }
+
+            // Map selectedItemInOption keys (optionIds) and values (itemIds) to new IDs
+            const newSelectedItemInOption: Record<string, string> = {};
+            for (const [oldOptionId, oldItemId] of Object.entries(selectedItemInOption || {})) {
+              const newOptionId = optionIdMap[oldOptionId] || oldOptionId;
+              const newItemIdVal = itemIdMap[oldItemId as string] || (oldItemId as string);
+              newSelectedItemInOption[newOptionId] = newItemIdVal;
+            }
+
+            defaultSelectedState = {
+              selectedScopeId: rawSelectedState.selectedScopeId ?? null,
+              selectedVariants: newSelectedVariants,
+              selectedOptionalItems: newSelectedOptionalItems,
+              selectedItemInOption: newSelectedItemInOption,
+            };
           } else {
-            parts.push(`• ${scopeName}`);
+            defaultSelectedState = {
+              selectedScopeId: rawSelectedState.selectedScopeId ?? null,
+              selectedVariants: rawSelectedState.selectedVariants || {},
+              selectedOptionalItems: rawSelectedState.selectedOptionalItems || {},
+              selectedItemInOption: rawSelectedState.selectedItemInOption || {},
+            };
           }
+
+          // Consistency check (only log for non-duplicates to avoid noise)
         }
 
-        // Add selected extras
-        if (extrasNames.length > 0) {
-          parts.push('');
-          parts.push('Dodatki:');
-          extrasNames.forEach((name) => {
-            parts.push(`• ${name}`);
-          });
-        }
+        // Merge generated inquiry content into customer data if available
+        const finalCustomerData: CustomerData = {
+          ...((offerData.customer_data || defaultCustomerData) as unknown as CustomerData),
+          ...(generatedInquiryContent && { inquiryContent: generatedInquiryContent }),
+        };
 
-        // Add budget if provided
-        const budgetSuggestion = offerData.budget_suggestion;
-        if (budgetSuggestion) {
-          parts.push('');
-          parts.push(`Budżet: ${budgetSuggestion.toLocaleString('pl-PL')} zł`);
-        }
-
-        // Add customer notes if provided
-        const inquiryNotes = offerData.inquiry_notes;
-        if (inquiryNotes) {
-          parts.push('');
-          parts.push(`Notatki klienta: ${inquiryNotes}`);
-        }
-
-        generatedInquiryContent = parts.join('\n');
+        setOffer({
+          id: isDuplicate ? undefined : offerData.id, // Clear ID for duplicates
+          instanceId: offerData.instance_id,
+          customerData: finalCustomerData,
+          vehicleData,
+          selectedScopeIds: scopeIdsFromOptions,
+          options,
+          additions,
+          notes: offerData.notes,
+          paymentTerms: offerData.payment_terms,
+          warranty: offerData.warranty || '',
+          serviceInfo: offerData.service_info || '',
+          internalNotes: offerData.internal_notes || '',
+          validUntil: offerData.valid_until,
+          vatRate: Number(offerData.vat_rate),
+          hideUnitPrices: offerData.hide_unit_prices || false,
+          status: isDuplicate ? 'draft' : (offerData.status as OfferState['status']), // Reset status for duplicates
+          defaultSelectedState,
+          widgetSelectedExtras,
+          widgetDurationSelections,
+          offerFormat: (offerData.offer_format as 'v1' | 'v2' | null) ?? null,
+        });
+      } catch (error) {
+        console.error('Error loading offer:', error);
+        toast.error('Błąd podczas wczytywania oferty');
+        throw error;
+      } finally {
+        setLoading(false);
       }
-
-      // Parse defaultSelectedState from selected_state if it has isDefault marker
-      const loadedOptionIds = options.map((o: OfferOption) => o.id);
-      const loadedItemIds = options.flatMap((o: OfferOption) =>
-        o.items.map((i: OfferItem) => i.id),
-      );
-
-      const rawSelectedState = offerData.selected_state as unknown as
-        | (DefaultSelectedState & { isDefault?: boolean })
-        | null;
-      let defaultSelectedState: DefaultSelectedState | undefined;
-
-      if (rawSelectedState?.isDefault) {
-        if (isDuplicate) {
-          // Remap IDs in selected state for duplication
-          const { selectedVariants, selectedOptionalItems, selectedItemInOption } =
-            rawSelectedState;
-
-          // Map selectedVariants values (optionIds) to new IDs
-          const newSelectedVariants: Record<string, string> = {};
-          for (const [scopeId, oldOptionId] of Object.entries(selectedVariants || {})) {
-            newSelectedVariants[scopeId] =
-              optionIdMap[oldOptionId as string] || (oldOptionId as string);
-          }
-
-          // Map selectedOptionalItems keys (itemIds) to new IDs
-          const newSelectedOptionalItems: Record<string, boolean> = {};
-          for (const [oldItemId, value] of Object.entries(selectedOptionalItems || {})) {
-            const newItemId = itemIdMap[oldItemId] || oldItemId;
-            newSelectedOptionalItems[newItemId] = value as boolean;
-          }
-
-          // Map selectedItemInOption keys (optionIds) and values (itemIds) to new IDs
-          const newSelectedItemInOption: Record<string, string> = {};
-          for (const [oldOptionId, oldItemId] of Object.entries(selectedItemInOption || {})) {
-            const newOptionId = optionIdMap[oldOptionId] || oldOptionId;
-            const newItemIdVal = itemIdMap[oldItemId as string] || (oldItemId as string);
-            newSelectedItemInOption[newOptionId] = newItemIdVal;
-          }
-
-          defaultSelectedState = {
-            selectedScopeId: rawSelectedState.selectedScopeId ?? null,
-            selectedVariants: newSelectedVariants,
-            selectedOptionalItems: newSelectedOptionalItems,
-            selectedItemInOption: newSelectedItemInOption,
-          };
-        } else {
-          defaultSelectedState = {
-            selectedScopeId: rawSelectedState.selectedScopeId ?? null,
-            selectedVariants: rawSelectedState.selectedVariants || {},
-            selectedOptionalItems: rawSelectedState.selectedOptionalItems || {},
-            selectedItemInOption: rawSelectedState.selectedItemInOption || {},
-          };
-        }
-
-        // Consistency check (only log for non-duplicates to avoid noise)
-      }
-
-      // Merge generated inquiry content into customer data if available
-      const finalCustomerData: CustomerData = {
-        ...((offerData.customer_data || defaultCustomerData) as unknown as CustomerData),
-        ...(generatedInquiryContent && { inquiryContent: generatedInquiryContent }),
-      };
-
-      setOffer({
-        id: isDuplicate ? undefined : offerData.id, // Clear ID for duplicates
-        instanceId: offerData.instance_id,
-        customerData: finalCustomerData,
-        vehicleData,
-        selectedScopeIds: scopeIdsFromOptions,
-        options,
-        additions,
-        notes: offerData.notes,
-        paymentTerms: offerData.payment_terms,
-        warranty: offerData.warranty || '',
-        serviceInfo: offerData.service_info || '',
-        internalNotes: offerData.internal_notes || '',
-        validUntil: offerData.valid_until,
-        vatRate: Number(offerData.vat_rate),
-        hideUnitPrices: offerData.hide_unit_prices || false,
-        status: isDuplicate ? 'draft' : (offerData.status as OfferState['status']), // Reset status for duplicates
-        defaultSelectedState,
-        widgetSelectedExtras,
-        widgetDurationSelections,
-        offerFormat: (offerData.offer_format as 'v1' | 'v2' | null) ?? null,
-      });
-    } catch (error) {
-      console.error('Error loading offer:', error);
-      toast.error('Błąd podczas wczytywania oferty');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [instanceId]);
+    },
+    [instanceId],
+  );
 
   // Reset offer
   const resetOffer = useCallback(() => {

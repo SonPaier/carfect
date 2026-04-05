@@ -291,7 +291,7 @@ function parseRollLabel(rawText: string) {
         break;
       }
     }
-    const digitsOnly = lines[i].replace(/[\s\-]/g, '');  // eslint-disable-line no-useless-escape
+    const digitsOnly = lines[i].replace(/[\s\-]/g, ''); // eslint-disable-line no-useless-escape
     if (/^\d{13}$/.test(digitsOnly) && !isDateString(digitsOnly)) {
       result.barcode = digitsOnly;
       confidence.barcode = 0.95;

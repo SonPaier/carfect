@@ -9,8 +9,21 @@ const mockFrom = vi.fn();
 const createChainMock = (resolveData: unknown = null, resolveError: unknown = null) => {
   const chain: Record<string, unknown> = {};
   const methods = [
-    'select', 'eq', 'neq', 'or', 'order', 'limit', 'single',
-    'insert', 'update', 'delete', 'match', 'ilike', 'gte', 'lt', 'upsert',
+    'select',
+    'eq',
+    'neq',
+    'or',
+    'order',
+    'limit',
+    'single',
+    'insert',
+    'update',
+    'delete',
+    'match',
+    'ilike',
+    'gte',
+    'lt',
+    'upsert',
   ];
   methods.forEach((method) => {
     chain[method] = vi.fn(() => chain);
@@ -104,8 +117,18 @@ describe('SmsMessageSettings', () => {
 
     const now = new Date();
     const monthNames = [
-      'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-      'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
+      'Styczeń',
+      'Luty',
+      'Marzec',
+      'Kwiecień',
+      'Maj',
+      'Czerwiec',
+      'Lipiec',
+      'Sierpień',
+      'Wrzesień',
+      'Październik',
+      'Listopad',
+      'Grudzień',
     ];
 
     await waitFor(() => {
@@ -183,8 +206,18 @@ describe('SmsMessageSettings', () => {
     const now = new Date();
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const monthNames = [
-      'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-      'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
+      'Styczeń',
+      'Luty',
+      'Marzec',
+      'Kwiecień',
+      'Maj',
+      'Czerwiec',
+      'Lipiec',
+      'Sierpień',
+      'Wrzesień',
+      'Październik',
+      'Listopad',
+      'Grudzień',
     ];
 
     await waitFor(() => {

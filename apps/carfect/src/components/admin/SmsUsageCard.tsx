@@ -10,7 +10,12 @@ interface SmsUsageCardProps {
 
 const SMS_OVER_LIMIT_PRICE = 0.12; // PLN netto per SMS
 
-export function SmsUsageCard({ smsCount, smsLimit, showInstanceName = false, instanceName }: SmsUsageCardProps) {
+export function SmsUsageCard({
+  smsCount,
+  smsLimit,
+  showInstanceName = false,
+  instanceName,
+}: SmsUsageCardProps) {
   const percentage = smsLimit > 0 ? (smsCount / smsLimit) * 100 : 0;
   const isNearLimit = percentage >= 80;
   const isAtLimit = percentage >= 100;

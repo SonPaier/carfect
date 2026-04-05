@@ -3,6 +3,7 @@
 ## Problem
 
 Current `generate-offer-pdf` edge function generates HTML and relies on `window.print()`. This causes:
+
 - Random page breaks splitting descriptions/sections mid-content
 - Interactive elements rendered (buttons, carousels, copy buttons)
 - No control over pagination
@@ -14,16 +15,19 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 ## Architecture
 
 ### API Route
+
 - **Path:** `/api/generate-offer-pdf`
 - **Method:** POST `{ publicToken: string }` or GET `?token=xxx`
 - **Response:** PDF binary (`application/pdf`)
 - **Runtime:** Node.js (Vercel serverless function, not edge — react-pdf needs Node)
 
 ### Shared Library
+
 - `libs/pdf/` — font registration, common styles, reusable PDF primitives
 - Usable by other apps (hi-service protocols, invoices in future)
 
 ### Font
+
 - Google Font with Polish characters (Inter or Roboto), downloaded as TTF to `libs/pdf/fonts/`
 - Registered locally per react-pdf requirement (remote URLs don't work)
 - Hyphenation disabled for custom fonts
@@ -31,11 +35,13 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 ## PDF Layout (multi-page A4)
 
 ### Fixed Header (every page)
+
 - Company logo (left) + offer number (right)
 - Thin separator line below
 - Compact — ~40pt height
 
 ### Fixed Footer (every page)
+
 - Company name, phone, email — one line
 - "Strona X z Y" — right aligned
 - ~25pt height
@@ -54,6 +60,7 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 7. **Expert Contact** — name, phone, email as text
 
 ### What's excluded from PDF (vs web view)
+
 - Social media links/buttons
 - Copy-to-clipboard buttons
 - Photo carousels (one photo per scope max)
@@ -62,6 +69,7 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 - Carfect branding footer
 
 ### Page Break Rules
+
 - `wrap={false}` on each scope group (header + items together)
 - `wrap={false}` on summary block
 - `wrap={false}` on terms block
@@ -69,6 +77,7 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 - `break` before new scope if less than 100pt remaining
 
 ## Styling
+
 - White background, black text (always — regardless of instance branding colors)
 - Branding accent color used for: header line separator, scope header background tint, summary highlight
 - Company logo: max 80x40pt, `objectFit: contain`
@@ -78,10 +87,12 @@ Replace with `@react-pdf/renderer` in a Vercel API route. React-PDF gives full c
 ## UI Triggers
 
 ### Offer List (ReservationsView or OffersView)
+
 - Dropdown menu per offer → "Drukuj PDF" item
 - Calls API, opens PDF in new tab or triggers download
 
 ### Public Offer View (client-facing)
+
 - "Pobierz PDF" button, visible but not in print
 - Calls same API endpoint with public token
 

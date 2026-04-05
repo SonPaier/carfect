@@ -66,7 +66,10 @@ const SalesSettingsView = () => {
         const normalized = accounts.map((a: unknown) =>
           typeof a === 'string'
             ? { name: '', number: a }
-            : { name: (a as { name?: string }).name || '', number: (a as { number?: string }).number || '' },
+            : {
+                name: (a as { name?: string }).name || '',
+                number: (a as { number?: string }).number || '',
+              },
         );
         setBankAccounts(normalized);
       } else {

@@ -58,7 +58,7 @@ interface CustomersViewProps {
 type SortField = 'name' | 'phone' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) => {
   const { t } = useTranslation();
@@ -309,11 +309,9 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {t('common.showingPagination', {
-              from: (currentPage - 1) * ITEMS_PER_PAGE + 1,
-              to: Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length),
-              total: filteredCustomers.length,
-            })}
+            {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length)} z{' '}
+            {filteredCustomers.length}
           </div>
           <div className="flex items-center gap-1">
             <Button

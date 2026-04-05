@@ -445,7 +445,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-24">
+    <div className="max-w-3xl mx-auto space-y-4 pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-medium">Pracownicy</h1>
@@ -478,16 +478,16 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
       {/* Period picker (Month or Week) - only show when there are employees */}
       {activeEmployees.length > 0 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={handlePrevPeriod} className="bg-white">
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="font-medium min-w-[200px] text-center text-lg">
-            {isWeeklyMode ? formatWeekDisplay() : format(currentDate, 'LLLL yyyy', { locale: pl })}
-          </span>
           <Button variant="outline" size="icon" onClick={handleNextPeriod} className="bg-white">
             <ChevronRight className="w-4 h-4" />
           </Button>
+          <span className="font-medium text-lg">
+            {isWeeklyMode ? formatWeekDisplay() : format(currentDate, 'LLLL yyyy', { locale: pl })}
+          </span>
         </div>
       )}
 

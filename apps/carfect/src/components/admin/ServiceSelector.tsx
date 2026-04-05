@@ -21,7 +21,11 @@ interface ServiceSelectorProps {
   onServicesChange: (serviceIds: string[]) => void;
 }
 
-const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: ServiceSelectorProps) => {
+const ServiceSelector = ({
+  instanceId,
+  selectedServiceIds,
+  onServicesChange,
+}: ServiceSelectorProps) => {
   const { t } = useTranslation();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,14 +35,22 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
   useEffect(() => {
     const fetchServices = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = (await supabase
         .from('unified_services')
         .select('id, name, short_name, duration_minutes, is_popular')
         .eq('instance_id', instanceId)
         .eq('service_type', 'reservation')
         .eq('active', true)
-        .order('sort_order') as { data: Array<{ id: string; name: string; short_name: string | null; duration_minutes: number | null; is_popular: boolean | null }> | null };
-      
+        .order('sort_order')) as {
+        data: Array<{
+          id: string;
+          name: string;
+          short_name: string | null;
+          duration_minutes: number | null;
+          is_popular: boolean | null;
+        }> | null;
+      };
+
       if (data) {
         setServices(data);
       }
@@ -52,7 +64,7 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
 
   const toggleService = (serviceId: string) => {
     if (selectedServiceIds.includes(serviceId)) {
-      onServicesChange(selectedServiceIds.filter(id => id !== serviceId));
+      onServicesChange(selectedServiceIds.filter((id) => id !== serviceId));
     } else {
       onServicesChange([...selectedServiceIds, serviceId]);
     }
@@ -80,14 +92,15 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
 
   // Filter services based on search
   const filteredServices = searchValue
-    ? services.filter(s => 
-        s.short_name?.toLowerCase().includes(searchValue.toLowerCase()) ||
-        s.name.toLowerCase().includes(searchValue.toLowerCase())
+    ? services.filter(
+        (s) =>
+          s.short_name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          s.name.toLowerCase().includes(searchValue.toLowerCase()),
       )
     : services;
 
   // Get popular services for quick selection
-  const popularServices = services.filter(s => s.is_popular);
+  const popularServices = services.filter((s) => s.is_popular);
 
   if (loading) {
     return (
@@ -116,12 +129,12 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
           onBlur={() => setTimeout(() => setIsDropdownOpen(false), 150)}
           className="h-9"
         />
-        
+
         {/* Dropdown list */}
         {isDropdownOpen && filteredServices.length > 0 && (
           <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
             <div className="grid grid-cols-2 gap-1 p-2">
-              {filteredServices.map(service => (
+              {filteredServices.map((service) => (
                 <label
                   key={service.id}
                   className="flex items-center gap-2 cursor-pointer p-2 rounded-md hover:bg-accent transition-colors"
@@ -136,7 +149,7 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
                   />
                   <span className="text-sm">
                     {service.short_name && (
-                      <span className="text-primary font-semibold">[{service.short_name}]</span>
+                      <span className="text-foreground font-semibold">[{service.short_name}]</span>
                     )}
                     {service.short_name ? ` - ${service.name}` : service.name}
                   </span>
@@ -149,7 +162,7 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
 
       {/* Selected/Popular services - clickable chips */}
       <div className="flex flex-wrap gap-2">
-        {(popularServices.length > 0 ? popularServices : services.slice(0, 4)).map(service => {
+        {(popularServices.length > 0 ? popularServices : services.slice(0, 4)).map((service) => {
           const isSelected = selectedServiceIds.includes(service.id);
           return (
             <button
@@ -157,10 +170,10 @@ const ServiceSelector = ({ instanceId, selectedServiceIds, onServicesChange }: S
               type="button"
               onClick={() => toggleService(service.id)}
               className={cn(
-                "px-3 py-2 rounded-md text-sm font-medium transition-colors min-h-[44px]",
+                'px-3 py-2 rounded-md text-sm font-medium transition-colors min-h-[44px]',
                 isSelected
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-accent',
               )}
             >
               {service.short_name || service.name}

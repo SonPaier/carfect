@@ -670,30 +670,13 @@ export default function OffersView({
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{t('offers.show')}</span>
-                  <Select
-                    value={String(pageSize)}
-                    onValueChange={(v) => {
-                      setPageSize(Number(v));
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-20 h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAGE_SIZE_OPTIONS.map((size) => (
-                        <SelectItem key={size} value={String(size)}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span>{t('offers.perPage')}</span>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  {(currentPage - 1) * pageSize + 1}-
+                  {Math.min(currentPage * pageSize, filteredOffers.length)} z{' '}
+                  {filteredOffers.length}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Button
                     variant="outline"
                     size="icon"
@@ -703,7 +686,7 @@ export default function OffersView({
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm text-muted-foreground px-2">
+                  <span className="text-sm px-3 min-w-[60px] text-center">
                     {currentPage} / {totalPages}
                   </span>
                   <Button

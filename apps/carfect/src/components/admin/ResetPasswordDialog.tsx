@@ -29,7 +29,7 @@ const ResetPasswordDialog = ({
   open,
   onOpenChange,
   instanceId,
-  user
+  user,
 }: ResetPasswordDialogProps) => {
   const [loading, setLoading] = useState(false);
   const {
@@ -61,7 +61,9 @@ const ResetPasswordDialog = ({
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Sesja wygasła');
         return;
@@ -98,10 +100,13 @@ const ResetPasswordDialog = ({
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) handleReset();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) handleReset();
+        onOpenChange(isOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -141,15 +146,24 @@ const ResetPasswordDialog = ({
                   key={req.key}
                   className={`flex items-center gap-1.5 transition-colors ${req.met ? 'text-green-600' : 'text-muted-foreground'}`}
                 >
-                  {req.met ? '✓' : '✗'} {req.key === 'minLength' ? 'Minimum 8 znaków'
-                    : req.key === 'hasUppercase' ? 'Wielka litera (A-Z)'
-                    : req.key === 'hasLowercase' ? 'Mała litera (a-z)'
-                    : req.key === 'hasNumber' ? 'Cyfra (0-9)'
-                    : req.key === 'hasSpecial' ? 'Znak specjalny (!@#$%...)'
-                    : req.key === 'noSequence' ? 'Brak sekwencji klawiszowych'
-                    : req.key === 'noRepeating' ? 'Brak powtarzających się znaków'
-                    : req.key === 'notCommon' ? 'Nie jest popularnym hasłem'
-                    : req.key}
+                  {req.met ? '✓' : '✗'}{' '}
+                  {req.key === 'minLength'
+                    ? 'Minimum 8 znaków'
+                    : req.key === 'hasUppercase'
+                      ? 'Wielka litera (A-Z)'
+                      : req.key === 'hasLowercase'
+                        ? 'Mała litera (a-z)'
+                        : req.key === 'hasNumber'
+                          ? 'Cyfra (0-9)'
+                          : req.key === 'hasSpecial'
+                            ? 'Znak specjalny (!@#$%...)'
+                            : req.key === 'noSequence'
+                              ? 'Brak sekwencji klawiszowych'
+                              : req.key === 'noRepeating'
+                                ? 'Brak powtarzających się znaków'
+                                : req.key === 'notCommon'
+                                  ? 'Nie jest popularnym hasłem'
+                                  : req.key}
                 </li>
               ))}
             </ul>

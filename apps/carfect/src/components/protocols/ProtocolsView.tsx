@@ -397,7 +397,7 @@ export const ProtocolsView = ({
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
-                Wyświetlanie {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
                 {Math.min(currentPage * ITEMS_PER_PAGE, filteredProtocols.length)} z{' '}
                 {filteredProtocols.length}
               </div>

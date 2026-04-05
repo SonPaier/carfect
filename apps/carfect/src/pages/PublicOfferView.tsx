@@ -23,7 +23,6 @@ const PublicOfferView = () => {
   const [error, setError] = useState<string | null>(null);
   const shouldPrint = searchParams.get('print') === 'true';
 
-
   useEffect(() => {
     const fetchOffer = async () => {
       if (!token) {

@@ -19,10 +19,7 @@ export function PdfHeader({ offerNumber, logoBuffer, accentColor }: PdfHeaderPro
         )}
         <Text style={baseStyles.headerOfferNumber}>Oferta nr {offerNumber}</Text>
       </View>
-      <View
-        fixed
-        style={[baseStyles.headerSeparator, { backgroundColor: accentColor }]}
-      />
+      <View fixed style={[baseStyles.headerSeparator, { backgroundColor: accentColor }]} />
     </>
   );
 }

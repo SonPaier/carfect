@@ -20,7 +20,12 @@ interface PdfItemsTableProps {
   accentColor: string;
 }
 
-export function PdfItemsTable({ scope, hideUnitPrices, scopeIndex, accentColor }: PdfItemsTableProps) {
+export function PdfItemsTable({
+  scope,
+  hideUnitPrices,
+  scopeIndex,
+  accentColor,
+}: PdfItemsTableProps) {
   const allowWrap = scope.items.length > 8;
 
   return (
@@ -29,7 +34,13 @@ export function PdfItemsTable({ scope, hideUnitPrices, scopeIndex, accentColor }
       minPresenceAhead={allowWrap ? 80 : undefined}
       style={[baseStyles.section, scopeIndex > 0 ? { marginTop: 4 } : {}]}
     >
-      <View style={[baseStyles.scopeHeader, styles.scopeHeaderAccent, { borderBottomColor: accentColor }]}>
+      <View
+        style={[
+          baseStyles.scopeHeader,
+          styles.scopeHeaderAccent,
+          { borderBottomColor: accentColor },
+        ]}
+      >
         <View style={baseStyles.scopeHeaderText}>
           <Text style={baseStyles.scopeName}>{scope.name}</Text>
           {scope.description ? (
