@@ -8,8 +8,8 @@ import {
   Users,
   MessageSquare,
   Loader2,
-  Upload,
   Trash2,
+  Pencil,
   Image as ImageIcon,
   ChevronDown,
   Warehouse,
@@ -236,6 +236,58 @@ const SettingsView = ({
 
   const handleSaveCompany = async () => {
     if (!instanceId) return;
+    if (loading) return;
+
+    // Validation
+    if (!companyForm.name.trim()) {
+      toast.error('Nazwa myjni jest wymagana');
+      return;
+    }
+
+    if (companyForm.nip) {
+      const nipDigits = companyForm.nip.replace(/[\s-]/g, '');
+      if (!/^\d{10}$/.test(nipDigits)) {
+        toast.error('NIP musi mieć dokładnie 10 cyfr');
+        return;
+      }
+    }
+
+    if (companyForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyForm.email)) {
+      toast.error('Podaj poprawny adres email');
+      return;
+    }
+
+    if (companyForm.phone && companyForm.phone.replace(/\D/g, '').length < 9) {
+      toast.error('Numer telefonu musi mieć co najmniej 9 cyfr');
+      return;
+    }
+
+    if (
+      companyForm.reservation_phone &&
+      companyForm.reservation_phone.replace(/\D/g, '').length < 9
+    ) {
+      toast.error('Numer telefonu do rezerwacji musi mieć co najmniej 9 cyfr');
+      return;
+    }
+
+    const urlFields: { field: keyof typeof companyForm; label: string }[] = [
+      { field: 'website', label: 'Strona WWW' },
+      { field: 'social_facebook', label: 'Facebook' },
+      { field: 'social_instagram', label: 'Instagram' },
+      { field: 'google_maps_url', label: 'Google Maps' },
+    ];
+    for (const { field, label } of urlFields) {
+      const value = companyForm[field];
+      if (value && !/^https?:\/\//.test(value)) {
+        toast.error(`${label}: adres URL musi zaczynać się od http:// lub https://`);
+        return;
+      }
+    }
+
+    if (companyForm.short_name && companyForm.short_name.length > 11) {
+      toast.error('Skrócona nazwa SMS może mieć maksymalnie 11 znaków');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -279,16 +331,14 @@ const SettingsView = ({
       case 'company':
         return (
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold">Dane firmy</h3>
-              <p className="text-sm text-muted-foreground mt-1">Podstawowe informacje o firmie</p>
-            </div>
-            {/* Logo */}
-            <div className="space-y-3">
-              <Label>{t('instanceSettings.logo')}</Label>
-              <div className="flex items-center gap-4">
+            <h3 className="text-lg font-semibold">Dane firmy</h3>
+
+            {/* Logo + main name fields side by side on desktop */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Logo with overlay icons */}
+              <div className="shrink-0">
                 <div
-                  className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/50 overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                  className="relative w-32 h-32 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/50 overflow-hidden cursor-pointer group hover:border-primary transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {uploadingLogo ? (
@@ -302,134 +352,124 @@ const SettingsView = ({
                   ) : (
                     <ImageIcon className="w-8 h-8 text-muted-foreground" />
                   )}
-                </div>
-                <div className="space-y-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingLogo}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {companyForm.logo_url
-                      ? t('instanceSettings.changeLogo')
-                      : t('instanceSettings.uploadLogo')}
-                  </Button>
-                  {companyForm.logo_url && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRemoveLogo}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t('instanceSettings.removeLogo')}
-                    </Button>
+
+                  {/* Hover overlay */}
+                  {!uploadingLogo && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                      <div className="flex gap-2">
+                        <Pencil className="w-4 h-4 text-white" />
+                        {companyForm.logo_url && (
+                          <Trash2
+                            className="w-4 h-4 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveLogo();
+                            }}
+                          />
+                        )}
+                      </div>
+                      <span className="text-white text-xs font-medium">Zmień</span>
+                    </div>
                   )}
                 </div>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
+
+              {/* Name fields to the right of logo */}
+              <div className="flex-1 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">{t('instanceSettings.carWashName')} *</Label>
+                  <Input
+                    id="name"
+                    value={companyForm.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="short_name">{t('instanceSettings.shortName')} *</Label>
+                  <Input
+                    id="short_name"
+                    value={companyForm.short_name}
+                    onChange={(e) => handleInputChange('short_name', e.target.value)}
+                    maxLength={11}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Używana w wiadomościach SMS, max 11 znaków
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Car Wash Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('instanceSettings.carWashName')} *</Label>
-              <Input
-                id="name"
-                value={companyForm.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-              />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+
+            {/* Invoice Company Name + NIP on one line */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="invoice_company_name">
+                  {t('instanceSettings.invoiceCompanyName')}
+                </Label>
+                <Input
+                  id="invoice_company_name"
+                  value={companyForm.invoice_company_name}
+                  onChange={(e) => handleInputChange('invoice_company_name', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nip">{t('instanceSettings.nip')}</Label>
+                <Input
+                  id="nip"
+                  value={companyForm.nip}
+                  onChange={(e) => handleInputChange('nip', e.target.value)}
+                  maxLength={13}
+                />
+              </div>
             </div>
 
-            {/* Short Name for SMS */}
-            <div className="space-y-2">
-              <Label htmlFor="short_name">{t('instanceSettings.shortName')} *</Label>
-              <Input
-                id="short_name"
-                value={companyForm.short_name}
-                onChange={(e) => handleInputChange('short_name', e.target.value)}
-                maxLength={20}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t('instanceSettings.shortNameDescription')}
-              </p>
-            </div>
-
-            {/* Invoice Company Name */}
-            <div className="space-y-2">
-              <Label htmlFor="invoice_company_name">
-                {t('instanceSettings.invoiceCompanyName')}
-              </Label>
-              <Input
-                id="invoice_company_name"
-                value={companyForm.invoice_company_name}
-                onChange={(e) => handleInputChange('invoice_company_name', e.target.value)}
-              />
-            </div>
-
-            {/* NIP */}
-            <div className="space-y-2">
-              <Label htmlFor="nip">{t('instanceSettings.nip')}</Label>
-              <Input
-                id="nip"
-                value={companyForm.nip}
-                onChange={(e) => handleInputChange('nip', e.target.value)}
-                maxLength={13}
-              />
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">{t('instanceSettings.phone')}</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={companyForm.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-              />
-            </div>
-
-            {/* Reservation Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="reservation_phone">{t('instanceSettings.reservationPhone')}</Label>
-              <Input
-                id="reservation_phone"
-                type="tel"
-                value={companyForm.reservation_phone}
-                onChange={(e) => handleInputChange('reservation_phone', e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t('instanceSettings.reservationPhoneDescription')}
-              </p>
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('instanceSettings.email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={companyForm.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-              />
-            </div>
-
-            {/* Address */}
-            <div className="space-y-2">
-              <Label htmlFor="address">{t('instanceSettings.address')}</Label>
-              <Input
-                id="address"
-                value={companyForm.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-              />
+            {/* Contact fields 2x2 grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">{t('instanceSettings.phone')}</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={companyForm.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reservation_phone">{t('instanceSettings.reservationPhone')}</Label>
+                <Input
+                  id="reservation_phone"
+                  type="tel"
+                  value={companyForm.reservation_phone}
+                  onChange={(e) => handleInputChange('reservation_phone', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('instanceSettings.reservationPhoneDescription')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('instanceSettings.email')}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={companyForm.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">{t('instanceSettings.address')}</Label>
+                <Input
+                  id="address"
+                  value={companyForm.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Contact Person */}
@@ -487,43 +527,41 @@ const SettingsView = ({
               </button>
             </div>
 
-            {/* Website */}
-            <div className="space-y-2">
-              <Label htmlFor="website">{t('instanceSettings.website')}</Label>
-              <Input
-                id="website"
-                type="url"
-                value={companyForm.website}
-                onChange={(e) => handleInputChange('website', e.target.value)}
-              />
-            </div>
-
-            {/* Social Links */}
-            <div className="space-y-2">
-              <Label htmlFor="social_facebook">{t('instanceSettings.facebook')}</Label>
-              <Input
-                id="social_facebook"
-                value={companyForm.social_facebook}
-                onChange={(e) => handleInputChange('social_facebook', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="social_instagram">{t('instanceSettings.instagram')}</Label>
-              <Input
-                id="social_instagram"
-                value={companyForm.social_instagram}
-                onChange={(e) => handleInputChange('social_instagram', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google_maps_url">{t('instanceSettings.googleMaps')}</Label>
-              <Input
-                id="google_maps_url"
-                value={companyForm.google_maps_url}
-                onChange={(e) => handleInputChange('google_maps_url', e.target.value)}
-              />
+            {/* Web/social links 2x2 grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="website">{t('instanceSettings.website')}</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  value={companyForm.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="social_facebook">{t('instanceSettings.facebook')}</Label>
+                <Input
+                  id="social_facebook"
+                  value={companyForm.social_facebook}
+                  onChange={(e) => handleInputChange('social_facebook', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="social_instagram">{t('instanceSettings.instagram')}</Label>
+                <Input
+                  id="social_instagram"
+                  value={companyForm.social_instagram}
+                  onChange={(e) => handleInputChange('social_instagram', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="google_maps_url">{t('instanceSettings.googleMaps')}</Label>
+                <Input
+                  id="google_maps_url"
+                  value={companyForm.google_maps_url}
+                  onChange={(e) => handleInputChange('google_maps_url', e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Save Button */}
