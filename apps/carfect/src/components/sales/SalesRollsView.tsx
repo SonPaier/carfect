@@ -99,8 +99,8 @@ const SalesRollsView = () => {
     try {
       const data = await fetchRolls(instanceId, activeTab);
       setRolls(data);
-    } catch (err: any) {
-      toast.error('Błąd ładowania rolek: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Błąd ładowania rolek: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
