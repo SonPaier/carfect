@@ -1,10 +1,4 @@
-import { renderToBuffer } from '@react-pdf/renderer';
 import { createClient } from '@supabase/supabase-js';
-import React from 'react';
-import { registerFonts } from '../libs/pdf/src/fonts';
-import { OfferPdfDocument } from '../libs/pdf/src/OfferPdfDocument';
-import { transformOfferData, transformInstanceData } from '../libs/pdf/src/transformOfferData';
-import type { PdfConfig } from '../libs/pdf/src/styles';
 
 export const maxDuration = 30;
 
@@ -35,6 +29,16 @@ export default async function handler(req: Request) {
   }
 
   try {
+    // Dynamic imports for ESM-only packages
+    const [{ renderToBuffer }, React, pdfLib] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('react'),
+      import('../libs/pdf/src/index.js'),
+    ]);
+
+    const { registerFonts, OfferPdfDocument, transformOfferData, transformInstanceData } = pdfLib;
+    type PdfConfig = import('../libs/pdf/src/styles').PdfConfig;
+
     // Parse token from POST body or GET query
     let publicToken: string | null = null;
 
