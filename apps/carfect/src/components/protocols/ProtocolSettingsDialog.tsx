@@ -36,6 +36,8 @@ export const ProtocolSettingsDialog = ({
     if (open && instanceId) {
       fetchSettings();
     }
+    // fetchSettings is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, instanceId]);
 
   const fetchSettings = async () => {

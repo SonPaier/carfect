@@ -451,9 +451,12 @@ const AdminDashboard = () => {
     // Hall users are allowed to use the Protocols module.
     if (currentView === 'protocols') return;
 
-    const hallPath = adminBasePath ? '/admin/halls/1' : '/halls/1';
+    // Use hall_id from role if available, otherwise fallback to /1
+    const hallRole = roles.find((r) => r.role === 'hall');
+    const hallSegment = hallRole?.hall_id || '1';
+    const hallPath = adminBasePath ? `/admin/halls/${hallSegment}` : `/halls/${hallSegment}`;
     navigate(hallPath, { replace: true });
-  }, [userRole, instanceId, navigate, adminBasePath, currentView]);
+  }, [userRole, instanceId, navigate, adminBasePath, currentView, roles]);
 
   // Fetch yard vehicle count for badge (lazy-loaded only when needed)
   const fetchYardVehicleCount = async () => {
@@ -2912,7 +2915,9 @@ const AdminDashboard = () => {
               <button
                 onClick={() => {
                   if (userRole === 'hall') {
-                    navigate(adminBasePath ? '/admin/halls/1' : '/halls/1');
+                    const hallRole = roles.find((r) => r.role === 'hall');
+                    const hallSegment = hallRole?.hall_id || '1';
+                    navigate(adminBasePath ? `/admin/halls/${hallSegment}` : `/halls/${hallSegment}`);
                   } else {
                     setCurrentView('calendar');
                   }

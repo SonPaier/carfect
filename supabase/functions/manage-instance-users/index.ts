@@ -6,6 +6,58 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ALLOWED_ROLES = ['admin', 'employee', 'hall', 'sales'] as const;
+
+const jsonError = (message: string, status: number) =>
+  new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+async function validateHallForInstance(
+  supabase: ReturnType<typeof createClient>,
+  hallId: string,
+  instanceId: string,
+): Promise<Response | null> {
+  const { data } = await supabase
+    .from('halls')
+    .select('id')
+    .eq('id', hallId)
+    .eq('instance_id', instanceId)
+    .maybeSingle();
+  if (!data) return jsonError('Nieprawidłowy kalendarz', 400);
+  return null;
+}
+
+async function verifyUserBelongsToInstance(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  instanceId: string,
+): Promise<Response | null> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, instance_id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const { data: roles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('instance_id', instanceId);
+
+  const belongs =
+    profile?.instance_id === instanceId || (roles && roles.length > 0);
+
+  if (!profile || !belongs) {
+    return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  return null;
+}
+
 interface ManageUserRequest {
   action: 'list' | 'create' | 'update' | 'delete' | 'block' | 'unblock' | 'reset-password';
   instanceId: string;
@@ -13,6 +65,7 @@ interface ManageUserRequest {
   username?: string;
   password?: string;
   role?: 'admin' | 'employee' | 'hall' | 'sales';
+  hallId?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -59,7 +112,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body: ManageUserRequest = await req.json();
-    const { action, instanceId, userId, username, password, role } = body;
+    const { action, instanceId, userId, username, password, role, hallId } = body;
 
     if (!instanceId) {
       return new Response(JSON.stringify({ error: 'Brak ID instancji' }), {
@@ -103,7 +156,7 @@ Deno.serve(async (req) => {
         const { data: roles, error: rolesError } = userIds.length
           ? await supabase
               .from('user_roles')
-              .select('user_id, role')
+              .select('user_id, role, hall_id')
               .eq('instance_id', instanceId)
               .in('user_id', userIds)
           : { data: [], error: null };
@@ -117,17 +170,18 @@ Deno.serve(async (req) => {
         }
 
         const users = (profiles || []).map((profile: any) => {
-          const userRoles = (roles || [])
-            .filter((r: any) => r.user_id === profile.id)
-            .map((r: any) => r.role);
+          const userRoleRecords = (roles || []).filter((r: any) => r.user_id === profile.id);
+          const userRoles = userRoleRecords.map((r: any) => r.role);
           // Determine role priority: admin > sales > hall > employee
           let userRole = 'employee';
+          let userHallId = null;
           if (userRoles.includes('admin')) {
             userRole = 'admin';
           } else if (userRoles.includes('sales')) {
             userRole = 'sales';
           } else if (userRoles.includes('hall')) {
             userRole = 'hall';
+            userHallId = userRoleRecords.find((r: any) => r.role === 'hall')?.hall_id || null;
           }
           return {
             id: profile.id,
@@ -136,6 +190,7 @@ Deno.serve(async (req) => {
             is_blocked: !!profile.is_blocked,
             created_at: profile.created_at || new Date().toISOString(),
             role: userRole,
+            hall_id: userHallId,
           };
         });
 
@@ -154,13 +209,14 @@ Deno.serve(async (req) => {
         }
 
         // Validate role
-        if (role !== 'admin' && role !== 'employee' && role !== 'hall' && role !== 'sales') {
-          return new Response(
-            JSON.stringify({
-              error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales',
-            }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-          );
+        if (!ALLOWED_ROLES.includes(role as typeof ALLOWED_ROLES[number])) {
+          return jsonError(`Nieprawidłowa rola. Dozwolone: ${ALLOWED_ROLES.join(', ')}`, 400);
+        }
+
+        // Validate hallId belongs to this instance
+        if (role === 'hall' && hallId) {
+          const hallError = await validateHallForInstance(supabase, hallId, instanceId);
+          if (hallError) return hallError;
         }
 
         // Check if username is unique within instance
@@ -217,11 +273,15 @@ Deno.serve(async (req) => {
         }
 
         // Assign role
-        const { error: roleError } = await supabase.from('user_roles').insert({
+        const roleInsert: Record<string, unknown> = {
           user_id: newUser.user.id,
-          role: role,
+          role,
           instance_id: instanceId,
-        });
+        };
+        if (role === 'hall' && hallId) {
+          roleInsert.hall_id = hallId;
+        }
+        const { error: roleError } = await supabase.from('user_roles').insert(roleInsert);
 
         if (roleError) {
           console.error('Error assigning role:', roleError);
@@ -252,29 +312,8 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Verify user belongs to this instance (check both profiles and user_roles)
-        const { data: updateTargetProfile } = await supabase
-          .from('profiles')
-          .select('id, instance_id')
-          .eq('id', userId)
-          .maybeSingle();
-
-        const { data: updateTargetRoles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .eq('instance_id', instanceId);
-
-        const updateBelongs =
-          updateTargetProfile?.instance_id === instanceId ||
-          (updateTargetRoles && updateTargetRoles.length > 0);
-
-        if (!updateTargetProfile || !updateBelongs) {
-          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+        const verifyError = await verifyUserBelongsToInstance(supabase, userId, instanceId);
+        if (verifyError) return verifyError;
 
         // Update username if provided
         if (username) {
@@ -310,18 +349,25 @@ Deno.serve(async (req) => {
 
         // Update role if provided
         if (role) {
-          if (role !== 'admin' && role !== 'employee' && role !== 'hall' && role !== 'sales') {
-            return new Response(
-              JSON.stringify({
-                error: 'Nieprawidłowa rola. Dozwolone: admin, employee, hall, sales',
-              }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-            );
+          if (!ALLOWED_ROLES.includes(role as typeof ALLOWED_ROLES[number])) {
+            return jsonError(`Nieprawidłowa rola. Dozwolone: ${ALLOWED_ROLES.join(', ')}`, 400);
+          }
+
+          if (role === 'hall' && hallId) {
+            const hallError = await validateHallForInstance(supabase, hallId, instanceId);
+            if (hallError) return hallError;
+          }
+
+          const roleUpdate: Record<string, unknown> = { role };
+          if (role === 'hall') {
+            roleUpdate.hall_id = hallId || null;
+          } else {
+            roleUpdate.hall_id = null;
           }
 
           const { error: roleError } = await supabase
             .from('user_roles')
-            .update({ role })
+            .update(roleUpdate)
             .eq('user_id', userId)
             .eq('instance_id', instanceId);
 
@@ -351,29 +397,8 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Verify user belongs to this instance (check both profiles and user_roles)
-        const { data: blockTargetProfile } = await supabase
-          .from('profiles')
-          .select('id, instance_id')
-          .eq('id', userId)
-          .maybeSingle();
-
-        const { data: blockTargetRoles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .eq('instance_id', instanceId);
-
-        const blockBelongs =
-          blockTargetProfile?.instance_id === instanceId ||
-          (blockTargetRoles && blockTargetRoles.length > 0);
-
-        if (!blockTargetProfile || !blockBelongs) {
-          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+        const blockVerifyError = await verifyUserBelongsToInstance(supabase, userId, instanceId);
+        if (blockVerifyError) return blockVerifyError;
 
         // Prevent blocking yourself
         if (userId === caller.id) {
@@ -418,29 +443,8 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Verify user belongs to this instance (check both profiles and user_roles)
-        const { data: resetTargetProfile } = await supabase
-          .from('profiles')
-          .select('id, instance_id')
-          .eq('id', userId)
-          .maybeSingle();
-
-        const { data: resetTargetRoles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .eq('instance_id', instanceId);
-
-        const resetBelongs =
-          resetTargetProfile?.instance_id === instanceId ||
-          (resetTargetRoles && resetTargetRoles.length > 0);
-
-        if (!resetTargetProfile || !resetBelongs) {
-          return new Response(JSON.stringify({ error: 'Użytkownik nie należy do tej instancji' }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+        const resetVerifyError = await verifyUserBelongsToInstance(supabase, userId, instanceId);
+        if (resetVerifyError) return resetVerifyError;
 
         // Reset password using admin API
         const { error: passwordError } = await supabase.auth.admin.updateUserById(userId, {

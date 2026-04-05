@@ -27,11 +27,14 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
+import HallPickerField from './HallPickerField';
+import type { HallOption } from './HallPickerField';
 
 interface InstanceUser {
   id: string;
   username: string;
   role: 'admin' | 'employee' | 'hall' | 'sales';
+  hall_id?: string | null;
 }
 
 interface EditInstanceUserDialogProps {
@@ -65,6 +68,8 @@ const EditInstanceUserDialog = ({
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [role, setRole] = useState<'employee' | 'admin' | 'hall' | 'sales'>('employee');
+  const [selectedHallId, setSelectedHallId] = useState<string>('');
+  const [halls, setHalls] = useState<HallOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState<'admin' | null>(null);
@@ -73,15 +78,31 @@ const EditInstanceUserDialog = ({
   const { hasFeature } = useCombinedFeatures(instanceId);
 
   useEffect(() => {
+    if (!open) return;
+    const fetchHalls = async () => {
+      const { data } = await supabase
+        .from('halls')
+        .select('id, name')
+        .eq('instance_id', instanceId)
+        .eq('active', true)
+        .order('sort_order');
+      if (data) setHalls(data);
+    };
+    fetchHalls();
+  }, [open, instanceId]);
+
+  useEffect(() => {
     if (user) {
       setUsername(user.username);
       setRole(user.role);
+      setSelectedHallId(user.hall_id || '');
       if (user.role === 'employee') {
         fetchPermissions(user.id);
       } else {
         setPermissions({});
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchPermissions = async (userId: string) => {
@@ -196,6 +217,7 @@ const EditInstanceUserDialog = ({
           userId: user.id,
           username: username.trim(),
           role,
+          ...(role === 'hall' ? { hallId: selectedHallId || null } : {}),
         },
       });
 
@@ -262,9 +284,7 @@ const EditInstanceUserDialog = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">{t('editUser.roleEmployee')}</SelectItem>
-                  <SelectItem value="hall">
-                    {t('editUser.roleHall') || 'Widok Hali (Kiosk)'}
-                  </SelectItem>
+                  <SelectItem value="hall">Kalendarz (tablet/kiosk)</SelectItem>
                   <SelectItem value="sales">
                     {t('editUser.roleSales') || 'Sprzedaż (CRM)'}
                   </SelectItem>
@@ -275,12 +295,16 @@ const EditInstanceUserDialog = ({
                 {role === 'admin'
                   ? t('editUser.adminHint')
                   : role === 'hall'
-                    ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
+                    ? 'Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)'
                     : role === 'sales'
                       ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
                       : t('editUser.employeeHint')}
               </p>
             </div>
+
+            {role === 'hall' && (
+              <HallPickerField value={selectedHallId} onChange={setSelectedHallId} halls={halls} />
+            )}
 
             {/* Employee Permissions */}
             {role === 'employee' && availableFeatures.length > 0 && (

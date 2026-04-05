@@ -10,6 +10,7 @@ import {
   Columns,
   ExternalLink,
   Settings,
+  User,
 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
@@ -44,6 +45,7 @@ export interface Hall {
     vehicle_plate: boolean;
     services: boolean;
     admin_notes: boolean;
+    price: boolean;
   };
   allowed_actions: {
     add_services: boolean;
@@ -66,6 +68,7 @@ interface HallCardProps {
   hallNumber: number; // 1-indexed order number for URL
   instanceSlug: string;
   stations: Station[];
+  assignedUsername?: string;
   onEdit: (hall: Hall) => void;
   onDelete: (hallId: string) => void;
 }
@@ -75,6 +78,7 @@ const HallCard = ({
   hallNumber,
   instanceSlug,
   stations,
+  assignedUsername,
   onEdit,
   onDelete,
 }: HallCardProps) => {
@@ -82,19 +86,11 @@ const HallCard = ({
   const [copied, setCopied] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Generate full URL for this hall - use simple number for user-friendly URLs
-  const getHallUrl = () => {
-    return `https://${instanceSlug}.admin.carfect.pl/halls/${hallNumber}`;
-  };
-
-  // Get dev/preview URL for this hall
-  const getDevHallUrl = () => {
-    return `/admin/halls/${hallNumber}`;
-  };
+  const hallUrl = `https://${instanceSlug}.admin.carfect.pl/halls/${hallNumber}`;
 
   const handleCopyUrl = async () => {
     try {
-      await navigator.clipboard.writeText(getHallUrl());
+      await navigator.clipboard.writeText(hallUrl);
       setCopied(true);
       toast.success(t('halls.urlCopied'));
       setTimeout(() => setCopied(false), 2000);
@@ -108,18 +104,18 @@ const HallCard = ({
     setDeleteDialogOpen(false);
   };
 
-  const handlePreview = () => {
-    window.open(getDevHallUrl(), '_blank');
-  };
+  // Known keys — filter out legacy/removed keys that may still exist in DB
+  const knownFieldKeys = ['customer_name', 'customer_phone', 'vehicle_plate', 'services', 'admin_notes', 'price'];
+  const knownActionKeys = ['add_services'];
 
-  // Get visible field names
+  // Get visible field names (exclude always-on: vehicle_plate, services)
   const visibleFieldNames = Object.entries(hall.visible_fields)
-    .filter(([_, visible]) => visible)
+    .filter(([key, visible]) => visible && knownFieldKeys.includes(key) && key !== 'vehicle_plate' && key !== 'services')
     .map(([key]) => t(`halls.fields.${key}`));
 
-  // Get allowed action names (for edit section)
+  // Get allowed action names
   const allowedActionNames = Object.entries(hall.allowed_actions)
-    .filter(([_, allowed]) => allowed)
+    .filter(([key, allowed]) => allowed && knownActionKeys.includes(key))
     .map(([key]) => t(`halls.actions.${key}`));
 
   // Get station names for this hall
@@ -159,7 +155,7 @@ const HallCard = ({
           <div className="mt-3 space-y-1">
             <span className="text-xs text-muted-foreground">{t('halls.calendarLinkLabel')}</span>
             <div className="flex items-center gap-2 bg-white border rounded-md px-3 py-2">
-              <code className="text-xs text-muted-foreground truncate flex-1">{getHallUrl()}</code>
+              <code className="text-xs text-muted-foreground truncate flex-1">{hallUrl}</code>
               <Button
                 variant="ghost"
                 size="icon"
@@ -175,7 +171,24 @@ const HallCard = ({
             </div>
           </div>
 
-          {/* Stations - renamed to "Widoczne stanowiska" */}
+          {/* Assigned user */}
+          <div className="mt-4 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <User className="h-3.5 w-3.5" />
+              <span className="font-medium">{t('halls.assignedUser')}:</span>
+            </div>
+            {assignedUsername ? (
+              <Badge variant="secondary" className="text-xs">
+                {assignedUsername}
+              </Badge>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {t('halls.assignUserHint')}
+              </span>
+            )}
+          </div>
+
+          {/* Stations */}
           <div className="mt-6 space-y-1">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Columns className="h-3.5 w-3.5" />
@@ -240,7 +253,7 @@ const HallCard = ({
           <div className="flex-1" />
 
           {/* Preview button - pinned to bottom, full width */}
-          <Button variant="outline" size="sm" className="mt-4 w-full" onClick={handlePreview}>
+          <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => window.open(`/admin/halls/${hallNumber}`, '_blank')}>
             <ExternalLink className="h-4 w-4 mr-2" />
             {t('halls.preview')}
           </Button>

@@ -15,6 +15,23 @@ interface Employee {
   photo_url: string | null;
 }
 
+interface VisibleFields {
+  customer_name: boolean;
+  customer_phone: boolean;
+  vehicle_plate: boolean;
+  services: boolean;
+  admin_notes: boolean;
+  price: boolean;
+}
+
+interface AllowedActions {
+  add_services: boolean;
+  change_time: boolean;
+  change_station: boolean;
+  edit_reservation: boolean;
+  delete_reservation: boolean;
+}
+
 interface HallReservationCardProps {
   reservation: {
     id: string;
@@ -28,11 +45,14 @@ interface HallReservationCardProps {
     status: string;
     services_data?: Array<{ id?: string; name: string }>;
     admin_notes?: string | null;
+    price?: number | null;
     instance_id: string;
     photo_urls?: string[] | null;
     checked_service_ids?: string[] | null;
     assigned_employee_ids?: string[] | null;
   };
+  visibleFields?: VisibleFields;
+  allowedActions?: AllowedActions;
   showEmployees?: boolean;
   employees?: Employee[];
   open: boolean;
@@ -47,8 +67,27 @@ interface HallReservationCardProps {
   onRemoveService?: (serviceId: string, serviceName: string) => Promise<void>;
 }
 
+const ALL_VISIBLE: VisibleFields = {
+  customer_name: true,
+  customer_phone: true,
+  vehicle_plate: true,
+  services: true,
+  admin_notes: true,
+  price: true,
+};
+
+const ALL_ALLOWED: AllowedActions = {
+  add_services: true,
+  change_time: true,
+  change_station: true,
+  edit_reservation: true,
+  delete_reservation: true,
+};
+
 const HallReservationCard = ({
   reservation,
+  visibleFields = ALL_VISIBLE,
+  allowedActions = ALL_ALLOWED,
   open,
   onClose,
   onStartWork,
@@ -77,6 +116,7 @@ const HallReservationCard = ({
     vehicle_plate,
     reservation_date,
     end_date,
+    price,
     start_time,
     end_time,
     status,
@@ -88,20 +128,13 @@ const HallReservationCard = ({
 
   const normalizedStatus = (status ?? '').toLowerCase().trim();
 
-  // Format time range
-  const formatTimeRange = () => {
-    return `${start_time.slice(0, 5)} - ${end_time.slice(0, 5)}`;
-  };
+  const timeRange = `${start_time.slice(0, 5)} - ${end_time.slice(0, 5)}`;
 
-  // Format date range
-  const formatDateRange = () => {
-    const startDate = parseISO(reservation_date);
-    if (end_date && end_date !== reservation_date) {
-      const endDate = parseISO(end_date);
-      return `${format(startDate, 'd MMM', { locale: pl })} - ${format(endDate, 'd MMM yyyy', { locale: pl })}`;
-    }
-    return format(startDate, 'd MMMM yyyy', { locale: pl });
-  };
+  const startDate = parseISO(reservation_date);
+  const dateRange =
+    end_date && end_date !== reservation_date
+      ? `${format(startDate, 'd MMM', { locale: pl })} - ${format(parseISO(end_date), 'd MMM yyyy', { locale: pl })}`
+      : format(startDate, 'd MMMM yyyy', { locale: pl });
 
   // Handle actions with loading states
   const handleStart = async () => {
@@ -224,33 +257,39 @@ const HallReservationCard = ({
           <div className="space-y-6">
             {/* Time (bold) and date */}
             <div className="text-[28px] text-foreground">
-              <span className="font-bold">{formatTimeRange()}</span>
-              <span className="text-muted-foreground"> · {formatDateRange()}</span>
+              <span className="font-bold">{timeRange}</span>
+              <span className="text-muted-foreground"> · {dateRange}</span>
             </div>
 
             {/* Vehicle plate first, then customer */}
             <div className="space-y-1">
-              <div className="text-xl font-bold text-foreground">
-                {vehicle_plate}
-              </div>
-              <div className="text-lg text-muted-foreground">
-                {customer_name}, {formatPhoneDisplay(customer_phone)}
-              </div>
+              {visibleFields.vehicle_plate && (
+                <div className="text-xl font-bold text-foreground">
+                  {vehicle_plate}
+                </div>
+              )}
+              {(visibleFields.customer_name || visibleFields.customer_phone) && (
+                <div className="text-lg text-muted-foreground">
+                  {visibleFields.customer_name && customer_name}
+                  {visibleFields.customer_name && visibleFields.customer_phone && ', '}
+                  {visibleFields.customer_phone && formatPhoneDisplay(customer_phone)}
+                </div>
+              )}
             </div>
 
             {/* Services list - clickable with checkmark toggle and delete */}
-            {services_data && services_data.length > 0 && (
+            {visibleFields.services && services_data && services_data.length > 0 && (
               <div className="space-y-1">
                 {services_data.map((service, idx) => {
                   const isChecked = service.id && checked_service_ids?.includes(service.id);
-                  const canToggle = !!service.id && !!onServiceToggle;
-                  
+                  const canToggle = !!service.id && !!onServiceToggle && allowedActions.add_services;
+
                   return (
-                    <div 
-                      key={service.id || idx} 
+                    <div
+                      key={service.id || idx}
                       className="flex items-center justify-between gap-2"
                     >
-                      <div 
+                      <div
                         className={cn(
                           "text-2xl font-bold flex items-center gap-2 flex-1",
                           canToggle && "cursor-pointer hover:bg-hover-strong rounded px-2 -mx-2 py-1",
@@ -263,9 +302,9 @@ const HallReservationCard = ({
                         </span>
                         {isChecked && <Check className="w-6 h-6 text-success" />}
                       </div>
-                      
+
                       {/* Red trash icon for delete */}
-                      {onRemoveService && service.id && (
+                      {allowedActions.add_services && onRemoveService && service.id && (
                         <button
                           onClick={() => setConfirmRemoveService({ id: service.id!, name: service.name })}
                           className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
@@ -313,17 +352,24 @@ const HallReservationCard = ({
               </div>
             )}
 
+            {/* Price */}
+            {visibleFields.price && price != null && (
+              <div className="text-xl font-semibold text-foreground">
+                {price.toFixed(2)} zł
+              </div>
+            )}
+
             {/* Admin notes - yellow background, red text */}
-            {admin_notes && (
+            {visibleFields.admin_notes && admin_notes && (
               <div className="text-xl bg-warning/20 text-destructive rounded-lg p-4">
                 {admin_notes}
               </div>
             )}
 
             {/* Protocol, Photos, and Services buttons - white style */}
-            {(onAddProtocol || onAddPhotos || onAddService) && (
+            {(onAddProtocol || onAddPhotos || (onAddService && allowedActions.add_services)) && (
               <div className="flex gap-2">
-                {onAddService && (
+                {onAddService && allowedActions.add_services && (
                   <Button
                     variant="outline"
                     className="flex-1 gap-2 bg-white hover:bg-gray-50"

@@ -25,6 +25,8 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
 
   useEffect(() => {
     fetchScopes();
+    // fetchScopes is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   const fetchScopes = async () => {

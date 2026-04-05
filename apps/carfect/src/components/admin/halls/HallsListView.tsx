@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Loader2, Building2, Warehouse } from 'lucide-react';
+import { Plus, Loader2, Warehouse } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,11 +16,16 @@ interface Station {
   name: string;
 }
 
+interface HallUser {
+  hall_id: string;
+  username: string;
+}
+
 const HallsListView = ({ instanceId }: HallsListViewProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [halls, setHalls] = useState<Hall[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
+  const [hallUsers, setHallUsers] = useState<HallUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingHall, setEditingHall] = useState<Hall | null>(null);
@@ -51,6 +55,7 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
           vehicle_plate: true,
           services: true,
           admin_notes: false,
+          price: false,
         },
         allowed_actions: (h.allowed_actions as Hall['allowed_actions']) || {
           add_services: false,
@@ -67,8 +72,6 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
     } catch (error) {
       console.error('Error fetching halls:', error);
       toast.error(t('common.error'));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -93,11 +96,43 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
     }
   };
 
+  const fetchHallUsers = async () => {
+    // Use edge function (bypasses RLS) to get users with hall assignments
+    const response = await supabase.functions.invoke('manage-instance-users', {
+      body: { action: 'list', instanceId },
+    });
+
+    if (response.error || response.data?.error) {
+      setHallUsers([]);
+      return;
+    }
+
+    const users: HallUser[] = (response.data?.users || [])
+      .filter((u: { role: string; hall_id?: string | null }) => u.role === 'hall' && u.hall_id)
+      .map((u: { hall_id: string; username: string }) => ({
+        hall_id: u.hall_id,
+        username: u.username,
+      }));
+
+    setHallUsers(users);
+  };
+
   useEffect(() => {
-    fetchHalls();
-    fetchInstanceSlug();
-    fetchStations();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchHalls(), fetchInstanceSlug(), fetchStations(), fetchHallUsers()]);
+      setLoading(false);
+    };
+    loadAll();
+    // fetchHalls, fetchInstanceSlug, fetchStations, fetchHallUsers are stable functions
+    // defined in component scope that only depend on instanceId (already in deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
+
+  const hallUsersMap = useMemo(
+    () => new Map(hallUsers.map((u) => [u.hall_id, u.username])),
+    [hallUsers],
+  );
 
   const handleEdit = (hall: Hall) => {
     setEditingHall(hall);
@@ -153,7 +188,7 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
             {t('halls.noHallsDescription')}
           </p>
           <Button onClick={handleAddNew} className="mt-4">
-            Dodaj halę
+            {t('halls.addFirst')}
           </Button>
         </div>
       ) : (
@@ -165,6 +200,7 @@ const HallsListView = ({ instanceId }: HallsListViewProps) => {
               hallNumber={index + 1}
               instanceSlug={instanceSlug}
               stations={stations}
+              assignedUsername={hallUsersMap.get(hall.id)}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

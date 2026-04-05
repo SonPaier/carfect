@@ -2271,10 +2271,12 @@ const AdminCalendar = ({
                                 {hallMode ? (
                                   // Hall mode: show based on hallConfig and hallDataVisible
                                   <div className="flex items-center gap-1 text-[13px] md:text-[15px] min-w-0">
-                                    {/* Vehicle plate is always visible */}
+                                    {/* Vehicle plate based on config */}
+                                    {(hallConfig?.visible_fields?.vehicle_plate !== false) && (
                                     <span className="font-semibold truncate max-w-[50%]">
                                       {reservation.vehicle_plate}
                                     </span>
+                                    )}
                                     {/* Customer name based on config and visibility toggle */}
                                     {hallConfig?.visible_fields?.customer_name &&
                                       hallDataVisible && (
@@ -2295,6 +2297,7 @@ const AdminCalendar = ({
                                 )}
                                 {/* Service chips */}
                                 {hallMode ? (
+                                  (hallConfig?.visible_fields?.services !== false) &&
                                   reservation.services_data &&
                                   reservation.services_data.length > 0 ? (
                                     <div className="flex flex-wrap gap-0.5 mt-0.5">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, AlertTriangle, Shield } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -26,6 +26,8 @@ import {
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import HallPickerField from './HallPickerField';
+import type { HallOption } from './HallPickerField';
 
 interface AddInstanceUserDialogProps {
   open: boolean;
@@ -43,9 +45,25 @@ const AddInstanceUserDialog = ({
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [role, setRole] = useState<'employee' | 'admin' | 'hall' | 'sales'>('employee');
+  const [selectedHallId, setSelectedHallId] = useState<string>('');
+  const [halls, setHalls] = useState<HallOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState<'admin' | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const fetchHalls = async () => {
+      const { data } = await supabase
+        .from('halls')
+        .select('id, name')
+        .eq('instance_id', instanceId)
+        .eq('active', true)
+        .order('sort_order');
+      if (data) setHalls(data);
+    };
+    fetchHalls();
+  }, [open, instanceId]);
 
   const {
     password,
@@ -63,6 +81,7 @@ const AddInstanceUserDialog = ({
     setUsername('');
     resetPassword();
     setRole('employee');
+    setSelectedHallId('');
     setPendingRole(null);
   };
 
@@ -124,6 +143,7 @@ const AddInstanceUserDialog = ({
           username: username.trim(),
           password,
           role,
+          ...(role === 'hall' && selectedHallId ? { hallId: selectedHallId } : {}),
         },
       });
 
@@ -197,7 +217,7 @@ const AddInstanceUserDialog = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">Pracownik</SelectItem>
-                  <SelectItem value="hall">Widok Hali (Kiosk)</SelectItem>
+                  <SelectItem value="hall">Kalendarz (tablet/kiosk)</SelectItem>
                   <SelectItem value="sales">Sprzedaż (CRM)</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
@@ -206,12 +226,16 @@ const AddInstanceUserDialog = ({
                 {role === 'admin'
                   ? 'Admin ma pełny dostęp do ustawień i zarządzania użytkownikami'
                   : role === 'hall'
-                    ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
+                    ? 'Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)'
                     : role === 'sales'
                       ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
                       : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
               </p>
             </div>
+
+            {role === 'hall' && (
+              <HallPickerField value={selectedHallId} onChange={setSelectedHallId} halls={halls} />
+            )}
 
             <DialogFooter>
               <Button

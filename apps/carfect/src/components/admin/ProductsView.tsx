@@ -199,6 +199,8 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
   useEffect(() => {
     if (!instanceId) return;
     fetchData();
+    // fetchData is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   // Get unique categories and counts
