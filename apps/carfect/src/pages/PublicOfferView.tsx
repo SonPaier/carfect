@@ -23,15 +23,6 @@ const PublicOfferView = () => {
   const [error, setError] = useState<string | null>(null);
   const shouldPrint = searchParams.get('print') === 'true';
 
-  // Auto-print when ?print=true is in the URL
-  useEffect(() => {
-    if (shouldPrint && !loading && offer) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [shouldPrint, loading, offer]);
 
   useEffect(() => {
     const fetchOffer = async () => {
