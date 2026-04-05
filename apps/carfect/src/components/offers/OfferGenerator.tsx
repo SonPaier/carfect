@@ -107,7 +107,7 @@ export const OfferGenerator = ({
         phone: initialCustomerData.phone,
       });
       if (initialCustomerData.plate) {
-        updateVehicleData({ plate: initialCustomerData.plate });
+        updateVehicleData({ brandModel: initialCustomerData.plate });
       }
     }
   }, []);
