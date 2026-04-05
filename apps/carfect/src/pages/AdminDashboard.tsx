@@ -78,72 +78,12 @@ import type { Training } from '@/components/admin/AddTrainingDrawer';
 import { toast } from 'sonner';
 import { sendPushNotification, formatDateForPush } from '@/lib/pushNotifications';
 import { normalizePhone as normalizePhoneForStorage } from '@shared/utils';
+import type { Reservation, ServiceItem } from '@/types/reservation';
 interface Station {
   id: string;
   name: string;
   type: string;
   color?: string | null;
-}
-interface ServiceItem {
-  service_id: string;
-  custom_price: number | null;
-  name?: string; // Present in JSONB from database
-  id?: string; // Alias for service_id in some contexts
-  short_name?: string | null;
-  price_small?: number | null;
-  price_medium?: number | null;
-  price_large?: number | null;
-  price_from?: number | null;
-}
-
-interface Reservation {
-  id: string;
-  instance_id: string;
-  customer_name: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string;
-  status: string;
-  confirmation_code: string;
-  service?: {
-    name: string;
-    shortcut?: string | null;
-  };
-  // Array of all services (if multi-service reservation)
-  services_data?: Array<{
-    id?: string;
-    name: string;
-    shortcut?: string | null;
-    price_small?: number | null;
-    price_medium?: number | null;
-    price_large?: number | null;
-    price_from?: number | null;
-  }>;
-  station?: {
-    name: string;
-    type?: 'washing' | 'ppf' | 'detailing' | 'universal';
-  };
-  price: number | null;
-  original_reservation_id?: string | null;
-  original_reservation?: {
-    reservation_date: string;
-    start_time: string;
-    confirmation_code: string;
-  } | null;
-  created_by?: string | null;
-  created_by_username?: string | null;
-  offer_number?: string | null;
-  confirmation_sms_sent_at?: string | null;
-  pickup_sms_sent_at?: string | null;
-  service_items?: ServiceItem[] | null;
-  service_ids?: string[];
-  has_unified_services?: boolean | null;
-  photo_urls?: string[] | null;
-  assigned_employee_ids?: string[] | null;
 }
 interface Break {
   id: string;
@@ -299,7 +239,11 @@ const AdminDashboard = () => {
   });
 
   // Offer prefill from reservation drawer — cleared when leaving offers view
-  const [offerPrefill, setOfferPrefill] = useState<{ name: string; phone: string; plate?: string } | null>(null);
+  const [offerPrefill, setOfferPrefill] = useState<{
+    name: string;
+    phone: string;
+    plate?: string;
+  } | null>(null);
   useEffect(() => {
     if (currentView !== 'offers') setOfferPrefill(null);
   }, [currentView]);
@@ -1631,7 +1575,7 @@ const AdminDashboard = () => {
       .single();
     if (data) {
       const mapped: Reservation = {
-        ...data,
+        ...(data as unknown as Reservation),
         status: data.status || 'pending',
         service_ids: Array.isArray(data.service_ids) ? (data.service_ids as string[]) : undefined,
         service_items: Array.isArray(data.service_items)
@@ -2923,7 +2867,9 @@ const AdminDashboard = () => {
                   if (userRole === 'hall') {
                     const hallRole = roles.find((r) => r.role === 'hall');
                     const hallSegment = hallRole?.hall_id || '1';
-                    navigate(adminBasePath ? `/admin/halls/${hallSegment}` : `/halls/${hallSegment}`);
+                    navigate(
+                      adminBasePath ? `/admin/halls/${hallSegment}` : `/halls/${hallSegment}`,
+                    );
                   } else {
                     setCurrentView('calendar');
                   }

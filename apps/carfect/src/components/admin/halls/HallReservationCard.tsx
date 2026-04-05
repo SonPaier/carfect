@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { PhotoFullscreenDialog } from '@/components/protocols/PhotoFullscreenDialog';
 import { ConfirmDialog } from '@shared/ui';
 import { cn } from '@/lib/utils';
+import type { Reservation } from '@/types/reservation';
 
 interface Employee {
   id: string;
@@ -33,24 +34,7 @@ interface AllowedActions {
 }
 
 interface HallReservationCardProps {
-  reservation: {
-    id: string;
-    customer_name: string;
-    customer_phone: string;
-    vehicle_plate: string;
-    reservation_date: string;
-    end_date?: string | null;
-    start_time: string;
-    end_time: string;
-    status: string;
-    services_data?: Array<{ id?: string; name: string }>;
-    admin_notes?: string | null;
-    price?: number | null;
-    instance_id: string;
-    photo_urls?: string[] | null;
-    checked_service_ids?: string[] | null;
-    assigned_employee_ids?: string[] | null;
-  };
+  reservation: Reservation;
   visibleFields?: VisibleFields;
   allowedActions?: AllowedActions;
   showEmployees?: boolean;
@@ -60,10 +44,10 @@ interface HallReservationCardProps {
   onStartWork: (id: string) => Promise<void>;
   onEndWork: (id: string) => Promise<void>;
   onSendPickupSms: (id: string) => Promise<void>;
-  onAddProtocol?: (reservation: HallReservationCardProps['reservation']) => void;
-  onAddPhotos?: (reservation: HallReservationCardProps['reservation']) => void;
+  onAddProtocol?: (reservation: Reservation) => void;
+  onAddPhotos?: (reservation: Reservation) => void;
   onServiceToggle?: (serviceId: string, checked: boolean) => Promise<void>;
-  onAddService?: (reservation: HallReservationCardProps['reservation']) => void;
+  onAddService?: (reservation: Reservation) => void;
   onRemoveService?: (serviceId: string, serviceName: string) => Promise<void>;
 }
 
@@ -104,7 +88,10 @@ const HallReservationCard = ({
   const { t } = useTranslation();
   const [loading, setLoading] = useState<'start' | 'stop' | 'sms' | null>(null);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
-  const [confirmRemoveService, setConfirmRemoveService] = useState<{ id: string; name: string } | null>(null);
+  const [confirmRemoveService, setConfirmRemoveService] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [removingService, setRemovingService] = useState(false);
 
   if (!open || !reservation) return null;
@@ -264,9 +251,7 @@ const HallReservationCard = ({
             {/* Vehicle plate first, then customer */}
             <div className="space-y-1">
               {visibleFields.vehicle_plate && (
-                <div className="text-xl font-bold text-foreground">
-                  {vehicle_plate}
-                </div>
+                <div className="text-xl font-bold text-foreground">{vehicle_plate}</div>
               )}
               {(visibleFields.customer_name || visibleFields.customer_phone) && (
                 <div className="text-lg text-muted-foreground">
@@ -282,7 +267,8 @@ const HallReservationCard = ({
               <div className="space-y-1">
                 {services_data.map((service, idx) => {
                   const isChecked = service.id && checked_service_ids?.includes(service.id);
-                  const canToggle = !!service.id && !!onServiceToggle && allowedActions.add_services;
+                  const canToggle =
+                    !!service.id && !!onServiceToggle && allowedActions.add_services;
 
                   return (
                     <div
@@ -291,13 +277,16 @@ const HallReservationCard = ({
                     >
                       <div
                         className={cn(
-                          "text-2xl font-bold flex items-center gap-2 flex-1",
-                          canToggle && "cursor-pointer hover:bg-hover-strong rounded px-2 -mx-2 py-1",
-                          isChecked && "text-muted-foreground"
+                          'text-2xl font-bold flex items-center gap-2 flex-1',
+                          canToggle &&
+                            'cursor-pointer hover:bg-hover-strong rounded px-2 -mx-2 py-1',
+                          isChecked && 'text-muted-foreground',
                         )}
-                        onClick={canToggle ? () => onServiceToggle(service.id!, !isChecked) : undefined}
+                        onClick={
+                          canToggle ? () => onServiceToggle(service.id!, !isChecked) : undefined
+                        }
                       >
-                        <span className={isChecked ? "line-through" : ""}>
+                        <span className={isChecked ? 'line-through' : ''}>
                           {idx + 1}. {service.name}
                         </span>
                         {isChecked && <Check className="w-6 h-6 text-success" />}
@@ -306,7 +295,9 @@ const HallReservationCard = ({
                       {/* Red trash icon for delete */}
                       {allowedActions.add_services && onRemoveService && service.id && (
                         <button
-                          onClick={() => setConfirmRemoveService({ id: service.id!, name: service.name })}
+                          onClick={() =>
+                            setConfirmRemoveService({ id: service.id!, name: service.name })
+                          }
                           className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -319,23 +310,30 @@ const HallReservationCard = ({
             )}
 
             {/* Assigned employees - blue chips (readonly) */}
-            {showEmployees && reservation.assigned_employee_ids && reservation.assigned_employee_ids.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {reservation.assigned_employee_ids.map((empId) => {
-                  const employee = employees.find(e => e.id === empId);
-                  const displayName = employee?.name || empId.slice(0, 8);
-                  const shortName = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-                  return (
-                    <span
-                      key={empId}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium"
-                    >
-                      {shortName}: {displayName.split(' ')[0]}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+            {showEmployees &&
+              reservation.assigned_employee_ids &&
+              reservation.assigned_employee_ids.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {reservation.assigned_employee_ids.map((empId) => {
+                    const employee = employees.find((e) => e.id === empId);
+                    const displayName = employee?.name || empId.slice(0, 8);
+                    const shortName = displayName
+                      .split(' ')
+                      .map((w) => w[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase();
+                    return (
+                      <span
+                        key={empId}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                      >
+                        {shortName}: {displayName.split(' ')[0]}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
             {/* Photos thumbnails */}
             {photo_urls && photo_urls.length > 0 && (
@@ -354,9 +352,7 @@ const HallReservationCard = ({
 
             {/* Price */}
             {visibleFields.price && price != null && (
-              <div className="text-xl font-semibold text-foreground">
-                {price.toFixed(2)} zł
-              </div>
+              <div className="text-xl font-semibold text-foreground">{price.toFixed(2)} zł</div>
             )}
 
             {/* Admin notes - yellow background, red text */}
@@ -403,9 +399,7 @@ const HallReservationCard = ({
             )}
 
             {/* Action buttons */}
-            <div className="pt-4">
-              {renderActionButtons()}
-            </div>
+            <div className="pt-4">{renderActionButtons()}</div>
           </div>
         </div>
       </div>

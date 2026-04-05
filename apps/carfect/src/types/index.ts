@@ -14,21 +14,6 @@ export interface TimeSlot {
   stationId: string;
 }
 
-export interface Reservation {
-  id: string;
-  serviceId: string;
-  serviceName: string;
-  date: string;
-  time: string;
-  stationId: string;
-  customerName: string;
-  customerPhone: string;
-  vehiclePlate: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  confirmationCode: string;
-  createdAt: string;
-}
-
 export interface Station {
   id: string;
   name: string;

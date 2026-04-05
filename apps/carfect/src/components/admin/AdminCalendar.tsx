@@ -48,6 +48,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
+import type { Reservation } from '@/types/reservation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import {
   DropdownMenu,
@@ -83,34 +84,6 @@ interface Station {
   name: string;
   type: string;
   color?: string | null;
-}
-interface Reservation {
-  id: string;
-  customer_name: string;
-  customer_phone?: string;
-  vehicle_plate: string;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  status: string;
-  customer_notes?: string | null;
-  admin_notes?: string | null;
-  offer_number?: string | null;
-  assigned_employee_ids?: string[] | null;
-  service?: {
-    name: string;
-    shortcut?: string | null;
-  };
-  // Array of all services (if multi-service reservation)
-  services_data?: Array<{
-    name: string;
-    shortcut?: string | null;
-  }>;
-  station?: {
-    type?: string;
-  };
 }
 interface Break {
   id: string;
@@ -496,7 +469,9 @@ const AdminCalendar = ({
       };
     }, 50);
 
-    const capturedEl = gridScrollRef.current as (HTMLElement & { __axisLockCleanup?: () => void }) | null;
+    const capturedEl = gridScrollRef.current as
+      | (HTMLElement & { __axisLockCleanup?: () => void })
+      | null;
     return () => {
       clearTimeout(timerId);
       if (capturedEl && capturedEl.__axisLockCleanup) {
@@ -2272,10 +2247,10 @@ const AdminCalendar = ({
                                   // Hall mode: show based on hallConfig and hallDataVisible
                                   <div className="flex items-center gap-1 text-[13px] md:text-[15px] min-w-0">
                                     {/* Vehicle plate based on config */}
-                                    {(hallConfig?.visible_fields?.vehicle_plate !== false) && (
-                                    <span className="font-semibold truncate max-w-[50%]">
-                                      {reservation.vehicle_plate}
-                                    </span>
+                                    {hallConfig?.visible_fields?.vehicle_plate !== false && (
+                                      <span className="font-semibold truncate max-w-[50%]">
+                                        {reservation.vehicle_plate}
+                                      </span>
                                     )}
                                     {/* Customer name based on config and visibility toggle */}
                                     {hallConfig?.visible_fields?.customer_name &&
@@ -2297,7 +2272,7 @@ const AdminCalendar = ({
                                 )}
                                 {/* Service chips */}
                                 {hallMode ? (
-                                  (hallConfig?.visible_fields?.services !== false) &&
+                                  hallConfig?.visible_fields?.services !== false &&
                                   reservation.services_data &&
                                   reservation.services_data.length > 0 ? (
                                     <div className="flex flex-wrap gap-0.5 mt-0.5">
