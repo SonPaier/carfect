@@ -26,6 +26,7 @@ interface OfferListCardProps {
   onReserve: (offer: OfferWithOptions) => void;
   onFollowUpChange: (offerId: string, status: FollowUpPhoneStatus) => void;
   onNoteClick: (offer: OfferWithOptions) => void;
+  onPrintPdf?: (token: string) => void;
 }
 
 function StatusBadge({ offer }: { offer: OfferWithOptions }) {
@@ -169,6 +170,7 @@ export function OfferListCard({
   onReserve,
   onFollowUpChange,
   onNoteClick,
+  onPrintPdf,
 }: OfferListCardProps) {
   const menuProps = {
     offer,
@@ -181,6 +183,7 @@ export function OfferListCard({
     onReminders,
     onDelete,
     onReserve,
+    onPrintPdf,
   };
 
   return (

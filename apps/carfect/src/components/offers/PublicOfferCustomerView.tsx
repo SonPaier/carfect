@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { parseMarkdownLists } from '@shared/utils';
 import { formatPrice } from '@/lib/offerUtils';
+import { openOfferPdf } from '@/lib/pdfUtils';
 import { TruncatedDescription } from './TruncatedDescription';
 import { ScopePhotoCarousel } from './ScopePhotoCarousel';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +18,7 @@ import {
   Globe,
   MapPin,
   CreditCard,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
 import { format } from 'date-fns';
@@ -154,6 +157,7 @@ interface PublicOfferCustomerViewProps {
   mode: 'public' | 'overlayPreview';
   embedded?: boolean;
   isAdmin?: boolean;
+  isPrintMode?: boolean;
   onClose?: () => void;
 }
 
@@ -167,9 +171,20 @@ export const PublicOfferCustomerView = ({
   mode,
   embedded = false,
   isAdmin = false,
+  isPrintMode = false,
   onClose,
 }: PublicOfferCustomerViewProps) => {
   const { t } = useTranslation();
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setIsPdfLoading(true);
+    try {
+      await openOfferPdf(offer.public_token);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
 
   const formatPriceRounded = (value: number) => formatPrice(value, true);
 
@@ -336,6 +351,21 @@ export const PublicOfferCustomerView = ({
       </header>
 
       <main className="max-w-4xl w-full mx-auto px-4 py-8 space-y-6">
+        {/* Download PDF button — hidden in print mode */}
+        {!isPrintMode && mode === 'public' && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isPdfLoading}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-white text-sm font-medium hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              {isPdfLoading ? 'Generowanie...' : 'Pobierz PDF'}
+            </button>
+          </div>
+        )}
+
         {/* Customer Data Card */}
         <Card
           className="border"

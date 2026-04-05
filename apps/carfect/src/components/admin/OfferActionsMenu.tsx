@@ -10,6 +10,7 @@ import {
   Banknote,
   Phone,
   CalendarPlus,
+  Printer,
 } from 'lucide-react';
 import { Badge } from '@shared/ui';
 import {
@@ -33,6 +34,7 @@ interface OfferActionsMenuProps {
   onReminders: (offer: OfferWithOptions) => void;
   onDelete: (offer: OfferWithOptions) => void;
   onReserve: (offer: OfferWithOptions) => void;
+  onPrintPdf?: (token: string) => void;
 }
 
 export function OfferActionsMenu({
@@ -46,6 +48,7 @@ export function OfferActionsMenu({
   onReminders,
   onDelete,
   onReserve,
+  onPrintPdf,
 }: OfferActionsMenuProps) {
   const { t } = useTranslation();
 
@@ -71,6 +74,17 @@ export function OfferActionsMenu({
         <Eye className="w-4 h-4 mr-2" />
         {t('offers.preview')}
       </DropdownMenuItem>
+      {onPrintPdf && offer.public_token && (
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            onPrintPdf(offer.public_token);
+          }}
+        >
+          <Printer className="w-4 h-4 mr-2" />
+          Drukuj PDF
+        </DropdownMenuItem>
+      )}
       <DropdownMenuItem
         onClick={(e) => {
           e.stopPropagation();

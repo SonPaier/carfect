@@ -153,6 +153,7 @@ const PublicOfferView = () => {
         mode="public"
         embedded={false}
         isAdmin={isAdmin ?? false}
+        isPrintMode={shouldPrint}
         onClose={isAdmin ? () => navigate(-1) : undefined}
       />
     </>

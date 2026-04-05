@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { normalizeSearchQuery } from '@shared/utils';
 import { getPublicOfferUrl } from '@/lib/offerUtils';
+import { openOfferPdf } from '@/lib/pdfUtils';
 import { useTranslation } from 'react-i18next';
 import { Button, Input, ConfirmDialog, EmptyState, Badge } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
@@ -289,6 +290,10 @@ export default function OffersView({
   const handleCopyLink = (token: string) => {
     navigator.clipboard.writeText(getPublicOfferUrl(token));
     toast.success(t('offers.linkCopied'));
+  };
+
+  const handlePrintPdf = (token: string) => {
+    openOfferPdf(token);
   };
 
   const handleCopyOfferNumber = (offerNumber: string, e: React.MouseEvent) => {
@@ -658,6 +663,7 @@ export default function OffersView({
                   onReserve={handleReserveFromOffer}
                   onFollowUpChange={handleFollowUpStatusChange}
                   onNoteClick={handleOpenNoteDrawer}
+                  onPrintPdf={handlePrintPdf}
                 />
               ))}
             </div>
