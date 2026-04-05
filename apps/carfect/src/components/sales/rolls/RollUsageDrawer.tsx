@@ -50,26 +50,26 @@ const RollUsageDrawer = ({ open, onOpenChange, roll }: RollUsageDrawerProps) => 
     (async () => {
       try {
         // Fetch usages for this roll
-        const { data: usageRows, error } = await (supabase
+        const { data: usageRows, error } = await supabase
           .from('sales_roll_usages')
           .select('id, order_id, used_m2, used_mb, created_at')
           .eq('roll_id', roll.id)
-          .order('created_at', { ascending: false }) as any);
+          .order('created_at', { ascending: false });
 
         if (error || cancelled) return;
 
         // Fetch order details for all unique order IDs
-        const orderIds = [...new Set((usageRows || []).map((u: any) => u.order_id))];
+        const orderIds = [...new Set((usageRows || []).map((u) => u.order_id))];
         const orderMap: Record<string, { orderNumber: string; customerName: string }> = {};
 
         if (orderIds.length > 0) {
-          const { data: orders } = await (supabase
+          const { data: orders } = await supabase
             .from('sales_orders')
             .select('id, order_number, customer_name')
-            .in('id', orderIds) as any);
+            .in('id', orderIds);
 
           if (orders) {
-            for (const o of orders as { id: string; order_number: string; customer_name: string }[]) {
+            for (const o of orders) {
               orderMap[o.id] = { orderNumber: o.order_number, customerName: o.customer_name };
             }
           }
@@ -77,7 +77,7 @@ const RollUsageDrawer = ({ open, onOpenChange, roll }: RollUsageDrawerProps) => 
 
         if (!cancelled) {
           setUsages(
-            (usageRows || []).map((u: any) => ({
+            (usageRows || []).map((u) => ({
               id: u.id,
               orderId: u.order_id,
               orderNumber: orderMap[u.order_id]?.orderNumber || '—',

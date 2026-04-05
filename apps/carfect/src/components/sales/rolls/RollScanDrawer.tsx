@@ -69,14 +69,14 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
     }
 
     if (productCodes.length > 0) {
-      const { data: existing } = await (supabase
+      const { data: existing } = await supabase
         .from('sales_rolls')
         .select('product_code')
         .eq('instance_id', instanceId)
         .eq('status', 'active')
-        .in('product_code', productCodes) as any);
+        .in('product_code', productCodes);
 
-      const existingCodes = (existing || []).map((r: any) => r.product_code);
+      const existingCodes = (existing || []).map((r) => r.product_code);
       if (existingCodes.length > 0) {
         toast.error(`Rolki z tymi kodami już istnieją: ${existingCodes.join(', ')}`);
         setSaving(false);
@@ -112,8 +112,8 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
       scan.reset();
       onOpenChange(false);
       onSaved?.();
-    } catch (err: any) {
-      toast.error('Błąd zapisu: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Błąd zapisu: ' + (err as Error).message);
     } finally {
       setSaving(false);
     }

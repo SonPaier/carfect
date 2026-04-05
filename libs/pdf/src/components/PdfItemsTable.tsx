@@ -7,10 +7,56 @@ const styles = StyleSheet.create({
   scopeHeaderAccent: {
     borderBottomWidth: 1.5,
     paddingBottom: 6,
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  lp: { width: 20, fontSize: 8 },
-  number: { fontSize: 8 },
+  item: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#eeeeee',
+  },
+  itemLeft: {
+    flex: 1,
+    paddingRight: 20,
+  },
+  itemName: {
+    fontSize: 11,
+    color: '#111111',
+    fontWeight: 'bold',
+  },
+  itemDescription: {
+    fontSize: 8,
+    color: '#555555',
+    marginTop: 4,
+    lineHeight: 1.5,
+  },
+  optionalBadge: {
+    fontSize: 7,
+    color: '#999999',
+    marginTop: 2,
+  },
+  itemRight: {
+    alignItems: 'flex-end',
+    minWidth: 90,
+  },
+  itemPrice: {
+    fontSize: 12,
+    color: '#111111',
+    fontWeight: 'bold',
+  },
+  itemVat: {
+    fontSize: 7,
+    color: '#888888',
+    marginTop: 1,
+  },
+  itemDiscount: {
+    fontSize: 7,
+    color: '#999999',
+    marginTop: 1,
+  },
 });
 
 interface PdfItemsTableProps {
@@ -20,18 +66,11 @@ interface PdfItemsTableProps {
   accentColor: string;
 }
 
-export function PdfItemsTable({
-  scope,
-  hideUnitPrices,
-  scopeIndex,
-  accentColor,
-}: PdfItemsTableProps) {
-  const allowWrap = scope.items.length > 8;
-
+export function PdfItemsTable({ scope, hideUnitPrices, scopeIndex, accentColor }: PdfItemsTableProps) {
   return (
     <View
-      wrap={allowWrap}
-      minPresenceAhead={allowWrap ? 80 : undefined}
+      wrap={true}
+      minPresenceAhead={60}
       style={[baseStyles.section, scopeIndex > 0 ? { marginTop: 4 } : {}]}
     >
       <View
@@ -52,32 +91,24 @@ export function PdfItemsTable({
         ) : null}
       </View>
 
-      <View style={baseStyles.tableHeader}>
-        <Text style={styles.lp}>Lp.</Text>
-        <Text style={baseStyles.tableColName}>Nazwa</Text>
-        <Text style={baseStyles.tableColQty}>Ilość</Text>
-        {!hideUnitPrices && <Text style={baseStyles.tableColUnitPrice}>Cena jedn.</Text>}
-        {!hideUnitPrices && <Text style={baseStyles.tableColDiscount}>Rabat</Text>}
-        <Text style={baseStyles.tableColTotal}>Wartość</Text>
-      </View>
-
-      {scope.items.map((item, index) => (
-        <View key={item.id} style={baseStyles.tableRow}>
-          <Text style={[styles.lp, styles.number]}>{index + 1}.</Text>
-          <View style={baseStyles.tableColName}>
-            <Text style={{ fontSize: 9 }}>{item.name}</Text>
-            {item.isOptional && <Text style={baseStyles.optionalBadge}>(opcjonalnie)</Text>}
+      {scope.items.map((item) => (
+        <View key={item.id} style={styles.item}>
+          <View style={styles.itemLeft}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            {item.description && (
+              <Text style={styles.itemDescription}>{item.description}</Text>
+            )}
+            {item.isOptional && (
+              <Text style={styles.optionalBadge}>opcjonalnie</Text>
+            )}
           </View>
-          <Text style={baseStyles.tableColQty}>{item.quantity}</Text>
-          {!hideUnitPrices && (
-            <Text style={baseStyles.tableColUnitPrice}>{item.unitPrice.toFixed(2)} zł</Text>
-          )}
-          {!hideUnitPrices && (
-            <Text style={baseStyles.tableColDiscount}>
-              {item.discountPercent ? `${item.discountPercent}%` : '—'}
-            </Text>
-          )}
-          <Text style={baseStyles.tableColTotal}>{item.total.toFixed(2)} zł</Text>
+          <View style={styles.itemRight}>
+            <Text style={styles.itemPrice}>{item.total.toFixed(2)} zł</Text>
+            <Text style={styles.itemVat}>+ 23% VAT</Text>
+            {!hideUnitPrices && item.discountPercent > 0 && (
+              <Text style={styles.itemDiscount}>rabat {item.discountPercent}%</Text>
+            )}
+          </View>
         </View>
       ))}
     </View>

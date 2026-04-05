@@ -8,7 +8,7 @@ import { PdfFooter } from './components/PdfFooter';
 import { PdfCustomerSection } from './components/PdfCustomerSection';
 import { PdfTrustTiles } from './components/PdfTrustTiles';
 import { PdfItemsTable } from './components/PdfItemsTable';
-import { PdfSummary } from './components/PdfSummary';
+// PdfSummary intentionally not used — this is an offer, not an invoice
 import { PdfTerms } from './components/PdfTerms';
 import { PdfBankAccount } from './components/PdfBankAccount';
 import { PdfExpertContact } from './components/PdfExpertContact';
@@ -37,7 +37,9 @@ export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferP
           <PdfCustomerSection customer={offer.customerData} vehicle={offer.vehicleData} />
         )}
 
-        {config.showTrustTiles && trustTiles && <PdfTrustTiles tiles={trustTiles} />}
+        {config.showTrustTiles && trustTiles && (
+          <PdfTrustTiles tiles={trustTiles} accentColor={config.accentColor} />
+        )}
 
         {offer.scopes.map((scope, index) => (
           <PdfItemsTable
@@ -48,12 +50,6 @@ export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferP
             accentColor={config.accentColor}
           />
         ))}
-
-        <PdfSummary
-          totalNet={offer.totalNet}
-          totalGross={offer.totalGross}
-          vatRate={offer.vatRate}
-        />
 
         <PdfTerms
           validUntil={offer.validUntil}

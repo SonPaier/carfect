@@ -16,6 +16,7 @@ interface RawOfferOptionItem {
   discount_percent?: number;
   is_optional?: boolean;
   unified_services?: {
+    description?: string | null;
     photo_urls?: string[] | null;
   } | null;
 }
@@ -69,6 +70,8 @@ interface RawOffer {
     plate?: string;
     vin?: string;
     year?: number;
+    paintColor?: string;
+    paintType?: string;
   } | null;
   offer_options?: RawOfferOption[];
 }
@@ -89,6 +92,17 @@ interface RawInstance {
   offer_trust_tiles?: PdfTrustTile[] | null;
   offer_trust_header_title?: string | null;
   offer_trust_description?: string | null;
+}
+
+function formatPhoneDisplay(phone: string): string {
+  if (!phone) return '';
+  let cleaned = phone.replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('+48')) cleaned = cleaned.slice(3);
+  else if (cleaned.startsWith('48') && cleaned.length >= 11) cleaned = cleaned.slice(2);
+  if (cleaned.length === 9 && /^\d+$/.test(cleaned)) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 9)}`;
+  }
+  return phone;
 }
 
 function stripHtmlTags(html: string): string {
@@ -168,6 +182,10 @@ export function transformOfferData(rawOffer: RawOffer): PdfOfferData {
       const displayName =
         nameParts.length > 1 ? nameParts.slice(1).join('\n') : (item.custom_name ?? '');
 
+      const itemDescription = item.unified_services?.description
+        ? stripHtmlTags(item.unified_services.description)
+        : undefined;
+
       scopeMap[key].items.push({
         id: item.id,
         name: displayName,
@@ -176,6 +194,7 @@ export function transformOfferData(rawOffer: RawOffer): PdfOfferData {
         discountPercent: discountPercent,
         total,
         isOptional: item.is_optional ?? false,
+        description: itemDescription,
         photoUrl: itemPhotoUrl,
       });
     }
@@ -195,7 +214,7 @@ export function transformOfferData(rawOffer: RawOffer): PdfOfferData {
 
   const customerData: PdfCustomerData = {
     name: rawOffer.customer_data?.name,
-    phone: rawOffer.customer_data?.phone,
+    phone: rawOffer.customer_data?.phone ? formatPhoneDisplay(rawOffer.customer_data.phone) : undefined,
     email: rawOffer.customer_data?.email,
     company: rawOffer.customer_data?.company,
     nip: rawOffer.customer_data?.nip,
@@ -209,6 +228,8 @@ export function transformOfferData(rawOffer: RawOffer): PdfOfferData {
     plate: rawOffer.vehicle_data?.plate,
     vin: rawOffer.vehicle_data?.vin,
     year: rawOffer.vehicle_data?.year,
+    paintColor: rawOffer.vehicle_data?.paintColor,
+    paintType: rawOffer.vehicle_data?.paintType,
   };
 
   return {

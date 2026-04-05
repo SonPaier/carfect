@@ -135,7 +135,7 @@ describe('useApaczkaValuation', () => {
   });
 
   it('sets loading state during fetch', async () => {
-    let resolvePromise: (v: any) => void;
+    let resolvePromise: (v: { data: unknown; error: null }) => void;
     mockInvoke.mockReturnValue(new Promise((resolve) => { resolvePromise = resolve; }));
 
     const { result } = renderHook(() =>

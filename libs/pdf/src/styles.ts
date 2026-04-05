@@ -57,7 +57,7 @@ export const baseStyles = StyleSheet.create({
   },
   headerSeparator: {
     position: 'absolute',
-    top: 55,
+    top: 63,
     left: 40,
     right: 40,
     height: 1,
@@ -182,7 +182,7 @@ export const baseStyles = StyleSheet.create({
   optionalBadge: {
     fontSize: 7,
     color: '#888888',
-    fontStyle: 'italic',
+    fontWeight: 'normal',
   },
 
   // Summary block
