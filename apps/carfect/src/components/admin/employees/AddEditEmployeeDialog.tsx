@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -9,14 +10,17 @@ import {
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
+import { Switch } from '@shared/ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/ui';
 import { useCreateEmployee, useUpdateEmployee, useDeleteEmployee, Employee } from '@/hooks/useEmployees';
+import { useCreateInstanceUser } from '@/hooks/useCreateInstanceUser';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Upload, X, Trash2, Camera } from 'lucide-react';
+import { Loader2, X, Trash2, Camera } from 'lucide-react';
 import { ConfirmDialog } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { compressImage } from '@shared/utils';
+import { compressImage, sanitizeUsername } from '@shared/utils';
+import { PasswordInput, PasswordConfirmInput, usePasswordValidation } from '@/components/password';
 
 interface AddEditEmployeeDialogProps {
   open: boolean;
@@ -33,16 +37,32 @@ const AddEditEmployeeDialog = ({
   employee,
   isAdmin = true,
 }: AddEditEmployeeDialogProps) => {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('');
+  const [grantAccess, setGrantAccess] = useState(false);
+  const [username, setUsername] = useState('');
+
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const {
+    password,
+    confirmPassword,
+    setPassword,
+    setConfirmPassword,
+    validation,
+    strength,
+    confirmMatch,
+    isFormValid: isPasswordValid,
+    reset: resetPassword,
+  } = usePasswordValidation({ username });
+
   const createEmployee = useCreateEmployee(instanceId);
   const updateEmployee = useUpdateEmployee(instanceId);
   const deleteEmployee = useDeleteEmployee(instanceId);
+  const { createUser, isPending: isCreatingUser } = useCreateInstanceUser();
 
   const isEditing = !!employee;
   const isSubmitting = createEmployee.isPending || updateEmployee.isPending;
@@ -51,17 +71,17 @@ const AddEditEmployeeDialog = ({
   useEffect(() => {
     if (employee) {
       setName(employee.name);
-      setHourlyRate(employee.hourly_rate?.toString() || '');
       setPhotoUrl(employee.photo_url);
     } else {
       setName('');
-      setHourlyRate('');
       setPhotoUrl(null);
     }
+    setGrantAccess(false);
+    setUsername('');
+    resetPassword();
   }, [employee, open]);
 
   const handleAvatarClick = () => {
-    // CRITICAL: directly trigger file input from user gesture
     fileInputRef.current?.click();
   };
 
@@ -69,23 +89,19 @@ const AddEditEmployeeDialog = ({
     const file = e.target.files?.[0];
     if (!file || !instanceId) return;
 
-    // Validate file type and size
     if (!file.type.startsWith('image/')) {
-      toast.error('Dozwolone są tylko pliki graficzne');
+      toast.error(t('employeeDialog.photoOnlyImages'));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Maksymalny rozmiar pliku to 10MB');
+      toast.error(t('employeeDialog.photoMaxSize'));
       return;
     }
 
     setIsUploading(true);
     try {
-      // Compress and crop to square for avatar
       const compressedBlob = await compressImage(file, 400, 0.85, true);
-      
-      const fileExt = 'jpg';
-      const fileName = `${instanceId}/${Date.now()}.${fileExt}`;
+      const fileName = `${instanceId}/${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('employee-photos')
@@ -98,25 +114,23 @@ const AddEditEmployeeDialog = ({
         .getPublicUrl(fileName);
 
       setPhotoUrl(publicUrl);
-      
-      // If editing, auto-save after photo upload
+
       if (isEditing && employee) {
-        await updateEmployee.mutateAsync({ 
-          id: employee.id, 
+        await updateEmployee.mutateAsync({
+          id: employee.id,
           photo_url: publicUrl,
           name: name.trim() || employee.name,
-          hourly_rate: isAdmin && hourlyRate ? parseFloat(hourlyRate) : employee.hourly_rate,
+          hourly_rate: employee.hourly_rate,
         });
-        toast.success('Zdjęcie zostało zapisane');
+        toast.success(t('employeeDialog.photoSaved'));
       } else {
-        toast.success('Zdjęcie zostało przesłane');
+        toast.success(t('employeeDialog.photoUploaded'));
       }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Błąd podczas przesyłania zdjęcia');
+      toast.error(t('employeeDialog.photoUploadError'));
     } finally {
       setIsUploading(false);
-      // Reset input to allow re-selecting the same file
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -129,28 +143,52 @@ const AddEditEmployeeDialog = ({
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      toast.error('Podaj imię lub ksywkę');
+      toast.error(t('employeeDialog.nameRequired'));
       return;
+    }
+
+    if (grantAccess) {
+      if (!username.trim() || username.length < 3) {
+        toast.error(t('employeeDialog.usernameMinLength'));
+        return;
+      }
+      if (!isPasswordValid) {
+        toast.error(t('employeeDialog.fixPassword'));
+        return;
+      }
     }
 
     try {
       const data = {
         name: name.trim(),
-        hourly_rate: isAdmin && hourlyRate ? parseFloat(hourlyRate) : null,
         photo_url: photoUrl,
       };
 
       if (isEditing && employee) {
         await updateEmployee.mutateAsync({ id: employee.id, ...data });
-        toast.success('Pracownik został zaktualizowany');
+        toast.success(t('employeeDialog.employeeUpdated'));
       } else {
-        await createEmployee.mutateAsync(data);
-        toast.success('Pracownik został dodany');
+        await createEmployee.mutateAsync({ ...data, hourly_rate: null });
+        toast.success(t('employeeDialog.employeeAdded'));
+      }
+
+      if (grantAccess && instanceId) {
+        try {
+          await createUser({
+            instanceId,
+            username: username.trim(),
+            password,
+            role: 'employee',
+          });
+          toast.success(t('employeeDialog.userCreated'));
+        } catch (error) {
+          toast.error(t('employeeDialog.userCreateError', { error: (error as Error).message }));
+        }
       }
 
       onOpenChange(false);
     } catch (error) {
-      toast.error('Wystąpił błąd');
+      toast.error(t('employeeDialog.submitError'));
     }
   };
 
@@ -158,27 +196,12 @@ const AddEditEmployeeDialog = ({
     if (!employee) return;
 
     try {
-      // Soft delete - just set deleted_at timestamp
-      const { error } = await supabase
-        .from('employees')
-        .update({ 
-          deleted_at: new Date().toISOString(),
-          active: false 
-        })
-        .eq('id', employee.id);
-
-      if (error) throw error;
-
-      toast.success('Pracownik został usunięty');
+      await deleteEmployee.mutateAsync(employee.id);
+      toast.success(t('employeeDialog.employeeDeleted'));
       setDeleteConfirmOpen(false);
       onOpenChange(false);
-      
-      // Invalidate query to refresh the list
-      deleteEmployee.reset();
-      window.location.reload(); // Force refresh to update the list
     } catch (error) {
-      console.error('Delete error:', error);
-      toast.error('Błąd podczas usuwania pracownika');
+      toast.error(t('employeeDialog.deleteError'));
     }
   };
 
@@ -188,14 +211,14 @@ const AddEditEmployeeDialog = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {isEditing ? 'Edytuj pracownika' : 'Dodaj pracownika'}
+              {isEditing ? t('employeeDialog.editTitle') : t('employeeDialog.addTitle')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Photo upload - clickable avatar */}
+            {/* Photo upload */}
             <div className="flex items-center gap-4">
-              <div 
+              <div
                 className="relative cursor-pointer group"
                 onClick={handleAvatarClick}
               >
@@ -229,13 +252,12 @@ const AddEditEmployeeDialog = ({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Kliknij zdjęcie aby zrobić nowe
+                  {t('employeeDialog.photoHint')}
                 </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  
                   className="hidden"
                   onChange={handlePhotoUpload}
                   disabled={isUploading}
@@ -245,36 +267,70 @@ const AddEditEmployeeDialog = ({
 
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Imię / ksywka *</Label>
+              <Label htmlFor="name">{t('employeeDialog.nameLabel')} *</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="np. Jan, Kowal, Mechanik"
+                placeholder={t('employeeDialog.namePlaceholder')}
               />
             </div>
 
-            {/* Hourly rate - admin only */}
-            {isAdmin && (
-              <div className="space-y-2">
-                <Label htmlFor="rate">Stawka godzinowa na rękę (zł)</Label>
-                <Input
-                  id="rate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={hourlyRate}
-                  onChange={(e) => setHourlyRate(e.target.value)}
-                  placeholder="np. 30"
-                />
-              </div>
+            {/* Grant access toggle - only for new employees */}
+            {!isEditing && isAdmin && (
+              <>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="grant-access">{t('employeeDialog.grantAccess')}</Label>
+                  <Switch
+                    size="sm"
+                    id="grant-access"
+                    checked={grantAccess}
+                    onCheckedChange={setGrantAccess}
+                  />
+                </div>
+
+                {grantAccess && (
+                  <div className="space-y-3 pl-1 border-l-2 border-primary/20 ml-1">
+                    <div className="space-y-2 pl-3">
+                      <Label htmlFor="username">{t('employeeDialog.usernameLabel')}</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
+                        placeholder={t('employeeDialog.usernamePlaceholder')}
+                        autoComplete="off"
+                      />
+                      <p className="text-xs text-muted-foreground">{t('employeeDialog.usernameHint')}</p>
+                    </div>
+
+                    <div className="pl-3">
+                      <PasswordInput
+                        label={t('addUser.password')}
+                        value={password}
+                        onChange={setPassword}
+                        validation={validation}
+                        strength={strength}
+                      />
+                    </div>
+
+                    <div className="pl-3">
+                      <PasswordConfirmInput
+                        label={t('addUser.confirmPassword')}
+                        value={confirmPassword}
+                        onChange={setConfirmPassword}
+                        match={confirmMatch}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           <DialogFooter className="flex flex-row gap-2">
             {isEditing && isAdmin && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => setDeleteConfirmOpen(true)}
                 disabled={isDeleting}
@@ -284,11 +340,11 @@ const AddEditEmployeeDialog = ({
               </Button>
             )}
             <Button variant="outline" onClick={() => onOpenChange(false)} className={cn("bg-white", !isEditing && "flex-1")}>
-              Anuluj
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting} className={cn(!isEditing && "flex-1")}>
-              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isEditing ? 'Zapisz' : 'Dodaj'}
+            <Button onClick={handleSubmit} disabled={isSubmitting || isCreatingUser || (grantAccess && !isPasswordValid)} className={cn(!isEditing && "flex-1")}>
+              {(isSubmitting || isCreatingUser) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {isEditing ? t('common.save') : t('common.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -297,9 +353,9 @@ const AddEditEmployeeDialog = ({
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title="Usuń pracownika"
-        description={`Czy na pewno chcesz usunąć pracownika "${employee?.name}"? Wpisy czasu pracy zostaną zachowane.`}
-        confirmLabel="Usuń"
+        title={t('employeeDialog.deleteTitle')}
+        description={t('employeeDialog.deleteDescription', { name: employee?.name })}
+        confirmLabel={t('common.delete')}
         onConfirm={handleDelete}
         variant="destructive"
       />

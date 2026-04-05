@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeeklySchedule from './WeeklySchedule';
 import type { Employee } from '@/hooks/useEmployees';
 import { resetSupabaseMocks } from '@/test/mocks/supabase';
 
 // ============================================================
-// Module mocks — must be at top level for hoisting
+// Module mocks
 // ============================================================
 
 vi.mock('@/integrations/supabase/client', async () => {
@@ -18,9 +18,8 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-// Mocked mutation spies — captured per test via module-level vars
-const mockUpsertMutateAsync = vi.fn();
-const mockDeleteMutateAsync = vi.fn();
+const mockCreateMutateAsync = vi.fn();
+const mockUpdateMutateAsync = vi.fn();
 const mockCreateDayOffMutateAsync = vi.fn();
 const mockDeleteDayOffMutateAsync = vi.fn();
 
@@ -30,10 +29,8 @@ vi.mock('@/hooks/useTimeEntries', async (importOriginal) => {
     ...original,
     useTimeEntries: vi.fn(() => ({ data: [] })),
     useTimeEntriesForDateRange: vi.fn(() => ({ data: [] })),
-    useCreateTimeEntry: vi.fn(() => ({ mutateAsync: mockUpsertMutateAsync })),
-    useUpdateTimeEntry: vi.fn(() => ({ mutateAsync: vi.fn() })),
-    useUpsertTimeEntry: vi.fn(() => ({ mutateAsync: mockUpsertMutateAsync })),
-    useDeleteTimeEntry: vi.fn(() => ({ mutateAsync: mockDeleteMutateAsync })),
+    useCreateTimeEntry: vi.fn(() => ({ mutateAsync: mockCreateMutateAsync })),
+    useUpdateTimeEntry: vi.fn(() => ({ mutateAsync: mockUpdateMutateAsync })),
   };
 });
 
@@ -47,9 +44,6 @@ vi.mock('@/hooks/useWorkingHours', () => ({
   useWorkingHours: vi.fn(() => ({ data: null })),
 }));
 
-// ============================================================
-// Import hooks after mocking
-// ============================================================
 import { useTimeEntries } from '@/hooks/useTimeEntries';
 import { toast } from 'sonner';
 
@@ -70,14 +64,34 @@ const mockEmployee: Employee = {
   created_at: '2026-01-01T00:00:00Z',
 };
 
-// ============================================================
-// Helpers
-// ============================================================
-
 const renderComponent = () => {
   const user = userEvent.setup();
   const result = render(<WeeklySchedule employee={mockEmployee} instanceId={INSTANCE_ID} />);
   return { ...result, user };
+};
+
+// Helper to fill time inputs and click Save
+const fillTimeAndSave = async (
+  user: ReturnType<typeof userEvent.setup>,
+  startTime: string,
+  endTime: string,
+) => {
+  const timeInputs = screen.getAllByDisplayValue('');
+  // Filter to only time inputs
+  const startInput = timeInputs.find(
+    (el) => el.getAttribute('type') === 'time' && !el.getAttribute('value'),
+  ) || screen.getAllByRole('textbox').length > 0
+    ? (screen.container || document).querySelectorAll('input[type="time"]')[0]
+    : null;
+
+  const inputs = document.querySelectorAll('input[type="time"]');
+  if (inputs.length >= 2) {
+    fireEvent.change(inputs[0], { target: { value: startTime } });
+    fireEvent.change(inputs[1], { target: { value: endTime } });
+  }
+
+  const saveButton = screen.getByRole('button', { name: /zapisz/i });
+  await user.click(saveButton);
 };
 
 // ============================================================
@@ -88,81 +102,49 @@ describe('WeeklySchedule', () => {
   beforeEach(() => {
     resetSupabaseMocks();
     vi.clearAllMocks();
-
-    // Default: no time entries loaded
     vi.mocked(useTimeEntries).mockReturnValue({ data: [] } as ReturnType<typeof useTimeEntries>);
-
-    // Default mutation results
-    mockUpsertMutateAsync.mockResolvedValue({ id: 'new-entry' });
-    mockDeleteMutateAsync.mockResolvedValue(undefined);
+    mockCreateMutateAsync.mockResolvedValue({ id: 'new-entry' });
+    mockUpdateMutateAsync.mockResolvedValue({ id: 'updated-entry' });
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  // ----------------------------------------------------------
-  // Rendering
-  // ----------------------------------------------------------
-
   describe('rendering', () => {
     it('renders the week navigation buttons', () => {
       renderComponent();
       const buttons = screen.getAllByRole('button');
-      // ChevronLeft / ChevronRight nav buttons should be present
       expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
 
     it('renders 7 day cells for the current week', () => {
       renderComponent();
-      // Each day cell is a button in the week grid (plus nav buttons)
       const allButtons = screen.getAllByRole('button');
-      // At least 7 day-cell buttons plus 2 nav buttons
       expect(allButtons.length).toBeGreaterThanOrEqual(9);
     });
 
-    it('shows the editor panel by default (today is auto-selected)', () => {
+    it('shows the editor panel with time inputs by default (today is auto-selected)', () => {
       renderComponent();
-      // Hours select trigger is visible
-      const comboboxes = screen.getAllByRole('combobox');
-      expect(comboboxes.length).toBeGreaterThanOrEqual(2); // hours + minutes selects
+      const timeInputs = document.querySelectorAll('input[type="time"]');
+      expect(timeInputs.length).toBe(2);
+      expect(screen.getByRole('button', { name: /zapisz/i })).toBeInTheDocument();
     });
   });
 
-  // ----------------------------------------------------------
-  // saveEntry — upsert path (totalMinutes > 0)
-  // ----------------------------------------------------------
-
-  describe('saveEntry — upsert path', () => {
-    it('calls upsertTimeEntry.mutateAsync when hours value is changed to non-zero', async () => {
+  describe('save time entry', () => {
+    it('creates a new time entry when Save is clicked with valid times', async () => {
       const { user } = renderComponent();
 
-      // Open the hours select (first combobox)
-      const comboboxes = screen.getAllByRole('combobox');
-      const hoursSelect = comboboxes[0];
-
-      await user.click(hoursSelect);
-
-      // Pick "8" hours from the dropdown list
-      const option = await screen.findByRole('option', { name: '8' });
-      await user.click(option);
+      await fillTimeAndSave(user, '08:00', '16:00');
 
       await waitFor(() => {
-        expect(mockUpsertMutateAsync).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it('passes correct employee_id to upsertTimeEntry', async () => {
-      const { user } = renderComponent();
-
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '4' });
-      await user.click(option);
-
-      await waitFor(() => {
-        expect(mockUpsertMutateAsync).toHaveBeenCalledWith(
-          expect.objectContaining({ employee_id: 'emp-1' }),
+        expect(mockCreateMutateAsync).toHaveBeenCalledTimes(1);
+        expect(mockCreateMutateAsync).toHaveBeenCalledWith(
+          expect.objectContaining({
+            employee_id: 'emp-1',
+            entry_type: 'manual',
+          }),
         );
       });
     });
@@ -170,136 +152,59 @@ describe('WeeklySchedule', () => {
     it('passes entry_date matching the selected day', async () => {
       const { user } = renderComponent();
 
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '2' });
-      await user.click(option);
+      await fillTimeAndSave(user, '09:00', '17:00');
 
       await waitFor(() => {
-        const call = mockUpsertMutateAsync.mock.calls[0][0];
-        // entry_date must be a valid date string (yyyy-MM-dd)
+        const call = mockCreateMutateAsync.mock.calls[0][0];
         expect(call.entry_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       });
     });
 
-    it('does NOT call deleteTimeEntry when totalMinutes > 0', async () => {
+    it('shows success toast after successful save', async () => {
       const { user } = renderComponent();
 
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '6' });
-      await user.click(option);
-
-      await waitFor(() => {
-        expect(mockUpsertMutateAsync).toHaveBeenCalledTimes(1);
-      });
-      expect(mockDeleteMutateAsync).not.toHaveBeenCalled();
-    });
-
-    it('shows success toast after successful upsert', async () => {
-      const { user } = renderComponent();
-
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '3' });
-      await user.click(option);
+      await fillTimeAndSave(user, '08:00', '16:00');
 
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalled();
       });
     });
-  });
 
-  // ----------------------------------------------------------
-  // saveEntry — delete path (totalMinutes === 0)
-  // ----------------------------------------------------------
-
-  describe('saveEntry — delete path (totalMinutes === 0)', () => {
-    it('does not call delete or upsert when hours=0 and minutes=0 and no entry exists', async () => {
-      // No entries loaded, default 0h 0min selected
-      vi.mocked(useTimeEntries).mockReturnValue({ data: [] } as ReturnType<typeof useTimeEntries>);
-
+    it('shows error toast when end time is before start time', async () => {
       const { user } = renderComponent();
 
-      // Open hours select and explicitly choose "0"
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '0' });
-      await user.click(option);
-
-      // Wait briefly to ensure no async calls are made
-      await new Promise((r) => setTimeout(r, 50));
-      expect(mockUpsertMutateAsync).not.toHaveBeenCalled();
-      expect(mockDeleteMutateAsync).not.toHaveBeenCalled();
-    });
-
-    // Note: delete path tests removed — WeeklySchedule component does not
-    // implement useDeleteTimeEntry. Setting hours to 0 is a no-op save.
-  });
-
-  // ----------------------------------------------------------
-  // Race condition regression
-  // ----------------------------------------------------------
-
-  describe('race condition regression — upsert works even when minutesByDate is empty', () => {
-    it('calls upsert successfully when no existing entries are loaded (minutesByDate empty)', async () => {
-      // This is the exact race condition: data not yet loaded, minutesByDate is empty Map
-      vi.mocked(useTimeEntries).mockReturnValue({ data: [] } as ReturnType<typeof useTimeEntries>);
-
-      const { user } = renderComponent();
-
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '5' });
-      await user.click(option);
-
-      // upsert must be called regardless of whether minutesByDate has data
-      await waitFor(() => {
-        expect(mockUpsertMutateAsync).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it('does not call any legacy create/update — only upsert is used', async () => {
-      // Regression: old code did create-or-update branching based on local state.
-      // New code always uses upsert. Verify no separate create hook is invoked.
-      // We verify by checking that upsertMutateAsync is called (not a different spy).
-      vi.mocked(useTimeEntries).mockReturnValue({ data: [] } as ReturnType<typeof useTimeEntries>);
-
-      const { user } = renderComponent();
-
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '1' });
-      await user.click(option);
+      await fillTimeAndSave(user, '16:00', '08:00');
 
       await waitFor(() => {
-        expect(mockUpsertMutateAsync).toHaveBeenCalledTimes(1);
+        expect(toast.error).toHaveBeenCalled();
       });
-      // deleteTimeEntry should not be called on a save path with non-zero value
-      expect(mockDeleteMutateAsync).not.toHaveBeenCalled();
+      expect(mockCreateMutateAsync).not.toHaveBeenCalled();
+    });
+
+    it('shows error toast when times are empty', async () => {
+      const { user } = renderComponent();
+
+      const saveButton = screen.getByRole('button', { name: /zapisz/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalled();
+      });
+      expect(mockCreateMutateAsync).not.toHaveBeenCalled();
     });
   });
-
-  // ----------------------------------------------------------
-  // Error handling
-  // ----------------------------------------------------------
 
   describe('error handling', () => {
-    it('shows error toast when upsert throws', async () => {
-      mockUpsertMutateAsync.mockRejectedValue(new Error('DB error'));
+    it('shows error toast when save throws', async () => {
+      mockCreateMutateAsync.mockRejectedValue(new Error('DB error'));
 
       const { user } = renderComponent();
 
-      const comboboxes = screen.getAllByRole('combobox');
-      await user.click(comboboxes[0]);
-      const option = await screen.findByRole('option', { name: '2' });
-      await user.click(option);
+      await fillTimeAndSave(user, '08:00', '16:00');
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalled();
       });
     });
-
-    // Note: "delete throws" test removed — component has no delete path
   });
 });

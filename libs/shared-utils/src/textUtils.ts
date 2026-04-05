@@ -95,3 +95,6 @@ export const parseMarkdownLists = (text: string): string => {
   if (inList) result += '</ul>';
   return DOMPurify.sanitize(result);
 };
+
+export const sanitizeUsername = (input: string): string =>
+  input.toLowerCase().replace(/[^a-z0-9.-]/g, '');

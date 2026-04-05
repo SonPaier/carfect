@@ -25,7 +25,9 @@ import {
   AlertDialogTitle,
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeUsername } from '@shared/utils';
 import { toast } from 'sonner';
+import { useCreateInstanceUser } from '@/hooks/useCreateInstanceUser';
 import HallPickerField from './HallPickerField';
 import type { HallOption } from './HallPickerField';
 
@@ -47,7 +49,7 @@ const AddInstanceUserDialog = ({
   const [role, setRole] = useState<'employee' | 'admin' | 'hall' | 'sales'>('employee');
   const [selectedHallId, setSelectedHallId] = useState<string>('');
   const [halls, setHalls] = useState<HallOption[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { createUser, isPending: loading } = useCreateInstanceUser();
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState<'admin' | null>(null);
 
@@ -125,35 +127,14 @@ const AddInstanceUserDialog = ({
       return;
     }
 
-    setLoading(true);
-
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Sesja wygasła');
-        return;
-      }
-
-      const response = await supabase.functions.invoke('manage-instance-users', {
-        body: {
-          action: 'create',
-          instanceId,
-          username: username.trim(),
-          password,
-          role,
-          ...(role === 'hall' && selectedHallId ? { hallId: selectedHallId } : {}),
-        },
+      await createUser({
+        instanceId,
+        username: username.trim(),
+        password,
+        role,
+        ...(role === 'hall' && selectedHallId ? { hallId: selectedHallId } : {}),
       });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      if (response.data?.error) {
-        throw new Error(response.data.error);
-      }
 
       toast.success('Użytkownik został utworzony');
       resetForm();
@@ -162,8 +143,6 @@ const AddInstanceUserDialog = ({
     } catch (error: unknown) {
       console.error('Error creating user:', error);
       toast.error((error as Error).message || 'Nie udało się utworzyć użytkownika');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -188,10 +167,11 @@ const AddInstanceUserDialog = ({
               <Input
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="np. jan.kowalski"
+                onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
+                placeholder={t('addUser.usernamePlaceholder')}
                 autoComplete="off"
               />
+              <p className="text-xs text-muted-foreground">{t('addUser.usernameHint')}</p>
             </div>
 
             <PasswordInput

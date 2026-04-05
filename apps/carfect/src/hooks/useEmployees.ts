@@ -93,9 +93,9 @@ export const useDeleteEmployee = (instanceId: string | null) => {
     mutationFn: async (employeeId: string) => {
       const { error } = await supabase
         .from('employees')
-        .delete()
+        .update({ deleted_at: new Date().toISOString(), active: false })
         .eq('id', employeeId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
