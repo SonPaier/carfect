@@ -33,15 +33,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [rolesLoading, setRolesLoading] = useState(false);
-  
+
   // Track previous user ID to avoid unnecessary loading on TOKEN_REFRESHED
   const previousUserIdRef = useRef<string | null>(null);
+  const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Auth] onAuthStateChange:', event, 'userId:', session?.user?.id);
-      
+
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -55,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userChanged) {
           previousUserIdRef.current = newUserId;
           setRolesLoading(true);
-          setTimeout(() => {
+          fetchTimeoutRef.current = setTimeout(() => {
             fetchUserRoles(session.user.id).finally(() => {
               setRolesLoading(false);
             });
@@ -70,26 +73,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Then check for existing session (await roles before clearing loading)
+    // Then check for existing session — only sets session state and clears loading.
+    // Role fetching is owned exclusively by onAuthStateChange (fires INITIAL_SESSION
+    // synchronously on registration when a session exists, avoiding double fetch).
     supabase.auth
       .getSession()
-      .then(async ({ data: { session } }) => {
+      .then(({ data: { session } }) => {
         setSession(session);
         setUser(session?.user ?? null);
-
-        if (session?.user) {
-          setRolesLoading(true);
-          try {
-            await fetchUserRoles(session.user.id);
-          } finally {
-            setRolesLoading(false);
-          }
-        } else {
+        if (!session?.user) {
           setRoles([]);
           setUsername(null);
-          setRolesLoading(false);
         }
-
         setSessionLoading(false);
       })
       .catch((err) => {
@@ -97,22 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSessionLoading(false);
       });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    };
   }, []);
 
   const fetchUserRoles = async (userId: string) => {
     try {
       // Fetch roles and profile in parallel to reduce requests
       const [rolesResult, profileResult] = await Promise.all([
-        supabase
-          .from('user_roles')
-          .select('role, instance_id, hall_id')
-          .eq('user_id', userId),
-        supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', userId)
-          .maybeSingle()
+        supabase.from('user_roles').select('role, instance_id, hall_id').eq('user_id', userId),
+        supabase.from('profiles').select('username').eq('id', userId).maybeSingle(),
       ]);
 
       if (rolesResult.error) {
@@ -120,19 +111,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const userRoles = rolesResult.data?.map(r => ({
-        role: r.role as AppRole,
-        instance_id: r.instance_id,
-        hall_id: r.hall_id
-      })) || [];
-      
+      const userRoles =
+        rolesResult.data?.map((r) => ({
+          role: r.role as AppRole,
+          instance_id: r.instance_id,
+          hall_id: r.hall_id,
+        })) || [];
+
       setRoles(userRoles);
-      
+
       // Set username from profile
       if (profileResult.data?.username) {
         setUsername(profileResult.data.username);
       }
-      
+
       // Update Sentry user context
       const primaryRole = userRoles.length > 0 ? userRoles[0].role : undefined;
       setSentryUser({
@@ -144,40 +136,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const forceClearAuthStorage = () => {
-    // Supabase Auth stores session tokens in localStorage under keys like:
-    // `sb-<project-ref>-auth-token` and `sb-<project-ref>-auth-token-code-verifier`
-    // If signOut fails (network/backend), auth-js may keep the session.
-    // This is a best-effort local fallback to prevent being "stuck logged in".
+  const clearSupabaseKeys = (storage: Storage) => {
     try {
       const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
         if (!key) continue;
         if (!key.startsWith('sb-')) continue;
         if (key.includes('auth-token') || key.includes('code-verifier')) {
           keysToRemove.push(key);
         }
       }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      keysToRemove.forEach((k) => storage.removeItem(k));
     } catch {
       // ignore
     }
+  };
 
-    try {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (!key) continue;
-        if (!key.startsWith('sb-')) continue;
-        if (key.includes('auth-token') || key.includes('code-verifier')) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach((k) => sessionStorage.removeItem(k));
-    } catch {
-      // ignore
-    }
+  // Supabase Auth stores session tokens in localStorage under keys like:
+  // `sb-<project-ref>-auth-token` and `sb-<project-ref>-auth-token-code-verifier`
+  // If signOut fails (network/backend), auth-js may keep the session.
+  // This is a best-effort local fallback to prevent being "stuck logged in".
+  const forceClearAuthStorage = () => {
+    clearSupabaseKeys(localStorage);
+    clearSupabaseKeys(sessionStorage);
   };
 
   const signIn = async (email: string, password: string) => {
@@ -190,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -225,26 +207,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasRole = (role: AppRole) => {
-    return roles.some(r => r.role === role);
+    return roles.some((r) => r.role === role);
   };
 
   const hasInstanceRole = (role: AppRole, instanceId: string) => {
-    return roles.some(r => r.role === role && (r.instance_id === instanceId || r.instance_id === null));
+    return roles.some(
+      (r) => r.role === role && (r.instance_id === instanceId || r.instance_id === null),
+    );
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      roles,
-      username,
-      loading: sessionLoading || rolesLoading,
-      signIn,
-      signUp,
-      signOut,
-      hasRole,
-      hasInstanceRole,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        roles,
+        username,
+        loading: sessionLoading || rolesLoading,
+        signIn,
+        signUp,
+        signOut,
+        hasRole,
+        hasInstanceRole,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -230,7 +230,10 @@ describe('useAuth', () => {
       setupFromMock([{ role: 'admin', instance_id: 'inst-1', hall_id: null }]);
 
       const { result } = renderAuthHook();
+
+      // onAuthStateChange fires INITIAL_SESSION — this is the sole trigger for role fetching
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -247,7 +250,9 @@ describe('useAuth', () => {
       setupFromMock([], { username: 'johndoe' });
 
       const { result } = renderAuthHook();
+
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -260,7 +265,9 @@ describe('useAuth', () => {
       setupFromMock([], null);
 
       const { result } = renderAuthHook();
+
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -273,14 +280,16 @@ describe('useAuth', () => {
       setupFromMock([{ role: 'user', instance_id: null, hall_id: null }]);
 
       const { result } = renderAuthHook();
+
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
       expect(result.current.loading).toBe(false);
     });
 
-    it('loading is true while roles are being fetched after session restore', async () => {
+    it('loading is true while roles are being fetched after auth callback fires', async () => {
       const session = makeSession('user-42');
       setupGetSession(session);
 
@@ -323,8 +332,13 @@ describe('useAuth', () => {
 
       const { result } = renderAuthHook();
 
-      // getSession resolves but roles fetch is still pending — loading must be true
+      // Fire INITIAL_SESSION — this sets rolesLoading=true and schedules fetchUserRoles via setTimeout
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
+        // Run setTimeout(0) so fetchUserRoles is called, but roles promise is still pending
+        await vi.runAllTimersAsync();
+        // Flush microtasks so getSession resolves (sets sessionLoading=false)
+        // but rolesPromise is still unresolved
         await Promise.resolve();
       });
 
@@ -345,7 +359,9 @@ describe('useAuth', () => {
       setupFromMock([{ role: 'admin', instance_id: 'inst-1', hall_id: null }]);
 
       renderAuthHook();
+
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -411,13 +427,14 @@ describe('useAuth', () => {
     });
 
     it('clears user, session, roles and username on SIGNED_OUT event', async () => {
-      // First, establish a logged-in state
+      // First, establish a logged-in state via INITIAL_SESSION
       const session = makeSession('user-1');
       setupGetSession(session);
       setupFromMock([{ role: 'admin', instance_id: null, hall_id: null }]);
 
       const { result } = renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -486,7 +503,9 @@ describe('useAuth', () => {
       setupFromMock([{ role: 'admin', instance_id: null, hall_id: null }]);
 
       renderAuthHook();
+      // Fire INITIAL_SESSION for user-A to establish first user's roles
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session1);
         await vi.runAllTimersAsync();
       });
 
@@ -516,6 +535,7 @@ describe('useAuth', () => {
 
       const { result } = renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
       return result;
@@ -563,6 +583,7 @@ describe('useAuth', () => {
 
       const { result } = renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
       return result;
@@ -736,6 +757,7 @@ describe('useAuth', () => {
 
       const { result } = renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -823,6 +845,7 @@ describe('useAuth', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const { result } = renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
       consoleSpy.mockRestore();
@@ -848,6 +871,7 @@ describe('useAuth', () => {
 
       const { result } = renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -867,6 +891,7 @@ describe('useAuth', () => {
 
       renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 
@@ -880,6 +905,7 @@ describe('useAuth', () => {
 
       renderAuthHook();
       await act(async () => {
+        capturedAuthCallback?.('INITIAL_SESSION', session);
         await vi.runAllTimersAsync();
       });
 

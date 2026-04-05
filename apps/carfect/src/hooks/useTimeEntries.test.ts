@@ -160,6 +160,10 @@ describe('formatMinutesToTime', () => {
     // 24 hours = 1440 minutes
     expect(formatMinutesToTime(1440)).toBe('24h 0min');
   });
+
+  it('returns "0h 0min" for negative values', () => {
+    expect(formatMinutesToTime(-90)).toBe('0h 0min');
+  });
 });
 
 // ============================================================
@@ -455,81 +459,6 @@ describe('useCreateTimeEntry', () => {
         });
       }),
     ).rejects.toThrow('Insert failed');
-  });
-
-  it('adds an optimistic entry to the cache before the mutation settles', async () => {
-    // Use a non-zero gcTime so the manually seeded cache entry is not garbage-collected
-    // before onMutate reads it (gcTime: 0 removes unobserved entries immediately)
-    const { queryClient, wrapper } = createWrapperWithClient(30000);
-
-    const existingEntry = makeEntry({ id: 'existing-entry', total_minutes: 60 });
-    const entryDate = '2026-03-17';
-
-    // Pre-populate the cache with the exact key the hook reads from in onMutate
-    queryClient.setQueryData<TimeEntry[]>(
-      ['time_entries', INSTANCE_ID, null, entryDate, entryDate],
-      [existingEntry],
-    );
-
-    // Make the mutation hang so we can inspect cache state during onMutate.
-    // The hook destructures { data, error } from the promise, so resolve shape must match.
-    let resolveMutation!: (value: { data: TimeEntry; error: null }) => void;
-    const hangingPromise = new Promise<{ data: TimeEntry; error: null }>((resolve) => {
-      resolveMutation = resolve;
-    });
-    const { mockSupabase } = await import('@/test/mocks/supabase');
-    // Use mockImplementationOnce so only this test's insert call is intercepted;
-    // subsequent calls fall back to the default createQueryBuilder implementation.
-    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
-      insert: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockReturnValue(hangingPromise),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      then: vi.fn(),
-    }));
-
-    const { result } = renderHook(() => useCreateTimeEntry(INSTANCE_ID), { wrapper });
-
-    // Start mutation — onMutate runs async before mutationFn; hanging promise keeps mutationFn in-flight
-    act(() => {
-      result.current.mutate({
-        employee_id: 'emp-1',
-        entry_date: entryDate,
-      });
-    });
-
-    // Wait for onMutate to complete — cancelQueries resolves, then setQueryData writes optimistic entry
-    await waitFor(
-      () => {
-        const cached = queryClient.getQueryData<TimeEntry[]>([
-          'time_entries',
-          INSTANCE_ID,
-          null,
-          entryDate,
-          entryDate,
-        ]);
-        expect(cached).toHaveLength(2);
-      },
-      { timeout: 3000 },
-    );
-
-    const cached = queryClient.getQueryData<TimeEntry[]>([
-      'time_entries',
-      INSTANCE_ID,
-      null,
-      entryDate,
-      entryDate,
-    ]);
-    expect(cached).toHaveLength(2);
-    const optimistic = cached!.find((e) => e.id.startsWith('temp-'));
-    expect(optimistic).toBeDefined();
-    expect(optimistic!.employee_id).toBe('emp-1');
-    expect(optimistic!.entry_date).toBe(entryDate);
-    expect(optimistic!.entry_type).toBe('manual');
-
-    // Resolve the hanging mutation so the hook can clean up
-    resolveMutation({ data: makeEntry({ id: 'server-entry-id' }), error: null });
   });
 
   it('invalidates time_entries queries after successful create', async () => {

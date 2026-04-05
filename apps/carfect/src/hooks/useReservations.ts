@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useMemo } from 'react';
+import { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, startOfWeek, subWeeks, addDays, parseISO } from 'date-fns';
@@ -79,9 +79,12 @@ async function fetchReservationsForRange(
   instanceId: string,
   from: Date,
   to: Date | null,
-  servicesMap: Map<string, ServiceMap>
+  servicesMap: Map<string, ServiceMap>,
 ): Promise<Reservation[]> {
-  let query = supabase.from('reservations').select(`
+  let query = supabase
+    .from('reservations')
+    .select(
+      `
     id,
     instance_id,
     customer_name,
@@ -113,7 +116,9 @@ async function fetchReservationsForRange(
     photo_urls,
     checked_service_ids,
     stations:station_id (name, type)
-  `).eq('instance_id', instanceId)
+  `,
+    )
+    .eq('instance_id', instanceId)
     .neq('status', 'cancelled')
     .gte('reservation_date', format(from, 'yyyy-MM-dd'));
 
@@ -124,15 +129,18 @@ async function fetchReservationsForRange(
   const { data, error } = await query;
 
   if (error || !data) {
-    throw error || new Error('Failed to fetch reservations');
+    throw error ?? new Error('Failed to fetch reservations');
   }
 
   // Fetch original reservation data for change requests
   const changeRequestIds = data
-    .filter(r => r.original_reservation_id)
-    .map(r => r.original_reservation_id);
+    .filter((r): r is typeof r & { original_reservation_id: string } => !!r.original_reservation_id)
+    .map((r) => r.original_reservation_id);
 
-  const originalReservationsMap = new Map<string, { id: string; reservation_date: string; start_time: string; confirmation_code: string }>();
+  const originalReservationsMap = new Map<
+    string,
+    { id: string; reservation_date: string; start_time: string; confirmation_code: string }
+  >();
   if (changeRequestIds.length > 0) {
     const { data: originals } = await supabase
       .from('reservations')
@@ -140,7 +148,7 @@ async function fetchReservationsForRange(
       .in('id', changeRequestIds);
 
     if (originals) {
-      originals.forEach(o => originalReservationsMap.set(o.id, o));
+      originals.forEach((o) => originalReservationsMap.set(o.id, o));
     }
   }
 
@@ -163,13 +171,13 @@ async function fetchReservationsForRange(
     if (serviceIds && serviceIds.length > 0) {
       const itemsById = new Map<string, ServiceItem>();
       if (serviceItems) {
-        serviceItems.forEach(item => {
+        serviceItems.forEach((item) => {
           const key = item.id || item.service_id;
           if (key) itemsById.set(key, item);
         });
       }
 
-      servicesDataMapped = serviceIds.map(id => {
+      servicesDataMapped = serviceIds.map((id) => {
         const item = itemsById.get(id);
         const svc = servicesMap.get(id);
 
@@ -180,13 +188,13 @@ async function fetchReservationsForRange(
           price_small: item?.price_small ?? svc?.price_small ?? null,
           price_medium: item?.price_medium ?? svc?.price_medium ?? null,
           price_large: item?.price_large ?? svc?.price_large ?? null,
-          price_from: item?.price_from ?? svc?.price_from ?? null
+          price_from: item?.price_from ?? svc?.price_from ?? null,
         };
       });
     } else if (serviceItems && serviceItems.length > 0) {
       const seen = new Set<string>();
       servicesDataMapped = serviceItems
-        .map(item => {
+        .map((item) => {
           const resolvedId = item.id || item.service_id;
           const svc = resolvedId ? servicesMap.get(resolvedId) : undefined;
           return {
@@ -196,10 +204,10 @@ async function fetchReservationsForRange(
             price_small: item.price_small ?? svc?.price_small ?? null,
             price_medium: item.price_medium ?? svc?.price_medium ?? null,
             price_large: item.price_large ?? svc?.price_large ?? null,
-            price_from: item.price_from ?? svc?.price_from ?? null
+            price_from: item.price_from ?? svc?.price_from ?? null,
           };
         })
-        .filter(svc => {
+        .filter((svc) => {
           if (!svc.id) return false;
           if (seen.has(svc.id)) return false;
           seen.add(svc.id);
@@ -214,17 +222,21 @@ async function fetchReservationsForRange(
     return {
       ...r,
       status: r.status || 'pending',
-      service_ids: Array.isArray(r.service_ids) ? r.service_ids as string[] : undefined,
-      service_items: Array.isArray(r.service_items) ? r.service_items as ServiceItem[] : undefined,
+      service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
+      service_items: Array.isArray(r.service_items)
+        ? (r.service_items as ServiceItem[])
+        : undefined,
       services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-      station: r.stations ? {
-        name: r.stations.name,
-        type: r.stations.type
-      } : undefined,
+      station: r.stations
+        ? {
+            name: r.stations.name,
+            type: r.stations.type,
+          }
+        : undefined,
       original_reservation: originalReservation || null,
       created_by_username: r.created_by_username || null,
       has_unified_services: r.has_unified_services ?? null,
-      checked_service_ids: Array.isArray(r.checked_service_ids) ? r.checked_service_ids : undefined
+      checked_service_ids: Array.isArray(r.checked_service_ids) ? r.checked_service_ids : undefined,
     } as Reservation;
   });
 }
@@ -244,36 +256,43 @@ interface UseReservationsOptions {
 
 export function useReservations({ instanceId, services }: UseReservationsOptions) {
   const queryClient = useQueryClient();
-  
+
   // Calculate initial date range: 1 week back from Monday
   const initialDateRange = useMemo(() => {
     const today = new Date();
     const mondayThisWeek = startOfWeek(today, { weekStartsOn: 1 });
     return {
       from: subWeeks(mondayThisWeek, 1),
-      to: null // All future reservations
+      to: null, // All future reservations
     };
   }, []);
 
   // Track loaded date range for incremental loading
-  const loadedRangeRef = useRef<DateRange>(initialDateRange);
-  
+  // State drives the queryKey (reactive); ref mirror lets callbacks read latest value without re-creating
+  const [loadedRange, setLoadedRange] = useState<DateRange>(initialDateRange);
+  const loadedRangeRef = useRef(loadedRange);
+  loadedRangeRef.current = loadedRange;
+
   // Debounce ref for loadMore
   const loadMoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isLoadingMoreRef = useRef(false);
+  // State for reactive UI; ref as mutex guard to prevent concurrent loads
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const isLoadingMoreMutex = useRef(false);
 
   // Build services map
   const servicesMap = useMemo(() => {
     const map = new Map<string, ServiceMap>();
-    services.forEach(s => map.set(s.id, {
-      id: s.id,
-      name: s.name,
-      shortcut: s.short_name,
-      price_small: s.price_small,
-      price_medium: s.price_medium,
-      price_large: s.price_large,
-      price_from: s.price_from
-    }));
+    services.forEach((s) =>
+      map.set(s.id, {
+        id: s.id,
+        name: s.name,
+        shortcut: s.short_name,
+        price_small: s.price_small,
+        price_medium: s.price_medium,
+        price_large: s.price_large,
+        price_from: s.price_from,
+      }),
+    );
     return map;
   }, [services]);
 
@@ -286,16 +305,16 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     data: reservations = [],
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery({
-    queryKey: ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
+    queryKey: ['reservations', instanceId, format(loadedRange.from, 'yyyy-MM-dd')],
     queryFn: async () => {
       if (!instanceId) return [];
       return fetchReservationsForRange(
         instanceId,
         loadedRangeRef.current.from,
         loadedRangeRef.current.to,
-        servicesMapRef.current
+        servicesMapRef.current,
       );
     },
     enabled: !!instanceId && services.length > 0,
@@ -305,46 +324,44 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
 
   // Load more past reservations
   const loadMoreReservations = useCallback(async () => {
-    if (!instanceId || isLoadingMoreRef.current) return;
-    
-    isLoadingMoreRef.current = true;
-    
+    if (!instanceId || isLoadingMoreMutex.current) return;
+
+    isLoadingMoreMutex.current = true;
+    setIsLoadingMore(true);
+
     try {
       const currentFrom = loadedRangeRef.current.from;
       const newFrom = subMonths(currentFrom, 1);
-      
+
       // Fetch additional reservations
       const additionalReservations = await fetchReservationsForRange(
         instanceId,
         newFrom,
-        currentFrom, // Up to old 'from' date (exclusive in query via lt)
-        servicesMapRef.current
+        currentFrom, // Up to old 'from' date
+        servicesMapRef.current,
       );
-      
-      // Update loaded range
-      loadedRangeRef.current = {
-        ...loadedRangeRef.current,
-        from: newFrom
-      };
-      
-      // Merge with existing data (prepend older reservations)
+
+      // Merge into the new key so useQuery reads the combined data after re-render
       queryClient.setQueryData<Reservation[]>(
-        ['reservations', instanceId, format(currentFrom, 'yyyy-MM-dd')],
-        (old = []) => {
-          // Filter out any duplicates
-          const existingIds = new Set(old.map(r => r.id));
-          const uniqueNew = additionalReservations.filter(r => !existingIds.has(r.id));
-          return [...uniqueNew, ...old];
-        }
-      );
-      
-      // Update query key to reflect new range
-      queryClient.setQueryData(
         ['reservations', instanceId, format(newFrom, 'yyyy-MM-dd')],
-        queryClient.getQueryData(['reservations', instanceId, format(currentFrom, 'yyyy-MM-dd')])
+        () => {
+          const existing =
+            queryClient.getQueryData<Reservation[]>([
+              'reservations',
+              instanceId,
+              format(currentFrom, 'yyyy-MM-dd'),
+            ]) ?? [];
+          const existingIds = new Set(existing.map((r) => r.id));
+          const uniqueNew = additionalReservations.filter((r) => !existingIds.has(r.id));
+          return [...uniqueNew, ...existing];
+        },
       );
+
+      // Update state — this triggers useQuery to switch to the new key
+      setLoadedRange((prev) => ({ ...prev, from: newFrom }));
     } finally {
-      isLoadingMoreRef.current = false;
+      isLoadingMoreMutex.current = false;
+      setIsLoadingMore(false);
     }
   }, [instanceId, queryClient]);
 
@@ -359,40 +376,49 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
   }, [loadMoreReservations]);
 
   // Check if date is approaching edge of loaded data
-  const checkAndLoadMore = useCallback((date: Date) => {
-    const bufferDays = 7;
-    if (date < addDays(loadedRangeRef.current.from, bufferDays)) {
-      loadMoreReservationsDebounced();
-    }
-  }, [loadMoreReservationsDebounced]);
+  const checkAndLoadMore = useCallback(
+    (date: Date) => {
+      const bufferDays = 7;
+      if (date < addDays(loadedRangeRef.current.from, bufferDays)) {
+        loadMoreReservationsDebounced();
+      }
+    },
+    [loadMoreReservationsDebounced],
+  );
 
   // Update a single reservation in cache (for realtime updates)
-  const updateReservationInCache = useCallback((updatedReservation: Reservation) => {
-    queryClient.setQueryData<Reservation[]>(
-      ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
-      (old = []) => {
-        const exists = old.some(r => r.id === updatedReservation.id);
-        if (exists) {
-          return old.map(r => r.id === updatedReservation.id ? updatedReservation : r);
-        }
-        return [...old, updatedReservation];
-      }
-    );
-  }, [instanceId, queryClient]);
+  const updateReservationInCache = useCallback(
+    (updatedReservation: Reservation) => {
+      queryClient.setQueryData<Reservation[]>(
+        ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
+        (old = []) => {
+          const exists = old.some((r) => r.id === updatedReservation.id);
+          if (exists) {
+            return old.map((r) => (r.id === updatedReservation.id ? updatedReservation : r));
+          }
+          return [...old, updatedReservation];
+        },
+      );
+    },
+    [instanceId, queryClient],
+  );
 
   // Remove a reservation from cache
-  const removeReservationFromCache = useCallback((reservationId: string) => {
-    queryClient.setQueryData<Reservation[]>(
-      ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
-      (old = []) => old.filter(r => r.id !== reservationId)
-    );
-  }, [instanceId, queryClient]);
+  const removeReservationFromCache = useCallback(
+    (reservationId: string) => {
+      queryClient.setQueryData<Reservation[]>(
+        ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
+        (old = []) => old.filter((r) => r.id !== reservationId),
+      );
+    },
+    [instanceId, queryClient],
+  );
 
   // Invalidate and refetch
   const invalidateReservations = useCallback(() => {
-    queryClient.invalidateQueries({ 
+    queryClient.invalidateQueries({
       queryKey: ['reservations', instanceId],
-      exact: false 
+      exact: false,
     });
   }, [instanceId, queryClient]);
 
@@ -408,7 +434,7 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
   return {
     reservations,
     isLoading,
-    isLoadingMore: isLoadingMoreRef.current,
+    isLoadingMore,
     error,
     refetch,
     loadMoreReservations: loadMoreReservationsDebounced,
@@ -417,6 +443,6 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     removeReservationFromCache,
     invalidateReservations,
     servicesMapRef,
-    loadedDateRange: loadedRangeRef.current
+    loadedDateRange: loadedRange,
   };
 }
