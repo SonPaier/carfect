@@ -18,7 +18,7 @@ interface PdfCustomerSectionProps {
 
 export function PdfCustomerSection({ customer, vehicle }: PdfCustomerSectionProps) {
   const vehicleName = customer.name ?? '—';
-  const vehicleLabel = vehicle.brandModel ?? [vehicle.brand, vehicle.model].filter(Boolean).join(' ') || '—';
+  const vehicleLabel = vehicle.brandModel ?? ([vehicle.brand, vehicle.model].filter(Boolean).join(' ') || '—');
 
   return (
     <View wrap={false} style={baseStyles.section}>
