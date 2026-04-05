@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
@@ -32,13 +32,7 @@ export function OfferPreviewDialogByToken({
   const [offerData, setOfferData] = useState<PublicOfferData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open && token) {
-      fetchOfferData();
-    }
-  }, [open, token]);
-
-  const fetchOfferData = async () => {
+  const fetchOfferData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -119,7 +113,13 @@ export function OfferPreviewDialogByToken({
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, t]);
+
+  useEffect(() => {
+    if (open && token) {
+      fetchOfferData();
+    }
+  }, [open, token, fetchOfferData]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>

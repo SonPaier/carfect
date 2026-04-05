@@ -160,7 +160,7 @@ const MojaRezerwacja = () => {
     };
 
     fetchReservation();
-  }, [code]);
+  }, [code, t]);
 
   const handleCancel = async () => {
     if (!reservation) return;

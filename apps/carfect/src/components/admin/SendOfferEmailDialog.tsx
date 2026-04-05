@@ -62,13 +62,11 @@ export function SendOfferEmailDialog({
 
   const customerEmail = offer.customer_data?.email || '';
 
-  const getOfferUrl = () => getPublicOfferUrl(offer.public_token);
-
   // Populate template when dialog opens
   useEffect(() => {
     if (open && instanceData) {
       const template = instanceData.offer_email_template || defaultEmailTemplate;
-      const offerUrl = getOfferUrl();
+      const offerUrl = getPublicOfferUrl(offer.public_token);
 
       let body = template
         .replace(/\{\{offerUrl\}\}/g, offerUrl)

@@ -96,7 +96,7 @@ const PublicOfferView = () => {
     };
 
     fetchOffer();
-  }, [token, t, isAdminPreview]);
+  }, [token, t, isAdminPreview, shouldPrint]);
 
   // Check if user is admin for this offer's instance
   const isAdmin =
