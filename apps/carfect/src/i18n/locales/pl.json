@@ -891,33 +891,33 @@
       },
       "reservation_confirmed": {
         "label": "Potwierdzenie rezerwacji",
-        "description": "SMS z potwierdzeniem rezerwacji i linkiem do zarządzania.",
-        "exampleTemplate": "{{instanceName}}: Rezerwacja potwierdzona! 15 stycznia o 10:00. Dojazd: [link] Zmien lub anuluj: [link]"
+        "description": "SMS z potwierdzeniem rezerwacji.",
+        "exampleTemplate": "{{instanceName}}: Rezerwacja potwierdzona! 15 stycznia o 10:00. Dojazd: [link]"
       },
       "reservation_pending": {
         "label": "Rezerwacja oczekująca",
         "description": "SMS wysyłany gdy rezerwacja wymaga potwierdzenia przez admina.",
-        "exampleTemplate": "{{instanceName}}: Otrzymalismy prosbe o rezerwacje: 15 stycznia o 10:00. Potwierdzimy ja wkrotce. Zmien lub anuluj: [link]"
+        "exampleTemplate": "{{instanceName}}: Otrzymalismy prosbe o rezerwacje: 15 stycznia o 10:00. Potwierdzimy ja wkrotce."
       },
       "reservation_confirmed_by_admin": {
         "label": "Potwierdzenie przez admina",
         "description": "SMS wysyłany gdy admin potwierdzi oczekującą rezerwację.",
-        "exampleTemplate": "{{instanceName}}: Rezerwacja potwierdzona! 15 stycznia o 10:00. Dojazd: [link] Zmien lub anuluj: [link]"
+        "exampleTemplate": "{{instanceName}}: Rezerwacja potwierdzona! 15 stycznia o 10:00. Dojazd: [link]"
       },
       "reservation_edited": {
         "label": "Zmiana terminu zatwierdzona",
         "description": "SMS wysyłany gdy admin zatwierdzi zmianę terminu.",
-        "exampleTemplate": "{{instanceName}}: Potwierdzamy nowy termin: 15 stycznia o 10:00. Zmien lub anuluj: [link]"
+        "exampleTemplate": "{{instanceName}}: Potwierdzamy nowy termin: 15 stycznia o 10:00."
       },
       "reservation_rejected": {
         "label": "Zmiana terminu odrzucona",
         "description": "SMS wysyłany gdy admin odrzuci prośbę o zmianę terminu.",
-        "exampleTemplate": "{{instanceName}}: Niestety nie mozemy zmienic terminu rezerwacji: 15 stycznia o 10:00. Wybierz inny lub anuluj: [link]"
+        "exampleTemplate": "{{instanceName}}: Niestety nie mozemy zmienic terminu rezerwacji: 15 stycznia o 10:00."
       },
       "reminder_1day": {
         "label": "Przypomnienie 1 dzień przed",
-        "description": "Automatyczne przypomnienie wysyłane dzień przed wizytą.",
-        "exampleTemplate": "{{instanceName}}: Przypomnienie - jutro o 10:00 masz wizyte. Zmien lub anuluj: [link]"
+        "description": "Automatyczne przypomnienie wysyłane o 19:00 dzień przed wizytą.",
+        "exampleTemplate": "{{instanceName}}: Przypomnienie - jutro o 10:00 masz wizyte."
       },
       "reminder_1hour": {
         "label": "Przypomnienie w dniu wizyty",
@@ -1381,7 +1381,7 @@
     "confirmPasswordPlaceholder": "Powtórz hasło",
     "role": "Rola",
     "roleEmployee": "Pracownik",
-    "roleAdmin": "Admin Instancji",
+    "roleAdmin": "Admin",
     "roleAdminDescription": "Admin ma pełny dostęp do ustawień i zarządzania użytkownikami",
     "roleEmployeeDescription": "Pracownik ma ograniczony dostęp do wybranych modułów",
     "createUser": "Utwórz użytkownika",
@@ -1791,7 +1791,7 @@
     "usernameMinLength": "Nazwa użytkownika musi mieć co najmniej 3 znaki",
     "role": "Rola",
     "roleEmployee": "Pracownik",
-    "roleAdmin": "Admin Instancji",
+    "roleAdmin": "Admin",
     "adminHint": "Admin ma pełny dostęp do ustawień i zarządzania użytkownikami",
     "employeeHint": "Pracownik ma ograniczony dostęp do wybranych modułów",
     "permissions": "Uprawnienia pracownika",

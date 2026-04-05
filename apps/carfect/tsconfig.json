@@ -3,6 +3,7 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"],
+      "@shared/pdf": ["../../libs/pdf/src/index.ts"],
       "@shared/ui": ["../../libs/ui/src/index.ts"],
       "@shared/ui/*": ["../../libs/ui/src/*"],
       "@shared/utils": ["../../libs/shared-utils/src/index.ts"],
@@ -12,8 +13,5 @@
     "strictNullChecks": false
   },
   "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
 }

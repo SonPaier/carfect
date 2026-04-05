@@ -22,7 +22,7 @@ const INSTANCE_ID = 'test-instance-id';
 // Helper to create a fresh chainable query builder for offer_views
 function createOfferViewsBuilder() {
   let currentMethod = 'select';
-  const builder: Record<string, any> = {};
+  const builder: Record<string, unknown> = {};
   ['select', 'insert', 'update', 'delete', 'upsert'].forEach((method) => {
     builder[method] = vi.fn().mockImplementation(() => {
       currentMethod = method === 'upsert' ? 'insert' : method;
@@ -33,7 +33,7 @@ function createOfferViewsBuilder() {
     builder[method] = vi.fn().mockReturnValue(builder);
   });
   builder.single = vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null }));
-  builder.then = (resolve: (v: any) => void) => {
+  builder.then = (resolve: (v: unknown) => void) => {
     resolve({ data: null, error: null });
   };
   return builder;
@@ -172,7 +172,7 @@ describe('useOfferViewTracking', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Make insert resolve with error
-    offerViewsBuilder.then = (resolve: (v: any) => void) => {
+    offerViewsBuilder.then = (resolve: (v: unknown) => void) => {
       resolve({ data: null, error: { message: 'RLS policy violation' } });
     };
 
@@ -220,7 +220,7 @@ describe('useOfferViewTracking', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Insert error — viewIdRef stays null
-    offerViewsBuilder.then = (resolve: (v: any) => void) => {
+    offerViewsBuilder.then = (resolve: (v: unknown) => void) => {
       resolve({ data: null, error: { message: 'Insert failed' } });
     };
 

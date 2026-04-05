@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, MessageSquare, Clock, History } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Switch } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
-import { Input } from '@shared/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SmsUsageCard } from './SmsUsageCard';
@@ -36,7 +34,7 @@ type SmsMessageType =
 interface MessageSetting {
   type: SmsMessageType;
   enabled: boolean;
-  sendAtTime?: string | null; // For reminder_1day - time like "19:00"
+  sendAtTime?: string | null;
 }
 
 const SMS_MESSAGE_TYPES: SmsMessageType[] = [
@@ -50,6 +48,61 @@ const SMS_MESSAGE_TYPES: SmsMessageType[] = [
   'vehicle_ready',
 ];
 
+const HIDDEN_SMS_TYPES: SmsMessageType[] = [
+  'verification_code',
+  'reservation_pending',
+  'reservation_confirmed_by_admin',
+  'reservation_edited',
+];
+
+const MONTH_NAMES_PL = [
+  'Styczeń',
+  'Luty',
+  'Marzec',
+  'Kwiecień',
+  'Maj',
+  'Czerwiec',
+  'Lipiec',
+  'Sierpień',
+  'Wrzesień',
+  'Październik',
+  'Listopad',
+  'Grudzień',
+];
+
+const MESSAGE_TYPE_LABELS: Record<string, string> = {
+  verification_code: 'Kod',
+  reservation_confirmed: 'Potw.',
+  reservation_pending: 'Oczek.',
+  reservation_confirmed_by_admin: 'Potw. admin',
+  reservation_edited: 'Zmiana',
+  reminder_1day: 'Przyp. 1d',
+  reminder_1hour: 'Przyp. dziś',
+  vehicle_ready: 'Gotowy',
+  confirmation: 'Potw.',
+  pending_confirmation: 'Oczek.',
+  manual: 'Ręczny',
+  customer_reminder: 'Oferta',
+  payment_blik: 'BLIK',
+  payment_bank_transfer: 'Przelew',
+};
+
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  sent: { label: 'Wysłany', className: 'text-green-700 bg-green-50' },
+  failed: { label: 'Błąd', className: 'text-red-700 bg-red-50' },
+  simulated: { label: 'Demo', className: 'text-blue-700 bg-blue-50' },
+};
+
+function getMonthRange(date: Date): { start: string; end: string } {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const start = `${year}-${String(month + 1).padStart(2, '0')}-01T00:00:00Z`;
+  const endMonth = month === 11 ? 0 : month + 1;
+  const endYear = month === 11 ? year + 1 : year;
+  const end = `${endYear}-${String(endMonth + 1).padStart(2, '0')}-01T00:00:00Z`;
+  return { start, end };
+}
+
 const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProps) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -57,33 +110,37 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
   const [settings, setSettings] = useState<MessageSetting[]>([]);
   const [currentInstanceName, setCurrentInstanceName] = useState(instanceName || '');
   const [currentReservationPhone, setCurrentReservationPhone] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
+  const [smsLimit, setSmsLimit] = useState(100);
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const [smsLogs, setSmsLogs] = useState<SmsLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   useEffect(() => {
     if (instanceId) {
       fetchSettings();
-      if (!instanceName) {
-        fetchInstanceName();
-      }
+      fetchInstanceData();
     }
-  }, [instanceId, instanceName]);
+  }, [instanceId]);
 
-  const fetchInstanceName = async () => {
+  useEffect(() => {
+    if (instanceId) {
+      fetchSmsLogs();
+    }
+  }, [instanceId, selectedMonth]);
+
+  const fetchInstanceData = async () => {
     if (!instanceId) return;
 
     const { data } = await supabase
       .from('instances')
-      .select('name, short_name, phone, reservation_phone')
+      .select('name, short_name, phone, reservation_phone, sms_limit')
       .eq('id', instanceId)
       .single();
 
     if (data) {
-      // Prefer short_name for SMS examples
       setCurrentInstanceName(data.short_name || data.name);
-      // Prefer reservation_phone for SMS examples
       setCurrentReservationPhone(data.reservation_phone || data.phone || '');
+      setSmsLimit(data.sms_limit);
     }
   };
 
@@ -99,7 +156,6 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
       if (error) throw error;
 
-      // Create settings with defaults for missing types
       const existingSettings = new Map(
         data?.map((s) => [s.message_type, { enabled: s.enabled, sendAtTime: s.send_at_time }]) ||
           [],
@@ -118,7 +174,6 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       setSettings(allSettings);
     } catch (error) {
       console.error('Error fetching SMS settings:', error);
-      // Set defaults
       setSettings(
         SMS_MESSAGE_TYPES.map((type) => ({
           type,
@@ -135,32 +190,22 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
     setSettings((prev) => prev.map((s) => (s.type === type ? { ...s, enabled } : s)));
   };
 
-  const handleTimeChange = (type: SmsMessageType, time: string) => {
-    setSettings((prev) => prev.map((s) => (s.type === type ? { ...s, sendAtTime: time } : s)));
-  };
-
   const handleSave = async () => {
     if (!instanceId) return;
 
     setSaving(true);
     try {
-      // Upsert all settings
-      for (const setting of settings) {
-        const { error } = await supabase.from('sms_message_settings').upsert(
-          {
-            instance_id: instanceId,
-            message_type: setting.type,
-            enabled: setting.enabled,
-            send_at_time: setting.sendAtTime || null,
-          },
-          {
-            onConflict: 'instance_id,message_type',
-          },
-        );
+      const { error } = await supabase.from('sms_message_settings').upsert(
+        settings.map((s) => ({
+          instance_id: instanceId,
+          message_type: s.type,
+          enabled: s.enabled,
+          send_at_time: s.sendAtTime ?? null,
+        })),
+        { onConflict: 'instance_id,message_type' },
+      );
 
-        if (error) throw error;
-      }
-
+      if (error) throw error;
       toast.success(t('settings.saved'));
     } catch (error) {
       console.error('Error saving SMS settings:', error);
@@ -175,12 +220,17 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
     setLoadingLogs(true);
     try {
+      const { start, end } = getMonthRange(selectedMonth);
+
       const { data, error } = await supabase
         .from('sms_logs')
         .select('phone, message, created_at, message_type, status')
         .eq('instance_id', instanceId)
+        .neq('status', 'failed')
+        .gte('created_at', start)
+        .lt('created_at', end)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(500);
 
       if (error) throw error;
       setSmsLogs(data || []);
@@ -192,12 +242,21 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
     }
   };
 
-  const handleShowHistory = () => {
-    if (!showHistory) {
-      fetchSmsLogs();
-    }
-    setShowHistory(!showHistory);
+  const handlePrevMonth = () => {
+    setSelectedMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
+
+  const handleNextMonth = () => {
+    const now = new Date();
+    const next = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+    if (next <= new Date(now.getFullYear(), now.getMonth() + 1, 1)) {
+      setSelectedMonth(next);
+    }
+  };
+
+  const isCurrentMonth =
+    selectedMonth.getFullYear() === new Date().getFullYear() &&
+    selectedMonth.getMonth() === new Date().getMonth();
 
   const getMessageTypeLabel = (type: SmsMessageType): string => {
     return t(`sms.messageTypes.${type}.label`);
@@ -209,11 +268,28 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
   const getExampleMessage = (type: SmsMessageType): string => {
     const template = t(`sms.messageTypes.${type}.exampleTemplate`);
-    // Remove spaces from phone number for SMS
     const phoneWithoutSpaces = (currentReservationPhone || '+48123456789').replace(/\s/g, '');
     return template
       .replace('{{instanceName}}', currentInstanceName || 'Nazwa myjni')
       .replace('{{reservationPhone}}', phoneWithoutSpaces);
+  };
+
+  const formatLogDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleString('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getLogTypeLabel = (type: string): string => {
+    return MESSAGE_TYPE_LABELS[type] || type;
+  };
+
+  const getLogStatus = (status: string) => {
+    return STATUS_LABELS[status] || { label: status, className: 'text-gray-700 bg-gray-50' };
   };
 
   if (loading) {
@@ -226,103 +302,106 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
+      {/* Month Picker */}
+      <div className="flex items-center justify-center gap-3">
+        <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-sm font-medium min-w-[140px] text-center">
+          {MONTH_NAMES_PL[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}
+        </span>
+        <Button variant="ghost" size="icon" onClick={handleNextMonth} disabled={isCurrentMonth}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+
       {/* SMS Usage */}
-      {instanceId && <SmsUsageCard instanceId={instanceId} />}
+      {instanceId && <SmsUsageCard smsCount={smsLogs.length} smsLimit={smsLimit} />}
 
-      {/* SMS History Button */}
-      <Button variant="outline" onClick={handleShowHistory}>
-        {loadingLogs ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      {/* SMS History Table */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium">Historia SMS ({smsLogs.length})</span>
+          {loadingLogs && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+        </div>
+        {smsLogs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {loadingLogs ? 'Ładowanie...' : 'Brak wiadomości SMS w tym miesiącu'}
+          </p>
         ) : (
-          <History className="w-4 h-4 mr-2" />
+          <div className="max-h-[400px] overflow-auto border rounded-lg text-xs">
+            <Table>
+              <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                <TableRow>
+                  <TableHead className="h-8 px-2 text-xs">Data</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">Telefon</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">Typ</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">Status</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">Treść</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {smsLogs.map((log, i) => {
+                  const statusInfo = getLogStatus(log.status);
+                  return (
+                    <TableRow key={`${log.created_at}-${i}`}>
+                      <TableCell className="p-2 whitespace-nowrap">
+                        {formatLogDate(log.created_at)}
+                      </TableCell>
+                      <TableCell className="p-2 whitespace-nowrap font-mono">{log.phone}</TableCell>
+                      <TableCell className="p-2 whitespace-nowrap">
+                        {getLogTypeLabel(log.message_type)}
+                      </TableCell>
+                      <TableCell className="p-2 whitespace-nowrap">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusInfo.className}`}
+                        >
+                          {statusInfo.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="p-2 max-w-[200px] truncate" title={log.message}>
+                        {log.message}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         )}
-        {showHistory ? 'Ukryj historię' : 'Zobacz historię'}
-      </Button>
+      </div>
 
-      {/* SMS History Log */}
-      {showHistory && (
-        <Card className="bg-slate-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Historia SMS (ostatnie 50)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {smsLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Brak wiadomości SMS</p>
-            ) : (
-              <pre className="text-xs bg-slate-900 text-slate-100 p-4 rounded-lg overflow-auto max-h-96">
-                {JSON.stringify(
-                  smsLogs.map((log) => ({
-                    phone: log.phone,
-                    date: new Date(log.created_at).toLocaleString('pl-PL'),
-                    type: log.message_type,
-                    status: log.status,
-                    message: log.message,
-                  })),
-                  null,
-                  2,
-                )}
-              </pre>
-            )}
-          </CardContent>
-        </Card>
-      )}
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-medium">{t('sms.messageSettings')}</h3>
           <p className="text-sm text-muted-foreground">{t('sms.messageSettingsDescription')}</p>
         </div>
 
-        {settings.map((setting) => (
-          <div
-            key={setting.type}
-            className="bg-white border border-border/50 rounded-lg p-4 space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="font-medium text-sm">{getMessageTypeLabel(setting.type)}</div>
-                <div className="text-xs text-muted-foreground">
-                  {getMessageTypeDescription(setting.type)}
+        {settings
+          .filter((setting) => !HIDDEN_SMS_TYPES.includes(setting.type))
+          .map((setting) => (
+            <div
+              key={setting.type}
+              className="space-y-2 py-3 border-b border-border/30 last:border-0"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="font-medium text-sm">{getMessageTypeLabel(setting.type)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {getMessageTypeDescription(setting.type)}
+                  </div>
                 </div>
-              </div>
-              <Switch
-                size="sm"
-                checked={setting.enabled}
-                onCheckedChange={(checked) => handleToggle(setting.type, checked)}
-              />
-            </div>
-
-            {/* Time picker for 1-day reminder */}
-            {setting.type === 'reminder_1day' && setting.enabled && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                <div className="flex-1">
-                  <Label className="text-sm font-medium text-blue-900">{t('sms.sendAtTime')}</Label>
-                  <p className="text-xs text-blue-700 mt-0.5">{t('sms.sendAtTimeDescription')}</p>
-                </div>
-                <Input
-                  type="time"
-                  value={setting.sendAtTime || '19:00'}
-                  onChange={(e) => handleTimeChange(setting.type, e.target.value)}
-                  className="w-24 bg-white"
+                <Switch
+                  size="sm"
+                  checked={setting.enabled}
+                  onCheckedChange={(checked) => handleToggle(setting.type, checked)}
                 />
               </div>
-            )}
-
-            <div className="bg-slate-100 rounded-lg p-3 border border-slate-200">
-              <div className="flex items-start gap-2">
-                <MessageSquare className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" />
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-500 font-medium">
-                    {t('sms.exampleMessage')}
-                  </Label>
-                  <p className="text-sm text-slate-900 font-mono whitespace-pre-wrap">
-                    {getExampleMessage(setting.type)}
-                  </p>
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground font-mono">
+                {getExampleMessage(setting.type)}
+              </p>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       {/* Save Button */}

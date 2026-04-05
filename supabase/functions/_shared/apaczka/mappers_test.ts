@@ -92,8 +92,9 @@ Deno.test(
 Deno.test('APM-003: filters out non-shipping packages', () => {
   const items = mapPackagesToShipmentItems([kartonPackage, pickupPackage, tubaPackage]);
   assertEquals(items.length, 2);
+  // Both karton and tuba map to PACZKA (tuba uses nstd flag)
   assertEquals(items[0].shipment_type_code, 'PACZKA');
-  assertEquals(items[1].shipment_type_code, 'RURA');
+  assertEquals(items[1].shipment_type_code, 'PACZKA');
 });
 
 // --- mapOrderToApaczkaRequest ---

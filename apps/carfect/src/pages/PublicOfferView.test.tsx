@@ -2,12 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import React from 'react';
-import {
-  mockSupabase,
-  mockSupabaseQuery,
-  mockSupabaseRpc,
-  resetSupabaseMocks,
-} from '@/test/mocks/supabase';
+import { mockSupabase, mockSupabaseRpc, resetSupabaseMocks } from '@/test/mocks/supabase';
 
 // Mock supabase
 vi.mock('@/integrations/supabase/client', async () => {
@@ -55,7 +50,7 @@ import PublicOfferView from './PublicOfferView';
 
 const TOKEN = 'abc-public-token';
 
-const mockOfferData = {
+const mockRpcResponse = {
   id: 'offer-1',
   instance_id: 'inst-1',
   offer_number: 'OFF-001',
@@ -77,7 +72,9 @@ const mockOfferData = {
   viewed_at: null,
   selected_state: null,
   has_unified_services: false,
+  offer_format: null,
   offer_options: [],
+  product_descriptions: {},
   instances: {
     id: 'inst-1',
     name: 'Test Instance',
@@ -118,7 +115,7 @@ function renderPage(path = `/offer/${TOKEN}`, searchParams = '') {
   );
 }
 
-describe('PublicOfferView — Supabase backend interactions', () => {
+describe('PublicOfferView — RPC-based data fetching', () => {
   beforeEach(() => {
     resetSupabaseMocks();
     vi.clearAllMocks();
@@ -129,101 +126,60 @@ describe('PublicOfferView — Supabase backend interactions', () => {
     });
   });
 
-  describe('mark_offer_viewed RPC', () => {
-    it('calls mark_offer_viewed for offers with status=sent (anonymous user)', async () => {
-      mockSupabaseQuery('offers', { data: mockOfferData, error: null });
-      mockSupabaseRpc('mark_offer_viewed', { data: null, error: null });
+  describe('get_public_offer RPC', () => {
+    it('calls get_public_offer with token and skip_mark_viewed=false for anonymous user', async () => {
+      mockSupabaseRpc('get_public_offer', { data: mockRpcResponse, error: null });
 
       renderPage();
 
       await waitFor(() => {
-        expect(mockSupabase.rpc).toHaveBeenCalledWith('mark_offer_viewed', {
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('get_public_offer', {
           p_token: TOKEN,
+          p_skip_mark_viewed: false,
         });
       });
     });
 
-    it('does NOT call mark_offer_viewed when status is not sent', async () => {
-      const viewedOffer = { ...mockOfferData, status: 'viewed' };
-      mockSupabaseQuery('offers', { data: viewedOffer, error: null });
+    it('renders offer view on successful RPC response', async () => {
+      mockSupabaseRpc('get_public_offer', { data: mockRpcResponse, error: null });
 
       renderPage();
 
       await waitFor(() => {
         expect(screen.getByTestId('offer-view')).toBeInTheDocument();
       });
-
-      expect(mockSupabase.rpc).not.toHaveBeenCalledWith('mark_offer_viewed', expect.anything());
     });
 
-    it('does NOT call mark_offer_viewed when user is super_admin', async () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 'admin-1' },
-        hasRole: (role: string) => role === 'super_admin',
-        hasInstanceRole: () => false,
-      });
+    it('passes skip_mark_viewed=true when admin preview', async () => {
+      mockSupabaseRpc('get_public_offer', { data: mockRpcResponse, error: null });
 
-      mockSupabaseQuery('offers', { data: mockOfferData, error: null });
-
-      renderPage();
+      renderPage(`/offer/${TOKEN}`, '?admin=true');
 
       await waitFor(() => {
-        expect(screen.getByTestId('offer-view')).toBeInTheDocument();
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('get_public_offer', {
+          p_token: TOKEN,
+          p_skip_mark_viewed: true,
+        });
       });
-
-      expect(mockSupabase.rpc).not.toHaveBeenCalledWith('mark_offer_viewed', expect.anything());
     });
 
-    it('does NOT call mark_offer_viewed when user is instance admin', async () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 'admin-2' },
-        hasRole: () => false,
-        hasInstanceRole: (role: string, instId: string) => role === 'admin' && instId === 'inst-1',
-      });
-
-      mockSupabaseQuery('offers', { data: mockOfferData, error: null });
-
-      renderPage();
-
-      await waitFor(() => {
-        expect(screen.getByTestId('offer-view')).toBeInTheDocument();
-      });
-
-      expect(mockSupabase.rpc).not.toHaveBeenCalledWith('mark_offer_viewed', expect.anything());
-    });
-
-    it('does NOT call mark_offer_viewed when print=true', async () => {
-      mockSupabaseQuery('offers', { data: mockOfferData, error: null });
+    it('passes skip_mark_viewed=true when print=true', async () => {
+      mockSupabaseRpc('get_public_offer', { data: mockRpcResponse, error: null });
 
       renderPage(`/offer/${TOKEN}`, '?print=true');
 
       await waitFor(() => {
-        expect(screen.getByTestId('offer-view')).toBeInTheDocument();
-      });
-
-      expect(mockSupabase.rpc).not.toHaveBeenCalledWith('mark_offer_viewed', expect.anything());
-    });
-  });
-
-  describe('offer fetching', () => {
-    it('fetches offer by public_token from URL params', async () => {
-      mockSupabaseQuery('offers', { data: mockOfferData, error: null });
-
-      renderPage();
-
-      await waitFor(() => {
-        expect(mockSupabase.from).toHaveBeenCalledWith('offers');
-      });
-
-      await waitFor(() => {
-        expect(screen.getByTestId('offer-view')).toBeInTheDocument();
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('get_public_offer', {
+          p_token: TOKEN,
+          p_skip_mark_viewed: true,
+        });
       });
     });
 
-    it('shows error screen when offer not found (PGRST116)', async () => {
-      mockSupabaseQuery('offers', {
+    it('shows error screen when RPC returns error', async () => {
+      mockSupabaseRpc('get_public_offer', {
         data: null,
-        error: { message: 'JSON object requested, multiple (or no) rows returned' },
+        error: { message: 'Offer not found' },
       });
 
       renderPage();
@@ -248,9 +204,9 @@ describe('PublicOfferView — Supabase backend interactions', () => {
       });
     });
 
-    it('fetches product descriptions for items with product_id', async () => {
-      const offerWithProducts = {
-        ...mockOfferData,
+    it('enriches offer_option_items with product_descriptions from RPC response', async () => {
+      const responseWithProducts = {
+        ...mockRpcResponse,
         offer_options: [
           {
             id: 'opt-1',
@@ -261,6 +217,7 @@ describe('PublicOfferView — Supabase backend interactions', () => {
             scope_id: 'scope-1',
             is_upsell: false,
             scope: null,
+            subtotal_net: 1000,
             offer_option_items: [
               {
                 id: 'item-1',
@@ -278,16 +235,15 @@ describe('PublicOfferView — Supabase backend interactions', () => {
             ],
           },
         ],
+        product_descriptions: {
+          'prod-1': {
+            description: 'Premium paint protection film',
+            photo_urls: ['url1.jpg'],
+          },
+        },
       };
 
-      mockSupabaseQuery('offers', { data: offerWithProducts, error: null });
-      mockSupabaseQuery('unified_services', {
-        data: [
-          { id: 'prod-1', description: 'Premium paint protection film', photo_urls: ['url1.jpg'] },
-        ],
-        error: null,
-      });
-      mockSupabaseRpc('mark_offer_viewed', { data: null, error: null });
+      mockSupabaseRpc('get_public_offer', { data: responseWithProducts, error: null });
 
       renderPage();
 
@@ -295,8 +251,8 @@ describe('PublicOfferView — Supabase backend interactions', () => {
         expect(screen.getByTestId('offer-view')).toBeInTheDocument();
       });
 
-      // Verify unified_services was queried for product descriptions
-      expect(mockSupabase.from).toHaveBeenCalledWith('unified_services');
+      // Single RPC call — no separate table queries
+      expect(mockSupabase.from).not.toHaveBeenCalled();
     });
   });
 });

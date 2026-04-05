@@ -18,6 +18,8 @@ interface PasswordInputProps {
   placeholder?: string;
   showRequirements?: boolean;
   showStrength?: boolean;
+  showInput?: boolean;
+  alwaysVisible?: boolean;
   autoComplete?: string;
 }
 
@@ -31,10 +33,12 @@ const PasswordInput = ({
   placeholder,
   showRequirements = true,
   showStrength = true,
+  showInput = true,
+  alwaysVisible = false,
   autoComplete = 'new-password',
 }: PasswordInputProps) => {
   const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(alwaysVisible);
 
   const requirementLabels: Record<string, string> = {
     minLength: t('password.req.minLength'),
@@ -50,32 +54,38 @@ const PasswordInput = ({
 
   return (
     <div className="space-y-2">
-      {label && <Label htmlFor={id}>{label}</Label>}
-      <div className="relative">
-        <Input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? t('password.placeholder')}
-          autoComplete={autoComplete}
-          className="pr-10"
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-          onClick={() => setVisible(!visible)}
-          tabIndex={-1}
-        >
-          {visible ? (
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          )}
-        </Button>
-      </div>
+      {showInput && (
+        <>
+          {label && <Label htmlFor={id}>{label}</Label>}
+          <div className="relative">
+            <Input
+              id={id}
+              type={visible ? 'text' : 'password'}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder ?? t('password.placeholder')}
+              autoComplete={autoComplete}
+              className={alwaysVisible ? '' : 'pr-10'}
+            />
+            {!alwaysVisible && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setVisible(!visible)}
+                tabIndex={-1}
+              >
+                {visible ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Strength meter */}
       {showStrength && value.length > 0 && (
@@ -86,16 +96,12 @@ const PasswordInput = ({
                 key={i}
                 className={cn(
                   'flex-1 rounded-full transition-colors',
-                  i < strength.score
-                    ? strength.color
-                    : 'bg-muted',
+                  i < strength.score ? strength.color : 'bg-muted',
                 )}
               />
             ))}
           </div>
-          <p className="text-sm font-medium text-foreground">
-            {t(strength.label)}
-          </p>
+          <p className="text-sm font-medium text-foreground">{t(strength.label)}</p>
         </div>
       )}
 

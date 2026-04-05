@@ -1,0 +1,6 @@
+echo "🔐 Scanning for secrets..."
+if command -v gitleaks &> /dev/null; then
+  gitleaks git --log-opts="$(git merge-base origin/main HEAD)..HEAD" --no-banner
+else
+  echo "⚠️  gitleaks not installed — skipping secrets scan (brew install gitleaks)"
+fi

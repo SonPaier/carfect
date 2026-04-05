@@ -13,6 +13,7 @@ interface PasswordConfirmInputProps {
   onChange: (value: string) => void;
   match: boolean;
   placeholder?: string;
+  alwaysVisible?: boolean;
 }
 
 const PasswordConfirmInput = ({
@@ -22,9 +23,10 @@ const PasswordConfirmInput = ({
   onChange,
   match,
   placeholder,
+  alwaysVisible,
 }: PasswordConfirmInputProps) => {
   const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(alwaysVisible ?? false);
 
   return (
     <div className="space-y-2">
@@ -37,22 +39,24 @@ const PasswordConfirmInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? t('password.confirmPlaceholder')}
           autoComplete="new-password"
-          className="pr-10"
+          className={alwaysVisible ? '' : 'pr-10'}
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-          onClick={() => setVisible(!visible)}
-          tabIndex={-1}
-        >
-          {visible ? (
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          )}
-        </Button>
+        {!alwaysVisible && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+            onClick={() => setVisible(!visible)}
+            tabIndex={-1}
+          >
+            {visible ? (
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
+        )}
       </div>
 
       {value.length > 0 && (
@@ -62,11 +66,7 @@ const PasswordConfirmInput = ({
             match ? 'text-green-600' : 'text-destructive',
           )}
         >
-          {match ? (
-            <Check className="h-3 w-3" />
-          ) : (
-            <X className="h-3 w-3" />
-          )}
+          {match ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
           {match ? t('password.match') : t('password.noMatch')}
         </p>
       )}

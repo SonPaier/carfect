@@ -79,6 +79,14 @@ export function useSummaryServices(
   const conditionsInitializedRef = useRef(false);
   const prevOfferIdRef = useRef(offer.id);
 
+  // Keep refs to values read inside the fetch effect but that must not re-trigger it
+  const onUpdateOfferRef = useRef(onUpdateOffer);
+  onUpdateOfferRef.current = onUpdateOffer;
+  const isEditingRef = useRef(isEditing);
+  isEditingRef.current = isEditing;
+  const offerRef = useRef(offer);
+  offerRef.current = offer;
+
   useEffect(() => {
     if (prevOfferIdRef.current !== offer.id) {
       conditionsInitializedRef.current = false;
@@ -105,7 +113,7 @@ export function useSummaryServices(
       const extrasScopeIds = (extrasScopes || []).map((s) => s.id);
 
       // Combine selected scopes with extras scopes
-      const allScopeIds = [...new Set([...offer.selectedScopeIds, ...extrasScopeIds])];
+      const allScopeIds = [...new Set([...offerRef.current.selectedScopeIds, ...extrasScopeIds])];
 
       if (allScopeIds.length === 0) {
         setServices([]);
@@ -242,7 +250,7 @@ export function useSummaryServices(
         }
 
         // Check if we have saved options for this scope - restore them
-        const existingOption = offer.options.find((opt) => opt.scopeId === scope.id);
+        const existingOption = offerRef.current.options.find((opt) => opt.scopeId === scope.id);
 
         // Helper: convert scope product to SelectedProduct
         const toSelectedProduct = (p: ScopeProduct, isPreselected: boolean): SelectedProduct => ({
@@ -270,9 +278,9 @@ export function useSummaryServices(
 
         // Get customer selections from saved state
         const customerSelectedOptionalItems =
-          offer.defaultSelectedState?.selectedOptionalItems || {};
+          offerRef.current.defaultSelectedState?.selectedOptionalItems || {};
 
-        const isPersistedOffer = Boolean(offer.id);
+        const isPersistedOffer = Boolean(offerRef.current.id);
 
         if (isPersistedOffer && existingOption && existingOption.items.length > 0) {
           // Restore from saved offer
@@ -316,9 +324,9 @@ export function useSummaryServices(
           selectedProducts = buildDefaultSelected();
 
           // For NEW offers from widget: auto-add widget-selected extras
-          if (scope.is_extras_scope && offer.widgetSelectedExtras?.length) {
+          if (scope.is_extras_scope && offerRef.current.widgetSelectedExtras?.length) {
             const widgetExtrasProducts = scopeProducts.filter(
-              (p) => offer.widgetSelectedExtras?.includes(p.product_id) && p.product,
+              (p) => offerRef.current.widgetSelectedExtras?.includes(p.product_id) && p.product,
             );
             const widgetPreselected = widgetExtrasProducts.map((p) => toSelectedProduct(p, true));
             const existingIds = new Set(selectedProducts.map((sp) => sp.productId));

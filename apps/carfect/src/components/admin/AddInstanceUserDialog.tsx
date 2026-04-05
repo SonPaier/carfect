@@ -13,13 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@shared/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,11 +34,11 @@ interface AddInstanceUserDialogProps {
   onSuccess: () => void;
 }
 
-const AddInstanceUserDialog = ({ 
-  open, 
-  onOpenChange, 
-  instanceId, 
-  onSuccess 
+const AddInstanceUserDialog = ({
+  open,
+  onOpenChange,
+  instanceId,
+  onSuccess,
 }: AddInstanceUserDialogProps) => {
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
@@ -115,7 +109,9 @@ const AddInstanceUserDialog = ({
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         toast.error('Sesja wygasła');
         return;
@@ -153,18 +149,19 @@ const AddInstanceUserDialog = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(isOpen) => {
-        if (!isOpen) resetForm();
-        onOpenChange(isOpen);
-      }}>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) resetForm();
+          onOpenChange(isOpen);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Dodaj użytkownika</DialogTitle>
-            <DialogDescription>
-              Utwórz nowe konto użytkownika dla tej instancji.
-            </DialogDescription>
+            <DialogDescription>Utwórz nowe konto użytkownika dla tej instancji.</DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Nazwa użytkownika</Label>
@@ -202,24 +199,24 @@ const AddInstanceUserDialog = ({
                   <SelectItem value="employee">Pracownik</SelectItem>
                   <SelectItem value="hall">Widok Hali (Kiosk)</SelectItem>
                   <SelectItem value="sales">Sprzedaż (CRM)</SelectItem>
-                  <SelectItem value="admin">Admin Instancji</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
                 {role === 'admin'
                   ? 'Admin ma pełny dostęp do ustawień i zarządzania użytkownikami'
                   : role === 'hall'
-                  ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
-                  : role === 'sales'
-                  ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
-                  : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
+                    ? 'Widok Hali wyświetla tylko kalendarz bez sidebara (tryb kiosk)'
+                    : role === 'sales'
+                      ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
+                      : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
               </p>
             </div>
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
@@ -242,9 +239,7 @@ const AddInstanceUserDialog = ({
               Uprawnienia administratora
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>
-                Administrator instancji będzie miał dostęp do:
-              </p>
+              <p>Administrator instancji będzie miał dostęp do:</p>
               <ul className="list-disc list-inside text-left space-y-1 text-sm">
                 <li>Wszystkich ustawień instancji</li>
                 <li>Zarządzania użytkownikami</li>
@@ -258,9 +253,7 @@ const AddInstanceUserDialog = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelAdminRole}>
-              Anuluj
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={cancelAdminRole}>Anuluj</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAdminRole}>
               Rozumiem, nadaj uprawnienia
             </AlertDialogAction>

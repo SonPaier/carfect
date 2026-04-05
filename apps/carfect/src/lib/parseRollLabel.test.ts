@@ -176,7 +176,7 @@ const DESCRIPTION_PATTERNS = [
 ];
 
 function isDateString(s: string): boolean {
-  const clean = s.replace(/[\s./\-]/g, '');
+  const clean = s.replace(/[\s./-]/g, '');
   if (/^\d{8}$/.test(clean)) {
     const day = parseInt(clean.slice(0, 2));
     const month = parseInt(clean.slice(2, 4));
@@ -291,7 +291,7 @@ function parseRollLabel(rawText: string) {
         break;
       }
     }
-    const digitsOnly = lines[i].replace(/[\s\-]/g, '');  // eslint-disable-line no-useless-escape
+    const digitsOnly = lines[i].replace(/[\s\-]/g, ''); // eslint-disable-line no-useless-escape
     if (/^\d{13}$/.test(digitsOnly) && !isDateString(digitsOnly)) {
       result.barcode = digitsOnly;
       confidence.barcode = 0.95;
