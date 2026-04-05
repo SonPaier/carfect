@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GraduationCap, Pencil, Trash2, Loader2, GripVertical } from 'lucide-react';
-import { Button } from '@shared/ui';
-import { Input } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
-import { ConfirmDialog } from '@shared/ui';
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, ConfirmDialog } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 

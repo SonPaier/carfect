@@ -12,6 +12,12 @@ interface ReservationConfirmSettingsProps {
   instanceId: string | null;
 }
 
+interface InstanceAppSettings {
+  auto_confirm_reservations: boolean;
+  customer_edit_cutoff_hours: number | null;
+  pricing_mode?: string;
+}
+
 export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSettingsProps) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -87,9 +93,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         .single();
 
       if (data) {
-        setAutoConfirm(data.auto_confirm_reservations !== false);
-        setCustomerEditCutoffHours(data.customer_edit_cutoff_hours ?? 1);
-        setPricingMode((data as { pricing_mode?: string }).pricing_mode || 'brutto');
+        const settings = data as unknown as InstanceAppSettings;
+        setAutoConfirm(settings.auto_confirm_reservations !== false);
+        setCustomerEditCutoffHours(settings.customer_edit_cutoff_hours ?? 1);
+        setPricingMode((settings.pricing_mode as 'netto' | 'brutto') || 'brutto');
       }
       setLoading(false);
     };

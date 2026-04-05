@@ -120,12 +120,14 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       fetchSettings();
       fetchInstanceData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   useEffect(() => {
     if (instanceId) {
       fetchSmsLogs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId, selectedMonth]);
 
   const fetchInstanceData = async () => {
