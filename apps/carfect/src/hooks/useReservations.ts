@@ -3,71 +3,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, startOfWeek, subWeeks, addDays, parseISO } from 'date-fns';
 import type { ServiceMapEntry } from '@/hooks/useServiceDictionary';
+import type { Reservation, ServiceItem } from '@/types/reservation';
 
-interface ServiceItem {
-  service_id: string;
-  custom_price: number | null;
-  name?: string;
-  id?: string;
-  short_name?: string | null;
-  price_small?: number | null;
-  price_medium?: number | null;
-  price_large?: number | null;
-  price_from?: number | null;
-}
+export type { Reservation, ServiceItem };
 
 // Re-export ServiceMapEntry as ServiceMap for backward compat
 type ServiceMap = ServiceMapEntry;
-
-export interface Reservation {
-  id: string;
-  instance_id: string;
-  customer_name: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string;
-  status: string;
-  confirmation_code: string;
-  service?: {
-    name: string;
-    shortcut?: string | null;
-  };
-  services_data?: Array<{
-    id?: string;
-    name: string;
-    shortcut?: string | null;
-    price_small?: number | null;
-    price_medium?: number | null;
-    price_large?: number | null;
-    price_from?: number | null;
-  }>;
-  station?: {
-    name: string;
-    type?: 'washing' | 'ppf' | 'detailing' | 'universal';
-  };
-  price: number | null;
-  original_reservation_id?: string | null;
-  original_reservation?: {
-    reservation_date: string;
-    start_time: string;
-    confirmation_code: string;
-  } | null;
-  created_by?: string | null;
-  created_by_username?: string | null;
-  offer_number?: string | null;
-  confirmation_sms_sent_at?: string | null;
-  pickup_sms_sent_at?: string | null;
-  service_items?: ServiceItem[] | null;
-  service_ids?: string[];
-  has_unified_services?: boolean | null;
-  photo_urls?: string[] | null;
-  checked_service_ids?: string[];
-  assigned_employee_ids?: string[] | null;
-}
 
 interface DateRange {
   from: Date;
@@ -154,7 +95,7 @@ async function fetchReservationsForRange(
 
   // Map reservation data
   return data.map((r) => {
-    const serviceItems = r.service_items as ServiceItem[] | null;
+    const serviceItems = r.service_items as unknown as ServiceItem[] | null;
     const serviceIds = r.service_ids as string[] | null;
 
     let servicesDataMapped: Array<{
@@ -224,7 +165,7 @@ async function fetchReservationsForRange(
       status: r.status || 'pending',
       service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
       service_items: Array.isArray(r.service_items)
-        ? (r.service_items as ServiceItem[])
+        ? (r.service_items as unknown as ServiceItem[])
         : undefined,
       services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
       station: r.stations

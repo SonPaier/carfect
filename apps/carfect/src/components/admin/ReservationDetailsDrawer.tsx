@@ -68,63 +68,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@shared/ui';
-
-type CarSize = 'small' | 'medium' | 'large';
-
-interface Reservation {
-  id: string;
-  instance_id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  vehicle_plate: string;
-  car_size?: CarSize | null;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  status: string;
-  confirmation_code: string;
-  price?: number;
-  price_netto?: number | null;
-  customer_notes?: string | null;
-  admin_notes?: string | null;
-  source?: string | null;
-  service_id?: string;
-  service_ids?: string[];
-  service_items?: Array<{ service_id: string; custom_price: number | null }> | null;
-  offer_number?: string | null;
-  has_unified_services?: boolean | null;
-  photo_urls?: string[] | null;
-  assigned_employee_ids?: string[] | null;
-  service?: {
-    name: string;
-  };
-  services_data?: Array<{
-    id?: string;
-    name: string;
-    shortcut?: string | null;
-    price_small?: number | null;
-    price_medium?: number | null;
-    price_large?: number | null;
-    price_from?: number | null;
-  }>;
-  station?: {
-    name: string;
-    type?: 'washing' | 'ppf' | 'detailing' | 'universal';
-  };
-  original_reservation_id?: string | null;
-  original_reservation?: {
-    reservation_date: string;
-    start_time: string;
-    confirmation_code: string;
-  } | null;
-  created_by?: string | null;
-  created_by_username?: string | null;
-  confirmation_sms_sent_at?: string | null;
-  pickup_sms_sent_at?: string | null;
-}
+import type { Reservation, CarSize } from '@/types/reservation';
 
 export interface HallVisibleFields {
   customer_name: boolean;
@@ -433,7 +377,8 @@ const ReservationDetailsDrawer = ({
         .from('reservations')
         .update({
           service_ids: mergedIds,
-          service_items: mergedItems,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          service_items: mergedItems as any,
         })
         .eq('id', reservation.id);
 
@@ -463,7 +408,8 @@ const ReservationDetailsDrawer = ({
         .from('reservations')
         .update({
           service_ids: updatedIds,
-          service_items: updatedItems.length > 0 ? updatedItems : null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          service_items: (updatedItems.length > 0 ? updatedItems : null) as any,
         })
         .eq('id', reservation.id);
 

@@ -1,38 +1,12 @@
 import type { DragEvent } from 'react';
+import type { Reservation } from '@/types/reservation';
+export type { Reservation } from '@/types/reservation';
 
 export interface Station {
   id: string;
   name: string;
   type: string;
   color?: string | null;
-}
-
-export interface Reservation {
-  id: string;
-  customer_name: string;
-  customer_phone?: string;
-  vehicle_plate: string;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  status: string;
-  customer_notes?: string | null;
-  admin_notes?: string | null;
-  offer_number?: string | null;
-  assigned_employee_ids?: string[] | null;
-  service?: {
-    name: string;
-    shortcut?: string | null;
-  };
-  services_data?: Array<{
-    name: string;
-    shortcut?: string | null;
-  }>;
-  station?: {
-    type?: string;
-  };
 }
 
 export interface ClosedDay {
