@@ -18,3 +18,6 @@ export { PdfSummary } from './components/PdfSummary';
 export { PdfTerms } from './components/PdfTerms';
 export { PdfBankAccount } from './components/PdfBankAccount';
 export { PdfExpertContact } from './components/PdfExpertContact';
+export { OfferPdfDocument } from './OfferPdfDocument';
+export type { OfferPdfDocumentProps } from './OfferPdfDocument';
+export { transformOfferData, transformInstanceData } from './transformOfferData';
