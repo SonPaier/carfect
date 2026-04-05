@@ -298,6 +298,12 @@ const AdminDashboard = () => {
     stationType: '' as string,
   });
 
+  // Offer prefill from reservation drawer — cleared when leaving offers view
+  const [offerPrefill, setOfferPrefill] = useState<{ name: string; phone: string; plate?: string } | null>(null);
+  useEffect(() => {
+    if (currentView !== 'offers') setOfferPrefill(null);
+  }, [currentView]);
+
   // Slot preview for live calendar highlight
   const [slotPreview, setSlotPreview] = useState<{
     date: string;
@@ -3410,6 +3416,7 @@ const AdminDashboard = () => {
                 }}
                 employees={cachedEmployees}
                 onOpenReservation={handleOpenReservationById}
+                onRequestAllHistory={() => fetchReservations(new Date('2020-01-01'))}
               />
             )}
 
@@ -3444,6 +3451,7 @@ const AdminDashboard = () => {
                 instanceId={instanceId}
                 instanceData={instanceData}
                 onEditModeChange={setOfferEditMode}
+                initialCustomerData={offerPrefill}
                 onReserveFromOffer={(offerData) => {
                   setCurrentView('calendar');
                   setNewReservationData({ stationId: '', date: '', time: '', stationType: '' });
@@ -3534,6 +3542,11 @@ const AdminDashboard = () => {
         }}
         onSendPickupSms={handleSendPickupSms}
         onSendConfirmationSms={handleSendConfirmationSms}
+        onCreateOffer={(data) => {
+          setSelectedReservation(null);
+          setOfferPrefill(data);
+          setCurrentView('offers');
+        }}
       />
 
       {/* Add/Edit Reservation Dialog V2 — Sheet mode for mobile or non-calendar views */}

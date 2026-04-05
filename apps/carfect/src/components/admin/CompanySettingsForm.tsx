@@ -76,7 +76,6 @@ const CompanySettingsForm = ({
         setBankAccounts([{ name: '', number: '' }]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceData]);
 
   const handleInputChange = (field: string, value: string) => {
