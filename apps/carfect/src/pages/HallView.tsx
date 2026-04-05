@@ -27,47 +27,12 @@ import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { normalizePhone } from '@shared/utils';
 import { compressImage } from '@shared/utils';
+import type { Reservation } from '@/types/reservation';
 interface Station {
   id: string;
   name: string;
   type: string;
   color?: string | null;
-}
-
-interface Reservation {
-  id: string;
-  instance_id: string;
-  customer_name: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string;
-  status: string;
-  confirmation_code: string;
-  service_ids?: string[];
-  service_items?: Array<{ service_id: string; custom_price: number | null; name?: string; id?: string; short_name?: string }>;
-  service?: {
-    name: string;
-    shortcut?: string | null;
-  };
-  services_data?: Array<{
-    id?: string;
-    name: string;
-    shortcut?: string | null;
-  }>;
-  station?: {
-    name: string;
-    type?: 'washing' | 'ppf' | 'detailing' | 'universal';
-  };
-  price: number | null;
-  has_unified_services?: boolean | null;
-  admin_notes?: string | null;
-  photo_urls?: string[] | null;
-  checked_service_ids?: string[] | null;
-  assigned_employee_ids?: string[] | null;
 }
 
 interface Break {
@@ -90,18 +55,18 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   const location = useLocation();
   const { hallId } = useParams<{ hallId: string }>();
   const { user, roles, signOut } = useAuth();
-  
+
   // Derive instanceId from auth roles (avoid duplicate fetch)
   const derivedInstanceId = useMemo(() => {
-    const adminRole = roles.find(r => r.role === 'admin' && r.instance_id);
+    const adminRole = roles.find((r) => r.role === 'admin' && r.instance_id);
     if (adminRole?.instance_id) return adminRole.instance_id;
-    const employeeRole = roles.find(r => r.role === 'employee' && r.instance_id);
+    const employeeRole = roles.find((r) => r.role === 'employee' && r.instance_id);
     if (employeeRole?.instance_id) return employeeRole.instance_id;
-    const hallRole = roles.find(r => r.role === 'hall' && r.instance_id);
+    const hallRole = roles.find((r) => r.role === 'hall' && r.instance_id);
     if (hallRole?.instance_id) return hallRole.instance_id;
     return null;
   }, [roles]);
-  
+
   const [instanceId, setInstanceId] = useState<string | null>(null);
   const [hall, setHall] = useState<Hall | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
@@ -117,9 +82,11 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photosTargetReservation, setPhotosTargetReservation] = useState<Reservation | null>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Service drawer state for hall view
-  const [serviceDrawerReservation, setServiceDrawerReservation] = useState<Reservation | null>(null);
+  const [serviceDrawerReservation, setServiceDrawerReservation] = useState<Reservation | null>(
+    null,
+  );
 
   // Trainings state
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -131,7 +98,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   const { data: cachedWorkingHours } = useWorkingHours(instanceId);
   const { data: cachedServices = [] } = useUnifiedServices(instanceId);
   const { map: serviceDictMap } = useServiceDictionary(instanceId);
-  
+
   // Use cached data
   const breaks = cachedBreaks as Break[];
   const workingHours = cachedWorkingHours;
@@ -144,8 +111,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   }, [serviceDictMap]);
 
   // Check if user has hall role (kiosk mode)
-  const hasHallRole = roles.some(r => r.role === 'hall');
-  const hasAdminOrEmployeeRole = roles.some(r => r.role === 'admin' || r.role === 'employee');
+  const hasHallRole = roles.some((r) => r.role === 'hall');
+  const hasAdminOrEmployeeRole = roles.some((r) => r.role === 'admin' || r.role === 'employee');
   const effectiveKioskMode = isKioskMode || hasHallRole;
 
   // Check if we're on /admin/... path
@@ -192,9 +159,9 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Helper to find customer email for protocol
   const findCustomerEmail = async (phone: string): Promise<string | null> => {
     if (!instanceId || !phone) return null;
-    
+
     const normalized = normalizePhone(phone);
-    
+
     // Check customers table
     const { data: customer } = await supabase
       .from('customers')
@@ -202,9 +169,9 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       .eq('instance_id', instanceId)
       .or(`phone.eq.${normalized},phone.eq.+48${normalized}`)
       .maybeSingle();
-    
+
     if (customer?.email) return customer.email;
-    
+
     // Check offers table
     const { data: offers } = await supabase
       .from('offers')
@@ -212,14 +179,14 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       .eq('instance_id', instanceId)
       .not('customer_data', 'is', null)
       .limit(10);
-    
+
     for (const offer of offers || []) {
       const customerData = offer.customer_data as any;
       if (normalizePhone(customerData?.phone) === normalized && customerData?.email) {
         return customerData.email;
       }
     }
-    
+
     return null;
   };
 
@@ -309,9 +276,11 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       if (updateError) throw updateError;
 
       // Update local state
-      setReservations(prev => prev.map(r => 
-        r.id === photosTargetReservation.id ? { ...r, photo_urls: newPhotos } : r
-      ));
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === photosTargetReservation.id ? { ...r, photo_urls: newPhotos } : r,
+        ),
+      );
 
       toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
     } catch (error) {
@@ -325,18 +294,21 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   };
 
   // Handle adding services to reservation from drawer (hall view)
-  const handleAddServicesToReservation = async (newServiceIds: string[], servicesData: ServiceWithCategory[]) => {
+  const handleAddServicesToReservation = async (
+    newServiceIds: string[],
+    servicesData: ServiceWithCategory[],
+  ) => {
     if (!serviceDrawerReservation) return;
-    
+
     const currentIds = serviceDrawerReservation.service_ids || [];
     const mergedIds = [...new Set([...currentIds, ...newServiceIds])];
-    
+
     // Build full service_items with metadata
     const existingItems = serviceDrawerReservation.service_items || [];
     const newItems = newServiceIds
-      .filter(id => !currentIds.includes(id))
-      .map(id => {
-        const svc = servicesData.find(s => s.id === id);
+      .filter((id) => !currentIds.includes(id))
+      .map((id) => {
+        const svc = servicesData.find((s) => s.id === id);
         return {
           service_id: id,
           name: svc?.name || 'Usługa',
@@ -347,47 +319,50 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           price_large: svc?.price_large ?? null,
         };
       });
-    
+
     const mergedItems = [...existingItems, ...newItems];
-    
+
     const { error } = await supabase
       .from('reservations')
-      .update({ service_ids: mergedIds, service_items: mergedItems })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ service_ids: mergedIds, service_items: mergedItems as any })
       .eq('id', serviceDrawerReservation.id);
-    
+
     if (error) {
       toast.error(t('common.error'));
       return;
     }
-    
+
     // Update local state
-    setReservations(prev => prev.map(r => {
-      if (r.id !== serviceDrawerReservation.id) return r;
-      
-      // Also update services_data for display
-      const newServicesData = newServiceIds
-        .filter(id => !currentIds.includes(id))
-        .map(id => {
-          const svc = servicesData.find(s => s.id === id);
-          return { id, name: svc?.name || 'Usługa', shortcut: svc?.short_name || null };
-        });
-      
-      return {
-        ...r,
-        service_ids: mergedIds,
-        service_items: mergedItems as any,
-        services_data: [...(r.services_data || []), ...newServicesData],
-      };
-    }));
-    
+    setReservations((prev) =>
+      prev.map((r) => {
+        if (r.id !== serviceDrawerReservation.id) return r;
+
+        // Also update services_data for display
+        const newServicesData = newServiceIds
+          .filter((id) => !currentIds.includes(id))
+          .map((id) => {
+            const svc = servicesData.find((s) => s.id === id);
+            return { id, name: svc?.name || 'Usługa', shortcut: svc?.short_name || null };
+          });
+
+        return {
+          ...r,
+          service_ids: mergedIds,
+          service_items: mergedItems as any,
+          services_data: [...(r.services_data || []), ...newServicesData],
+        };
+      }),
+    );
+
     // Update selected reservation if it's the same one
     if (selectedReservation?.id === serviceDrawerReservation.id) {
-      setSelectedReservation(prev => {
+      setSelectedReservation((prev) => {
         if (!prev) return prev;
         const newServicesData = newServiceIds
-          .filter(id => !currentIds.includes(id))
-          .map(id => {
-            const svc = servicesData.find(s => s.id === id);
+          .filter((id) => !currentIds.includes(id))
+          .map((id) => {
+            const svc = servicesData.find((s) => s.id === id);
             return { id, name: svc?.name || 'Usługa', shortcut: svc?.short_name || null };
           });
         return {
@@ -398,54 +373,58 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         };
       });
     }
-    
+
     toast.success(t('common.saved'));
   };
 
   // Handle removing service from reservation (hall view)
   const handleRemoveServiceFromReservation = async (serviceId: string) => {
     if (!selectedReservation) return;
-    
+
     const currentIds = selectedReservation.service_ids || [];
-    const updatedIds = currentIds.filter(id => id !== serviceId);
-    const updatedItems = (selectedReservation.service_items || [])
-      .filter(item => (item.service_id || (item as any).id) !== serviceId);
-    
+    const updatedIds = currentIds.filter((id) => id !== serviceId);
+    const updatedItems = (selectedReservation.service_items || []).filter(
+      (item) => (item.service_id || (item as any).id) !== serviceId,
+    );
+
     const { error } = await supabase
       .from('reservations')
-      .update({ 
-        service_ids: updatedIds, 
-        service_items: updatedItems.length > 0 ? updatedItems : null 
+      .update({
+        service_ids: updatedIds,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        service_items: (updatedItems.length > 0 ? updatedItems : null) as any,
       })
       .eq('id', selectedReservation.id);
-    
+
     if (error) {
       toast.error(t('common.error'));
       return;
     }
-    
+
     // Update local state
-    setReservations(prev => prev.map(r => {
-      if (r.id !== selectedReservation.id) return r;
-      return {
-        ...r,
-        service_ids: updatedIds,
-        service_items: updatedItems.length > 0 ? updatedItems as any : undefined,
-        services_data: r.services_data?.filter(s => s.id !== serviceId),
-      };
-    }));
-    
+    setReservations((prev) =>
+      prev.map((r) => {
+        if (r.id !== selectedReservation.id) return r;
+        return {
+          ...r,
+          service_ids: updatedIds,
+          service_items: updatedItems.length > 0 ? (updatedItems as any) : undefined,
+          services_data: r.services_data?.filter((s) => s.id !== serviceId),
+        };
+      }),
+    );
+
     // Update selected reservation
-    setSelectedReservation(prev => {
+    setSelectedReservation((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
         service_ids: updatedIds,
-        service_items: updatedItems.length > 0 ? updatedItems as any : undefined,
-        services_data: prev.services_data?.filter(s => s.id !== serviceId),
+        service_items: updatedItems.length > 0 ? (updatedItems as any) : undefined,
+        services_data: prev.services_data?.filter((s) => s.id !== serviceId),
       };
     });
-    
+
     toast.success(t('common.saved'));
   };
 
@@ -481,11 +460,11 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       setInstanceId(derivedInstanceId);
       return;
     }
-    
+
     // Fallback for super_admin - need to fetch first instance
     const fetchSuperAdminInstance = async () => {
       if (!user) return;
-      const isSuperAdmin = roles.some(r => r.role === 'super_admin');
+      const isSuperAdmin = roles.some((r) => r.role === 'super_admin');
       if (isSuperAdmin) {
         const { data: instances } = await supabase
           .from('instances')
@@ -498,7 +477,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         }
       }
     };
-    
+
     fetchSuperAdminInstance();
   }, [user, roles, derivedInstanceId]);
 
@@ -553,7 +532,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
       // Access control: hall-role users can only view their assigned calendar
       if (hasHallRole && !hasAdminOrEmployeeRole) {
-        const hallRole = roles.find(r => r.role === 'hall');
+        const hallRole = roles.find((r) => r.role === 'hall');
         if (hallRole?.hall_id && hallData.id !== hallRole.hall_id) {
           toast.error(t('halls.notFound'));
           navigate(
@@ -633,7 +612,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       // Fetch reservations
       const { data: reservationsData } = await supabase
         .from('reservations')
-        .select(`
+        .select(
+          `
           id,
           instance_id,
           customer_name,
@@ -656,69 +636,88 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           checked_service_ids,
           assigned_employee_ids,
           stations:station_id (name, type)
-        `)
+        `,
+        )
         .eq('instance_id', instanceId);
 
       if (reservationsData) {
         // Build services map from central dictionary
         const svcMap = buildServicesMapFromDictionary(serviceDictMap);
-        
-        setReservations(reservationsData.map(r => {
-          // Map services_data using same logic as realtime
-          const serviceItems = r.service_items as unknown as Array<{ service_id: string; custom_price: number | null; name?: string; id?: string; short_name?: string }> | null;
-          const serviceIds = r.service_ids as string[] | null;
-          
-          let servicesDataMapped: Array<{ id?: string; name: string; shortcut?: string | null }> = [];
-          
-          if (serviceIds && serviceIds.length > 0) {
-            const itemsById = new Map<string, any>();
-            (serviceItems || []).forEach(item => {
-              const resolvedId = item.id || item.service_id;
-              if (resolvedId) itemsById.set(resolvedId, item);
-            });
 
-            servicesDataMapped = serviceIds.map(id => {
-              const item = itemsById.get(id);
-              const svc = svcMap.get(id);
-              return {
-                id,
-                name: item?.name ?? svc?.name ?? 'Usługa',
-                shortcut: item?.short_name ?? svc?.shortcut ?? null,
-              };
-            });
-          } else if (serviceItems && serviceItems.length > 0) {
-            const seen = new Set<string>();
-            servicesDataMapped = serviceItems
-              .map(item => {
+        setReservations(
+          reservationsData.map((r) => {
+            // Map services_data using same logic as realtime
+            const serviceItems = r.service_items as unknown as Array<{
+              service_id: string;
+              custom_price: number | null;
+              name?: string;
+              id?: string;
+              short_name?: string;
+            }> | null;
+            const serviceIds = r.service_ids as string[] | null;
+
+            let servicesDataMapped: Array<{ id?: string; name: string; shortcut?: string | null }> =
+              [];
+
+            if (serviceIds && serviceIds.length > 0) {
+              const itemsById = new Map<string, any>();
+              (serviceItems || []).forEach((item) => {
                 const resolvedId = item.id || item.service_id;
-                const svc = resolvedId ? svcMap.get(resolvedId) : undefined;
-                return {
-                  id: resolvedId,
-                  name: item.name ?? svc?.name ?? 'Usługa',
-                  shortcut: item.short_name ?? svc?.shortcut ?? null,
-                };
-              })
-              .filter(svc => {
-                if (!svc.id) return false;
-                if (seen.has(svc.id)) return false;
-                seen.add(svc.id);
-                return true;
+                if (resolvedId) itemsById.set(resolvedId, item);
               });
-          }
 
-          return {
-            ...r,
-            status: r.status || 'pending',
-            service_ids: Array.isArray(r.service_ids) ? r.service_ids as string[] : undefined,
-            service_items: Array.isArray(r.service_items) ? r.service_items as unknown as Array<{ service_id: string; custom_price: number | null }> : undefined,
-            services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-            service: undefined,
-            station: r.stations ? { name: (r.stations as any).name, type: (r.stations as any).type } : undefined,
-            has_unified_services: r.has_unified_services,
-            admin_notes: r.admin_notes,
-            checked_service_ids: Array.isArray(r.checked_service_ids) ? r.checked_service_ids as string[] : null,
-          };
-        }));
+              servicesDataMapped = serviceIds.map((id) => {
+                const item = itemsById.get(id);
+                const svc = svcMap.get(id);
+                return {
+                  id,
+                  name: item?.name ?? svc?.name ?? 'Usługa',
+                  shortcut: item?.short_name ?? svc?.shortcut ?? null,
+                };
+              });
+            } else if (serviceItems && serviceItems.length > 0) {
+              const seen = new Set<string>();
+              servicesDataMapped = serviceItems
+                .map((item) => {
+                  const resolvedId = item.id || item.service_id;
+                  const svc = resolvedId ? svcMap.get(resolvedId) : undefined;
+                  return {
+                    id: resolvedId,
+                    name: item.name ?? svc?.name ?? 'Usługa',
+                    shortcut: item.short_name ?? svc?.shortcut ?? null,
+                  };
+                })
+                .filter((svc) => {
+                  if (!svc.id) return false;
+                  if (seen.has(svc.id)) return false;
+                  seen.add(svc.id);
+                  return true;
+                });
+            }
+
+            return {
+              ...r,
+              status: r.status || 'pending',
+              service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
+              service_items: Array.isArray(r.service_items)
+                ? (r.service_items as unknown as Array<{
+                    service_id: string;
+                    custom_price: number | null;
+                  }>)
+                : undefined,
+              services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
+              service: undefined,
+              station: r.stations
+                ? { name: (r.stations as any).name, type: (r.stations as any).type }
+                : undefined,
+              has_unified_services: r.has_unified_services,
+              admin_notes: r.admin_notes,
+              checked_service_ids: Array.isArray(r.checked_service_ids)
+                ? (r.checked_service_ids as string[])
+                : null,
+            };
+          }),
+        );
       }
 
       // Fetch yard vehicles count (lazy-loaded)
@@ -745,15 +744,21 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       return;
     }
     const fetchTrainings = async () => {
-      const { data } = await supabase
+      const { data } = (await supabase
         .from('trainings')
-        .select('*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)')
-        .eq('instance_id', instanceId) as any;
+        .select(
+          '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
+        )
+        .eq('instance_id', instanceId)) as any;
       if (data) {
-        setTrainings(data.map((t: any) => ({
-          ...t,
-          assigned_employee_ids: Array.isArray(t.assigned_employee_ids) ? t.assigned_employee_ids : [],
-        })));
+        setTrainings(
+          data.map((t: any) => ({
+            ...t,
+            assigned_employee_ids: Array.isArray(t.assigned_employee_ids)
+              ? t.assigned_employee_ids
+              : [],
+          })),
+        );
       }
     };
     fetchTrainings();
@@ -764,7 +769,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     if (!instanceId) return;
 
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    
+
     const fetchYardCount = async () => {
       const { count } = await supabase
         .from('yard_vehicles')
@@ -783,11 +788,11 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           event: '*',
           schema: 'public',
           table: 'yard_vehicles',
-          filter: `instance_id=eq.${instanceId}`
+          filter: `instance_id=eq.${instanceId}`,
         },
         () => {
           fetchYardCount();
-        }
+        },
       )
       .subscribe();
 
@@ -802,18 +807,18 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       // Pleasant notification melody
       oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
       oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
       oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-      
+
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-      
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.4);
     } catch (e) {
@@ -822,8 +827,10 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   };
 
   // Reference to services map for realtime updates (same pattern as AdminDashboard)
-  const servicesMapRef = useRef<Map<string, { id: string; name: string; shortcut?: string | null }>>(new Map());
-  
+  const servicesMapRef = useRef<
+    Map<string, { id: string; name: string; shortcut?: string | null }>
+  >(new Map());
+
   // Update servicesMapRef when dictionary changes
   useEffect(() => {
     servicesMapRef.current = buildServicesMapFromDictionary(serviceDictMap);
@@ -845,20 +852,26 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     // Map helper for reservations - SAME LOGIC AS AdminDashboard
     const mapReservationData = (data: any): Reservation => {
       // Primary source: service_items JSONB (already contains names)
-      const serviceItems = data.service_items as unknown as Array<{ service_id: string; custom_price: number | null; name?: string; id?: string; short_name?: string }> | null;
+      const serviceItems = data.service_items as unknown as Array<{
+        service_id: string;
+        custom_price: number | null;
+        name?: string;
+        id?: string;
+        short_name?: string;
+      }> | null;
       const serviceIds = data.service_ids as string[] | null;
-      
+
       let servicesDataMapped: Array<{ id?: string; name: string; shortcut?: string | null }> = [];
-      
+
       // Canonical list of selected services is `service_ids`
       if (serviceIds && serviceIds.length > 0) {
         const itemsById = new Map<string, any>();
-        (serviceItems || []).forEach(item => {
+        (serviceItems || []).forEach((item) => {
           const resolvedId = item.id || item.service_id;
           if (resolvedId) itemsById.set(resolvedId, item);
         });
 
-        servicesDataMapped = serviceIds.map(id => {
+        servicesDataMapped = serviceIds.map((id) => {
           const item = itemsById.get(id);
           const svc = servicesMapRef.current.get(id);
 
@@ -872,7 +885,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         // Fallback: no service_ids, use service_items directly
         const seen = new Set<string>();
         servicesDataMapped = serviceItems
-          .map(item => {
+          .map((item) => {
             const resolvedId = item.id || item.service_id;
             const svc = resolvedId ? servicesMapRef.current.get(resolvedId) : undefined;
             return {
@@ -881,7 +894,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
               shortcut: item.short_name ?? svc?.shortcut ?? null,
             };
           })
-          .filter(svc => {
+          .filter((svc) => {
             if (!svc.id) return false;
             if (seen.has(svc.id)) return false;
             seen.add(svc.id);
@@ -892,24 +905,35 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       return {
         ...data,
         status: data.status || 'pending',
-        service_ids: Array.isArray(data.service_ids) ? data.service_ids as string[] : undefined,
-        service_items: Array.isArray(data.service_items) ? data.service_items as unknown as Array<{ service_id: string; custom_price: number | null }> : undefined,
+        service_ids: Array.isArray(data.service_ids) ? (data.service_ids as string[]) : undefined,
+        service_items: Array.isArray(data.service_items)
+          ? (data.service_items as unknown as Array<{
+              service_id: string;
+              custom_price: number | null;
+            }>)
+          : undefined,
         services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
         service: undefined,
-        station: data.stations ? { name: (data.stations as any).name, type: (data.stations as any).type } : undefined,
+        station: data.stations
+          ? { name: (data.stations as any).name, type: (data.stations as any).type }
+          : undefined,
         has_unified_services: data.has_unified_services,
         admin_notes: data.admin_notes,
-        checked_service_ids: Array.isArray(data.checked_service_ids) ? data.checked_service_ids as string[] : null,
+        checked_service_ids: Array.isArray(data.checked_service_ids)
+          ? (data.checked_service_ids as string[])
+          : null,
       };
     };
 
     const syncTrainings = async () => {
       if (!trainingsEnabled) return;
       try {
-        const { data: trainingsData, error } = await supabase
+        const { data: trainingsData, error } = (await supabase
           .from('trainings')
-          .select('*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)')
-          .eq('instance_id', instanceId) as any;
+          .select(
+            '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
+          )
+          .eq('instance_id', instanceId)) as any;
 
         if (error) {
           console.error('Sync trainings error:', error);
@@ -917,10 +941,14 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         }
 
         if (trainingsData) {
-          setTrainings(trainingsData.map((t: any) => ({
-            ...t,
-            assigned_employee_ids: Array.isArray(t.assigned_employee_ids) ? t.assigned_employee_ids : [],
-          })));
+          setTrainings(
+            trainingsData.map((t: any) => ({
+              ...t,
+              assigned_employee_ids: Array.isArray(t.assigned_employee_ids)
+                ? t.assigned_employee_ids
+                : [],
+            })),
+          );
         }
       } catch (err) {
         console.error('Sync trainings exception:', err);
@@ -930,12 +958,13 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     // Polling fallback function
     const pollForUpdates = async () => {
       if (isCleanedUp) return;
-      
+
       try {
         // Fetch recent reservations (created/updated since last poll)
         const query = supabase
           .from('reservations')
-          .select(`
+          .select(
+            `
             id,
             instance_id,
             customer_name,
@@ -957,7 +986,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
             checked_service_ids,
             updated_at,
             stations:station_id (name, type)
-          `)
+          `,
+          )
           .eq('instance_id', instanceId)
           .order('updated_at', { ascending: false })
           .limit(50);
@@ -972,13 +1002,13 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         if (data && data.length > 0) {
           // Update last poll timestamp
           lastPollTimestamp = data[0].updated_at;
-          
+
           // Update local state with new/updated reservations
-          setReservations(prev => {
+          setReservations((prev) => {
             const updatedReservations = [...prev];
             for (const newRes of data) {
               const mappedRes = mapReservationData(newRes);
-              const existingIdx = updatedReservations.findIndex(r => r.id === newRes.id);
+              const existingIdx = updatedReservations.findIndex((r) => r.id === newRes.id);
               if (existingIdx >= 0) {
                 updatedReservations[existingIdx] = mappedRes;
               } else {
@@ -1010,7 +1040,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     // Setup realtime channel with retry logic (same as AdminDashboard)
     const setupRealtimeChannel = () => {
       if (isCleanedUp) return;
-      
+
       // Remove previous channel if exists
       if (currentChannel) {
         supabase.removeChannel(currentChannel);
@@ -1019,28 +1049,32 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
       currentChannel = supabase
         .channel(`hall-reservations-changes-${Date.now()}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'reservations',
-          filter: `instance_id=eq.${instanceId}`
-        }, payload => {
-          console.log('[HallView] Realtime reservation update:', payload);
-          realtimeWorking = true;
-          pollInterval = 3000; // Reset poll interval when realtime works
-          retryCount = 0; // Reset retry count on successful message
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'reservations',
+            filter: `instance_id=eq.${instanceId}`,
+          },
+          (payload) => {
+            console.log('[HallView] Realtime reservation update:', payload);
+            realtimeWorking = true;
+            pollInterval = 3000; // Reset poll interval when realtime works
+            retryCount = 0; // Reset retry count on successful message
 
-          if (payload.eventType === 'INSERT') {
-            const newRecord = payload.new as any;
-            
-            // Play sound only for customer reservations
-            if (newRecord.source === 'customer') {
-              playNotificationSound();
-            }
+            if (payload.eventType === 'INSERT') {
+              const newRecord = payload.new as any;
 
-            supabase
-              .from('reservations')
-              .select(`
+              // Play sound only for customer reservations
+              if (newRecord.source === 'customer') {
+                playNotificationSound();
+              }
+
+              supabase
+                .from('reservations')
+                .select(
+                  `
                 id,
                 instance_id,
                 customer_name,
@@ -1062,29 +1096,36 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
                 photo_urls,
                 checked_service_ids,
                 stations:station_id (name, type)
-              `)
-              .eq('id', payload.new.id)
-              .single()
-              .then(({ data }) => {
-                if (data) {
-                  const newReservation = mapReservationData(data);
-                  setReservations(prev => {
-                    // Deduplicate by ID
-                    const filtered = prev.filter(r => r.id !== data.id);
-                    return [...filtered, newReservation];
-                  });
-                  
-                  const isCustomerReservation = (data as any).source === 'customer';
-                  toast.success(isCustomerReservation ? `🔔 ${t('notifications.newReservation')}!` : `${t('notifications.newReservation')}!`, {
-                    description: `${data.start_time.slice(0, 5)} - ${data.vehicle_plate}`
-                  });
-                }
-              });
-          } else if (payload.eventType === 'UPDATE') {
-            // Fetch full data from server to ensure complete object
-            supabase
-              .from('reservations')
-              .select(`
+              `,
+                )
+                .eq('id', payload.new.id)
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    const newReservation = mapReservationData(data);
+                    setReservations((prev) => {
+                      // Deduplicate by ID
+                      const filtered = prev.filter((r) => r.id !== data.id);
+                      return [...filtered, newReservation];
+                    });
+
+                    const isCustomerReservation = (data as any).source === 'customer';
+                    toast.success(
+                      isCustomerReservation
+                        ? `🔔 ${t('notifications.newReservation')}!`
+                        : `${t('notifications.newReservation')}!`,
+                      {
+                        description: `${data.start_time.slice(0, 5)} - ${data.vehicle_plate}`,
+                      },
+                    );
+                  }
+                });
+            } else if (payload.eventType === 'UPDATE') {
+              // Fetch full data from server to ensure complete object
+              supabase
+                .from('reservations')
+                .select(
+                  `
                 id,
                 instance_id,
                 customer_name,
@@ -1105,54 +1146,68 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
                 photo_urls,
                 checked_service_ids,
                 stations:station_id (name, type)
-              `)
-              .eq('id', payload.new.id)
-              .single()
-              .then(({ data }) => {
-                if (data) {
-                  const updatedReservation = mapReservationData(data);
-                  setReservations(prev => prev.map(r => r.id === data.id ? updatedReservation : r));
-                  // Also update selectedReservation if it's the same
-                  setSelectedReservation(prev => 
-                    prev?.id === data.id ? updatedReservation : prev
-                  );
-                }
-              });
-          } else if (payload.eventType === 'DELETE') {
-            setReservations(prev => prev.filter(r => r.id !== payload.old.id));
-          }
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'trainings',
-          filter: `instance_id=eq.${instanceId}`
-        }, async (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const { data } = await supabase
-              .from('trainings')
-              .select('*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)')
-              .eq('id', payload.new.id)
-              .single() as any;
-            if (data) {
-              const mapped: Training = {
-                ...data,
-                assigned_employee_ids: Array.isArray(data.assigned_employee_ids) ? data.assigned_employee_ids : [],
-              };
-
-              // Upsert to prevent disappearing trainings after reconnect or missed INSERT
-              setTrainings(prev => {
-                const exists = prev.some(t => t.id === mapped.id);
-                return exists ? prev.map(t => t.id === mapped.id ? mapped : t) : [...prev, mapped];
-              });
-
-              setSelectedTraining(prev => prev?.id === mapped.id ? mapped : prev);
+              `,
+                )
+                .eq('id', payload.new.id)
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    const updatedReservation = mapReservationData(data);
+                    setReservations((prev) =>
+                      prev.map((r) => (r.id === data.id ? updatedReservation : r)),
+                    );
+                    // Also update selectedReservation if it's the same
+                    setSelectedReservation((prev) =>
+                      prev?.id === data.id ? updatedReservation : prev,
+                    );
+                  }
+                });
+            } else if (payload.eventType === 'DELETE') {
+              setReservations((prev) => prev.filter((r) => r.id !== payload.old.id));
             }
-          } else if (payload.eventType === 'DELETE') {
-            setTrainings(prev => prev.filter(t => t.id !== payload.old.id));
-            setSelectedTraining(prev => prev?.id === payload.old.id ? null : prev);
-          }
-        })
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'trainings',
+            filter: `instance_id=eq.${instanceId}`,
+          },
+          async (payload) => {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const { data } = (await supabase
+                .from('trainings')
+                .select(
+                  '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
+                )
+                .eq('id', payload.new.id)
+                .single()) as any;
+              if (data) {
+                const mapped: Training = {
+                  ...data,
+                  assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+                    ? data.assigned_employee_ids
+                    : [],
+                };
+
+                // Upsert to prevent disappearing trainings after reconnect or missed INSERT
+                setTrainings((prev) => {
+                  const exists = prev.some((t) => t.id === mapped.id);
+                  return exists
+                    ? prev.map((t) => (t.id === mapped.id ? mapped : t))
+                    : [...prev, mapped];
+                });
+
+                setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
+              }
+            } else if (payload.eventType === 'DELETE') {
+              setTrainings((prev) => prev.filter((t) => t.id !== payload.old.id));
+              setSelectedTraining((prev) => (prev?.id === payload.old.id ? null : prev));
+            }
+          },
+        )
         .subscribe((status, err) => {
           console.log('[HallView] Channel status:', status, err);
           if (status === 'SUBSCRIBED') {
@@ -1163,12 +1218,14 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
             realtimeWorking = false;
             pollInterval = 3000; // Reset to fast polling when realtime fails
             void syncTrainings();
-            
+
             // Auto-retry with exponential backoff
             if (retryCount < maxRetries && !isCleanedUp) {
               retryCount++;
               const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-              console.log(`[HallView] Retrying realtime connection in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
+              console.log(
+                `[HallView] Retrying realtime connection in ${delay}ms (attempt ${retryCount}/${maxRetries})`,
+              );
               setTimeout(setupRealtimeChannel, delay);
             }
           } else if (status === 'CLOSED') {
@@ -1181,7 +1238,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
     // Start realtime subscription
     setupRealtimeChannel();
-    
+
     // Start polling as fallback
     pollTimeoutId = setTimeout(pollForUpdates, pollInterval);
 
@@ -1209,18 +1266,18 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   };
 
   const handleStatusChange = (reservationId: string, newStatus: string) => {
-    setReservations(prev => prev.map(r => 
-      r.id === reservationId ? { ...r, status: newStatus } : r
-    ));
+    setReservations((prev) =>
+      prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus } : r)),
+    );
     // Also update selectedReservation if it's the same
-    setSelectedReservation(prev => 
-      prev?.id === reservationId ? { ...prev, status: newStatus } : prev
+    setSelectedReservation((prev) =>
+      prev?.id === reservationId ? { ...prev, status: newStatus } : prev,
     );
   };
 
   const handleDeleteReservation = async (reservationId: string) => {
     await supabase.from('reservations').delete().eq('id', reservationId);
-    setReservations(prev => prev.filter(r => r.id !== reservationId));
+    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
     setSelectedReservation(null);
     toast.success(t('reservations.deleted'));
   };
@@ -1232,7 +1289,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
   // Send pickup SMS handler for hall view
   const handleSendPickupSms = async (reservationId: string) => {
-    const reservation = reservations.find(r => r.id === reservationId);
+    const reservation = reservations.find((r) => r.id === reservationId);
     if (!reservation || !instanceId) return;
 
     const message = `${instanceShortName || 'Serwis'}: Twoje auto jest gotowe do odbioru. Zapraszamy!`;
@@ -1256,21 +1313,21 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Map all reservations with services_data for calendar display (including service id for toggle)
   // Primary source: service_ids as canonical (like AdminDashboard), with names from service_items or servicesMap
   const reservationsWithServices = useMemo(() => {
-    return reservations.map(reservation => {
+    return reservations.map((reservation) => {
       const serviceItems = reservation.service_items as any[] | undefined;
       const serviceIds = reservation.service_ids;
-      
+
       let services_data: Array<{ id: string; name: string }> = [];
-      
+
       // service_ids to kanoniczne źródło (jak w AdminDashboard)
       if (serviceIds && serviceIds.length > 0) {
         const itemsById = new Map<string, any>();
-        (serviceItems || []).forEach(item => {
+        (serviceItems || []).forEach((item) => {
           const id = item.id || item.service_id;
           if (id) itemsById.set(id, item);
         });
-        
-        services_data = serviceIds.map(id => {
+
+        services_data = serviceIds.map((id) => {
           const item = itemsById.get(id);
           const globalName = servicesMap.get(id);
           return {
@@ -1282,18 +1339,18 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         // Fallback z deduplicacją
         const seen = new Set<string>();
         services_data = serviceItems
-          .filter(item => {
+          .filter((item) => {
             const id = item.id || item.service_id;
             if (!id || seen.has(id)) return false;
             seen.add(id);
             return true;
           })
-          .map(item => ({
+          .map((item) => ({
             id: item.id || item.service_id,
             name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
           }));
       }
-      
+
       return { ...reservation, services_data };
     });
   }, [reservations, servicesMap]);
@@ -1302,20 +1359,20 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Primary source: service_ids as canonical
   const selectedReservationWithServices = useMemo(() => {
     if (!selectedReservation) return null;
-    
+
     const serviceItems = selectedReservation.service_items as any[] | undefined;
     const serviceIds = selectedReservation.service_ids;
     let services_data: Array<{ id: string; name: string }> = [];
-    
+
     // service_ids jako kanoniczne źródło
     if (serviceIds && serviceIds.length > 0) {
       const itemsById = new Map<string, any>();
-      (serviceItems || []).forEach(item => {
+      (serviceItems || []).forEach((item) => {
         const id = item.id || item.service_id;
         if (id) itemsById.set(id, item);
       });
-      
-      services_data = serviceIds.map(id => {
+
+      services_data = serviceIds.map((id) => {
         const item = itemsById.get(id);
         const globalName = servicesMap.get(id);
         return {
@@ -1327,13 +1384,13 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       // Fallback z deduplicacją
       const seen = new Set<string>();
       services_data = serviceItems
-        .filter(item => {
+        .filter((item) => {
           const id = item.id || item.service_id;
           if (!id || seen.has(id)) return false;
           seen.add(id);
           return true;
         })
-        .map(item => ({
+        .map((item) => ({
           id: item.id || item.service_id,
           name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
         }));
@@ -1348,36 +1405,37 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Handle service toggle (mark as done/undone)
   const handleServiceToggle = async (serviceId: string, checked: boolean) => {
     if (!selectedReservation) return;
-    
+
     const currentChecked = selectedReservation.checked_service_ids || [];
-    const newChecked = checked 
+    const newChecked = checked
       ? [...currentChecked, serviceId]
-      : currentChecked.filter(id => id !== serviceId);
-    
+      : currentChecked.filter((id) => id !== serviceId);
+
     const { error } = await supabase
       .from('reservations')
       .update({ checked_service_ids: newChecked })
       .eq('id', selectedReservation.id);
-    
+
     if (error) {
       toast.error(t('common.error'));
       return;
     }
-    
+
     // Update local state
-    setReservations(prev => prev.map(r => 
-      r.id === selectedReservation.id ? { ...r, checked_service_ids: newChecked } : r
-    ));
-    setSelectedReservation(prev => 
-      prev ? { ...prev, checked_service_ids: newChecked } : prev
+    setReservations((prev) =>
+      prev.map((r) =>
+        r.id === selectedReservation.id ? { ...r, checked_service_ids: newChecked } : r,
+      ),
     );
+    setSelectedReservation((prev) => (prev ? { ...prev, checked_service_ids: newChecked } : prev));
   };
 
   const handleReservationSaved = async () => {
     // Refresh reservations after edit
     const { data: reservationsData } = await supabase
       .from('reservations')
-      .select(`
+      .select(
+        `
         id,
         instance_id,
         customer_name,
@@ -1398,21 +1456,33 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         photo_urls,
         checked_service_ids,
         stations:station_id (name, type)
-      `)
+      `,
+      )
       .eq('instance_id', instanceId);
 
     if (reservationsData) {
-      setReservations(reservationsData.map(r => ({
-        ...r,
-        status: r.status || 'pending',
-        service_ids: Array.isArray(r.service_ids) ? r.service_ids as string[] : undefined,
-        service_items: Array.isArray(r.service_items) ? r.service_items as unknown as Array<{ service_id: string; custom_price: number | null }> : undefined,
-        service: undefined, // Legacy relation removed
-        station: r.stations ? { name: (r.stations as any).name, type: (r.stations as any).type } : undefined,
-        has_unified_services: r.has_unified_services,
-        admin_notes: r.admin_notes,
-        checked_service_ids: Array.isArray(r.checked_service_ids) ? r.checked_service_ids as string[] : null,
-      })));
+      setReservations(
+        reservationsData.map((r) => ({
+          ...r,
+          status: r.status || 'pending',
+          service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
+          service_items: Array.isArray(r.service_items)
+            ? (r.service_items as unknown as Array<{
+                service_id: string;
+                custom_price: number | null;
+              }>)
+            : undefined,
+          service: undefined, // Legacy relation removed
+          station: r.stations
+            ? { name: (r.stations as any).name, type: (r.stations as any).type }
+            : undefined,
+          has_unified_services: r.has_unified_services,
+          admin_notes: r.admin_notes,
+          checked_service_ids: Array.isArray(r.checked_service_ids)
+            ? (r.checked_service_ids as string[])
+            : null,
+        })),
+      );
     }
     setEditingReservation(null);
   };
@@ -1426,10 +1496,12 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   }
 
   // Prepare hallConfig for passing to calendar and drawer
-  const hallConfig = hall ? {
-    visible_fields: hall.visible_fields,
-    allowed_actions: hall.allowed_actions,
-  } : undefined;
+  const hallConfig = hall
+    ? {
+        visible_fields: hall.visible_fields,
+        allowed_actions: hall.allowed_actions,
+      }
+    : undefined;
 
   // Render workers list with sidebar
   if (showWorkersList && instanceId) {
@@ -1555,10 +1627,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
           {/* Protocols content */}
           <div className="flex-1 h-full overflow-auto">
-            <ProtocolsView 
-              instanceId={instanceId} 
-              kioskMode={true}
-            />
+            <ProtocolsView instanceId={instanceId} kioskMode={true} />
           </div>
         </div>
       </>
@@ -1568,7 +1637,9 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   return (
     <>
       <Helmet>
-        <title>{hall?.name || t('hall.title')} | {t('hall.employeePanel')}</title>
+        <title>
+          {hall?.name || t('hall.title')} | {t('hall.employeePanel')}
+        </title>
       </Helmet>
 
       <div className="h-screen w-screen overflow-hidden bg-background flex">
@@ -1639,7 +1710,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
             hallMode={true}
             hallConfig={hallConfig}
             hallDataVisible={hallDataVisible}
-            onToggleHallDataVisibility={() => setHallDataVisible(prev => !prev)}
+            onToggleHallDataVisibility={() => setHallDataVisible((prev) => !prev)}
             instanceId={instanceId || undefined}
             yardVehicleCount={yardVehicleCount}
             trainings={trainings}
@@ -1657,7 +1728,10 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           open={!!selectedReservation}
           onClose={() => setSelectedReservation(null)}
           onStartWork={async (id) => {
-            const { error } = await supabase.from('reservations').update({ status: 'in_progress', started_at: new Date().toISOString() }).eq('id', id);
+            const { error } = await supabase
+              .from('reservations')
+              .update({ status: 'in_progress', started_at: new Date().toISOString() })
+              .eq('id', id);
             if (!error) {
               handleStatusChange(id, 'in_progress');
             } else {
@@ -1667,15 +1741,36 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           onEndWork={async (id) => {
             const now = new Date();
             const nowTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const res = reservations.find(r => r.id === id);
-            const updateData: Record<string, any> = { status: 'completed', completed_at: now.toISOString() };
+            const res = reservations.find((r) => r.id === id);
+            const updateData: Record<string, any> = {
+              status: 'completed',
+              completed_at: now.toISOString(),
+            };
             if (res && nowTime < res.end_time) {
               updateData.end_time = nowTime;
             }
             const { error } = await supabase.from('reservations').update(updateData).eq('id', id);
             if (!error) {
-              setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'completed', ...(updateData.end_time ? { end_time: updateData.end_time } : {}) } : r));
-              setSelectedReservation(prev => prev?.id === id ? { ...prev, status: 'completed', ...(updateData.end_time ? { end_time: updateData.end_time } : {}) } : prev);
+              setReservations((prev) =>
+                prev.map((r) =>
+                  r.id === id
+                    ? {
+                        ...r,
+                        status: 'completed',
+                        ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
+                      }
+                    : r,
+                ),
+              );
+              setSelectedReservation((prev) =>
+                prev?.id === id
+                  ? {
+                      ...prev,
+                      status: 'completed',
+                      ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
+                    }
+                  : prev,
+              );
             } else {
               toast.error(t('common.error'));
             }
@@ -1701,7 +1796,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           hideSelectedSection={true}
           onConfirm={(serviceIds, _duration, servicesData) => {
             const currentIds = serviceDrawerReservation.service_ids || [];
-            const newIds = serviceIds.filter(id => !currentIds.includes(id));
+            const newIds = serviceIds.filter((id) => !currentIds.includes(id));
             if (newIds.length > 0) {
               handleAddServicesToReservation(newIds, servicesData);
             }
@@ -1722,7 +1817,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           instanceId={instanceId}
           onEdit={() => {}}
           onDeleted={() => {
-            setTrainings(prev => prev.filter(t => t.id !== selectedTraining.id));
+            setTrainings((prev) => prev.filter((t) => t.id !== selectedTraining.id));
             setSelectedTraining(null);
             setTrainingDetailsOpen(false);
           }}
@@ -1736,7 +1831,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         type="file"
         accept="image/*"
         multiple
-        
         onChange={handlePhotoFileSelect}
         className="hidden"
       />

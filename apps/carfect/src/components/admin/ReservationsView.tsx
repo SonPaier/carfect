@@ -51,42 +51,12 @@ import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
 import { FileText } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
+import type { Reservation } from '@/types/reservation';
 
 interface Service {
   id: string;
   name: string;
   shortcut?: string | null;
-}
-
-interface Reservation {
-  id: string;
-  instance_id: string;
-  customer_name: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  reservation_date: string;
-  end_date?: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string;
-  status: string;
-  confirmation_code: string;
-  service?: {
-    name: string;
-    shortcut?: string | null;
-  };
-  services_data?: Array<{
-    name: string;
-    shortcut?: string | null;
-  }>;
-  station?: {
-    name: string;
-    type?: 'washing' | 'ppf' | 'detailing' | 'universal';
-  };
-  price: number | null;
-  price_netto?: number | null;
-  photo_urls?: string[] | null;
-  assigned_employee_ids?: string[] | null;
 }
 
 interface Customer {
