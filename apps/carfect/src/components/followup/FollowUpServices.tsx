@@ -49,6 +49,8 @@ export function FollowUpServices({ instanceId }: FollowUpServicesProps) {
 
   useEffect(() => {
     fetchServices();
+    // fetchServices is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   if (selectedService) {

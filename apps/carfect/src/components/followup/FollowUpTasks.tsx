@@ -69,6 +69,8 @@ export function FollowUpTasks({ instanceId }: FollowUpTasksProps) {
 
   useEffect(() => {
     fetchTasks();
+    // fetchTasks is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   const handleCompleteTask = async (task: FollowUpTask, notes?: string) => {

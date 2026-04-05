@@ -25,6 +25,8 @@ export const TemplateAssignedCustomers = ({ templateId, instanceId }: TemplateAs
     if (templateId && instanceId) {
       fetchAssignedCustomers();
     }
+    // fetchAssignedCustomers is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId, instanceId]);
 
   const fetchAssignedCustomers = async () => {

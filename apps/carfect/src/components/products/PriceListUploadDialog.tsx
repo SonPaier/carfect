@@ -21,6 +21,12 @@ interface PriceListUploadDialogProps {
   onSuccess: () => void;
 }
 
+const ACCEPTED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+];
+
 export function PriceListUploadDialog({
   instanceId,
   open,
@@ -35,12 +41,6 @@ export function PriceListUploadDialog({
   const [salespersonEmail, setSalespersonEmail] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-
-  const acceptedTypes = [
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel',
-  ];
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -57,7 +57,7 @@ export function PriceListUploadDialog({
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
-      if (acceptedTypes.includes(droppedFile.type)) {
+      if (ACCEPTED_TYPES.includes(droppedFile.type)) {
         setFile(droppedFile);
         if (!name) {
           setName(droppedFile.name.replace(/\.[^/.]+$/, ''));
@@ -71,7 +71,7 @@ export function PriceListUploadDialog({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (!acceptedTypes.includes(selectedFile.type)) {
+      if (!ACCEPTED_TYPES.includes(selectedFile.type)) {
         toast.error(t('priceListUpload.unsupportedFormat'));
         return;
       }

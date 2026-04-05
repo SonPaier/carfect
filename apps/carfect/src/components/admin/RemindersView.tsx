@@ -49,6 +49,8 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
     if (instanceId) {
       fetchTemplates();
     }
+    // fetchTemplates is defined in component body and not memoized — intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instanceId]);
 
   const fetchTemplates = async () => {
