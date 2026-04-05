@@ -38,9 +38,10 @@ export const WeekTileView = ({
   }, [closedDays]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekStartTime = weekStart.getTime();
   const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  }, [weekStart.getTime()]);
+    return Array.from({ length: 7 }, (_, i) => addDays(new Date(weekStartTime), i));
+  }, [weekStartTime]);
 
   const today = new Date();
 

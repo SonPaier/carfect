@@ -496,12 +496,12 @@ const AdminCalendar = ({
       };
     }, 50);
 
+    const capturedEl = gridScrollRef.current as (HTMLElement & { __axisLockCleanup?: () => void }) | null;
     return () => {
       clearTimeout(timerId);
-      const el = gridScrollRef.current as (HTMLElement & { __axisLockCleanup?: () => void }) | null;
-      if (el && el.__axisLockCleanup) {
-        el.__axisLockCleanup();
-        delete el.__axisLockCleanup;
+      if (capturedEl && capturedEl.__axisLockCleanup) {
+        capturedEl.__axisLockCleanup();
+        delete capturedEl.__axisLockCleanup;
       }
     };
   }, [isMobile, currentDate, viewMode]);

@@ -12,6 +12,12 @@ interface ReservationConfirmSettingsProps {
   instanceId: string | null;
 }
 
+interface InstanceAppSettings {
+  auto_confirm_reservations: boolean;
+  customer_edit_cutoff_hours: number | null;
+  pricing_mode?: string;
+}
+
 export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSettingsProps) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -87,9 +93,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         .single();
 
       if (data) {
-        setAutoConfirm(data.auto_confirm_reservations !== false);
-        setCustomerEditCutoffHours(data.customer_edit_cutoff_hours ?? 1);
-        setPricingMode((data as { pricing_mode?: string }).pricing_mode || 'brutto');
+        const settings = data as unknown as InstanceAppSettings;
+        setAutoConfirm(settings.auto_confirm_reservations !== false);
+        setCustomerEditCutoffHours(settings.customer_edit_cutoff_hours ?? 1);
+        setPricingMode((settings.pricing_mode as 'netto' | 'brutto') || 'brutto');
       }
       setLoading(false);
     };
@@ -134,11 +141,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     setSaving(false);
   };
 
-  const handleCutoffHoursChange = async (value: number) => {
+  const saveCutoffHours = async (value: number) => {
     if (!instanceId) return;
 
     setSaving(true);
-    setCustomerEditCutoffHours(value);
 
     const { error } = await supabase
       .from('instances')
@@ -257,7 +263,8 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
               min={0}
               max={48}
               value={customerEditCutoffHours}
-              onChange={(e) => handleCutoffHoursChange(parseInt(e.target.value) || 0)}
+              onChange={(e) => setCustomerEditCutoffHours(parseInt(e.target.value) || 0)}
+              onBlur={(e) => saveCutoffHours(parseInt(e.target.value) || 0)}
               className="w-20"
               disabled={saving}
             />

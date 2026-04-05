@@ -49,13 +49,16 @@ export const MonthCalendarView = ({
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const calendarStartTime = calendarStart.getTime();
+  const calendarEndTime = calendarEnd.getTime();
 
   const weeks = useMemo(() => {
     const result: Date[][] = [];
-    let day = calendarStart;
+    let day = new Date(calendarStartTime);
     let currentWeek: Date[] = [];
+    const end = new Date(calendarEndTime);
 
-    while (day <= calendarEnd) {
+    while (day <= end) {
       currentWeek.push(day);
       if (currentWeek.length === 7) {
         result.push(currentWeek);
@@ -67,7 +70,7 @@ export const MonthCalendarView = ({
       result.push(currentWeek);
     }
     return result;
-  }, [calendarStart.getTime(), calendarEnd.getTime()]);
+  }, [calendarStartTime, calendarEndTime]);
 
   const today = new Date();
 

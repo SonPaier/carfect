@@ -17,10 +17,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button } from '@shared/ui';
-import { Input } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
+import { Button, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, ConfirmDialog } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -137,6 +134,9 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
   const [editingStation, setEditingStation] = useState<Station | null>(null);
   const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingStation, setDeletingStation] = useState<Station | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [formErrors, setFormErrors] = useState<{ name?: string }>({});
 
   // Employee assignment settings and data
@@ -334,9 +334,16 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
     }
   };
 
-  const handleDelete = async (stationId: string) => {
-    if (!confirm(t('stationsSettings.deleteConfirm'))) return;
+  const handleDelete = (station: Station) => {
+    setDeletingStation(station);
+    setDeleteDialogOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!deletingStation) return;
+
+    const stationId = deletingStation.id;
+    setDeleting(true);
     setDeletingId(stationId);
     try {
       // Check for reservations or trainings assigned to this station
@@ -354,6 +361,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       const total = (resCount ?? 0) + (trainCount ?? 0);
       if (total > 0) {
         toast.error(`Nie można usunąć stanowiska — ma ${total} przypisanych rezerwacji/szkoleń`);
+        setDeleteDialogOpen(false);
         return;
       }
 
@@ -361,12 +369,14 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
 
       if (error) throw error;
       toast.success(t('stationsSettings.stationDeleted'));
+      setDeleteDialogOpen(false);
       fetchStations();
       queryClient.invalidateQueries({ queryKey: ['stations', instanceId] });
     } catch (error) {
       console.error('Error deleting station:', error);
       toast.error(t('stationsSettings.deleteError'));
     } finally {
+      setDeleting(false);
       setDeletingId(null);
     }
   };
@@ -415,7 +425,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
                   key={station.id}
                   station={station}
                   onEdit={() => openEditDialog(station)}
-                  onDelete={() => handleDelete(station.id)}
+                  onDelete={() => handleDelete(station)}
                   disabled={reordering}
                   deleting={deletingId === station.id}
                 />
@@ -532,6 +542,16 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
           onSelect={setSelectedEmployeeIds}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Usuń stanowisko"
+        description={`Czy na pewno chcesz usunąć stanowisko "${deletingStation?.name}"?`}
+        onConfirm={confirmDelete}
+        loading={deleting}
+        variant="destructive"
+      />
     </div>
   );
 };

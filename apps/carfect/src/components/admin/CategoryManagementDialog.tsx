@@ -189,7 +189,7 @@ export function CategoryManagementDialog({
     };
 
     fetchCategories();
-  }, [open, instanceId]);
+  }, [open, instanceId, categoryType]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;

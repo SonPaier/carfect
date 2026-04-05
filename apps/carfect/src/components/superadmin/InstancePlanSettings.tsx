@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Minus, Plus, Check } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -57,11 +57,7 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [stationLimit, setStationLimit] = useState(1);
 
-  useEffect(() => {
-    fetchData();
-  }, [instanceId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Fetch all active plans
       const { data: plansData, error: plansError } = await supabase
@@ -104,7 +100,11 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
     } finally {
       setLoading(false);
     }
-  };
+  }, [instanceId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
   
