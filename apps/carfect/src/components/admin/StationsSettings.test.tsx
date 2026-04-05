@@ -463,6 +463,104 @@ describe('StationsSettings', () => {
 
       expect(deleteMock).not.toHaveBeenCalled();
     });
+
+    it('blocks delete when station has assigned reservations', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      const deleteMock = vi.fn();
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'instance_subscriptions') {
+          return createChainMock({ station_limit: 10, subscription_plans: null }, null);
+        }
+        if (table === 'reservations') {
+          // Return count > 0 to block deletion
+          const chain = createChainMock(null, null);
+          chain.then = vi.fn((resolve: (v: unknown) => void) =>
+            Promise.resolve({ count: 3, data: null, error: null }).then(resolve),
+          );
+          return chain;
+        }
+        if (table === 'trainings') {
+          const chain = createChainMock(null, null);
+          chain.then = vi.fn((resolve: (v: unknown) => void) =>
+            Promise.resolve({ count: 0, data: null, error: null }).then(resolve),
+          );
+          return chain;
+        }
+        const chain = createChainMock([makeStation({ id: 'station-1', name: 'Busy Station' })], null);
+        (chain.delete as ReturnType<typeof vi.fn>).mockImplementation(deleteMock);
+        return chain;
+      });
+
+      renderStationsSettings();
+
+      await waitFor(() => screen.getByText('Busy Station'));
+
+      const allButtons = screen.getAllByRole('button');
+      const deleteButton = allButtons.find(
+        (b) => b.classList.contains('text-destructive'),
+      );
+
+      if (deleteButton) {
+        await user.click(deleteButton);
+      }
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith(
+          expect.stringContaining('Nie można usunąć stanowiska'),
+        );
+      });
+
+      // Should NOT have called delete
+      expect(deleteMock).not.toHaveBeenCalled();
+    });
+
+    it('blocks delete when station has assigned trainings', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'instance_subscriptions') {
+          return createChainMock({ station_limit: 10, subscription_plans: null }, null);
+        }
+        if (table === 'reservations') {
+          const chain = createChainMock(null, null);
+          chain.then = vi.fn((resolve: (v: unknown) => void) =>
+            Promise.resolve({ count: 0, data: null, error: null }).then(resolve),
+          );
+          return chain;
+        }
+        if (table === 'trainings') {
+          const chain = createChainMock(null, null);
+          chain.then = vi.fn((resolve: (v: unknown) => void) =>
+            Promise.resolve({ count: 2, data: null, error: null }).then(resolve),
+          );
+          return chain;
+        }
+        return createChainMock([makeStation({ id: 'station-1', name: 'Training Station' })], null);
+      });
+
+      renderStationsSettings();
+
+      await waitFor(() => screen.getByText('Training Station'));
+
+      const allButtons = screen.getAllByRole('button');
+      const deleteButton = allButtons.find(
+        (b) => b.classList.contains('text-destructive'),
+      );
+
+      if (deleteButton) {
+        await user.click(deleteButton);
+      }
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith(
+          expect.stringContaining('Nie można usunąć stanowiska'),
+        );
+      });
+    });
   });
 
   describe('Drag reorder — disabled during save', () => {

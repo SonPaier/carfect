@@ -339,12 +339,29 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
 
     setDeletingId(stationId);
     try {
+      // Check for reservations or trainings assigned to this station
+      const [{ count: resCount }, { count: trainCount }] = await Promise.all([
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact', head: true })
+          .eq('station_id', stationId),
+        supabase
+          .from('trainings')
+          .select('id', { count: 'exact', head: true })
+          .eq('station_id', stationId),
+      ]);
+
+      const total = (resCount ?? 0) + (trainCount ?? 0);
+      if (total > 0) {
+        toast.error(`Nie można usunąć stanowiska — ma ${total} przypisanych rezerwacji/szkoleń`);
+        return;
+      }
+
       const { error } = await supabase.from('stations').delete().eq('id', stationId);
 
       if (error) throw error;
       toast.success(t('stationsSettings.stationDeleted'));
       fetchStations();
-      // Invalidate stations cache
       queryClient.invalidateQueries({ queryKey: ['stations', instanceId] });
     } catch (error) {
       console.error('Error deleting station:', error);

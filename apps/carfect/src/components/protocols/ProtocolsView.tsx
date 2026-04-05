@@ -11,9 +11,6 @@ import {
   ClipboardCheck,
   Search,
   Loader2,
-  Calendar,
-  User,
-  Car,
   MoreVertical,
   Pencil,
   Link2,
@@ -269,32 +266,18 @@ export const ProtocolsView = ({
                       className="flex-1 min-w-0 space-y-1 cursor-pointer"
                       onClick={() => setEditingProtocolId(protocol.id)}
                     >
-                      {/* Line 1: Customer name */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <User className="h-4 w-4 text-muted-foreground flex-shrink-0 hidden sm:block" />
-                        <span className="font-semibold text-sm truncate">
-                          {protocol.customer_name}
-                        </span>
+                      <div className="font-semibold text-sm truncate">
+                        {protocol.customer_name}
                       </div>
-
-                      {/* Line 2: Car */}
                       {(protocol.vehicle_model || protocol.registration_number) && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Car className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">
-                            {[protocol.vehicle_model, protocol.registration_number]
-                              .filter(Boolean)
-                              .join(' • ')}
-                          </span>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {[protocol.vehicle_model, protocol.registration_number]
+                            .filter(Boolean)
+                            .join(' • ')}
                         </div>
                       )}
-
-                      {/* Line 3: Date */}
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 flex-shrink-0" />
-                        <span>
-                          {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
-                        </span>
+                      <div className="text-sm text-muted-foreground">
+                        {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
                       </div>
 
                       {/* Line 4: Offer number + Protocol type + Status (mobile) */}

@@ -85,10 +85,10 @@ const AddSalesOrderDrawer = ({
     const raw = salesSettings?.bank_accounts ?? instanceData?.bank_accounts;
     if (!Array.isArray(raw) || raw.length === 0) return [];
     return raw
-      .map((a: any) =>
+      .map((a: unknown) =>
         typeof a === 'string'
           ? { name: '', number: a }
-          : { name: a.name || '', number: a.number || '' },
+          : { name: (a as { name?: string; number?: string }).name || '', number: (a as { name?: string; number?: string }).number || '' },
       )
       .filter((a: { number: string }) => a.number.trim() !== '');
   }, [salesSettings?.bank_accounts, instanceData?.bank_accounts]);
@@ -199,7 +199,7 @@ const AddSalesOrderDrawer = ({
       )
       .eq('id', customerSearch.selectedCustomer.id)
       .single()
-      .then(({ data }: any) => {
+      .then(({ data }: { data: { shipping_postal_code: string | null; shipping_city: string | null; shipping_country_code: string | null; shipping_street: string | null; shipping_street_line2: string | null } | null }) => {
         if (data) {
           setCustomerAddress({
             postalCode: data.shipping_postal_code || '',
@@ -393,8 +393,8 @@ const AddSalesOrderDrawer = ({
             return;
           }
         }
-      } catch (err: any) {
-        toast.error('Błąd walidacji rolek: ' + (err.message || ''));
+      } catch (err: unknown) {
+        toast.error('Błąd walidacji rolek: ' + ((err as Error).message || ''));
         setSaving(false);
         return;
       }

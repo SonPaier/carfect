@@ -379,11 +379,11 @@ describe('SalesOrdersView', () => {
 
   describe('status change — clearing Apaczka data (regression H4+H5)', () => {
     it('sends null for Apaczka fields when changeStatus sets non-wysłany status', async () => {
-      let updatePayload: any = null;
+      let updatePayload: Record<string, unknown> = {};
       mockFrom.mockImplementation((table: string) => {
         if (table === 'sales_orders') {
           const chain = createChainMock(mockOrders);
-          chain.update = vi.fn((payload: any) => {
+          chain.update = vi.fn((payload: Record<string, unknown>) => {
             updatePayload = payload;
             return chain;
           });
@@ -430,11 +430,11 @@ describe('SalesOrdersView', () => {
 
   describe('payment status', () => {
     it('changePaymentStatus sends correct payload and updates badge', async () => {
-      let updatePayload: any = null;
+      let updatePayload: Record<string, unknown> = {};
       mockFrom.mockImplementation((table: string) => {
         if (table === 'sales_orders') {
           const chain = createChainMock([mockOrders[0]]);
-          chain.update = vi.fn((payload: any) => {
+          chain.update = vi.fn((payload: Record<string, unknown>) => {
             updatePayload = payload;
             return chain;
           });
@@ -483,11 +483,11 @@ describe('SalesOrdersView', () => {
     });
 
     it('changing order status does not open order details drawer', async () => {
-      let updatePayload: any = null;
+      let updatePayload: Record<string, unknown> | null = null;
       mockFrom.mockImplementation((table: string) => {
         if (table === 'sales_orders') {
           const chain = createChainMock([mockOrders[0]]);
-          chain.update = vi.fn((payload: any) => {
+          chain.update = vi.fn((payload: Record<string, unknown>) => {
             updatePayload = payload;
             return chain;
           });

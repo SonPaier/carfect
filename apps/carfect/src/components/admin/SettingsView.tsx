@@ -72,6 +72,7 @@ const SettingsView = ({
   // Company form state
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [companyForm, setCompanyForm] = useState({
@@ -153,6 +154,13 @@ const SettingsView = ({
 
   const handleInputChange = (field: string, value: string) => {
     setCompanyForm((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,36 +246,37 @@ const SettingsView = ({
     if (!instanceId) return;
     if (loading) return;
 
-    // Validation
+    // Validation — collect all errors
+    const errors: Record<string, string> = {};
+
     if (!companyForm.name.trim()) {
-      toast.error('Nazwa myjni jest wymagana');
-      return;
+      errors.name = 'Nazwa myjni jest wymagana';
+    }
+
+    if (companyForm.short_name && companyForm.short_name.length > 11) {
+      errors.short_name = 'Maksymalnie 11 znaków';
     }
 
     if (companyForm.nip) {
       const nipDigits = companyForm.nip.replace(/[\s-]/g, '');
       if (!/^\d{10}$/.test(nipDigits)) {
-        toast.error('NIP musi mieć dokładnie 10 cyfr');
-        return;
+        errors.nip = 'NIP musi mieć dokładnie 10 cyfr';
       }
     }
 
     if (companyForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyForm.email)) {
-      toast.error('Podaj poprawny adres email');
-      return;
+      errors.email = 'Podaj poprawny adres email';
     }
 
     if (companyForm.phone && companyForm.phone.replace(/\D/g, '').length < 9) {
-      toast.error('Numer telefonu musi mieć co najmniej 9 cyfr');
-      return;
+      errors.phone = 'Numer telefonu musi mieć co najmniej 9 cyfr';
     }
 
     if (
       companyForm.reservation_phone &&
       companyForm.reservation_phone.replace(/\D/g, '').length < 9
     ) {
-      toast.error('Numer telefonu do rezerwacji musi mieć co najmniej 9 cyfr');
-      return;
+      errors.reservation_phone = 'Numer telefonu musi mieć co najmniej 9 cyfr';
     }
 
     const urlFields: { field: keyof typeof companyForm; label: string }[] = [
@@ -276,16 +285,20 @@ const SettingsView = ({
       { field: 'social_instagram', label: 'Instagram' },
       { field: 'google_maps_url', label: 'Google Maps' },
     ];
-    for (const { field, label } of urlFields) {
+    for (const { field } of urlFields) {
       const value = companyForm[field];
       if (value && !/^https?:\/\//.test(value)) {
-        toast.error(`${label}: adres URL musi zaczynać się od http:// lub https://`);
-        return;
+        errors[field] = 'Adres musi zaczynać się od http:// lub https://';
       }
     }
 
-    if (companyForm.short_name && companyForm.short_name.length > 11) {
-      toast.error('Skrócona nazwa SMS może mieć maksymalnie 11 znaków');
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      // Scroll to first error
+      const firstErrorField = Object.keys(errors)[0];
+      const el = document.getElementById(firstErrorField);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -323,6 +336,11 @@ const SettingsView = ({
       setLoading(false);
     }
   };
+
+  const FieldError = ({ field }: { field: string }) =>
+    formErrors[field] ? (
+      <p className="text-xs text-destructive mt-1">{formErrors[field]}</p>
+    ) : null;
 
   const currentTab = tabs.find((t) => t.key === activeTab);
 
@@ -382,7 +400,9 @@ const SettingsView = ({
                     id="name"
                     value={companyForm.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
+                    className={formErrors.name ? 'border-destructive' : ''}
                   />
+                  <FieldError field="name" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="short_name">{t('instanceSettings.shortName')} *</Label>
@@ -391,7 +411,9 @@ const SettingsView = ({
                     value={companyForm.short_name}
                     onChange={(e) => handleInputChange('short_name', e.target.value)}
                     maxLength={11}
+                    className={formErrors.short_name ? 'border-destructive' : ''}
                   />
+                  <FieldError field="short_name" />
                   <p className="text-xs text-muted-foreground">
                     Używana w wiadomościach SMS, max 11 znaków
                   </p>
@@ -426,7 +448,9 @@ const SettingsView = ({
                   value={companyForm.nip}
                   onChange={(e) => handleInputChange('nip', e.target.value)}
                   maxLength={13}
+                  className={formErrors.nip ? 'border-destructive' : ''}
                 />
+                <FieldError field="nip" />
               </div>
             </div>
 
@@ -439,7 +463,9 @@ const SettingsView = ({
                   type="tel"
                   value={companyForm.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className={formErrors.phone ? 'border-destructive' : ''}
                 />
+                <FieldError field="phone" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="reservation_phone">{t('instanceSettings.reservationPhone')}</Label>
@@ -448,7 +474,9 @@ const SettingsView = ({
                   type="tel"
                   value={companyForm.reservation_phone}
                   onChange={(e) => handleInputChange('reservation_phone', e.target.value)}
+                  className={formErrors.reservation_phone ? 'border-destructive' : ''}
                 />
+                <FieldError field="reservation_phone" />
                 <p className="text-xs text-muted-foreground">
                   {t('instanceSettings.reservationPhoneDescription')}
                 </p>
@@ -460,7 +488,9 @@ const SettingsView = ({
                   type="email"
                   value={companyForm.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={formErrors.email ? 'border-destructive' : ''}
                 />
+                <FieldError field="email" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">{t('instanceSettings.address')}</Label>
@@ -495,7 +525,7 @@ const SettingsView = ({
                       setBankAccounts(updated);
                     }}
                     placeholder="Nazwa konta"
-                    className="w-40 shrink-0"
+                    className="w-full sm:w-[40%] shrink-0"
                   />
                   <Input
                     value={account.number}
@@ -523,7 +553,7 @@ const SettingsView = ({
                 onClick={() => setBankAccounts([...bankAccounts, { name: '', number: '' }])}
                 className="text-sm text-primary hover:underline"
               >
-                + Dodaj numer konta bankowego
+                + Dodaj kolejne konto bankowe
               </button>
             </div>
 
@@ -536,7 +566,9 @@ const SettingsView = ({
                   type="url"
                   value={companyForm.website}
                   onChange={(e) => handleInputChange('website', e.target.value)}
+                  className={formErrors.website ? 'border-destructive' : ''}
                 />
+                <FieldError field="website" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="social_facebook">{t('instanceSettings.facebook')}</Label>
@@ -544,7 +576,9 @@ const SettingsView = ({
                   id="social_facebook"
                   value={companyForm.social_facebook}
                   onChange={(e) => handleInputChange('social_facebook', e.target.value)}
+                  className={formErrors.social_facebook ? 'border-destructive' : ''}
                 />
+                <FieldError field="social_facebook" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="social_instagram">{t('instanceSettings.instagram')}</Label>
@@ -552,7 +586,9 @@ const SettingsView = ({
                   id="social_instagram"
                   value={companyForm.social_instagram}
                   onChange={(e) => handleInputChange('social_instagram', e.target.value)}
+                  className={formErrors.social_instagram ? 'border-destructive' : ''}
                 />
+                <FieldError field="social_instagram" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="google_maps_url">{t('instanceSettings.googleMaps')}</Label>
@@ -560,7 +596,9 @@ const SettingsView = ({
                   id="google_maps_url"
                   value={companyForm.google_maps_url}
                   onChange={(e) => handleInputChange('google_maps_url', e.target.value)}
+                  className={formErrors.google_maps_url ? 'border-destructive' : ''}
                 />
+                <FieldError field="google_maps_url" />
               </div>
             </div>
 

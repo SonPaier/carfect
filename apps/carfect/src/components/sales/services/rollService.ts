@@ -405,12 +405,12 @@ export async function updateManualRollUsage(
 }
 
 export async function deleteRollUsage(id: string): Promise<void> {
-  const { data, error } = await (supabase
+  const { data, error } = await supabase
     .from('sales_roll_usages')
     .delete()
     .eq('id', id)
     .neq('source', 'order')
-    .select('id') as any);
+    .select('id');
 
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) {
@@ -419,19 +419,19 @@ export async function deleteRollUsage(id: string): Promise<void> {
 }
 
 export async function deleteRollUsagesByOrderItem(orderItemId: string): Promise<void> {
-  const { error } = await (supabase
+  const { error } = await supabase
     .from('sales_roll_usages')
     .delete()
-    .eq('order_item_id', orderItemId) as any);
+    .eq('order_item_id', orderItemId);
 
   if (error) throw new Error(error.message);
 }
 
 export async function deleteRollUsagesByOrder(orderId: string): Promise<void> {
-  const { error } = await (supabase
+  const { error } = await supabase
     .from('sales_roll_usages')
     .delete()
-    .eq('order_id', orderId) as any);
+    .eq('order_id', orderId);
 
   if (error) throw new Error(error.message);
 }
@@ -442,11 +442,11 @@ export async function fetchRollRemainingMb(
   rollId: string,
   excludeOrderId?: string,
 ): Promise<{ lengthM: number; widthMm: number; usedMb: number; remainingMb: number }> {
-  const { data: roll, error: rollErr } = await (supabase
+  const { data: roll, error: rollErr } = await supabase
     .from('sales_rolls')
     .select('length_m, width_mm, initial_remaining_mb')
     .eq('id', rollId)
-    .single() as any);
+    .single();
 
   if (rollErr || !roll) throw new Error(rollErr?.message || 'Roll not found');
 
@@ -456,10 +456,10 @@ export async function fetchRollRemainingMb(
     query = query.neq('order_id', excludeOrderId);
   }
 
-  const { data: usages, error: usageErr } = await (query as any);
+  const { data: usages, error: usageErr } = await query;
   if (usageErr) throw new Error(usageErr.message);
 
-  const usageMb = (usages || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
+  const usageMb = (usages || []).reduce((sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb), 0);
   const lengthM = Number(roll.length_m);
   const widthMm = Number(roll.width_mm);
   const initialRemainingMb = Number(roll.initial_remaining_mb ?? lengthM);
@@ -475,22 +475,22 @@ export async function fetchRollRemainingMb(
 // ─── Fetch single roll by ID (with usage) ───────────────────
 
 export async function fetchRollById(rollId: string): Promise<SalesRoll | null> {
-  const { data: row, error } = await (supabase
+  const { data: row, error } = await supabase
     .from('sales_rolls')
     .select('*')
     .eq('id', rollId)
-    .single() as any);
+    .single();
 
   if (error || !row) return null;
 
-  const roll = mapDbRow(row);
+  const roll = mapDbRow(row as RollDbRow);
 
-  const { data: usageRows } = await (supabase
+  const { data: usageRows } = await supabase
     .from('sales_roll_usages')
     .select('used_mb')
-    .eq('roll_id', rollId) as any);
+    .eq('roll_id', rollId);
 
-  const usageMb = (usageRows || []).reduce((sum: number, u: any) => sum + Number(u.used_mb), 0);
+  const usageMb = (usageRows || []).reduce((sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb), 0);
   const usedMb = (roll.lengthM - roll.initialRemainingMb) + usageMb;
   const remainingMb = Math.max(0, roll.initialRemainingMb - usageMb);
   const widthM = roll.widthMm / 1000;
