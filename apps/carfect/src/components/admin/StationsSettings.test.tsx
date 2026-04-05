@@ -405,9 +405,15 @@ describe('StationsSettings', () => {
   });
 
   describe('Delete station — confirmation dialog', () => {
-    it('calls confirm before deleting', async () => {
+    const findDeleteButton = () => {
+      const allButtons = screen.getAllByRole('button');
+      return allButtons.find(
+        (b) => b.classList.contains('text-destructive') || b.closest('[class*="destructive"]'),
+      );
+    };
+
+    it('opens confirm dialog before deleting', async () => {
       const user = userEvent.setup();
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       mockFrom.mockImplementation((table: string) => {
         if (table === 'instance_subscriptions') {
@@ -420,22 +426,18 @@ describe('StationsSettings', () => {
 
       await waitFor(() => screen.getByText('To Delete'));
 
-      const allButtons = screen.getAllByRole('button');
-      // Delete button is third in the row (after grip and edit)
-      const deleteButton = allButtons.find(
-        (b) => b.classList.contains('text-destructive') || b.closest('[class*="destructive"]'),
-      );
-
+      const deleteButton = findDeleteButton();
       if (deleteButton) {
         await user.click(deleteButton);
       }
 
-      expect(confirmSpy).toHaveBeenCalled();
+      // ConfirmDialog should appear
+      expect(screen.getByText('Usuń stanowisko')).toBeInTheDocument();
+      expect(screen.getByText(/Czy na pewno chcesz usunąć stanowisko/)).toBeInTheDocument();
     });
 
     it('does not delete when confirmation is cancelled', async () => {
       const user = userEvent.setup();
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       const deleteMock = vi.fn();
 
@@ -452,21 +454,20 @@ describe('StationsSettings', () => {
 
       await waitFor(() => screen.getByText('To Delete'));
 
-      const allButtons = screen.getAllByRole('button');
-      const deleteButton = allButtons.find(
-        (b) => b.classList.contains('text-destructive'),
-      );
-
+      const deleteButton = findDeleteButton();
       if (deleteButton) {
         await user.click(deleteButton);
       }
+
+      // Click cancel in the confirm dialog
+      const cancelButton = screen.getByRole('button', { name: 'Anuluj' });
+      await user.click(cancelButton);
 
       expect(deleteMock).not.toHaveBeenCalled();
     });
 
     it('blocks delete when station has assigned reservations', async () => {
       const user = userEvent.setup();
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       const deleteMock = vi.fn();
 
@@ -475,7 +476,6 @@ describe('StationsSettings', () => {
           return createChainMock({ station_limit: 10, subscription_plans: null }, null);
         }
         if (table === 'reservations') {
-          // Return count > 0 to block deletion
           const chain = createChainMock(null, null);
           chain.then = vi.fn((resolve: (v: unknown) => void) =>
             Promise.resolve({ count: 3, data: null, error: null }).then(resolve),
@@ -498,14 +498,14 @@ describe('StationsSettings', () => {
 
       await waitFor(() => screen.getByText('Busy Station'));
 
-      const allButtons = screen.getAllByRole('button');
-      const deleteButton = allButtons.find(
-        (b) => b.classList.contains('text-destructive'),
-      );
-
+      const deleteButton = findDeleteButton();
       if (deleteButton) {
         await user.click(deleteButton);
       }
+
+      // Confirm deletion in the dialog
+      const confirmButton = screen.getByRole('button', { name: 'Potwierdź' });
+      await user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(
@@ -513,13 +513,11 @@ describe('StationsSettings', () => {
         );
       });
 
-      // Should NOT have called delete
       expect(deleteMock).not.toHaveBeenCalled();
     });
 
     it('blocks delete when station has assigned trainings', async () => {
       const user = userEvent.setup();
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       mockFrom.mockImplementation((table: string) => {
         if (table === 'instance_subscriptions') {
@@ -546,14 +544,14 @@ describe('StationsSettings', () => {
 
       await waitFor(() => screen.getByText('Training Station'));
 
-      const allButtons = screen.getAllByRole('button');
-      const deleteButton = allButtons.find(
-        (b) => b.classList.contains('text-destructive'),
-      );
-
+      const deleteButton = findDeleteButton();
       if (deleteButton) {
         await user.click(deleteButton);
       }
+
+      // Confirm deletion in the dialog
+      const confirmButton = screen.getByRole('button', { name: 'Potwierdź' });
+      await user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(

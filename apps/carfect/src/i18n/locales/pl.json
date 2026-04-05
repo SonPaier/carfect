@@ -799,7 +799,8 @@
       "app": "Ustawienia aplikacji",
       "sms": "Wiadomości SMS",
       "users": "Użytkownicy",
-      "widget": "Widget"
+      "widget": "Widget",
+      "integrations": "Integracje"
     }
   },
   "widget": {

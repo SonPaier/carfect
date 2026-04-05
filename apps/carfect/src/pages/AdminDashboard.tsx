@@ -9,7 +9,6 @@ import {
   Menu,
   CheckCircle,
   Settings,
-  Users,
   UserCircle,
   PanelLeftClose,
   PanelLeft,
@@ -19,6 +18,7 @@ import {
   Package,
   Bell,
   ClipboardCheck,
+  ListChecks,
   Loader2,
   UsersRound,
   BadgeDollarSign,
@@ -3022,7 +3022,7 @@ const AdminDashboard = () => {
                     title="Realizacje"
                   >
                     <div className="relative">
-                      <Users className="w-4 h-4 shrink-0" />
+                      <ListChecks className="w-4 h-4 shrink-0" />
                       {sidebarCollapsed && pendingCount > 0 && (
                         <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 text-[10px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
                           {pendingCount}
