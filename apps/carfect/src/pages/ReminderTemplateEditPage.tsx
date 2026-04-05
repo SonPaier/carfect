@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
@@ -81,20 +81,7 @@ export default function ReminderTemplateEditPage() {
   const [description, setDescription] = useState('');
   const [items, setItems] = useState<ReminderItem[]>([{ months: 12, service_type: 'serwis' }]);
 
-  // For new templates, stop loading once auth is ready and we have instanceId
-  useEffect(() => {
-    if (!authLoading && isNew) {
-      setLoading(false);
-    }
-  }, [authLoading, isNew]);
-
-  useEffect(() => {
-    if (!authLoading && !isNew && instanceId && shortId) {
-      fetchTemplate();
-    }
-  }, [authLoading, isNew, instanceId, shortId]);
-
-  const fetchTemplate = async () => {
+  const fetchTemplate = useCallback(async () => {
     if (!instanceId || !shortId) return;
 
     setLoading(true);
@@ -109,7 +96,7 @@ export default function ReminderTemplateEditPage() {
       if (error) throw error;
 
       // Find template where ID starts with shortId
-      const template = data?.find((t) => t.id.startsWith(shortId));
+      const template = data?.find((tmpl) => tmpl.id.startsWith(shortId));
 
       if (template) {
         setTemplateId(template.id);
@@ -131,7 +118,20 @@ export default function ReminderTemplateEditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [instanceId, shortId, t, navigate, remindersBasePath]);
+
+  // For new templates, stop loading once auth is ready and we have instanceId
+  useEffect(() => {
+    if (!authLoading && isNew) {
+      setLoading(false);
+    }
+  }, [authLoading, isNew]);
+
+  useEffect(() => {
+    if (!authLoading && !isNew && instanceId && shortId) {
+      fetchTemplate();
+    }
+  }, [authLoading, isNew, instanceId, shortId, fetchTemplate]);
 
   const handleSave = async () => {
     if (!instanceId) return;

@@ -150,7 +150,7 @@ export const useOffer = (instanceId: string) => {
 
       return newOptions;
     },
-    [instanceId],
+    [],
   );
 
   // Generate options from selected scopes (state mutation)
@@ -893,6 +893,33 @@ export const useOffer = (instanceId: string) => {
     ],
   );
 
+  // ── Local types for Supabase nested join in loadOffer ───────────────────
+  interface LoadedOptionItem {
+    id: string;
+    product_id: string | null;
+    custom_name: string | null;
+    custom_description: string | null;
+    quantity: number;
+    unit_price: number;
+    unit: string | null;
+    discount_percent: number;
+    is_optional: boolean;
+    is_custom: boolean;
+    sort_order: number;
+  }
+
+  interface LoadedOption {
+    id: string;
+    name: string;
+    description: string | null;
+    is_selected: boolean;
+    sort_order: number;
+    scope_id: string | null;
+    variant_id: string | null;
+    is_upsell: boolean;
+    offer_option_items: LoadedOptionItem[] | null;
+  }
+
   // Load offer from database
   // isDuplicate: if true, regenerates all option/item IDs to prevent primary key conflicts
   const loadOffer = useCallback(async (offerId: string, isDuplicate = false) => {
@@ -915,25 +942,25 @@ export const useOffer = (instanceId: string) => {
 
       if (offerError) throw offerError;
 
-      const allOptions = (offerData.offer_options || []).sort(
-        (a: any, b: any) => a.sort_order - b.sort_order,
+      const allOptions = ((offerData.offer_options || []) as LoadedOption[]).sort(
+        (a, b) => a.sort_order - b.sort_order,
       );
 
       // Separate additions from regular options
       // "Additions" option has name 'Dodatki' but NO scope_id - these are manually added items
       // Options with scope_id (even if named 'Dodatki') are service-based and should be loaded as regular options
       const additionsOption = allOptions.find(
-        (opt: any) => opt.name === 'Dodatki' && !opt.scope_id,
+        (opt) => opt.name === 'Dodatki' && !opt.scope_id,
       );
       const regularOptions = allOptions.filter(
-        (opt: any) => !(opt.name === 'Dodatki' && !opt.scope_id),
+        (opt) => !(opt.name === 'Dodatki' && !opt.scope_id),
       );
 
       // Build ID mappings for duplication
       const optionIdMap: Record<string, string> = {};
       const itemIdMap: Record<string, string> = {};
 
-      const options: OfferOption[] = regularOptions.map((opt: any) => {
+      const options: OfferOption[] = regularOptions.map((opt) => {
         const originalOptionId = opt.id;
         const newOptionId = isDuplicate ? crypto.randomUUID() : originalOptionId;
 
@@ -951,8 +978,8 @@ export const useOffer = (instanceId: string) => {
           variantId: opt.variant_id,
           isUpsell: opt.is_upsell,
           items: (opt.offer_option_items || [])
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
-            .map((item: any) => {
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((item) => {
               const originalItemId = item.id;
               const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
 
@@ -983,8 +1010,8 @@ export const useOffer = (instanceId: string) => {
 
       const additions: OfferItem[] = additionsOption
         ? (additionsOption.offer_option_items || [])
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
-            .map((item: any) => {
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((item) => {
               const originalItemId = item.id;
               const newItemId = isDuplicate ? crypto.randomUUID() : originalItemId;
 
@@ -1231,7 +1258,7 @@ export const useOffer = (instanceId: string) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [instanceId]);
 
   // Reset offer
   const resetOffer = useCallback(() => {

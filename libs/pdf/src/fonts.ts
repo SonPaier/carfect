@@ -1,14 +1,16 @@
 import { Font } from '@react-pdf/renderer';
-import path from 'path';
+
+const INTER_REGULAR_URL =
+  'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2';
+const INTER_BOLD_URL =
+  'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYAZ9hiA.woff2';
 
 export function registerFonts() {
-  const fontsDir = path.join(__dirname, '..', 'fonts');
-
   Font.register({
     family: 'Inter',
     fonts: [
-      { src: path.join(fontsDir, 'Inter-Regular.ttf'), fontWeight: 'normal' },
-      { src: path.join(fontsDir, 'Inter-Bold.ttf'), fontWeight: 'bold' },
+      { src: INTER_REGULAR_URL, fontWeight: 'normal' },
+      { src: INTER_BOLD_URL, fontWeight: 'bold' },
     ],
   });
 
