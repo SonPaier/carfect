@@ -74,7 +74,7 @@ export function OfferActionsMenu({
         <Eye className="w-4 h-4 mr-2" />
         {t('offers.preview')}
       </DropdownMenuItem>
-      {onPrintPdf && offer.public_token && (
+      {onPrintPdf && offer.public_token && offer.offer_format === 'v2' && (
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();

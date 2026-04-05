@@ -77,6 +77,15 @@ export default async function handler(req: Request) {
     }
 
     const data = rpcData as Record<string, unknown>;
+
+    // PDF generation only supports v2 offers
+    if (data.offer_format !== 'v2') {
+      return Response.json(
+        { error: 'PDF generation is only available for v2 offers' },
+        { status: 400, headers: CORS_HEADERS },
+      );
+    }
+
     const instanceId = data.instance_id as string;
 
     // Fetch instance data for branding

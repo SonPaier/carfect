@@ -107,6 +107,10 @@ UI trigger → POST /api/generate-offer-pdf { publicToken }
 - New API route replaces it
 - Remove old edge function after verification
 
+## Offer Format Compatibility
+
+PDF is built **only for v2 offers** (flat list, no scopes/templates). Legacy v1 offers are rejected by the API (400 error). UI hides "Drukuj PDF" button for non-v2 offers. V2 offers have `scope_id = NULL` — all items land in a single "Usługi" scope group. Optional/suggested items are marked with `(opcjonalnie)` badge.
+
 ## Future: PDF Configuration View
 
 Not built now, but architecture supports it: all section visibility, font sizes, accent colors, and margins flow through a single config object. When an admin config UI is needed, it writes to DB → API reads config → passes to renderer. No component changes needed.
