@@ -62,4 +62,31 @@ describe('TrustTilesSection', () => {
     expect(screen.getByText('Test')).toBeInTheDocument();
     expect(container.querySelector('svg')).toBeInTheDocument();
   });
+
+  it('tiles container has flex-wrap and justify-center classes for centering', () => {
+    const { container } = render(
+      <TrustTilesSection
+        tiles={[
+          { icon: 'star', title: 'Tile 1', description: 'desc 1' },
+          { icon: 'shield', title: 'Tile 2', description: 'desc 2' },
+        ]}
+        branding={branding}
+      />,
+    );
+
+    // The tiles wrapper div must have flex-wrap and justify-center for proper centering
+    const tilesContainer = container.querySelector('.flex.flex-wrap.justify-center');
+    expect(tilesContainer).toBeInTheDocument();
+  });
+
+  it('renders all known icon types without errors', () => {
+    const iconTypes = ['star', 'shield', 'sparkles', 'award', 'heart', 'car', 'clock', 'check', 'zap', 'trophy', 'thumbsup', 'eye'];
+    const tiles = iconTypes.map((icon) => ({ icon, title: `Icon ${icon}`, description: 'desc' }));
+
+    const { container } = render(<TrustTilesSection tiles={tiles} branding={branding} />);
+
+    // All tiles should render — one svg per tile
+    const svgs = container.querySelectorAll('svg');
+    expect(svgs.length).toBe(iconTypes.length);
+  });
 });

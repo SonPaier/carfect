@@ -101,7 +101,26 @@ function MetaLine({ offer }: { offer: OfferWithOptions }) {
 }
 
 function ScopePills({ offer }: { offer: OfferWithOptions }) {
-  const { t } = useTranslation();
+  // v2 offers: show service names from items instead of scopes
+  if (offer.offer_format === 'v2') {
+    const items = offer.offer_options?.flatMap((opt) => opt.offer_option_items || []) || [];
+    if (items.length === 0) return null;
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {items.map((item) => (
+          <Badge
+            key={item.id}
+            variant="secondary"
+            className="text-xs bg-muted/20 text-foreground font-normal"
+          >
+            {item.custom_name}
+          </Badge>
+        ))}
+      </div>
+    );
+  }
+
+  // v1 offers: show scope names
   if (!offer.offer_scopes || offer.offer_scopes.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-1 mt-2">
