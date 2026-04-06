@@ -215,13 +215,17 @@ export const PublicOfferCustomerView = ({
     }
     return (
       <div className="flex flex-col items-end">
-        <span className="text-xs line-through text-muted-foreground">
-          {formatItemPrice(originalTotal, prefix)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs line-through text-muted-foreground">
+            {formatItemPrice(originalTotal, prefix)}
+          </span>
+          <span className="text-xs" style={{ color: textColor }}>
+            +rabat {item.discount_percent}%
+          </span>
+        </div>
         <span className="font-medium" style={{ color: textColor }}>
           {formatItemPrice(itemTotal, prefix)}
         </span>
-        <span className="text-xs text-green-600">plus rabat {item.discount_percent}%</span>
       </div>
     );
   };

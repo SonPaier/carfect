@@ -178,11 +178,6 @@ export const ProductsSummaryStepV2 = ({
           Wybrane usługi, ceny netto
         </h3>
 
-        {products.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            Brak wybranych usług. Kliknij &quot;Dodaj usługę&quot; poniżej.
-          </p>
-        )}
 
         <div className="space-y-2">
           {products.map((product) => (
@@ -257,18 +252,6 @@ interface ProductRowProps {
 }
 
 function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
-  const [editingPrice, setEditingPrice] = useState(false);
-  const [priceValue, setPriceValue] = useState(product.price.toString());
-
-  const commitPrice = () => {
-    const parsed = parseFloat(priceValue);
-    if (!isNaN(parsed) && parsed >= 0) {
-      onPriceChange(product.itemId, parsed);
-    } else {
-      setPriceValue(product.price.toString());
-    }
-    setEditingPrice(false);
-  };
 
   return (
     <div className="p-3 rounded-lg border bg-white space-y-2">
@@ -288,19 +271,19 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
           )}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onToggleSuggested(product.itemId)}
-            className={cn(
-              'px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
-              product.isSuggested
-                ? 'bg-primary text-white hover:bg-primary/90'
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted',
-            )}
-            title={product.isSuggested ? 'Oznaczone jako opcja' : 'Oznacz jako opcje'}
-          >
-            Opcja
-          </button>
+          {product.isSuggested ? (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer" onClick={() => onToggleSuggested(product.itemId)}>
+              Opcja
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onToggleSuggested(product.itemId)}
+              className="text-xs text-foreground underline hover:text-primary transition-colors"
+            >
+              Dodaj jako opcja
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onRemove(product.itemId)}
@@ -313,28 +296,18 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
 
       {/* Row 2: Price + discount */}
       <div className="flex items-center gap-3">
-        {editingPrice ? (
-          <Input
-            type="number"
-            value={priceValue}
-            onChange={(e) => setPriceValue(e.target.value)}
-            onFocus={(e) => e.target.select()}
-            onBlur={commitPrice}
-            onKeyDown={(e) => e.key === 'Enter' && commitPrice()}
-            className="w-28 h-8 text-sm"
-            min={0}
-            step={1}
-            autoFocus
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => { setPriceValue(product.price.toString()); setEditingPrice(true); }}
-            className="text-sm font-semibold hover:text-primary transition-colors"
-          >
-            {formatPrice(product.price, true)}
-          </button>
-        )}
+        <Input
+          type="number"
+          value={product.price}
+          onChange={(e) => {
+            const parsed = parseFloat(e.target.value);
+            if (!isNaN(parsed) && parsed >= 0) onPriceChange(product.itemId, parsed);
+          }}
+          onFocus={(e) => e.target.select()}
+          className="w-28 h-8 text-sm"
+          min={0}
+          step={1}
+        />
         {discountsEnabled && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Rabat:</span>
