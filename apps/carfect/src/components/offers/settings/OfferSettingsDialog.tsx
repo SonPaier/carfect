@@ -22,6 +22,25 @@ interface OfferSettingsDialogProps {
   instanceId: string;
 }
 
+function DefaultTextarea({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} disabled={disabled} />
+    </div>
+  );
+}
+
 export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSettingsDialogProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('general');
@@ -221,54 +240,30 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                         Te ustawienia będą dziedziczone przez każdą nowo utworzoną usługę.
                       </p>
 
-                      <div className="space-y-2">
-                        <Label>{t('offerSettings.defaultPaymentTerms')}</Label>
-                        <Textarea
-                          value={defaultPaymentTerms}
-                          onChange={(e) => {
-                            setDefaultPaymentTerms(e.target.value);
-                            handleChange();
-                          }}
-                          rows={3}
-                          disabled={saving}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Gwarancja</Label>
-                        <Textarea
-                          value={defaultWarranty}
-                          onChange={(e) => {
-                            setDefaultWarranty(e.target.value);
-                            handleChange();
-                          }}
-                          rows={3}
-                          disabled={saving}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Informacje o serwisie</Label>
-                        <Textarea
-                          value={defaultServiceInfo}
-                          onChange={(e) => {
-                            setDefaultServiceInfo(e.target.value);
-                            handleChange();
-                          }}
-                          rows={3}
-                          disabled={saving}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Uwagi</Label>
-                        <Textarea
-                          value={defaultNotes}
-                          onChange={(e) => {
-                            setDefaultNotes(e.target.value);
-                            handleChange();
-                          }}
-                          rows={3}
-                          disabled={saving}
-                        />
-                      </div>
+                      <DefaultTextarea
+                        label={t('offerSettings.defaultPaymentTerms')}
+                        value={defaultPaymentTerms}
+                        onChange={(v) => { setDefaultPaymentTerms(v); handleChange(); }}
+                        disabled={saving}
+                      />
+                      <DefaultTextarea
+                        label="Gwarancja"
+                        value={defaultWarranty}
+                        onChange={(v) => { setDefaultWarranty(v); handleChange(); }}
+                        disabled={saving}
+                      />
+                      <DefaultTextarea
+                        label="Informacje o serwisie"
+                        value={defaultServiceInfo}
+                        onChange={(v) => { setDefaultServiceInfo(v); handleChange(); }}
+                        disabled={saving}
+                      />
+                      <DefaultTextarea
+                        label="Uwagi"
+                        value={defaultNotes}
+                        onChange={(v) => { setDefaultNotes(v); handleChange(); }}
+                        disabled={saving}
+                      />
                     </div>
 
                     {/* Discounts toggle */}

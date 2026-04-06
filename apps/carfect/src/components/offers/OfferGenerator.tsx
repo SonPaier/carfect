@@ -301,39 +301,6 @@ export const OfferGenerator = ({
     }
   };
 
-  const handleSendFromPreview = async () => {
-    try {
-      const savedId = await saveOffer();
-      if (savedId) {
-        // Fetch the saved offer to get public_token
-        const { data: savedOffer } = await supabase
-          .from('offers')
-          .select('id, offer_number, public_token, customer_data')
-          .eq('id', savedId)
-          .single();
-
-        if (savedOffer) {
-          const customerData = savedOffer.customer_data as { name?: string; email?: string } | null;
-          if (!customerData?.email) {
-            toast.error(t('offers.noCustomerEmail'));
-            return;
-          }
-          // Close preview and open email dialog
-          setShowPreview(false);
-          setSavedOfferForEmail({
-            id: savedOffer.id,
-            offer_number: savedOffer.offer_number,
-            public_token: savedOffer.public_token,
-            customer_data: savedOffer.customer_data as { name?: string; email?: string },
-          });
-          setShowEmailDialog(true);
-        }
-      }
-    } catch (error) {
-      // Error already handled in hook
-    }
-  };
-
   const handleShowPreview = () => {
     setShowPreview(true);
   };
@@ -353,47 +320,6 @@ export const OfferGenerator = ({
       }
     } catch (error) {
       console.error('Print error:', error);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!offer.id) {
-      toast.error(t('offers.saveFirst'));
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-offer-pdf', {
-        body: { offerId: offer.id },
-      });
-
-      if (error) throw error;
-
-      // Validate response is HTML before opening (#3)
-      if (data instanceof Blob && data.type && !data.type.includes('text/html')) {
-        throw new Error(`Unexpected response type: ${data.type}`);
-      }
-      // Open in new window for print-to-PDF using a safe blob URL
-      const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
-      const printWindow = window.open(blobUrl, '_blank');
-      if (printWindow) {
-        // Revoke after the window has loaded the content
-        printWindow.addEventListener('load', () => URL.revokeObjectURL(blobUrl));
-      } else {
-        // Fallback - download as HTML
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `Oferta_${offer.id}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-        toast.info(t('offers.openFilePrintPdf'));
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error(t('offers.pdfError'));
     }
   };
 
