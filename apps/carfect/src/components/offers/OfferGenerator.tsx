@@ -119,7 +119,7 @@ export const OfferGenerator = ({
       const { data, error } = await supabase
         .from('instances')
         .select(
-          'show_unit_prices_in_offer, offer_discounts_enabled, name, email, phone, address, website, contact_person, slug, offer_email_template',
+          'show_unit_prices_in_offer, offer_discounts_enabled, offer_default_payment_terms, offer_default_warranty, offer_default_service_info, offer_default_notes, name, email, phone, address, website, contact_person, slug, offer_email_template',
         )
         .eq('id', instanceId)
         .single();
@@ -143,6 +143,16 @@ export const OfferGenerator = ({
           slug: data.slug,
           offer_email_template: data.offer_email_template,
         });
+
+        // Auto-populate conditions for new offers (not editing, not duplicating)
+        if (!offerId && !duplicateFromId) {
+          const defaults: Record<string, string> = {};
+          if (data.offer_default_payment_terms) defaults.paymentTerms = data.offer_default_payment_terms;
+          if (data.offer_default_warranty) defaults.warranty = data.offer_default_warranty;
+          if (data.offer_default_service_info) defaults.serviceInfo = data.offer_default_service_info;
+          if (data.offer_default_notes) defaults.notes = data.offer_default_notes;
+          if (Object.keys(defaults).length > 0) updateOffer(defaults);
+        }
       }
     };
     fetchInstanceSettings();

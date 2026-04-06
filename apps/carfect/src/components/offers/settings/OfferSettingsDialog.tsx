@@ -33,6 +33,9 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
   const [bankName, setBankName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankCompanyName, setBankCompanyName] = useState('');
+  const [defaultWarranty, setDefaultWarranty] = useState('');
+  const [defaultServiceInfo, setDefaultServiceInfo] = useState('');
+  const [defaultNotes, setDefaultNotes] = useState('');
   const [offerDiscountsEnabled, setOfferDiscountsEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -48,7 +51,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
       const { data } = await supabase
         .from('instances')
         .select(
-          'offer_default_payment_terms, offer_bank_name, offer_bank_account_number, offer_bank_company_name, offer_discounts_enabled',
+          'offer_default_payment_terms, offer_default_warranty, offer_default_service_info, offer_default_notes, offer_bank_name, offer_bank_account_number, offer_bank_company_name, offer_discounts_enabled',
         )
         .eq('id', instanceId)
         .single();
@@ -58,6 +61,9 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
         setBankName(data.offer_bank_name || '');
         setBankAccountNumber(data.offer_bank_account_number || '');
         setBankCompanyName(data.offer_bank_company_name || '');
+        setDefaultWarranty(data.offer_default_warranty || '');
+        setDefaultServiceInfo(data.offer_default_service_info || '');
+        setDefaultNotes(data.offer_default_notes || '');
         setOfferDiscountsEnabled(data.offer_discounts_enabled ?? false);
       }
       setLoadingSettings(false);
@@ -77,6 +83,9 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
           offer_bank_name: bankName || null,
           offer_bank_account_number: bankAccountNumber || null,
           offer_bank_company_name: bankCompanyName || null,
+          offer_default_warranty: defaultWarranty || null,
+          offer_default_service_info: defaultServiceInfo || null,
+          offer_default_notes: defaultNotes || null,
           offer_discounts_enabled: offerDiscountsEnabled,
         })
         .eq('id', instanceId);
@@ -220,7 +229,43 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                             setDefaultPaymentTerms(e.target.value);
                             handleChange();
                           }}
-                          rows={5}
+                          rows={3}
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Gwarancja</Label>
+                        <Textarea
+                          value={defaultWarranty}
+                          onChange={(e) => {
+                            setDefaultWarranty(e.target.value);
+                            handleChange();
+                          }}
+                          rows={3}
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Informacje o serwisie</Label>
+                        <Textarea
+                          value={defaultServiceInfo}
+                          onChange={(e) => {
+                            setDefaultServiceInfo(e.target.value);
+                            handleChange();
+                          }}
+                          rows={3}
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Uwagi</Label>
+                        <Textarea
+                          value={defaultNotes}
+                          onChange={(e) => {
+                            setDefaultNotes(e.target.value);
+                            handleChange();
+                          }}
+                          rows={3}
                           disabled={saving}
                         />
                       </div>
