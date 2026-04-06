@@ -160,3 +160,9 @@ jobs:
       - run: npx playwright test
         env:
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-report
+          path: playwright-report/
+          retention-days: 14
