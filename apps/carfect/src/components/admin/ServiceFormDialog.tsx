@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProtocolPhotosUploader } from '@/components/protocols/ProtocolPhotosUploader';
-import { bruttoToNetto } from '@/utils/pricing';
+import { bruttoToNetto, nettoToBrutto } from '@/utils/pricing';
 
 interface ServiceCategory {
   id: string;
@@ -539,7 +539,9 @@ const ServiceFormContent = ({
               </div>
               {formData.price_from != null && (
                 <p className="text-xs text-muted-foreground">
-                  {bruttoToNetto(formData.price_from).toFixed(2)} zł netto
+                  {formData.prices_are_net
+                    ? `${nettoToBrutto(formData.price_from).toFixed(2)} zł brutto`
+                    : `${bruttoToNetto(formData.price_from).toFixed(2)} zł netto`}
                 </p>
               )}
               <button
@@ -600,14 +602,14 @@ const ServiceFormContent = ({
                 formData.price_medium != null ||
                 formData.price_large != null) && (
                 <p className="text-xs text-muted-foreground">
-                  Netto:{' '}
+                  {formData.prices_are_net ? 'Brutto:' : 'Netto:'}{' '}
                   {[
                     formData.price_small != null &&
-                      `S: ${bruttoToNetto(formData.price_small).toFixed(2)}`,
+                      `S: ${(formData.prices_are_net ? nettoToBrutto(formData.price_small) : bruttoToNetto(formData.price_small)).toFixed(2)}`,
                     formData.price_medium != null &&
-                      `M: ${bruttoToNetto(formData.price_medium).toFixed(2)}`,
+                      `M: ${(formData.prices_are_net ? nettoToBrutto(formData.price_medium) : bruttoToNetto(formData.price_medium)).toFixed(2)}`,
                     formData.price_large != null &&
-                      `L: ${bruttoToNetto(formData.price_large).toFixed(2)}`,
+                      `L: ${(formData.prices_are_net ? nettoToBrutto(formData.price_large) : bruttoToNetto(formData.price_large)).toFixed(2)}`,
                   ]
                     .filter(Boolean)
                     .join(', ')}{' '}

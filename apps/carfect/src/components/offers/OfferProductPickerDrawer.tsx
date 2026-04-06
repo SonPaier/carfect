@@ -3,7 +3,7 @@ import { ArrowLeft, Check, Loader2, Search, X } from 'lucide-react';
 import { Button, Input, Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { bruttoToNetto } from '@/utils/pricing';
+import { bruttoToNetto, nettoToBrutto } from '@/utils/pricing';
 
 export interface PickedProduct {
   id: string;
@@ -33,6 +33,7 @@ interface Category {
   id: string;
   name: string;
   sort_order: number | null;
+  prices_are_net: boolean;
 }
 
 export interface OfferProductPickerDrawerProps {
@@ -84,7 +85,7 @@ export function OfferProductPickerDrawer({
             .order('sort_order'),
           supabase
             .from('unified_categories')
-            .select('id, name, sort_order')
+            .select('id, name, sort_order, prices_are_net')
             .eq('instance_id', instanceId)
             .eq('active', true)
             .eq('category_type', 'both')
@@ -137,17 +138,27 @@ export function OfferProductPickerDrawer({
     });
   };
 
+  const isCategoryNet = (categoryId: string | null): boolean => {
+    if (!categoryId) return false;
+    return categories.find((c) => c.id === categoryId)?.prices_are_net ?? false;
+  };
+
   const handleConfirm = () => {
     const picked: PickedProduct[] = Array.from(selectedIds)
       .map((id) => services.find((s) => s.id === id))
       .filter((s): s is Service => s !== undefined)
-      .map((s) => ({
-        id: s.id,
-        name: s.name,
-        short_name: s.short_name,
-        description: s.description,
-        price: getServicePrice(s) ? bruttoToNetto(getServicePrice(s)!) : 0,
-      }));
+      .map((s) => {
+        const raw = getServicePrice(s);
+        // Prices in offers are always net — convert if stored as brutto
+        const netPrice = raw ? (isCategoryNet(s.category_id) ? raw : bruttoToNetto(raw)) : 0;
+        return {
+          id: s.id,
+          name: s.name,
+          short_name: s.short_name,
+          description: s.description,
+          price: netPrice,
+        };
+      });
 
     onConfirm(picked);
     onClose();
@@ -156,6 +167,9 @@ export function OfferProductPickerDrawer({
   const formatServicePrice = (s: Service): string => {
     const raw = getServicePrice(s);
     if (raw === null) return 'wycena';
+    if (isCategoryNet(s.category_id)) {
+      return `${raw.toFixed(0)} zł netto`;
+    }
     return `${bruttoToNetto(raw).toFixed(0)} zł netto`;
   };
 

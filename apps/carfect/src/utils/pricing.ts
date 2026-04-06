@@ -15,6 +15,11 @@ export const bruttoToNetto = (brutto: number): number => {
   return Math.round((brutto / VAT_RATE) * 100) / 100;
 };
 
+/** Convert netto (net) to gross, rounded to 2 decimal places */
+export const nettoToBrutto = (netto: number): number => {
+  return Math.round(netto * VAT_RATE * 100) / 100;
+};
+
 interface ServiceLike {
   price_from: number | null;
   price_small: number | null;
