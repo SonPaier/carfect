@@ -738,4 +738,250 @@ describe('ProductsSummaryStepV2', () => {
       expect(screen.queryByTestId('service-form-dialog')).not.toBeInTheDocument();
     });
   });
+
+  // --- 10. Discount feature ---
+
+  describe('discounts feature', () => {
+    describe('when discountsEnabled is false (flag OFF)', () => {
+      it('does not render any discount input when a product is added', async () => {
+        const user = userEvent.setup();
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={false} />);
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        expect(screen.queryByLabelText('Rabat %')).not.toBeInTheDocument();
+      });
+
+      it('does not render "Rabat:" label when a product is added', async () => {
+        const user = userEvent.setup();
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={false} />);
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        expect(screen.queryByText('Rabat:')).not.toBeInTheDocument();
+      });
+
+      it('does not render discount input for products loaded from existing offer', () => {
+        const offer = buildOffer({
+          options: [
+            buildOptionWithItems([
+              {
+                id: 'item-1',
+                productId: 'prod-1',
+                customName: 'Mycie Premium',
+                quantity: 1,
+                unitPrice: 300,
+                unit: 'szt.',
+                discountPercent: 15,
+                isOptional: false,
+                isCustom: false,
+              },
+            ]),
+          ],
+        });
+
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={false} offer={offer} />);
+
+        expect(screen.queryByLabelText('Rabat %')).not.toBeInTheDocument();
+        expect(screen.queryByText('Rabat:')).not.toBeInTheDocument();
+      });
+    });
+
+    describe('when discountsEnabled is true (flag ON)', () => {
+      it('renders discount input and "Rabat:" label for each product row', async () => {
+        const user = userEvent.setup();
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={true} />);
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        expect(screen.getByLabelText('Rabat %')).toBeInTheDocument();
+        expect(screen.getByText('Rabat:')).toBeInTheDocument();
+      });
+
+      it('discount input has placeholder "0"', async () => {
+        const user = userEvent.setup();
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={true} />);
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        const discountInput = screen.getByLabelText('Rabat %');
+        expect(discountInput).toHaveAttribute('placeholder', '0');
+      });
+
+      it('entering a discount value syncs discountPercent to onUpdateOffer', async () => {
+        const onUpdateOffer = vi.fn();
+        const user = userEvent.setup();
+
+        render(
+          <ProductsSummaryStepV2
+            {...defaultProps}
+            discountsEnabled={true}
+            onUpdateOffer={onUpdateOffer}
+          />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        onUpdateOffer.mockClear();
+
+        const discountInput = screen.getByLabelText('Rabat %');
+        fireEvent.change(discountInput, { target: { value: '20' } });
+
+        await waitFor(() => {
+          const lastCall = onUpdateOffer.mock.calls.at(-1)?.[0];
+          expect(lastCall?.options?.[0]?.items?.[0]?.discountPercent).toBe(20);
+        });
+      });
+
+      it('clamps discount to 100 when entering a value above 100', async () => {
+        const onUpdateOffer = vi.fn();
+        const user = userEvent.setup();
+
+        render(
+          <ProductsSummaryStepV2
+            {...defaultProps}
+            discountsEnabled={true}
+            onUpdateOffer={onUpdateOffer}
+          />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        onUpdateOffer.mockClear();
+
+        const discountInput = screen.getByLabelText('Rabat %');
+        fireEvent.change(discountInput, { target: { value: '150' } });
+
+        await waitFor(() => {
+          const lastCall = onUpdateOffer.mock.calls.at(-1)?.[0];
+          expect(lastCall?.options?.[0]?.items?.[0]?.discountPercent).toBe(100);
+        });
+      });
+
+      it('clamps discount to 0 when entering a negative value', async () => {
+        const onUpdateOffer = vi.fn();
+        const user = userEvent.setup();
+
+        render(
+          <ProductsSummaryStepV2
+            {...defaultProps}
+            discountsEnabled={true}
+            onUpdateOffer={onUpdateOffer}
+          />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        onUpdateOffer.mockClear();
+
+        const discountInput = screen.getByLabelText('Rabat %');
+        fireEvent.change(discountInput, { target: { value: '-10' } });
+
+        await waitFor(() => {
+          const lastCall = onUpdateOffer.mock.calls.at(-1)?.[0];
+          expect(lastCall?.options?.[0]?.items?.[0]?.discountPercent).toBe(0);
+        });
+      });
+
+      it('loading an existing offer with discountPercent shows value in the discount input', () => {
+        const offer = buildOffer({
+          options: [
+            buildOptionWithItems([
+              {
+                id: 'item-1',
+                productId: 'prod-1',
+                customName: 'Usługa Z Rabatem',
+                quantity: 1,
+                unitPrice: 500,
+                unit: 'szt.',
+                discountPercent: 15,
+                isOptional: false,
+                isCustom: false,
+              },
+            ]),
+          ],
+        });
+
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={true} offer={offer} />);
+
+        const discountInput = screen.getByLabelText('Rabat %') as HTMLInputElement;
+        expect(discountInput.value).toBe('15');
+      });
+
+      it('discountPercent is synced into OfferItem in onUpdateOffer when loading existing offer', () => {
+        const onUpdateOffer = vi.fn();
+        const offer = buildOffer({
+          options: [
+            buildOptionWithItems([
+              {
+                id: 'item-1',
+                productId: 'prod-1',
+                customName: 'Usługa Sync',
+                quantity: 1,
+                unitPrice: 400,
+                unit: 'szt.',
+                discountPercent: 25,
+                isOptional: false,
+                isCustom: false,
+              },
+            ]),
+          ],
+        });
+
+        render(
+          <ProductsSummaryStepV2
+            {...defaultProps}
+            discountsEnabled={true}
+            offer={offer}
+            onUpdateOffer={onUpdateOffer}
+          />,
+        );
+
+        // onUpdateOffer is called during mount sync (useEffect: products -> offer.options)
+        const calls = onUpdateOffer.mock.calls;
+        const lastCall = calls.at(-1)?.[0];
+        expect(lastCall?.options?.[0]?.items?.[0]?.discountPercent).toBe(25);
+      });
+
+      it('new product added via picker starts with discountPercent 0', async () => {
+        const onUpdateOffer = vi.fn();
+        const user = userEvent.setup();
+
+        render(
+          <ProductsSummaryStepV2
+            {...defaultProps}
+            discountsEnabled={true}
+            onUpdateOffer={onUpdateOffer}
+          />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        await waitFor(() => {
+          const lastCall = onUpdateOffer.mock.calls.at(-1)?.[0];
+          expect(lastCall?.options?.[0]?.items?.[0]?.discountPercent).toBe(0);
+        });
+      });
+
+      it('renders one discount input per product row when multiple products are present', async () => {
+        const user = userEvent.setup();
+        render(<ProductsSummaryStepV2 {...defaultProps} discountsEnabled={true} />);
+
+        // Add first product
+        await user.click(screen.getByRole('button', { name: /dodaj usługę/i }));
+        await user.click(screen.getByTestId('picker-add-with-id'));
+
+        const discountInputs = screen.getAllByLabelText('Rabat %');
+        expect(discountInputs).toHaveLength(1);
+      });
+    });
+  });
 });
