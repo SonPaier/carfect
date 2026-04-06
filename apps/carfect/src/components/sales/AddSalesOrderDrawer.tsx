@@ -88,7 +88,10 @@ const AddSalesOrderDrawer = ({
       .map((a: unknown) =>
         typeof a === 'string'
           ? { name: '', number: a }
-          : { name: (a as { name?: string; number?: string }).name || '', number: (a as { name?: string; number?: string }).number || '' },
+          : {
+              name: (a as { name?: string; number?: string }).name || '',
+              number: (a as { name?: string; number?: string }).number || '',
+            },
       )
       .filter((a: { number: string }) => a.number.trim() !== '');
   }, [salesSettings?.bank_accounts, instanceData?.bank_accounts]);
@@ -199,25 +202,37 @@ const AddSalesOrderDrawer = ({
       )
       .eq('id', customerSearch.selectedCustomer.id)
       .single()
-      .then(({ data }: { data: { shipping_postal_code: string | null; shipping_city: string | null; shipping_country_code: string | null; shipping_street: string | null; shipping_street_line2: string | null } | null }) => {
-        if (data) {
-          setCustomerAddress({
-            postalCode: data.shipping_postal_code || '',
-            city: data.shipping_city || '',
-          });
-          if (skipAddressOverrideRef.current) {
-            skipAddressOverrideRef.current = false;
-          } else {
-            setShippingAddress({
-              country: data.shipping_country_code || 'PL',
-              street: data.shipping_street || '',
-              streetLine2: data.shipping_street_line2 || '',
+      .then(
+        ({
+          data,
+        }: {
+          data: {
+            shipping_postal_code: string | null;
+            shipping_city: string | null;
+            shipping_country_code: string | null;
+            shipping_street: string | null;
+            shipping_street_line2: string | null;
+          } | null;
+        }) => {
+          if (data) {
+            setCustomerAddress({
               postalCode: data.shipping_postal_code || '',
               city: data.shipping_city || '',
             });
+            if (skipAddressOverrideRef.current) {
+              skipAddressOverrideRef.current = false;
+            } else {
+              setShippingAddress({
+                country: data.shipping_country_code || 'PL',
+                street: data.shipping_street || '',
+                streetLine2: data.shipping_street_line2 || '',
+                postalCode: data.shipping_postal_code || '',
+                city: data.shipping_city || '',
+              });
+            }
           }
-        }
-      });
+        },
+      );
   }, [customerSearch.selectedCustomer?.id]);
 
   const [nextOrderNumber, setNextOrderNumber] = useState('');
@@ -422,7 +437,7 @@ const AddSalesOrderDrawer = ({
           : ('shipping' as DeliveryType);
 
       if (isEdit && editOrder) {
-        const { error } = await (supabase
+        const { error } = (await supabase
           .from('sales_orders')
           .update({
             customer_id: customerSearch.selectedCustomer.id,
@@ -441,13 +456,13 @@ const AddSalesOrderDrawer = ({
             })),
             shipping_address: hasShipping ? shippingAddress : null,
           })
-          .eq('id', editOrder.id) as any);
+          .eq('id', editOrder.id)) as { error: { message: string } | null };
 
         if (error) throw error;
 
         // Delete old roll usages and items explicitly (don't rely on cascade)
-        await (supabase.from('sales_roll_usages').delete().eq('order_id', editOrder.id) as any);
-        await (supabase.from('sales_order_items').delete().eq('order_id', editOrder.id) as any);
+        await supabase.from('sales_roll_usages').delete().eq('order_id', editOrder.id);
+        await supabase.from('sales_order_items').delete().eq('order_id', editOrder.id);
         if (products.length > 0) {
           const items = products.map((p, idx) => {
             const qty = getEffectiveQty(p);
@@ -465,10 +480,10 @@ const AddSalesOrderDrawer = ({
               required_m2: p.requiredM2 ?? null,
             };
           });
-          const { data: insertedItems } = await (supabase
+          const { data: insertedItems } = await supabase
             .from('sales_order_items')
             .insert(items)
-            .select('id') as any);
+            .select('id');
 
           // Create roll usages for meter-based products (multi-roll)
           if (insertedItems) {
@@ -488,7 +503,7 @@ const AddSalesOrderDrawer = ({
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
                     toast.error(
-                      `Błąd zapisu zużycia rolki: ${(e as any)?.message || 'Nieznany błąd'}`,
+                      `Błąd zapisu zużycia rolki: ${(e as Error)?.message || 'Nieznany błąd'}`,
                     );
                   }
                 }
@@ -501,7 +516,7 @@ const AddSalesOrderDrawer = ({
       } else {
         // Regenerate order number at save time to avoid race conditions
         const freshOrderNumber = await getNextOrderNumber(instanceId!);
-        const { data: order, error } = await (supabase
+        const { data: order, error } = await supabase
           .from('sales_orders')
           .insert({
             instance_id: instanceId,
@@ -526,7 +541,7 @@ const AddSalesOrderDrawer = ({
             shipping_address: hasShipping ? shippingAddress : null,
           })
           .select('id')
-          .single() as any);
+          .single();
 
         if (error) throw error;
 
@@ -548,10 +563,10 @@ const AddSalesOrderDrawer = ({
               required_m2: p.requiredM2 ?? null,
             };
           });
-          const { data: insertedItems } = await (supabase
+          const { data: insertedItems } = await supabase
             .from('sales_order_items')
             .insert(items)
-            .select('id') as any);
+            .select('id');
 
           // Create roll usages for meter-based products (multi-roll)
           if (insertedItems) {
@@ -571,7 +586,7 @@ const AddSalesOrderDrawer = ({
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
                     toast.error(
-                      `Błąd zapisu zużycia rolki: ${(e as any)?.message || 'Nieznany błąd'}`,
+                      `Błąd zapisu zużycia rolki: ${(e as Error)?.message || 'Nieznany błąd'}`,
                     );
                   }
                 }

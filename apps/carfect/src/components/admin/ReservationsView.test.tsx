@@ -294,29 +294,29 @@ describe('ReservationsView', () => {
   describe('multi-day reservation', () => {
     it('shows two date lines for multi-day reservation', () => {
       const reservation = makeReservation({
-        reservation_date: '2026-04-05',
-        end_date: '2026-04-07',
+        reservation_date: '2026-06-10',
+        end_date: '2026-06-12',
       });
       renderView({ reservations: [reservation] });
 
       const table = screen.getByRole('table');
-      expect(within(table).getByText('05.04.2026, 10:00')).toBeInTheDocument();
-      expect(within(table).getByText('07.04.2026, 12:00')).toBeInTheDocument();
+      expect(within(table).getByText('10.06.2026, 10:00')).toBeInTheDocument();
+      expect(within(table).getByText('12.06.2026, 12:00')).toBeInTheDocument();
     });
 
     it('shows one date line for single-day reservation', () => {
       const reservation = makeReservation({
-        reservation_date: '2026-04-05',
+        reservation_date: '2026-06-10',
         end_date: null,
       });
       renderView({ reservations: [reservation] });
 
       const table = screen.getByRole('table');
       // Only one date line — end date should not appear separately
-      const dateElements = within(table).queryAllByText('05.04.2026, 10:00');
+      const dateElements = within(table).queryAllByText('10.06.2026, 10:00');
       expect(dateElements).toHaveLength(1);
       // And no second date line for the same date
-      expect(within(table).queryAllByText('05.04.2026, 12:00')).toHaveLength(0);
+      expect(within(table).queryAllByText('10.06.2026, 12:00')).toHaveLength(0);
     });
   });
 
