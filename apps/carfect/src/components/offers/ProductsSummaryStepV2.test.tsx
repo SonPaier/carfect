@@ -11,10 +11,6 @@ vi.mock('@/integrations/supabase/client', async () => {
   return { supabase: mockSupabase };
 });
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // Mock OfferProductPickerDrawer — controllable stub
 vi.mock('./OfferProductPickerDrawer', () => ({
   OfferProductPickerDrawer: ({

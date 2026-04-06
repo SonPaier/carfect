@@ -1,15 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@shared/ui';
-import { Input } from '@shared/ui';
-
+import { Button, Input } from '@shared/ui';
 import { Plus, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { OfferProductPickerDrawer, PickedProduct } from './OfferProductPickerDrawer';
 import { ConditionsSection } from './summary/ConditionsSection';
 import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
-import { formatPrice } from '@/lib/offerUtils';
 import type { OfferState, OfferOption, OfferItem } from '@/hooks/useOffer';
 
 const clampPercent = (v: number) => (isNaN(v) ? 0 : Math.min(100, Math.max(0, v)));
@@ -50,7 +45,6 @@ export const ProductsSummaryStepV2 = ({
   onShowPreview,
   onServiceSaved,
 }: ProductsSummaryStepV2Props) => {
-  const { t } = useTranslation();
   const [products, setProducts] = useState<FlatProduct[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceData | null>(null);
@@ -178,7 +172,6 @@ export const ProductsSummaryStepV2 = ({
           Wybrane usługi, ceny netto
         </h3>
 
-
         <div className="space-y-2">
           {products.map((product) => (
             <ProductRow
@@ -296,18 +289,21 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
 
       {/* Row 2: Price + discount */}
       <div className="flex items-center gap-3">
-        <Input
-          type="number"
-          value={product.price}
-          onChange={(e) => {
-            const parsed = parseFloat(e.target.value);
-            if (!isNaN(parsed) && parsed >= 0) onPriceChange(product.itemId, parsed);
-          }}
-          onFocus={(e) => e.target.select()}
-          className="w-28 h-8 text-sm"
-          min={0}
-          step={1}
-        />
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            value={product.price}
+            onChange={(e) => {
+              const parsed = parseFloat(e.target.value);
+              if (!isNaN(parsed) && parsed >= 0) onPriceChange(product.itemId, parsed);
+            }}
+            onFocus={(e) => e.target.select()}
+            className="w-28 h-8 text-sm"
+            min={0}
+            step={1}
+          />
+          <span className="text-sm text-muted-foreground">zł</span>
+        </div>
         {discountsEnabled && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Rabat:</span>
