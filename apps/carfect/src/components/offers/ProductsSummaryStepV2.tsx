@@ -271,24 +271,48 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
   };
 
   return (
-    <div
-      className="flex items-start gap-4 p-3 rounded-lg border bg-white"
-    >
-      <div className="flex-1 min-w-0">
-        {product.productId ? (
+    <div className="p-3 rounded-lg border bg-white space-y-2">
+      {/* Row 1: Name + delete */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {product.productId ? (
+            <button
+              type="button"
+              onClick={() => onEdit(product.productId)}
+              className="font-medium text-sm block text-left hover:text-primary transition-colors"
+            >
+              {product.name}
+            </button>
+          ) : (
+            <p className="font-medium text-sm">{product.name}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => onEdit(product.productId)}
-            className="font-medium text-sm block text-left hover:text-primary transition-colors"
+            onClick={() => onToggleSuggested(product.itemId)}
+            className={cn(
+              'px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
+              product.isSuggested
+                ? 'bg-primary text-white hover:bg-primary/90'
+                : 'bg-muted/50 text-muted-foreground hover:bg-muted',
+            )}
+            title={product.isSuggested ? 'Oznaczone jako opcja' : 'Oznacz jako opcje'}
           >
-            {product.name}
+            Opcja
           </button>
-        ) : (
-          <p className="font-medium text-sm">{product.name}</p>
-        )}
+          <button
+            type="button"
+            onClick={() => onRemove(product.itemId)}
+            className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="shrink-0">
+      {/* Row 2: Price + discount */}
+      <div className="flex items-center gap-3">
         {editingPrice ? (
           <Input
             type="number"
@@ -297,7 +321,7 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
             onFocus={(e) => e.target.select()}
             onBlur={commitPrice}
             onKeyDown={(e) => e.key === 'Enter' && commitPrice()}
-            className="w-24 h-8 text-right text-sm"
+            className="w-28 h-8 text-sm"
             min={0}
             step={1}
             autoFocus
@@ -306,66 +330,32 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
           <button
             type="button"
             onClick={() => { setPriceValue(product.price.toString()); setEditingPrice(true); }}
-            className="text-sm font-semibold hover:text-primary transition-colors min-w-[70px] text-right"
+            className="text-sm font-semibold hover:text-primary transition-colors"
           >
-            {product.price} zl
+            {formatPrice(product.price, true)}
           </button>
         )}
-      </div>
-
-      {discountsEnabled && (
-        <div className="shrink-0 flex flex-col items-end gap-1">
-          <Input
-            type="number"
-            value={product.discountPercent === 0 ? '' : product.discountPercent}
-            onChange={(e) => {
-              const raw = parseFloat(e.target.value);
-              onDiscountChange(product.itemId, clampPercent(raw));
-            }}
-            placeholder="0"
-            min={0}
-            max={100}
-            step={1}
-            className="w-16 h-8 text-right text-sm"
-            aria-label="Rabat %"
-          />
-          {product.discountPercent > 0 && (
-            <div className="text-xs text-right space-y-0.5">
-              <span className="line-through text-muted-foreground">
-                {formatPrice(product.price, true)}
-              </span>
-              <span className="text-green-600 block">
-                oszczędność: {formatPrice(Math.round(product.price * product.discountPercent / 100), true)}
-              </span>
-              <span className="font-semibold block">
-                {formatPrice(Math.round(product.price * (1 - product.discountPercent / 100)), true)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onToggleSuggested(product.itemId)}
-        className={cn(
-          'px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
-          product.isSuggested
-            ? 'bg-primary text-white hover:bg-primary/90'
-            : 'bg-muted/50 text-muted-foreground hover:bg-muted',
+        {discountsEnabled && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Rabat:</span>
+            <Input
+              type="number"
+              value={product.discountPercent === 0 ? '' : product.discountPercent}
+              onChange={(e) => {
+                const raw = parseFloat(e.target.value);
+                onDiscountChange(product.itemId, clampPercent(raw));
+              }}
+              placeholder="0"
+              min={0}
+              max={100}
+              step={1}
+              className="w-16 h-8 text-right text-sm"
+              aria-label="Rabat %"
+            />
+            <span className="text-xs text-muted-foreground">%</span>
+          </div>
         )}
-        title={product.isSuggested ? 'Oznaczone jako opcja' : 'Oznacz jako opcje'}
-      >
-        Opcja
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onRemove(product.itemId)}
-        className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      </div>
     </div>
   );
 }

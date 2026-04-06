@@ -221,7 +221,7 @@ export const PublicOfferCustomerView = ({
         <span className="font-medium" style={{ color: textColor }}>
           {formatItemPrice(itemTotal, prefix)}
         </span>
-        <span className="text-xs text-green-600">-{item.discount_percent}%</span>
+        <span className="text-xs text-green-600">plus rabat {item.discount_percent}%</span>
       </div>
     );
   };
