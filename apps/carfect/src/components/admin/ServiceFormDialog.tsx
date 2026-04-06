@@ -964,6 +964,7 @@ export const ServiceFormDialog = ({
   onDelete,
   existingServices = [],
   forceAdvancedOpen = false,
+  pricingMode,
 }: ServiceFormDialogProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -994,6 +995,7 @@ export const ServiceFormDialog = ({
               onDelete={onDelete}
               existingServices={existingServices}
               forceAdvancedOpen={forceAdvancedOpen}
+              pricingMode={pricingMode}
             />
           </div>
         </DrawerContent>
@@ -1025,6 +1027,7 @@ export const ServiceFormDialog = ({
             onDelete={onDelete}
             existingServices={existingServices}
             forceAdvancedOpen={forceAdvancedOpen}
+            pricingMode={pricingMode}
           />
         </div>
       </DialogContent>

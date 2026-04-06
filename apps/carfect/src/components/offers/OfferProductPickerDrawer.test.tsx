@@ -29,8 +29,8 @@ vi.mock('@shared/ui', async (importOriginal) => {
 const INSTANCE_ID = 'test-instance-id';
 
 const mockCategories = [
-  { id: 'cat-1', name: 'Mycie', sort_order: 1 },
-  { id: 'cat-2', name: 'Detailing', sort_order: 2 },
+  { id: 'cat-1', name: 'Mycie', sort_order: 1, prices_are_net: false },
+  { id: 'cat-2', name: 'Detailing', sort_order: 2, prices_are_net: false },
 ];
 
 const mockServices = [
@@ -222,5 +222,156 @@ describe('OfferProductPickerDrawer', () => {
   it('does not render content when drawer is closed', () => {
     render(<OfferProductPickerDrawer {...defaultProps} open={false} />);
     expect(screen.queryByTestId('sheet')).not.toBeInTheDocument();
+  });
+
+  describe('prices_are_net category handling', () => {
+    it('preserves raw price as netto when category has prices_are_net=true (no double VAT division)', async () => {
+      // When category prices_are_net=true, the price IS already netto.
+      // It should NOT be divided by VAT again — price must equal the raw stored value.
+      const netCategories = [
+        { id: 'cat-net', name: 'Net Category', sort_order: 1, prices_are_net: true },
+      ];
+      const netServices = [
+        {
+          id: 'svc-net',
+          name: 'Net Service',
+          short_name: null,
+          description: null,
+          category_id: 'cat-net',
+          price_from: 500,
+          price_small: null,
+          price_medium: null,
+          price_large: null,
+        },
+      ];
+
+      mockSupabaseQuery('unified_services', { data: netServices, error: null });
+      mockSupabaseQuery('unified_categories', { data: netCategories, error: null });
+
+      const onConfirm = vi.fn();
+      const user = userEvent.setup();
+
+      render(
+        <OfferProductPickerDrawer
+          {...defaultProps}
+          onConfirm={onConfirm}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('product-item')).toHaveLength(1);
+      });
+
+      await user.click(screen.getAllByTestId('product-item')[0]);
+      await user.click(screen.getByTestId('confirm-button'));
+
+      const confirmed = onConfirm.mock.calls[0][0];
+      // Price must be exactly 500 (the raw netto value), NOT bruttoToNetto(500) ≈ 406.50
+      expect(confirmed[0].price).toBe(500);
+    });
+
+    it('converts brutto to netto when category has prices_are_net=false', async () => {
+      // When prices_are_net=false, raw price is brutto and must be converted to netto
+      const bruttoCategories = [
+        { id: 'cat-brutto', name: 'Brutto Category', sort_order: 1, prices_are_net: false },
+      ];
+      const bruttoServices = [
+        {
+          id: 'svc-brutto',
+          name: 'Brutto Service',
+          short_name: null,
+          description: null,
+          category_id: 'cat-brutto',
+          price_from: 123,
+          price_small: null,
+          price_medium: null,
+          price_large: null,
+        },
+      ];
+
+      mockSupabaseQuery('unified_services', { data: bruttoServices, error: null });
+      mockSupabaseQuery('unified_categories', { data: bruttoCategories, error: null });
+
+      const onConfirm = vi.fn();
+      const user = userEvent.setup();
+
+      render(
+        <OfferProductPickerDrawer
+          {...defaultProps}
+          onConfirm={onConfirm}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('product-item')).toHaveLength(1);
+      });
+
+      await user.click(screen.getAllByTestId('product-item')[0]);
+      await user.click(screen.getByTestId('confirm-button'));
+
+      const confirmed = onConfirm.mock.calls[0][0];
+      // 123 brutto / 1.23 = 100.00 netto
+      expect(confirmed[0].price).toBeCloseTo(100, 1);
+    });
+
+    it('displays price as netto in list for prices_are_net=true category', async () => {
+      // Price display should show raw value as netto — no conversion
+      const netCategories = [
+        { id: 'cat-net', name: 'Net Category', sort_order: 1, prices_are_net: true },
+      ];
+      const netServices = [
+        {
+          id: 'svc-net',
+          name: 'Net Service',
+          short_name: null,
+          description: null,
+          category_id: 'cat-net',
+          price_from: 800,
+          price_small: null,
+          price_medium: null,
+          price_large: null,
+        },
+      ];
+
+      mockSupabaseQuery('unified_services', { data: netServices, error: null });
+      mockSupabaseQuery('unified_categories', { data: netCategories, error: null });
+
+      render(<OfferProductPickerDrawer {...defaultProps} />);
+
+      await waitFor(() => {
+        // formatServicePrice for net category shows raw price as netto: "800 zł netto"
+        expect(screen.getByText('800 zł netto')).toBeInTheDocument();
+      });
+    });
+
+    it('displays bruttoToNetto conversion in list for prices_are_net=false category', async () => {
+      // For brutto category, display converts to netto: bruttoToNetto(123) ≈ 100.00
+      const bruttoCategories = [
+        { id: 'cat-brutto', name: 'Brutto Category', sort_order: 1, prices_are_net: false },
+      ];
+      const bruttoServices = [
+        {
+          id: 'svc-brutto',
+          name: 'Brutto Service',
+          short_name: null,
+          description: null,
+          category_id: 'cat-brutto',
+          price_from: 123,
+          price_small: null,
+          price_medium: null,
+          price_large: null,
+        },
+      ];
+
+      mockSupabaseQuery('unified_services', { data: bruttoServices, error: null });
+      mockSupabaseQuery('unified_categories', { data: bruttoCategories, error: null });
+
+      render(<OfferProductPickerDrawer {...defaultProps} />);
+
+      await waitFor(() => {
+        // bruttoToNetto(123) = 100.00, displayed as "100 zł netto"
+        expect(screen.getByText('100 zł netto')).toBeInTheDocument();
+      });
+    });
   });
 });

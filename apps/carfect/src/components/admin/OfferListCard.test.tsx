@@ -208,6 +208,69 @@ describe('OfferListCard', () => {
     });
   });
 
+  describe('v2 offer pills', () => {
+    it('renders item custom_name badges for v2 offers instead of scope names', () => {
+      renderCard(
+        createOffer({
+          offer_format: 'v2',
+          offer_options: [
+            {
+              id: 'opt-1',
+              offer_option_items: [
+                { id: 'item-1', custom_name: 'PPF Zderzak' },
+                { id: 'item-2', custom_name: 'Ceramic Coating' },
+              ],
+            },
+          ],
+        }),
+      );
+      expect(screen.getAllByText('PPF Zderzak').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Ceramic Coating').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('does not show scope names for v2 offers even when offer_scopes are present', () => {
+      renderCard(
+        createOffer({
+          offer_format: 'v2',
+          offer_scopes: [{ id: 's1', name: 'PPF' }],
+          offer_options: [
+            {
+              id: 'opt-1',
+              offer_option_items: [{ id: 'item-1', custom_name: 'PPF Zderzak' }],
+            },
+          ],
+        }),
+      );
+      // v2 shows item names, not scope names
+      expect(screen.getAllByText('PPF Zderzak').length).toBeGreaterThanOrEqual(1);
+      // "PPF" as a standalone badge should not appear (only "PPF Zderzak" should)
+      // We check that "PPF" alone is not rendered as a separate badge
+      const allPpfTexts = screen.queryAllByText(/^PPF$/);
+      expect(allPpfTexts.length).toBe(0);
+    });
+
+    it('renders nothing when v2 offer has no items', () => {
+      const { container } = renderCard(
+        createOffer({
+          offer_format: 'v2',
+          offer_options: [{ id: 'opt-1', offer_option_items: [] }],
+        }),
+      );
+      // No scope pills section rendered
+      expect(container.querySelectorAll('.flex.flex-wrap.gap-1').length).toBe(0);
+    });
+
+    it('v1 offer without offer_format still uses scope-based pills', () => {
+      renderCard(
+        createOffer({
+          offer_format: undefined,
+          offer_scopes: [{ id: 's1', name: 'Folie PPF' }],
+        }),
+      );
+      expect(screen.getAllByText('Folie PPF').length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   describe('follow-up status', () => {
     it('renders follow-up when customer has phone', () => {
       renderCard(createOffer({ customer_data: { name: 'Jan', phone: '123' } }));
