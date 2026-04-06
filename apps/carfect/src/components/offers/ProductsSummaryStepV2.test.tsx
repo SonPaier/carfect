@@ -110,6 +110,7 @@ const defaultProps = {
   instanceId: 'test-instance-id',
   offer: buildOffer(),
   showUnitPrices: true,
+  discountsEnabled: false,
   isEditing: false,
   onUpdateOffer: vi.fn(),
   calculateTotalNet: vi.fn(() => 0),

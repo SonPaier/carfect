@@ -8,6 +8,7 @@ import { Label } from '@shared/ui';
 import { Textarea } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { ScrollArea } from '@shared/ui';
+import { Switch } from '@shared/ui';
 import { OfferBrandingSettings, OfferBrandingSettingsRef } from './OfferBrandingSettings';
 import { OfferTrustHeaderSettings, OfferTrustHeaderSettingsRef } from './OfferTrustHeaderSettings';
 import { WidgetSettingsTab } from './WidgetSettingsTab';
@@ -32,6 +33,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
   const [bankName, setBankName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankCompanyName, setBankCompanyName] = useState('');
+  const [offerDiscountsEnabled, setOfferDiscountsEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   const brandingRef = useRef<OfferBrandingSettingsRef>(null);
@@ -46,7 +48,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
       const { data } = await supabase
         .from('instances')
         .select(
-          'offer_default_payment_terms, offer_bank_name, offer_bank_account_number, offer_bank_company_name',
+          'offer_default_payment_terms, offer_bank_name, offer_bank_account_number, offer_bank_company_name, offer_discounts_enabled',
         )
         .eq('id', instanceId)
         .single();
@@ -56,6 +58,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
         setBankName(data.offer_bank_name || '');
         setBankAccountNumber(data.offer_bank_account_number || '');
         setBankCompanyName(data.offer_bank_company_name || '');
+        setOfferDiscountsEnabled(data.offer_discounts_enabled ?? false);
       }
       setLoadingSettings(false);
     };
@@ -74,6 +77,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
           offer_bank_name: bankName || null,
           offer_bank_account_number: bankAccountNumber || null,
           offer_bank_company_name: bankCompanyName || null,
+          offer_discounts_enabled: offerDiscountsEnabled,
         })
         .eq('id', instanceId);
 
@@ -217,6 +221,30 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                             handleChange();
                           }}
                           rows={5}
+                          disabled={saving}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Discounts toggle */}
+                    <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+                      <h4 className="font-medium">Rabaty</h4>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <Label htmlFor="offer-discounts-enabled">
+                            Możliwość dodawania rabatów do usług w ofertach
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Gdy włączone, przy każdej pozycji w kreatorze oferty pojawi się pole do wpisania rabatu %.
+                          </p>
+                        </div>
+                        <Switch
+                          id="offer-discounts-enabled"
+                          checked={offerDiscountsEnabled}
+                          onCheckedChange={(checked) => {
+                            setOfferDiscountsEnabled(checked);
+                            handleChange();
+                          }}
                           disabled={saving}
                         />
                       </div>

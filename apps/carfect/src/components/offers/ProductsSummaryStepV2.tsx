@@ -9,12 +9,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { OfferProductPickerDrawer, PickedProduct } from './OfferProductPickerDrawer';
 import { ConditionsSection } from './summary/ConditionsSection';
 import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
+import { formatPrice } from '@/lib/offerUtils';
 import type { OfferState, OfferOption, OfferItem } from '@/hooks/useOffer';
+
+const clampPercent = (v: number) => (isNaN(v) ? 0 : Math.min(100, Math.max(0, v)));
 
 interface ProductsSummaryStepV2Props {
   instanceId: string;
   offer: OfferState;
   showUnitPrices: boolean;
+  discountsEnabled: boolean;
   isEditing: boolean;
   onUpdateOffer: (partial: Partial<OfferState>) => void;
   calculateTotalNet: () => number;
@@ -31,12 +35,14 @@ interface FlatProduct {
   price: number;
   quantity: number;
   isSuggested: boolean;
+  discountPercent: number;
 }
 
 export const ProductsSummaryStepV2 = ({
   instanceId,
   offer,
   showUnitPrices,
+  discountsEnabled,
   isEditing,
   onUpdateOffer,
   calculateTotalNet,
@@ -87,6 +93,7 @@ export const ProductsSummaryStepV2 = ({
           price: item.unitPrice,
           quantity: item.quantity,
           isSuggested: item.isOptional,
+          discountPercent: item.discountPercent ?? 0,
         })),
       );
     }
@@ -108,7 +115,7 @@ export const ProductsSummaryStepV2 = ({
         quantity: p.quantity,
         unitPrice: p.price,
         unit: 'szt.',
-        discountPercent: 0,
+        discountPercent: p.discountPercent,
         isOptional: p.isSuggested,
         isCustom: false,
       })),
@@ -131,6 +138,7 @@ export const ProductsSummaryStepV2 = ({
         price: p.price,
         quantity: 1,
         isSuggested: false,
+        discountPercent: 0,
       })),
     ]);
   }, []);
@@ -148,6 +156,12 @@ export const ProductsSummaryStepV2 = ({
   const handlePriceChange = useCallback((itemId: string, newPrice: number) => {
     setProducts((prev) =>
       prev.map((p) => (p.itemId === itemId ? { ...p, price: newPrice } : p)),
+    );
+  }, []);
+
+  const handleDiscountChange = useCallback((itemId: string, newDiscount: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.itemId === itemId ? { ...p, discountPercent: newDiscount } : p)),
     );
   }, []);
 
@@ -175,7 +189,9 @@ export const ProductsSummaryStepV2 = ({
             <ProductRow
               key={product.itemId}
               product={product}
+              discountsEnabled={discountsEnabled}
               onPriceChange={handlePriceChange}
+              onDiscountChange={handleDiscountChange}
               onToggleSuggested={handleToggleSuggested}
               onRemove={handleRemove}
               onEdit={handleEditService}
@@ -232,13 +248,15 @@ export const ProductsSummaryStepV2 = ({
 // ---- Product Row ----
 interface ProductRowProps {
   product: FlatProduct;
+  discountsEnabled: boolean;
   onPriceChange: (itemId: string, price: number) => void;
+  onDiscountChange: (itemId: string, discount: number) => void;
   onToggleSuggested: (itemId: string) => void;
   onRemove: (itemId: string) => void;
   onEdit: (productId: string) => void;
 }
 
-function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
+function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState(product.price.toString());
 
@@ -294,6 +312,38 @@ function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, onEdi
           </button>
         )}
       </div>
+
+      {discountsEnabled && (
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          <Input
+            type="number"
+            value={product.discountPercent === 0 ? '' : product.discountPercent}
+            onChange={(e) => {
+              const raw = parseFloat(e.target.value);
+              onDiscountChange(product.itemId, clampPercent(raw));
+            }}
+            placeholder="0"
+            min={0}
+            max={100}
+            step={1}
+            className="w-16 h-8 text-right text-sm"
+            aria-label="Rabat %"
+          />
+          {product.discountPercent > 0 && (
+            <div className="text-xs text-right space-y-0.5">
+              <span className="line-through text-muted-foreground">
+                {formatPrice(product.price, true)}
+              </span>
+              <span className="text-green-600 block">
+                oszczędność: {formatPrice(Math.round(product.price * product.discountPercent / 100), true)}
+              </span>
+              <span className="font-semibold block">
+                {formatPrice(Math.round(product.price * (1 - product.discountPercent / 100)), true)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <button
         type="button"

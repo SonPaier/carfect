@@ -55,6 +55,7 @@ export const OfferGenerator = ({
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [instanceShowUnitPrices, setInstanceShowUnitPrices] = useState(false);
+  const [instanceDiscountsEnabled, setInstanceDiscountsEnabled] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
@@ -118,7 +119,7 @@ export const OfferGenerator = ({
       const { data, error } = await supabase
         .from('instances')
         .select(
-          'show_unit_prices_in_offer, name, email, phone, address, website, contact_person, slug, offer_email_template',
+          'show_unit_prices_in_offer, offer_discounts_enabled, name, email, phone, address, website, contact_person, slug, offer_email_template',
         )
         .eq('id', instanceId)
         .single();
@@ -131,6 +132,7 @@ export const OfferGenerator = ({
 
       if (data) {
         setInstanceShowUnitPrices(data.show_unit_prices_in_offer === true);
+        setInstanceDiscountsEnabled(data.offer_discounts_enabled === true);
         setInstanceData({
           name: data.name,
           email: data.email,
@@ -425,6 +427,7 @@ export const OfferGenerator = ({
           instanceId={instanceId}
           offer={offer}
           showUnitPrices={instanceShowUnitPrices}
+          discountsEnabled={instanceDiscountsEnabled}
           isEditing={!!offerId}
           onUpdateOffer={updateOffer}
           calculateTotalNet={calculateTotalNet}

@@ -79,7 +79,14 @@ vi.mock('./SummaryStepV2', () => ({
 }));
 
 vi.mock('./ProductsSummaryStepV2', () => ({
-  ProductsSummaryStepV2: () => <div data-testid="products-summary-step">ProductsSummary</div>,
+  ProductsSummaryStepV2: ({ discountsEnabled }: { discountsEnabled: boolean }) => (
+    <div
+      data-testid="products-summary-step"
+      data-discounts-enabled={String(discountsEnabled)}
+    >
+      ProductsSummary
+    </div>
+  ),
 }));
 
 vi.mock('./OfferPreviewDialog', () => ({
@@ -230,6 +237,75 @@ describe('OfferGenerator', () => {
         expect(mockUpdateVehicleData).toHaveBeenCalledWith({
           brandModel: 'Toyota Yaris WA99999',
         });
+      });
+    });
+  });
+
+  describe('discountsEnabled prop forwarding', () => {
+    it('passes discountsEnabled=true to ProductsSummaryStepV2 when instance has offer_discounts_enabled=true', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            show_unit_prices_in_offer: false,
+            offer_discounts_enabled: true,
+            name: 'Test',
+            email: null,
+            phone: null,
+            address: null,
+            website: null,
+            contact_person: null,
+            slug: 'test',
+            offer_email_template: null,
+          },
+          error: null,
+        }),
+      });
+
+      mockOfferState = { ...mockOfferState, offerFormat: 'v2' };
+      renderGenerator();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('products-summary-step')).toBeInTheDocument();
+        expect(screen.getByTestId('products-summary-step')).toHaveAttribute(
+          'data-discounts-enabled',
+          'true',
+        );
+      });
+    });
+
+    it('passes discountsEnabled=false to ProductsSummaryStepV2 when instance has offer_discounts_enabled=false', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            show_unit_prices_in_offer: false,
+            offer_discounts_enabled: false,
+            name: 'Test',
+            email: null,
+            phone: null,
+            address: null,
+            website: null,
+            contact_person: null,
+            slug: 'test',
+            offer_email_template: null,
+          },
+          error: null,
+        }),
+      });
+
+      mockOfferState = { ...mockOfferState, offerFormat: 'v2' };
+      renderGenerator();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('products-summary-step')).toHaveAttribute(
+          'data-discounts-enabled',
+          'false',
+        );
       });
     });
   });
