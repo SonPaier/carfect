@@ -1,11 +1,37 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Check, ChevronLeft, ChevronRight, Loader2, Palmtree, Trash2 } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  addWeeks,
+  subWeeks,
+  isSameDay,
+} from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { useTimeEntries, useCreateTimeEntry, useUpdateTimeEntry, getEffectiveMinutes, TimeEntry } from '@/hooks/useTimeEntries';
-import { useEmployeeDaysOff, useCreateEmployeeDayOff, useDeleteEmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
+import {
+  useTimeEntries,
+  useCreateTimeEntry,
+  useUpdateTimeEntry,
+  getEffectiveMinutes,
+  TimeEntry,
+} from '@/hooks/useTimeEntries';
+import {
+  useEmployeeDaysOff,
+  useCreateEmployeeDayOff,
+  useDeleteEmployeeDayOff,
+} from '@/hooks/useEmployeeDaysOff';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { Employee } from '@/hooks/useEmployees';
 import { toast } from 'sonner';
@@ -25,9 +51,13 @@ interface EditingCell {
 }
 
 const SAVE_DEBOUNCE_MS = 400;
+const EMPTY_ENTRIES: TimeEntry[] = [];
+const EMPTY_DAYS_OFF: import('@/hooks/useEmployeeDaysOff').EmployeeDayOff[] = [];
 
 const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [currentWeekStart, setCurrentWeekStart] = useState(() =>
+    startOfWeek(new Date(), { weekStartsOn: 1 }),
+  );
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
   const [manualSaving, setManualSaving] = useState(false);
@@ -40,22 +70,30 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   const monthStartDate = startOfMonth(currentWeekStart);
   const monthEndDate = endOfMonth(currentWeekStart);
   // Query range must cover both the month (for totals) AND the full week (which may cross month boundary)
-  const queryFrom = format(currentWeekStart < monthStartDate ? currentWeekStart : monthStartDate, 'yyyy-MM-dd');
+  const queryFrom = format(
+    currentWeekStart < monthStartDate ? currentWeekStart : monthStartDate,
+    'yyyy-MM-dd',
+  );
   const queryTo = format(weekEnd > monthEndDate ? weekEnd : monthEndDate, 'yyyy-MM-dd');
   const monthFrom = format(monthStartDate, 'yyyy-MM-dd');
   const monthTo = format(monthEndDate, 'yyyy-MM-dd');
 
   // Single query covering month + week boundary
-  const { data: allTimeEntries = [] } = useTimeEntries(instanceId, employee.id, queryFrom, queryTo);
+  const { data: allTimeEntries = EMPTY_ENTRIES } = useTimeEntries(
+    instanceId,
+    employee.id,
+    queryFrom,
+    queryTo,
+  );
   const monthTimeEntries = useMemo(
-    () => allTimeEntries.filter(e => e.entry_date >= monthFrom && e.entry_date <= monthTo),
+    () => allTimeEntries.filter((e) => e.entry_date >= monthFrom && e.entry_date <= monthTo),
     [allTimeEntries, monthFrom, monthTo],
   );
   const timeEntries = useMemo(
-    () => allTimeEntries.filter(e => e.entry_date >= dateFrom && e.entry_date <= dateTo),
+    () => allTimeEntries.filter((e) => e.entry_date >= dateFrom && e.entry_date <= dateTo),
     [allTimeEntries, dateFrom, dateTo],
   );
-  const { data: daysOff = [] } = useEmployeeDaysOff(instanceId, employee.id);
+  const { data: daysOff = EMPTY_DAYS_OFF } = useEmployeeDaysOff(instanceId, employee.id);
   const { data: workersSettings } = useWorkersSettings(instanceId);
   const timeInputMode = workersSettings?.time_input_mode ?? 'total';
   const createTimeEntry = useCreateTimeEntry(instanceId);
@@ -65,14 +103,39 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
-  const pendingSaveRef = useRef<{ date: string; hours: string; minutes: string; startTime: string; endTime: string } | null>(null);
-  const executeSaveRef = useRef<(data: { date: string; hours: string; minutes: string; startTime: string; endTime: string }) => Promise<void>>();
+  const pendingSaveRef = useRef<{
+    date: string;
+    hours: string;
+    minutes: string;
+    startTime: string;
+    endTime: string;
+  } | null>(null);
+  const executeSaveRef =
+    useRef<
+      (data: {
+        date: string;
+        hours: string;
+        minutes: string;
+        startTime: string;
+        endTime: string;
+      }) => Promise<void>
+    >();
 
-  console.log('[WeeklySchedule] monthTimeEntries:', monthTimeEntries.length, 'timeEntries for week:', timeEntries.length, 'employee:', employee.id, 'range:', dateFrom, dateTo);
+  console.log(
+    '[WeeklySchedule] monthTimeEntries:',
+    monthTimeEntries.length,
+    'timeEntries for week:',
+    timeEntries.length,
+    'employee:',
+    employee.id,
+    'range:',
+    dateFrom,
+    dateTo,
+  );
 
   const minutesByDate = useMemo(() => {
     const map = new Map<string, { totalMinutes: number; entries: TimeEntry[] }>();
-    timeEntries.forEach(entry => {
+    timeEntries.forEach((entry) => {
       const existing = map.get(entry.entry_date) || { totalMinutes: 0, entries: [] };
       existing.totalMinutes += getEffectiveMinutes(entry);
       existing.entries.push(entry);
@@ -101,7 +164,8 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
     setEditingCell(buildEditingCellFromServer(selectedDate));
   }, [selectedDate, minutesByDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getDayOffRecord = (dateStr: string) => daysOff.find(d => dateStr >= d.date_from && dateStr <= d.date_to);
+  const getDayOffRecord = (dateStr: string) =>
+    daysOff.find((d) => dateStr >= d.date_from && dateStr <= d.date_to);
 
   const handleCellClick = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -122,84 +186,119 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   const minutesByDateRef = useRef(minutesByDate);
   minutesByDateRef.current = minutesByDate;
 
-  const executeSave = useCallback(async (saveData: { date: string; hours: string; minutes: string; startTime: string; endTime: string }) => {
-    if (savingRef.current) {
-      pendingSaveRef.current = saveData;
-      return;
-    }
-    savingRef.current = true;
+  const executeSave = useCallback(
+    async (saveData: {
+      date: string;
+      hours: string;
+      minutes: string;
+      startTime: string;
+      endTime: string;
+    }) => {
+      if (savingRef.current) {
+        pendingSaveRef.current = saveData;
+        return;
+      }
+      savingRef.current = true;
 
-    try {
-      // Calculate start/end timestamps
-      let startTimestamp: string;
-      let endTimestamp: string;
+      try {
+        // Calculate start/end timestamps
+        let startTimestamp: string;
+        let endTimestamp: string;
 
-      if (timeInputMode === 'start_end') {
-        const { startTime: start, endTime: end } = saveData;
-        if (!start || !end || start.length < 5 || end.length < 5 || start >= end) {
-          toast.error('Podaj poprawne godziny (od < do)');
-          return;
+        if (timeInputMode === 'start_end') {
+          const { startTime: start, endTime: end } = saveData;
+          if (!start || !end || start.length < 5 || end.length < 5 || start >= end) {
+            toast.error('Podaj poprawne godziny (od < do)');
+            return;
+          }
+          startTimestamp = `${saveData.date}T${start}:00`;
+          endTimestamp = `${saveData.date}T${end}:00`;
+        } else {
+          const totalMinutes =
+            (parseInt(saveData.hours) || 0) * 60 + (parseInt(saveData.minutes) || 0);
+          if (totalMinutes <= 0) {
+            toast.error('Podaj liczbę godzin');
+            return;
+          }
+          const startTime = new Date(`${saveData.date}T08:00:00`);
+          startTimestamp = startTime.toISOString();
+          endTimestamp = new Date(startTime.getTime() + totalMinutes * 60000).toISOString();
         }
-        startTimestamp = `${saveData.date}T${start}:00`;
-        endTimestamp = `${saveData.date}T${end}:00`;
-      } else {
-        const totalMinutes = (parseInt(saveData.hours) || 0) * 60 + (parseInt(saveData.minutes) || 0);
-        if (totalMinutes <= 0) {
-          toast.error('Podaj liczbę godzin');
-          return;
+
+        // One entry per day — find existing or create new
+        const { data: existing, error: fetchError } = await supabase
+          .from('time_entries')
+          .select('id')
+          .eq('instance_id', instanceId)
+          .eq('employee_id', employee.id)
+          .eq('entry_date', saveData.date)
+          .limit(1);
+
+        console.log('[TimeEntry save]', {
+          date: saveData.date,
+          startTimestamp,
+          endTimestamp,
+          existing,
+          fetchError,
+        });
+
+        if (existing && existing.length > 0) {
+          await updateTimeEntry.mutateAsync({
+            id: existing[0].id,
+            start_time: startTimestamp,
+            end_time: endTimestamp,
+          });
+        } else {
+          await createTimeEntry.mutateAsync({
+            employee_id: employee.id,
+            entry_date: saveData.date,
+            start_time: startTimestamp,
+            end_time: endTimestamp,
+            entry_type: 'manual',
+          });
         }
-        const startTime = new Date(`${saveData.date}T08:00:00`);
-        startTimestamp = startTime.toISOString();
-        endTimestamp = new Date(startTime.getTime() + totalMinutes * 60000).toISOString();
+        console.log('[TimeEntry save] success');
+      } catch (error) {
+        console.error('Save error:', error);
+        toast.error('Błąd podczas zapisywania');
+      } finally {
+        savingRef.current = false;
+        if (pendingSaveRef.current) {
+          const next = pendingSaveRef.current;
+          pendingSaveRef.current = null;
+          executeSaveRef.current?.(next);
+        }
       }
-
-      // One entry per day — find existing or create new
-      const { data: existing, error: fetchError } = await supabase
-        .from('time_entries')
-        .select('id')
-        .eq('instance_id', instanceId)
-        .eq('employee_id', employee.id)
-        .eq('entry_date', saveData.date)
-        .limit(1);
-
-      console.log('[TimeEntry save]', { date: saveData.date, startTimestamp, endTimestamp, existing, fetchError });
-
-      if (existing && existing.length > 0) {
-        await updateTimeEntry.mutateAsync({ id: existing[0].id, start_time: startTimestamp, end_time: endTimestamp });
-      } else {
-        await createTimeEntry.mutateAsync({ employee_id: employee.id, entry_date: saveData.date, start_time: startTimestamp, end_time: endTimestamp, entry_type: 'manual' });
-      }
-      console.log('[TimeEntry save] success');
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Błąd podczas zapisywania');
-    } finally {
-      savingRef.current = false;
-      if (pendingSaveRef.current) {
-        const next = pendingSaveRef.current;
-        pendingSaveRef.current = null;
-        executeSaveRef.current?.(next);
-      }
-    }
-  }, [instanceId, employee.id, timeInputMode, createTimeEntry, updateTimeEntry]);
+    },
+    [instanceId, employee.id, timeInputMode, createTimeEntry, updateTimeEntry],
+  );
 
   // Keep ref in sync so debounce timer always calls the latest version
   executeSaveRef.current = executeSave;
 
-  const scheduleSave = useCallback((data: { date: string; hours: string; minutes: string; startTime: string; endTime: string }) => {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
-    pendingSaveRef.current = data;
-    saveTimerRef.current = setTimeout(() => {
-      saveTimerRef.current = null;
-      const toSave = pendingSaveRef.current;
-      pendingSaveRef.current = null;
-      if (toSave) {
-        executeSaveRef.current?.(toSave);
+  const scheduleSave = useCallback(
+    (data: {
+      date: string;
+      hours: string;
+      minutes: string;
+      startTime: string;
+      endTime: string;
+    }) => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
       }
-    }, SAVE_DEBOUNCE_MS);
-  }, []);
+      pendingSaveRef.current = data;
+      saveTimerRef.current = setTimeout(() => {
+        saveTimerRef.current = null;
+        const toSave = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        if (toSave) {
+          executeSaveRef.current?.(toSave);
+        }
+      }, SAVE_DEBOUNCE_MS);
+    },
+    [],
+  );
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -229,7 +328,9 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   };
 
   // Optimistic local day-off overrides: 'add' = locally marked as day off, 'remove' = locally unmarked
-  const [localDayOffOverrides, setLocalDayOffOverrides] = useState<Map<string, 'add' | 'remove'>>(new Map());
+  const [localDayOffOverrides, setLocalDayOffOverrides] = useState<Map<string, 'add' | 'remove'>>(
+    new Map(),
+  );
 
   // Clear all overrides when fresh daysOff data arrives from the server
   const prevDaysOffRef = useRef(daysOff);
@@ -240,24 +341,36 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
     prevDaysOffRef.current = daysOff;
   }, [daysOff, localDayOffOverrides.size]);
 
-  const isDayOff = useCallback((dateStr: string) => {
-    const override = localDayOffOverrides.get(dateStr);
-    if (override === 'add') return true;
-    if (override === 'remove') return false;
-    return !!getDayOffRecord(dateStr);
-  }, [localDayOffOverrides, daysOff]);
+  const isDayOff = useCallback(
+    (dateStr: string) => {
+      const override = localDayOffOverrides.get(dateStr);
+      if (override === 'add') return true;
+      if (override === 'remove') return false;
+      return !!getDayOffRecord(dateStr);
+    },
+    [localDayOffOverrides, daysOff],
+  );
 
   const handleMarkDayOff = async () => {
     if (!editingCell) return;
     // Optimistic: show as day off immediately
-    setLocalDayOffOverrides(prev => new Map(prev).set(editingCell.date, 'add'));
+    setLocalDayOffOverrides((prev) => new Map(prev).set(editingCell.date, 'add'));
     try {
-      await createDayOff.mutateAsync({ employee_id: employee.id, date_from: editingCell.date, date_to: editingCell.date, day_off_type: 'vacation' });
+      await createDayOff.mutateAsync({
+        employee_id: employee.id,
+        date_from: editingCell.date,
+        date_to: editingCell.date,
+        day_off_type: 'vacation',
+      });
       toast.success('Zapisano jako wolne');
     } catch (error) {
       toast.error('Błąd podczas zapisywania');
       // Revert optimistic update on error
-      setLocalDayOffOverrides(prev => { const m = new Map(prev); m.delete(editingCell!.date); return m; });
+      setLocalDayOffOverrides((prev) => {
+        const m = new Map(prev);
+        m.delete(editingCell!.date);
+        return m;
+      });
     }
   };
 
@@ -266,20 +379,26 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
     const dayOffRecord = getDayOffRecord(editingCell.date);
     if (!dayOffRecord) return;
     // Optimistic: remove day off immediately
-    setLocalDayOffOverrides(prev => new Map(prev).set(editingCell.date, 'remove'));
+    setLocalDayOffOverrides((prev) => new Map(prev).set(editingCell.date, 'remove'));
     try {
       await deleteDayOff.mutateAsync(dayOffRecord.id);
       toast.success('Usunięto wolne');
     } catch (error) {
       toast.error('Błąd podczas usuwania');
       // Revert optimistic update on error
-      setLocalDayOffOverrides(prev => { const m = new Map(prev); m.delete(editingCell!.date); return m; });
+      setLocalDayOffOverrides((prev) => {
+        const m = new Map(prev);
+        m.delete(editingCell!.date);
+        return m;
+      });
     }
   };
 
   const weekTotal = useMemo(() => {
     let total = 0;
-    minutesByDate.forEach(({ totalMinutes }) => { total += totalMinutes; });
+    minutesByDate.forEach(({ totalMinutes }) => {
+      total += totalMinutes;
+    });
     return total;
   }, [minutesByDate]);
 
@@ -295,7 +414,9 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
     return `${h} h ${m} min`;
   };
 
-  const editingDayLabel = editingCell ? format(new Date(editingCell.date + 'T12:00:00'), 'EEEE, d MMM', { locale: pl }) : '';
+  const editingDayLabel = editingCell
+    ? format(new Date(editingCell.date + 'T12:00:00'), 'EEEE, d MMM', { locale: pl })
+    : '';
   const monthName = format(monthStartDate, 'LLLL', { locale: pl });
   const editingCellIsDayOff = editingCell ? isDayOff(editingCell.date) : false;
   const hourOptions = Array.from({ length: 25 }, (_, i) => i);
@@ -306,10 +427,16 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
     if (editingCell?.date === dateStr) {
       if (timeInputMode === 'start_end') {
         const { startTime, endTime } = editingCell;
-        if (startTime && endTime && startTime.length >= 5 && endTime.length >= 5 && endTime > startTime) {
+        if (
+          startTime &&
+          endTime &&
+          startTime.length >= 5 &&
+          endTime.length >= 5 &&
+          endTime > startTime
+        ) {
           const [sh, sm] = startTime.split(':').map(Number);
           const [eh, em] = endTime.split(':').map(Number);
-          return (eh * 60 + em) - (sh * 60 + sm);
+          return eh * 60 + em - (sh * 60 + sm);
         }
         return 0;
       }
@@ -321,13 +448,22 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
   return (
     <div className="w-full space-y-2">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => setCurrentWeekStart(prev => subWeeks(prev, 1))}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentWeekStart((prev) => subWeeks(prev, 1))}
+        >
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <span className="font-semibold text-2xl">
-          {format(currentWeekStart, 'd MMM', { locale: pl })} - {format(weekEnd, 'd MMM yyyy', { locale: pl })}
+          {format(currentWeekStart, 'd MMM', { locale: pl })} -{' '}
+          {format(weekEnd, 'd MMM yyyy', { locale: pl })}
         </span>
-        <Button variant="ghost" size="icon" onClick={() => setCurrentWeekStart(prev => addWeeks(prev, 1))}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentWeekStart((prev) => addWeeks(prev, 1))}
+        >
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
@@ -342,20 +478,27 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
 
           return (
             <div key={dateStr} className="flex flex-col">
-              <div className={`text-center text-xs py-1 rounded-t ${isToday ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>
+              <div
+                className={`text-center text-xs py-1 rounded-t ${isToday ? 'bg-primary text-primary-foreground' : 'bg-card'}`}
+              >
                 <div className="font-medium">{format(day, 'EEE', { locale: pl })}</div>
                 <div>{format(day, 'd')}</div>
               </div>
               <button
                 onClick={() => handleCellClick(day)}
                 className={`border rounded-b p-1 text-center min-h-[40px] flex items-center justify-center transition-colors ${
-                  isSelected ? 'ring-2 ring-primary border-primary bg-primary/10'
-                    : isOff ? 'bg-orange-50 border-orange-200'
-                    : totalMinutes > 0 ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                    : 'bg-background hover:bg-primary/5'
+                  isSelected
+                    ? 'ring-2 ring-primary border-primary bg-primary/10'
+                    : isOff
+                      ? 'bg-orange-50 border-orange-200'
+                      : totalMinutes > 0
+                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                        : 'bg-background hover:bg-primary/5'
                 }`}
               >
-                <span className={`text-sm font-medium ${isOff ? 'text-orange-600' : totalMinutes > 0 ? 'text-green-700' : 'text-muted-foreground'}`}>
+                <span
+                  className={`text-sm font-medium ${isOff ? 'text-orange-600' : totalMinutes > 0 ? 'text-green-700' : 'text-muted-foreground'}`}
+                >
                   {isOff ? 'Wolne' : totalMinutes > 0 ? formatMinutes(totalMinutes) : '-'}
                 </span>
               </button>
@@ -393,13 +536,29 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
             ) : (
               <>
                 <Select value={editingCell.hours} onValueChange={handleHoursChange}>
-                  <SelectTrigger className="h-14 w-24 text-center text-xl font-medium"><SelectValue placeholder="0" /></SelectTrigger>
-                  <SelectContent>{hourOptions.map(h => (<SelectItem key={h} value={h.toString()}>{h}</SelectItem>))}</SelectContent>
+                  <SelectTrigger className="h-14 w-24 text-center text-xl font-medium">
+                    <SelectValue placeholder="0" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hourOptions.map((h) => (
+                      <SelectItem key={h} value={h.toString()}>
+                        {h}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
                 <span className="text-2xl font-bold">:</span>
                 <Select value={editingCell.minutes} onValueChange={handleMinutesChange}>
-                  <SelectTrigger className="h-14 w-24 text-center text-xl font-medium"><SelectValue placeholder="0" /></SelectTrigger>
-                  <SelectContent>{minuteOptions.map(m => (<SelectItem key={m} value={m.toString()}>{m}</SelectItem>))}</SelectContent>
+                  <SelectTrigger className="h-14 w-24 text-center text-xl font-medium">
+                    <SelectValue placeholder="0" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {minuteOptions.map((m) => (
+                      <SelectItem key={m} value={m.toString()}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </>
             )}
@@ -435,12 +594,22 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
             {saved ? 'Zapisano' : 'Zapisz'}
           </Button>
           {editingCellIsDayOff ? (
-            <Button onClick={handleRemoveDayOff} variant="outline" className="w-full h-12 bg-red-50 border-red-200 text-red-700 hover:bg-red-100">
-              <Trash2 className="w-4 h-4 mr-2" />Usuń Wolne
+            <Button
+              onClick={handleRemoveDayOff}
+              variant="outline"
+              className="w-full h-12 bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Usuń Wolne
             </Button>
           ) : (
-            <Button onClick={handleMarkDayOff} variant="outline" className="w-full h-12 bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100">
-              <Palmtree className="w-4 h-4 mr-2" />Wolne
+            <Button
+              onClick={handleMarkDayOff}
+              variant="outline"
+              className="w-full h-12 bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+            >
+              <Palmtree className="w-4 h-4 mr-2" />
+              Wolne
             </Button>
           )}
         </div>
