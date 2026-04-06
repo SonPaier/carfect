@@ -12,6 +12,21 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'in-app-hints',
+      root: 'libs/in-app-hints',
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['../ui/src/test/setup.ts'],
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    },
+    resolve: {
+      alias: {
+        '@shared/ui': new URL('libs/ui/src/index.ts', import.meta.url).pathname,
+      },
+    },
+  },
+  {
+    test: {
       name: 'ui',
       root: 'libs/ui',
       environment: 'jsdom',

@@ -8,6 +8,7 @@ import { CarModelsProvider } from '@/contexts/CarModelsContext';
 import { lazy, Suspense } from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedRedirect from './components/RoleBasedRedirect';
+import { AdminHintsRenderer } from './components/AdminHintsRenderer';
 
 // All pages lazy loaded for code splitting — each becomes its own chunk
 const Rezerwacje = lazy(() => import('./pages/Rezerwacje'));
@@ -133,6 +134,7 @@ const InstancePublicRoutes = ({ subdomain }: { subdomain: string }) => (
 // Instance Admin Routes - for armcar.admin.carfect.pl (admin panel)
 const InstanceAdminRoutes = ({ subdomain }: { subdomain: string }) => (
   <Suspense fallback={<PageLoader />}>
+    <AdminHintsRenderer />
     <Routes>
       {/* Login page - must be first */}
       <Route path="/login" element={<InstanceAuth subdomainSlug={subdomain} />} />
@@ -201,6 +203,7 @@ const PageLoader = () => (
 const DevRoutes = () => (
   <CarModelsProvider>
     <Suspense fallback={<PageLoader />}>
+      <AdminHintsRenderer />
       <Routes>
         <Route path="/" element={<Navigate to="/rezerwacje" replace />} />
         <Route path="/rezerwacje" element={<Rezerwacje />} />
