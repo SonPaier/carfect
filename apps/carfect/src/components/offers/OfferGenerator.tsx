@@ -98,7 +98,9 @@ export const OfferGenerator = ({
     loadOffer,
   } = useOffer(instanceId);
 
-  const isV2 = offer.offerFormat === 'v2';
+  // For new offers, treat as v2 immediately (before async fetch sets offerFormat)
+  // For existing offers, wait for loadOffer to determine the format
+  const isV2 = offerId || duplicateFromId ? offer.offerFormat === 'v2' : offer.offerFormat !== 'v1';
 
   // Pre-fill customer data from reservation (new offers only)
   useEffect(() => {
@@ -146,12 +148,12 @@ export const OfferGenerator = ({
 
         // Auto-populate conditions for new offers (not editing, not duplicating)
         if (!offerId && !duplicateFromId) {
-          const defaults: Record<string, string> = {};
+          const defaults: Partial<OfferState> = { offerFormat: 'v2' as const };
           if (data.offer_default_payment_terms) defaults.paymentTerms = data.offer_default_payment_terms;
           if (data.offer_default_warranty) defaults.warranty = data.offer_default_warranty;
           if (data.offer_default_service_info) defaults.serviceInfo = data.offer_default_service_info;
           if (data.offer_default_notes) defaults.notes = data.offer_default_notes;
-          if (Object.keys(defaults).length > 0) updateOffer(defaults);
+          updateOffer(defaults);
         }
       }
     };
