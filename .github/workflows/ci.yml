@@ -141,3 +141,28 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno test supabase/functions/ --no-check --allow-env --allow-net --allow-read
+
+  e2e:
+    name: E2E Tests
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install chromium
+      - run: npx playwright test
+        env:
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-report
+          path: playwright-report/
+          retention-days: 14

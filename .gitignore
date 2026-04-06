@@ -42,3 +42,4 @@ supabase/.temp/
 .sb-pentest-evidence/
 supabase-audit-report.md
 supabase-audit-comparison.md
+test-results/
