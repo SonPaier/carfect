@@ -1,20 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@shared/ui';
-import { Input } from '@shared/ui';
-
+import { Button, Input } from '@shared/ui';
 import { Plus, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { OfferProductPickerDrawer, PickedProduct } from './OfferProductPickerDrawer';
 import { ConditionsSection } from './summary/ConditionsSection';
 import { ServiceFormDialog, ServiceData } from '@/components/admin/ServiceFormDialog';
 import type { OfferState, OfferOption, OfferItem } from '@/hooks/useOffer';
 
+const clampPercent = (v: number) => (isNaN(v) ? 0 : Math.min(100, Math.max(0, v)));
+
 interface ProductsSummaryStepV2Props {
   instanceId: string;
   offer: OfferState;
   showUnitPrices: boolean;
+  discountsEnabled: boolean;
   isEditing: boolean;
   onUpdateOffer: (partial: Partial<OfferState>) => void;
   calculateTotalNet: () => number;
@@ -31,12 +30,14 @@ interface FlatProduct {
   price: number;
   quantity: number;
   isSuggested: boolean;
+  discountPercent: number;
 }
 
 export const ProductsSummaryStepV2 = ({
   instanceId,
   offer,
   showUnitPrices,
+  discountsEnabled,
   isEditing,
   onUpdateOffer,
   calculateTotalNet,
@@ -44,7 +45,6 @@ export const ProductsSummaryStepV2 = ({
   onShowPreview,
   onServiceSaved,
 }: ProductsSummaryStepV2Props) => {
-  const { t } = useTranslation();
   const [products, setProducts] = useState<FlatProduct[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceData | null>(null);
@@ -87,6 +87,7 @@ export const ProductsSummaryStepV2 = ({
           price: item.unitPrice,
           quantity: item.quantity,
           isSuggested: item.isOptional,
+          discountPercent: item.discountPercent ?? 0,
         })),
       );
     }
@@ -108,7 +109,7 @@ export const ProductsSummaryStepV2 = ({
         quantity: p.quantity,
         unitPrice: p.price,
         unit: 'szt.',
-        discountPercent: 0,
+        discountPercent: p.discountPercent,
         isOptional: p.isSuggested,
         isCustom: false,
       })),
@@ -131,6 +132,7 @@ export const ProductsSummaryStepV2 = ({
         price: p.price,
         quantity: 1,
         isSuggested: false,
+        discountPercent: 0,
       })),
     ]);
   }, []);
@@ -151,6 +153,12 @@ export const ProductsSummaryStepV2 = ({
     );
   }, []);
 
+  const handleDiscountChange = useCallback((itemId: string, newDiscount: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.itemId === itemId ? { ...p, discountPercent: newDiscount } : p)),
+    );
+  }, []);
+
   const getTextareaRows = (value: string | undefined | null, minRows = 2) => {
     if (!value) return minRows;
     return Math.max(value.split('\n').length + 1, minRows);
@@ -164,18 +172,14 @@ export const ProductsSummaryStepV2 = ({
           Wybrane usługi, ceny netto
         </h3>
 
-        {products.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            Brak wybranych usług. Kliknij &quot;Dodaj usługę&quot; poniżej.
-          </p>
-        )}
-
         <div className="space-y-2">
           {products.map((product) => (
             <ProductRow
               key={product.itemId}
               product={product}
+              discountsEnabled={discountsEnabled}
               onPriceChange={handlePriceChange}
+              onDiscountChange={handleDiscountChange}
               onToggleSuggested={handleToggleSuggested}
               onRemove={handleRemove}
               onEdit={handleEditService}
@@ -232,90 +236,95 @@ export const ProductsSummaryStepV2 = ({
 // ---- Product Row ----
 interface ProductRowProps {
   product: FlatProduct;
+  discountsEnabled: boolean;
   onPriceChange: (itemId: string, price: number) => void;
+  onDiscountChange: (itemId: string, discount: number) => void;
   onToggleSuggested: (itemId: string) => void;
   onRemove: (itemId: string) => void;
   onEdit: (productId: string) => void;
 }
 
-function ProductRow({ product, onPriceChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
-  const [editingPrice, setEditingPrice] = useState(false);
-  const [priceValue, setPriceValue] = useState(product.price.toString());
-
-  const commitPrice = () => {
-    const parsed = parseFloat(priceValue);
-    if (!isNaN(parsed) && parsed >= 0) {
-      onPriceChange(product.itemId, parsed);
-    } else {
-      setPriceValue(product.price.toString());
-    }
-    setEditingPrice(false);
-  };
+function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
 
   return (
-    <div
-      className="flex items-start gap-4 p-3 rounded-lg border bg-white"
-    >
-      <div className="flex-1 min-w-0">
-        {product.productId ? (
+    <div className="p-3 rounded-lg border bg-white space-y-2">
+      {/* Row 1: Name + delete */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {product.productId ? (
+            <button
+              type="button"
+              onClick={() => onEdit(product.productId)}
+              className="font-medium text-sm block text-left hover:text-primary transition-colors"
+            >
+              {product.name}
+            </button>
+          ) : (
+            <p className="font-medium text-sm">{product.name}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {product.isSuggested ? (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer" onClick={() => onToggleSuggested(product.itemId)}>
+              Opcja
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onToggleSuggested(product.itemId)}
+              className="text-xs text-foreground underline hover:text-primary transition-colors"
+            >
+              Dodaj jako opcja
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => onEdit(product.productId)}
-            className="font-medium text-sm block text-left hover:text-primary transition-colors"
+            onClick={() => onRemove(product.itemId)}
+            className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors"
           >
-            {product.name}
+            <Trash2 className="w-4 h-4" />
           </button>
-        ) : (
-          <p className="font-medium text-sm">{product.name}</p>
-        )}
+        </div>
       </div>
 
-      <div className="shrink-0">
-        {editingPrice ? (
+      {/* Row 2: Price + discount */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           <Input
             type="number"
-            value={priceValue}
-            onChange={(e) => setPriceValue(e.target.value)}
+            value={product.price}
+            onChange={(e) => {
+              const parsed = parseFloat(e.target.value);
+              if (!isNaN(parsed) && parsed >= 0) onPriceChange(product.itemId, parsed);
+            }}
             onFocus={(e) => e.target.select()}
-            onBlur={commitPrice}
-            onKeyDown={(e) => e.key === 'Enter' && commitPrice()}
-            className="w-24 h-8 text-right text-sm"
+            className="w-28 h-8 text-sm"
             min={0}
             step={1}
-            autoFocus
           />
-        ) : (
-          <button
-            type="button"
-            onClick={() => { setPriceValue(product.price.toString()); setEditingPrice(true); }}
-            className="text-sm font-semibold hover:text-primary transition-colors min-w-[70px] text-right"
-          >
-            {product.price} zl
-          </button>
+          <span className="text-sm text-muted-foreground">zł</span>
+        </div>
+        {discountsEnabled && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Rabat:</span>
+            <Input
+              type="number"
+              value={product.discountPercent === 0 ? '' : product.discountPercent}
+              onChange={(e) => {
+                const raw = parseFloat(e.target.value);
+                onDiscountChange(product.itemId, clampPercent(raw));
+              }}
+              placeholder="0"
+              min={0}
+              max={100}
+              step={1}
+              className="w-16 h-8 text-right text-sm"
+              aria-label="Rabat %"
+            />
+            <span className="text-xs text-muted-foreground">%</span>
+          </div>
         )}
       </div>
-
-      <button
-        type="button"
-        onClick={() => onToggleSuggested(product.itemId)}
-        className={cn(
-          'px-2 py-0.5 rounded-full text-xs font-medium transition-colors',
-          product.isSuggested
-            ? 'bg-primary text-white hover:bg-primary/90'
-            : 'bg-muted/50 text-muted-foreground hover:bg-muted',
-        )}
-        title={product.isSuggested ? 'Oznaczone jako opcja' : 'Oznacz jako opcje'}
-      >
-        Opcja
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onRemove(product.itemId)}
-        className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
     </div>
   );
 }

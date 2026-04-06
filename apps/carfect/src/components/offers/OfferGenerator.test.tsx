@@ -79,7 +79,14 @@ vi.mock('./SummaryStepV2', () => ({
 }));
 
 vi.mock('./ProductsSummaryStepV2', () => ({
-  ProductsSummaryStepV2: () => <div data-testid="products-summary-step">ProductsSummary</div>,
+  ProductsSummaryStepV2: ({ discountsEnabled }: { discountsEnabled: boolean }) => (
+    <div
+      data-testid="products-summary-step"
+      data-discounts-enabled={String(discountsEnabled)}
+    >
+      ProductsSummary
+    </div>
+  ),
 }));
 
 vi.mock('./OfferPreviewDialog', () => ({
@@ -231,6 +238,214 @@ describe('OfferGenerator', () => {
           brandModel: 'Toyota Yaris WA99999',
         });
       });
+    });
+  });
+
+  describe('discountsEnabled prop forwarding', () => {
+    it('passes discountsEnabled=true to ProductsSummaryStepV2 when instance has offer_discounts_enabled=true', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            show_unit_prices_in_offer: false,
+            offer_discounts_enabled: true,
+            offer_default_payment_terms: null,
+            offer_default_warranty: null,
+            offer_default_service_info: null,
+            offer_default_notes: null,
+            name: 'Test',
+            email: null,
+            phone: null,
+            address: null,
+            website: null,
+            contact_person: null,
+            slug: 'test',
+            offer_email_template: null,
+          },
+          error: null,
+        }),
+      });
+
+      mockOfferState = { ...mockOfferState, offerFormat: 'v2' };
+      renderGenerator();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('products-summary-step')).toBeInTheDocument();
+        expect(screen.getByTestId('products-summary-step')).toHaveAttribute(
+          'data-discounts-enabled',
+          'true',
+        );
+      });
+    });
+
+    it('passes discountsEnabled=false to ProductsSummaryStepV2 when instance has offer_discounts_enabled=false', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: {
+            show_unit_prices_in_offer: false,
+            offer_discounts_enabled: false,
+            offer_default_payment_terms: null,
+            offer_default_warranty: null,
+            offer_default_service_info: null,
+            offer_default_notes: null,
+            name: 'Test',
+            email: null,
+            phone: null,
+            address: null,
+            website: null,
+            contact_person: null,
+            slug: 'test',
+            offer_email_template: null,
+          },
+          error: null,
+        }),
+      });
+
+      mockOfferState = { ...mockOfferState, offerFormat: 'v2' };
+      renderGenerator();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('products-summary-step')).toHaveAttribute(
+          'data-discounts-enabled',
+          'false',
+        );
+      });
+    });
+  });
+
+  describe('auto-populate defaults for new offers', () => {
+    const makeInstanceMock = (defaults: {
+      offer_default_payment_terms?: string | null;
+      offer_default_warranty?: string | null;
+      offer_default_service_info?: string | null;
+      offer_default_notes?: string | null;
+    }) => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: {
+          show_unit_prices_in_offer: false,
+          offer_discounts_enabled: false,
+          offer_default_payment_terms: defaults.offer_default_payment_terms ?? null,
+          offer_default_warranty: defaults.offer_default_warranty ?? null,
+          offer_default_service_info: defaults.offer_default_service_info ?? null,
+          offer_default_notes: defaults.offer_default_notes ?? null,
+          name: 'Test',
+          email: null,
+          phone: null,
+          address: null,
+          website: null,
+          contact_person: null,
+          slug: 'test',
+          offer_email_template: null,
+        },
+        error: null,
+      }),
+    });
+
+    it('calls updateOffer with warranty and serviceInfo defaults when creating a new offer', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeInstanceMock({
+          offer_default_warranty: '12 miesięcy',
+          offer_default_service_info: 'Serwis autoryzowany',
+        }),
+      );
+
+      renderGenerator(); // no offerId, no duplicateFromId
+
+      await waitFor(() => {
+        expect(mockUpdateOffer).toHaveBeenCalledWith(
+          expect.objectContaining({
+            warranty: '12 miesięcy',
+            serviceInfo: 'Serwis autoryzowany',
+          }),
+        );
+      });
+    });
+
+    it('calls updateOffer with all four defaults when all are set', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeInstanceMock({
+          offer_default_payment_terms: 'Przelew 14 dni',
+          offer_default_warranty: '24 miesiące',
+          offer_default_service_info: 'ASO',
+          offer_default_notes: 'Oferta ważna 7 dni',
+        }),
+      );
+
+      renderGenerator();
+
+      await waitFor(() => {
+        expect(mockUpdateOffer).toHaveBeenCalledWith(
+          expect.objectContaining({
+            paymentTerms: 'Przelew 14 dni',
+            warranty: '24 miesiące',
+            serviceInfo: 'ASO',
+            notes: 'Oferta ważna 7 dni',
+          }),
+        );
+      });
+    });
+
+    it('does NOT call updateOffer with defaults when all instance defaults are null', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeInstanceMock({}),
+      );
+
+      renderGenerator();
+
+      // Wait for the async fetch to complete
+      await waitFor(() => {
+        // updateOffer may be called for offerFormat: 'v2' but NOT with any condition fields
+        const conditionCalls = mockUpdateOffer.mock.calls.filter(
+          ([arg]) => arg.warranty !== undefined || arg.serviceInfo !== undefined || arg.notes !== undefined || arg.paymentTerms !== undefined,
+        );
+        expect(conditionCalls).toHaveLength(0);
+      });
+    });
+
+    it('does NOT apply defaults when editing an existing offer', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeInstanceMock({ offer_default_warranty: '12 miesięcy' }),
+      );
+
+      renderGenerator({ offerId: 'existing-offer-id' });
+
+      await waitFor(() => {
+        expect(mockLoadOffer).toHaveBeenCalledWith('existing-offer-id', false);
+      });
+
+      const conditionCalls = mockUpdateOffer.mock.calls.filter(
+        ([arg]) => arg.warranty !== undefined,
+      );
+      expect(conditionCalls).toHaveLength(0);
+    });
+
+    it('does NOT apply defaults when duplicating an offer', async () => {
+      const { mockSupabase } = await import('@/test/mocks/supabase');
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeInstanceMock({ offer_default_warranty: '12 miesięcy' }),
+      );
+
+      renderGenerator({ duplicateFromId: 'source-offer-id' });
+
+      await waitFor(() => {
+        expect(mockLoadOffer).toHaveBeenCalledWith('source-offer-id', true);
+      });
+
+      const conditionCalls = mockUpdateOffer.mock.calls.filter(
+        ([arg]) => arg.warranty !== undefined,
+      );
+      expect(conditionCalls).toHaveLength(0);
     });
   });
 
