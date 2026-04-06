@@ -17,6 +17,7 @@ import {
   Car,
   CreditCard,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ import { CarModelsManager } from '@/components/superadmin/CarModelsManager';
 import { InstancePlanSettings } from '@/components/superadmin/InstancePlanSettings';
 import { AddInstanceDialog, SuccessData } from '@/components/superadmin/AddInstanceDialog';
 import { InstanceCreatedSuccessDialog } from '@/components/superadmin/InstanceCreatedSuccessDialog';
+import { HintsManager } from '@/components/superadmin/HintsManager';
 
 interface Instance {
   id: string;
@@ -73,9 +75,9 @@ const SuperAdminDashboard = () => {
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null);
-  const [activeSection, setActiveSection] = useState<'instances' | 'cars' | 'admins' | 'settings'>(
-    'instances',
-  );
+  const [activeSection, setActiveSection] = useState<
+    'instances' | 'cars' | 'admins' | 'settings' | 'hints'
+  >('instances');
 
   useEffect(() => {
     fetchInstances();
@@ -282,6 +284,14 @@ const SuperAdminDashboard = () => {
                 <Settings className="w-4 h-4" />
                 Ustawienia
               </Button>
+              <Button
+                variant={activeSection === 'hints' ? 'secondary' : 'ghost'}
+                className="w-full justify-start gap-3"
+                onClick={() => setActiveSection('hints')}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Wskazówki
+              </Button>
             </nav>
 
             {/* User Info & Logout */}
@@ -321,7 +331,9 @@ const SuperAdminDashboard = () => {
 
           {/* Content */}
           <div className="flex-1 p-4 lg:p-8 space-y-8">
-            {activeSection === 'cars' ? (
+            {activeSection === 'hints' ? (
+              <HintsManager />
+            ) : activeSection === 'cars' ? (
               <CarModelsManager />
             ) : activeSection === 'instances' ? (
               <>

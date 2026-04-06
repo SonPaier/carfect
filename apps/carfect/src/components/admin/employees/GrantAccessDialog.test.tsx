@@ -77,11 +77,13 @@ import GrantAccessDialog from './GrantAccessDialog';
 
 const INSTANCE_ID = 'inst-abc';
 
-const renderDialog = (props: Partial<{
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  employeeName: string;
-}> = {}) => {
+const renderDialog = (
+  props: Partial<{
+    open: boolean;
+    onOpenChange: (v: boolean) => void;
+    employeeName: string;
+  }> = {},
+) => {
   const user = userEvent.setup();
   const onOpenChange = props.onOpenChange ?? vi.fn();
   const result = render(
@@ -173,7 +175,7 @@ describe('GrantAccessDialog', () => {
       renderDialog({ employeeName: 'Łukasz Żółkowski' });
       const usernameInput = screen.getByRole('textbox', { name: /login/i }) as HTMLInputElement;
       // Only a-z, 0-9, . - allowed
-      expect(usernameInput.value).toMatch(/^[a-z0-9.\-]*$/);
+      expect(usernameInput.value).toMatch(/^[a-z0-9.-]*$/);
     });
   });
 

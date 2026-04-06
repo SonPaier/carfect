@@ -8,7 +8,9 @@
       "@shared/ui/*": ["../../libs/ui/src/*"],
       "@shared/utils": ["../../libs/shared-utils/src/index.ts"],
       "@shared/ai": ["../../libs/ai/src/index.ts"],
-      "@shared/ai/*": ["../../libs/ai/src/*"]
+      "@shared/ai/*": ["../../libs/ai/src/*"],
+      "@shared/in-app-hints": ["../../libs/in-app-hints/src/index.ts"],
+      "@shared/in-app-hints/*": ["../../libs/in-app-hints/src/*"]
     },
     "strictNullChecks": false
   },
