@@ -14,8 +14,8 @@ export function HintInfobox({ hint, onDismiss }: HintInfoboxProps) {
     >
       <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="font-medium leading-snug text-blue-900">{hint.title}</p>
-        {hint.body && <p className="mt-1 text-blue-700 whitespace-pre-wrap">{hint.body}</p>}
+        <p className="font-semibold leading-snug text-blue-900">{hint.title}</p>
+        {hint.body && <p className="mt-1 text-foreground whitespace-pre-wrap">{hint.body}</p>}
       </div>
       <button
         type="button"

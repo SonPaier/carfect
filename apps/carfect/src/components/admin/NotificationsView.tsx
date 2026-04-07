@@ -317,6 +317,7 @@ export default function NotificationsView({
           )}
         </div>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {loading ? (
         <div className="text-center text-muted-foreground py-8">Ładowanie...</div>

@@ -667,6 +667,7 @@ const ReservationsView = ({
     <div className="space-y-4 pb-28">
       {/* Title */}
       <h1 className="text-2xl font-medium text-foreground">Realizacje</h1>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Sticky header on mobile */}
       <div className="sm:static sticky top-0 z-20 bg-background pb-0 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">

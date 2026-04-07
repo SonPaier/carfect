@@ -36,11 +36,14 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<TemplateWithCount[]>([]);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; template: ReminderTemplate | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    template: ReminderTemplate | null;
+  }>({
     open: false,
     template: null,
   });
-  
+
   // Detect if we're on admin path (for subdomain navigation)
   const isAdminPath = location.pathname.startsWith('/admin');
   const remindersBasePath = isAdminPath ? '/admin/reminders' : '/reminders';
@@ -55,7 +58,7 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
 
   const fetchTemplates = async () => {
     if (!instanceId) return;
-    
+
     setLoading(true);
     try {
       // Fetch templates
@@ -79,7 +82,7 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
 
       // Group counts by template_id
       const countsByTemplate: Record<string, Set<string>> = {};
-      (countsData || []).forEach(row => {
+      (countsData || []).forEach((row) => {
         if (!countsByTemplate[row.reminder_template_id]) {
           countsByTemplate[row.reminder_template_id] = new Set();
         }
@@ -87,9 +90,11 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
       });
 
       // Merge templates with counts
-      const templatesWithCounts: TemplateWithCount[] = (templatesData || []).map(t => ({
+      const templatesWithCounts: TemplateWithCount[] = (templatesData || []).map((t) => ({
         ...t,
-        items: Array.isArray(t.items) ? t.items as { months: number; service_type: string }[] : [],
+        items: Array.isArray(t.items)
+          ? (t.items as { months: number; service_type: string }[])
+          : [],
         activeCustomersCount: countsByTemplate[t.id]?.size || 0,
       }));
 
@@ -120,14 +125,11 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
         return;
       }
 
-      const { error } = await supabase
-        .from('reminder_templates')
-        .delete()
-        .eq('id', template.id);
+      const { error } = await supabase.from('reminder_templates').delete().eq('id', template.id);
 
       if (error) throw error;
 
-      setTemplates(prev => prev.filter(t => t.id !== template.id));
+      setTemplates((prev) => prev.filter((t) => t.id !== template.id));
       toast.success(t('reminderTemplates.deleted'));
     } catch (error) {
       console.error('Error deleting template:', error);
@@ -153,12 +155,7 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
       <div className="flex items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           {onNavigateBack && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onNavigateBack}
-              className="shrink-0"
-            >
+            <Button variant="ghost" size="icon" onClick={onNavigateBack} className="shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
@@ -166,9 +163,7 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
             <h1 className="text-xl font-semibold flex items-center gap-2">
               {t('reminders.title')}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('reminders.description')}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{t('reminders.description')}</p>
           </div>
         </div>
         <Button onClick={handleAddNew} className="gap-2">
@@ -176,6 +171,7 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
           <span className="hidden sm:inline">{t('reminders.addTemplate')}</span>
         </Button>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Content */}
       {loading ? (
@@ -213,7 +209,10 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
                   {template.activeCustomersCount > 0 && (
                     <Badge variant="secondary" className="text-xs flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {template.activeCustomersCount} {template.activeCustomersCount === 1 ? t('reminders.customerSingular') : t('reminders.customerPlural')}
+                      {template.activeCustomersCount}{' '}
+                      {template.activeCustomersCount === 1
+                        ? t('reminders.customerSingular')
+                        : t('reminders.customerPlural')}
                     </Badge>
                   )}
                 </div>
@@ -247,7 +246,9 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
         open={deleteDialog.open}
         onOpenChange={(open) => !open && setDeleteDialog({ open: false, template: null })}
         title={t('reminderTemplates.deleteConfirmTitle')}
-        description={t('reminderTemplates.deleteConfirmDesc', { name: deleteDialog.template?.name || '' })}
+        description={t('reminderTemplates.deleteConfirmDesc', {
+          name: deleteDialog.template?.name || '',
+        })}
         confirmLabel={t('common.delete')}
         cancelLabel={t('common.cancel')}
         onConfirm={handleDelete}

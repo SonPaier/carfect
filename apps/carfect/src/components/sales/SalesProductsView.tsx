@@ -196,6 +196,7 @@ const SalesProductsView = () => {
           </Button>
         </div>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Search */}
       <div className="flex items-center gap-4">
