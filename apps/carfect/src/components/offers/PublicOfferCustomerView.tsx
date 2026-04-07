@@ -199,6 +199,37 @@ export const PublicOfferCustomerView = ({
   // VAT annotation shown below each item price
   const vatAnnotation = t('publicOffer.netPlusVat');
 
+  const renderDiscountPrice = (
+    item: { unit_price: number; quantity: number; discount_percent: number },
+    itemTotal: number,
+    prefix: string = '',
+    textColor?: string,
+  ) => {
+    const originalTotal = item.unit_price * item.quantity;
+    if (item.discount_percent <= 0) {
+      return (
+        <span className="font-medium" style={{ color: textColor }}>
+          {formatItemPrice(itemTotal, prefix)}
+        </span>
+      );
+    }
+    return (
+      <div className="flex flex-col items-end">
+        <div className="flex items-center gap-2">
+          <span className="text-xs line-through text-muted-foreground">
+            {formatItemPrice(originalTotal, prefix)}
+          </span>
+          <span className="text-xs" style={{ color: textColor }}>
+            +rabat {item.discount_percent}%
+          </span>
+        </div>
+        <span className="font-medium" style={{ color: textColor }}>
+          {formatItemPrice(itemTotal, prefix)}
+        </span>
+      </div>
+    );
+  };
+
   const instance = offer.instances;
 
   // Branding colors
@@ -523,12 +554,12 @@ export const PublicOfferCustomerView = ({
                               </p>
                               {!offer.hide_unit_prices && (
                                 <div className="text-right">
-                                  <span
-                                    className="font-medium"
-                                    style={{ color: branding.offer_section_text_color }}
-                                  >
-                                    {formatItemPrice(itemTotal, '+')}
-                                  </span>
+                                  {renderDiscountPrice(
+                                    item,
+                                    itemTotal,
+                                    '+',
+                                    branding.offer_section_text_color,
+                                  )}
                                   <div className="text-[12px] text-muted-foreground">
                                     {vatAnnotation}
                                   </div>
@@ -561,12 +592,12 @@ export const PublicOfferCustomerView = ({
                             {!offer.hide_unit_prices && (
                               <div className="flex items-center justify-end">
                                 <div className="text-right">
-                                  <span
-                                    className="font-medium"
-                                    style={{ color: branding.offer_section_text_color }}
-                                  >
-                                    {formatItemPrice(itemTotal, '+')}
-                                  </span>
+                                  {renderDiscountPrice(
+                                    item,
+                                    itemTotal,
+                                    '+',
+                                    branding.offer_section_text_color,
+                                  )}
                                   <div className="text-[12px] text-muted-foreground">
                                     {vatAnnotation}
                                   </div>
@@ -691,12 +722,12 @@ export const PublicOfferCustomerView = ({
                                   </span>
                                   {!offer.hide_unit_prices && (
                                     <div className="text-right shrink-0">
-                                      <span
-                                        className="font-bold text-lg"
-                                        style={{ color: branding.offer_section_text_color }}
-                                      >
-                                        {formatItemPrice(itemTotal)}
-                                      </span>
+                                      {renderDiscountPrice(
+                                        item,
+                                        itemTotal,
+                                        '',
+                                        branding.offer_section_text_color,
+                                      )}
                                       <div className="text-[12px] text-muted-foreground">
                                         {vatAnnotation}
                                       </div>
@@ -769,17 +800,16 @@ export const PublicOfferCustomerView = ({
                                   {item.custom_name}
                                 </span>
                                 {!offer.hide_unit_prices && (
-                                  <span
-                                    className="font-semibold text-base whitespace-nowrap"
-                                    style={{
-                                      color:
-                                        itemTotal === 0
-                                          ? branding.offer_primary_color
-                                          : branding.offer_section_text_color,
-                                    }}
-                                  >
-                                    {itemTotal === 0 ? 'Gratis!' : `${itemTotal.toFixed(2)} zł`}
-                                  </span>
+                                  <div className="shrink-0">
+                                    {renderDiscountPrice(
+                                      item,
+                                      itemTotal,
+                                      '',
+                                      itemTotal === 0
+                                        ? branding.offer_primary_color
+                                        : branding.offer_section_text_color,
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>

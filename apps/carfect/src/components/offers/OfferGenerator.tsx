@@ -55,6 +55,7 @@ export const OfferGenerator = ({
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [instanceShowUnitPrices, setInstanceShowUnitPrices] = useState(false);
+  const [instanceDiscountsEnabled, setInstanceDiscountsEnabled] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
@@ -97,7 +98,9 @@ export const OfferGenerator = ({
     loadOffer,
   } = useOffer(instanceId);
 
-  const isV2 = offer.offerFormat === 'v2';
+  // For new offers, treat as v2 immediately (before async fetch sets offerFormat)
+  // For existing offers, wait for loadOffer to determine the format
+  const isV2 = offerId || duplicateFromId ? offer.offerFormat === 'v2' : offer.offerFormat !== 'v1';
 
   // Pre-fill customer data from reservation (new offers only)
   useEffect(() => {
@@ -118,7 +121,7 @@ export const OfferGenerator = ({
       const { data, error } = await supabase
         .from('instances')
         .select(
-          'show_unit_prices_in_offer, name, email, phone, address, website, contact_person, slug, offer_email_template',
+          'show_unit_prices_in_offer, offer_discounts_enabled, offer_default_payment_terms, offer_default_warranty, offer_default_service_info, offer_default_notes, name, email, phone, address, website, contact_person, slug, offer_email_template',
         )
         .eq('id', instanceId)
         .single();
@@ -131,6 +134,7 @@ export const OfferGenerator = ({
 
       if (data) {
         setInstanceShowUnitPrices(data.show_unit_prices_in_offer === true);
+        setInstanceDiscountsEnabled(data.offer_discounts_enabled === true);
         setInstanceData({
           name: data.name,
           email: data.email,
@@ -141,6 +145,18 @@ export const OfferGenerator = ({
           slug: data.slug,
           offer_email_template: data.offer_email_template,
         });
+
+        // Auto-populate conditions for new offers (not editing, not duplicating)
+        if (!offerId && !duplicateFromId) {
+          const defaults: Partial<OfferState> = { offerFormat: 'v2' as const };
+          if (data.offer_default_payment_terms)
+            defaults.paymentTerms = data.offer_default_payment_terms;
+          if (data.offer_default_warranty) defaults.warranty = data.offer_default_warranty;
+          if (data.offer_default_service_info)
+            defaults.serviceInfo = data.offer_default_service_info;
+          if (data.offer_default_notes) defaults.notes = data.offer_default_notes;
+          updateOffer(defaults);
+        }
       }
     };
     fetchInstanceSettings();
@@ -289,39 +305,6 @@ export const OfferGenerator = ({
     }
   };
 
-  const handleSendFromPreview = async () => {
-    try {
-      const savedId = await saveOffer();
-      if (savedId) {
-        // Fetch the saved offer to get public_token
-        const { data: savedOffer } = await supabase
-          .from('offers')
-          .select('id, offer_number, public_token, customer_data')
-          .eq('id', savedId)
-          .single();
-
-        if (savedOffer) {
-          const customerData = savedOffer.customer_data as { name?: string; email?: string } | null;
-          if (!customerData?.email) {
-            toast.error(t('offers.noCustomerEmail'));
-            return;
-          }
-          // Close preview and open email dialog
-          setShowPreview(false);
-          setSavedOfferForEmail({
-            id: savedOffer.id,
-            offer_number: savedOffer.offer_number,
-            public_token: savedOffer.public_token,
-            customer_data: savedOffer.customer_data as { name?: string; email?: string },
-          });
-          setShowEmailDialog(true);
-        }
-      }
-    } catch (error) {
-      // Error already handled in hook
-    }
-  };
-
   const handleShowPreview = () => {
     setShowPreview(true);
   };
@@ -341,47 +324,6 @@ export const OfferGenerator = ({
       }
     } catch (error) {
       console.error('Print error:', error);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!offer.id) {
-      toast.error(t('offers.saveFirst'));
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-offer-pdf', {
-        body: { offerId: offer.id },
-      });
-
-      if (error) throw error;
-
-      // Validate response is HTML before opening (#3)
-      if (data instanceof Blob && data.type && !data.type.includes('text/html')) {
-        throw new Error(`Unexpected response type: ${data.type}`);
-      }
-      // Open in new window for print-to-PDF using a safe blob URL
-      const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
-      const printWindow = window.open(blobUrl, '_blank');
-      if (printWindow) {
-        // Revoke after the window has loaded the content
-        printWindow.addEventListener('load', () => URL.revokeObjectURL(blobUrl));
-      } else {
-        // Fallback - download as HTML
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `Oferta_${offer.id}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-        toast.info(t('offers.openFilePrintPdf'));
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error(t('offers.pdfError'));
     }
   };
 
@@ -425,6 +367,7 @@ export const OfferGenerator = ({
           instanceId={instanceId}
           offer={offer}
           showUnitPrices={instanceShowUnitPrices}
+          discountsEnabled={instanceDiscountsEnabled}
           isEditing={!!offerId}
           onUpdateOffer={updateOffer}
           calculateTotalNet={calculateTotalNet}

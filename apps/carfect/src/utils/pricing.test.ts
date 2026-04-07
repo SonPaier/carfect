@@ -3,6 +3,7 @@ import {
   roundToNearest5,
   netToBrutto,
   bruttoToNetto,
+  nettoToBrutto,
   getServicePricePair,
   getServiceDisplayPrice,
   calculatePricePair,
@@ -170,6 +171,38 @@ describe('pricing utilities', () => {
       const result = calculatePricePair(300, 'brutto');
       expect(result.brutto).toBe(300);
       expect(result.netto).toBe(243.9);
+    });
+  });
+
+  describe('nettoToBrutto', () => {
+    it('converts 1000 netto to 1230.00 brutto (precise, not rounded to 5)', () => {
+      // nettoToBrutto uses Math.round to 2dp, unlike netToBrutto which rounds to nearest 5
+      expect(nettoToBrutto(1000)).toBe(1230);
+    });
+
+    it('converts 100 netto to 123.00 brutto (not rounded to nearest 5)', () => {
+      // netToBrutto(100) = 125, but nettoToBrutto(100) = 123
+      expect(nettoToBrutto(100)).toBe(123);
+    });
+
+    it('returns 0 for 0', () => {
+      expect(nettoToBrutto(0)).toBe(0);
+    });
+
+    it('is inverse of bruttoToNetto within rounding', () => {
+      // bruttoToNetto(1230) = 1000, nettoToBrutto(1000) = 1230
+      expect(nettoToBrutto(bruttoToNetto(1230))).toBeCloseTo(1230, 0);
+    });
+
+    it('rounds result to 2 decimal places', () => {
+      // 10 * 1.23 = 12.3
+      expect(nettoToBrutto(10)).toBe(12.3);
+    });
+
+    it('differs from netToBrutto — does not snap to nearest 5', () => {
+      // netToBrutto(200) = 245 (rounded to 5), nettoToBrutto(200) = 246
+      expect(nettoToBrutto(200)).toBe(246);
+      expect(netToBrutto(200)).toBe(245);
     });
   });
 });

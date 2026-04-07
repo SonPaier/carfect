@@ -15,6 +15,11 @@ export const bruttoToNetto = (brutto: number): number => {
   return Math.round((brutto / VAT_RATE) * 100) / 100;
 };
 
+/** Convert netto (net) to gross, rounded to 2 decimal places */
+export const nettoToBrutto = (netto: number): number => {
+  return Math.round(netto * VAT_RATE * 100) / 100;
+};
+
 interface ServiceLike {
   price_from: number | null;
   price_small: number | null;
@@ -26,10 +31,7 @@ interface ServiceLike {
 type CarSize = 'small' | 'medium' | 'large';
 
 /** Get raw price for car size (before any net/brutto conversion) */
-export const getRawServicePrice = (
-  service: ServiceLike,
-  carSize: CarSize,
-): number | null => {
+export const getRawServicePrice = (service: ServiceLike, carSize: CarSize): number | null => {
   if (carSize === 'small' && service.price_small !== null) return service.price_small;
   if (carSize === 'medium' && service.price_medium !== null) return service.price_medium;
   if (carSize === 'large' && service.price_large !== null) return service.price_large;

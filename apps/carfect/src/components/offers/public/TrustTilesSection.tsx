@@ -69,14 +69,14 @@ export function TrustTilesSection({ tiles, title, description, branding }: Trust
           </p>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           {tiles.map((tile, idx) => {
             const IconComponent = ICON_MAP[tile.icon] || Star;
 
             return (
               <div
                 key={idx}
-                className="rounded p-4 border shadow-sm"
+                className="rounded p-4 border shadow-sm w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)]"
                 style={{
                   backgroundColor: branding.offer_section_bg_color,
                   borderColor: '#e0e0e0',

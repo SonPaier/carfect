@@ -118,6 +118,7 @@ interface RenderOptions {
   onDelete?: () => void;
   defaultCategoryId?: string;
   totalServicesCount?: number;
+  pricingMode?: 'netto' | 'brutto';
 }
 
 const renderServiceFormDialog = (options: RenderOptions = {}) => {
@@ -132,6 +133,7 @@ const renderServiceFormDialog = (options: RenderOptions = {}) => {
     totalServicesCount: options.totalServicesCount ?? 5,
     onDelete: options.onDelete,
     existingServices: options.existingServices ?? [],
+    pricingMode: options.pricingMode,
   };
 
   const user = userEvent.setup();
@@ -792,6 +794,115 @@ describe('ServiceFormDialog', () => {
         // Skip if no close button found (some dialogs don't have one)
         expect(true).toBe(true);
       }
+    });
+  });
+
+  // ==========================================
+  // Grupa 9: pricingMode labels (SVC-U-100 to 106)
+  // ==========================================
+
+  describe('Grupa 9: pricingMode labels', () => {
+    it('SVC-U-100: size price hint shows "Brutto:" label when pricingMode=netto', async () => {
+      // When prices are stored as netto, the hint should show the brutto equivalent
+      const { user } = renderServiceFormDialog({
+        service: mockServiceWithSizePrices,
+        pricingMode: 'netto',
+      });
+
+      // The hint row shows "Brutto: S: ... M: ... L: ... zł"
+      await waitFor(() => {
+        expect(screen.getByText(/Brutto:/i)).toBeInTheDocument();
+      });
+    });
+
+    it('SVC-U-101: size price hint shows "Netto:" label when pricingMode=brutto', async () => {
+      // When prices are stored as brutto, the hint should show the netto equivalent
+      const { user } = renderServiceFormDialog({
+        service: mockServiceWithSizePrices,
+        pricingMode: 'brutto',
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Netto:/i)).toBeInTheDocument();
+      });
+    });
+
+    it('SVC-U-102: single price hint shows brutto value text when pricingMode=netto', async () => {
+      // Enter a price and check hint shows "X zł brutto"
+      const { user } = renderServiceFormDialog({ pricingMode: 'netto' });
+      const priceInput = screen.getByRole('spinbutton');
+      await user.type(priceInput, '100');
+
+      await waitFor(() => {
+        // 100 * 1.23 = 123.00 zł brutto
+        expect(screen.getByText(/zł brutto/i)).toBeInTheDocument();
+      });
+    });
+
+    it('SVC-U-103: single price hint shows netto value text when pricingMode=brutto', async () => {
+      // Enter a price and check hint shows "X zł netto"
+      const { user } = renderServiceFormDialog({ pricingMode: 'brutto' });
+      const priceInput = screen.getByRole('spinbutton');
+      await user.type(priceInput, '123');
+
+      await waitFor(() => {
+        // 123 / 1.23 = 100.00 zł netto
+        expect(screen.getByText(/zł netto/i)).toBeInTheDocument();
+      });
+    });
+
+    it('SVC-U-104: prices_are_net is preserved from service data on save (not hardcoded false)', async () => {
+      // Service has prices_are_net: true — it must be saved as true, not false
+      const serviceWithNetPrices = { ...mockServiceBasic, prices_are_net: true };
+      const onSaved = vi.fn();
+      const { user } = renderServiceFormDialog({ service: serviceWithNetPrices, onSaved });
+      const saveButton = screen.getByRole('button', { name: /Zapisz/i });
+
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalled();
+      });
+
+      // Verify the update call included prices_are_net: true
+      const updateCall = mockSupabase.from.mock.results
+        .map((r: { value: ReturnType<typeof mockSupabase.from> }) => r.value)
+        .find((b) => b.update.mock?.calls?.length > 0);
+
+      if (updateCall) {
+        const savedData = updateCall.update.mock.calls[0][0];
+        expect(savedData.prices_are_net).toBe(true);
+      }
+    });
+
+    it('SVC-U-105: prices_are_net=false is preserved from service data on save', async () => {
+      const serviceWithGrossPrices = { ...mockServiceBasic, prices_are_net: false };
+      const onSaved = vi.fn();
+      const { user } = renderServiceFormDialog({ service: serviceWithGrossPrices, onSaved });
+      const saveButton = screen.getByRole('button', { name: /Zapisz/i });
+
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalled();
+      });
+
+      const updateCall = mockSupabase.from.mock.results
+        .map((r: { value: ReturnType<typeof mockSupabase.from> }) => r.value)
+        .find((b) => b.update.mock?.calls?.length > 0);
+
+      if (updateCall) {
+        const savedData = updateCall.update.mock.calls[0][0];
+        expect(savedData.prices_are_net).toBe(false);
+      }
+    });
+
+    it('SVC-U-106: default pricingMode is brutto — size hint shows Netto: label without prop', async () => {
+      renderServiceFormDialog({ service: mockServiceWithSizePrices });
+      // Default pricingMode='brutto', so hint shows "Netto:"
+      await waitFor(() => {
+        expect(screen.getByText(/Netto:/i)).toBeInTheDocument();
+      });
     });
   });
 

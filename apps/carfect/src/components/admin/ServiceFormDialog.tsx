@@ -17,11 +17,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProtocolPhotosUploader } from '@/components/protocols/ProtocolPhotosUploader';
-import { bruttoToNetto } from '@/utils/pricing';
+import { bruttoToNetto, nettoToBrutto } from '@/utils/pricing';
 
 interface ServiceCategory {
   id: string;
   name: string;
+  prices_are_net?: boolean;
 }
 
 interface ReminderTemplateItem {
@@ -84,6 +85,7 @@ interface ServiceFormDialogProps {
   onDelete?: () => void;
   existingServices?: ExistingService[];
   forceAdvancedOpen?: boolean;
+  pricingMode?: 'netto' | 'brutto';
 }
 
 // Info icon with tooltip component - only shows on click, not on focus
@@ -127,6 +129,7 @@ const ServiceFormContent = ({
   onDelete,
   existingServices = [],
   forceAdvancedOpen = false,
+  pricingMode = 'brutto',
 }: {
   service?: ServiceData | null;
   categories: ServiceCategory[];
@@ -139,6 +142,7 @@ const ServiceFormContent = ({
   onDelete?: () => void;
   existingServices?: ExistingService[];
   forceAdvancedOpen?: boolean;
+  pricingMode?: 'netto' | 'brutto';
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -148,6 +152,18 @@ const ServiceFormContent = ({
   const [saving, setSaving] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [reminderTemplates, setReminderTemplates] = useState<ReminderTemplateOption[]>([]);
+  const [resolvedPricingMode, setResolvedPricingMode] = useState<'netto' | 'brutto'>(pricingMode);
+
+  useEffect(() => {
+    supabase
+      .from('instances')
+      .select('pricing_mode')
+      .eq('id', instanceId)
+      .single()
+      .then(({ data }) => {
+        if (data?.pricing_mode) setResolvedPricingMode(data.pricing_mode as 'netto' | 'brutto');
+      });
+  }, [instanceId]);
   const [nameError, setNameError] = useState(false);
   const [shortNameError, setShortNameError] = useState(false);
 
@@ -185,6 +201,11 @@ const ServiceFormContent = ({
     duration_small: service?.duration_small ?? null,
     duration_medium: service?.duration_medium ?? null,
     duration_large: service?.duration_large ?? null,
+    prices_are_net:
+      service?.prices_are_net ??
+      categories.find((c) => c.id === (service?.category_id || defaultCategoryId))
+        ?.prices_are_net ??
+      false,
     category_id: service?.category_id || defaultCategoryId || '',
     service_type: service?.service_type || 'both',
     visibility: 'everywhere',
@@ -271,6 +292,7 @@ const ServiceFormContent = ({
         duration_small: service.duration_small ?? null,
         duration_medium: service.duration_medium ?? null,
         duration_large: service.duration_large ?? null,
+        prices_are_net: service.prices_are_net ?? false,
         category_id: service.category_id || defaultCategoryId || '',
         service_type: service.service_type || 'both',
         visibility: 'everywhere',
@@ -342,7 +364,7 @@ const ServiceFormContent = ({
         price_small: showSizePrices ? formData.price_small : null,
         price_medium: showSizePrices ? formData.price_medium : null,
         price_large: showSizePrices ? formData.price_large : null,
-        prices_are_net: false,
+        prices_are_net: formData.prices_are_net,
         duration_minutes: showSizeDurations ? null : formData.duration_minutes,
         duration_small: showSizeDurations ? formData.duration_small : null,
         duration_medium: showSizeDurations ? formData.duration_medium : null,
@@ -539,7 +561,9 @@ const ServiceFormContent = ({
               </div>
               {formData.price_from != null && (
                 <p className="text-xs text-muted-foreground">
-                  {bruttoToNetto(formData.price_from).toFixed(2)} zł netto
+                  {resolvedPricingMode === 'netto'
+                    ? `${nettoToBrutto(formData.price_from).toFixed(2)} zł brutto`
+                    : `${bruttoToNetto(formData.price_from).toFixed(2)} zł netto`}
                 </p>
               )}
               <button
@@ -600,14 +624,14 @@ const ServiceFormContent = ({
                 formData.price_medium != null ||
                 formData.price_large != null) && (
                 <p className="text-xs text-muted-foreground">
-                  Netto:{' '}
+                  {resolvedPricingMode === 'netto' ? 'Brutto:' : 'Netto:'}{' '}
                   {[
                     formData.price_small != null &&
-                      `S: ${bruttoToNetto(formData.price_small).toFixed(2)}`,
+                      `S: ${(resolvedPricingMode === 'netto' ? nettoToBrutto(formData.price_small) : bruttoToNetto(formData.price_small)).toFixed(2)}`,
                     formData.price_medium != null &&
-                      `M: ${bruttoToNetto(formData.price_medium).toFixed(2)}`,
+                      `M: ${(resolvedPricingMode === 'netto' ? nettoToBrutto(formData.price_medium) : bruttoToNetto(formData.price_medium)).toFixed(2)}`,
                     formData.price_large != null &&
-                      `L: ${bruttoToNetto(formData.price_large).toFixed(2)}`,
+                      `L: ${(resolvedPricingMode === 'netto' ? nettoToBrutto(formData.price_large) : bruttoToNetto(formData.price_large)).toFixed(2)}`,
                   ]
                     .filter(Boolean)
                     .join(', ')}{' '}
@@ -944,6 +968,7 @@ export const ServiceFormDialog = ({
   onDelete,
   existingServices = [],
   forceAdvancedOpen = false,
+  pricingMode,
 }: ServiceFormDialogProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -974,6 +999,7 @@ export const ServiceFormDialog = ({
               onDelete={onDelete}
               existingServices={existingServices}
               forceAdvancedOpen={forceAdvancedOpen}
+              pricingMode={pricingMode}
             />
           </div>
         </DrawerContent>
@@ -1005,6 +1031,7 @@ export const ServiceFormDialog = ({
             onDelete={onDelete}
             existingServices={existingServices}
             forceAdvancedOpen={forceAdvancedOpen}
+            pricingMode={pricingMode}
           />
         </div>
       </DialogContent>
