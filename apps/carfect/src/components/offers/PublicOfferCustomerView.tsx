@@ -554,7 +554,12 @@ export const PublicOfferCustomerView = ({
                               </p>
                               {!offer.hide_unit_prices && (
                                 <div className="text-right">
-                                  {renderDiscountPrice(item, itemTotal, '+', branding.offer_section_text_color)}
+                                  {renderDiscountPrice(
+                                    item,
+                                    itemTotal,
+                                    '+',
+                                    branding.offer_section_text_color,
+                                  )}
                                   <div className="text-[12px] text-muted-foreground">
                                     {vatAnnotation}
                                   </div>
@@ -587,7 +592,12 @@ export const PublicOfferCustomerView = ({
                             {!offer.hide_unit_prices && (
                               <div className="flex items-center justify-end">
                                 <div className="text-right">
-                                  {renderDiscountPrice(item, itemTotal, '+', branding.offer_section_text_color)}
+                                  {renderDiscountPrice(
+                                    item,
+                                    itemTotal,
+                                    '+',
+                                    branding.offer_section_text_color,
+                                  )}
                                   <div className="text-[12px] text-muted-foreground">
                                     {vatAnnotation}
                                   </div>
@@ -712,7 +722,12 @@ export const PublicOfferCustomerView = ({
                                   </span>
                                   {!offer.hide_unit_prices && (
                                     <div className="text-right shrink-0">
-                                      {renderDiscountPrice(item, itemTotal, '', branding.offer_section_text_color)}
+                                      {renderDiscountPrice(
+                                        item,
+                                        itemTotal,
+                                        '',
+                                        branding.offer_section_text_color,
+                                      )}
                                       <div className="text-[12px] text-muted-foreground">
                                         {vatAnnotation}
                                       </div>

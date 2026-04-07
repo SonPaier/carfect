@@ -80,7 +80,20 @@ describe('TrustTilesSection', () => {
   });
 
   it('renders all known icon types without errors', () => {
-    const iconTypes = ['star', 'shield', 'sparkles', 'award', 'heart', 'car', 'clock', 'check', 'zap', 'trophy', 'thumbsup', 'eye'];
+    const iconTypes = [
+      'star',
+      'shield',
+      'sparkles',
+      'award',
+      'heart',
+      'car',
+      'clock',
+      'check',
+      'zap',
+      'trophy',
+      'thumbsup',
+      'eye',
+    ];
     const tiles = iconTypes.map((icon) => ({ icon, title: `Icon ${icon}`, description: 'desc' }));
 
     const { container } = render(<TrustTilesSection tiles={tiles} branding={branding} />);

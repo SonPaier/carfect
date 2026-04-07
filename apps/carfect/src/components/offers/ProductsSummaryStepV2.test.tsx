@@ -19,7 +19,15 @@ vi.mock('./OfferProductPickerDrawer', () => ({
     onClose,
   }: {
     open: boolean;
-    onConfirm: (products: Array<{ id: string; name: string; short_name: string | null; description: string | null; price: number }>) => void;
+    onConfirm: (
+      products: Array<{
+        id: string;
+        name: string;
+        short_name: string | null;
+        description: string | null;
+        price: number;
+      }>,
+    ) => void;
     onClose: () => void;
   }) =>
     open ? (
@@ -27,7 +35,15 @@ vi.mock('./OfferProductPickerDrawer', () => ({
         <button
           data-testid="picker-add-with-id"
           onClick={() => {
-            onConfirm([{ id: 'prod-a', name: 'Usługa A', short_name: null, description: 'Opis A', price: 200 }]);
+            onConfirm([
+              {
+                id: 'prod-a',
+                name: 'Usługa A',
+                short_name: null,
+                description: 'Opis A',
+                price: 200,
+              },
+            ]);
             onClose();
           }}
         >
@@ -36,7 +52,9 @@ vi.mock('./OfferProductPickerDrawer', () => ({
         <button
           data-testid="picker-add-without-id"
           onClick={() => {
-            onConfirm([{ id: '', name: 'Custom Service', short_name: null, description: null, price: 150 }]);
+            onConfirm([
+              { id: '', name: 'Custom Service', short_name: null, description: null, price: 150 },
+            ]);
             onClose();
           }}
         >
@@ -650,11 +668,7 @@ describe('ProductsSummaryStepV2', () => {
     });
 
     render(
-      <ProductsSummaryStepV2
-        {...defaultProps}
-        offer={offer}
-        onServiceSaved={onServiceSaved}
-      />,
+      <ProductsSummaryStepV2 {...defaultProps} offer={offer} onServiceSaved={onServiceSaved} />,
     );
 
     // Click product name to open edit dialog

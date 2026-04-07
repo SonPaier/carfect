@@ -90,6 +90,19 @@ export function HintsManager() {
     if (!deleteHint) return;
     setDeleting(true);
     try {
+      // Delete image from storage if exists
+      if (deleteHint.image_url) {
+        try {
+          const urlParts = deleteHint.image_url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          if (fileName) {
+            await supabase.storage.from('hint-images').remove([fileName]);
+          }
+        } catch {
+          // Don't block hint deletion if image cleanup fails
+        }
+      }
+
       const { error } = await supabase.from('app_hints').delete().eq('id', deleteHint.id);
       if (error) throw error;
 

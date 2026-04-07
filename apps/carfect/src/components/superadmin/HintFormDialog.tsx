@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -17,7 +17,7 @@ import {
   Switch,
   Checkbox,
 } from '@shared/ui';
-import { Loader2 } from 'lucide-react';
+import { X, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ALL_ROLES = ['admin', 'employee', 'hall', 'sales', 'super_admin'] as const;
@@ -54,9 +54,16 @@ const EMPTY: Omit<HintRow, 'id'> = {
   active: true,
 };
 
+function extractFileName(url: string): string | null {
+  const parts = url.split('/');
+  return parts[parts.length - 1] || null;
+}
+
 export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintFormDialogProps) {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -75,6 +82,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
             }
           : EMPTY,
       );
+      setUploading(false);
     }
   }, [open, hint]);
 
@@ -85,6 +93,64 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
         ? prev.target_roles.filter((r) => r !== role)
         : [...prev.target_roles, role],
     }));
+  };
+
+  const deleteImageFromStorage = async (imageUrl: string) => {
+    const fileName = extractFileName(imageUrl);
+    if (fileName) {
+      await supabase.storage.from('hint-images').remove([fileName]);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset file input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    const ext = file.name.split('.').pop() ?? 'png';
+    const fileName = `hint-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+    try {
+      setUploading(true);
+
+      // Delete old image if replacing
+      if (form.image_url) {
+        try {
+          await deleteImageFromStorage(form.image_url);
+        } catch {
+          // Don't block upload if old image cleanup fails
+        }
+      }
+
+      const { error } = await supabase.storage
+        .from('hint-images')
+        .upload(fileName, file, { contentType: file.type, cacheControl: '3600' });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage.from('hint-images').getPublicUrl(fileName);
+      setForm((p) => ({ ...p, image_url: urlData.publicUrl }));
+    } catch (error: unknown) {
+      toast.error((error as Error).message ?? 'Błąd podczas przesyłania obrazka');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!form.image_url) return;
+
+    try {
+      setUploading(true);
+      await deleteImageFromStorage(form.image_url);
+    } catch {
+      // Don't block removal from form if storage cleanup fails
+    } finally {
+      setForm((p) => ({ ...p, image_url: null }));
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,16 +257,57 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
             />
           </div>
 
-          {/* Image URL */}
-          <div className="space-y-1.5">
-            <Label htmlFor="hint-image">URL obrazka (opcjonalnie)</Label>
-            <Input
-              id="hint-image"
-              value={form.image_url ?? ''}
-              onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value || null }))}
-              placeholder="https://..."
-            />
-          </div>
+          {/* Image upload — hidden for infobox type */}
+          {form.type !== 'infobox' && (
+            <div className="space-y-1.5">
+              <Label>Obrazek (opcjonalnie)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+              {form.image_url ? (
+                <div className="relative rounded-md overflow-hidden border border-border">
+                  <img
+                    src={form.image_url}
+                    alt="Podgląd"
+                    className="w-full rounded-md object-cover max-h-48"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={uploading}
+                    className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-ring"
+                    aria-label="Usuń obrazek"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center justify-center gap-2 w-full rounded-md border border-dashed border-input bg-transparent px-3 py-6 text-sm text-muted-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <ImageIcon className="h-5 w-5" />
+                      <span>Kliknij, aby dodać obrazek</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Target element ID — only for tooltip */}
           {form.type === 'tooltip' && (

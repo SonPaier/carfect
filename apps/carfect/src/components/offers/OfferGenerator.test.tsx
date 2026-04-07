@@ -80,10 +80,7 @@ vi.mock('./SummaryStepV2', () => ({
 
 vi.mock('./ProductsSummaryStepV2', () => ({
   ProductsSummaryStepV2: ({ discountsEnabled }: { discountsEnabled: boolean }) => (
-    <div
-      data-testid="products-summary-step"
-      data-discounts-enabled={String(discountsEnabled)}
-    >
+    <div data-testid="products-summary-step" data-discounts-enabled={String(discountsEnabled)}>
       ProductsSummary
     </div>
   ),
@@ -396,9 +393,7 @@ describe('OfferGenerator', () => {
 
     it('does NOT call updateOffer with defaults when all instance defaults are null', async () => {
       const { mockSupabase } = await import('@/test/mocks/supabase');
-      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(
-        makeInstanceMock({}),
-      );
+      (mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(makeInstanceMock({}));
 
       renderGenerator();
 
@@ -406,7 +401,11 @@ describe('OfferGenerator', () => {
       await waitFor(() => {
         // updateOffer may be called for offerFormat: 'v2' but NOT with any condition fields
         const conditionCalls = mockUpdateOffer.mock.calls.filter(
-          ([arg]) => arg.warranty !== undefined || arg.serviceInfo !== undefined || arg.notes !== undefined || arg.paymentTerms !== undefined,
+          ([arg]) =>
+            arg.warranty !== undefined ||
+            arg.serviceInfo !== undefined ||
+            arg.notes !== undefined ||
+            arg.paymentTerms !== undefined,
         );
         expect(conditionCalls).toHaveLength(0);
       });

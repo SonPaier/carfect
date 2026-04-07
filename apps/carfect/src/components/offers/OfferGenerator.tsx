@@ -149,9 +149,11 @@ export const OfferGenerator = ({
         // Auto-populate conditions for new offers (not editing, not duplicating)
         if (!offerId && !duplicateFromId) {
           const defaults: Partial<OfferState> = { offerFormat: 'v2' as const };
-          if (data.offer_default_payment_terms) defaults.paymentTerms = data.offer_default_payment_terms;
+          if (data.offer_default_payment_terms)
+            defaults.paymentTerms = data.offer_default_payment_terms;
           if (data.offer_default_warranty) defaults.warranty = data.offer_default_warranty;
-          if (data.offer_default_service_info) defaults.serviceInfo = data.offer_default_service_info;
+          if (data.offer_default_service_info)
+            defaults.serviceInfo = data.offer_default_service_info;
           if (data.offer_default_notes) defaults.notes = data.offer_default_notes;
           updateOffer(defaults);
         }

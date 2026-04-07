@@ -154,13 +154,7 @@ describe('OfferProductPickerDrawer', () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
 
-    render(
-      <OfferProductPickerDrawer
-        {...defaultProps}
-        onConfirm={onConfirm}
-        onClose={onClose}
-      />,
-    );
+    render(<OfferProductPickerDrawer {...defaultProps} onConfirm={onConfirm} onClose={onClose} />);
 
     await waitFor(() => {
       expect(screen.getAllByTestId('product-item')).toHaveLength(3);
@@ -251,12 +245,7 @@ describe('OfferProductPickerDrawer', () => {
       const onConfirm = vi.fn();
       const user = userEvent.setup();
 
-      render(
-        <OfferProductPickerDrawer
-          {...defaultProps}
-          onConfirm={onConfirm}
-        />,
-      );
+      render(<OfferProductPickerDrawer {...defaultProps} onConfirm={onConfirm} />);
 
       await waitFor(() => {
         expect(screen.getAllByTestId('product-item')).toHaveLength(1);
@@ -295,12 +284,7 @@ describe('OfferProductPickerDrawer', () => {
       const onConfirm = vi.fn();
       const user = userEvent.setup();
 
-      render(
-        <OfferProductPickerDrawer
-          {...defaultProps}
-          onConfirm={onConfirm}
-        />,
-      );
+      render(<OfferProductPickerDrawer {...defaultProps} onConfirm={onConfirm} />);
 
       await waitFor(() => {
         expect(screen.getAllByTestId('product-item')).toHaveLength(1);

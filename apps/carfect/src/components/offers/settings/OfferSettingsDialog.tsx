@@ -36,7 +36,12 @@ function DefaultTextarea({
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} disabled={disabled} />
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={3}
+        disabled={disabled}
+      />
     </div>
   );
 }
@@ -243,25 +248,37 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       <DefaultTextarea
                         label={t('offerSettings.defaultPaymentTerms')}
                         value={defaultPaymentTerms}
-                        onChange={(v) => { setDefaultPaymentTerms(v); handleChange(); }}
+                        onChange={(v) => {
+                          setDefaultPaymentTerms(v);
+                          handleChange();
+                        }}
                         disabled={saving}
                       />
                       <DefaultTextarea
                         label="Gwarancja"
                         value={defaultWarranty}
-                        onChange={(v) => { setDefaultWarranty(v); handleChange(); }}
+                        onChange={(v) => {
+                          setDefaultWarranty(v);
+                          handleChange();
+                        }}
                         disabled={saving}
                       />
                       <DefaultTextarea
                         label="Informacje o serwisie"
                         value={defaultServiceInfo}
-                        onChange={(v) => { setDefaultServiceInfo(v); handleChange(); }}
+                        onChange={(v) => {
+                          setDefaultServiceInfo(v);
+                          handleChange();
+                        }}
                         disabled={saving}
                       />
                       <DefaultTextarea
                         label="Uwagi"
                         value={defaultNotes}
-                        onChange={(v) => { setDefaultNotes(v); handleChange(); }}
+                        onChange={(v) => {
+                          setDefaultNotes(v);
+                          handleChange();
+                        }}
                         disabled={saving}
                       />
                     </div>
@@ -275,7 +292,8 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                             Możliwość dodawania rabatów do usług w ofertach
                           </Label>
                           <p className="text-sm text-muted-foreground">
-                            Gdy włączone, przy każdej pozycji w kreatorze oferty pojawi się pole do wpisania rabatu %.
+                            Gdy włączone, przy każdej pozycji w kreatorze oferty pojawi się pole do
+                            wpisania rabatu %.
                           </p>
                         </div>
                         <Switch

@@ -57,7 +57,9 @@ export const ProductsSummaryStepV2 = ({
       .from('service_categories')
       .select('id, name')
       .eq('instance_id', instanceId)
-      .then(({ data }) => { if (data) setCategories(data); });
+      .then(({ data }) => {
+        if (data) setCategories(data);
+      });
   }, [instanceId]);
 
   const handleEditService = useCallback(async (productId: string) => {
@@ -148,9 +150,7 @@ export const ProductsSummaryStepV2 = ({
   }, []);
 
   const handlePriceChange = useCallback((itemId: string, newPrice: number) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.itemId === itemId ? { ...p, price: newPrice } : p)),
-    );
+    setProducts((prev) => prev.map((p) => (p.itemId === itemId ? { ...p, price: newPrice } : p)));
   }, []);
 
   const handleDiscountChange = useCallback((itemId: string, newDiscount: number) => {
@@ -168,9 +168,7 @@ export const ProductsSummaryStepV2 = ({
     <div className="space-y-6">
       {/* Products */}
       <div className="space-y-3">
-        <h3 className="font-semibold">
-          Wybrane usługi, ceny netto
-        </h3>
+        <h3 className="font-semibold">Wybrane usługi, ceny netto</h3>
 
         <div className="space-y-2">
           {products.map((product) => (
@@ -189,11 +187,7 @@ export const ProductsSummaryStepV2 = ({
       </div>
 
       {/* Add Product Button */}
-      <Button
-        type="button"
-        onClick={() => setPickerOpen(true)}
-        className="w-full h-12"
-      >
+      <Button type="button" onClick={() => setPickerOpen(true)} className="w-full h-12">
         <Plus className="w-4 h-4 mr-2" />
         Dodaj usługę
       </Button>
@@ -244,8 +238,15 @@ interface ProductRowProps {
   onEdit: (productId: string) => void;
 }
 
-function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange, onToggleSuggested, onRemove, onEdit }: ProductRowProps) {
-
+function ProductRow({
+  product,
+  discountsEnabled,
+  onPriceChange,
+  onDiscountChange,
+  onToggleSuggested,
+  onRemove,
+  onEdit,
+}: ProductRowProps) {
   return (
     <div className="p-3 rounded-lg border bg-white space-y-2">
       {/* Row 1: Name + delete */}
@@ -265,7 +266,10 @@ function ProductRow({ product, discountsEnabled, onPriceChange, onDiscountChange
         </div>
         <div className="flex items-center gap-1">
           {product.isSuggested ? (
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer" onClick={() => onToggleSuggested(product.itemId)}>
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer"
+              onClick={() => onToggleSuggested(product.itemId)}
+            >
               Opcja
             </span>
           ) : (

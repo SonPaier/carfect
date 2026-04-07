@@ -31,10 +31,7 @@ interface ServiceLike {
 type CarSize = 'small' | 'medium' | 'large';
 
 /** Get raw price for car size (before any net/brutto conversion) */
-export const getRawServicePrice = (
-  service: ServiceLike,
-  carSize: CarSize,
-): number | null => {
+export const getRawServicePrice = (service: ServiceLike, carSize: CarSize): number | null => {
   if (carSize === 'small' && service.price_small !== null) return service.price_small;
   if (carSize === 'medium' && service.price_medium !== null) return service.price_medium;
   if (carSize === 'large' && service.price_large !== null) return service.price_large;

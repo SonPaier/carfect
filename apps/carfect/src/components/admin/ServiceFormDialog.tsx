@@ -201,7 +201,11 @@ const ServiceFormContent = ({
     duration_small: service?.duration_small ?? null,
     duration_medium: service?.duration_medium ?? null,
     duration_large: service?.duration_large ?? null,
-    prices_are_net: service?.prices_are_net ?? categories.find(c => c.id === (service?.category_id || defaultCategoryId))?.prices_are_net ?? false,
+    prices_are_net:
+      service?.prices_are_net ??
+      categories.find((c) => c.id === (service?.category_id || defaultCategoryId))
+        ?.prices_are_net ??
+      false,
     category_id: service?.category_id || defaultCategoryId || '',
     service_type: service?.service_type || 'both',
     visibility: 'everywhere',
