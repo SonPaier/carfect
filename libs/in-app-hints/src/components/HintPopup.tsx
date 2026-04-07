@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@shared/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import type { AppHint } from '../types';
 
@@ -13,12 +13,12 @@ export function HintPopup({ hint, onDismiss }: HintPopupProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{hint.title}</DialogTitle>
-          {hint.body && (
-            <DialogDescription className="whitespace-pre-wrap">{hint.body}</DialogDescription>
-          )}
         </DialogHeader>
         {hint.image_url && (
           <img src={hint.image_url} alt="" className="w-full rounded-md object-cover max-h-48" />
+        )}
+        {hint.body && (
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{hint.body}</p>
         )}
         <Button className="w-full mt-2" onClick={() => onDismiss(hint.id)}>
           Rozumiem

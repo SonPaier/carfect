@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppHints } from '../hooks/useAppHints';
 import { useDismissHint } from '../hooks/useDismissHint';
 import { HintPopup } from './HintPopup';
@@ -44,17 +45,20 @@ export function HintsRenderer({
       {/* Show only the first popup at a time */}
       {popups[0] && <HintPopup hint={popups[0]} onDismiss={handleDismiss} />}
 
-      {/* Infoboxes rendered in a fixed banner area at the top */}
-      {infoboxes.length > 0 && (
-        <div
-          className="fixed top-0 left-0 right-0 z-50 flex flex-col gap-1 px-4 pt-2"
-          aria-label="Komunikaty aplikacji"
-        >
-          {infoboxes.map((hint) => (
-            <HintInfobox key={hint.id} hint={hint} onDismiss={handleDismiss} />
-          ))}
-        </div>
-      )}
+      {/* Infoboxes rendered into the slot element via portal */}
+      {infoboxes.length > 0 &&
+        (() => {
+          const slot = document.getElementById('hint-infobox-slot');
+          if (!slot) return null;
+          return createPortal(
+            <>
+              {infoboxes.map((hint) => (
+                <HintInfobox key={hint.id} hint={hint} onDismiss={handleDismiss} />
+              ))}
+            </>,
+            slot,
+          );
+        })()}
 
       {/* Tooltips anchored to DOM elements */}
       {tooltips.map((hint) => (

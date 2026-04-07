@@ -96,10 +96,10 @@ export function HintTooltip({ hint, onDismiss }: HintTooltipProps) {
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      {hint.body && <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{hint.body}</p>}
       {hint.image_url && (
         <img src={hint.image_url} alt="" className="mt-2 rounded-md object-cover max-h-32 w-full" />
       )}
+      {hint.body && <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{hint.body}</p>}
     </div>,
     document.body,
   );
