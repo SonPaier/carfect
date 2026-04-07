@@ -555,7 +555,9 @@ export default function OffersView({
               await fetchOffers();
               navigateBack();
             }}
-            initialCustomerData={!editingOfferId && !duplicatingOfferId ? initialCustomerData : null}
+            initialCustomerData={
+              !editingOfferId && !duplicatingOfferId ? initialCustomerData : null
+            }
           />
         </div>
       </>
@@ -608,6 +610,7 @@ export default function OffersView({
             <Button onClick={() => navigateTo('new')}>Dodaj ofertę</Button>
           </div>
         </div>
+        <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">

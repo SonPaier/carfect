@@ -661,6 +661,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           <Button onClick={() => openEditDialog()}>{t('priceList.addService')}</Button>
         </div>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Search input */}
       <div className="relative">

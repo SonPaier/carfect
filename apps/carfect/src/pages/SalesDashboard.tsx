@@ -300,8 +300,6 @@ const SalesDashboard = () => {
 
           {/* Content area */}
           <div className="flex-1 overflow-auto p-4 md:p-6">
-            {/* Slot for in-app hint infoboxes */}
-            <div id="hint-infobox-slot" className="flex flex-col gap-4" />
             <div className="max-w-[var(--sales-content-max-width)] mx-auto">{renderContent()}</div>
           </div>
         </main>

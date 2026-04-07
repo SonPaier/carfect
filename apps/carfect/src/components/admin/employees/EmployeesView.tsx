@@ -5,23 +5,13 @@ import {
   calculateMonthlySummary,
   TimeEntry,
 } from '@/hooks/useTimeEntries';
-import {
-  useEmployeeDaysOff,
-  EmployeeDayOff,
-} from '@/hooks/useEmployeeDaysOff';
+import { useEmployeeDaysOff, EmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useAuth } from '@/hooks/useAuth';
 import { Button, EmptyState } from '@shared/ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/ui';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -216,7 +206,6 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   // Time calculation mode from settings (default: start_to_stop)
   const timeCalculationMode = workersSettings?.time_calculation_mode ?? 'start_to_stop';
 
-
   // Get days off for this period
   const getDaysOffForEmployee = (employeeId: string) => {
     return daysOff.filter((d) => {
@@ -398,6 +387,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
           </div>
         )}
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Period picker (Month or Week) - only when time tracking enabled */}
       {timeTrackingEnabled && activeEmployees.length > 0 && (
@@ -520,57 +510,58 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
           </div>
 
           {/* Vacations/Days off section - only when time tracking enabled */}
-          {timeTrackingEnabled && (() => {
-            // Collect all employees with days off in this period
-            const employeesWithDaysOff = activeEmployees
-              .map((emp) => ({
-                employee: emp,
-                daysOffLines: formatDaysOffForPeriodLines(getDaysOffForEmployee(emp.id)),
-              }))
-              .filter((item) => item.daysOffLines.length > 0);
+          {timeTrackingEnabled &&
+            (() => {
+              // Collect all employees with days off in this period
+              const employeesWithDaysOff = activeEmployees
+                .map((emp) => ({
+                  employee: emp,
+                  daysOffLines: formatDaysOffForPeriodLines(getDaysOffForEmployee(emp.id)),
+                }))
+                .filter((item) => item.daysOffLines.length > 0);
 
-            if (employeesWithDaysOff.length === 0) return null;
+              if (employeesWithDaysOff.length === 0) return null;
 
-            return (
-              <div className="mt-6 space-y-3">
-                <h3 className="font-medium text-muted-foreground">Nieobecności</h3>
-                <div className="space-y-2">
-                  {employeesWithDaysOff.map(({ employee, daysOffLines }) => (
-                    <div
-                      key={employee.id}
-                      className="flex items-start gap-3 p-3 border rounded-lg bg-card"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={employee.photo_url || undefined} alt={employee.name} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                          {employee.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium mb-1">{employee.name}</div>
-                        <div className="text-sm space-y-1.5">
-                          {daysOffLines.map((line, idx) => (
-                            <div key={idx}>
-                              {line.to ? (
-                                <>
-                                  <span className="text-muted-foreground">od </span>
+              return (
+                <div className="mt-6 space-y-3">
+                  <h3 className="font-medium text-muted-foreground">Nieobecności</h3>
+                  <div className="space-y-2">
+                    {employeesWithDaysOff.map(({ employee, daysOffLines }) => (
+                      <div
+                        key={employee.id}
+                        className="flex items-start gap-3 p-3 border rounded-lg bg-card"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={employee.photo_url || undefined} alt={employee.name} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                            {employee.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium mb-1">{employee.name}</div>
+                          <div className="text-sm space-y-1.5">
+                            {daysOffLines.map((line, idx) => (
+                              <div key={idx}>
+                                {line.to ? (
+                                  <>
+                                    <span className="text-muted-foreground">od </span>
+                                    <span className="font-medium text-foreground">{line.from}</span>
+                                    <span className="text-muted-foreground"> do </span>
+                                    <span className="font-medium text-foreground">{line.to}</span>
+                                  </>
+                                ) : (
                                   <span className="font-medium text-foreground">{line.from}</span>
-                                  <span className="text-muted-foreground"> do </span>
-                                  <span className="font-medium text-foreground">{line.to}</span>
-                                </>
-                              ) : (
-                                <span className="font-medium text-foreground">{line.from}</span>
-                              )}
-                            </div>
-                          ))}
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
         </>
       )}
 

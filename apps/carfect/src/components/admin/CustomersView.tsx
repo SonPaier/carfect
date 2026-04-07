@@ -348,6 +348,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
         <h1 className="text-2xl font-medium text-foreground">{t('customers.title')}</h1>
         <Button onClick={handleAddCustomer}>Dodaj klienta</Button>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Sticky header on mobile */}
       <div className="sm:static sticky top-0 z-20 bg-background -mx-4 px-4 sm:mx-0 sm:px-0">

@@ -109,6 +109,7 @@ export default function FollowUpView({ instanceId }: FollowUpViewProps) {
         <h1 className="text-2xl font-medium">{t('followupPage.title')}</h1>
         <p className="text-muted-foreground">{t('followupPage.description')}</p>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       <Tabs defaultValue="tasks" className="w-full">
         <TabsList>

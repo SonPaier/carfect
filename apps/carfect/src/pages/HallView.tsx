@@ -1697,8 +1697,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
 
         {/* Main content */}
         <div className="flex-1 h-full overflow-hidden flex flex-col">
-          {/* Slot for in-app hint infoboxes */}
-          <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
           <AdminCalendar
             stations={stations}
             reservations={reservationsWithServices}

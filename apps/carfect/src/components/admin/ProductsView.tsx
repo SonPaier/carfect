@@ -385,6 +385,7 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
           Na ich podstawie możesz tworzyć własne szablony oraz wykorzystywać je w ofertach.
         </p>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">

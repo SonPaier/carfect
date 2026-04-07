@@ -172,7 +172,10 @@ const SalesOrdersView = () => {
 
     // Fetch invoices separately
     const orderIds = (data || []).map((o) => o.id);
-    const invoiceMap: Record<string, { id: string; invoice_number: string; status: string; pdf_url: string }> = {};
+    const invoiceMap: Record<
+      string,
+      { id: string; invoice_number: string; status: string; pdf_url: string }
+    > = {};
     if (orderIds.length > 0) {
       const { data: invoices, error: invError } = await supabase
         .from('invoices')
@@ -199,7 +202,15 @@ const SalesOrdersView = () => {
         totalNet: Number(o.total_net),
         totalGross: Number(o.total_gross),
         currency: (o.currency || 'PLN') as 'PLN' | 'EUR',
-        products: ((o.sales_order_items || []) as { name: string; quantity: number; price_net: number; price_unit?: string; discount_percent?: number }[]).map((item) => ({
+        products: (
+          (o.sales_order_items || []) as {
+            name: string;
+            quantity: number;
+            price_net: number;
+            price_unit?: string;
+            discount_percent?: number;
+          }[]
+        ).map((item) => ({
           name: item.name,
           quantity: item.quantity,
           priceNet: Number(item.price_net),
@@ -208,10 +219,12 @@ const SalesOrdersView = () => {
           discountPercent:
             item.discount_percent != null ? Number(item.discount_percent) : undefined,
         })),
-        packages: ((o.packages || []) as { shippingMethod?: string; shippingCost?: number }[]).map((pkg) => ({
-          shippingMethod: pkg.shippingMethod || 'shipping',
-          shippingCost: pkg.shippingCost ?? undefined,
-        })),
+        packages: ((o.packages || []) as { shippingMethod?: string; shippingCost?: number }[]).map(
+          (pkg) => ({
+            shippingMethod: pkg.shippingMethod || 'shipping',
+            shippingCost: pkg.shippingCost ?? undefined,
+          }),
+        ),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
         paymentStatus:
@@ -268,7 +281,10 @@ const SalesOrdersView = () => {
   };
 
   const changeStatus = async (id: string, newStatus: SalesOrder['status']) => {
-    const updates: Record<string, string | null> = { status: newStatus, updated_at: new Date().toISOString() };
+    const updates: Record<string, string | null> = {
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    };
     if (newStatus === 'wysłany') {
       updates.shipped_at = new Date().toISOString();
     } else {
@@ -607,6 +623,7 @@ const SalesOrdersView = () => {
           Dodaj zamówienie
         </Button>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {/* Search */}
       <div className="flex items-center gap-4">

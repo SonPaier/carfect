@@ -227,6 +227,7 @@ export const ProtocolsView = ({
           <Button onClick={() => setShowCreateForm(true)}>Dodaj protokół</Button>
         </div>
       </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -266,9 +267,7 @@ export const ProtocolsView = ({
                       className="flex-1 min-w-0 space-y-1 cursor-pointer"
                       onClick={() => setEditingProtocolId(protocol.id)}
                     >
-                      <div className="font-semibold text-sm truncate">
-                        {protocol.customer_name}
-                      </div>
+                      <div className="font-semibold text-sm truncate">{protocol.customer_name}</div>
                       {(protocol.vehicle_model || protocol.registration_number) && (
                         <div className="text-sm text-muted-foreground truncate">
                           {[protocol.vehicle_model, protocol.registration_number]
