@@ -3240,9 +3240,6 @@ const AdminDashboard = () => {
           >
             {/* Free Time Ranges Per Station - Hidden on desktop, shown via bottom sheet on mobile */}
 
-            {/* Slot for in-app hint infoboxes */}
-            <div id="hint-infobox-slot" className="flex flex-col gap-4" />
-
             {/* View Content */}
             {currentView === 'calendar' && (
               <div className="flex-1 min-h-[600px] h-full relative flex">

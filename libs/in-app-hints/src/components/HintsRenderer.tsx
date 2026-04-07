@@ -8,6 +8,32 @@ import { HintTooltip } from './HintTooltip';
 import { filterHints } from '../utils';
 import type { HintsRendererProps } from '../types';
 
+const SLOT_ID = 'hint-infobox-slot';
+
+/**
+ * Watches for the infobox slot element to appear/change in the DOM.
+ * On initial load or route change, the slot may not exist yet when hints
+ * data arrives, so we observe mutations and re-resolve the element.
+ */
+function useInfoboxSlot() {
+  const [slot, setSlot] = useState<HTMLElement | null>(() => document.getElementById(SLOT_ID));
+
+  useEffect(() => {
+    // Re-check immediately (covers SSR hydration / late mounts)
+    setSlot(document.getElementById(SLOT_ID));
+
+    const observer = new MutationObserver(() => {
+      const el = document.getElementById(SLOT_ID);
+      setSlot((prev) => (prev === el ? prev : el));
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  return slot;
+}
+
 export function HintsRenderer({
   supabaseClient,
   userId,
@@ -16,6 +42,7 @@ export function HintsRenderer({
 }: HintsRendererProps) {
   const { data: hints = [] } = useAppHints({ supabaseClient, userId });
   const dismiss = useDismissHint({ supabaseClient, userId });
+  const infoboxSlot = useInfoboxSlot();
 
   // Track which hints have been locally dismissed (before the query refetches)
   const [locallyDismissed, setLocallyDismissed] = useState<Set<string>>(new Set());
@@ -47,18 +74,15 @@ export function HintsRenderer({
 
       {/* Infoboxes rendered into the slot element via portal */}
       {infoboxes.length > 0 &&
-        (() => {
-          const slot = document.getElementById('hint-infobox-slot');
-          if (!slot) return null;
-          return createPortal(
-            <>
-              {infoboxes.map((hint) => (
-                <HintInfobox key={hint.id} hint={hint} onDismiss={handleDismiss} />
-              ))}
-            </>,
-            slot,
-          );
-        })()}
+        infoboxSlot &&
+        createPortal(
+          <>
+            {infoboxes.map((hint) => (
+              <HintInfobox key={hint.id} hint={hint} onDismiss={handleDismiss} />
+            ))}
+          </>,
+          infoboxSlot,
+        )}
 
       {/* Tooltips anchored to DOM elements */}
       {tooltips.map((hint) => (
