@@ -97,12 +97,36 @@ export const OrderSummarySection = ({
           <Separator className="my-1" />
 
           {/* Totals */}
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Razem netto</span>
-            <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
-          </div>
-          {!isNetPayer && (
+          {isNetPayer ? (
             <>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Razem netto</span>
+                <span className="tabular-nums font-medium">
+                  {formatCurrency(totalGross - shippingCosts.reduce((s, c) => s + c, 0))}
+                </span>
+              </div>
+              {shippingCosts.length > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Wysyłka (brutto)</span>
+                  <span className="tabular-nums">
+                    {formatCurrency(shippingCosts.reduce((s, c) => s + c, 0))}
+                  </span>
+                </div>
+              )}
+              <Separator className="my-1" />
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Do zapłaty</span>
+                <span className="tabular-nums">
+                  {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalGross)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Razem netto</span>
+                <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">VAT (23%)</span>
                 <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
@@ -115,14 +139,6 @@ export const OrderSummarySection = ({
                 </span>
               </div>
             </>
-          )}
-          {isNetPayer && (
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Do zapłaty (netto)</span>
-              <span className="tabular-nums">
-                {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalNet)}
-              </span>
-            </div>
           )}
         </div>
       </div>
