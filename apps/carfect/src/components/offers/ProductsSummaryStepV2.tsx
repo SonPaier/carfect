@@ -296,12 +296,14 @@ function ProductRow({
         <div className="flex items-center gap-1">
           <Input
             type="number"
-            value={product.price}
+            value={product.price === 0 ? '' : product.price}
             onChange={(e) => {
-              const parsed = parseFloat(e.target.value);
+              const val = e.target.value;
+              const parsed = val === '' ? 0 : parseFloat(val);
               if (!isNaN(parsed) && parsed >= 0) onPriceChange(product.itemId, parsed);
             }}
             onFocus={(e) => e.target.select()}
+            placeholder="0"
             className="w-28 h-8 text-sm"
             min={0}
             step={1}

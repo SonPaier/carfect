@@ -1063,6 +1063,7 @@ const AddReservationDialogV2 = ({
   }, [phone, loadCustomerVehicles, isEditMode]);
 
   const selectVehicle = async (vehicle: CustomerVehicle) => {
+    suppressPhoneSearchRef.current = true;
     setPhone(vehicle.phone);
     setCarModel(vehicle.model);
     setShowPhoneDropdown(false);
@@ -1587,6 +1588,7 @@ const AddReservationDialogV2 = ({
             }}
             onCustomerSelect={async (customer) => {
               markUserEditing();
+              suppressPhoneSearchRef.current = true;
               setCustomerName(customer.name);
               setPhone(customer.phone);
               setSelectedCustomerId(customer.id);
