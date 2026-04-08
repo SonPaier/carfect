@@ -85,7 +85,7 @@ describe('OrderSummarySection', () => {
     expect(screen.queryByText(/Rabat/)).not.toBeInTheDocument();
   });
 
-  it('renders shipping cost as netto', () => {
+  it('renders shipping cost as brutto', () => {
     render(
       <OrderSummarySection
         products={[makeProduct()]}
@@ -99,6 +99,7 @@ describe('OrderSummarySection', () => {
     );
 
     expect(screen.getByText(/Wysyłka/)).toBeInTheDocument();
+    expect(screen.getByText(/Wysyłka \(brutto\)/)).toBeInTheDocument();
     // Does not show #1 for single shipment
     expect(screen.queryByText(/#1/)).not.toBeInTheDocument();
   });
@@ -135,6 +136,103 @@ describe('OrderSummarySection', () => {
     expect(screen.getByText('Razem netto')).toBeInTheDocument();
     expect(screen.getByText(/VAT \(23%\)/)).toBeInTheDocument();
     expect(screen.getByText('Razem brutto')).toBeInTheDocument();
+  });
+
+  it('shows "Do zapłaty (netto)" for net payer instead of brutto section', () => {
+    render(
+      <OrderSummarySection
+        products={[makeProduct({ priceNet: 100, quantity: 1 })]}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        totalNet={100}
+        totalGross={100}
+        isNetPayer={true}
+      />,
+    );
+
+    expect(screen.getByText('Do zapłaty (netto)')).toBeInTheDocument();
+    expect(screen.queryByText('Razem brutto')).not.toBeInTheDocument();
+    expect(screen.queryByText(/VAT/)).not.toBeInTheDocument();
+  });
+
+  it('shows VAT and brutto for gross payer', () => {
+    render(
+      <OrderSummarySection
+        products={[makeProduct({ priceNet: 100, quantity: 1 })]}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        totalNet={100}
+        totalGross={123}
+        isNetPayer={false}
+      />,
+    );
+
+    expect(screen.getByText(/VAT \(23%\)/)).toBeInTheDocument();
+    expect(screen.getByText('Razem brutto')).toBeInTheDocument();
+    expect(screen.queryByText('Do zapłaty (netto)')).not.toBeInTheDocument();
+  });
+
+  it('displays shipping cost as brutto value (not divided by VAT)', () => {
+    const shippingBrutto = 24.6;
+    render(
+      <OrderSummarySection
+        products={[makeProduct()]}
+        subtotalNet={200}
+        discountAmount={0}
+        customerDiscount={0}
+        shippingCosts={[shippingBrutto]}
+        totalNet={220}
+        totalGross={270.6}
+      />,
+    );
+
+    // Should show the brutto value directly (24,60), not netto (20,00)
+    expect(screen.getByText('24,60 zł')).toBeInTheDocument();
+  });
+
+  it('shows "Bezpłatne" for free payment method', () => {
+    render(
+      <OrderSummarySection
+        products={[makeProduct({ priceNet: 100, quantity: 1 })]}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        totalNet={100}
+        totalGross={123}
+        paymentMethod="free"
+      />,
+    );
+
+    expect(screen.getByText('Bezpłatne')).toBeInTheDocument();
+  });
+
+  it('uses requiredMb converted to m² for meter product without roll assignments', () => {
+    // Product: 1524mm width, 5 mb required → 5 * 1.524 = 7.62 m²
+    // Price: 40 zł/m² × 7.62 = 304.80 zł
+    const products = [
+      makeProduct({
+        name: 'XP Crystal - 1524mm x 15m',
+        priceUnit: 'meter',
+        priceNet: 40,
+        quantity: 1,
+        requiredMb: 5,
+      }),
+    ];
+    render(
+      <OrderSummarySection
+        products={products}
+        subtotalNet={304.8}
+        discountAmount={0}
+        customerDiscount={0}
+        totalNet={304.8}
+        totalGross={374.9}
+      />,
+    );
+
+    // Should show 7.62 m² (from 5mb × 1.524m width), not 1
+    expect(screen.getByText(/7.62 m²/)).toBeInTheDocument();
   });
 
   it('uses rollAssignments for meter-based product quantity', () => {

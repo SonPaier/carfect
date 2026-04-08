@@ -57,7 +57,8 @@ export interface OrderProduct {
   /** @deprecated Use rollAssignments instead */
   rollWidthMm?: number;
   rollAssignments?: RollAssignment[];
-  requiredM2?: number;
+  /** Required running meters (mb) — converted to m² via roll width for pricing */
+  requiredMb?: number;
   /** Per-product discount percentage (overrides customer discount) */
   discountPercent?: number;
 }
@@ -72,7 +73,7 @@ export const createDefaultPackage = (): OrderPackage => ({
   courier: undefined,
   courierServiceId: undefined,
   weight: 1,
-  contents: '',
+  contents: 'Folia samochodowa',
   declaredValueManual: false,
   oversized: false,
   productKeys: [],
@@ -237,8 +238,8 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
-  const updateRequiredM2 = (key: string, requiredM2: number) => {
-    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, requiredM2 } : p)));
+  const updateRequiredMb = (key: string, requiredMb: number) => {
+    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, requiredMb } : p)));
   };
 
   const updateProductDiscount = (key: string, discountPercent: number) => {
@@ -392,7 +393,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updatePackageDeclaredValue,
     updatePackageOversized,
     updatePackageShippingCost,
-    updateRequiredM2,
+    updateRequiredMb,
     updateProductDiscount,
   };
 }

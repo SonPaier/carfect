@@ -84,7 +84,7 @@ describe('useOrderPackages', () => {
       expect(pkg.courier).toBeUndefined();
       expect(pkg.courierServiceId).toBeUndefined();
       expect(pkg.weight).toBe(1);
-      expect(pkg.contents).toBe('');
+      expect(pkg.contents).toBe('Folia samochodowa');
       expect(pkg.declaredValue).toBeUndefined();
       expect(pkg.declaredValueManual).toBe(false);
       expect(pkg.oversized).toBe(false);
@@ -728,6 +728,71 @@ describe('useOrderPackages', () => {
 
       expect(result.current.packages[0].productKeys).not.toContain('ghost-key');
       expect(result.current.packages[0].productKeys).not.toContain('exists');
+    });
+  });
+
+  // updateRequiredMb
+  describe('updateRequiredMb', () => {
+    it('sets requiredMb on the correct product', () => {
+      const p = makeProduct({ instanceKey: 'mb-product', priceUnit: 'meter' });
+      const { result, getProducts } = setupHook({ initialProducts: [p] });
+
+      act(() => {
+        result.current.updateRequiredMb('mb-product', 5);
+      });
+
+      expect(getProducts()[0].requiredMb).toBe(5);
+    });
+
+    it('only updates the targeted product', () => {
+      const p1 = makeProduct({ instanceKey: 'mb1', priceUnit: 'meter' });
+      const p2 = makeProduct({ instanceKey: 'mb2', priceUnit: 'meter' });
+      const { result, getProducts } = setupHook({ initialProducts: [p1, p2] });
+
+      act(() => {
+        result.current.updateRequiredMb('mb1', 3.5);
+      });
+
+      const products = getProducts();
+      expect(products.find((p) => p.instanceKey === 'mb1')?.requiredMb).toBe(3.5);
+      expect(products.find((p) => p.instanceKey === 'mb2')?.requiredMb).toBeUndefined();
+    });
+  });
+
+  // updateProductDiscount
+  describe('updateProductDiscount', () => {
+    it('sets discountPercent on the correct product', () => {
+      const p = makeProduct({ instanceKey: 'dp1' });
+      const { result, getProducts } = setupHook({ initialProducts: [p] });
+
+      act(() => {
+        result.current.updateProductDiscount('dp1', 15);
+      });
+
+      expect(getProducts()[0].discountPercent).toBe(15);
+    });
+  });
+
+  // createDefaultPackage defaults
+  describe('createDefaultPackage via addPackage', () => {
+    it('default package has contents "Folia samochodowa"', () => {
+      const { result } = setupHook();
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      expect(result.current.packages[0].contents).toBe('Folia samochodowa');
+    });
+
+    it('default package has tuba packaging type', () => {
+      const { result } = setupHook();
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      expect(result.current.packages[0].packagingType).toBe('tuba');
     });
   });
 

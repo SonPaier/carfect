@@ -2,6 +2,7 @@ import { Label } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { formatCurrency } from '../constants';
 import { VAT_RATE } from '../constants';
+import { mbToM2 } from '../types/rolls';
 import type { OrderProduct } from '../hooks/useOrderPackages';
 
 interface OrderSummarySectionProps {
@@ -28,9 +29,17 @@ export const OrderSummarySection = ({
 }: OrderSummarySectionProps) => {
   const vatAmount = totalNet * VAT_RATE;
 
+  const getProductWidthMm = (p: OrderProduct): number => {
+    const match = p.name.match(/(\d{3,4})\s*mm/);
+    return match ? parseInt(match[1]) : 1524;
+  };
+
   const getEffectiveQty = (p: OrderProduct) => {
-    if (p.priceUnit === 'meter' && p.rollAssignments?.length) {
-      return p.rollAssignments.reduce((sum, a) => sum + a.usageM2, 0);
+    if (p.priceUnit === 'meter') {
+      if (p.rollAssignments?.length) {
+        return p.rollAssignments.reduce((sum, a) => sum + a.usageM2, 0);
+      }
+      if (p.requiredMb) return mbToM2(p.requiredMb, getProductWidthMm(p));
     }
     return p.quantity;
   };
@@ -75,13 +84,13 @@ export const OrderSummarySection = ({
             );
           })}
 
-          {/* Shipping */}
+          {/* Shipping — always shown as brutto */}
           {shippingCosts.map((cost, i) => (
             <div key={`ship-${i}`} className="flex justify-between">
               <span className="text-muted-foreground">
-                {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`} (netto)
+                {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`} (brutto)
               </span>
-              <span className="tabular-nums">{formatCurrency(cost / (1 + VAT_RATE))}</span>
+              <span className="tabular-nums">{formatCurrency(cost)}</span>
             </div>
           ))}
 

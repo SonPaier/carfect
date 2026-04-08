@@ -56,6 +56,7 @@ export interface EditOrderData {
   paymentMethod: PaymentMethod;
   bankAccountNumber: string;
   comment: string;
+  isNetPayer?: boolean;
   sendEmail: boolean;
   attachments?: string[];
   shippingAddress?: AddressData;
@@ -157,6 +158,7 @@ const AddSalesOrderDrawer = ({
       orderPackages.setPackages(editPackages);
       setPaymentMethod(editOrder.paymentMethod || 'cod');
       setBankAccountNumber(editOrder.bankAccountNumber || '');
+      setIsNetPayer(editOrder.isNetPayer ?? false);
       setComment(editOrder.comment);
       setSendEmail(editOrder.sendEmail);
       setAttachments(editOrder.attachments || []);
@@ -246,18 +248,26 @@ const AddSalesOrderDrawer = ({
 
   const customerDiscount = customerSearch.selectedCustomer?.discountPercent || 0;
 
-  // Sync isNetPayer when customer changes
+  // Sync isNetPayer when customer changes (only for new orders — edit restores from saved order)
   useEffect(() => {
-    if (customerSearch.selectedCustomer) {
+    if (!isEdit && customerSearch.selectedCustomer) {
       setIsNetPayer(customerSearch.selectedCustomer.isNetPayer ?? false);
     }
-  }, [customerSearch.selectedCustomer?.id]);
+  }, [customerSearch.selectedCustomer?.id, isEdit]);
 
-  /** Effective quantity: total m² from roll assignments, or plain quantity */
+  /** Extract roll width (mm) from product name, e.g. "Ultrafit XP Crystal - 1220mm x 30m" → 1220 */
+  const getProductWidthMm = (p: OrderProduct): number => {
+    const match = p.name.match(/(\d{3,4})\s*mm/);
+    return match ? parseInt(match[1]) : 1524; // fallback to common width
+  };
+
+  /** Effective quantity in m²: from roll assignments, or requiredMb converted to m², or plain quantity */
   const getEffectiveQty = (p: OrderProduct) =>
     p.rollAssignments?.length
       ? p.rollAssignments.reduce((sum, ra) => sum + ra.usageM2, 0)
-      : p.quantity;
+      : p.priceUnit === 'meter' && p.requiredMb
+        ? mbToM2(p.requiredMb, getProductWidthMm(p))
+        : p.quantity;
 
   // Auto-update declared value for packages where user hasn't manually set it
   const autoUpdateSignature = orderPackages.packages
@@ -274,7 +284,7 @@ const AddSalesOrderDrawer = ({
         const qty = getEffectiveQty(p);
         const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : customerDiscount);
         const net = p.priceNet * qty * (1 - discount / 100);
-        return sum + net * (1 + VAT_RATE);
+        return sum + (isNetPayer ? net : net * (1 + VAT_RATE));
       }, 0);
       const rounded = Math.round(autoValue * 100) / 100;
       return pkg.declaredValue === rounded ? pkg : { ...pkg, declaredValue: rounded };
@@ -284,7 +294,7 @@ const AddSalesOrderDrawer = ({
       orderPackages.setPackages(newPackages);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, customerDiscount, autoUpdateSignature]);
+  }, [products, customerDiscount, isNetPayer, autoUpdateSignature]);
 
   const hasShipping = orderPackages.packages.some((p) => p.shippingMethod === 'shipping');
 
@@ -306,7 +316,7 @@ const AddSalesOrderDrawer = ({
     [products, customerDiscount],
   );
 
-  // Shipping costs from Apaczka (brutto) — convert to netto for summary
+  // Shipping costs from Apaczka — always brutto, unaffected by netto/brutto toggle
   const shippingCosts = useMemo(
     () =>
       orderPackages.packages
@@ -314,10 +324,13 @@ const AddSalesOrderDrawer = ({
         .map((pkg) => pkg.shippingCost!),
     [orderPackages.packages],
   );
-  const shippingNetTotal = shippingCosts.reduce((sum, cost) => sum + cost / (1 + VAT_RATE), 0);
+  const shippingBruttoTotal = shippingCosts.reduce((sum, cost) => sum + cost, 0);
+  const shippingNetTotal = shippingBruttoTotal / (1 + VAT_RATE);
 
-  const totalNet = Math.max(0, subtotalNet - discountAmount) + shippingNetTotal;
-  const totalGross = isNetPayer ? totalNet : totalNet * (1 + VAT_RATE);
+  const productsNet = Math.max(0, subtotalNet - discountAmount);
+  const totalNet = productsNet + shippingNetTotal;
+  // Shipping is always added as brutto regardless of payer type
+  const totalGross = isNetPayer ? productsNet + shippingBruttoTotal : totalNet * (1 + VAT_RATE);
 
   /* ── Handlers ── */
 
@@ -448,6 +461,7 @@ const AddSalesOrderDrawer = ({
             delivery_type: effectiveDeliveryType,
             payment_method: paymentMethod,
             bank_account_number: bankAccountNumber || null,
+            is_net_payer: isNetPayer,
             packages: packagesPayload,
             attachments: attachments.map((url, i) => ({
               url,
@@ -477,13 +491,15 @@ const AddSalesOrderDrawer = ({
               vehicle: p.vehicle || null,
               sort_order: idx,
               discount_percent: p.discountPercent ?? customerDiscount ?? 0,
-              required_m2: p.requiredM2 ?? null,
+              required_mb: p.requiredMb ?? null,
             };
           });
-          const { data: insertedItems } = await supabase
+          const { data: insertedItems, error: itemsError } = await supabase
             .from('sales_order_items')
             .insert(items)
             .select('id');
+
+          if (itemsError) throw itemsError;
 
           // Create roll usages for meter-based products (multi-roll)
           if (insertedItems) {
@@ -530,6 +546,7 @@ const AddSalesOrderDrawer = ({
             delivery_type: effectiveDeliveryType,
             payment_method: paymentMethod,
             bank_account_number: bankAccountNumber || null,
+            is_net_payer: isNetPayer,
             status: 'nowy',
             created_by: user?.id || null,
             packages: packagesPayload,
@@ -560,13 +577,15 @@ const AddSalesOrderDrawer = ({
               vehicle: p.vehicle || null,
               sort_order: idx,
               discount_percent: p.discountPercent ?? customerDiscount ?? 0,
-              required_m2: p.requiredM2 ?? null,
+              required_mb: p.requiredMb ?? null,
             };
           });
-          const { data: insertedItems } = await supabase
+          const { data: insertedItems, error: itemsError } = await supabase
             .from('sales_order_items')
             .insert(items)
             .select('id');
+
+          if (itemsError) throw itemsError;
 
           // Create roll usages for meter-based products (multi-roll)
           if (insertedItems) {
@@ -788,9 +807,9 @@ const AddSalesOrderDrawer = ({
                   markDirty();
                   orderPackages.setRollAssignments(...args);
                 }}
-                onUpdateRequiredM2={(...args) => {
+                onUpdateRequiredMb={(...args) => {
                   markDirty();
-                  orderPackages.updateRequiredM2(...args);
+                  orderPackages.updateRequiredMb(...args);
                 }}
                 onUpdateProductDiscount={(...args) => {
                   markDirty();
