@@ -87,7 +87,7 @@ describe('OrderSummarySection — netto payer', () => {
       />,
     );
 
-    expect(screen.getAllByText(/Wysyłka/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Wysyłka \(brutto\)/)).toBeInTheDocument();
     expect(screen.getByText('Do zapłaty')).toBeInTheDocument();
   });
 });

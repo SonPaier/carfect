@@ -84,15 +84,16 @@ export const OrderSummarySection = ({
             );
           })}
 
-          {/* Shipping — always shown as brutto */}
-          {shippingCosts.map((cost, i) => (
-            <div key={`ship-${i}`} className="flex justify-between">
-              <span className="text-muted-foreground">
-                {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`} (brutto)
-              </span>
-              <span className="tabular-nums">{formatCurrency(cost)}</span>
-            </div>
-          ))}
+          {/* Shipping — shown in product section only for brutto payer */}
+          {!isNetPayer &&
+            shippingCosts.map((cost, i) => (
+              <div key={`ship-${i}`} className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`} (brutto)
+                </span>
+                <span className="tabular-nums">{formatCurrency(cost)}</span>
+              </div>
+            ))}
 
           <Separator className="my-1" />
 
