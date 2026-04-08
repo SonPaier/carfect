@@ -138,7 +138,7 @@ describe('OrderSummarySection', () => {
     expect(screen.getByText('Razem brutto')).toBeInTheDocument();
   });
 
-  it('shows "Do zapłaty (netto)" for net payer instead of brutto section', () => {
+  it('shows "Do zapłaty" with totalGross for net payer instead of brutto section', () => {
     render(
       <OrderSummarySection
         products={[makeProduct({ priceNet: 100, quantity: 1 })]}
@@ -151,9 +151,28 @@ describe('OrderSummarySection', () => {
       />,
     );
 
-    expect(screen.getByText('Do zapłaty (netto)')).toBeInTheDocument();
+    expect(screen.getByText('Do zapłaty')).toBeInTheDocument();
     expect(screen.queryByText('Razem brutto')).not.toBeInTheDocument();
     expect(screen.queryByText(/VAT/)).not.toBeInTheDocument();
+  });
+
+  it('netto payer "Do zapłaty" shows totalGross (productsNet + shippingBrutto)', () => {
+    // productsNet=100, shippingBrutto=24.6, totalGross=124.6
+    render(
+      <OrderSummarySection
+        products={[makeProduct({ priceNet: 100, quantity: 1 })]}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        shippingCosts={[24.6]}
+        totalNet={120}
+        totalGross={124.6}
+        isNetPayer={true}
+      />,
+    );
+
+    expect(screen.getByText('Do zapłaty')).toBeInTheDocument();
+    expect(screen.getByText('124,60 zł')).toBeInTheDocument();
   });
 
   it('shows VAT and brutto for gross payer', () => {
@@ -171,7 +190,7 @@ describe('OrderSummarySection', () => {
 
     expect(screen.getByText(/VAT \(23%\)/)).toBeInTheDocument();
     expect(screen.getByText('Razem brutto')).toBeInTheDocument();
-    expect(screen.queryByText('Do zapłaty (netto)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Do zapłaty')).not.toBeInTheDocument();
   });
 
   it('displays shipping cost as brutto value (not divided by VAT)', () => {
