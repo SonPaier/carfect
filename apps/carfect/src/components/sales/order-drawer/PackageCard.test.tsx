@@ -93,7 +93,9 @@ describe('PackageCard', () => {
     });
 
     it('shows placeholder "Wybierz kuriera" when no courier is selected', () => {
-      render(<PackageCard {...defaultProps} pkg={{ ...basePackage, courierServiceId: undefined }} />);
+      render(
+        <PackageCard {...defaultProps} pkg={{ ...basePackage, courierServiceId: undefined }} />,
+      );
 
       expect(screen.getByText('Wybierz kuriera')).toBeInTheDocument();
     });
@@ -127,9 +129,7 @@ describe('PackageCard', () => {
         { name: 'DPD', serviceId: 21 },
       ];
 
-      render(
-        <PackageCard {...defaultProps} availableCouriers={availableCouriers} />,
-      );
+      render(<PackageCard {...defaultProps} availableCouriers={availableCouriers} />);
 
       await user.click(screen.getByRole('combobox'));
 
@@ -218,16 +218,14 @@ describe('PackageCard', () => {
     it('calls onShippingCostChange with price when valuation succeeds', async () => {
       const user = userEvent.setup();
       const onShippingCostChange = vi.fn();
-      mockFetchValuation.mockResolvedValueOnce(12.40);
+      mockFetchValuation.mockResolvedValueOnce(12.4);
 
-      render(
-        <PackageCard {...defaultProps} onShippingCostChange={onShippingCostChange} />,
-      );
+      render(<PackageCard {...defaultProps} onShippingCostChange={onShippingCostChange} />);
 
       await user.click(screen.getByRole('button', { name: /Sprawdź wycenę/ }));
 
       expect(mockFetchValuation).toHaveBeenCalled();
-      expect(onShippingCostChange).toHaveBeenCalledWith(12.40);
+      expect(onShippingCostChange).toHaveBeenCalledWith(12.4);
     });
 
     it('calls onShippingCostChange with undefined when valuation returns null', async () => {
@@ -235,9 +233,7 @@ describe('PackageCard', () => {
       const onShippingCostChange = vi.fn();
       mockFetchValuation.mockResolvedValueOnce(null);
 
-      render(
-        <PackageCard {...defaultProps} onShippingCostChange={onShippingCostChange} />,
-      );
+      render(<PackageCard {...defaultProps} onShippingCostChange={onShippingCostChange} />);
 
       await user.click(screen.getByRole('button', { name: /Sprawdź wycenę/ }));
 
@@ -245,12 +241,7 @@ describe('PackageCard', () => {
     });
 
     it('displays shipping cost when shippingCost is set on package', () => {
-      render(
-        <PackageCard
-          {...defaultProps}
-          pkg={{ ...basePackage, shippingCost: 12.40 }}
-        />,
-      );
+      render(<PackageCard {...defaultProps} pkg={{ ...basePackage, shippingCost: 12.4 }} />);
 
       expect(screen.getByText(/Cena wysyłki:/)).toBeInTheDocument();
       expect(screen.getByText(/12,40 zł/)).toBeInTheDocument();
@@ -277,30 +268,20 @@ describe('PackageCard', () => {
 
     it('shows brutto COD amount by default (isNetPayer=false)', () => {
       render(
-        <PackageCard
-          {...defaultProps}
-          pkg={codPackage}
-          paymentMethod="cod"
-          isNetPayer={false}
-        />,
+        <PackageCard {...defaultProps} pkg={codPackage} paymentMethod="cod" isNetPayer={false} />,
       );
 
       // (2800 + 15) / 1 = 2815
       expect(Number(getCodInput().value)).toBe(2815);
     });
 
-    it('shows netto COD amount when isNetPayer is true', () => {
+    it('shows same COD amount regardless of isNetPayer (declared value already adjusted)', () => {
       render(
-        <PackageCard
-          {...defaultProps}
-          pkg={codPackage}
-          paymentMethod="cod"
-          isNetPayer={true}
-        />,
+        <PackageCard {...defaultProps} pkg={codPackage} paymentMethod="cod" isNetPayer={true} />,
       );
 
-      // (2800 + 15) / 1.23 = 2288.62 (rounded to 2 decimal places)
-      expect(Number(getCodInput().value)).toBeCloseTo(2288.62, 2);
+      // COD = declaredValue + shippingCost = 2800 + 15 = 2815 (no VAT division — declared value is already net/gross-aware)
+      expect(Number(getCodInput().value)).toBeCloseTo(2815, 2);
     });
 
     it('uses manual codAmountOverride regardless of isNetPayer', () => {
@@ -318,13 +299,7 @@ describe('PackageCard', () => {
     });
 
     it('does not show COD section when paymentMethod is transfer', () => {
-      render(
-        <PackageCard
-          {...defaultProps}
-          pkg={codPackage}
-          paymentMethod="transfer"
-        />,
-      );
+      render(<PackageCard {...defaultProps} pkg={codPackage} paymentMethod="transfer" />);
 
       expect(screen.queryByText('Kwota pobrania (zł)')).not.toBeInTheDocument();
     });
