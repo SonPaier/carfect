@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, X, AlertCircle } from 'lucide-react';
 import { Button, Label, NumericInput } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
-import { mbToM2 } from '../types/rolls';
+import { mbToM2, m2ToMb } from '../types/rolls';
 import type { RollAssignment } from '../hooks/useOrderPackages';
 import { fetchRollById } from '../services/rollService';
 import RollSelectDrawer from './RollSelectDrawer';
@@ -11,7 +11,10 @@ interface MultiRollAssignmentProps {
   instanceId: string | null;
   assignments: RollAssignment[];
   onChange: (assignments: RollAssignment[]) => void;
+  /** Required m² — used for smart sorting in roll select drawer */
   requiredM2?: number;
+  /** Required running meters — auto-copied to single assignment input */
+  requiredMb?: number;
   customerName?: string;
   productName?: string;
   filterWidthMm?: number;
@@ -27,12 +30,14 @@ const MultiRollAssignment = ({
   assignments,
   onChange,
   requiredM2,
+  requiredMb,
   customerName,
   productName,
   filterWidthMm,
 }: MultiRollAssignmentProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
+  const prevRequiredMbRef = useRef(requiredMb);
 
   // Fetch roll info for all assigned rolls
   useEffect(() => {
@@ -70,9 +75,11 @@ const MultiRollAssignment = ({
 
       for (const roll of selectedRolls) {
         if (!existingIds.has(roll.id)) {
+          // Pre-fill with requiredMb converted to m² if available
+          const prefillM2 = requiredMb ? mbToM2(requiredMb, roll.widthMm) : 0;
           newAssignments.push({
             rollId: roll.id,
-            usageM2: 0,
+            usageM2: prefillM2,
             widthMm: roll.widthMm,
           });
           // Cache roll info
@@ -88,11 +95,28 @@ const MultiRollAssignment = ({
 
       onChange(newAssignments);
     },
-    [assignments, onChange],
+    [assignments, onChange, requiredMb],
   );
 
-  const handleUsageChange = useCallback(
-    (rollId: string, usageM2: number) => {
+  // Auto-copy requiredMb to single assignment when it changes
+  useEffect(() => {
+    if (
+      requiredMb != null &&
+      requiredMb !== prevRequiredMbRef.current &&
+      assignments.length === 1
+    ) {
+      const a = assignments[0];
+      const newUsageM2 = mbToM2(requiredMb, a.widthMm);
+      if (Math.abs(a.usageM2 - newUsageM2) > 0.001) {
+        onChange([{ ...a, usageM2: newUsageM2 }]);
+      }
+    }
+    prevRequiredMbRef.current = requiredMb;
+  }, [requiredMb, assignments, onChange]);
+
+  const handleUsageMbChange = useCallback(
+    (rollId: string, mb: number, widthMm: number) => {
+      const usageM2 = mbToM2(mb, widthMm);
       onChange(assignments.map((a) => (a.rollId === rollId ? { ...a, usageM2 } : a)));
     },
     [assignments, onChange],
@@ -139,8 +163,9 @@ const MultiRollAssignment = ({
       {assignments.map((a) => {
         const info = rollInfoMap[a.rollId];
         const rollName = info ? `${info.roll.productCode || info.roll.barcode || '—'}` : '...';
-        const remaining = info?.remainingM2 ?? 0;
-        const shortage = a.usageM2 > remaining ? a.usageM2 - remaining : 0;
+        const remainingMb = info ? m2ToMb(info.remainingM2, info.roll.widthMm) : 0;
+        const usageMb = m2ToMb(a.usageM2, a.widthMm);
+        const shortageMb = usageMb > remainingMb ? usageMb - remainingMb : 0;
 
         return (
           <div
@@ -151,26 +176,28 @@ const MultiRollAssignment = ({
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-foreground truncate">{rollName}</span>
                 {info && (
-                  <span className="text-xs text-foreground">({remaining.toFixed(1)} m² dost.)</span>
+                  <span className="text-xs text-foreground">
+                    ({remainingMb.toFixed(1)} mb dost.)
+                  </span>
                 )}
               </div>
-              {shortage > 0 && (
+              {shortageMb > 0 && (
                 <div className="flex items-center gap-1 text-xs text-destructive mt-0.5">
                   <AlertCircle className="w-3 h-3 shrink-0" />
-                  Brakuje {shortage.toFixed(2)} m²
+                  Brakuje {shortageMb.toFixed(2)} mb
                 </div>
               )}
             </div>
             <NumericInput
               min={0}
-              max={remaining > 0 ? remaining : undefined}
+              max={remainingMb > 0 ? Math.round(remainingMb * 100) / 100 : undefined}
               step={0.1}
-              value={a.usageM2 ?? undefined}
-              onChange={(v) => handleUsageChange(a.rollId, v ?? 0)}
-              className={`h-7 text-xs w-20 ${shortage > 0 ? 'border-destructive' : ''}`}
-              placeholder="m²"
+              value={usageMb > 0 ? Math.round(usageMb * 100) / 100 : undefined}
+              onChange={(v) => handleUsageMbChange(a.rollId, v ?? 0, a.widthMm)}
+              className={`h-7 text-xs w-20 ${shortageMb > 0 ? 'border-destructive' : ''}`}
+              placeholder="mb"
             />
-            <span className="text-xs text-foreground">m²</span>
+            <span className="text-xs text-foreground">mb</span>
             <button
               type="button"
               onClick={() => handleRemove(a.rollId)}

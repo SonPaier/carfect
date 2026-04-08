@@ -205,9 +205,9 @@ const RollSelectDrawer = ({
           ) : (
             filteredRolls.map((roll) => {
               const isSelected = selected.includes(roll.id);
-              const remainingM2 = mbToM2(roll.remainingMb || 0, roll.widthMm);
-              const isLow = (roll.remainingMb || 0) < (roll.initialLengthM || roll.lengthM) * 0.2;
-              const isEmpty = (roll.remainingMb || 0) <= 0;
+              const remainingMb = roll.remainingMb || 0;
+              const isLow = remainingMb < (roll.initialLengthM || roll.lengthM) * 0.2;
+              const isEmpty = remainingMb <= 0;
 
               return (
                 <button
@@ -243,7 +243,7 @@ const RollSelectDrawer = ({
                               : 'text-foreground'
                         }`}
                       >
-                        {remainingM2.toFixed(1)} m²
+                        {remainingMb.toFixed(1)} mb
                       </span>
                       {isSelected && (
                         <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">

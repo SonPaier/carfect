@@ -190,9 +190,7 @@ const RollDetailsDrawer = ({
               {roll.deliveryDate && (
                 <div>
                   <span className="text-muted-foreground">Data dostawy</span>
-                  <p className="font-medium">
-                    {format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')}
-                  </p>
+                  <p className="font-medium">{format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')}</p>
                 </div>
               )}
               <div>
@@ -202,10 +200,7 @@ const RollDetailsDrawer = ({
             </div>
 
             {onEdit && (
-              <button
-                className="text-sm text-primary hover:underline"
-                onClick={() => onEdit(roll)}
-              >
+              <button className="text-sm text-primary hover:underline" onClick={() => onEdit(roll)}>
                 Edytuj dane rolki
               </button>
             )}
@@ -244,7 +239,7 @@ const RollDetailsDrawer = ({
                       <TableCell className="font-medium text-sm">{u.orderNumber}</TableCell>
                       <TableCell className="text-sm">{u.customerName}</TableCell>
                       <TableCell className="text-right text-sm tabular-nums">
-                        {u.usedM2.toFixed(2)} m²
+                        {u.usedMb.toFixed(2)} mb
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(parseISO(u.createdAt), 'dd.MM.yyyy')}

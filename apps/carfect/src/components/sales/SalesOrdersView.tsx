@@ -347,7 +347,7 @@ const SalesOrdersView = () => {
     const { data: items } = await (supabase
       .from('sales_order_items')
       .select(
-        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_m2',
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_mb',
       )
       .eq('order_id', order.id)
       .order('sort_order') as any);
@@ -356,7 +356,7 @@ const SalesOrdersView = () => {
     const { data: orderData } = await (supabase
       .from('sales_orders')
       .select(
-        'delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments, shipping_address',
+        'delivery_type, payment_method, bank_account_number, comment, customer_id, customer_name, packages, attachments, shipping_address, is_net_payer',
       )
       .eq('id', order.id)
       .single() as any);
@@ -439,7 +439,7 @@ const SalesOrdersView = () => {
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
         discountPercent: item.discount_percent != null ? Number(item.discount_percent) : undefined,
-        requiredM2: item.required_m2 ? Number(item.required_m2) : undefined,
+        requiredMb: item.required_mb ? Number(item.required_mb) : undefined,
         rollAssignments: usages.map((u) => ({
           rollId: u.rollId,
           usageM2: u.usedM2,
@@ -500,6 +500,7 @@ const SalesOrdersView = () => {
       paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer' | 'free',
       bankAccountNumber: orderData?.bank_account_number || '',
       comment: orderData?.comment || '',
+      isNetPayer: orderData?.is_net_payer ?? false,
       sendEmail: false,
       attachments: ((orderData?.attachments as any[]) || []).map((a: any) => a.url),
       shippingAddress: orderData?.shipping_address

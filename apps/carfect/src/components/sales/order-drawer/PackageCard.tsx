@@ -21,6 +21,7 @@ import {
   getItemKey,
 } from '../hooks/useOrderPackages';
 import { formatCurrency, VAT_RATE } from '../constants';
+import { mbToM2 } from '../types/rolls';
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
 import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
@@ -52,7 +53,8 @@ function RollAssignmentWrapper({
       instanceId={instanceId}
       assignments={p.rollAssignments || []}
       onChange={(assignments) => onSetRollAssignments(itemKey, assignments)}
-      requiredM2={p.requiredM2}
+      requiredM2={p.requiredMb && widthMm ? mbToM2(p.requiredMb, widthMm) : undefined}
+      requiredMb={p.requiredMb}
       customerName={customerName}
       productName={baseName}
       filterWidthMm={widthMm}
@@ -92,7 +94,7 @@ interface PackageCardProps {
     widthMm?: number,
   ) => void;
   onSetRollAssignments?: (productKey: string, assignments: RollAssignment[]) => void;
-  onUpdateRequiredM2?: (productKey: string, requiredM2: number) => void;
+  onUpdateRequiredMb?: (productKey: string, requiredMb: number) => void;
   onUpdateProductDiscount?: (productKey: string, discountPercent: number) => void;
   onToggleDiscount?: (productKey: string) => void;
   customerDiscount?: number;
@@ -129,7 +131,7 @@ const PackageCard = ({
   onUpdateVehicle,
   onUpdateRollAssignment,
   onSetRollAssignments,
-  onUpdateRequiredM2,
+  onUpdateRequiredMb,
   onUpdateProductDiscount,
   onToggleDiscount,
   customerDiscount,
@@ -273,8 +275,10 @@ const PackageCard = ({
                         </div>
                       )}
                     </div>
-                    {/* Vehicle + Required m2 + Discount */}
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                    {/* Vehicle + Required m2 (meter only) + Discount */}
+                    <div
+                      className={`grid gap-2 ${p.priceUnit === 'meter' ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}
+                    >
                       <div className="space-y-1">
                         <Label className="text-xs">Pojazd</Label>
                         <Input
@@ -283,17 +287,19 @@ const PackageCard = ({
                           className="h-8 text-sm"
                         />
                       </div>
-                      <div className="space-y-1 w-20">
-                        <Label className="text-xs">m² wymag.</Label>
-                        <NumericInput
-                          min={0}
-                          step={0.1}
-                          value={p.requiredM2 ?? undefined}
-                          onChange={(v) => onUpdateRequiredM2?.(itemKey, v ?? 0)}
-                          placeholder="0"
-                          className="h-8 text-sm"
-                        />
-                      </div>
+                      {p.priceUnit === 'meter' && (
+                        <div className="space-y-1 w-20">
+                          <Label className="text-xs">mb. wymag.</Label>
+                          <NumericInput
+                            min={0}
+                            step={0.1}
+                            value={p.requiredMb ?? undefined}
+                            onChange={(v) => onUpdateRequiredMb?.(itemKey, v ?? 0)}
+                            placeholder="0"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      )}
                       <div className="space-y-1 w-16">
                         <Label className="text-xs">Rabat %</Label>
                         <NumericInput
@@ -599,11 +605,7 @@ const PackageCard = ({
                       codAmountOverride != null
                         ? codAmountOverride
                         : pkg.shippingCost != null
-                          ? Math.round(
-                              ((pkg.declaredValue ?? 0) + pkg.shippingCost) /
-                                (isNetPayer ? 1 + VAT_RATE : 1) *
-                                100,
-                            ) / 100
+                          ? Math.round(((pkg.declaredValue ?? 0) + pkg.shippingCost) * 100) / 100
                           : ''
                     }
                     placeholder="—"
