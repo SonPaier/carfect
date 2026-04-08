@@ -20,7 +20,7 @@ const makeProduct = (overrides: Partial<OrderProduct> = {}): OrderProduct => ({
 });
 
 describe('OrderSummarySection — netto payer', () => {
-  it('hides VAT row and shows "Do zapłaty (netto)" when isNetPayer is true', () => {
+  it('hides VAT row and shows "Do zapłaty" when isNetPayer is true', () => {
     render(
       <OrderSummarySection
         products={[makeProduct({ priceNet: 100, quantity: 1 })]}
@@ -35,7 +35,7 @@ describe('OrderSummarySection — netto payer', () => {
 
     expect(screen.queryByText(/VAT/)).not.toBeInTheDocument();
     expect(screen.queryByText('Razem brutto')).not.toBeInTheDocument();
-    expect(screen.getByText('Do zapłaty (netto)')).toBeInTheDocument();
+    expect(screen.getByText('Do zapłaty')).toBeInTheDocument();
     expect(screen.getByText('Razem netto')).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe('OrderSummarySection — netto payer', () => {
 
     expect(screen.getByText(/VAT \(23%\)/)).toBeInTheDocument();
     expect(screen.getByText('Razem brutto')).toBeInTheDocument();
-    expect(screen.queryByText('Do zapłaty (netto)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Do zapłaty')).not.toBeInTheDocument();
   });
 
   it('defaults to brutto when isNetPayer is not provided', () => {
@@ -73,7 +73,7 @@ describe('OrderSummarySection — netto payer', () => {
     expect(screen.getByText('Razem brutto')).toBeInTheDocument();
   });
 
-  it('still shows shipping netto for netto payer', () => {
+  it('still shows shipping brutto for netto payer', () => {
     render(
       <OrderSummarySection
         products={[makeProduct()]}
@@ -82,12 +82,12 @@ describe('OrderSummarySection — netto payer', () => {
         customerDiscount={0}
         shippingCosts={[24.6]}
         totalNet={220}
-        totalGross={220}
+        totalGross={224.6}
         isNetPayer={true}
       />,
     );
 
-    expect(screen.getByText(/Wysyłka/)).toBeInTheDocument();
-    expect(screen.getByText('Do zapłaty (netto)')).toBeInTheDocument();
+    expect(screen.getAllByText(/Wysyłka/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Do zapłaty')).toBeInTheDocument();
   });
 });
