@@ -114,7 +114,7 @@ export const CalendarDayCell = ({
             <div key={sIdx} className="flex flex-col gap-0.5">
               {showHeaders && section.label && (
                 <div
-                  className="text-[9px] font-bold pl-0.5 border-l-2 leading-tight truncate mt-0.5"
+                  className="text-[10px] font-bold text-center py-0.5 border-l-3 truncate mt-1 bg-muted/30 rounded-sm"
                   style={section.color ? { borderColor: section.color } : { borderColor: 'transparent' }}
                 >
                   {section.label}

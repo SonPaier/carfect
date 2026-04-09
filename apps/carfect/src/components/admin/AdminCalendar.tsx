@@ -1642,6 +1642,27 @@ const AdminCalendar = ({
                       ))}
                     </div>
                   </div>
+
+                  {/* Grouping mode for week/month views */}
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-medium text-sm">Grupowanie (tydzień/miesiąc)</h4>
+                    <div className="space-y-1">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="grouping-mode" value="station"
+                          checked={groupingMode === 'station'}
+                          onChange={() => handleGroupingModeChange('station')}
+                          className="accent-primary" />
+                        Wg stanowiska
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="grouping-mode" value="employee"
+                          checked={groupingMode === 'employee'}
+                          onChange={() => handleGroupingModeChange('employee')}
+                          className="accent-primary" />
+                        Wg pracownika
+                      </label>
+                    </div>
+                  </div>
                 </PopoverContent>
               </Popover>
             )}
@@ -3103,12 +3124,14 @@ const AdminCalendar = ({
 
       {/* WEEK VIEW (Tile-based) */}
       {viewMode === 'week' && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto flex-1">
           <WeekTileView
             reservations={reservations}
             stations={stations}
             currentDate={currentDate}
             closedDays={closedDays}
+            groupBy={groupingMode}
+            employees={employees}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
@@ -3135,12 +3158,14 @@ const AdminCalendar = ({
 
       {/* MONTH VIEW */}
       {viewMode === 'month' && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto flex-1">
           <MonthCalendarView
             reservations={reservations}
             stations={stations}
             currentDate={currentDate}
             closedDays={closedDays}
+            groupBy={groupingMode}
+            employees={employees}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
