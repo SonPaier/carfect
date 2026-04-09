@@ -443,7 +443,7 @@ describe('useOrderPackages', () => {
     it('updates quantity for the correct product', () => {
       const p1 = makeProduct({ instanceKey: 'p1' });
       const p2 = makeProduct({ instanceKey: 'p2' });
-      const { result, rerender, getProducts } = setupHook({ initialProducts: [p1, p2] });
+      const { result, getProducts } = setupHook({ initialProducts: [p1, p2] });
 
       act(() => {
         result.current.updateQuantity('p1', 3);
@@ -463,6 +463,22 @@ describe('useOrderPackages', () => {
       });
 
       expect(getProducts()[0].quantity).toBe(2);
+    });
+
+    it('allows fractional quantity (< 1) for other+meter products (m² input)', () => {
+      const p = makeProduct({
+        instanceKey: 'p1',
+        quantity: 1,
+        productType: 'other',
+        priceUnit: 'meter',
+      });
+      const { result, getProducts } = setupHook({ initialProducts: [p] });
+
+      act(() => {
+        result.current.updateQuantity('p1', 0.5);
+      });
+
+      expect(getProducts()[0].quantity).toBe(0.5);
     });
   });
 

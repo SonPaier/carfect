@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export type DeliveryType = 'shipping' | 'pickup' | 'uber';
+export type ProductType = 'roll' | 'other';
 export type PackagingType = 'karton' | 'tuba' | 'koperta';
 /** @deprecated Use courierServiceId (number) instead */
 export type CourierType = string;
@@ -200,7 +201,10 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   };
 
   const updateQuantity = (key: string, quantity: number) => {
-    if (quantity < 1) return;
+    const product = products.find((p) => getItemKey(p) === key);
+    const isOtherMeter = product?.productType === 'other' && product?.priceUnit === 'meter';
+    const minQty = isOtherMeter ? 0.01 : 1;
+    if (quantity < minQty) return;
     setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, quantity } : p)));
   };
 

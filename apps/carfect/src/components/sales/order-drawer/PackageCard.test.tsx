@@ -370,6 +370,95 @@ describe('PackageCard', () => {
     });
   });
 
+  describe('other+meter product quantity input', () => {
+    const otherMeterProduct = {
+      instanceKey: 'prod-other-meter',
+      productId: 'p3',
+      name: 'Generic Meter Product',
+      priceNet: 80,
+      priceUnit: 'meter' as const,
+      quantity: 2.5,
+      vehicle: '',
+      productType: 'other' as const,
+    };
+
+    it('shows m² quantity input with "m²" label for other+meter product', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[otherMeterProduct]} />);
+
+      expect(screen.getByText('m²')).toBeInTheDocument();
+    });
+
+    it('does NOT show ± quantity buttons for other+meter product', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[otherMeterProduct]} />);
+
+      expect(screen.queryByRole('button', { name: /minus/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /plus/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('piece product quantity controls', () => {
+    const pieceProduct = {
+      instanceKey: 'prod-piece',
+      productId: 'p4',
+      name: 'Cleaning Kit',
+      priceNet: 50,
+      priceUnit: 'piece' as const,
+      quantity: 1,
+      vehicle: '',
+      productType: 'other' as const,
+    };
+
+    it('shows ± quantity buttons for piece product', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[pieceProduct]} />);
+
+      // The minus button is rendered and disabled at quantity=1
+      const stepButtons = screen
+        .getAllByRole('button')
+        .filter((btn) => btn.className.includes('h-7 w-7'));
+      // Expect exactly 2 step buttons: minus and plus
+      expect(stepButtons).toHaveLength(2);
+    });
+
+    it('minus button is disabled when quantity is 1 for piece product', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[pieceProduct]} />);
+
+      const stepButtons = screen
+        .getAllByRole('button')
+        .filter((btn) => btn.className.includes('h-7 w-7'));
+      // First step button is the minus (decrement)
+      expect(stepButtons[0]).toBeDisabled();
+    });
+  });
+
+  describe('excludeFromDiscount flag', () => {
+    const baseProduct = {
+      instanceKey: 'prod-base',
+      productId: 'p5',
+      name: 'Test Product',
+      priceNet: 100,
+      priceUnit: 'piece' as const,
+      quantity: 1,
+      vehicle: '',
+      productType: 'other' as const,
+    };
+
+    it('hides the discount % field when excludeFromDiscount=true', () => {
+      const product = { ...baseProduct, excludeFromDiscount: true };
+
+      render(<PackageCard {...defaultProps} packageProducts={[product]} />);
+
+      expect(screen.queryByText('Rabat %')).not.toBeInTheDocument();
+    });
+
+    it('shows the discount % field when excludeFromDiscount=false', () => {
+      const product = { ...baseProduct, excludeFromDiscount: false };
+
+      render(<PackageCard {...defaultProps} packageProducts={[product]} />);
+
+      expect(screen.getByText('Rabat %')).toBeInTheDocument();
+    });
+  });
+
   describe('shipping/pickup/uber toggle', () => {
     it('renders Wysylka, Odbior osobisty and Uber toggle options', () => {
       render(<PackageCard {...defaultProps} />);
