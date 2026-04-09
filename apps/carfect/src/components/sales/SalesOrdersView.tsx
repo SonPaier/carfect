@@ -435,6 +435,7 @@ const SalesOrdersView = () => {
         name: item.name,
         priceNet: Number(item.price_net),
         priceUnit: item.price_unit || 'szt.',
+        productType: (item.product_type as 'roll' | 'other') || 'roll',
         quantity: item.quantity,
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,

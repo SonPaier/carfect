@@ -277,7 +277,13 @@ const PackageCard = ({
                     </div>
                     {/* Vehicle + Required m2 (meter only) + Discount */}
                     <div
-                      className={`grid gap-2 ${p.priceUnit === 'meter' && p.productType !== 'other' ? 'grid-cols-[1fr_auto_auto]' : p.productType === 'other' ? 'grid-cols-[auto]' : 'grid-cols-[1fr_auto]'}`}
+                      className={`grid gap-2 ${
+                        p.productType === 'other'
+                          ? 'grid-cols-[auto]'
+                          : p.priceUnit === 'meter'
+                            ? 'grid-cols-[1fr_auto_auto]'
+                            : 'grid-cols-[1fr_auto]'
+                      }`}
                     >
                       {p.productType !== 'other' && (
                         <div className="space-y-1">

@@ -264,6 +264,63 @@ describe('useOrderPackages', () => {
 
       expect(result.current.activePackageId).toBeNull();
     });
+
+    it('sets productType="other" on OrderProduct when selected product has productType="other"', () => {
+      const { result, getProducts } = setupHook();
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      const pkgId = result.current.packages[0].id;
+
+      act(() => {
+        result.current.setActivePackageId(pkgId);
+      });
+
+      act(() => {
+        result.current.handleProductsConfirm([
+          {
+            productId: 'prod-other',
+            fullName: 'Cleaning Kit',
+            priceNet: 50,
+            priceUnit: 'piece',
+            productType: 'other',
+          },
+        ]);
+      });
+
+      const products = getProducts();
+      expect(products).toHaveLength(1);
+      expect(products[0].productType).toBe('other');
+    });
+
+    it('defaults productType to "roll" when productType is not provided', () => {
+      const { result, getProducts } = setupHook();
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      const pkgId = result.current.packages[0].id;
+
+      act(() => {
+        result.current.setActivePackageId(pkgId);
+      });
+
+      act(() => {
+        result.current.handleProductsConfirm([
+          {
+            productId: 'prod-roll',
+            fullName: 'PPF Film',
+            priceNet: 200,
+            priceUnit: 'meter',
+          },
+        ]);
+      });
+
+      expect(getProducts()[0].productType).toBe('roll');
+    });
   });
 
   // 5. removeProductFromPackage
@@ -628,6 +685,22 @@ describe('useOrderPackages', () => {
         0,
       );
       expect(subtotal).toBe(0);
+    });
+
+    it('includes products with productType="other" and priceUnit="piece" in subtotal', () => {
+      const products: OrderProduct[] = [
+        makeProduct({ instanceKey: 'roll-1', priceNet: 200, quantity: 1, productType: 'roll' }),
+        makeProduct({
+          instanceKey: 'other-1',
+          priceNet: 30,
+          quantity: 3,
+          priceUnit: 'piece',
+          productType: 'other',
+        }),
+      ];
+      // subtotal = 200*1 + 30*3 = 200 + 90 = 290
+      const subtotal = products.reduce((sum, p) => sum + p.priceNet * p.quantity, 0);
+      expect(subtotal).toBe(290);
     });
   });
 

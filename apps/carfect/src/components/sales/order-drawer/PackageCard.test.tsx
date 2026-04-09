@@ -305,6 +305,71 @@ describe('PackageCard', () => {
     });
   });
 
+  describe('product type rendering', () => {
+    const rollProduct = {
+      instanceKey: 'prod-roll',
+      productId: 'p1',
+      name: 'PPF Film 1520mm x 15m',
+      priceNet: 200,
+      priceUnit: 'meter',
+      quantity: 1,
+      vehicle: 'BMW X5',
+      productType: 'roll' as const,
+    };
+
+    const otherProduct = {
+      instanceKey: 'prod-other',
+      productId: 'p2',
+      name: 'Cleaning Kit',
+      priceNet: 50,
+      priceUnit: 'piece',
+      quantity: 2,
+      vehicle: '',
+      productType: 'other' as const,
+    };
+
+    const otherProductMeter = {
+      instanceKey: 'prod-other-meter',
+      productId: 'p3',
+      name: 'Generic Meter Product',
+      priceNet: 80,
+      priceUnit: 'meter',
+      quantity: 1,
+      vehicle: '',
+      productType: 'other' as const,
+    };
+
+    it('renders vehicle field for product with productType="roll"', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[rollProduct]} />);
+
+      expect(screen.getByText('Pojazd')).toBeInTheDocument();
+    });
+
+    it('does NOT render vehicle field for product with productType="other"', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[otherProduct]} />);
+
+      expect(screen.queryByText('Pojazd')).not.toBeInTheDocument();
+    });
+
+    it('does NOT render mb field for product with productType="other" and priceUnit="meter"', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[otherProductMeter]} />);
+
+      expect(screen.queryByText('mb. wymag.')).not.toBeInTheDocument();
+    });
+
+    it('renders mb field for product with productType="roll" and priceUnit="meter"', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[rollProduct]} />);
+
+      expect(screen.getByText('mb. wymag.')).toBeInTheDocument();
+    });
+
+    it('does NOT render vehicle field when productType="other" regardless of priceUnit', () => {
+      render(<PackageCard {...defaultProps} packageProducts={[otherProductMeter]} />);
+
+      expect(screen.queryByText('Pojazd')).not.toBeInTheDocument();
+    });
+  });
+
   describe('shipping/pickup/uber toggle', () => {
     it('renders Wysylka, Odbior osobisty and Uber toggle options', () => {
       render(<PackageCard {...defaultProps} />);

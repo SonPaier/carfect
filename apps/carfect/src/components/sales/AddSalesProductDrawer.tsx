@@ -55,7 +55,7 @@ const AddSalesProductDrawer = ({
   const [shortName, setShortName] = useState('');
   const [description, setDescription] = useState('');
   const [priceNet, setPriceNet] = useState<number | undefined>(undefined);
-  const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('piece');
+  const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('meter');
   const [productType, setProductType] = useState<ProductType>('roll');
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
@@ -86,7 +86,7 @@ const AddSalesProductDrawer = ({
     setShortName('');
     setDescription('');
     setPriceNet(undefined);
-    setPriceUnit('piece');
+    setPriceUnit('meter');
     setProductType('roll');
     setCategoryId('');
     setExcludeFromDiscount(false);
@@ -383,22 +383,12 @@ const AddSalesProductDrawer = ({
                     Sztukę
                   </Label>
                 </div>
-                {productType === 'roll' && (
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="meter" id="unit-meter" />
-                    <Label htmlFor="unit-meter" className="font-normal cursor-pointer">
-                      m²
-                    </Label>
-                  </div>
-                )}
-                {productType === 'other' && (
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="meter" id="unit-m2" />
-                    <Label htmlFor="unit-m2" className="font-normal cursor-pointer">
-                      m²
-                    </Label>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="meter" id="unit-meter" />
+                  <Label htmlFor="unit-meter" className="font-normal cursor-pointer">
+                    m²
+                  </Label>
+                </div>
               </RadioGroup>
             </div>
 
