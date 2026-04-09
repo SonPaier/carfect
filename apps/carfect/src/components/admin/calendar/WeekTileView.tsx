@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { CalendarDayCell } from './CalendarDayCell';
 import { useReservationsByDate } from './useReservationsByDate';
 import { useDragReservation } from './useDragReservation';
-import type { Reservation, Station, ClosedDay } from './types';
+import type { Reservation, Station, ClosedDay, GroupBy } from './types';
 
 interface WeekTileViewProps {
   reservations: Reservation[];
@@ -16,6 +16,8 @@ interface WeekTileViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  groupBy?: GroupBy;
+  employees?: { id: string; name: string }[];
 }
 
 export const WeekTileView = ({
@@ -27,6 +29,8 @@ export const WeekTileView = ({
   onReservationClick,
   onAddClick,
   onReservationMove,
+  groupBy = 'none',
+  employees = [],
 }: WeekTileViewProps) => {
   const reservationsByDate = useReservationsByDate(reservations);
   const dragHandlers = useDragReservation(reservations, onReservationMove);
@@ -109,6 +113,8 @@ export const WeekTileView = ({
               onReservationClick={onReservationClick}
               onAddClick={onAddClick}
               dragHandlers={dragHandlers}
+              groupBy={groupBy}
+              employees={employees}
             />
           );
         })}

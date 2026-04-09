@@ -12,6 +12,8 @@ interface ReservationTileProps {
   isDragging?: boolean;
   onDragStart?: (e: DragEvent<HTMLButtonElement>, reservation: Reservation) => void;
   onDragEnd?: () => void;
+  showStationName?: boolean;
+  employees?: { id: string; name: string }[];
 }
 
 export const ReservationTile = ({
@@ -22,6 +24,10 @@ export const ReservationTile = ({
   isDragging = false,
   onDragStart,
   onDragEnd,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  showStationName: _showStationName,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  employees: _employees,
 }: ReservationTileProps) => {
   const isMobile = useIsMobile();
   const station = stations.find(s => s.id === reservation.station_id);

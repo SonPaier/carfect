@@ -1,4 +1,6 @@
 import type { DragEvent } from 'react';
+
+export type GroupBy = 'station' | 'employee' | 'none';
 import type { Reservation } from '@/types/reservation';
 export type { Reservation } from '@/types/reservation';
 
