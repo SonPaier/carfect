@@ -3091,6 +3091,7 @@ const AdminCalendar = ({
           stations={stations}
           currentDate={currentDate}
           closedDays={closedDays}
+          employees={showEmployeesOnReservations ? employees : []}
           onDayClick={(date) => {
             setCurrentDate(date);
             setViewMode('day');
@@ -3121,6 +3122,7 @@ const AdminCalendar = ({
           stations={stations}
           currentDate={currentDate}
           closedDays={closedDays}
+          employees={showEmployeesOnReservations ? employees : []}
           onDayClick={(date) => {
             setCurrentDate(date);
             setViewMode('day');

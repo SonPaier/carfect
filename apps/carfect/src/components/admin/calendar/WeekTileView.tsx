@@ -16,6 +16,7 @@ interface WeekTileViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  employees?: { id: string; name: string }[];
 }
 
 export const WeekTileView = ({
@@ -27,13 +28,14 @@ export const WeekTileView = ({
   onReservationClick,
   onAddClick,
   onReservationMove,
+  employees = [],
 }: WeekTileViewProps) => {
   const reservationsByDate = useReservationsByDate(reservations);
   const dragHandlers = useDragReservation(reservations, onReservationMove);
 
   const closedDateSet = useMemo(() => {
     const set = new Set<string>();
-    closedDays.forEach(d => set.add(d.closed_date));
+    closedDays.forEach((d) => set.add(d.closed_date));
     return set;
   }, [closedDays]);
 
@@ -66,24 +68,27 @@ export const WeekTileView = ({
               )}
               onClick={() => onDayClick(day)}
             >
-              <div className={cn(
-                'text-foreground capitalize',
-                isDayToday && 'text-primary font-bold',
-                isClosed && 'text-red-500',
-              )}>
+              <div
+                className={cn(
+                  'text-foreground capitalize',
+                  isDayToday && 'text-primary font-bold',
+                  isClosed && 'text-red-500',
+                )}
+              >
                 {format(day, 'EEE', { locale: pl })}
               </div>
-              <div className={cn(
-                'text-lg font-bold',
-                isDayToday && 'text-primary',
-                isClosed && 'text-red-500',
-              )}>
+              <div
+                className={cn(
+                  'text-lg font-bold',
+                  isDayToday && 'text-primary',
+                  isClosed && 'text-red-500',
+                )}
+              >
                 {format(day, 'd')}
               </div>
-              <div className={cn(
-                'text-[10px]',
-                isClosed ? 'text-red-500' : 'text-muted-foreground',
-              )}>
+              <div
+                className={cn('text-[10px]', isClosed ? 'text-red-500' : 'text-muted-foreground')}
+              >
                 {isClosed ? 'zamknięte' : `${dayReservations.length} rez.`}
               </div>
             </div>
@@ -109,6 +114,8 @@ export const WeekTileView = ({
               onReservationClick={onReservationClick}
               onAddClick={onAddClick}
               dragHandlers={dragHandlers}
+              showStationName
+              employees={employees}
             />
           );
         })}

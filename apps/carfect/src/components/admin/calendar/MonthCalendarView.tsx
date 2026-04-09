@@ -22,6 +22,7 @@ interface MonthCalendarViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  employees?: { id: string; name: string }[];
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
@@ -35,13 +36,14 @@ export const MonthCalendarView = ({
   onReservationClick,
   onAddClick,
   onReservationMove,
+  employees = [],
 }: MonthCalendarViewProps) => {
   const reservationsByDate = useReservationsByDate(reservations);
   const dragHandlers = useDragReservation(reservations, onReservationMove);
 
   const closedDateSet = useMemo(() => {
     const set = new Set<string>();
-    closedDays.forEach(d => set.add(d.closed_date));
+    closedDays.forEach((d) => set.add(d.closed_date));
     return set;
   }, [closedDays]);
 
@@ -79,7 +81,10 @@ export const MonthCalendarView = ({
       {/* Day names header */}
       <div className="grid grid-cols-7 border-b border-border">
         {DAY_NAMES.map((name) => (
-          <div key={name} className="text-center text-xs font-medium text-muted-foreground py-2 border-r border-border last:border-r-0">
+          <div
+            key={name}
+            className="text-center text-xs font-medium text-muted-foreground py-2 border-r border-border last:border-r-0"
+          >
             {name}
           </div>
         ))}
@@ -88,7 +93,10 @@ export const MonthCalendarView = ({
       {/* Calendar grid */}
       <div>
         {weeks.map((week, weekIdx) => (
-          <div key={weekIdx} className="grid grid-cols-7 border-b border-border last:border-b-0 min-h-[80px]">
+          <div
+            key={weekIdx}
+            className="grid grid-cols-7 border-b border-border last:border-b-0 min-h-[80px]"
+          >
             {week.map((day) => {
               const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
               const dayReservations = reservationsByDate.get(dateStr) || [];
@@ -106,6 +114,8 @@ export const MonthCalendarView = ({
                   onReservationClick={onReservationClick}
                   onAddClick={onAddClick}
                   dragHandlers={dragHandlers}
+                  showStationName
+                  employees={employees}
                 />
               );
             })}

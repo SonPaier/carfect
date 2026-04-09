@@ -15,6 +15,8 @@ interface CalendarDayCellProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   dragHandlers: DragHandlers;
+  showStationName?: boolean;
+  employees?: { id: string; name: string }[];
 }
 
 export const CalendarDayCell = ({
@@ -28,6 +30,8 @@ export const CalendarDayCell = ({
   onReservationClick,
   onAddClick,
   dragHandlers,
+  showStationName = false,
+  employees = [],
 }: CalendarDayCellProps) => {
   const dateStr = format(date, 'yyyy-MM-dd');
   const isDragOver = dragHandlers.dragOverDate === dateStr;
@@ -68,13 +72,18 @@ export const CalendarDayCell = ({
             isDragging={dragHandlers.draggedId === reservation.id}
             onDragStart={dragHandlers.onDragStart}
             onDragEnd={dragHandlers.onDragEnd}
+            showStationName={showStationName}
+            employees={employees}
           />
         ))}
 
         {/* Add reservation button */}
         {onAddClick && !isClosed && isCurrentMonth && (
           <button
-            onClick={(e) => { e.stopPropagation(); onAddClick(date); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddClick(date);
+            }}
             className="flex items-center justify-center gap-1 text-xs font-bold text-black hover:text-primary transition-colors mt-auto pt-1 w-full group"
           >
             <Plus className="w-3.5 h-3.5" />
