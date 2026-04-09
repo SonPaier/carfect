@@ -247,7 +247,19 @@ const PackageCard = ({
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      {(!p.priceUnit || p.priceUnit === 'szt.' || p.priceUnit === 'piece') && (
+                      {p.productType === 'other' && p.priceUnit === 'meter' ? (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <NumericInput
+                            min={0.01}
+                            step={0.01}
+                            value={p.quantity ?? undefined}
+                            onChange={(v) => onUpdateQuantity(itemKey, v ?? 1)}
+                            className="w-20 h-7 text-center text-sm px-1"
+                            placeholder="m²"
+                          />
+                          <span className="text-xs text-muted-foreground">m²</span>
+                        </div>
+                      ) : !p.priceUnit || p.priceUnit === 'szt.' || p.priceUnit === 'piece' ? (
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
                             variant="outline"
@@ -262,7 +274,7 @@ const PackageCard = ({
                             min={1}
                             value={p.quantity ?? undefined}
                             onChange={(v) => onUpdateQuantity(itemKey, v ?? 1)}
-                            className="w-12 h-7 text-center text-sm px-1"
+                            className="w-14 h-7 text-center text-sm px-1"
                           />
                           <Button
                             variant="outline"
@@ -273,7 +285,7 @@ const PackageCard = ({
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     {/* Vehicle + Required m2 (meter only) + Discount */}
                     <div
@@ -308,17 +320,19 @@ const PackageCard = ({
                           />
                         </div>
                       )}
-                      <div className="space-y-1 w-16">
-                        <Label className="text-xs">Rabat %</Label>
-                        <NumericInput
-                          min={0}
-                          max={100}
-                          value={p.discountPercent != null ? p.discountPercent : undefined}
-                          onChange={(v) => onUpdateProductDiscount?.(itemKey, v ?? 0)}
-                          placeholder={String(customerDiscount ?? 0)}
-                          className="h-8 text-sm placeholder:text-foreground"
-                        />
-                      </div>
+                      {!p.excludeFromDiscount && (
+                        <div className="space-y-1 w-16">
+                          <Label className="text-xs">Rabat %</Label>
+                          <NumericInput
+                            min={0}
+                            max={100}
+                            value={p.discountPercent != null ? p.discountPercent : undefined}
+                            onChange={(v) => onUpdateProductDiscount?.(itemKey, v ?? 0)}
+                            placeholder={String(customerDiscount ?? 0)}
+                            className="h-8 text-sm placeholder:text-foreground"
+                          />
+                        </div>
+                      )}
                     </div>
                     {/* Roll assignment for meter-based products */}
                     {p.priceUnit === 'meter' &&
