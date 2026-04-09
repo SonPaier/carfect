@@ -523,8 +523,9 @@ const AddReservationDialogV2 = ({
 
         setAdminNotes(editingReservation.admin_notes || '');
         // Load price matching the current pricing mode to avoid VAT double-application
+        // price = brutto, price_netto = netto. When price_netto is NULL (legacy), derive from brutto.
         const editPrice = pricingMode === 'netto'
-          ? editingReservation.price_netto ?? editingReservation.price
+          ? editingReservation.price_netto ?? (editingReservation.price ? Math.round(editingReservation.price / 1.23 * 100) / 100 : null)
           : editingReservation.price;
         setFinalPrice(editPrice?.toString() || '');
         // Mark as user-modified if editing reservation with existing price
