@@ -79,7 +79,7 @@ export const MonthCalendarView = ({
   const today = new Date();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       {/* Day names header */}
       <div className="grid grid-cols-7 border-b border-border">
         {DAY_NAMES.map((name) => (

@@ -84,7 +84,7 @@ export const CalendarDayCell = ({
   return (
     <div
       className={cn(
-        'border-r border-border last:border-r-0 p-1 flex flex-col min-h-0 overflow-hidden overflow-y-auto transition-colors bg-white dark:bg-card',
+        'group/cell border-r border-border last:border-r-0 p-1 flex flex-col min-h-0 overflow-hidden overflow-y-auto transition-colors bg-white dark:bg-card',
         isDragOver && 'bg-primary/10 ring-1 ring-inset ring-primary/30',
         isClosed && 'bg-red-50 dark:bg-red-950/20',
       )}
@@ -142,7 +142,7 @@ export const CalendarDayCell = ({
         {onAddClick && !isClosed && isCurrentMonth && (
           <button
             onClick={(e) => { e.stopPropagation(); onAddClick(date); }}
-            className="flex items-center justify-center gap-1 text-xs font-bold text-black hover:text-primary transition-colors mt-auto pt-1 w-full group"
+            className="flex items-center justify-center gap-1 text-xs font-bold text-black hover:text-primary transition-all mt-auto pt-1 w-full opacity-0 group-hover/cell:opacity-100"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Dodaj</span>

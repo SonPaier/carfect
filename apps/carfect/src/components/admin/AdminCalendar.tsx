@@ -547,6 +547,11 @@ const AdminCalendar = ({
     }
   }, [defaultView]);
 
+  const handleViewModeChange = (mode: 'day' | 'week' | 'month') => {
+    setViewMode(mode);
+    saveDefaultView(mode);
+  };
+
   const handleGroupingModeChange = (mode: GroupBy) => {
     setGroupingMode(mode);
     localStorage.setItem('calendar-grouping-mode', mode);
@@ -1626,19 +1631,24 @@ const AdminCalendar = ({
                             className="text-sm cursor-pointer flex-1"
                           >
                             {station.name}
-                            <span className="text-xs text-muted-foreground ml-1">
-                              (
-                              {station.type === 'washing'
-                                ? 'mycie'
-                                : station.type === 'ppf'
-                                  ? 'folia'
-                                  : station.type === 'detailing'
-                                    ? 'detailing'
-                                    : 'uniwersalny'}
-                              )
-                            </span>
                           </Label>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Default view preference */}
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-medium text-sm">Domyślny widok</h4>
+                    <div className="space-y-1">
+                      {(['day', 'week', 'month'] as const).map((v) => (
+                        <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="radio" name="default-view" value={v}
+                            checked={viewMode === v}
+                            onChange={() => handleViewModeChange(v)}
+                            className="accent-primary" />
+                          {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}
+                        </label>
                       ))}
                     </div>
                   </div>

@@ -50,7 +50,7 @@ export const WeekTileView = ({
   const today = new Date();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       {/* Day headers */}
       <div className="grid grid-cols-7 border-b border-border">
         {weekDays.map((day, idx) => {
@@ -96,7 +96,7 @@ export const WeekTileView = ({
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 min-h-[300px]">
+      <div className="grid grid-cols-7 flex-1">
         {weekDays.map((day) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const dayReservations = reservationsByDate.get(dateStr) || [];
