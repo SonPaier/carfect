@@ -483,9 +483,13 @@ const AddEditSalesCustomerDrawer = ({
                     )}
                     {o.payment_method && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {{ cod: 'Pobranie', transfer: 'Przelew', free: 'Bezpłatne' }[
-                          o.payment_method
-                        ] ?? o.payment_method}
+                        {{
+                          cod: 'Pobranie',
+                          transfer: 'Przelew',
+                          cash: 'Gotówka',
+                          card: 'Karta',
+                          free: 'Bezpłatne',
+                        }[o.payment_method] ?? o.payment_method}
                       </Badge>
                     )}
                   </div>

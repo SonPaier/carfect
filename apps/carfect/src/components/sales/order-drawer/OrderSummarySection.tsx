@@ -15,7 +15,7 @@ interface OrderSummarySectionProps {
   totalNet: number;
   totalGross: number;
   isNetPayer?: boolean;
-  paymentMethod?: 'cod' | 'transfer' | 'free';
+  paymentMethod?: 'cod' | 'transfer' | 'free' | 'cash' | 'card';
 }
 
 export const OrderSummarySection = ({
