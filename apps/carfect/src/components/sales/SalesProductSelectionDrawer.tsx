@@ -12,6 +12,7 @@ export interface SalesProductOption {
   shortName: string;
   priceNet: number;
   priceUnit: string;
+  productType?: 'roll' | 'other';
   hasVariants?: boolean;
   excludeFromDiscount?: boolean;
   categoryName?: string;
@@ -36,6 +37,7 @@ export interface SelectedProductItem {
   variantName?: string;
   priceNet: number;
   priceUnit: string;
+  productType?: 'roll' | 'other';
   excludeFromDiscount?: boolean;
   categoryName?: string;
 }
@@ -89,7 +91,7 @@ const SalesProductSelectionDrawer = ({
     const { data } = await supabase
       .from('sales_products')
       .select(
-        'id, full_name, short_name, price_net, price_unit, has_variants, exclude_from_discount, category_id',
+        'id, full_name, short_name, price_net, price_unit, product_type, has_variants, exclude_from_discount, category_id',
       )
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false });
@@ -108,6 +110,7 @@ const SalesProductSelectionDrawer = ({
       shortName: p.short_name || '',
       priceNet: Number(p.price_net),
       priceUnit: p.price_unit || 'szt.',
+      productType: (p.product_type as 'roll' | 'other') || 'roll',
       hasVariants: p.has_variants || false,
       excludeFromDiscount: p.exclude_from_discount || false,
       categoryName: p.category_id ? catMap.get(p.category_id) || undefined : undefined,
@@ -214,6 +217,7 @@ const SalesProductSelectionDrawer = ({
               variantName: variant.variantName,
               priceNet: product.priceNet,
               priceUnit: product.priceUnit,
+              productType: product.productType,
               excludeFromDiscount: product.excludeFromDiscount,
               categoryName: product.categoryName,
             });
@@ -230,6 +234,7 @@ const SalesProductSelectionDrawer = ({
             shortName: product.shortName,
             priceNet: product.priceNet,
             priceUnit: product.priceUnit,
+            productType: product.productType,
             excludeFromDiscount: product.excludeFromDiscount,
             categoryName: product.categoryName,
           });

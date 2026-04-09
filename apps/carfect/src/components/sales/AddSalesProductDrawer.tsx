@@ -19,6 +19,8 @@ interface SalesProductVariant {
   sortOrder: number;
 }
 
+export type ProductType = 'roll' | 'other';
+
 interface SalesProductData {
   id: string;
   fullName: string;
@@ -26,6 +28,7 @@ interface SalesProductData {
   description?: string;
   priceNet: number;
   priceUnit: string;
+  productType?: ProductType;
   categoryId?: string | null;
   hasVariants?: boolean;
   excludeFromDiscount?: boolean;
@@ -52,7 +55,8 @@ const AddSalesProductDrawer = ({
   const [shortName, setShortName] = useState('');
   const [description, setDescription] = useState('');
   const [priceNet, setPriceNet] = useState<number | undefined>(undefined);
-  const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('piece');
+  const [priceUnit, setPriceUnit] = useState<'piece' | 'meter'>('meter');
+  const [productType, setProductType] = useState<ProductType>('roll');
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const {
@@ -82,7 +86,8 @@ const AddSalesProductDrawer = ({
     setShortName('');
     setDescription('');
     setPriceNet(undefined);
-    setPriceUnit('piece');
+    setPriceUnit('meter');
+    setProductType('roll');
     setCategoryId('');
     setExcludeFromDiscount(false);
     setHasVariants(false);
@@ -97,6 +102,7 @@ const AddSalesProductDrawer = ({
       setDescription(product.description || '');
       setPriceNet(product.priceNet || undefined);
       setPriceUnit((product.priceUnit as 'piece' | 'meter') || 'piece');
+      setProductType(product.productType || 'roll');
       setCategoryId(product.categoryId || '');
       setExcludeFromDiscount(product.excludeFromDiscount || false);
       setHasVariants(product.hasVariants || false);
@@ -166,6 +172,7 @@ const AddSalesProductDrawer = ({
         description: description.trim() || null,
         price_net: priceNet ?? 0,
         price_unit: priceUnit,
+        product_type: productType,
         category_id: categoryId || null,
         exclude_from_discount: excludeFromDiscount,
         has_variants: hasVariants,
@@ -259,6 +266,33 @@ const AddSalesProductDrawer = ({
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Typ produktu</Label>
+              <RadioGroup
+                value={productType}
+                onValueChange={(v) => {
+                  setProductType(v as ProductType);
+                  if (v === 'other') setPriceUnit('piece');
+                  if (v === 'roll') setPriceUnit('meter');
+                  markDirty();
+                }}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="roll" id="type-roll" />
+                  <Label htmlFor="type-roll" className="font-normal cursor-pointer">
+                    Rolka (folia)
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="other" id="type-other" />
+                  <Label htmlFor="type-other" className="font-normal cursor-pointer">
+                    Inny produkt
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="product-full-name">Pełna nazwa produktu</Label>
               <Input

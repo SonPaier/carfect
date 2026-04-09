@@ -23,6 +23,7 @@ export interface SalesProduct {
   description?: string;
   priceNet: number;
   priceUnit: string;
+  productType: 'roll' | 'other';
   categoryId?: string | null;
   categoryName?: string | null;
   hasVariants?: boolean;
@@ -57,7 +58,7 @@ const SalesProductsView = () => {
     const { data } = await supabase
       .from('sales_products')
       .select(
-        'id, short_name, full_name, description, price_net, price_unit, category_id, has_variants, exclude_from_discount',
+        'id, short_name, full_name, description, price_net, price_unit, product_type, category_id, has_variants, exclude_from_discount',
       )
       .eq('instance_id', instanceId)
       .order('created_at', { ascending: false });
@@ -80,6 +81,7 @@ const SalesProductsView = () => {
         priceUnit: p.price_unit,
         categoryId: p.category_id || null,
         categoryName: p.category_id ? catMap.get(p.category_id) || null : null,
+        productType: (p.product_type as 'roll' | 'other') || 'roll',
         hasVariants: p.has_variants || false,
         excludeFromDiscount: p.exclude_from_discount || false,
       })),
