@@ -61,6 +61,8 @@ export interface OrderProduct {
   requiredMb?: number;
   /** Per-product discount percentage (overrides customer discount) */
   discountPercent?: number;
+  /** Product type: 'roll' (default, with vehicle + mb) or 'other' (generic, no vehicle) */
+  productType?: 'roll' | 'other';
 }
 
 export const getItemKey = (p: OrderProduct) => p.instanceKey;
@@ -112,6 +114,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
         fullName: string;
         priceNet: number;
         priceUnit?: string;
+        productType?: 'roll' | 'other';
         excludeFromDiscount?: boolean;
         categoryName?: string;
       }>,
@@ -132,6 +135,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
           vehicle: '',
           excludeFromDiscount: s.excludeFromDiscount,
           categoryName: s.categoryName,
+          productType: s.productType || 'roll',
         };
       });
 
