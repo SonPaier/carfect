@@ -142,7 +142,7 @@ export const CalendarDayCell = ({
         {onAddClick && !isClosed && isCurrentMonth && (
           <button
             onClick={(e) => { e.stopPropagation(); onAddClick(date); }}
-            className="flex items-center justify-center gap-1 text-xs font-bold text-black hover:text-primary transition-all mt-auto pt-1 w-full opacity-0 group-hover/cell:opacity-100"
+            className="flex items-center justify-center gap-1 text-xs font-bold text-black hover:text-primary transition-all mt-auto pt-1 w-full md:opacity-0 md:group-hover/cell:opacity-100"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Dodaj</span>
