@@ -154,12 +154,39 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
     }
     setLoading(true);
     try {
-      const { data: profile, error: lookupError } = await supabase
+      // Try instance-specific profile first
+      let { data: profile, error: lookupError } = await supabase
         .from('profiles')
         .select('id, email, is_blocked')
         .eq('username', username)
         .eq('instance_id', instance.id)
         .maybeSingle();
+
+      // If not found, check if user is a super_admin (no instance_id constraint)
+      if (!profile && !lookupError) {
+        const { data: superProfile, error: superError } = await supabase
+          .from('profiles')
+          .select('id, email, is_blocked')
+          .eq('username', username)
+          .is('instance_id', null)
+          .maybeSingle();
+
+        if (superProfile?.email && !superError) {
+          // Verify super_admin role
+          const { data: roleCheck } = await supabase
+            .from('user_roles')
+            .select('id')
+            .eq('user_id', superProfile.id)
+            .eq('role', 'super_admin')
+            .maybeSingle();
+
+          if (roleCheck) {
+            profile = superProfile;
+            lookupError = null;
+          }
+        }
+      }
+
       if (lookupError || !profile?.email) {
         setErrors({
           general: 'Nieprawidłowy login lub hasło',
