@@ -497,7 +497,12 @@ const SalesOrdersView = () => {
       products: editProducts,
       packages: editPackages,
       deliveryType: (orderData?.delivery_type || 'shipping') as 'shipping' | 'pickup' | 'uber',
-      paymentMethod: (orderData?.payment_method || 'cod') as 'cod' | 'transfer' | 'free',
+      paymentMethod: (orderData?.payment_method || 'cod') as
+        | 'cod'
+        | 'transfer'
+        | 'free'
+        | 'cash'
+        | 'card',
       bankAccountNumber: orderData?.bank_account_number || '',
       comment: orderData?.comment || '',
       isNetPayer: orderData?.is_net_payer ?? false,
