@@ -11,7 +11,7 @@ import {
 import { CalendarDayCell } from './CalendarDayCell';
 import { useReservationsByDate } from './useReservationsByDate';
 import { useDragReservation } from './useDragReservation';
-import type { Reservation, Station, ClosedDay } from './types';
+import type { Reservation, Station, ClosedDay, GroupBy } from './types';
 
 interface MonthCalendarViewProps {
   reservations: Reservation[];
@@ -22,6 +22,8 @@ interface MonthCalendarViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  groupBy?: GroupBy;
+  employees?: { id: string; name: string }[];
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
@@ -35,6 +37,8 @@ export const MonthCalendarView = ({
   onReservationClick,
   onAddClick,
   onReservationMove,
+  groupBy = 'none',
+  employees = [],
 }: MonthCalendarViewProps) => {
   const reservationsByDate = useReservationsByDate(reservations);
   const dragHandlers = useDragReservation(reservations, onReservationMove);
@@ -75,7 +79,7 @@ export const MonthCalendarView = ({
   const today = new Date();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       {/* Day names header */}
       <div className="grid grid-cols-7 border-b border-border">
         {DAY_NAMES.map((name) => (
@@ -106,6 +110,8 @@ export const MonthCalendarView = ({
                   onReservationClick={onReservationClick}
                   onAddClick={onAddClick}
                   dragHandlers={dragHandlers}
+                  groupBy={groupBy}
+                  employees={employees}
                 />
               );
             })}

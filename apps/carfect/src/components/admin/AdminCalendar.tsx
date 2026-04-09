@@ -77,7 +77,8 @@ import { Checkbox } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
-import { MonthCalendarView, WeekTileView } from './calendar';
+import { MonthCalendarView, WeekTileView, useCalendarViewPreference } from './calendar';
+import type { GroupBy } from './calendar';
 type ViewMode = 'day' | 'two-days' | 'week' | 'month';
 interface Station {
   id: string;
@@ -308,7 +309,12 @@ const AdminCalendar = ({
     }
     return new Date();
   });
+  const { defaultView, saveDefaultView } = useCalendarViewPreference();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
+  const [groupingMode, setGroupingMode] = useState<GroupBy>(() => {
+    const saved = localStorage.getItem('calendar-grouping-mode');
+    return (saved === 'station' || saved === 'employee') ? saved : 'station';
+  });
   const [hiddenStationIds, setHiddenStationIds] = useState<Set<string>>(() => {
     // Load from localStorage
     const saved = localStorage.getItem('calendar-hidden-stations');
@@ -533,6 +539,24 @@ const AdminCalendar = ({
   useEffect(() => {
     localStorage.setItem('admin-calendar-date', format(currentDate, 'yyyy-MM-dd'));
   }, [currentDate]);
+
+  // Set initial view from DB preference
+  useEffect(() => {
+    if (defaultView === 'week' || defaultView === 'month') {
+      setViewMode(defaultView);
+    }
+  }, [defaultView]);
+
+  const handleViewModeChange = (mode: 'day' | 'week' | 'month') => {
+    setViewMode(mode);
+    saveDefaultView(mode);
+  };
+
+  const handleGroupingModeChange = (mode: GroupBy) => {
+    setGroupingMode(mode);
+    localStorage.setItem('calendar-grouping-mode', mode);
+  };
+
   const toggleStationVisibility = (stationId: string) => {
     setHiddenStationIds((prev) => {
       const newSet = new Set(prev);
@@ -1524,8 +1548,7 @@ const AdminCalendar = ({
             {/* Station selector removed - week tile view shows all stations via color */}
 
             {/* View mode toggle - icons only */}
-            {!isMobile && (
-              <div className="flex border border-border rounded-lg overflow-hidden">
+            <div className="flex border border-border rounded-lg overflow-hidden">
                 {allowedViews.includes('day') && (
                   <Button
                     variant={viewMode === 'day' ? 'secondary' : 'ghost'}
@@ -1552,7 +1575,7 @@ const AdminCalendar = ({
                   <Button
                     variant={viewMode === 'week' ? 'secondary' : 'ghost'}
                     size="sm"
-                    onClick={() => setViewMode('week')}
+                    onClick={() => { setViewMode('week'); saveDefaultView('week'); }}
                     className="rounded-none border-0 px-2.5"
                     title="Tydzień"
                   >
@@ -1563,15 +1586,14 @@ const AdminCalendar = ({
                   <Button
                     variant={viewMode === 'month' ? 'secondary' : 'ghost'}
                     size="sm"
-                    onClick={() => setViewMode('month')}
+                    onClick={() => { setViewMode('month'); saveDefaultView('month'); }}
                     className="rounded-none border-0 px-2.5"
                     title="Miesiąc"
                   >
                     <CalendarRange className="w-4 h-4" />
                   </Button>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Column visibility settings - only show if not read only */}
             {showStationFilter && (
@@ -1609,20 +1631,46 @@ const AdminCalendar = ({
                             className="text-sm cursor-pointer flex-1"
                           >
                             {station.name}
-                            <span className="text-xs text-muted-foreground ml-1">
-                              (
-                              {station.type === 'washing'
-                                ? 'mycie'
-                                : station.type === 'ppf'
-                                  ? 'folia'
-                                  : station.type === 'detailing'
-                                    ? 'detailing'
-                                    : 'uniwersalny'}
-                              )
-                            </span>
                           </Label>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Default view preference */}
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-medium text-sm">Domyślny widok</h4>
+                    <div className="space-y-1">
+                      {(['day', 'week', 'month'] as const).map((v) => (
+                        <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="radio" name="default-view" value={v}
+                            checked={viewMode === v}
+                            onChange={() => handleViewModeChange(v)}
+                            className="accent-primary" />
+                          {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Grouping mode for week/month views */}
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <h4 className="font-medium text-sm">Grupowanie (tydzień/miesiąc)</h4>
+                    <div className="space-y-1">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="grouping-mode" value="station"
+                          checked={groupingMode === 'station'}
+                          onChange={() => handleGroupingModeChange('station')}
+                          className="accent-primary" />
+                        Wg stanowiska
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="grouping-mode" value="employee"
+                          checked={groupingMode === 'employee'}
+                          onChange={() => handleGroupingModeChange('employee')}
+                          className="accent-primary" />
+                        Wg pracownika
+                      </label>
                     </div>
                   </div>
                 </PopoverContent>
@@ -3086,62 +3134,70 @@ const AdminCalendar = ({
 
       {/* WEEK VIEW (Tile-based) */}
       {viewMode === 'week' && (
-        <WeekTileView
-          reservations={reservations}
-          stations={stations}
-          currentDate={currentDate}
-          closedDays={closedDays}
-          onDayClick={(date) => {
-            setCurrentDate(date);
-            setViewMode('day');
-          }}
-          onReservationClick={(r) => onReservationClick?.(r)}
-          onAddClick={
-            onAddReservation && !readOnly
-              ? (date) => {
-                  const dateStr = format(date, 'yyyy-MM-dd');
-                  setCurrentDate(date);
-                  setViewMode('day');
-                  onAddReservation(stations[0]?.id || '', dateStr, '08:00');
-                }
-              : undefined
-          }
-          onReservationMove={
-            onReservationMove
-              ? (id, stationId, date) => onReservationMove(id, stationId, date)
-              : undefined
-          }
-        />
+        <div className="overflow-x-auto flex-1">
+          <WeekTileView
+            reservations={reservations}
+            stations={stations}
+            currentDate={currentDate}
+            closedDays={closedDays}
+            groupBy={groupingMode}
+            employees={employees}
+            onDayClick={(date) => {
+              setCurrentDate(date);
+              setViewMode('day');
+            }}
+            onReservationClick={(r) => onReservationClick?.(r)}
+            onAddClick={
+              onAddReservation && !readOnly
+                ? (date) => {
+                    const dateStr = format(date, 'yyyy-MM-dd');
+                    setCurrentDate(date);
+                    setViewMode('day');
+                    onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+                  }
+                : undefined
+            }
+            onReservationMove={
+              onReservationMove
+                ? (id, stationId, date) => onReservationMove(id, stationId, date)
+                : undefined
+            }
+          />
+        </div>
       )}
 
       {/* MONTH VIEW */}
       {viewMode === 'month' && (
-        <MonthCalendarView
-          reservations={reservations}
-          stations={stations}
-          currentDate={currentDate}
-          closedDays={closedDays}
-          onDayClick={(date) => {
-            setCurrentDate(date);
-            setViewMode('day');
-          }}
-          onReservationClick={(r) => onReservationClick?.(r)}
-          onAddClick={
-            onAddReservation && !readOnly
-              ? (date) => {
-                  const dateStr = format(date, 'yyyy-MM-dd');
-                  setCurrentDate(date);
-                  setViewMode('day');
-                  onAddReservation(stations[0]?.id || '', dateStr, '08:00');
-                }
-              : undefined
-          }
-          onReservationMove={
-            onReservationMove
-              ? (id, stationId, date) => onReservationMove(id, stationId, date)
-              : undefined
-          }
-        />
+        <div className="overflow-x-auto flex-1">
+          <MonthCalendarView
+            reservations={reservations}
+            stations={stations}
+            currentDate={currentDate}
+            closedDays={closedDays}
+            groupBy={groupingMode}
+            employees={employees}
+            onDayClick={(date) => {
+              setCurrentDate(date);
+              setViewMode('day');
+            }}
+            onReservationClick={(r) => onReservationClick?.(r)}
+            onAddClick={
+              onAddReservation && !readOnly
+                ? (date) => {
+                    const dateStr = format(date, 'yyyy-MM-dd');
+                    setCurrentDate(date);
+                    setViewMode('day');
+                    onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+                  }
+                : undefined
+            }
+            onReservationMove={
+              onReservationMove
+                ? (id, stationId, date) => onReservationMove(id, stationId, date)
+                : undefined
+            }
+          />
+        </div>
       )}
 
       {/* Color Legend */}

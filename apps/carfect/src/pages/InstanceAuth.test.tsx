@@ -66,6 +66,8 @@ import { supabase } from '@/integrations/supabase/client';
 const createQueryMock = (response: { data: unknown; error: unknown }) => ({
   select: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
+  is: vi.fn().mockReturnThis(),
+  in: vi.fn().mockReturnThis(),
   maybeSingle: vi.fn().mockResolvedValue(response),
   single: vi.fn().mockResolvedValue(response),
 });

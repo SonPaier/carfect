@@ -12,6 +12,8 @@ interface ReservationTileProps {
   isDragging?: boolean;
   onDragStart?: (e: DragEvent<HTMLButtonElement>, reservation: Reservation) => void;
   onDragEnd?: () => void;
+  showStationName?: boolean;
+  employees?: { id: string; name: string }[];
 }
 
 export const ReservationTile = ({
@@ -22,6 +24,8 @@ export const ReservationTile = ({
   isDragging = false,
   onDragStart,
   onDragEnd,
+  showStationName = false,
+  employees = [],
 }: ReservationTileProps) => {
   const isMobile = useIsMobile();
   const station = stations.find(s => s.id === reservation.station_id);
@@ -56,22 +60,22 @@ export const ReservationTile = ({
         <>
           {/* Line 1: Time + Service */}
           <div className="flex items-center gap-1 min-w-0">
-            <span className="text-[11px] font-bold tabular-nums shrink-0">
+            <span className="text-[12px] font-bold tabular-nums shrink-0 text-foreground">
               {reservation.start_time?.slice(0, 5)}
             </span>
             {serviceName && (
-              <span className="text-[11px] font-bold truncate">
+              <span className="text-[12px] font-bold truncate text-foreground">
                 {serviceName}
               </span>
             )}
           </div>
           {/* Line 2: Customer name */}
-          <div className="text-[10px] truncate opacity-80">
+          <div className="text-[11px] truncate font-medium text-foreground">
             {reservation.customer_name}
           </div>
           {/* Line 3: Vehicle plate */}
           {reservation.vehicle_plate && (
-            <div className="text-[9px] truncate opacity-60">
+            <div className="text-[11px] truncate font-semibold text-foreground">
               {reservation.vehicle_plate}
             </div>
           )}
