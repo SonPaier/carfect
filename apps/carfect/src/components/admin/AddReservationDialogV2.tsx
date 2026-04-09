@@ -522,7 +522,11 @@ const AddReservationDialogV2 = ({
         }
 
         setAdminNotes(editingReservation.admin_notes || '');
-        setFinalPrice(editingReservation.price?.toString() || '');
+        // Load price matching the current pricing mode to avoid VAT double-application
+        const editPrice = pricingMode === 'netto'
+          ? editingReservation.price_netto ?? editingReservation.price
+          : editingReservation.price;
+        setFinalPrice(editPrice?.toString() || '');
         // Mark as user-modified if editing reservation with existing price
         setUserModifiedFinalPrice(!!editingReservation.price);
         setOfferNumber(editingReservation.offer_number || '');
