@@ -638,7 +638,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           stations:station_id (name, type)
         `,
         )
-        .eq('instance_id', instanceId);
+        .eq('instance_id', instanceId)
+        .range(0, 4999);
 
       if (reservationsData) {
         // Build services map from central dictionary
