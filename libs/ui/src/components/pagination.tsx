@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "../lib/utils";
 import { ButtonProps, buttonVariants } from "./button";
@@ -86,7 +86,7 @@ const PaginationFooter = ({
   totalPages,
   totalItems,
   pageSize,
-  pageSizeOptions = [25, 50, 100],
+  pageSizeOptions = [25, 50, 100, 200],
   onPageChange,
   onPageSizeChange,
   itemLabel = 'pozycji',
@@ -120,7 +120,7 @@ const PaginationFooter = ({
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          className="h-8 rounded-md bg-primary text-primary-foreground pl-2 pr-6 text-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_6px_center] bg-no-repeat"
         >
           {pageSizeOptions.map((size) => (
             <option key={size} value={size}>
@@ -134,7 +134,16 @@ const PaginationFooter = ({
           <button
             className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
             disabled={currentPage === 1}
+            onClick={() => onPageChange(1)}
+            aria-label="First page"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={currentPage === 1}
             onClick={() => onPageChange(currentPage - 1)}
+            aria-label="Previous page"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -165,8 +174,17 @@ const PaginationFooter = ({
             className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
             disabled={currentPage === totalPages}
             onClick={() => onPageChange(currentPage + 1)}
+            aria-label="Next page"
           >
             <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(totalPages)}
+            aria-label="Last page"
+          >
+            <ChevronsRight className="h-4 w-4" />
           </button>
         </div>
       )}

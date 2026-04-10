@@ -1,6 +1,5 @@
-import { useMemo, useEffect, useState, useRef } from 'react';
+import { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import {
@@ -13,16 +12,12 @@ import {
   GraduationCap,
   ArrowUp,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   MoreHorizontal,
 } from 'lucide-react';
 import { normalizeSearchQuery, formatPhoneDisplay } from '@shared/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
-import { Tabs } from '@shared/ui';
-import { AdminTabsList, AdminTabsTrigger } from './AdminTabsList';
 import { Badge } from '@shared/ui';
 import {
   AlertDialog,
@@ -40,9 +35,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, PaginationFooter } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
-import { EmptyState } from '@shared/ui';
+import { EmptyState, useIsMobile } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import ServiceTag from './ServiceTag';
 import CustomerEditDrawer from './CustomerEditDrawer';
@@ -135,6 +130,7 @@ const ReservationsView = ({
   onRequestAllHistory,
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   // Request full history once
   const historyLoadedRef = useRef(false);
@@ -169,10 +165,7 @@ const ReservationsView = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [activeTab, setActiveTab] = useSessionStorageState<TabValue>(
-    'reservations-active-tab',
-    'all',
-  );
+  const activeTab: TabValue = 'all';
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [reservationToReject, setReservationToReject] = useState<Reservation | null>(null);
   const [deleteTrainingDialogOpen, setDeleteTrainingDialogOpen] = useState(false);
@@ -187,19 +180,27 @@ const ReservationsView = ({
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(25);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Sort state
   const [sortField, setSortField] = useState<SortField>('reservation_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  // If trainings got disabled, reset tab
-  useEffect(() => {
-    if (!trainingsEnabled && activeTab === 'trainings') {
-      setActiveTab('all');
-    }
-  }, [trainingsEnabled, activeTab, setActiveTab]);
+  const scrollToTop = useCallback(() => {
+    tableRef.current?.scrollTo({ top: 0 });
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    scrollToTop();
+  }, [scrollToTop]);
+
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+    scrollToTop();
+  }, [scrollToTop]);
 
   const employeeMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -391,16 +392,6 @@ const ReservationsView = ({
   }, [sortedItems, currentPage, pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
-
-  // Counts for tabs
-  const counts = useMemo(
-    () => ({
-      all: reservations.length + trainings.length,
-      reservations: reservations.length,
-      trainings: trainings.length,
-    }),
-    [reservations, trainings],
-  );
 
   const handleRejectClick = (e: React.MouseEvent, reservation: Reservation) => {
     e.stopPropagation();
@@ -661,17 +652,19 @@ const ReservationsView = ({
     );
   };
 
-  const showTabs = trainingsEnabled;
-
   return (
-    <div className="space-y-4 pb-28">
+    <div className={isMobile ? 'space-y-4 pb-28' : 'flex flex-col h-[calc(100vh-80px)]'}>
       {/* Title */}
-      <h1 className="text-2xl font-medium text-foreground">Realizacje</h1>
-      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
+      <div className="shrink-0 pb-4">
+        <h1 className="text-2xl font-medium text-foreground">Realizacje</h1>
+      </div>
+      <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
-      {/* Sticky header on mobile */}
-      <div className="sm:static sticky top-0 z-20 bg-background pb-0 space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {/* Search + status filter */}
+      {/* Search + status filter */}
+      <div className={cn(
+        'shrink-0 pb-4',
+        isMobile && 'sticky top-0 z-20 bg-background -mx-4 px-4'
+      )}>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -705,38 +698,6 @@ const ReservationsView = ({
             </SelectContent>
           </Select>
         </div>
-
-        {/* Tabs - only when trainings enabled */}
-        {showTabs && (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
-            <AdminTabsList columns={3}>
-              <AdminTabsTrigger value="all">
-                {t('common.all')}
-                {counts.all > 0 && (
-                  <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 text-xs">
-                    {counts.all}
-                  </Badge>
-                )}
-              </AdminTabsTrigger>
-              <AdminTabsTrigger value="reservations">
-                {t('reservations.washingAndDetailing')}
-                {counts.reservations > 0 && (
-                  <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 text-xs">
-                    {counts.reservations}
-                  </Badge>
-                )}
-              </AdminTabsTrigger>
-              <AdminTabsTrigger value="trainings">
-                {t('trainings.tabTitle')}
-                {counts.trainings > 0 && (
-                  <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 text-xs">
-                    {counts.trainings}
-                  </Badge>
-                )}
-              </AdminTabsTrigger>
-            </AdminTabsList>
-          </Tabs>
-        )}
       </div>
 
       {/* Content */}
@@ -749,10 +710,10 @@ const ReservationsView = ({
           }
         />
       ) : (
-        <div ref={tableRef}>
+        <div ref={tableRef} className={isMobile ? undefined : 'overflow-auto flex-1 min-h-0 rounded-lg border border-border/50 bg-white'}>
           {/* Desktop table */}
-          <div className="hidden sm:block border border-border/50 rounded-xl overflow-hidden bg-white">
-            <Table>
+          <div className="hidden sm:block">
+            <Table wrapperClassName="overflow-visible">
               <TableHeader>
                 <TableRow>
                   <SortableHeader field="customer_name">Klient</SortableHeader>
@@ -935,46 +896,20 @@ const ReservationsView = ({
             })}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {(currentPage - 1) * pageSize + 1}-
-                {Math.min(currentPage * pageSize, sortedItems.length)} z {sortedItems.length}
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={currentPage === 1}
-                  onClick={() => {
-                    setCurrentPage((p) => p - 1);
-                    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="text-sm px-3 min-w-[60px] text-center">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={currentPage === totalPages}
-                  onClick={() => {
-                    setCurrentPage((p) => p + 1);
-                    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       )}
+
+      <div className="shrink-0">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={sortedItems.length}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          itemLabel="realizacji"
+        />
+      </div>
 
       {/* Reject reservation dialog */}
       <AlertDialog

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ReservationsView from './ReservationsView';
 
@@ -61,12 +60,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useSessionStorageState', () => ({
-  useSessionStorageState: (key: string, initial: unknown) => {
-    const [state, setState] = useState(initial);
-    return [state, setState];
-  },
-}));
 
 // ---- Types ----
 interface Reservation {
@@ -276,8 +269,8 @@ describe('ReservationsView', () => {
       );
       renderView({ reservations });
 
-      // Inline pagination renders "1-20 z 30" (20 per page)
-      expect(screen.getByText(/1-20 z 30/)).toBeInTheDocument();
+      // PaginationFooter renders "1–25 z 30" (25 per page)
+      expect(screen.getByText(/1–25 z 30/)).toBeInTheDocument();
     });
 
     it('hides pagination when all results fit on one page', () => {

@@ -1,15 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Search,
-  Phone,
-  MessageSquare,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  Users,
-} from 'lucide-react';
+import { Search, Phone, MessageSquare, Trash2, Users } from 'lucide-react';
 import { normalizeSearchQuery, normalizePhone, formatPhoneDisplay } from '@shared/utils';
+import { cn } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import {
@@ -21,6 +14,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  PaginationFooter,
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile, EmptyState } from '@shared/ui';
@@ -58,7 +58,7 @@ interface CustomersViewProps {
 type SortField = 'name' | 'phone' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
-const ITEMS_PER_PAGE = 20;
+const DEFAULT_PAGE_SIZE = 25;
 
 const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) => {
   const { t } = useTranslation();
@@ -71,6 +71,8 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
   const [sortField] = useState<SortField>('name');
   const [sortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [smsCustomer, setSmsCustomer] = useState<Customer | null>(null);
   const [isAddMode, setIsAddMode] = useState(false);
@@ -103,10 +105,20 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
     fetchCustomers();
   }, [instanceId]);
 
-  // Get vehicles for a customer by phone (E.164 format in DB)
+  // Pre-compute vehicle lookup map (phone → vehicles[])
+  const vehiclesByPhone = useMemo(() => {
+    const map = new Map<string, CustomerVehicle[]>();
+    for (const v of vehicles) {
+      const existing = map.get(v.phone) || [];
+      existing.push(v);
+      map.set(v.phone, existing);
+    }
+    return map;
+  }, [vehicles]);
+
   const getVehiclesForCustomer = (phone: string) => {
     const normalized = normalizePhone(phone);
-    return vehicles.filter((v) => v.phone === normalized);
+    return vehiclesByPhone.get(normalized) || [];
   };
 
   // Filtered and sorted customers
@@ -155,11 +167,11 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
   }, [customers, searchQuery, sortField, sortDirection, vehicles]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
   const paginatedCustomers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredCustomers.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredCustomers, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, currentPage, pageSize]);
 
   // Reset page when search changes
   useEffect(() => {
@@ -215,6 +227,21 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
     }
   };
 
+  const scrollToTop = useCallback(() => {
+    tableContainerRef.current?.scrollTo({ top: 0 });
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    scrollToTop();
+  }, [scrollToTop]);
+
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+    scrollToTop();
+  }, [scrollToTop]);
+
   if (loading) {
     return (
       <div className="bg-white border border-border/50 p-8 text-center text-muted-foreground rounded-lg">
@@ -223,56 +250,121 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
     );
   }
 
-  const renderCustomerList = () => (
-    <>
-      {/* Customers list */}
-      <div>
-        {paginatedCustomers.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={searchQuery ? t('common.noResults') : t('customers.noCustomers')}
-            description={searchQuery ? undefined : 'Dodaj pierwszego klienta, aby rozpocząć'}
-          />
-        ) : (
-          <div className="grid gap-2">
-            {paginatedCustomers.map((customer) => {
-              const customerVehicles = getVehiclesForCustomer(customer.phone);
-              return (
-                <div
-                  key={customer.id}
-                  onClick={() => {
-                    setIsAddMode(false);
-                    setSelectedCustomer(customer);
-                  }}
-                  className="p-4 flex items-center justify-between gap-4 transition-shadow cursor-pointer bg-white border border-border/50 rounded-lg hover:shadow-md"
-                >
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    {/* Line 1: Name */}
-                    <div className="font-semibold text-sm text-foreground">{customer.name}</div>
-                    {/* Line 2: Phone */}
-                    <div className="text-sm text-muted-foreground">
-                      {formatPhoneDisplay(customer.phone)}
+  const handleCustomerClick = (customer: Customer) => {
+    setIsAddMode(false);
+    setSelectedCustomer(customer);
+  };
+
+  const renderMobileList = () => (
+    <div className="grid gap-2">
+      {paginatedCustomers.map((customer) => {
+        const customerVehicles = getVehiclesForCustomer(customer.phone);
+        return (
+          <div
+            key={customer.id}
+            onClick={() => handleCustomerClick(customer)}
+            className="p-4 flex items-center justify-between gap-4 transition-shadow cursor-pointer bg-white border border-border/50 rounded-lg hover:shadow-md"
+          >
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="font-semibold text-sm text-foreground">{customer.name}</div>
+              <div className="text-sm text-muted-foreground">
+                {formatPhoneDisplay(customer.phone)}
+              </div>
+              {customerVehicles.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  {customerVehicles.slice(0, 3).map((v, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700/90 text-white rounded-full text-xs"
+                    >
+                      {v.model}
+                    </span>
+                  ))}
+                  {customerVehicles.length > 3 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{customerVehicles.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+                onClick={(e) => handleSms(customer, e)}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-hover"
+                onClick={(e) => handleCall(customer.phone, e)}
+              >
+                <Phone className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-hover"
+                onClick={(e) => handleDeleteClick(customer, e)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderDesktopTable = () => (
+    <div ref={tableContainerRef} className="rounded-lg border border-border/50 bg-white overflow-auto flex-1 min-h-0">
+      <Table wrapperClassName="overflow-visible">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-[200px]">Nazwa</TableHead>
+            <TableHead className="w-[140px]">Telefon</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Pojazdy</TableHead>
+            <TableHead className="w-[100px] text-right" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paginatedCustomers.map((customer) => {
+            const customerVehicles = getVehiclesForCustomer(customer.phone);
+            return (
+              <TableRow
+                key={customer.id}
+                className="cursor-pointer"
+                onClick={() => handleCustomerClick(customer)}
+              >
+                <TableCell className="font-medium">{customer.name}</TableCell>
+                <TableCell>{formatPhoneDisplay(customer.phone)}</TableCell>
+                <TableCell>{customer.email || '—'}</TableCell>
+                <TableCell>
+                  {customerVehicles.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {customerVehicles.slice(0, 2).map((v, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2 py-0.5 bg-slate-700/90 text-white rounded-full text-xs"
+                        >
+                          {v.model}
+                        </span>
+                      ))}
+                      {customerVehicles.length > 2 && (
+                        <span className="text-xs text-muted-foreground">
+                          +{customerVehicles.length - 2}
+                        </span>
+                      )}
                     </div>
-                    {/* Line 3: Vehicles */}
-                    {customerVehicles.length > 0 && (
-                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                        {customerVehicles.slice(0, 3).map((v, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700/90 text-white rounded-full text-xs"
-                          >
-                            {v.model}
-                          </span>
-                        ))}
-                        {customerVehicles.length > 3 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{customerVehicles.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -298,61 +390,75 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length)} z{' '}
-            {filteredCustomers.length}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="text-sm px-3 min-w-[60px] text-center">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 
+  const renderCustomerList = () => {
+    if (paginatedCustomers.length === 0) {
+      return (
+        <EmptyState
+          icon={Users}
+          title={searchQuery ? t('common.noResults') : t('customers.noCustomers')}
+          description={searchQuery ? undefined : 'Dodaj pierwszego klienta, aby rozpocząć'}
+        />
+      );
+    }
+
+    if (isMobile) {
+      return (
+        <>
+          {renderMobileList()}
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredCustomers.length}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            itemLabel="klientów"
+          />
+        </>
+      );
+    }
+
+    return (
+      <>
+        {renderDesktopTable()}
+        <div className="shrink-0">
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredCustomers.length}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            itemLabel="klientów"
+          />
+        </div>
+      </>
+    );
+  };
+
   return (
-    <div className="space-y-4 max-w-3xl mx-auto pb-28">
+    <div className={isMobile ? 'space-y-4 pb-28' : 'flex flex-col h-[calc(100vh-80px)]'}>
       {/* Header with title and add button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0 pb-4">
         <h1 className="text-2xl font-medium text-foreground">{t('customers.title')}</h1>
         <Button onClick={handleAddCustomer}>Dodaj klienta</Button>
       </div>
-      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
+      <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
-      {/* Sticky header on mobile */}
-      <div className="sm:static sticky top-0 z-20 bg-background -mx-4 px-4 sm:mx-0 sm:px-0">
-        {/* Search bar - full width */}
+      {/* Search bar */}
+      <div className={cn(
+        'shrink-0 pb-4',
+        isMobile && 'sticky top-0 z-20 bg-background -mx-4 px-4'
+      )}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
