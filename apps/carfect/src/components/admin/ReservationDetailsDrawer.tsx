@@ -69,6 +69,8 @@ import {
   AlertDialogTrigger,
 } from '@shared/ui';
 import type { Reservation, CarSize } from '@/types/reservation';
+import { formatTime, getStatusBadge, getSourceLabel } from '@/lib/reservationDisplay';
+import { triggerReservationPhotoUpload } from '@/lib/reservationPhotoUpload';
 
 export interface HallVisibleFields {
   customer_name: boolean;
@@ -496,97 +498,6 @@ const ReservationDetailsDrawer = ({
     }, 50);
   };
 
-  const getSourceLabel = (source?: string | null, createdByUsername?: string | null) => {
-    if (!source || source === 'admin') {
-      const displayName = createdByUsername || t('reservations.sources.employee');
-      return (
-        <Badge variant="outline" className="text-xs font-normal">
-          {t('reservations.addedBy')}: {displayName}
-        </Badge>
-      );
-    }
-    if (source === 'customer' || source === 'calendar' || source === 'online') {
-      return (
-        <Badge
-          variant="outline"
-          className="text-xs font-normal border-muted-foreground/30 text-muted-foreground"
-        >
-          {t('reservations.addedBy')}: {t('reservations.sources.system')}
-        </Badge>
-      );
-    }
-    if (source === 'booksy') {
-      return (
-        <Badge
-          variant="outline"
-          className="text-xs font-normal border-purple-500/30 text-purple-600"
-        >
-          {t('reservations.addedBy')}: {t('reservations.sources.booksy')}
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="outline" className="text-xs font-normal">
-        {t('reservations.addedBy')}: {source}
-      </Badge>
-    );
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return (
-          <Badge className="bg-success/20 text-success border-success/30">
-            {t('reservations.statuses.confirmed')}
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-warning/20 text-warning border-warning/30">
-            {t('reservations.statuses.pending')}
-          </Badge>
-        );
-      case 'in_progress':
-        return (
-          <Badge className="bg-primary/20 text-primary border-primary/30">
-            {t('reservations.statuses.inProgress')}
-          </Badge>
-        );
-      case 'completed':
-        return (
-          <Badge className="bg-muted text-muted-foreground">
-            {t('reservations.statuses.completed')}
-          </Badge>
-        );
-      case 'released':
-        return (
-          <Badge className="bg-muted text-muted-foreground">
-            {t('reservations.statuses.released')}
-          </Badge>
-        );
-      case 'cancelled':
-        return (
-          <Badge className="bg-destructive/20 text-destructive border-destructive/30">
-            {t('reservations.statuses.cancelled')}
-          </Badge>
-        );
-      case 'no_show':
-        return (
-          <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30">
-            {t('reservations.statuses.noShow')}
-          </Badge>
-        );
-      case 'change_requested':
-        return (
-          <Badge className="bg-orange-200 text-orange-800 border-orange-400">
-            {t('reservations.statuses.changeRequested')}
-          </Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
   const handleEdit = () => {
     if (!reservation || !onEdit) return;
 
@@ -680,10 +591,6 @@ const ReservationDetailsDrawer = ({
 
   if (!reservation) return null;
 
-  const formatTime = (time: string) => {
-    return time?.substring(0, 5) || '';
-  };
-
   return (
     <>
       <Sheet open={open} onOpenChange={onClose} modal={false}>
@@ -714,8 +621,8 @@ const ReservationDetailsDrawer = ({
                   </span>
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-2 mt-2 flex-wrap">
-                  {getStatusBadge(reservation.status)}
-                  {getSourceLabel(reservation.source, reservation.created_by_username)}
+                  {getStatusBadge(reservation.status, t)}
+                  {getSourceLabel(reservation.source, reservation.created_by_username, t)}
                   {!isHallMode && reservation.confirmation_code && (
                     <Badge variant="outline" className="text-xs font-normal font-mono">
                       #{reservation.confirmation_code}
@@ -1291,69 +1198,11 @@ const ReservationDetailsDrawer = ({
                         <DropdownMenuItem
                           onClick={() => {
                             setActionsMenuOpen(false);
-                            // Trigger file input directly instead of opening dialog
-                            const fileInput = document.createElement('input');
-                            fileInput.type = 'file';
-                            fileInput.accept = 'image/*';
-                            fileInput.multiple = true;
-                            fileInput.capture = 'environment';
-                            fileInput.onchange = async (e) => {
-                              const target = e.target as HTMLInputElement;
-                              const files = target.files;
-                              if (!files || files.length === 0 || !reservation) return;
-
-                              const maxPhotos = 8;
-                              const currentPhotos = reservationPhotos || [];
-                              const remainingSlots = maxPhotos - currentPhotos.length;
-
-                              if (remainingSlots <= 0) {
-                                toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
-                                return;
-                              }
-
-                              const filesToUpload = Array.from(files).slice(0, remainingSlots);
-
-                              try {
-                                const uploadedUrls: string[] = [];
-                                const { compressImage } = await import('@/lib/imageUtils');
-
-                                for (const file of filesToUpload) {
-                                  const compressed = await compressImage(file, 1200, 0.8);
-                                  const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-
-                                  const { error: uploadError } = await supabase.storage
-                                    .from('reservation-photos')
-                                    .upload(fileName, compressed, {
-                                      contentType: 'image/jpeg',
-                                      cacheControl: '3600',
-                                    });
-
-                                  if (uploadError) throw uploadError;
-
-                                  const { data: urlData } = supabase.storage
-                                    .from('reservation-photos')
-                                    .getPublicUrl(fileName);
-
-                                  uploadedUrls.push(urlData.publicUrl);
-                                }
-
-                                const newPhotos = [...currentPhotos, ...uploadedUrls];
-
-                                const { error: updateError } = await supabase
-                                  .from('reservations')
-                                  .update({ photo_urls: newPhotos })
-                                  .eq('id', reservation.id);
-
-                                if (updateError) throw updateError;
-
-                                setReservationPhotos(newPhotos);
-                                toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
-                              } catch (error) {
-                                console.error('Error uploading photos:', error);
-                                toast.error('Błąd podczas przesyłania zdjęć');
-                              }
-                            };
-                            fileInput.click();
+                            triggerReservationPhotoUpload({
+                              reservationId: reservation.id,
+                              currentPhotos: reservationPhotos,
+                              onPhotosUpdated: setReservationPhotos,
+                            });
                           }}
                         >
                           <Camera className="w-4 h-4 mr-2" />
@@ -1517,69 +1366,11 @@ const ReservationDetailsDrawer = ({
                     >
                       <DropdownMenuItem
                         onClick={() => {
-                          // Trigger file input directly instead of opening dialog
-                          const fileInput = document.createElement('input');
-                          fileInput.type = 'file';
-                          fileInput.accept = 'image/*';
-                          fileInput.multiple = true;
-                          fileInput.capture = 'environment';
-                          fileInput.onchange = async (e) => {
-                            const target = e.target as HTMLInputElement;
-                            const files = target.files;
-                            if (!files || files.length === 0 || !reservation) return;
-
-                            const maxPhotos = 8;
-                            const currentPhotos = reservationPhotos || [];
-                            const remainingSlots = maxPhotos - currentPhotos.length;
-
-                            if (remainingSlots <= 0) {
-                              toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
-                              return;
-                            }
-
-                            const filesToUpload = Array.from(files).slice(0, remainingSlots);
-
-                            try {
-                              const uploadedUrls: string[] = [];
-                              const { compressImage } = await import('@/lib/imageUtils');
-
-                              for (const file of filesToUpload) {
-                                const compressed = await compressImage(file, 1200, 0.8);
-                                const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-
-                                const { error: uploadError } = await supabase.storage
-                                  .from('reservation-photos')
-                                  .upload(fileName, compressed, {
-                                    contentType: 'image/jpeg',
-                                    cacheControl: '3600',
-                                  });
-
-                                if (uploadError) throw uploadError;
-
-                                const { data: urlData } = supabase.storage
-                                  .from('reservation-photos')
-                                  .getPublicUrl(fileName);
-
-                                uploadedUrls.push(urlData.publicUrl);
-                              }
-
-                              const newPhotos = [...currentPhotos, ...uploadedUrls];
-
-                              const { error: updateError } = await supabase
-                                .from('reservations')
-                                .update({ photo_urls: newPhotos })
-                                .eq('id', reservation.id);
-
-                              if (updateError) throw updateError;
-
-                              setReservationPhotos(newPhotos);
-                              toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
-                            } catch (error) {
-                              console.error('Error uploading photos:', error);
-                              toast.error('Błąd podczas przesyłania zdjęć');
-                            }
-                          };
-                          fileInput.click();
+                          triggerReservationPhotoUpload({
+                            reservationId: reservation.id,
+                            currentPhotos: reservationPhotos,
+                            onPhotosUpdated: setReservationPhotos,
+                          });
                         }}
                       >
                         <Camera className="w-4 h-4 mr-2" />
