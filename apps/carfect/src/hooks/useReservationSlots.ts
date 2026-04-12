@@ -57,6 +57,9 @@ export function useReservationSlots({
   totalDurationMinutes,
   onSlotPreviewChange,
 }: UseReservationSlotsOptions): UseReservationSlotsReturn {
+  // Stable ref for callback to avoid infinite re-render loops
+  const onSlotPreviewChangeRef = useRef(onSlotPreviewChange);
+  onSlotPreviewChangeRef.current = onSlotPreviewChange;
   const [slots, setSlots] = useState<ReservationSlot[]>([
     {
       id: crypto.randomUUID(),
@@ -166,20 +169,21 @@ export function useReservationSlots({
 
   // Emit slot preview for calendar highlighting (create mode only)
   useEffect(() => {
-    if (!open || !isReservationMode || !onSlotPreviewChange || isEditMode) {
-      onSlotPreviewChange?.(null);
+    const cb = onSlotPreviewChangeRef.current;
+    if (!open || !isReservationMode || !cb || isEditMode) {
+      cb?.(null);
       return;
     }
 
     if (manualStartTime && manualEndTime && manualStationId && dateRange?.from) {
-      onSlotPreviewChange({
+      cb({
         date: format(dateRange.from, 'yyyy-MM-dd'),
         startTime: manualStartTime,
         endTime: manualEndTime,
         stationId: manualStationId,
       });
     } else {
-      onSlotPreviewChange(null);
+      cb(null);
     }
   }, [
     open,
@@ -189,7 +193,6 @@ export function useReservationSlots({
     manualStartTime,
     manualEndTime,
     manualStationId,
-    onSlotPreviewChange,
   ]);
 
   return {
