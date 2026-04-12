@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SmsUsageCard } from './SmsUsageCard';
+import { POLISH_MONTH_NAMES } from '@/lib/polishDateUtils';
 
 interface SmsLogEntry {
   phone: string;
@@ -55,20 +56,7 @@ const HIDDEN_SMS_TYPES: SmsMessageType[] = [
   'reservation_edited',
 ];
 
-const MONTH_NAMES_PL = [
-  'Styczeń',
-  'Luty',
-  'Marzec',
-  'Kwiecień',
-  'Maj',
-  'Czerwiec',
-  'Lipiec',
-  'Sierpień',
-  'Wrzesień',
-  'Październik',
-  'Listopad',
-  'Grudzień',
-];
+const MONTH_NAMES_PL = POLISH_MONTH_NAMES;
 
 const MESSAGE_TYPE_LABELS: Record<string, string> = {
   verification_code: 'Kod',

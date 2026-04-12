@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, startOfWeek, subWeeks, addDays, parseISO } from 'date-fns';
 import type { ServiceMapEntry } from '@/hooks/useServiceDictionary';
 import type { Reservation, ServiceItem } from '@/types/reservation';
+import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
 
 export type { Reservation, ServiceItem };
 
@@ -95,90 +96,16 @@ async function fetchReservationsForRange(
 
   // Map reservation data
   return data.map((r) => {
-    const serviceItems = r.service_items as unknown as ServiceItem[] | null;
-    const serviceIds = r.service_ids as string[] | null;
-
-    let servicesDataMapped: Array<{
-      id?: string;
-      name: string;
-      shortcut?: string | null;
-      price_small?: number | null;
-      price_medium?: number | null;
-      price_large?: number | null;
-      price_from?: number | null;
-    }> = [];
-
-    // Priority: service_ids + service_items for metadata
-    if (serviceIds && serviceIds.length > 0) {
-      const itemsById = new Map<string, ServiceItem>();
-      if (serviceItems) {
-        serviceItems.forEach((item) => {
-          const key = item.id || item.service_id;
-          if (key) itemsById.set(key, item);
-        });
-      }
-
-      servicesDataMapped = serviceIds.map((id) => {
-        const item = itemsById.get(id);
-        const svc = servicesMap.get(id);
-
-        return {
-          id,
-          name: item?.name ?? svc?.name ?? 'Usługa',
-          shortcut: item?.short_name ?? svc?.shortcut ?? null,
-          price_small: item?.price_small ?? svc?.price_small ?? null,
-          price_medium: item?.price_medium ?? svc?.price_medium ?? null,
-          price_large: item?.price_large ?? svc?.price_large ?? null,
-          price_from: item?.price_from ?? svc?.price_from ?? null,
-        };
-      });
-    } else if (serviceItems && serviceItems.length > 0) {
-      const seen = new Set<string>();
-      servicesDataMapped = serviceItems
-        .map((item) => {
-          const resolvedId = item.id || item.service_id;
-          const svc = resolvedId ? servicesMap.get(resolvedId) : undefined;
-          return {
-            id: resolvedId,
-            name: item.name ?? svc?.name ?? 'Usługa',
-            shortcut: item.short_name ?? svc?.shortcut ?? null,
-            price_small: item.price_small ?? svc?.price_small ?? null,
-            price_medium: item.price_medium ?? svc?.price_medium ?? null,
-            price_large: item.price_large ?? svc?.price_large ?? null,
-            price_from: item.price_from ?? svc?.price_from ?? null,
-          };
-        })
-        .filter((svc) => {
-          if (!svc.id) return false;
-          if (seen.has(svc.id)) return false;
-          seen.add(svc.id);
-          return true;
-        });
-    }
+    const mapped = mapRawReservation(r as RawReservation, servicesMap as ServicesMap);
 
     const originalReservation = r.original_reservation_id
       ? originalReservationsMap.get(r.original_reservation_id)
       : null;
 
     return {
-      ...r,
-      status: r.status || 'pending',
-      service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
-      service_items: Array.isArray(r.service_items)
-        ? (r.service_items as unknown as ServiceItem[])
-        : undefined,
-      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-      station: r.stations
-        ? {
-            name: r.stations.name,
-            type: r.stations.type,
-          }
-        : undefined,
+      ...mapped,
       original_reservation: originalReservation || null,
-      created_by_username: r.created_by_username || null,
-      has_unified_services: r.has_unified_services ?? null,
-      checked_service_ids: Array.isArray(r.checked_service_ids) ? r.checked_service_ids : undefined,
-    } as Reservation;
+    };
   });
 }
 

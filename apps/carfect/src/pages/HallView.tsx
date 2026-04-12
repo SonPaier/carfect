@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { normalizePhone } from '@shared/utils';
 import { compressImage } from '@shared/utils';
 import type { Reservation } from '@/types/reservation';
+import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
 interface Station {
   id: string;
   name: string;
@@ -646,78 +647,9 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         const svcMap = buildServicesMapFromDictionary(serviceDictMap);
 
         setReservations(
-          reservationsData.map((r) => {
-            // Map services_data using same logic as realtime
-            const serviceItems = r.service_items as unknown as Array<{
-              service_id: string;
-              custom_price: number | null;
-              name?: string;
-              id?: string;
-              short_name?: string;
-            }> | null;
-            const serviceIds = r.service_ids as string[] | null;
-
-            let servicesDataMapped: Array<{ id?: string; name: string; shortcut?: string | null }> =
-              [];
-
-            if (serviceIds && serviceIds.length > 0) {
-              const itemsById = new Map<string, any>();
-              (serviceItems || []).forEach((item) => {
-                const resolvedId = item.id || item.service_id;
-                if (resolvedId) itemsById.set(resolvedId, item);
-              });
-
-              servicesDataMapped = serviceIds.map((id) => {
-                const item = itemsById.get(id);
-                const svc = svcMap.get(id);
-                return {
-                  id,
-                  name: item?.name ?? svc?.name ?? 'Usługa',
-                  shortcut: item?.short_name ?? svc?.shortcut ?? null,
-                };
-              });
-            } else if (serviceItems && serviceItems.length > 0) {
-              const seen = new Set<string>();
-              servicesDataMapped = serviceItems
-                .map((item) => {
-                  const resolvedId = item.id || item.service_id;
-                  const svc = resolvedId ? svcMap.get(resolvedId) : undefined;
-                  return {
-                    id: resolvedId,
-                    name: item.name ?? svc?.name ?? 'Usługa',
-                    shortcut: item.short_name ?? svc?.shortcut ?? null,
-                  };
-                })
-                .filter((svc) => {
-                  if (!svc.id) return false;
-                  if (seen.has(svc.id)) return false;
-                  seen.add(svc.id);
-                  return true;
-                });
-            }
-
-            return {
-              ...r,
-              status: r.status || 'pending',
-              service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
-              service_items: Array.isArray(r.service_items)
-                ? (r.service_items as unknown as Array<{
-                    service_id: string;
-                    custom_price: number | null;
-                  }>)
-                : undefined,
-              services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-              service: undefined,
-              station: r.stations
-                ? { name: (r.stations as any).name, type: (r.stations as any).type }
-                : undefined,
-              has_unified_services: r.has_unified_services,
-              admin_notes: r.admin_notes,
-              checked_service_ids: Array.isArray(r.checked_service_ids)
-                ? (r.checked_service_ids as string[])
-                : null,
-            };
-          }),
+          reservationsData.map((r) =>
+            mapRawReservation(r as RawReservation, svcMap as ServicesMap, { includePrices: false }),
+          ),
         );
       }
 
@@ -850,81 +782,8 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     let currentChannel: ReturnType<typeof supabase.channel> | null = null;
     let isCleanedUp = false;
 
-    // Map helper for reservations - SAME LOGIC AS AdminDashboard
-    const mapReservationData = (data: any): Reservation => {
-      // Primary source: service_items JSONB (already contains names)
-      const serviceItems = data.service_items as unknown as Array<{
-        service_id: string;
-        custom_price: number | null;
-        name?: string;
-        id?: string;
-        short_name?: string;
-      }> | null;
-      const serviceIds = data.service_ids as string[] | null;
-
-      let servicesDataMapped: Array<{ id?: string; name: string; shortcut?: string | null }> = [];
-
-      // Canonical list of selected services is `service_ids`
-      if (serviceIds && serviceIds.length > 0) {
-        const itemsById = new Map<string, any>();
-        (serviceItems || []).forEach((item) => {
-          const resolvedId = item.id || item.service_id;
-          if (resolvedId) itemsById.set(resolvedId, item);
-        });
-
-        servicesDataMapped = serviceIds.map((id) => {
-          const item = itemsById.get(id);
-          const svc = servicesMapRef.current.get(id);
-
-          return {
-            id,
-            name: item?.name ?? svc?.name ?? 'Usługa',
-            shortcut: item?.short_name ?? svc?.shortcut ?? null,
-          };
-        });
-      } else if (serviceItems && serviceItems.length > 0) {
-        // Fallback: no service_ids, use service_items directly
-        const seen = new Set<string>();
-        servicesDataMapped = serviceItems
-          .map((item) => {
-            const resolvedId = item.id || item.service_id;
-            const svc = resolvedId ? servicesMapRef.current.get(resolvedId) : undefined;
-            return {
-              id: resolvedId,
-              name: item.name ?? svc?.name ?? 'Usługa',
-              shortcut: item.short_name ?? svc?.shortcut ?? null,
-            };
-          })
-          .filter((svc) => {
-            if (!svc.id) return false;
-            if (seen.has(svc.id)) return false;
-            seen.add(svc.id);
-            return true;
-          });
-      }
-
-      return {
-        ...data,
-        status: data.status || 'pending',
-        service_ids: Array.isArray(data.service_ids) ? (data.service_ids as string[]) : undefined,
-        service_items: Array.isArray(data.service_items)
-          ? (data.service_items as unknown as Array<{
-              service_id: string;
-              custom_price: number | null;
-            }>)
-          : undefined,
-        services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-        service: undefined,
-        station: data.stations
-          ? { name: (data.stations as any).name, type: (data.stations as any).type }
-          : undefined,
-        has_unified_services: data.has_unified_services,
-        admin_notes: data.admin_notes,
-        checked_service_ids: Array.isArray(data.checked_service_ids)
-          ? (data.checked_service_ids as string[])
-          : null,
-      };
-    };
+    const mapReservationData = (data: any): Reservation =>
+      mapRawReservation(data as RawReservation, servicesMapRef.current as ServicesMap, { includePrices: false });
 
     const syncTrainings = async () => {
       if (!trainingsEnabled) return;
