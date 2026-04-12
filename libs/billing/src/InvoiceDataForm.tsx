@@ -152,20 +152,19 @@ export function InvoiceDataForm({ initialData, onSave, gusLookup, labels: labels
             )}
           </div>
 
-          <div className="grid grid-cols-[auto_1fr] gap-4">
-            <div className="space-y-1">
+          <div className="flex gap-4">
+            <div className="space-y-1 w-36 shrink-0">
               <Label htmlFor="billing_postal_code">{labels.postalCode} *</Label>
               <Input
                 id="billing_postal_code"
                 {...register('billing_postal_code')}
                 placeholder="00-000"
-                className="w-32"
               />
               {errors.billing_postal_code && (
                 <p className="text-sm text-destructive">{errors.billing_postal_code.message}</p>
               )}
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1">
               <Label htmlFor="billing_city">{labels.city} *</Label>
               <Input
                 id="billing_city"
