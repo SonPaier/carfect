@@ -44,11 +44,11 @@ describe('InvoiceDataForm', () => {
       />,
     );
 
-    expect(screen.getByLabelText('NIP')).toBeInTheDocument();
-    expect(screen.getByLabelText('Nazwa firmy')).toBeInTheDocument();
-    expect(screen.getByLabelText('Ulica')).toBeInTheDocument();
-    expect(screen.getByLabelText('Kod pocztowy')).toBeInTheDocument();
-    expect(screen.getByLabelText('Miasto')).toBeInTheDocument();
+    expect(screen.getByLabelText('NIP *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nazwa firmy *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Ulica *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Kod pocztowy *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Miasto *')).toBeInTheDocument();
   });
 
   it('renders card heading', () => {
@@ -106,10 +106,10 @@ describe('InvoiceDataForm', () => {
     await user.click(screen.getByRole('button', { name: /Pobierz z GUS/ }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Nazwa firmy')).toHaveValue(mockGusResult.name);
-      expect(screen.getByLabelText('Ulica')).toHaveValue(mockGusResult.street);
-      expect(screen.getByLabelText('Kod pocztowy')).toHaveValue(mockGusResult.postalCode);
-      expect(screen.getByLabelText('Miasto')).toHaveValue(mockGusResult.city);
+      expect(screen.getByLabelText('Nazwa firmy *')).toHaveValue(mockGusResult.name);
+      expect(screen.getByLabelText('Ulica *')).toHaveValue(mockGusResult.street);
+      expect(screen.getByLabelText('Kod pocztowy *')).toHaveValue(mockGusResult.postalCode);
+      expect(screen.getByLabelText('Miasto *')).toHaveValue(mockGusResult.city);
     });
   });
 
@@ -141,13 +141,15 @@ describe('InvoiceDataForm', () => {
     await user.click(screen.getByRole('button', { name: /Zapisz dane do faktury/ }));
 
     await waitFor(() => {
-      expect(onSave).toHaveBeenCalledWith({
-        billing_nip: '1234567890',
-        billing_name: 'Test Company Sp. z o.o.',
-        billing_street: 'ul. Testowa 1',
-        billing_postal_code: '00-001',
-        billing_city: 'Warszawa',
-      });
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          billing_nip: '1234567890',
+          billing_name: 'Test Company Sp. z o.o.',
+          billing_street: 'ul. Testowa 1',
+          billing_postal_code: '00-001',
+          billing_city: 'Warszawa',
+        }),
+      );
     });
   });
 
@@ -163,7 +165,7 @@ describe('InvoiceDataForm', () => {
       />,
     );
 
-    const nipInput = screen.getByLabelText('NIP');
+    const nipInput = screen.getByLabelText('NIP *');
     await user.type(nipInput, '123');
 
     await user.click(screen.getByRole('button', { name: /Zapisz dane do faktury/ }));
@@ -175,9 +177,9 @@ describe('InvoiceDataForm', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('accepts empty NIP without validation error', async () => {
+  it('shows required field errors when submitting empty form', async () => {
     const user = userEvent.setup();
-    const onSave = vi.fn().mockResolvedValue(undefined);
+    const onSave = vi.fn();
 
     render(
       <InvoiceDataForm
@@ -190,15 +192,13 @@ describe('InvoiceDataForm', () => {
     await user.click(screen.getByRole('button', { name: /Zapisz dane do faktury/ }));
 
     await waitFor(() => {
-      expect(onSave).toHaveBeenCalledWith({
-        billing_nip: null,
-        billing_name: null,
-        billing_street: null,
-        billing_postal_code: null,
-        billing_city: null,
-      });
+      expect(screen.getByText('NIP jest wymagany')).toBeInTheDocument();
+      expect(screen.getByText('Nazwa firmy jest wymagana')).toBeInTheDocument();
+      expect(screen.getByText('Ulica jest wymagana')).toBeInTheDocument();
+      expect(screen.getByText('Kod pocztowy jest wymagany')).toBeInTheDocument();
+      expect(screen.getByText('Miasto jest wymagane')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('NIP musi mieć 10 cyfr')).not.toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
   });
 });

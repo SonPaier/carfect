@@ -5,10 +5,6 @@ import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
 } from '@shared/ui';
@@ -17,18 +13,15 @@ import type { BillingData } from './billing.types';
 const invoiceSchema = z.object({
   billing_nip: z
     .string()
-    .optional()
+    .min(1, 'NIP jest wymagany')
     .refine(
-      (val) => {
-        if (!val || val.trim() === '') return true;
-        return val.replace(/[^0-9]/g, '').length === 10;
-      },
+      (val) => val.replace(/[^0-9]/g, '').length === 10,
       { message: 'NIP musi mieć 10 cyfr' },
     ),
-  billing_name: z.string().optional(),
-  billing_street: z.string().optional(),
-  billing_postal_code: z.string().optional(),
-  billing_city: z.string().optional(),
+  billing_name: z.string().min(1, 'Nazwa firmy jest wymagana'),
+  billing_street: z.string().min(1, 'Ulica jest wymagana'),
+  billing_postal_code: z.string().min(1, 'Kod pocztowy jest wymagany'),
+  billing_city: z.string().min(1, 'Miasto jest wymagane'),
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
@@ -38,13 +31,37 @@ interface GusLookup {
   loading: boolean;
 }
 
+export interface InvoiceDataFormLabels {
+  title: string;
+  nip: string;
+  companyName: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  gusButton: string;
+  saveButton: string;
+}
+
+const DEFAULT_LABELS: InvoiceDataFormLabels = {
+  title: 'Dane do faktury',
+  nip: 'NIP',
+  companyName: 'Nazwa firmy',
+  street: 'Ulica',
+  postalCode: 'Kod pocztowy',
+  city: 'Miasto',
+  gusButton: 'Pobierz z GUS',
+  saveButton: 'Zapisz dane do faktury',
+};
+
 interface InvoiceDataFormProps {
   initialData: BillingData;
   onSave: (data: BillingData) => Promise<void>;
   gusLookup: GusLookup;
+  labels?: Partial<InvoiceDataFormLabels>;
 }
 
-export function InvoiceDataForm({ initialData, onSave, gusLookup }: InvoiceDataFormProps) {
+export function InvoiceDataForm({ initialData, onSave, gusLookup, labels: labelsProp }: InvoiceDataFormProps) {
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const [saving, setSaving] = useState(false);
 
   const {
@@ -68,37 +85,28 @@ export function InvoiceDataForm({ initialData, onSave, gusLookup }: InvoiceDataF
     const nip = getValues('billing_nip') ?? '';
     const result = await gusLookup.lookupNip(nip);
     if (result) {
-      setValue('billing_name', result.name);
-      setValue('billing_street', result.street);
-      setValue('billing_postal_code', result.postalCode);
-      setValue('billing_city', result.city);
+      setValue('billing_name', result.name, { shouldValidate: true });
+      setValue('billing_street', result.street, { shouldValidate: true });
+      setValue('billing_postal_code', result.postalCode, { shouldValidate: true });
+      setValue('billing_city', result.city, { shouldValidate: true });
     }
   };
 
   const onSubmit = async (values: InvoiceFormValues) => {
     setSaving(true);
     try {
-      await onSave({
-        billing_nip: values.billing_nip || null,
-        billing_name: values.billing_name || null,
-        billing_street: values.billing_street || null,
-        billing_postal_code: values.billing_postal_code || null,
-        billing_city: values.billing_city || null,
-      });
+      await onSave(values);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Dane do faktury</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div>
+      <h4 className="text-base font-semibold mb-4">{labels.title}</h4>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="billing_nip">NIP</Label>
+            <Label htmlFor="billing_nip">{labels.nip} *</Label>
             <div className="flex gap-2">
               <Input
                 id="billing_nip"
@@ -114,7 +122,7 @@ export function InvoiceDataForm({ initialData, onSave, gusLookup }: InvoiceDataF
                 {gusLookup.loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : null}
-                Pobierz z GUS
+                {labels.gusButton}
               </Button>
             </div>
             {errors.billing_nip && (
@@ -123,44 +131,59 @@ export function InvoiceDataForm({ initialData, onSave, gusLookup }: InvoiceDataF
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="billing_name">Nazwa firmy</Label>
+            <Label htmlFor="billing_name">{labels.companyName} *</Label>
             <Input
               id="billing_name"
               {...register('billing_name')}
             />
+            {errors.billing_name && (
+              <p className="text-sm text-destructive">{errors.billing_name.message}</p>
+            )}
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="billing_street">Ulica</Label>
+            <Label htmlFor="billing_street">{labels.street} *</Label>
             <Input
               id="billing_street"
               {...register('billing_street')}
             />
+            {errors.billing_street && (
+              <p className="text-sm text-destructive">{errors.billing_street.message}</p>
+            )}
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="billing_postal_code">Kod pocztowy</Label>
-            <Input
-              id="billing_postal_code"
-              {...register('billing_postal_code')}
-              placeholder="00-000"
-            />
+          <div className="grid grid-cols-[auto_1fr] gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="billing_postal_code">{labels.postalCode} *</Label>
+              <Input
+                id="billing_postal_code"
+                {...register('billing_postal_code')}
+                placeholder="00-000"
+                className="w-32"
+              />
+              {errors.billing_postal_code && (
+                <p className="text-sm text-destructive">{errors.billing_postal_code.message}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="billing_city">{labels.city} *</Label>
+              <Input
+                id="billing_city"
+                {...register('billing_city')}
+              />
+              {errors.billing_city && (
+                <p className="text-sm text-destructive">{errors.billing_city.message}</p>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="billing_city">Miasto</Label>
-            <Input
-              id="billing_city"
-              {...register('billing_city')}
-            />
+          <div className="flex justify-end">
+            <Button type="submit" disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {labels.saveButton}
+            </Button>
           </div>
-
-          <Button type="submit" disabled={saving} className="w-full">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Zapisz dane do faktury
-          </Button>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

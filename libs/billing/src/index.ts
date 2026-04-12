@@ -3,3 +3,8 @@ export { SubscriptionSummaryCard } from './SubscriptionSummaryCard';
 export { TrialBanner } from './TrialBanner';
 export { BillingHistoryTable } from './BillingHistoryTable';
 export { InvoiceDataForm } from './InvoiceDataForm';
+export type { InvoiceDataFormLabels } from './InvoiceDataForm';
+export { SubscriptionSettingsTabContent } from './SubscriptionSettingsTabContent';
+export type { SubscriptionSettingsLabels } from './SubscriptionSettingsTabContent';
+export { useSubscriptionInvoices } from './hooks/useSubscriptionInvoices';
+export { useBillingData } from './hooks/useBillingData';

@@ -1,3 +1,6 @@
+// Canonical SMS overage price — must match SMS_OVERAGE_PRICE in billing-cron/helpers.ts
+export const SMS_OVERAGE_PRICE = 0.12;
+
 export type SubscriptionStatus = 'active' | 'inactive';
 export type PaymentStatus = 'pending' | 'paid' | 'overdue';
 
