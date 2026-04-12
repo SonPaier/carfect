@@ -29,6 +29,17 @@ import { compressImage } from '@shared/utils';
 import type { Reservation } from '@/types/reservation';
 import { mapRawReservation, type ServicesMap, type RawReservation, type ServicesMapEntry } from '@/lib/reservationMapping';
 import { useReservationsRealtime } from '@/hooks/useReservationsRealtime';
+const HALL_RESERVATION_SELECT = `
+  id, instance_id, customer_name, customer_phone, vehicle_plate,
+  reservation_date, end_date, start_time, end_time, station_id,
+  status, confirmation_code, price, price_netto, customer_notes, admin_notes,
+  source, car_size, service_ids, service_items, assigned_employee_ids,
+  created_by, created_by_username, offer_number,
+  confirmation_sms_sent_at, pickup_sms_sent_at,
+  has_unified_services, photo_urls, checked_service_ids,
+  stations:station_id (name, type)
+`;
+
 interface Station {
   id: string;
   name: string;
@@ -44,6 +55,50 @@ interface Break {
   start_time: string;
   end_time: string;
   note: string | null;
+}
+
+function buildServicesData(
+  reservation: Pick<Reservation, 'service_ids' | 'service_items'>,
+  servicesMap: Map<string, string>,
+): Array<{ id: string; name: string }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const serviceItems = reservation.service_items as any[] | undefined;
+  const serviceIds = reservation.service_ids;
+
+  if (serviceIds && serviceIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const itemsById = new Map<string, any>();
+    (serviceItems || []).forEach((item) => {
+      const id = item.id || item.service_id;
+      if (id) itemsById.set(id, item);
+    });
+
+    return serviceIds.map((id) => {
+      const item = itemsById.get(id);
+      const globalName = servicesMap.get(id);
+      return {
+        id,
+        name: item?.name ?? globalName ?? 'Usługa',
+      };
+    });
+  }
+
+  if (serviceItems && serviceItems.length > 0) {
+    const seen = new Set<string>();
+    return serviceItems
+      .filter((item) => {
+        const id = item.id || item.service_id;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .map((item) => ({
+        id: item.id || item.service_id,
+        name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
+      }));
+  }
+
+  return [];
 }
 
 interface HallViewProps {
@@ -114,7 +169,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Check if user has hall role (kiosk mode)
   const hasHallRole = roles.some((r) => r.role === 'hall');
   const hasAdminOrEmployeeRole = roles.some((r) => r.role === 'admin' || r.role === 'employee');
-  const effectiveKioskMode = isKioskMode || hasHallRole;
 
   // Check if we're on /admin/... path
   const isAdminPath = location.pathname.startsWith('/admin');
@@ -126,17 +180,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Combined features (includes plan + instance features)
   const { hasFeature: hasCombinedFeature } = useCombinedFeatures(instanceId);
   const trainingsEnabled = hasCombinedFeature('trainings');
-
-  // Handle navigation based on role
-  const handleCalendarNavigation = () => {
-    if (hasHallRole && !hasAdminOrEmployeeRole) {
-      // Hall role stays on current hall view
-      navigate(isAdminPath ? `/admin/halls/${hallId || '1'}` : `/halls/${hallId || '1'}`);
-    } else {
-      // Admin/employee goes to main calendar
-      navigate(isAdminPath ? '/admin' : '/admin');
-    }
-  };
 
   const handleProtocolsNavigation = () => {
     setShowProtocolsList(true);
@@ -151,10 +194,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   const handleCalendarFromSidebar = () => {
     setShowProtocolsList(false);
     setShowWorkersList(false);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
   };
 
   // Helper to find customer email for protocol
@@ -613,38 +652,13 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       // Fetch reservations
       const { data: reservationsData } = await supabase
         .from('reservations')
-        .select(
-          `
-          id,
-          instance_id,
-          customer_name,
-          customer_phone,
-          vehicle_plate,
-          reservation_date,
-          end_date,
-          start_time,
-          end_time,
-          station_id,
-          status,
-          confirmation_code,
-          price,
-          price_netto,
-          service_ids,
-          service_items,
-          has_unified_services,
-          admin_notes,
-          photo_urls,
-          checked_service_ids,
-          assigned_employee_ids,
-          stations:station_id (name, type)
-        `,
-        )
+        .select(HALL_RESERVATION_SELECT)
         .eq('instance_id', instanceId)
         .range(0, 4999);
 
       if (reservationsData) {
-        // Build services map from central dictionary
-        const svcMap = buildServicesMapFromDictionary(serviceDictMap);
+        // Use the synced services map ref (kept current by separate effect)
+        const svcMap = servicesMapRef.current as ServicesMap;
 
         setReservations(
           reservationsData.map((r) =>
@@ -747,40 +761,14 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     if (!instanceId) return;
     const { data: reservationsData } = await supabase
       .from('reservations')
-      .select(
-        `
-        id,
-        instance_id,
-        customer_name,
-        customer_phone,
-        vehicle_plate,
-        reservation_date,
-        end_date,
-        start_time,
-        end_time,
-        station_id,
-        status,
-        confirmation_code,
-        price,
-        price_netto,
-        service_ids,
-        service_items,
-        has_unified_services,
-        admin_notes,
-        photo_urls,
-        checked_service_ids,
-        assigned_employee_ids,
-        stations:station_id (name, type)
-      `,
-      )
+      .select(HALL_RESERVATION_SELECT)
       .eq('instance_id', instanceId)
       .range(0, 4999);
 
     if (reservationsData) {
-      const svcMap = buildServicesMapFromDictionary(serviceDictMap);
       setReservations(
         reservationsData.map((r) =>
-          mapRawReservation(r as RawReservation, svcMap as ServicesMap, { includePrices: false }),
+          mapRawReservation(r as RawReservation, servicesMapRef.current as ServicesMap, { includePrices: false }),
         ),
       );
     }
@@ -870,18 +858,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     setSelectedReservation((prev) =>
       prev?.id === reservationId ? { ...prev, status: newStatus } : prev,
     );
-  };
-
-  const handleDeleteReservation = async (reservationId: string) => {
-    await supabase.from('reservations').delete().eq('id', reservationId);
-    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
-    setSelectedReservation(null);
-    toast.success(t('reservations.deleted'));
-  };
-
-  const handleEditReservation = (reservation: Reservation) => {
-    setSelectedReservation(null);
-    setEditingReservation(reservation);
   };
 
   // Send pickup SMS handler for hall view
@@ -1031,30 +1007,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     // Refresh reservations after edit
     const { data: reservationsData } = await supabase
       .from('reservations')
-      .select(
-        `
-        id,
-        instance_id,
-        customer_name,
-        customer_phone,
-        vehicle_plate,
-        reservation_date,
-        end_date,
-        start_time,
-        end_time,
-        station_id,
-        status,
-        confirmation_code,
-        price,
-        service_ids,
-        service_items,
-        has_unified_services,
-        admin_notes,
-        photo_urls,
-        checked_service_ids,
-        stations:station_id (name, type)
-      `,
-      )
+      .select(HALL_RESERVATION_SELECT)
       .eq('instance_id', instanceId);
 
     if (reservationsData) {
@@ -1146,7 +1099,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-center px-2 text-muted-foreground hover:text-foreground"
-                  onClick={handleLogout}
+                  onClick={() => void signOut()}
                   title={t('auth.logout')}
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
@@ -1213,7 +1166,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-center px-2 text-muted-foreground hover:text-foreground"
-                  onClick={handleLogout}
+                  onClick={() => void signOut()}
                   title={t('auth.logout')}
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
@@ -1283,7 +1236,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
               <Button
                 variant="ghost"
                 className="w-full justify-center px-2 text-muted-foreground hover:text-foreground"
-                onClick={handleLogout}
+                onClick={() => void signOut()}
                 title={t('auth.logout')}
               >
                 <LogOut className="w-4 h-4 shrink-0" />
@@ -1300,7 +1253,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
             breaks={breaks}
             workingHours={workingHours}
             onReservationClick={handleReservationClick}
-            allowedViews={['day', 'two-days']}
+            allowedViews={['day']}
             readOnly={true}
             showStationFilter={false}
             showWeekView={false}
