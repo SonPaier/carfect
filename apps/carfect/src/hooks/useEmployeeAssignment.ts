@@ -17,10 +17,12 @@ export function useEmployeeAssignment({
   const [savingEmployees, setSavingEmployees] = useState(false);
   const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
 
-  // Sync from reservation prop
+  // Sync from reservation prop — compare by value to avoid infinite loop
+  const initialIdsKey = initialEmployeeIds.join(',');
   useEffect(() => {
     setLocalAssignedEmployeeIds(initialEmployeeIds);
-  }, [initialEmployeeIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilized via initialIdsKey
+  }, [initialIdsKey]);
 
   const handleEmployeeSelect = useCallback(
     async (employeeIds: string[]) => {
