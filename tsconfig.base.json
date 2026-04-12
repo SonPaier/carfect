@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@shared/billing": ["libs/billing/src/index.ts"],
+      "@shared/billing/*": ["libs/billing/src/*"]
+    },
     "allowJs": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
