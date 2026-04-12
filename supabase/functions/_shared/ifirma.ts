@@ -1,6 +1,8 @@
 export async function ifirmaHmac(hexKey: string, message: string): Promise<string> {
-  const matches = hexKey.match(/.{1,2}/g);
-  if (!matches) throw new Error('IFIRMA_API_KEY is not valid hex');
+  if (!hexKey || !/^[0-9A-Fa-f]+$/.test(hexKey)) {
+    throw new Error('IFIRMA_API_KEY is not valid hex');
+  }
+  const matches = hexKey.match(/.{1,2}/g)!;
   const keyData = new Uint8Array(matches.map((b) => parseInt(b, 16)));
   const msgData = new TextEncoder().encode(message);
 
