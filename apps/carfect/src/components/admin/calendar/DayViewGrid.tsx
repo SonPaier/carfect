@@ -1,4 +1,5 @@
 import { DragEvent, RefObject } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CalendarOff } from 'lucide-react';
 import { format } from 'date-fns';
@@ -202,6 +203,7 @@ export function DayViewGrid({
   onDeleteBreak,
   onTrainingClick,
 }: DayViewGridProps) {
+  const { t } = useTranslation();
   // Current time indicator
   const now = new Date();
   const currentHour = now.getHours() + now.getMinutes() / 60;
@@ -248,7 +250,7 @@ export function DayViewGrid({
               <div className="bg-red-500/20 backdrop-blur-[1px] absolute inset-0" />
               <div className="relative bg-red-500/90 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
                 <CalendarOff className="w-5 h-5" />
-                <span className="font-semibold">Dzień zamknięty</span>
+                <span className="font-semibold">{t('calendar.closedDay')}</span>
               </div>
             </div>
           )}

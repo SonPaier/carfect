@@ -149,7 +149,7 @@ const AddReservationDialogV2 = ({
     setShowPhoneDropdown,
     showCustomerDropdown,
     setShowCustomerDropdown,
-    suppressPhoneSearchRef,
+    suppressNextSearch,
     selectedCustomerId,
     setSelectedCustomerId,
     customerDiscountPercent,
@@ -315,7 +315,7 @@ const AddReservationDialogV2 = ({
 
       if (isYardMode && editingYardVehicle) {
         // Yard edit mode
-        suppressPhoneSearchRef.current = true;
+        suppressNextSearch();
         setCustomerName(editingYardVehicle.customer_name || '');
         setPhone(editingYardVehicle.customer_phone || '');
         setCarModel(editingYardVehicle.vehicle_plate || '');
@@ -342,7 +342,7 @@ const AddReservationDialogV2 = ({
         resetCustomerSearch();
       } else if (editingReservation) {
         // Reservation edit mode
-        suppressPhoneSearchRef.current = true;
+        suppressNextSearch();
         setCustomerName(editingReservation.customer_name || '');
         setPhone(editingReservation.customer_phone || '');
         setCarModel(editingReservation.vehicle_plate || '');
@@ -825,7 +825,7 @@ const AddReservationDialogV2 = ({
             }}
             onCustomerSelect={async (customer) => {
               markUserEditing();
-              suppressPhoneSearchRef.current = true;
+              suppressNextSearch();
               setCustomerName(customer.name);
               setPhone(customer.phone);
               setSelectedCustomerId(customer.id);
@@ -1115,7 +1115,7 @@ const AddReservationDialogV2 = ({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Przypisani pracownicy
+                {t('addReservation.assignedEmployees')}
               </Label>
               <AssignedEmployeesChips
                 employeeIds={assignedEmployeeIds}

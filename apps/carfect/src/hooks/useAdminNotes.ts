@@ -21,6 +21,14 @@ export function useAdminNotes({
   const [savingNotes, setSavingNotes] = useState(false);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Stable refs for callback values — prevents recreation on every keystroke
+  const adminNotesRef = useRef(adminNotes);
+  adminNotesRef.current = adminNotes;
+  const editingNotesRef = useRef(editingNotes);
+  editingNotesRef.current = editingNotes;
+  const initialAdminNotesRef = useRef(initialAdminNotes);
+  initialAdminNotesRef.current = initialAdminNotes;
+
   // Sync from reservation prop
   useEffect(() => {
     setAdminNotes(initialAdminNotes);
@@ -35,7 +43,7 @@ export function useAdminNotes({
     try {
       const { error } = await supabase
         .from('reservations')
-        .update({ admin_notes: adminNotes || null })
+        .update({ admin_notes: adminNotesRef.current || null })
         .eq('id', reservationId);
 
       if (error) throw error;
@@ -47,13 +55,13 @@ export function useAdminNotes({
     } finally {
       setSavingNotes(false);
     }
-  }, [reservationId, adminNotes, t]);
+  }, [reservationId, t]);
 
   const handleNotesBlur = useCallback(() => {
     setTimeout(() => {
-      if (editingNotes) {
-        const original = initialAdminNotes || '';
-        const current = adminNotes || '';
+      if (editingNotesRef.current) {
+        const original = initialAdminNotesRef.current || '';
+        const current = adminNotesRef.current || '';
         if (current !== original) {
           handleSaveAdminNotes();
         } else {
@@ -61,7 +69,7 @@ export function useAdminNotes({
         }
       }
     }, 100);
-  }, [editingNotes, adminNotes, initialAdminNotes, handleSaveAdminNotes]);
+  }, [handleSaveAdminNotes]);
 
   const startEditingNotes = useCallback(() => {
     setEditingNotes(true);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import type { ReservationSlot, WorkingHours } from '../components/admin/reservation-form';
+import type { ReservationSlot } from '../components/admin/reservation-form';
 
 interface UseReservationSlotsOptions {
   open: boolean;
@@ -44,11 +44,6 @@ interface UseReservationSlotsReturn {
   originalDurationMinutesRef: React.MutableRefObject<number | null>;
   prevManualStartTimeRef: React.MutableRefObject<string>;
 }
-
-// WorkingHours type alias used internally — same shape as the map used in the dialog
-type WorkingHoursMap = Record<string, WorkingHours | null> | null;
-// Suppress unused-import: WorkingHoursMap is used only as a type annotation for internal correctness.
-void (null as unknown as WorkingHoursMap);
 
 export function useReservationSlots({
   open,

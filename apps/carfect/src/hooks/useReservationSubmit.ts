@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone } from '@shared/utils';
 import { sendPushNotification, formatDateForPush } from '@/lib/pushNotifications';
 import { calculatePricePair } from '@/utils/pricing';
+import { carSizeToCode } from '@/lib/reservationPricing';
 import type {
   CarSize,
   DialogMode,
@@ -107,32 +108,33 @@ export function validateReservationForm(
     isEditMode: boolean;
     initialStationId?: string;
   },
+  t: (key: string) => string,
 ): ValidationErrors {
   const errors: ValidationErrors = {};
 
   if (!formData.phone.trim()) {
-    errors.phone = 'Telefon jest wymagany';
+    errors.phone = t('validation.phoneRequired');
   }
   if (!formData.carModel.trim()) {
-    errors.carModel = 'Marka i model jest wymagana';
+    errors.carModel = t('validation.carModelRequired');
   }
   if (formData.selectedServices.length === 0) {
-    errors.services = 'Wybierz co najmniej jedną usługę';
+    errors.services = t('validation.servicesRequired');
   }
 
   if (!options.isYardMode) {
     // Reservation mode: validate slots
     for (const slot of formData.slots) {
       if (!slot.dateRange?.from) {
-        errors.dateRange = 'Wybierz datę dla każdego slotu';
+        errors.dateRange = t('validation.dateRequired');
         break;
       }
       if (!slot.startTime || !slot.endTime) {
-        errors.time = 'Wybierz godzinę rozpoczęcia i zakończenia dla każdego slotu';
+        errors.time = t('validation.timeRequired');
         break;
       }
       if (!slot.stationId && (options.isEditMode || !options.initialStationId)) {
-        errors.station = 'Wybierz stanowisko dla każdego slotu';
+        errors.station = t('validation.stationRequired');
         break;
       }
     }
@@ -160,6 +162,26 @@ export function useReservationSubmit(
   const { t } = useTranslation();
   const isYardMode = mode === 'yard';
   const isEditMode = isYardMode ? !!editingYardVehicle : !!editingReservation?.id;
+
+  const upsertCustomerVehicle = useCallback(
+    async (params: {
+      carModel: string;
+      phone: string;
+      carSize: CarSize;
+      customerId: string | null;
+    }) => {
+      if (!params.carModel || !params.carModel.trim() || params.carModel.trim() === 'BRAK' || !params.phone) return;
+      await supabase.rpc('upsert_customer_vehicle', {
+        _instance_id: instanceId,
+        _phone: normalizePhone(params.phone),
+        _model: params.carModel.trim(),
+        _plate: null,
+        _customer_id: params.customerId || null,
+        _car_size: carSizeToCode(params.carSize),
+      });
+    },
+    [instanceId],
+  );
 
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -229,6 +251,7 @@ export function useReservationSubmit(
       const errors = validateReservationForm(
         { phone, carModel, selectedServices, slots },
         { isYardMode, isEditMode, initialStationId },
+        t,
       );
 
       if (Object.keys(errors).length > 0) {
@@ -378,17 +401,7 @@ export function useReservationSubmit(
           if (updateError) throw updateError;
 
           // Upsert customer vehicle
-          if (carModel && carModel.trim() && carModel.trim() !== 'BRAK' && phone) {
-            const carSizeCode = carSize === 'small' ? 'S' : carSize === 'large' ? 'L' : 'M';
-            await supabase.rpc('upsert_customer_vehicle', {
-              _instance_id: instanceId,
-              _phone: normalizePhone(phone),
-              _model: carModel.trim(),
-              _plate: null,
-              _customer_id: customerId || null,
-              _car_size: carSizeCode,
-            });
-          }
+          await upsertCustomerVehicle({ carModel, phone, carSize, customerId: customerId || null });
 
           // Send push notification for edit
           sendPushNotification({
@@ -460,29 +473,14 @@ export function useReservationSubmit(
 
           toast.success(
             slots.length > 1
-              ? `Dodano ${slots.length} rezerwacji`
+              ? t('addReservation.multipleCreated', { count: slots.length })
               : t('addReservation.reservationCreated'),
           );
 
           // Upsert customer vehicle (silently in background)
-          if (carModel && carModel.trim() && carModel.trim() !== 'BRAK' && phone) {
-            const carSizeCode = carSize === 'small' ? 'S' : carSize === 'large' ? 'L' : 'M';
-            (async () => {
-              try {
-                await supabase.rpc('upsert_customer_vehicle', {
-                  _instance_id: instanceId,
-                  _phone: normalizePhone(phone),
-                  _model: carModel.trim(),
-                  _plate: null,
-                  _customer_id: customerId || null,
-                  _car_size: carSizeCode,
-                });
-                console.log('Customer vehicle upserted on create:', carModel);
-              } catch (err) {
-                console.error('Failed to upsert customer vehicle:', err);
-              }
-            })();
-          }
+          upsertCustomerVehicle({ carModel, phone, carSize, customerId: customerId || null })
+            .then(() => console.log('Customer vehicle upserted on create:', carModel))
+            .catch((err: unknown) => console.error('Failed to upsert customer vehicle:', err));
 
           // Save custom car model as proposal (silently in background)
           if (isCustomCarModel && carModel.trim() && carModel.trim() !== 'BRAK') {
@@ -517,6 +515,7 @@ export function useReservationSubmit(
       onClose,
       onSlotPreviewChange,
       scrollToFirstError,
+      upsertCustomerVehicle,
       t,
     ],
   );

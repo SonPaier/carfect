@@ -25,6 +25,13 @@ interface ServiceItemLike {
 
 type CarSize = 'small' | 'medium' | 'large';
 
+/** Convert CarSize to the single-letter code stored in DB */
+export function carSizeToCode(carSize: CarSize): 'S' | 'M' | 'L' {
+  if (carSize === 'small') return 'S';
+  if (carSize === 'large') return 'L';
+  return 'M';
+}
+
 /** Get duration for a service based on car size */
 export function getServiceDuration(
   service: Pick<ServiceLike, 'duration_minutes' | 'duration_small' | 'duration_medium' | 'duration_large'>,

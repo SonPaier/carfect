@@ -135,4 +135,153 @@ describe('useReservationSlots', () => {
     });
     expect(result.current.manualStationId).toBeNull();
   });
+
+  it('rounds end time up to nearest 15-minute slot when not on boundary', () => {
+    const { result, rerender } = renderHook(
+      (opts) => useReservationSlots(opts),
+      {
+        initialProps: {
+          ...DEFAULT_OPTIONS,
+          totalDurationMinutes: 60,
+        },
+      },
+    );
+
+    act(() => {
+      result.current.setManualStartTime('09:05');
+    });
+
+    rerender({ ...DEFAULT_OPTIONS, totalDurationMinutes: 60 });
+
+    // 09:05 + 60 min = 10:05, rounded up to nearest 15 = 10:15
+    expect(result.current.manualEndTime).toBe('10:15');
+  });
+
+  it('preserves original duration when start time changes in edit mode', () => {
+    const { result, rerender } = renderHook(
+      (opts) => useReservationSlots(opts),
+      {
+        initialProps: {
+          ...DEFAULT_OPTIONS,
+          isEditMode: true,
+          totalDurationMinutes: 90,
+        },
+      },
+    );
+
+    // Simulate what the dialog init effect does before changing start time
+    act(() => {
+      result.current.originalDurationMinutesRef.current = 90;
+      result.current.prevManualStartTimeRef.current = '09:00';
+    });
+
+    act(() => {
+      result.current.setManualStartTime('10:00');
+    });
+
+    rerender({ ...DEFAULT_OPTIONS, isEditMode: true, totalDurationMinutes: 90 });
+
+    // 10:00 + 90 min = 11:30
+    expect(result.current.manualEndTime).toBe('11:30');
+  });
+
+  it('emits slot preview when all fields are populated in create mode', () => {
+    const onSlotPreviewChange = vi.fn();
+    const { result, rerender } = renderHook(
+      (opts) => useReservationSlots(opts),
+      {
+        initialProps: {
+          ...DEFAULT_OPTIONS,
+          isEditMode: false,
+          onSlotPreviewChange,
+        },
+      },
+    );
+
+    const date = new Date('2026-04-10');
+    act(() => {
+      result.current.setDateRange({ from: date, to: date });
+      result.current.setManualStartTime('09:00');
+      result.current.setManualEndTime('10:00');
+      result.current.setManualStationId('station-1');
+    });
+
+    rerender({ ...DEFAULT_OPTIONS, isEditMode: false, onSlotPreviewChange });
+
+    const calls = onSlotPreviewChange.mock.calls;
+    const lastCall = calls[calls.length - 1][0];
+    expect(lastCall).toEqual({
+      date: '2026-04-10',
+      startTime: '09:00',
+      endTime: '10:00',
+      stationId: 'station-1',
+    });
+  });
+
+  it('emits null preview when any field is missing', () => {
+    const onSlotPreviewChange = vi.fn();
+    const { result, rerender } = renderHook(
+      (opts) => useReservationSlots(opts),
+      {
+        initialProps: {
+          ...DEFAULT_OPTIONS,
+          isEditMode: false,
+          onSlotPreviewChange,
+        },
+      },
+    );
+
+    const date = new Date('2026-04-10');
+    act(() => {
+      result.current.setDateRange({ from: date, to: date });
+      result.current.setManualStartTime('09:00');
+      result.current.setManualEndTime('10:00');
+      // stationId intentionally not set — stays null
+    });
+
+    rerender({ ...DEFAULT_OPTIONS, isEditMode: false, onSlotPreviewChange });
+
+    const calls = onSlotPreviewChange.mock.calls;
+    const lastCall = calls[calls.length - 1][0];
+    expect(lastCall).toBeNull();
+  });
+
+  it('does not emit preview in edit mode', () => {
+    const onSlotPreviewChange = vi.fn();
+    const { result, rerender } = renderHook(
+      (opts) => useReservationSlots(opts),
+      {
+        initialProps: {
+          ...DEFAULT_OPTIONS,
+          isEditMode: true,
+          onSlotPreviewChange,
+        },
+      },
+    );
+
+    const date = new Date('2026-04-10');
+    act(() => {
+      result.current.setDateRange({ from: date, to: date });
+      result.current.setManualStartTime('09:00');
+      result.current.setManualEndTime('10:00');
+      result.current.setManualStationId('station-1');
+    });
+
+    rerender({ ...DEFAULT_OPTIONS, isEditMode: true, onSlotPreviewChange });
+
+    // In edit mode the effect always calls cb(null)
+    const calls = onSlotPreviewChange.mock.calls;
+    const lastCall = calls[calls.length - 1][0];
+    expect(lastCall).toBeNull();
+  });
+
+  it('allows switching reservation type to multi', () => {
+    const { result } = renderHook(() => useReservationSlots(DEFAULT_OPTIONS));
+
+    act(() => {
+      result.current.setReservationType('multi');
+    });
+
+    expect(result.current.reservationType).toBe('multi');
+  });
 });

@@ -192,7 +192,6 @@ export function StationColumn({
 }: StationColumnProps) {
   const totalVisibleHeight = (displayEndTime - displayStartTime) * HOUR_HEIGHT;
 
-  const now = new Date();
   let pastHatchHeight = 0;
   if (isPastDay) {
     pastHatchHeight = totalVisibleHeight;

@@ -42,6 +42,10 @@ vi.mock('@/utils/pricing', () => ({
   calculatePricePair: vi.fn().mockReturnValue({ netto: 100, brutto: 123 }),
 }));
 
+vi.mock('@/lib/reservationPricing', () => ({
+  carSizeToCode: vi.fn((size: string) => size === 'small' ? 'S' : size === 'large' ? 'L' : 'M'),
+}));
+
 // Helper to build a valid slot
 function buildSlot(overrides?: Partial<ReservationSlot>): ReservationSlot {
   return {
@@ -81,6 +85,8 @@ function buildFormData(overrides?: Partial<ReservationFormData>): ReservationFor
 
 // ─── Pure validation tests ───────────────────────────────────────────────────
 
+const mockT = (key: string) => key;
+
 describe('validateReservationForm', () => {
   describe('yard mode', () => {
     const yardOptions = {
@@ -92,6 +98,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '', carModel: 'Toyota', selectedServices: ['svc-1'], slots: [] },
         yardOptions,
+        mockT,
       );
       expect(errors.phone).toBeDefined();
     });
@@ -100,6 +107,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '+48123456789', carModel: '', selectedServices: ['svc-1'], slots: [] },
         yardOptions,
+        mockT,
       );
       expect(errors.carModel).toBeDefined();
     });
@@ -108,6 +116,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '+48123456789', carModel: 'Toyota', selectedServices: [], slots: [] },
         yardOptions,
+        mockT,
       );
       expect(errors.services).toBeDefined();
     });
@@ -116,6 +125,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '+48123456789', carModel: 'Toyota', selectedServices: ['svc-1'], slots: [] },
         yardOptions,
+        mockT,
       );
       expect(errors.dateRange).toBeUndefined();
       expect(errors.time).toBeUndefined();
@@ -126,6 +136,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '+48123456789', carModel: 'Toyota', selectedServices: ['svc-1'], slots: [] },
         yardOptions,
+        mockT,
       );
       expect(Object.keys(errors)).toHaveLength(0);
     });
@@ -141,6 +152,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '', carModel: 'Toyota', selectedServices: ['svc-1'], slots: [buildSlot()] },
         reservationOptions,
+        mockT,
       );
       expect(errors.phone).toBeDefined();
     });
@@ -149,6 +161,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '+48123456789', carModel: '', selectedServices: ['svc-1'], slots: [buildSlot()] },
         reservationOptions,
+        mockT,
       );
       expect(errors.carModel).toBeDefined();
     });
@@ -157,6 +170,7 @@ describe('validateReservationForm', () => {
       const errors = validateReservationForm(
         { phone: '+48123456789', carModel: 'Toyota', selectedServices: [], slots: [buildSlot()] },
         reservationOptions,
+        mockT,
       );
       expect(errors.services).toBeDefined();
     });
@@ -170,6 +184,7 @@ describe('validateReservationForm', () => {
           slots: [buildSlot({ dateRange: undefined })],
         },
         reservationOptions,
+        mockT,
       );
       expect(errors.dateRange).toBeDefined();
     });
@@ -183,6 +198,7 @@ describe('validateReservationForm', () => {
           slots: [buildSlot({ startTime: '', endTime: '' })],
         },
         reservationOptions,
+        mockT,
       );
       expect(errors.time).toBeDefined();
     });
@@ -196,6 +212,7 @@ describe('validateReservationForm', () => {
           slots: [buildSlot({ stationId: null })],
         },
         { isYardMode: false, isEditMode: true },
+        mockT,
       );
       expect(errors.station).toBeDefined();
     });
@@ -209,6 +226,7 @@ describe('validateReservationForm', () => {
           slots: [buildSlot({ stationId: null })],
         },
         { isYardMode: false, isEditMode: false, initialStationId: undefined },
+        mockT,
       );
       expect(errors.station).toBeDefined();
     });
@@ -222,6 +240,7 @@ describe('validateReservationForm', () => {
           slots: [buildSlot({ stationId: null })],
         },
         { isYardMode: false, isEditMode: false, initialStationId: 'station-123' },
+        mockT,
       );
       expect(errors.station).toBeUndefined();
     });
@@ -235,6 +254,7 @@ describe('validateReservationForm', () => {
           slots: [buildSlot()],
         },
         reservationOptions,
+        mockT,
       );
       expect(Object.keys(errors)).toHaveLength(0);
     });

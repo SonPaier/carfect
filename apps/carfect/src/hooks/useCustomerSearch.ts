@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone, isValidPhone } from '@shared/utils';
 import { mergeVehiclesByPhone } from '@/lib/mergeVehiclesByPhone';
@@ -20,7 +21,7 @@ interface UseCustomerSearchReturn {
   setShowPhoneDropdown: (v: boolean) => void;
   showCustomerDropdown: boolean;
   setShowCustomerDropdown: (v: boolean) => void;
-  suppressPhoneSearchRef: React.MutableRefObject<boolean>;
+  suppressNextSearch: () => void;
 
   // Customer state
   selectedCustomerId: string | null;
@@ -67,6 +68,7 @@ export function useCustomerSearch({
   isEditMode,
   onVehicleAutoFill,
 }: UseCustomerSearchOptions): UseCustomerSearchReturn {
+  const { t } = useTranslation();
   // Stable ref for callback to avoid infinite re-render loops
   const onVehicleAutoFillRef = useRef(onVehicleAutoFill);
   onVehicleAutoFillRef.current = onVehicleAutoFill;
@@ -158,7 +160,7 @@ export function useCustomerSearch({
           .maybeSingle();
 
         if (data) {
-          let serviceName = 'Nieznana usługa';
+          let serviceName = t('common.unknownService');
           const items = data.service_items as Array<{ service_id: string; name?: string }> | null;
           if (items && Array.isArray(items) && items.length > 0 && items[0].name) {
             serviceName = items[0].name;
@@ -373,7 +375,9 @@ export function useCustomerSearch({
     setShowPhoneDropdown,
     showCustomerDropdown,
     setShowCustomerDropdown,
-    suppressPhoneSearchRef,
+    suppressNextSearch: useCallback(() => {
+      suppressPhoneSearchRef.current = true;
+    }, []),
 
     selectedCustomerId,
     setSelectedCustomerId,
