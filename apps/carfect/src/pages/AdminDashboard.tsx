@@ -77,8 +77,10 @@ import { TrainingDetailsDrawer } from '@/components/admin/TrainingDetailsDrawer'
 import type { Training } from '@/components/admin/AddTrainingDrawer';
 import { toast } from 'sonner';
 import { sendPushNotification, formatDateForPush } from '@/lib/pushNotifications';
+import { POLISH_MONTH_NAMES_GENITIVE } from '@/lib/polishDateUtils';
 import { normalizePhone as normalizePhoneForStorage } from '@shared/utils';
 import type { Reservation, ServiceItem } from '@/types/reservation';
+import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
 interface Station {
   id: string;
   name: string;
@@ -559,113 +561,19 @@ const AdminDashboard = () => {
   const mapReservationData = useCallback(
     (
       data: any[],
-      servicesMap: Map<
-        string,
-        {
-          id: string;
-          name: string;
-          shortcut?: string | null;
-          price_small?: number | null;
-          price_medium?: number | null;
-          price_large?: number | null;
-          price_from?: number | null;
-        }
-      >,
+      servicesMap: ServicesMap,
       originalReservationsMap: Map<string, any>,
     ): Reservation[] => {
       return data.map((r) => {
-        // Primary source: service_items JSONB (already contains names)
-        const serviceItems = r.service_items as unknown as ServiceItem[] | null;
-        const serviceIds = (r as any).service_ids as string[] | null;
-
-        let servicesDataMapped: Array<{
-          id?: string;
-          name: string;
-          shortcut?: string | null;
-          price_small?: number | null;
-          price_medium?: number | null;
-          price_large?: number | null;
-          price_from?: number | null;
-        }> = [];
-
-        // Canonical list of selected services is `service_ids`.
-        // `service_items` may contain stale/legacy entries (e.g. after edits), so use it only to enrich.
-        if (serviceIds && serviceIds.length > 0) {
-          const itemsById = new Map<string, ServiceItem>();
-          (serviceItems || []).forEach((item) => {
-            const resolvedId = item.id || item.service_id;
-            if (resolvedId) itemsById.set(resolvedId, item);
-          });
-
-          servicesDataMapped = serviceIds.map((id) => {
-            const item = itemsById.get(id);
-            const svc = servicesMap.get(id);
-
-            return {
-              id,
-              name: item?.name ?? svc?.name ?? 'Usługa',
-              shortcut: item?.short_name ?? svc?.shortcut ?? null,
-              price_small: item?.price_small ?? svc?.price_small ?? null,
-              price_medium: item?.price_medium ?? svc?.price_medium ?? null,
-              price_large: item?.price_large ?? svc?.price_large ?? null,
-              price_from: item?.price_from ?? svc?.price_from ?? null,
-            };
-          });
-        } else if (serviceItems && serviceItems.length > 0) {
-          // Fallback: no service_ids, use service_items directly (dedupe by id)
-          const seen = new Set<string>();
-          servicesDataMapped = serviceItems
-            .map((item) => {
-              const resolvedId = item.id || item.service_id;
-              const svc = resolvedId ? servicesMap.get(resolvedId) : undefined;
-              return {
-                id: resolvedId,
-                name: item.name ?? svc?.name ?? 'Usługa',
-                shortcut: item.short_name ?? svc?.shortcut ?? null,
-                price_small: item.price_small ?? svc?.price_small ?? null,
-                price_medium: item.price_medium ?? svc?.price_medium ?? null,
-                price_large: item.price_large ?? svc?.price_large ?? null,
-                price_from: item.price_from ?? svc?.price_from ?? null,
-              };
-            })
-            .filter((svc) => {
-              if (!svc.id) return false;
-              if (seen.has(svc.id)) return false;
-              seen.add(svc.id);
-              return true;
-            });
-        }
+        const mapped = mapRawReservation(r as RawReservation, servicesMap);
 
         const originalReservation = r.original_reservation_id
           ? originalReservationsMap.get(r.original_reservation_id)
           : null;
 
         return {
-          ...r,
-          status: r.status || 'pending',
-          service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
-          service_items: Array.isArray(r.service_items)
-            ? (r.service_items as unknown as ServiceItem[])
-            : undefined,
-          assigned_employee_ids: Array.isArray(r.assigned_employee_ids)
-            ? (r.assigned_employee_ids as string[])
-            : undefined,
-          service: r.services
-            ? {
-                name: (r.services as any).name,
-                shortcut: (r.services as any).shortcut,
-              }
-            : undefined,
-          services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-          station: r.stations
-            ? {
-                name: (r.stations as any).name,
-                type: (r.stations as any).type,
-              }
-            : undefined,
+          ...mapped,
           original_reservation: originalReservation || null,
-          created_by_username: r.created_by_username || null,
-          has_unified_services: r.has_unified_services ?? null,
         };
       });
     },
@@ -1162,70 +1070,10 @@ const AdminDashboard = () => {
                 .single()
                 .then(({ data }) => {
                   if (data) {
-                    // Primary source: service_items JSONB (already contains names)
-                    const serviceItems = data.service_items as unknown as ServiceItem[] | null;
-                    const serviceIds = (data as any).service_ids as string[] | null;
-
-                    let servicesDataMapped: Array<{
-                      id?: string;
-                      name: string;
-                      shortcut?: string | null;
-                      price_small?: number | null;
-                      price_medium?: number | null;
-                      price_large?: number | null;
-                      price_from?: number | null;
-                    }> = [];
-
-                    // Use service_items as primary source (may or may not have names embedded)
-                    if (serviceItems && serviceItems.length > 0) {
-                      servicesDataMapped = serviceItems.map((item) => {
-                        const resolvedId = item.id || item.service_id;
-                        const cached = resolvedId
-                          ? servicesMapRef.current.get(resolvedId)
-                          : undefined;
-
-                        return {
-                          id: resolvedId,
-                          name: item.name || cached?.name || 'Usługa',
-                          shortcut: item.short_name || cached?.shortcut || null,
-                          price_small: item.price_small ?? cached?.price_small ?? null,
-                          price_medium: item.price_medium ?? cached?.price_medium ?? null,
-                          price_large: item.price_large ?? cached?.price_large ?? null,
-                          price_from: item.price_from ?? cached?.price_from ?? null,
-                        };
-                      });
-                    } else if (serviceIds && serviceIds.length > 0) {
-                      // Fallback to service_ids lookup (for legacy reservations)
-                      serviceIds.forEach((id) => {
-                        const svc = servicesMapRef.current.get(id);
-                        if (svc) {
-                          servicesDataMapped.push(svc);
-                        }
-                      });
-                    }
-
-                    const newReservation = {
-                      ...data,
-                      status: data.status || 'pending',
-                      service_ids: Array.isArray(data.service_ids)
-                        ? (data.service_ids as string[])
-                        : undefined,
-                      service_items: Array.isArray(data.service_items)
-                        ? (data.service_items as unknown as ServiceItem[])
-                        : undefined,
-                      assigned_employee_ids: Array.isArray((data as any).assigned_employee_ids)
-                        ? ((data as any).assigned_employee_ids as string[])
-                        : undefined,
-                      service: undefined, // Legacy relation removed - use service_ids/service_items instead
-                      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-                      station: data.stations
-                        ? {
-                            name: (data.stations as any).name,
-                            type: (data.stations as any).type,
-                          }
-                        : undefined,
-                      created_by_username: (data as any).created_by_username || null,
-                    };
+                    const newReservation = mapRawReservation(
+                      data as RawReservation,
+                      servicesMapRef.current as ServicesMap,
+                    );
                     setReservations((prev) => {
                       // Prevent duplicates (in case fetch also returned this reservation)
                       if (prev.some((r) => r.id === data.id)) {
@@ -1290,76 +1138,10 @@ const AdminDashboard = () => {
                 .single()
                 .then(({ data }) => {
                   if (data) {
-                    // Primary source: service_items JSONB (already contains names)
-                    const serviceItems = data.service_items as unknown as ServiceItem[] | null;
-                    const serviceIds = (data as any).service_ids as string[] | null;
-
-                    let servicesDataMapped: Array<{
-                      id?: string;
-                      name: string;
-                      shortcut?: string | null;
-                      price_small?: number | null;
-                      price_medium?: number | null;
-                      price_large?: number | null;
-                      price_from?: number | null;
-                    }> = [];
-
-                    // Use service_items as primary source (may or may not have names embedded)
-                    if (serviceItems && serviceItems.length > 0) {
-                      servicesDataMapped = serviceItems.map((item) => {
-                        const resolvedId = item.id || item.service_id;
-                        const cached = resolvedId
-                          ? servicesMapRef.current.get(resolvedId)
-                          : undefined;
-
-                        return {
-                          id: resolvedId,
-                          name: item.name || cached?.name || 'Usługa',
-                          shortcut: item.short_name || cached?.shortcut || null,
-                          price_small: item.price_small ?? cached?.price_small ?? null,
-                          price_medium: item.price_medium ?? cached?.price_medium ?? null,
-                          price_large: item.price_large ?? cached?.price_large ?? null,
-                          price_from: item.price_from ?? cached?.price_from ?? null,
-                        };
-                      });
-                    } else if (serviceIds && serviceIds.length > 0) {
-                      // Fallback to service_ids lookup (for legacy reservations)
-                      serviceIds.forEach((id) => {
-                        const svc = servicesMapRef.current.get(id);
-                        if (svc) {
-                          servicesDataMapped.push(svc);
-                        }
-                        // Don't show "usługa usunięta" - just skip if not found in cache
-                        // The reservation still has the data, just wait for cache to load
-                      });
-                    }
-
-                    const updatedReservation = {
-                      ...data,
-                      status: data.status || 'pending',
-                      service_ids: Array.isArray(data.service_ids)
-                        ? (data.service_ids as string[])
-                        : undefined,
-                      service_items: Array.isArray(data.service_items)
-                        ? (data.service_items as unknown as ServiceItem[])
-                        : undefined,
-                      assigned_employee_ids: Array.isArray((data as any).assigned_employee_ids)
-                        ? ((data as any).assigned_employee_ids as string[])
-                        : undefined,
-                      service: undefined, // Legacy relation removed
-                      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-                      station: data.stations
-                        ? {
-                            name: (data.stations as any).name,
-                            type: (data.stations as any).type,
-                          }
-                        : undefined,
-                      has_unified_services: (data as any).has_unified_services,
-                      photo_urls: (data as any).photo_urls,
-                      checked_service_ids: Array.isArray((data as any).checked_service_ids)
-                        ? ((data as any).checked_service_ids as string[])
-                        : undefined,
-                    };
+                    const updatedReservation = mapRawReservation(
+                      data as RawReservation,
+                      servicesMapRef.current as ServicesMap,
+                    );
                     setReservations((prev) =>
                       prev.map((r) =>
                         r.id === payload.new.id ? (updatedReservation as Reservation) : r,
@@ -1917,22 +1699,8 @@ const AdminDashboard = () => {
     // Send confirmation SMS
     try {
       const dateObj = new Date(reservation.reservation_date);
-      const monthNames = [
-        'stycznia',
-        'lutego',
-        'marca',
-        'kwietnia',
-        'maja',
-        'czerwca',
-        'lipca',
-        'sierpnia',
-        'wrzesnia',
-        'pazdziernika',
-        'listopada',
-        'grudnia',
-      ];
       const dayNum = dateObj.getDate();
-      const monthName = monthNames[dateObj.getMonth()];
+      const monthName = POLISH_MONTH_NAMES_GENITIVE[dateObj.getMonth()];
       const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
       const manageUrl = `${window.location.origin}/moja-rezerwacja?code=${reservation.confirmation_code}`;
       const message = `${instanceName}: Rezerwacja potwierdzona! ${dayNum} ${monthName} o ${reservation.start_time?.slice(0, 5)}. Zmien lub anuluj: ${manageUrl}`;
@@ -2202,23 +1970,9 @@ const AdminDashboard = () => {
       }
 
       // Format date for SMS
-      const monthNamesFull = [
-        'stycznia',
-        'lutego',
-        'marca',
-        'kwietnia',
-        'maja',
-        'czerwca',
-        'lipca',
-        'sierpnia',
-        'wrzesnia',
-        'pazdziernika',
-        'listopada',
-        'grudnia',
-      ];
       const dateObj = new Date(reservation.reservation_date);
       const dayNum = dateObj.getDate();
-      const monthNameFull = monthNamesFull[dateObj.getMonth()];
+      const monthNameFull = POLISH_MONTH_NAMES_GENITIVE[dateObj.getMonth()];
 
       const instName = instData.short_name || instData.name || 'Myjnia';
       const mapsLink = instData.google_maps_url ? ` Dojazd: ${instData.google_maps_url}` : '';
