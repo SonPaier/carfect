@@ -146,8 +146,8 @@ Deno.test('nearestBillingDay — day 6 maps to 10', () => {
   assertEquals(nearestBillingDay(new Date('2026-03-06')), 10);
 });
 
-Deno.test('nearestBillingDay — day 15 maps to 10', () => {
-  assertEquals(nearestBillingDay(new Date('2026-03-15')), 10);
+Deno.test('nearestBillingDay — day 15 maps to 20 (ties round up)', () => {
+  assertEquals(nearestBillingDay(new Date('2026-03-15')), 20);
 });
 
 Deno.test('nearestBillingDay — day 16 maps to 20', () => {
