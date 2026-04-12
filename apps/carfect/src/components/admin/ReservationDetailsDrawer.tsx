@@ -37,6 +37,7 @@ import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePricingMode } from '@/hooks/usePricingMode';
 import { useAdminNotes } from '@/hooks/useAdminNotes';
+import { useEmployeeAssignment } from '@/hooks/useEmployeeAssignment';
 import { bruttoToNetto } from '@/utils/pricing';
 import SendSmsDialog from '@/components/admin/SendSmsDialog';
 import { ReservationHistoryDrawer } from './history/ReservationHistoryDrawer';
@@ -216,14 +217,18 @@ const ReservationDetailsDrawer = ({
   const { data: instanceSettings } = useInstanceSettings(reservation?.instance_id ?? null);
   const showEmployeeAssignment = instanceSettings?.assign_employees_to_reservations ?? false;
   const { data: employees = [] } = useEmployees(reservation?.instance_id ?? null);
-  const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
-  const [savingEmployees, setSavingEmployees] = useState(false);
-  const [localAssignedEmployeeIds, setLocalAssignedEmployeeIds] = useState<string[]>([]);
-
-  // Sync local employee IDs when reservation changes
-  useEffect(() => {
-    setLocalAssignedEmployeeIds(reservation?.assigned_employee_ids || []);
-  }, [reservation?.assigned_employee_ids]);
+  const {
+    localAssignedEmployeeIds,
+    setLocalAssignedEmployeeIds,
+    savingEmployees,
+    employeeDrawerOpen,
+    setEmployeeDrawerOpen,
+    handleEmployeeSelect,
+    handleRemoveEmployee,
+  } = useEmployeeAssignment({
+    reservationId: reservation?.id ?? null,
+    initialEmployeeIds: reservation?.assigned_employee_ids || [],
+  });
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -432,32 +437,6 @@ const ReservationDetailsDrawer = ({
     } finally {
       setSavingService(false);
     }
-  };
-
-  // Handle employee assignment changes
-  const handleEmployeeSelect = async (employeeIds: string[]) => {
-    if (!reservation) return;
-    setSavingEmployees(true);
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ assigned_employee_ids: employeeIds })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      setLocalAssignedEmployeeIds(employeeIds);
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error saving employees:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingEmployees(false);
-    }
-  };
-
-  const handleRemoveEmployee = async (employeeId: string) => {
-    const updatedIds = localAssignedEmployeeIds.filter((id) => id !== employeeId);
-    await handleEmployeeSelect(updatedIds);
   };
 
   const handleEdit = () => {
