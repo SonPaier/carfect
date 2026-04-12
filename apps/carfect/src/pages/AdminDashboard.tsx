@@ -32,11 +32,12 @@ import { useBreaks } from '@/hooks/useBreaks';
 import { useClosedDays } from '@/hooks/useClosedDays';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useUnifiedServices } from '@/hooks/useUnifiedServices';
-import { useServiceDictionary, buildServicesMapFromDictionary } from '@/hooks/useServiceDictionary';
+import { useServiceDictionary } from '@/hooks/useServiceDictionary';
 import { useInstanceData } from '@/hooks/useInstanceData';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useStationEmployees } from '@/hooks/useStationEmployees';
+import { useReservations } from '@/hooks/useReservations';
 import HallsListView from '@/components/admin/halls/HallsListView';
 import {
   DropdownMenu,
@@ -49,7 +50,7 @@ import { Separator } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { format, subMonths, subWeeks, startOfWeek, addDays, parseISO, getDay } from 'date-fns';
+import { format, addDays, parseISO, getDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
@@ -177,31 +178,9 @@ const AdminDashboard = () => {
   };
 
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-
-  // Loaded date range for reservations - 1 week back from Monday initially, null = all future
-  const [loadedDateRange, setLoadedDateRange] = useState<{ from: Date; to: null }>(() => {
-    const today = new Date();
-    const mondayThisWeek = startOfWeek(today, { weekStartsOn: 1 });
-    return {
-      from: subWeeks(mondayThisWeek, 1), // Monday one week earlier
-      to: null,
-    };
-  });
-  const [isLoadingMoreReservations, setIsLoadingMoreReservations] = useState(false);
-
-  // Mutex ref to prevent race condition in loadMoreReservations
-  // useState is async, so rapid navigation can trigger multiple calls before state updates
-  const isLoadingMoreRef = useRef(false);
 
   // Realtime connection state
   const [realtimeConnected, setRealtimeConnected] = useState(true);
-
-  // Ref to track loadedDateRange for realtime handler (avoids re-subscribing on date change)
-  const loadedDateRangeRef = useRef(loadedDateRange);
-  useEffect(() => {
-    loadedDateRangeRef.current = loadedDateRange;
-  }, [loadedDateRange]);
 
   // Debounce mechanism to prevent realtime updates from overwriting local changes
   const recentlyUpdatedReservationsRef = useRef<Map<string, number>>(new Map());
@@ -335,6 +314,25 @@ const AdminDashboard = () => {
   const closedDays = cachedClosedDays as ClosedDay[];
   const workingHours = cachedWorkingHours;
   const instanceData = cachedInstanceData;
+
+  // Reservations data via shared hook (replaces inline fetch/loadMore/mapReservationData)
+  const {
+    reservations,
+    isLoadingMore: isLoadingMoreReservations,
+    refetch: refetchReservations,
+    checkAndLoadMore,
+    updateReservationsCache,
+    invalidateReservations,
+    expandDateRange,
+    servicesMapRef,
+    loadedDateRange,
+  } = useReservations({ instanceId, serviceDictMap });
+
+  // Ref to track loadedDateRange for realtime handler (avoids re-subscribing on date change)
+  const loadedDateRangeRef = useRef(loadedDateRange);
+  useEffect(() => {
+    loadedDateRangeRef.current = loadedDateRange;
+  }, [loadedDateRange]);
 
   // Current calendar date (synced from AdminCalendar) - initialize from same localStorage source
   const [calendarDate, setCalendarDate] = useState<Date>(() => {
@@ -557,253 +555,14 @@ const AdminDashboard = () => {
     }
   };
 
-  // Map raw reservation data to Reservation type
-  const mapReservationData = useCallback(
-    (
-      data: any[],
-      servicesMap: ServicesMap,
-      originalReservationsMap: Map<string, any>,
-    ): Reservation[] => {
-      return data.map((r) => {
-        const mapped = mapRawReservation(r as RawReservation, servicesMap);
-
-        const originalReservation = r.original_reservation_id
-          ? originalReservationsMap.get(r.original_reservation_id)
-          : null;
-
-        return {
-          ...mapped,
-          original_reservation: originalReservation || null,
-        };
-      });
-    },
-    [],
-  );
-
-  // Reference to services map for realtime updates
-  const servicesMapRef = useRef<
-    Map<
-      string,
-      {
-        id: string;
-        name: string;
-        shortcut?: string | null;
-        price_small?: number | null;
-        price_medium?: number | null;
-        price_large?: number | null;
-        price_from?: number | null;
-      }
-    >
-  >(new Map());
-
-  // Fetch reservations from database with date range filter
-  // Initial load: 2 months back + all future reservations
-  const fetchReservations = async (fromDate?: Date, toDate?: Date | null) => {
-    if (!instanceId) return;
-
-    const from = fromDate || loadedDateRange.from;
-    const to = toDate === undefined ? loadedDateRange.to : toDate;
-
-    // Use central dictionary for service name resolution (covers ALL service types)
-    const servicesMap = buildServicesMapFromDictionary(serviceDictMap);
-    // Save for realtime updates
-    servicesMapRef.current = servicesMap;
-
-    // Build query with date filter
-    let query = supabase
-      .from('reservations')
-      .select(
-        `
-        id,
-        instance_id,
-        customer_name,
-        customer_phone,
-        vehicle_plate,
-        reservation_date,
-        end_date,
-        start_time,
-        end_time,
-        station_id,
-        status,
-        confirmation_code,
-        price,
-        price_netto,
-        customer_notes,
-        admin_notes,
-        source,
-        car_size,
-        service_ids,
-        service_items,
-        assigned_employee_ids,
-        original_reservation_id,
-        created_by,
-        created_by_username,
-        offer_number,
-        confirmation_sms_sent_at,
-        pickup_sms_sent_at,
-        has_unified_services,
-        photo_urls,
-        stations:station_id (name, type)
-      `,
-      )
-      .eq('instance_id', instanceId)
-      .neq('status', 'cancelled')
-      .gte('reservation_date', format(from, 'yyyy-MM-dd'));
-
-    // If to is not null, add upper bound filter
-    if (to !== null) {
-      query = query.lte('reservation_date', format(to, 'yyyy-MM-dd'));
-    }
-
-    const { data, error } = await query;
-
-    if (!error && data) {
-      // Fetch original reservation data for change requests
-      const changeRequestIds = data
-        .filter((r) => r.original_reservation_id)
-        .map((r) => r.original_reservation_id);
-
-      const originalReservationsMap = new Map<string, any>();
-      if (changeRequestIds.length > 0) {
-        const { data: originals } = await supabase
-          .from('reservations')
-          .select('id, reservation_date, start_time, confirmation_code')
-          .in('id', changeRequestIds);
-
-        if (originals) {
-          originals.forEach((o) => originalReservationsMap.set(o.id, o));
-        }
-      }
-
-      setReservations(mapReservationData(data, servicesMap, originalReservationsMap));
-    }
-  };
-
-  // Load more reservations when user navigates to dates near the edge of loaded data
-  // Uses mutex ref to prevent race condition during rapid navigation
-  const loadMoreReservations = useCallback(
-    async (direction: 'past') => {
-      // Use ref for synchronous check - prevents multiple calls during rapid navigation
-      if (!instanceId || isLoadingMoreRef.current) return;
-
-      if (direction === 'past') {
-        // Set mutex immediately (synchronous)
-        isLoadingMoreRef.current = true;
-        setIsLoadingMoreReservations(true); // For UI feedback
-
-        try {
-          const newFrom = subMonths(loadedDateRange.from, 1);
-          const oldFrom = loadedDateRange.from;
-
-          // First fetch services to map service_ids
-          const servicesMap = servicesMapRef.current;
-
-          // Fetch additional reservations
-          const { data, error } = await supabase
-            .from('reservations')
-            .select(
-              `
-            id,
-            instance_id,
-            customer_name,
-            customer_phone,
-            vehicle_plate,
-            reservation_date,
-            end_date,
-            start_time,
-            end_time,
-            station_id,
-            status,
-            confirmation_code,
-            price,
-            customer_notes,
-            admin_notes,
-            source,
-            car_size,
-            service_ids,
-            service_items,
-            original_reservation_id,
-            created_by,
-            created_by_username,
-            offer_number,
-            confirmation_sms_sent_at,
-            pickup_sms_sent_at,
-            has_unified_services,
-            photo_urls,
-            assigned_employee_ids,
-            stations:station_id (name, type)
-          `,
-            )
-            .eq('instance_id', instanceId)
-            .neq('status', 'cancelled')
-            .gte('reservation_date', format(newFrom, 'yyyy-MM-dd'))
-            .lt('reservation_date', format(oldFrom, 'yyyy-MM-dd'));
-
-          if (!error && data && data.length > 0) {
-            // Fetch original reservation data for change requests
-            const changeRequestIds = data
-              .filter((r) => r.original_reservation_id)
-              .map((r) => r.original_reservation_id);
-
-            const originalReservationsMap = new Map<string, any>();
-            if (changeRequestIds.length > 0) {
-              const { data: originals } = await supabase
-                .from('reservations')
-                .select('id, reservation_date, start_time, confirmation_code')
-                .in('id', changeRequestIds);
-
-              if (originals) {
-                originals.forEach((o) => originalReservationsMap.set(o.id, o));
-              }
-            }
-
-            const mappedData = mapReservationData(data, servicesMap, originalReservationsMap);
-            setReservations((prev) => [...mappedData, ...prev]);
-          }
-
-          setLoadedDateRange((prev) => ({ ...prev, from: newFrom }));
-        } finally {
-          // Always release mutex in finally block
-          isLoadingMoreRef.current = false;
-          setIsLoadingMoreReservations(false);
-        }
-      }
-    },
-    [instanceId, loadedDateRange.from, mapReservationData],
-  );
-
-  // Debounced loadMoreReservations to prevent burst requests during rapid navigation
-  const loadMoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Handle calendar date change - load more data if approaching edge
-  // Uses debounce to prevent multiple requests during rapid scrolling/clicking
   const handleCalendarDateChange = useCallback(
     (date: Date) => {
       setCalendarDate(date);
-
-      // Check if we're approaching the edge of loaded data (within 7 days buffer)
-      const bufferDays = 7;
-      if (date < addDays(loadedDateRange.from, bufferDays)) {
-        // Debounce loadMore to prevent burst requests
-        if (loadMoreDebounceRef.current) {
-          clearTimeout(loadMoreDebounceRef.current);
-        }
-        loadMoreDebounceRef.current = setTimeout(() => {
-          loadMoreReservations('past');
-        }, 300);
-      }
+      checkAndLoadMore(date);
     },
-    [loadedDateRange.from, loadMoreReservations],
+    [checkAndLoadMore],
   );
-
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      if (loadMoreDebounceRef.current) {
-        clearTimeout(loadMoreDebounceRef.current);
-      }
-    };
-  }, []);
 
   // Breaks and closed days now use cached hooks - invalidate cache instead of local state
   const invalidateBreaksCache = () => {
@@ -813,13 +572,6 @@ const AdminDashboard = () => {
   const invalidateClosedDaysCache = () => {
     queryClient.invalidateQueries({ queryKey: ['closed_days', instanceId] });
   };
-
-  // Initial fetch - wait for dictionary to be loaded first
-  useEffect(() => {
-    if (instanceId && serviceDictMap.size > 0) {
-      fetchReservations();
-    }
-  }, [instanceId, serviceDictMap.size]);
 
   // Trainings enabled flag
   const trainingsEnabled = hasFeature('trainings');
@@ -852,7 +604,7 @@ const AdminDashboard = () => {
   }, [instanceId, trainingsEnabled]);
 
   const fetchTrainingsRef = useRef(fetchTrainings);
-  const fetchReservationsRef = useRef(fetchReservations);
+  const refetchReservationsRef = useRef(refetchReservations);
   const lastRealtimeFetchRef = useRef(0);
   const isFetchingRef = useRef(false);
 
@@ -861,8 +613,8 @@ const AdminDashboard = () => {
   }, [fetchTrainings]);
 
   useEffect(() => {
-    fetchReservationsRef.current = fetchReservations;
-  }, [fetchReservations]);
+    refetchReservationsRef.current = refetchReservations;
+  }, [refetchReservations]);
 
   useEffect(() => {
     fetchTrainings();
@@ -954,7 +706,7 @@ const AdminDashboard = () => {
               : undefined,
           };
           // Add to state temporarily so drawer can open
-          setReservations((prev) => [...prev, mappedReservation]);
+          updateReservationsCache((prev) => [...prev, mappedReservation]);
           setSelectedReservation(mappedReservation);
           searchParams.delete('reservationCode');
           setSearchParams(searchParams, { replace: true });
@@ -1056,13 +808,23 @@ const AdminDashboard = () => {
               status,
               confirmation_code,
               price,
+              price_netto,
+              customer_notes,
+              admin_notes,
               source,
+              car_size,
               service_ids,
               service_items,
+              assigned_employee_ids,
+              original_reservation_id,
+              created_by,
               created_by_username,
               offer_number,
+              confirmation_sms_sent_at,
+              pickup_sms_sent_at,
+              has_unified_services,
               photo_urls,
-              assigned_employee_ids,
+              checked_service_ids,
               stations:station_id (name, type)
             `,
                 )
@@ -1074,7 +836,7 @@ const AdminDashboard = () => {
                       data as RawReservation,
                       servicesMapRef.current as ServicesMap,
                     );
-                    setReservations((prev) => {
+                    updateReservationsCache((prev) => {
                       // Prevent duplicates (in case fetch also returned this reservation)
                       if (prev.some((r) => r.id === data.id)) {
                         return prev.map((r) =>
@@ -1120,17 +882,23 @@ const AdminDashboard = () => {
               status,
               confirmation_code,
               price,
+              price_netto,
+              customer_notes,
+              admin_notes,
               source,
+              car_size,
               service_ids,
               service_items,
-              admin_notes,
-              customer_notes,
-              car_size,
-              offer_number,
-              photo_urls,
-              has_unified_services,
-              checked_service_ids,
               assigned_employee_ids,
+              original_reservation_id,
+              created_by,
+              created_by_username,
+              offer_number,
+              confirmation_sms_sent_at,
+              pickup_sms_sent_at,
+              has_unified_services,
+              photo_urls,
+              checked_service_ids,
               stations:station_id (name, type)
             `,
                 )
@@ -1142,7 +910,7 @@ const AdminDashboard = () => {
                       data as RawReservation,
                       servicesMapRef.current as ServicesMap,
                     );
-                    setReservations((prev) =>
+                    updateReservationsCache((prev) =>
                       prev.map((r) =>
                         r.id === payload.new.id ? (updatedReservation as Reservation) : r,
                       ),
@@ -1154,7 +922,7 @@ const AdminDashboard = () => {
                   }
                 });
             } else if (payload.eventType === 'DELETE') {
-              setReservations((prev) => prev.filter((r) => r.id !== payload.old.id));
+              updateReservationsCache((prev) => prev.filter((r) => r.id !== payload.old.id));
             }
           },
         )
@@ -1214,7 +982,7 @@ const AdminDashboard = () => {
             if (now - lastRealtimeFetchRef.current > 5000 && !isFetchingRef.current) {
               lastRealtimeFetchRef.current = now;
               isFetchingRef.current = true;
-              Promise.all([fetchReservationsRef.current(), fetchTrainingsRef.current()]).finally(
+              Promise.all([refetchReservationsRef.current(), fetchTrainingsRef.current()]).finally(
                 () => {
                   isFetchingRef.current = false;
                 },
@@ -1264,9 +1032,16 @@ const AdminDashboard = () => {
     const currentTimeMinutes = currentHour * 60 + currentMinutes;
     const today = format(now, 'yyyy-MM-dd');
 
-    // Working hours 8:00 - 18:00
-    const workStart = 8 * 60; // 8:00 in minutes
-    const workEnd = 18 * 60; // 18:00 in minutes
+    // Use actual working hours from instance settings
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const todayDayName = dayNames[getDay(now)];
+    const todayHours = workingHours?.[todayDayName];
+    const workStart = todayHours?.open
+      ? parseInt(todayHours.open.split(':')[0]) * 60 + parseInt(todayHours.open.split(':')[1])
+      : 8 * 60;
+    const workEnd = todayHours?.close
+      ? parseInt(todayHours.close.split(':')[0]) * 60 + parseInt(todayHours.close.split(':')[1])
+      : 18 * 60;
 
     return stations.map((station) => {
       const stationReservations = reservations
@@ -1447,7 +1222,7 @@ const AdminDashboard = () => {
       }
 
       // Remove from local state (cancelled reservations hidden from calendar)
-      setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+      updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
       setSelectedReservation(null);
       toast.success(t('reservations.reservationRejected'));
     } catch (error) {
@@ -1462,7 +1237,7 @@ const AdminDashboard = () => {
     if (!reservation || !instanceId) return;
 
     // Immediately hide from UI
-    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+    updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
 
     // Store timeout ID so we can cancel if user clicks Cofnij
     let deleteExecuted = false;
@@ -1498,12 +1273,12 @@ const AdminDashboard = () => {
         if (error) {
           console.error('Error rejecting reservation:', error);
           // Restore if update failed
-          setReservations((prev) => [...prev, reservation]);
+          updateReservationsCache((prev) => [...prev, reservation]);
           toast.error(t('errors.generic'));
         }
       } catch (error) {
         console.error('Error rejecting reservation:', error);
-        setReservations((prev) => [...prev, reservation]);
+        updateReservationsCache((prev) => [...prev, reservation]);
         toast.error(t('errors.generic'));
       }
     };
@@ -1514,7 +1289,7 @@ const AdminDashboard = () => {
         label: t('common.undo'),
         onClick: () => {
           deleteExecuted = true; // Prevent delete
-          setReservations((prev) => [...prev, reservation]);
+          updateReservationsCache((prev) => [...prev, reservation]);
           toast.success(t('common.success'));
         },
       },
@@ -1528,7 +1303,7 @@ const AdminDashboard = () => {
     });
   };
   const handleReservationSave = (reservationId: string, data: Partial<Reservation>) => {
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1584,8 +1359,8 @@ const AdminDashboard = () => {
   };
   const handleReservationAdded = (reservationId?: string) => {
     // Always refresh reservations to ensure new/updated data shows in calendar
-    // Realtime may have delays or miss events, so explicit fetch is more reliable
-    fetchReservations();
+    // Realtime may have delays or miss events, so explicit refetch is more reliable
+    invalidateReservations();
     setEditingReservation(null);
   };
   const handleAddBreak = (stationId: string, date: string, time: string) => {
@@ -1646,7 +1421,7 @@ const AdminDashboard = () => {
     const previousStatus = reservation.status;
 
     // Optimistic UI update (so it disappears from "Niepotwierdzone" instantly)
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1672,7 +1447,7 @@ const AdminDashboard = () => {
 
     if (error) {
       // Rollback optimistic update
-      setReservations((prev) =>
+      updateReservationsCache((prev) =>
         prev.map((r) =>
           r.id === reservationId
             ? {
@@ -1736,7 +1511,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1781,7 +1556,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1817,7 +1592,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1841,7 +1616,7 @@ const AdminDashboard = () => {
 
     // Optimistic update - set timestamp immediately
     const now = new Date().toISOString();
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1880,7 +1655,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('SMS error:', error);
       // Rollback optimistic update on error
-      setReservations((prev) =>
+      updateReservationsCache((prev) =>
         prev.map((r) =>
           r.id === reservationId
             ? {
@@ -1908,7 +1683,7 @@ const AdminDashboard = () => {
 
     // Optimistic update - set timestamp immediately
     const now = new Date().toISOString();
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -1953,17 +1728,9 @@ const AdminDashboard = () => {
         if (!params || !params.phones || params.phones.length === 0) {
           includeEditLink = true;
         } else {
-          let normalizedPhone = reservation.customer_phone
-            .replace(/\s+/g, '')
-            .replace(/[^\d+]/g, '');
-          if (!normalizedPhone.startsWith('+')) {
-            normalizedPhone = '+48' + normalizedPhone;
-          }
+          const normalizedPhone = normalizePhoneForStorage(reservation.customer_phone) || '';
           includeEditLink = params.phones.some((p) => {
-            let normalizedAllowed = p.replace(/\s+/g, '').replace(/[^\d+]/g, '');
-            if (!normalizedAllowed.startsWith('+')) {
-              normalizedAllowed = '+48' + normalizedAllowed;
-            }
+            const normalizedAllowed = normalizePhoneForStorage(p) || '';
             return normalizedPhone === normalizedAllowed;
           });
         }
@@ -2001,7 +1768,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('SMS error:', error);
       // Rollback optimistic update on error
-      setReservations((prev) =>
+      updateReservationsCache((prev) =>
         prev.map((r) =>
           r.id === reservationId
             ? {
@@ -2043,7 +1810,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -2079,7 +1846,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -2132,7 +1899,7 @@ const AdminDashboard = () => {
       return;
     }
 
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -2156,10 +1923,10 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Get original reservation
+    // Get original reservation's confirmation code for SMS link
     const { data: originalReservation, error: fetchError } = await supabase
       .from('reservations')
-      .select('confirmation_code, reservation_date, start_time')
+      .select('confirmation_code')
       .eq('id', originalId)
       .single();
 
@@ -2168,52 +1935,18 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Swap confirmation codes - new takes original's code
     const originalCode = originalReservation.confirmation_code;
-    const newCode = changeRequest.confirmation_code;
-    const tempCode = `TEMP_${Date.now()}`;
 
-    // Step 1: Change original's code to temp (to avoid unique constraint conflict)
-    const { error: tempError } = await supabase
-      .from('reservations')
-      .update({ confirmation_code: tempCode })
-      .eq('id', originalId);
+    // Atomic swap: temp code → confirm change request → cancel original
+    const { error: rpcError } = await supabase.rpc('approve_change_request', {
+      p_change_request_id: changeRequestId,
+      p_original_id: originalId,
+    });
 
-    if (tempError) {
-      console.error('Error setting temp code:', tempError);
+    if (rpcError) {
+      console.error('Error approving change request:', rpcError);
       toast.error(t('errors.generic'));
       return;
-    }
-
-    // Step 2: Update change request: set original's code, clear link, set to confirmed
-    const { error: updateNewError } = await supabase
-      .from('reservations')
-      .update({
-        confirmation_code: originalCode,
-        original_reservation_id: null,
-        status: 'confirmed',
-        confirmed_at: new Date().toISOString(),
-      })
-      .eq('id', changeRequestId);
-
-    if (updateNewError) {
-      console.error('Error updating change request:', updateNewError);
-      toast.error(t('errors.generic'));
-      return;
-    }
-
-    // Step 3: Cancel original reservation with the new code
-    const { error: cancelError } = await supabase
-      .from('reservations')
-      .update({
-        status: 'cancelled',
-        cancelled_at: new Date().toISOString(),
-        confirmation_code: newCode,
-      })
-      .eq('id', originalId);
-
-    if (cancelError) {
-      console.error('Error cancelling original:', cancelError);
     }
 
     // Send SMS to customer with new optimized format
@@ -2240,7 +1973,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev
         .filter((r) => r.id !== originalId)
         .map((r) =>
@@ -2315,7 +2048,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) => prev.filter((r) => r.id !== changeRequestId));
+    updateReservationsCache((prev) => prev.filter((r) => r.id !== changeRequestId));
 
     toast.success(t('myReservation.changeRejected'));
   };
@@ -2352,7 +2085,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state - remove from visible list (no_show hides from calendar)
-    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+    updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
     setSelectedReservation(null);
     toast.success(t('reservations.noShowMarked'));
   };
@@ -2402,7 +2135,7 @@ const AdminDashboard = () => {
     }
 
     // Update local state
-    setReservations((prev) =>
+    updateReservationsCache((prev) =>
       prev.map((r) =>
         r.id === reservationId
           ? {
@@ -2443,7 +2176,7 @@ const AdminDashboard = () => {
           }
 
           // Restore local state
-          setReservations((prev) =>
+          updateReservationsCache((prev) =>
             prev.map((r) =>
               r.id === reservationId
                 ? {
@@ -2562,7 +2295,7 @@ const AdminDashboard = () => {
         .eq('id', vehicle.id);
       if (deleteError) console.error('Error deleting yard vehicle:', deleteError);
 
-      fetchReservations();
+      invalidateReservations();
       toast.success('Rezerwacja utworzona z placu');
     } catch (error) {
       console.error('Error creating reservation from yard:', error);
@@ -3116,7 +2849,7 @@ const AdminDashboard = () => {
                 }}
                 employees={cachedEmployees}
                 onOpenReservation={handleOpenReservationById}
-                onRequestAllHistory={() => fetchReservations(new Date('2020-01-01'))}
+                onRequestAllHistory={() => expandDateRange(new Date('2020-01-01'))}
               />
             )}
 
