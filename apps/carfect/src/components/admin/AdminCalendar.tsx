@@ -79,6 +79,18 @@ import { Calendar } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { MonthCalendarView, WeekTileView, useCalendarViewPreference } from './calendar';
 import type { GroupBy } from './calendar';
+import {
+  useCalendarWorkingHours,
+  parseTime,
+  formatTimeSlot,
+  getTimeBasedZIndex,
+  DEFAULT_START_HOUR,
+  DEFAULT_END_HOUR,
+  SLOT_MINUTES,
+  SLOTS_PER_HOUR,
+  SLOT_HEIGHT,
+  HOUR_HEIGHT,
+} from './calendar/useCalendarWorkingHours';
 type ViewMode = 'day' | 'two-days' | 'week' | 'month';
 interface Station {
   id: string;
@@ -188,13 +200,6 @@ interface AdminCalendarProps {
   forceCompact?: boolean;
 }
 
-// Default hours from 9:00 to 19:00
-const DEFAULT_START_HOUR = 9;
-const DEFAULT_END_HOUR = 19;
-const SLOT_MINUTES = 15; // 15-minute slots
-const SLOTS_PER_HOUR = 60 / SLOT_MINUTES; // 4 slots per hour
-const SLOT_HEIGHT = 32; // pixels per 15 minutes (increased for 3 lines in 30min + padding)
-const HOUR_HEIGHT = SLOT_HEIGHT * SLOTS_PER_HOUR; // 108px per hour
 
 const getStatusColor = (status: string, stationType?: string) => {
   // PPF reservations get special colors
@@ -243,20 +248,6 @@ const getStatusColor = (status: string, stationType?: string) => {
       return 'bg-amber-100 border-amber-300 text-amber-900';
   }
 };
-const parseTime = (time: string): number => {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours + minutes / 60;
-};
-const formatTimeSlot = (hour: number, slotIndex: number): string => {
-  const minutes = slotIndex * SLOT_MINUTES;
-  return `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-};
-// Dynamic z-index based on start time - later reservations appear on top
-const getTimeBasedZIndex = (startTime: string): number => {
-  const [hours, minutes] = startTime.split(':').map(Number);
-  // Base z-index 5-18 depending on time (5:00-22:00 range)
-  return 5 + Math.floor(hours - 5 + minutes / 60);
-};
 const AdminCalendar = ({
   stations,
   reservations,
@@ -297,6 +288,13 @@ const AdminCalendar = ({
   forceCompact = false,
 }: AdminCalendarProps) => {
   const { t } = useTranslation();
+  const {
+    getHoursForDate,
+    getWorkingHoursForDate,
+    isWorkingDay,
+    findNextWorkingDay,
+    getDisplayTimesForDate,
+  } = useCalendarWorkingHours({ workingHours: workingHours ?? null });
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = localStorage.getItem('admin-calendar-date');
     if (saved) {
@@ -562,101 +560,6 @@ const AdminCalendar = ({
   };
 
   // Calculate hours based on working hours for current day
-  // Returns expanded range with 30-min margins before open and after close for hatched areas
-  // Supports half-hour working hours like 8:30 or 16:30
-  const getHoursForDate = (
-    date: Date,
-  ): {
-    hours: number[];
-    startHour: number;
-    endHour: number;
-    closeTime: string;
-    workingStartTime: number; // decimal, e.g., 8.5 for 8:30
-    workingEndTime: number; // decimal, e.g., 16.5 for 16:30
-    displayStartTime: number; // decimal, start of display (with margin)
-    displayEndTime: number; // decimal, end of display (with margin)
-    startSlotOffset: number; // slots to skip in first hour (0-3)
-    isClosed: boolean; // true if this day has no working hours
-  } => {
-    const defaultResult = {
-      hours: Array.from(
-        {
-          length: DEFAULT_END_HOUR - DEFAULT_START_HOUR,
-        },
-        (_, i) => i + DEFAULT_START_HOUR,
-      ),
-      startHour: DEFAULT_START_HOUR,
-      endHour: DEFAULT_END_HOUR,
-      closeTime: `${DEFAULT_END_HOUR}:00`,
-      workingStartTime: DEFAULT_START_HOUR,
-      workingEndTime: DEFAULT_END_HOUR,
-      displayStartTime: DEFAULT_START_HOUR,
-      displayEndTime: DEFAULT_END_HOUR,
-      startSlotOffset: 0,
-      isClosed: false,
-    };
-    if (!workingHours) {
-      return defaultResult;
-    }
-    const dayName = format(date, 'EEEE').toLowerCase();
-    const dayHours = workingHours[dayName];
-
-    // Day is closed (null in workingHours) - mark as closed
-    if (!dayHours || !dayHours.open || !dayHours.close) {
-      return {
-        ...defaultResult,
-        isClosed: true,
-      };
-    }
-
-    // Parse time as decimal to support half-hours (e.g., "8:30" -> 8.5)
-    const parseTimeDecimal = (time: string): number => {
-      const [hours, minutes] = time.split(':').map(Number);
-      return hours + (minutes || 0) / 60;
-    };
-    const workingStartTime = parseTimeDecimal(dayHours.open);
-    const workingEndTime = parseTimeDecimal(dayHours.close);
-
-    // If parsing failed, use defaults
-    if (isNaN(workingStartTime) || isNaN(workingEndTime) || workingEndTime <= workingStartTime) {
-      return defaultResult;
-    }
-
-    // Add exactly 30min (0.5 hour) display margin before and after working hours for hatched areas
-    // displayStartTime and displayEndTime are in decimal hours (e.g., 8.5 = 8:30)
-    const displayStartTime = Math.max(0, workingStartTime - 0.5);
-    const displayEndTime = Math.min(24, workingEndTime + 0.5);
-
-    // Calculate the starting full hour for rendering
-    // If displayStartTime is e.g. 8.5, we start from hour 8 but will only show slots from :30
-    // If displayStartTime is e.g. 9.0, we start from hour 9
-    const displayStartHour = Math.floor(displayStartTime);
-    const displayEndHour = Math.ceil(displayEndTime);
-
-    // Calculate starting slot offset within the first hour
-    // e.g., if displayStartTime = 8.5, startSlotOffset = 2 (skip 8:00 and 8:15 slots)
-    const startSlotOffset = Math.round((displayStartTime - displayStartHour) * SLOTS_PER_HOUR);
-    return {
-      hours: Array.from(
-        {
-          length: displayEndHour - displayStartHour,
-        },
-        (_, i) => i + displayStartHour,
-      ),
-      startHour: displayStartHour,
-      endHour: displayEndHour,
-      closeTime: dayHours.close,
-      workingStartTime,
-      workingEndTime,
-      displayStartTime,
-      // e.g., 8.5 for 8:30 start
-      displayEndTime,
-      // e.g., 19.5 for 19:30 end
-      startSlotOffset,
-      // number of slots to skip in first hour (0-3)
-      isClosed: false,
-    };
-  };
   const {
     hours: HOURS,
     startHour: DAY_START_HOUR,
@@ -697,30 +600,6 @@ const AdminCalendar = ({
       longPressTimeout.current = null;
     }
   }, []);
-
-  // Helper to check if a day is a working day (has working hours configured)
-  const isWorkingDay = (date: Date): boolean => {
-    if (!workingHours) return true; // If no working hours, all days are "open"
-    const dayName = format(date, 'EEEE').toLowerCase();
-    const dayHours = workingHours[dayName];
-    return !!(dayHours && dayHours.open && dayHours.close);
-  };
-
-  // Find next working day starting from date (inclusive), skipping closed days
-  const findNextWorkingDay = (
-    startDate: Date,
-    direction: 'forward' | 'backward' = 'forward',
-    maxDays: number = 14,
-  ): Date => {
-    let checkDate = startDate;
-    for (let i = 0; i < maxDays; i++) {
-      if (isWorkingDay(checkDate)) {
-        return checkDate;
-      }
-      checkDate = direction === 'forward' ? addDays(checkDate, 1) : subDays(checkDate, 1);
-    }
-    return startDate; // Fallback to original date if no working day found
-  };
 
   // Navigation handlers
   const handlePrev = () => {
@@ -1067,35 +946,6 @@ const AdminCalendar = ({
     };
   };
 
-  // Get display times for a multi-day reservation on a specific date
-  const getDisplayTimesForDate = (
-    reservation: Reservation,
-    dateStr: string,
-  ): {
-    displayStart: string;
-    displayEnd: string;
-  } => {
-    const isFirstDay = reservation.reservation_date === dateStr;
-    const isLastDay = (reservation.end_date || reservation.reservation_date) === dateStr;
-    const { startTime: dayOpen, closeTime: dayClose } = getWorkingHoursForDate(dateStr);
-    let displayStart = reservation.start_time;
-    let displayEnd = reservation.end_time;
-
-    // If not first day, start from opening time
-    if (!isFirstDay) {
-      displayStart = dayOpen;
-    }
-
-    // If not last day, end at closing time
-    if (!isLastDay) {
-      displayEnd = dayClose;
-    }
-    return {
-      displayStart,
-      displayEnd,
-    };
-  };
-
   // Handle click on empty time slot - show context menu or default to reservation
   const handleSlotClick = (
     stationId: string,
@@ -1183,34 +1033,6 @@ const AdminCalendar = ({
       setDragOverStation(null);
       setDragOverSlot(null);
     }
-  };
-
-  // Get working hours for a specific date
-  const getWorkingHoursForDate = (
-    dateStr: string,
-  ): {
-    closeTime: string;
-    startTime: string;
-  } => {
-    if (!workingHours) {
-      return {
-        startTime: `${DEFAULT_START_HOUR}:00`,
-        closeTime: `${DEFAULT_END_HOUR}:00`,
-      };
-    }
-    const date = new Date(dateStr);
-    const dayName = format(date, 'EEEE').toLowerCase();
-    const dayHours = workingHours[dayName];
-    if (!dayHours) {
-      return {
-        startTime: `${DEFAULT_START_HOUR}:00`,
-        closeTime: `${DEFAULT_END_HOUR}:00`,
-      };
-    }
-    return {
-      startTime: dayHours.open,
-      closeTime: dayHours.close,
-    };
   };
 
   // Check if a time slot overlaps with existing reservations (including multi-day)
