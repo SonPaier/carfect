@@ -9,7 +9,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}', '../../libs/ui/src/**/*.{test,spec}.{ts,tsx}'],
+    include: [
+      'src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/ui/src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/shared-utils/src/**/*.{test,spec}.{ts,tsx}',
+    ],
     coverage: {
       reporter: ['text', 'html'],
       include: ['src/lib/**', 'src/hooks/**', 'src/components/**'],
