@@ -8,7 +8,7 @@ interface TimeColumnProps {
 
 export function TimeColumn({ hours, startSlotOffset, displayEndTime }: TimeColumnProps) {
   return (
-    <div className="w-12 md:w-16 shrink-0 border-r border-border/50 sticky left-0 z-30 bg-card">
+    <div className="w-12 md:w-16 shrink-0 border-r border-border/50 sticky left-0 bg-card" style={{ zIndex: 250 }}>
       {hours.map((hour, hourIndex) => {
         const isFirstHour = hourIndex === 0;
         const isLastHour = hourIndex === hours.length - 1;
