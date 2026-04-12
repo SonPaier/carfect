@@ -1,15 +1,12 @@
 import { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, subMonths, startOfWeek, subWeeks, addDays, parseISO } from 'date-fns';
-import type { ServiceMapEntry } from '@/hooks/useServiceDictionary';
+import { format, subMonths, startOfWeek, subWeeks, addDays } from 'date-fns';
+import { buildServicesMapFromDictionary, type DictionaryService, type ServiceMapEntry } from '@/hooks/useServiceDictionary';
 import type { Reservation, ServiceItem } from '@/types/reservation';
 import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
 
 export type { Reservation, ServiceItem };
-
-// Re-export ServiceMapEntry as ServiceMap for backward compat
-type ServiceMap = ServiceMapEntry;
 
 interface DateRange {
   from: Date;
@@ -21,7 +18,7 @@ async function fetchReservationsForRange(
   instanceId: string,
   from: Date,
   to: Date | null,
-  servicesMap: Map<string, ServiceMap>,
+  servicesMap: Map<string, ServiceMapEntry>,
 ): Promise<Reservation[]> {
   let query = supabase
     .from('reservations')
@@ -111,18 +108,10 @@ async function fetchReservationsForRange(
 
 interface UseReservationsOptions {
   instanceId: string | null;
-  services: Array<{
-    id: string;
-    name: string;
-    short_name?: string | null;
-    price_small?: number | null;
-    price_medium?: number | null;
-    price_large?: number | null;
-    price_from?: number | null;
-  }>;
+  serviceDictMap: Map<string, DictionaryService>;
 }
 
-export function useReservations({ instanceId, services }: UseReservationsOptions) {
+export function useReservations({ instanceId, serviceDictMap }: UseReservationsOptions) {
   const queryClient = useQueryClient();
 
   // Calculate initial date range: 1 week back from Monday
@@ -131,7 +120,7 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     const mondayThisWeek = startOfWeek(today, { weekStartsOn: 1 });
     return {
       from: subWeeks(mondayThisWeek, 1),
-      to: null, // All future reservations
+      to: null as null, // All future reservations
     };
   }, []);
 
@@ -147,22 +136,11 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isLoadingMoreMutex = useRef(false);
 
-  // Build services map
-  const servicesMap = useMemo(() => {
-    const map = new Map<string, ServiceMap>();
-    services.forEach((s) =>
-      map.set(s.id, {
-        id: s.id,
-        name: s.name,
-        shortcut: s.short_name,
-        price_small: s.price_small,
-        price_medium: s.price_medium,
-        price_large: s.price_large,
-        price_from: s.price_from,
-      }),
-    );
-    return map;
-  }, [services]);
+  // Build services map from dictionary (same as inline buildServicesMapFromDictionary)
+  const servicesMap = useMemo(
+    () => buildServicesMapFromDictionary(serviceDictMap),
+    [serviceDictMap],
+  );
 
   // Ref for realtime handler
   const servicesMapRef = useRef(servicesMap);
@@ -185,9 +163,9 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
         servicesMapRef.current,
       );
     },
-    enabled: !!instanceId && services.length > 0,
+    enabled: !!instanceId && serviceDictMap.size > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Load more past reservations
@@ -254,32 +232,47 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     [loadMoreReservationsDebounced],
   );
 
-  // Update a single reservation in cache (for realtime updates)
-  const updateReservationInCache = useCallback(
-    (updatedReservation: Reservation) => {
+  // Expand loaded range to include a specific date (e.g., load all history from 2020)
+  const expandDateRange = useCallback(
+    (fromDate: Date) => {
+      if (fromDate < loadedRangeRef.current.from) {
+        setLoadedRange((prev) => ({ ...prev, from: fromDate }));
+      }
+    },
+    [],
+  );
+
+  // General-purpose cache updater — replaces setReservations(fn) pattern
+  const updateReservationsCache = useCallback(
+    (updater: (prev: Reservation[]) => Reservation[]) => {
       queryClient.setQueryData<Reservation[]>(
         ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
-        (old = []) => {
-          const exists = old.some((r) => r.id === updatedReservation.id);
-          if (exists) {
-            return old.map((r) => (r.id === updatedReservation.id ? updatedReservation : r));
-          }
-          return [...old, updatedReservation];
-        },
+        (old = []) => updater(old),
       );
     },
     [instanceId, queryClient],
   );
 
+  // Update a single reservation in cache (for realtime updates)
+  const updateReservationInCache = useCallback(
+    (updatedReservation: Reservation) => {
+      updateReservationsCache((old) => {
+        const exists = old.some((r) => r.id === updatedReservation.id);
+        if (exists) {
+          return old.map((r) => (r.id === updatedReservation.id ? updatedReservation : r));
+        }
+        return [...old, updatedReservation];
+      });
+    },
+    [updateReservationsCache],
+  );
+
   // Remove a reservation from cache
   const removeReservationFromCache = useCallback(
     (reservationId: string) => {
-      queryClient.setQueryData<Reservation[]>(
-        ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
-        (old = []) => old.filter((r) => r.id !== reservationId),
-      );
+      updateReservationsCache((old) => old.filter((r) => r.id !== reservationId));
     },
-    [instanceId, queryClient],
+    [updateReservationsCache],
   );
 
   // Invalidate and refetch
@@ -307,8 +300,10 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     refetch,
     loadMoreReservations: loadMoreReservationsDebounced,
     checkAndLoadMore,
+    expandDateRange,
     updateReservationInCache,
     removeReservationFromCache,
+    updateReservationsCache,
     invalidateReservations,
     servicesMapRef,
     loadedDateRange: loadedRange,

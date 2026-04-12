@@ -46,26 +46,33 @@ function createWrapper() {
 
 const INSTANCE_ID = 'inst-abc';
 
-const BASE_SERVICES = [
-  {
-    id: 'svc-1',
-    name: 'Mycie podstawowe',
-    short_name: 'MP',
-    price_small: 40,
-    price_medium: 50,
-    price_large: 70,
-    price_from: null,
-  },
-  {
-    id: 'svc-2',
-    name: 'Polerowanie',
-    short_name: 'POL',
-    price_small: 250,
-    price_medium: 300,
-    price_large: 400,
-    price_from: 200,
-  },
-];
+const BASE_SERVICE_DICT_MAP = new Map([
+  [
+    'svc-1',
+    {
+      id: 'svc-1',
+      name: 'Mycie podstawowe',
+      short_name: 'MP' as string | null,
+      price_small: 40 as number | null,
+      price_medium: 50 as number | null,
+      price_large: 70 as number | null,
+      price_from: null as number | null,
+    },
+  ],
+  [
+    'svc-2',
+    {
+      id: 'svc-2',
+      name: 'Polerowanie',
+      short_name: 'POL' as string | null,
+      price_small: 250 as number | null,
+      price_medium: 300 as number | null,
+      price_large: 400 as number | null,
+      price_from: 200 as number | null,
+    },
+  ],
+]);
+const EMPTY_DICT_MAP = new Map();
 
 /** Build a minimal raw DB reservation row */
 function makeRawReservation(overrides: Partial<Record<string, unknown>> = {}) {
@@ -171,14 +178,14 @@ describe('useReservations', () => {
     it('does not fetch when query is disabled', () => {
       const wrapperNullInstance = createWrapper();
       const { result: resultNull } = renderHook(
-        () => useReservations({ instanceId: null, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: null, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper: wrapperNullInstance },
       );
       expect(resultNull.current.reservations).toEqual([]);
 
       const wrapperEmptyServices = createWrapper();
       const { result: resultEmpty } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: [] }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: EMPTY_DICT_MAP }),
         { wrapper: wrapperEmptyServices },
       );
       expect(resultEmpty.current.reservations).toEqual([]);
@@ -199,7 +206,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -217,7 +224,7 @@ describe('useReservations', () => {
 
       const wrapper2 = createWrapper();
       const { result: result2 } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper: wrapper2 },
       );
 
@@ -231,7 +238,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -245,7 +252,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -269,7 +276,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -313,7 +320,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -335,7 +342,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -355,7 +362,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -384,7 +391,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -411,7 +418,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -427,7 +434,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -468,7 +475,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -493,7 +500,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -517,7 +524,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -552,7 +559,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -574,7 +581,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -598,7 +605,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
@@ -626,7 +633,7 @@ describe('useReservations', () => {
 
       const wrapper = createWrapper();
       const { result } = renderHook(
-        () => useReservations({ instanceId: INSTANCE_ID, services: BASE_SERVICES }),
+        () => useReservations({ instanceId: INSTANCE_ID, serviceDictMap: BASE_SERVICE_DICT_MAP }),
         { wrapper },
       );
 
