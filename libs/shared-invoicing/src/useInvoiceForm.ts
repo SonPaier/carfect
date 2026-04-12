@@ -97,8 +97,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       .then(({ data }: any) => {
         if (data) {
           if (data.nip) setBuyerTaxNo(data.nip);
-          if (data.email && !buyerEmail) setBuyerEmail(data.email);
-          if (data.company && !buyerName) setBuyerName(data.company);
+          if (data.email) setBuyerEmail(data.email);
+          if (data.company) setBuyerName(data.company);
           if (data.billing_street) setBuyerStreet(data.billing_street);
           if (data.billing_postal_code) setBuyerPostCode(data.billing_postal_code);
           if (data.billing_city) setBuyerCity(data.billing_city);
@@ -147,7 +147,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         const pos: InvoicePosition[] = data.map((s: any) => ({
           name: s.unified_services?.name || 'Usluga',
           quantity: s.quantity != null ? Number(s.quantity) : 1,
-          unit_price_gross: Math.round((s.custom_price ?? s.unified_services?.price ?? 0) * 100) / 100,
+          unit_price_gross:
+            Math.round((s.custom_price ?? s.unified_services?.price ?? 0) * 100) / 100,
           vat_rate: settings?.default_vat_rate ?? 23,
           unit: s.unified_services?.unit || 'szt.',
         }));
@@ -247,7 +248,11 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       if (priceMode === 'netto') {
         if (p.vat_rate === -1) return { ...p, unit_price_gross: discountedPrice, discount: 0 };
         const rate = p.vat_rate / 100;
-        return { ...p, unit_price_gross: Math.round(discountedPrice * (1 + rate) * 100) / 100, discount: 0 };
+        return {
+          ...p,
+          unit_price_gross: Math.round(discountedPrice * (1 + rate) * 100) / 100,
+          discount: 0,
+        };
       }
       return { ...p, unit_price_gross: discountedPrice, discount: 0 };
     });
