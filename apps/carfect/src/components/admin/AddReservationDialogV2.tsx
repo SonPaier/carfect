@@ -515,16 +515,7 @@ const AddReservationDialogV2 = ({
           setAdminNotes('');
           setFinalPrice('');
           setOfferNumber('');
-          setFoundCustomers([]);
-          setSelectedCustomerId(null);
-          setCustomerDiscountPercent(null);
-          setShowPhoneDropdown(false);
-          setShowCustomerDropdown(false);
-          setCustomerVehicles([]);
-          setSelectedVehicleId(null);
-          employeesDirtyRef.current = false;
-          employeesSyncedFromBackendForReservationIdRef.current = null;
-          setAssignedEmployeeIds([]);
+          resetCustomerSearch();
         }
       } else {
         // Reservation create mode (FAB click)
@@ -548,14 +539,7 @@ const AddReservationDialogV2 = ({
         setAdminNotes('');
         setFinalPrice('');
         setOfferNumber('');
-        setFoundVehicles([]);
-        setFoundCustomers([]);
-        setSelectedCustomerId(null);
-        setCustomerDiscountPercent(null);
-        setShowPhoneDropdown(false);
-        setShowCustomerDropdown(false);
-        setCustomerVehicles([]);
-        setSelectedVehicleId(null);
+        resetCustomerSearch();
         employeesDirtyRef.current = false;
         employeesSyncedFromBackendForReservationIdRef.current = null;
         setAssignedEmployeeIds([]);
