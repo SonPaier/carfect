@@ -38,13 +38,14 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { usePricingMode } from '@/hooks/usePricingMode';
 import { useAdminNotes } from '@/hooks/useAdminNotes';
 import { useEmployeeAssignment } from '@/hooks/useEmployeeAssignment';
+import { useServiceManagement } from '@/hooks/useServiceManagement';
 import { bruttoToNetto } from '@/utils/pricing';
 import SendSmsDialog from '@/components/admin/SendSmsDialog';
 import { ReservationHistoryDrawer } from './history/ReservationHistoryDrawer';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import ReservationPhotosDialog from './ReservationPhotosDialog';
 import ReservationPhotosSection from './ReservationPhotosSection';
-import ServiceSelectionDrawer, { ServiceWithCategory } from './ServiceSelectionDrawer';
+import ServiceSelectionDrawer from './ServiceSelectionDrawer';
 import { EmployeeSelectionDrawer } from './EmployeeSelectionDrawer';
 import { AssignedEmployeesChips } from './AssignedEmployeesChips';
 import { Button } from '@shared/ui';
@@ -195,8 +196,18 @@ const ReservationDetailsDrawer = ({
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
   const [reservationPhotos, setReservationPhotos] = useState<string[]>([]);
-  const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
-  const [savingService, setSavingService] = useState(false);
+  // Service management (add/remove services)
+  const {
+    savingService,
+    serviceDrawerOpen,
+    setServiceDrawerOpen,
+    handleRemoveService,
+    handleConfirmServices,
+  } = useServiceManagement({
+    reservationId: reservation?.id || null,
+    currentServiceIds: reservation?.service_ids || [],
+    currentServiceItems: reservation?.service_items || null,
+  });
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<{
     id: string;
@@ -350,93 +361,6 @@ const ReservationDetailsDrawer = ({
     });
     navigate(`${adminBasePath}/protocols?${params.toString()}`);
     onClose();
-  };
-
-  // Quick add services to reservation
-  const handleAddServices = async (
-    newServiceIds: string[],
-    servicesData: ServiceWithCategory[],
-  ) => {
-    if (!reservation) return;
-    setSavingService(true);
-
-    try {
-      // Merge existing + new service IDs (deduplicate)
-      const currentIds = reservation.service_ids || [];
-      const mergedIds = [...new Set([...currentIds, ...newServiceIds])];
-
-      // Build service_items with full service data (including names for display)
-      const existingItems = reservation.service_items || [];
-      const existingServiceIds = new Set(existingItems.map((item) => item.service_id));
-
-      const newItems = newServiceIds
-        .filter((id) => !existingServiceIds.has(id))
-        .map((id) => {
-          const svc = servicesData.find((s) => s.id === id);
-          return {
-            service_id: id,
-            id: id,
-            name: svc?.name || 'Usługa',
-            short_name: svc?.short_name || null,
-            custom_price: null,
-            price_small: svc?.price_small ?? null,
-            price_medium: svc?.price_medium ?? null,
-            price_large: svc?.price_large ?? null,
-            price_from: svc?.price_from ?? null,
-          };
-        });
-
-      const mergedItems = [...existingItems, ...newItems];
-
-      // Update database
-      const { error } = await supabase
-        .from('reservations')
-        .update({
-          service_ids: mergedIds,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          service_items: mergedItems as any,
-        })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error adding services:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingService(false);
-    }
-  };
-
-  // Quick remove service from reservation
-  const handleRemoveService = async (serviceId: string) => {
-    if (!reservation) return;
-    setSavingService(true);
-
-    try {
-      const currentIds = reservation.service_ids || [];
-      const updatedIds = currentIds.filter((id) => id !== serviceId);
-      const updatedItems = (reservation.service_items || []).filter(
-        (item) => item.service_id !== serviceId,
-      );
-
-      const { error } = await supabase
-        .from('reservations')
-        .update({
-          service_ids: updatedIds,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          service_items: (updatedItems.length > 0 ? updatedItems : null) as any,
-        })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error removing service:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingService(false);
-    }
   };
 
   const handleEdit = () => {
@@ -1669,15 +1593,7 @@ const ReservationDetailsDrawer = ({
         selectedServiceIds={reservation?.service_ids || []}
         hasUnifiedServices={reservation?.has_unified_services ?? true}
         hideSelectedSection={true}
-        onConfirm={(serviceIds, duration, servicesData) => {
-          // Filter only NEW services (not already in reservation)
-          const currentIds = reservation?.service_ids || [];
-          const newIds = serviceIds.filter((id) => !currentIds.includes(id));
-          if (newIds.length > 0) {
-            handleAddServices(newIds, servicesData);
-          }
-          setServiceDrawerOpen(false);
-        }}
+        onConfirm={handleConfirmServices}
       />
 
       {/* Employee Selection Drawer */}
