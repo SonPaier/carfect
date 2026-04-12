@@ -20,3 +20,4 @@ export {
   HOUR_HEIGHT,
 } from './useCalendarWorkingHours';
 export type { HoursForDate, WorkingHoursMap } from './useCalendarWorkingHours';
+export { useCalendarOverlap } from './useCalendarOverlap';
