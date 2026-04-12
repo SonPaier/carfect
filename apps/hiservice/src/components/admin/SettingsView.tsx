@@ -12,6 +12,7 @@ import {
   Plug,
   MessageSquare,
   Smartphone,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ import { IntegrationsSettingsView } from '@shared/invoicing';
 import SmsPaymentTemplatesView from './settings/SmsPaymentTemplatesView';
 import { useInstanceFeature } from '@/hooks/useInstanceFeatures';
 import type { AddressSearchResult } from '@/lib/addressSearch';
+import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 
 interface SettingsViewProps {
   instanceId: string | null;
@@ -46,7 +48,8 @@ type SettingsTab =
   | 'users'
   | 'sms-templates'
   | 'integrations'
-  | 'app';
+  | 'app'
+  | 'subscription';
 
 const SettingsView = ({ instanceId, onColumnsChange }: SettingsViewProps) => {
   const isMobile = useIsMobile();
@@ -161,6 +164,7 @@ const SettingsView = ({ instanceId, onColumnsChange }: SettingsViewProps) => {
     { key: 'sms-templates', label: 'Szablony SMS', icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'integrations', label: 'Integracje', icon: <Plug className="w-4 h-4" /> },
     { key: 'app', label: 'Aplikacja', icon: <Smartphone className="w-4 h-4" /> },
+    { key: 'subscription', label: 'Subskrypcja i faktury', icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const tabs = allTabs.filter((t) => employeesEnabled || t.key !== 'employee-calendars');
@@ -583,6 +587,9 @@ const SettingsView = ({ instanceId, onColumnsChange }: SettingsViewProps) => {
             </div>
           </div>
         );
+
+      case 'subscription':
+        return <SubscriptionSettingsTab instanceId={instanceId} />;
 
       default:
         return null;

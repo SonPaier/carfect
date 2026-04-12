@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "paths": {
+      "@shared/ui": ["../ui/src/index.ts"],
+      "@shared/ui/*": ["../ui/src/*"],
+      "@shared/utils": ["../shared-utils/src/index.ts"],
+      "@shared/utils/*": ["../shared-utils/src/*"]
+    }
+  },
+  "include": ["src"]
+}
