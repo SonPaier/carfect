@@ -17,44 +17,17 @@ import {
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
-  ChevronLeft,
-  ChevronRight,
-  User,
-  Car,
   Clock,
-  Eye,
-  EyeOff,
-  Calendar as CalendarIcon,
-  CalendarDays,
-  CalendarRange,
   X,
-  Settings2,
-  Check,
-  Ban,
-  CalendarOff,
-  ParkingSquare,
-  MessageSquare,
-  Loader2,
-  ClipboardCheck,
-  Maximize2,
-  Minimize2,
-  ChevronsLeftRight,
 } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import type { Reservation } from '@/types/reservation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@shared/ui';
 import { YardVehiclesList, YardVehicle } from './YardVehiclesList';
 import SendSmsDialog from './SendSmsDialog';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@shared/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,14 +37,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@shared/ui';
-import { Checkbox } from '@shared/ui';
-import { Label } from '@shared/ui';
-import { Calendar } from '@shared/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { MonthCalendarView, WeekTileView, useCalendarViewPreference } from './calendar';
 import type { GroupBy } from './calendar';
+import { CalendarHeader } from './calendar/CalendarHeader';
 import {
   useCalendarWorkingHours,
   parseTime,
@@ -1042,398 +1011,48 @@ const AdminCalendar = ({
   return (
     <div data-testid="admin-calendar" className="flex flex-col h-full bg-card rounded-xl relative">
       {/* Calendar Header - sticky */}
-      <div className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 z-50 gap-2 mx-0">
-        {/* First line on mobile: navigation + actions, on desktop: full layout */}
-        <div className="flex items-center justify-between gap-2">
-          {/* Navigation */}
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev} className="h-8 w-8">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleNext} className="h-8 w-8">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToday}
-              className={cn(hallMode && 'hidden sm:flex')}
-            >
-              Dziś
-            </Button>
-            {isLoadingMore && (
-              <div className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span className="hidden sm:inline">Ładowanie...</span>
-              </div>
-            )}
-            {/* Date picker button */}
-            {isMobile ? (
-              <Button variant="outline" size="sm" onClick={() => setDatePickerOpen(true)}>
-                <CalendarIcon className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <CalendarIcon className="w-4 h-4" />
-                    <span className="hidden sm:inline">Data</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={currentDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setCurrentDate(date);
-                        setViewMode('day');
-                        setDatePickerOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className="pointer-events-auto"
-                    locale={pl}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-
-          {/* Day name - only visible on desktop in header row */}
-          {!isMobile &&
-            (viewMode === 'day' && !readOnly && onToggleClosedDay ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={cn(
-                      'text-lg font-semibold cursor-pointer',
-                      isToday && 'text-primary',
-                      currentDateClosed && 'text-red-500',
-                      hallMode && 'flex-1 text-center',
-                    )}
-                  >
-                    {format(currentDate, 'EEEE, d MMMM', { locale: pl })}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="bg-popover">
-                  <DropdownMenuItem
-                    onClick={() => setCloseDayDialogOpen(true)}
-                    className={cn(currentDateClosed ? 'text-emerald-600' : 'text-destructive')}
-                  >
-                    {currentDateClosed ? (
-                      <>
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        {t('calendar.openDay')}
-                      </>
-                    ) : (
-                      <>
-                        <CalendarOff className="w-4 h-4 mr-2" />
-                        {t('calendar.closeDay')}
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <h2
-                className={cn(
-                  'text-lg font-semibold',
-                  isToday && 'text-primary',
-                  currentDateClosed && viewMode === 'day' && 'text-red-500',
-                  hallMode && 'flex-1 text-center',
-                )}
-              >
-                {viewMode === 'month'
-                  ? format(currentDate, 'LLLL yyyy', { locale: pl })
-                  : viewMode === 'week'
-                    ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                    : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
-              </h2>
-            ))}
-
-          <div className="flex items-center gap-2">
-            {/* Station selector removed - week tile view shows all stations via color */}
-
-            {/* View mode toggle - icons only */}
-            <div className="flex border border-border rounded-lg overflow-hidden">
-                {allowedViews.includes('day') && (
-                  <Button
-                    variant={viewMode === 'day' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('day')}
-                    className="rounded-none border-0 px-2.5"
-                    title="Dzień"
-                  >
-                    <CalendarIcon className="w-4 h-4" />
-                  </Button>
-                )}
-                {allowedViews.includes('week') && showWeekView && (
-                  <Button
-                    variant={viewMode === 'week' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => { setViewMode('week'); saveDefaultView('week'); }}
-                    className="rounded-none border-0 px-2.5"
-                    title="Tydzień"
-                  >
-                    <CalendarDays className="w-4 h-4" />
-                  </Button>
-                )}
-                {allowedViews.includes('month') && (
-                  <Button
-                    variant={viewMode === 'month' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => { setViewMode('month'); saveDefaultView('month'); }}
-                    className="rounded-none border-0 px-2.5"
-                    title="Miesiąc"
-                  >
-                    <CalendarRange className="w-4 h-4" />
-                  </Button>
-                )}
-            </div>
-
-            {/* Column visibility settings - only show if not read only */}
-            {showStationFilter && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9" title="Kolumny">
-                    <Settings2 className="w-4 h-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-56 p-3">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Widoczność kolumn</h4>
-                      {hasHiddenStations && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={showAllStations}
-                          className="h-7 text-xs"
-                        >
-                          Pokaż wszystkie
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      {stations.map((station) => (
-                        <div key={station.id} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`station-${station.id}`}
-                            checked={!hiddenStationIds.has(station.id)}
-                            onCheckedChange={() => toggleStationVisibility(station.id)}
-                          />
-                          <Label
-                            htmlFor={`station-${station.id}`}
-                            className="text-sm cursor-pointer flex-1"
-                          >
-                            {station.name}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Default view preference */}
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <h4 className="font-medium text-sm">Domyślny widok</h4>
-                    <div className="space-y-1">
-                      {(['day', 'week', 'month'] as const).map((v) => (
-                        <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="radio" name="default-view" value={v}
-                            checked={viewMode === v}
-                            onChange={() => handleViewModeChange(v)}
-                            className="accent-primary" />
-                          {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Grouping mode for week/month views */}
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <h4 className="font-medium text-sm">Grupowanie (tydzień/miesiąc)</h4>
-                    <div className="space-y-1">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="radio" name="grouping-mode" value="station"
-                          checked={groupingMode === 'station'}
-                          onChange={() => handleGroupingModeChange('station')}
-                          className="accent-primary" />
-                        Wg stanowiska
-                      </label>
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="radio" name="grouping-mode" value="employee"
-                          checked={groupingMode === 'employee'}
-                          onChange={() => handleGroupingModeChange('employee')}
-                          className="accent-primary" />
-                        Wg pracownika
-                      </label>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            {/* Eye toggle for hall mode - show/hide sensitive data */}
-            {hallMode && onToggleHallDataVisibility && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={onToggleHallDataVisibility}
-                title={hallDataVisible ? 'Ukryj dane klienta' : 'Pokaż dane klienta'}
-              >
-                {hallDataVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </Button>
-            )}
-
-            {/* Compact mode toggle - desktop only */}
-            {!isMobile && (
-              <Button
-                variant={isCompact ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={toggleCompact}
-                className="gap-1 h-9"
-                title={isCompact ? 'Rozwiń kolumny' : 'Zwiń kolumny'}
-              >
-                <ChevronsLeftRight className="w-4 h-4" />
-              </Button>
-            )}
-
-            {/* Plac button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPlacDrawerOpen(true)}
-              className="gap-1 h-9 relative"
-            >
-              <ParkingSquare className="w-4 h-4" />
-              <span className="hidden md:inline">Plac</span>
-              {yardVehicleCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {yardVehicleCount > 99 ? '99+' : yardVehicleCount}
-                </span>
-              )}
-            </Button>
-
-            {/* Protocols button - only in hall mode when enabled */}
-            {showProtocolsButton && onProtocolsClick && (
-              <Button variant="outline" size="sm" onClick={onProtocolsClick} className="gap-1">
-                <ClipboardCheck className="w-4 h-4" />
-                <span className="hidden md:inline">Protokół</span>
-              </Button>
-            )}
-
-            {/* Fullscreen button - in hall mode */}
-            {hallMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleFullscreen}
-                className="gap-1"
-                title={isFullscreen ? t('calendar.exitFullscreen') : t('calendar.enterFullscreen')}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="w-4 h-4" />
-                ) : (
-                  <Maximize2 className="w-4 h-4" />
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Second line on mobile: day name centered with dropdown for day options */}
-        {isMobile &&
-          (viewMode === 'day' && !readOnly && onToggleClosedDay ? (
-            <>
-              <button
-                onClick={() => setDatePickerOpen(true)}
-                className={cn(
-                  'text-lg font-semibold cursor-pointer text-center w-full',
-                  isToday && 'text-primary',
-                  currentDateClosed && 'text-red-500',
-                )}
-              >
-                {format(currentDate, 'EEEE, d MMMM', { locale: pl })}
-              </button>
-              <Sheet open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>
-                  <div className="flex flex-col items-center gap-4">
-                    <Calendar
-                      mode="single"
-                      selected={currentDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          setCurrentDate(date);
-                          setViewMode('day');
-                          setDatePickerOpen(false);
-                        }
-                      }}
-                      className="pointer-events-auto"
-                      locale={pl}
-                    />
-
-                    <Button
-                      variant={currentDateClosed ? 'outline' : 'destructive'}
-                      className="w-full"
-                      onClick={() => {
-                        setDatePickerOpen(false);
-                        setCloseDayDialogOpen(true);
-                      }}
-                    >
-                      {currentDateClosed ? (
-                        <>
-                          <CalendarIcon className="w-4 h-4 mr-2" />
-                          {t('calendar.openDay')}
-                        </>
-                      ) : (
-                        <>
-                          <CalendarOff className="w-4 h-4 mr-2" />
-                          {t('calendar.closeDay')}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setDatePickerOpen(true)}
-                className={cn(
-                  'text-lg font-semibold cursor-pointer hover:opacity-80 transition-opacity text-center w-full',
-                  isToday && 'text-primary',
-                  currentDateClosed && viewMode === 'day' && 'text-red-500',
-                )}
-              >
-                {viewMode === 'week'
-                  ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                  : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
-              </button>
-              <Sheet open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>
-                  <div className="flex flex-col items-center gap-4">
-                    <Calendar
-                      mode="single"
-                      selected={currentDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          setCurrentDate(date);
-                          setViewMode('day');
-                          setDatePickerOpen(false);
-                        }
-                      }}
-                      className="pointer-events-auto"
-                      locale={pl}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </>
-          ))}
-      </div>
+      <CalendarHeader
+        currentDate={currentDate}
+        viewMode={viewMode}
+        groupingMode={groupingMode}
+        weekStart={weekStart}
+        isMobile={isMobile}
+        isToday={isToday}
+        currentDateClosed={currentDateClosed}
+        hallMode={hallMode}
+        readOnly={readOnly}
+        hallDataVisible={hallDataVisible}
+        allowedViews={allowedViews}
+        showWeekView={showWeekView}
+        showStationFilter={showStationFilter}
+        hasHiddenStations={hasHiddenStations}
+        isFullscreen={isFullscreen}
+        isCompact={isCompact}
+        isLoadingMore={isLoadingMore}
+        stations={stations}
+        hiddenStationIds={hiddenStationIds}
+        datePickerOpen={datePickerOpen}
+        closeDayDialogOpen={closeDayDialogOpen}
+        showProtocolsButton={showProtocolsButton}
+        yardVehicleCount={yardVehicleCount}
+        onToggleClosedDay={onToggleClosedDay}
+        onToggleHallDataVisibility={onToggleHallDataVisibility}
+        onProtocolsClick={onProtocolsClick}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        onToday={handleToday}
+        onDateSelect={setCurrentDate}
+        onViewModeChange={handleViewModeChange}
+        onGroupingModeChange={handleGroupingModeChange}
+        onDatePickerOpenChange={setDatePickerOpen}
+        onCloseDayDialogOpenChange={setCloseDayDialogOpen}
+        onToggleStation={toggleStationVisibility}
+        onShowAllStations={showAllStations}
+        onToggleCompact={toggleCompact}
+        onToggleFullscreen={toggleFullscreen}
+        onPlacDrawerOpen={() => setPlacDrawerOpen(true)}
+        onSaveDefaultView={saveDefaultView}
+      />
 
       {/* DAY VIEW */}
       {viewMode === 'day' && (

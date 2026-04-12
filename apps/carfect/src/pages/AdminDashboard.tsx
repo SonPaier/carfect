@@ -52,6 +52,7 @@ import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { format, addDays, getDay } from 'date-fns';
+import { useFreeTimeSlots } from '@/hooks/useFreeTimeSlots';
 import { useAuth } from '@/hooks/useAuth';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,6 +132,27 @@ const validViews: ViewType[] = [
   'employees',
   'ai_analyst',
 ];
+
+// Pure helper: find nearest working day starting from `date` (checks up to 7 days ahead)
+const findNearestWorkingDay = (
+  date: Date,
+  hours: Record<string, { open: string; close: string } | null>,
+): Date => {
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+  for (let i = 0; i < 7; i++) {
+    const checkDate = addDays(date, i);
+    const dayName = dayNames[getDay(checkDate)];
+    const dayConfig = hours[dayName];
+
+    if (dayConfig && dayConfig.open && dayConfig.close) {
+      return checkDate;
+    }
+  }
+
+  return date;
+};
+
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -418,28 +440,6 @@ const AdminDashboard = () => {
     fetchUnreadNotificationsCount();
     // Don't fetch yard vehicles eagerly - only when dialog opens
   }, [instanceId]);
-
-  // Helper to find nearest working day
-  const findNearestWorkingDay = (
-    date: Date,
-    hours: Record<string, { open: string; close: string } | null>,
-  ): Date => {
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-    for (let i = 0; i < 7; i++) {
-      const checkDate = addDays(date, i);
-      const dayName = dayNames[getDay(checkDate)];
-      const dayConfig = hours[dayName];
-
-      // Day is open if it has valid open/close times
-      if (dayConfig && dayConfig.open && dayConfig.close) {
-        return checkDate;
-      }
-    }
-
-    // Fallback to original date if no working day found
-    return date;
-  };
 
   // Set calendar to nearest working day when working hours are loaded
   useEffect(() => {
