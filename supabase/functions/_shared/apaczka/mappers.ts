@@ -97,7 +97,7 @@ export function mapOrderToApaczkaRequest(params: {
     shipment_currency: 'PLN',
     pickup: buildDefaultPickup(),
     shipment: shipmentItems,
-    comment: (order.comment as string) || '',
+    comment: '',
     content: buildContentDescription([pkg]),
     is_zebra: 0,
   };

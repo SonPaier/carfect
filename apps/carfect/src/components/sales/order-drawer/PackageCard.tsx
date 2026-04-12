@@ -20,8 +20,27 @@ import {
   type RollAssignment,
   getItemKey,
 } from '../hooks/useOrderPackages';
-import { formatCurrency, VAT_RATE } from '../constants';
+import { formatCurrency } from '../constants';
 import { mbToM2 } from '../types/rolls';
+
+/** Compute effective quantity for a product (handles meter-based with roll assignments) */
+function getEffectiveQty(p: OrderProduct): number {
+  if (p.priceUnit === 'meter') {
+    if (p.rollAssignments?.length) {
+      return p.rollAssignments.reduce((sum, a) => sum + a.usageM2, 0);
+    }
+    if (p.requiredMb) {
+      const widthMatch = p.name.match(/(\d{3,4})\s*mm/);
+      const widthMm = widthMatch ? parseInt(widthMatch[1]) : 1524;
+      return mbToM2(p.requiredMb, widthMm);
+    }
+  }
+  return p.quantity;
+}
+
+function getProductTotal(p: OrderProduct): number {
+  return p.priceNet * getEffectiveQty(p);
+}
 import MultiRollAssignment from '../rolls/MultiRollAssignment';
 import { useApaczkaValuation } from '../hooks/useApaczkaValuation';
 
@@ -293,8 +312,8 @@ const PackageCard = ({
                         p.productType === 'other'
                           ? 'grid-cols-[auto]'
                           : p.priceUnit === 'meter'
-                            ? 'grid-cols-[1fr_auto_auto]'
-                            : 'grid-cols-[1fr_auto]'
+                            ? 'grid-cols-[1fr_auto_auto_auto]'
+                            : 'grid-cols-[1fr_auto_auto]'
                       }`}
                     >
                       {p.productType !== 'other' && (
@@ -320,19 +339,47 @@ const PackageCard = ({
                           />
                         </div>
                       )}
-                      {!p.excludeFromDiscount && (
-                        <div className="space-y-1 w-16">
-                          <Label className="text-xs">Rabat %</Label>
-                          <NumericInput
-                            min={0}
-                            max={100}
-                            value={p.discountPercent != null ? p.discountPercent : undefined}
-                            onChange={(v) => onUpdateProductDiscount?.(itemKey, v ?? 0)}
-                            placeholder={String(customerDiscount ?? 0)}
-                            className="h-8 text-sm placeholder:text-foreground"
-                          />
-                        </div>
-                      )}
+                      {!p.excludeFromDiscount &&
+                        (() => {
+                          const effectiveDiscount = p.discountPercent ?? customerDiscount ?? 0;
+                          const total = getProductTotal(p);
+                          const discountAmountValue =
+                            total > 0
+                              ? Math.round(((total * effectiveDiscount) / 100) * 100) / 100
+                              : 0;
+                          return (
+                            <>
+                              <div className="space-y-1 w-16">
+                                <Label className="text-xs">Rabat %</Label>
+                                <NumericInput
+                                  min={0}
+                                  max={100}
+                                  value={p.discountPercent != null ? p.discountPercent : undefined}
+                                  onChange={(v) => onUpdateProductDiscount?.(itemKey, v ?? 0)}
+                                  placeholder={String(customerDiscount ?? 0)}
+                                  className="h-8 text-sm placeholder:text-foreground"
+                                />
+                              </div>
+                              <div className="space-y-1 w-20">
+                                <Label className="text-xs">Rabat zł</Label>
+                                <NumericInput
+                                  min={0}
+                                  value={discountAmountValue > 0 ? discountAmountValue : undefined}
+                                  onChange={(v) => {
+                                    if (total > 0 && v != null) {
+                                      const newPercent = (v / total) * 100;
+                                      onUpdateProductDiscount?.(itemKey, Math.min(newPercent, 100));
+                                    } else {
+                                      onUpdateProductDiscount?.(itemKey, 0);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </>
+                          );
+                        })()}
                     </div>
                     {/* Roll assignment for meter-based products */}
                     {p.priceUnit === 'meter' &&
