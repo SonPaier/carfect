@@ -1,55 +1,19 @@
-import { DragEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
-import { format } from 'date-fns';
 import {
   SLOT_HEIGHT,
   SLOTS_PER_HOUR,
   SLOT_MINUTES,
   HOUR_HEIGHT,
-  parseTime,
   getTimeBasedZIndex,
 } from './useCalendarWorkingHours';
 import { ReservationBlock } from './ReservationBlock';
 import { BreakBlock } from './BreakBlock';
 import { TrainingBlock } from './TrainingBlock';
+import { useCalendarGrid } from './CalendarGridContext';
 import type { Reservation } from '@/types/reservation';
 import type { HallConfig } from '../AdminCalendar';
-
-interface Station {
-  id: string;
-  name: string;
-  type: string;
-  color?: string | null;
-}
-
-interface Break {
-  id: string;
-  station_id: string;
-  break_date: string;
-  start_time: string;
-  end_time: string;
-  note: string | null;
-}
-
-interface Training {
-  id: string;
-  title: string;
-  description: string | null;
-  start_date: string;
-  end_date: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  status: string;
-  assigned_employee_ids: string[];
-}
-
-interface Employee {
-  id: string;
-  name: string;
-  photo_url: string | null;
-}
+import type { Station, Break, Training } from './types';
 
 export interface StationColumnProps {
   station: Station;
@@ -67,78 +31,13 @@ export interface StationColumnProps {
   stationReservations: Reservation[];
   stationBreaks: Break[];
   stationTrainings: Training[];
-  // Display
-  isMobile: boolean;
-  effectiveCompact: boolean;
+  // Display (station-specific)
   hallMode: boolean;
   hallConfig?: HallConfig;
   hallDataVisible?: boolean;
   isPastDay: boolean;
   isDateClosed: boolean;
-  employees: Employee[];
   showEmployeesOnReservations: boolean;
-  // Drag state
-  draggedReservation: Reservation | null;
-  dragOverStation: string | null;
-  dragOverSlot: { hour: number; slotIndex: number } | null;
-  dragPreviewStyle: { top: string; height: string; time: string } | null;
-  slotPreview: { date: string; startTime: string; endTime: string; stationId: string } | null;
-  selectedReservationId: string | null;
-  // Functions
-  getOverlapInfo: (
-    reservation: Reservation,
-    allReservations: Reservation[],
-    dateStr: string,
-  ) => { hasOverlap: boolean; index: number; total: number };
-  getDisplayTimesForDate: (
-    reservation: Reservation,
-    dateStr: string,
-  ) => { displayStart: string; displayEnd: string };
-  getReservationStyle: (
-    startTime: string,
-    endTime: string,
-    displayStartTime?: number,
-  ) => { top: string; height: string };
-  getStationCellBg: (color: string) => string;
-  getMobileColumnStyle: (count: number) => React.CSSProperties;
-  // Callbacks
-  onSlotClick: (stationId: string, hour: number, slotIndex: number) => void;
-  onSlotContextMenu: (
-    e: React.MouseEvent,
-    stationId: string,
-    hour: number,
-    slotIndex: number,
-    dateStr: string,
-  ) => void;
-  onDragStart: (e: DragEvent<HTMLDivElement>, reservation: Reservation) => void;
-  onDragEnd: () => void;
-  onDragOver: (e: DragEvent<HTMLDivElement>, stationId: string, dateStr: string) => void;
-  onSlotDragOver: (
-    e: DragEvent<HTMLDivElement>,
-    stationId: string,
-    hour: number,
-    slotIndex: number,
-    dateStr: string,
-  ) => void;
-  onDragLeave: (e: DragEvent<HTMLDivElement>) => void;
-  onDrop: (
-    e: DragEvent<HTMLDivElement>,
-    stationId: string,
-    dateStr: string,
-    hour?: number,
-    slotIndex?: number,
-  ) => void;
-  onTouchStart: (
-    stationId: string,
-    hour: number,
-    slotIndex: number,
-    dateStr: string,
-  ) => void;
-  onTouchEnd: () => void;
-  onTouchMove: () => void;
-  onReservationClick: (reservation: Reservation) => void;
-  onDeleteBreak?: (breakId: string) => void;
-  onTrainingClick?: (training: Training) => void;
 }
 
 export function StationColumn({
@@ -155,41 +54,44 @@ export function StationColumn({
   stationReservations,
   stationBreaks,
   stationTrainings,
-  isMobile,
-  effectiveCompact,
   hallMode,
   hallConfig,
   hallDataVisible,
   isPastDay,
   isDateClosed,
-  employees,
   showEmployeesOnReservations,
-  draggedReservation,
-  dragOverStation,
-  dragOverSlot,
-  dragPreviewStyle,
-  slotPreview,
-  selectedReservationId,
-  getOverlapInfo,
-  getDisplayTimesForDate,
-  getReservationStyle,
-  getStationCellBg,
-  getMobileColumnStyle,
-  onSlotClick,
-  onSlotContextMenu,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onSlotDragOver,
-  onDragLeave,
-  onDrop,
-  onTouchStart,
-  onTouchEnd,
-  onTouchMove,
-  onReservationClick,
-  onDeleteBreak,
-  onTrainingClick,
 }: StationColumnProps) {
+  const {
+    isMobile,
+    effectiveCompact,
+    employees,
+    draggedReservation,
+    dragOverStation,
+    dragOverSlot,
+    dragPreviewStyle,
+    slotPreview,
+    selectedReservationId,
+    getOverlapInfo,
+    getDisplayTimesForDate,
+    getReservationStyle,
+    getStationCellBg,
+    getMobileColumnStyle,
+    onSlotClick,
+    onSlotContextMenu,
+    onDragStart,
+    onDragEnd,
+    onDragOver,
+    onSlotDragOver,
+    onDragLeave,
+    onDrop,
+    onTouchStart,
+    onTouchEnd,
+    onTouchMove,
+    onReservationClick,
+    onDeleteBreak,
+    onTrainingClick,
+  } = useCalendarGrid();
+
   const totalVisibleHeight = (displayEndTime - displayStartTime) * HOUR_HEIGHT;
 
   let pastHatchHeight = 0;

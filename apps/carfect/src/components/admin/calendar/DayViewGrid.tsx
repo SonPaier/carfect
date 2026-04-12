@@ -2,47 +2,13 @@ import { DragEvent, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CalendarOff } from 'lucide-react';
-import { format } from 'date-fns';
 import { HOUR_HEIGHT, parseTime } from './useCalendarWorkingHours';
 import { TimeColumn } from './TimeColumn';
 import { StationColumn } from './StationColumn';
+import { CalendarGridProvider, type CalendarGridContextValue } from './CalendarGridContext';
 import type { Reservation } from '@/types/reservation';
 import type { HallConfig } from '../AdminCalendar';
-
-interface Station {
-  id: string;
-  name: string;
-  type: string;
-  color?: string | null;
-}
-
-interface Break {
-  id: string;
-  station_id: string;
-  break_date: string;
-  start_time: string;
-  end_time: string;
-  note: string | null;
-}
-
-interface Training {
-  id: string;
-  title: string;
-  description: string | null;
-  start_date: string;
-  end_date: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  status: string;
-  assigned_employee_ids: string[];
-}
-
-interface Employee {
-  id: string;
-  name: string;
-  photo_url: string | null;
-}
+import type { Station, Break, Training, Employee } from './types';
 
 export interface DayViewGridProps {
   // Date info
@@ -79,7 +45,7 @@ export interface DayViewGridProps {
   // Refs
   headerScrollRef: RefObject<HTMLDivElement | null>;
   gridScrollRef: RefObject<HTMLDivElement | null>;
-  // Functions
+  // Functions (DayViewGrid-specific)
   getReservationsForStation: (stationId: string) => Reservation[];
   getBreaksForStation: (stationId: string) => Break[];
   getAllTrainingsForStationAndDate: (
@@ -87,6 +53,11 @@ export interface DayViewGridProps {
     dateStr: string,
     stationIdx: number,
   ) => Training[];
+  getMobileStationsContainerStyle: (count: number) => React.CSSProperties;
+  renderDayStationHeaders: () => React.ReactNode;
+  handleHeaderScroll: () => void;
+  handleGridScroll: () => void;
+  // Context-provided functions (passed through to StationColumn via context)
   getOverlapInfo: (
     reservation: Reservation,
     allReservations: Reservation[],
@@ -103,11 +74,7 @@ export interface DayViewGridProps {
   ) => { top: string; height: string };
   getStationCellBg: (color: string) => string;
   getMobileColumnStyle: (count: number) => React.CSSProperties;
-  getMobileStationsContainerStyle: (count: number) => React.CSSProperties;
-  renderDayStationHeaders: () => React.ReactNode;
-  handleHeaderScroll: () => void;
-  handleGridScroll: () => void;
-  // Callbacks
+  // Callbacks (context-provided)
   onSlotClick: (stationId: string, hour: number, slotIndex: number) => void;
   onSlotContextMenu: (
     e: React.MouseEvent,
@@ -148,7 +115,7 @@ export interface DayViewGridProps {
 }
 
 export function DayViewGrid({
-  currentDate,
+  currentDate: _currentDate,
   currentDateStr,
   isToday,
   currentDateClosed,
@@ -179,15 +146,15 @@ export function DayViewGrid({
   getReservationsForStation,
   getBreaksForStation,
   getAllTrainingsForStationAndDate,
+  getMobileStationsContainerStyle,
+  renderDayStationHeaders,
+  handleHeaderScroll,
+  handleGridScroll,
   getOverlapInfo,
   getDisplayTimesForDate,
   getReservationStyle,
   getStationCellBg,
   getMobileColumnStyle,
-  getMobileStationsContainerStyle,
-  renderDayStationHeaders,
-  handleHeaderScroll,
-  handleGridScroll,
   onSlotClick,
   onSlotContextMenu,
   onDragStart,
@@ -211,8 +178,40 @@ export function DayViewGrid({
     isToday && currentHour >= displayStartTime && currentHour <= parseTime(dayCloseTime);
   const currentTimeTop = (currentHour - displayStartTime) * HOUR_HEIGHT;
 
+  const contextValue: CalendarGridContextValue = {
+    isMobile,
+    effectiveCompact,
+    hallConfig,
+    employees,
+    draggedReservation,
+    dragOverStation,
+    dragOverSlot,
+    dragPreviewStyle,
+    slotPreview,
+    selectedReservationId,
+    getOverlapInfo,
+    getDisplayTimesForDate,
+    getReservationStyle,
+    getStationCellBg,
+    getMobileColumnStyle,
+    onSlotClick,
+    onSlotContextMenu,
+    onDragStart,
+    onDragEnd,
+    onDragOver,
+    onSlotDragOver,
+    onDragLeave,
+    onDrop,
+    onTouchStart,
+    onTouchEnd,
+    onTouchMove,
+    onReservationClick,
+    onDeleteBreak,
+    onTrainingClick,
+  };
+
   return (
-    <>
+    <CalendarGridProvider value={contextValue}>
       {/* Station Headers - outside grid on desktop (JS-synced horizontal scroll) */}
       {!isMobile && (
         <div
@@ -287,40 +286,11 @@ export function DayViewGrid({
                   currentDateStr,
                   idx,
                 )}
-                isMobile={isMobile}
-                effectiveCompact={effectiveCompact}
                 hallMode={hallMode}
-                hallConfig={hallConfig}
                 hallDataVisible={hallDataVisible}
                 isPastDay={isPastDay}
                 isDateClosed={currentDateClosed}
-                employees={employees}
                 showEmployeesOnReservations={showEmployeesOnReservations}
-                draggedReservation={draggedReservation}
-                dragOverStation={dragOverStation}
-                dragOverSlot={dragOverSlot}
-                dragPreviewStyle={dragPreviewStyle}
-                slotPreview={slotPreview}
-                selectedReservationId={selectedReservationId}
-                getOverlapInfo={getOverlapInfo}
-                getDisplayTimesForDate={getDisplayTimesForDate}
-                getReservationStyle={getReservationStyle}
-                getStationCellBg={getStationCellBg}
-                getMobileColumnStyle={getMobileColumnStyle}
-                onSlotClick={onSlotClick}
-                onSlotContextMenu={onSlotContextMenu}
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
-                onDragOver={onDragOver}
-                onSlotDragOver={onSlotDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-                onTouchStart={onTouchStart}
-                onTouchEnd={onTouchEnd}
-                onTouchMove={onTouchMove}
-                onReservationClick={onReservationClick}
-                onDeleteBreak={onDeleteBreak}
-                onTrainingClick={onTrainingClick}
               />
             ))}
           </div>
@@ -344,6 +314,6 @@ export function DayViewGrid({
           )}
         </div>
       </div>
-    </>
+    </CalendarGridProvider>
   );
 }

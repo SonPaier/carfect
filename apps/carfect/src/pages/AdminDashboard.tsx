@@ -709,9 +709,8 @@ const AdminDashboard = () => {
     },
     [updateReservationsCache],
   );
-  const handleRealtimeRefetch = useCallback(() => {
-    refetchReservations();
-    fetchTrainings();
+  const handleRealtimeRefetch = useCallback(async () => {
+    await Promise.all([refetchReservations(), fetchTrainings()]);
   }, [refetchReservations, fetchTrainings]);
   const handleNewCustomerReservation = useCallback(
     (reservation: Reservation) => {

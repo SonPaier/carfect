@@ -11,7 +11,7 @@ interface UseReservationsRealtimeOptions {
   onInsert: (reservation: Reservation) => void;
   onUpdate: (reservation: Reservation) => void;
   onDelete: (reservationId: string) => void;
-  onRefetch: () => void;
+  onRefetch: () => void | Promise<void>;
   onNewCustomerReservation?: (reservation: Reservation) => void;
   onUpdateSelectedReservation?: (reservation: Reservation) => void;
   onTrainingInsert?: (training: Record<string, unknown>) => void;
@@ -91,9 +91,14 @@ export function useReservationsRealtime({
 
     lastRefetchTimeRef.current = now;
     isFetchingRef.current = true;
-    Promise.resolve(onRefetch()).finally(() => {
+    const result = onRefetch();
+    if (result && typeof (result as Promise<void>).then === 'function') {
+      (result as Promise<void>).finally(() => {
+        isFetchingRef.current = false;
+      });
+    } else {
       isFetchingRef.current = false;
-    });
+    }
   }, [onRefetch]);
 
   // Notification sound using Web Audio API oscillator (matching AdminDashboard inline impl)

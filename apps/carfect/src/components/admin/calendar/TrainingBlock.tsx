@@ -1,25 +1,7 @@
 import { cn } from '@/lib/utils';
 import { GraduationCap } from 'lucide-react';
 import { parseTime } from './useCalendarWorkingHours';
-
-interface Employee {
-  id: string;
-  name: string;
-  photo_url: string | null;
-}
-
-interface Training {
-  id: string;
-  title: string;
-  description: string | null;
-  start_date: string;
-  end_date: string | null;
-  start_time: string;
-  end_time: string;
-  station_id: string | null;
-  status: string;
-  assigned_employee_ids: string[];
-}
+import type { Employee, Training } from './types';
 
 function getTrainingStatusColor(status: string): string {
   if (status === 'sold_out') {

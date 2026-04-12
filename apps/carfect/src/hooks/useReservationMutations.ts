@@ -39,6 +39,43 @@ export function useReservationMutations({
 }: UseReservationMutationsOptions) {
   const { t } = useTranslation();
 
+  const optimisticMutation = useCallback(
+    async (
+      reservationId: string,
+      optimisticChanges: Partial<Reservation>,
+      operation: () => Promise<{ error: unknown }>,
+      options?: {
+        successMessage?: string;
+        errorMessage?: string;
+      },
+    ): Promise<boolean> => {
+      const reservation = reservations.find((r) => r.id === reservationId);
+      if (!reservation) return false;
+
+      updateReservationsCache((prev) =>
+        prev.map((r) => (r.id === reservationId ? { ...r, ...optimisticChanges } : r)),
+      );
+      markAsLocallyUpdated(reservationId);
+
+      const { error } = await operation();
+
+      if (error) {
+        updateReservationsCache((prev) =>
+          prev.map((r) => (r.id === reservationId ? reservation : r)),
+        );
+        console.error(options?.errorMessage ?? 'Mutation error:', error);
+        toast.error(t('errors.generic'));
+        return false;
+      }
+
+      if (options?.successMessage) {
+        toast.success(options.successMessage);
+      }
+      return true;
+    },
+    [reservations, updateReservationsCache, markAsLocallyUpdated, t],
+  );
+
   const handleDeleteReservation = useCallback(
     async (
       reservationId: string,
@@ -193,54 +230,25 @@ export function useReservationMutations({
       const reservation = reservations.find((r) => r.id === reservationId);
       if (!reservation) return;
 
-      const previousStatus = reservation.status;
-
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: 'confirmed',
-              }
-            : r,
-        ),
-      );
       setSelectedReservation((prev) =>
-        prev && prev.id === reservationId
-          ? {
-              ...prev,
-              status: 'confirmed',
-            }
-          : prev,
+        prev && prev.id === reservationId ? { ...prev, status: 'confirmed' } : prev,
       );
 
-      const { error } = await supabase
-        .from('reservations')
-        .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
-        .eq('id', reservationId);
+      const success = await optimisticMutation(
+        reservationId,
+        { status: 'confirmed' },
+        () =>
+          supabase
+            .from('reservations')
+            .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+            .eq('id', reservationId),
+        { errorMessage: 'Error confirming reservation:' },
+      );
 
-      if (error) {
-        updateReservationsCache((prev) =>
-          prev.map((r) =>
-            r.id === reservationId
-              ? {
-                  ...r,
-                  status: previousStatus,
-                }
-              : r,
-          ),
-        );
+      if (!success) {
         setSelectedReservation((prev) =>
-          prev && prev.id === reservationId
-            ? {
-                ...prev,
-                status: previousStatus,
-              }
-            : prev,
+          prev && prev.id === reservationId ? { ...prev, status: reservation.status } : prev,
         );
-
-        toast.error(t('errors.generic'));
-        console.error('Error confirming reservation:', error);
         return;
       }
 
@@ -264,44 +272,29 @@ export function useReservationMutations({
         toast.success(t('reservations.reservationConfirmed'));
       }
     },
-    [instanceId, instanceData, reservations, updateReservationsCache, setSelectedReservation, t],
+    [instanceId, instanceData, reservations, optimisticMutation, setSelectedReservation, t],
   );
 
   const handleStartWork = useCallback(
     async (reservationId: string) => {
-      const reservation = reservations.find((r) => r.id === reservationId);
-      if (!reservation) return;
-
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({
-          status: 'in_progress',
-          started_at: new Date().toISOString(),
-        })
-        .eq('id', reservationId);
-
-      if (updateError) {
-        toast.error(t('errors.generic'));
-        console.error('Update error:', updateError);
-        return;
-      }
-
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: 'in_progress',
-              }
-            : r,
-        ),
+      const started_at = new Date().toISOString();
+      const success = await optimisticMutation(
+        reservationId,
+        { status: 'in_progress', started_at },
+        () =>
+          supabase
+            .from('reservations')
+            .update({ status: 'in_progress', started_at })
+            .eq('id', reservationId),
+        { errorMessage: 'Update error:' },
       );
-
-      toast.success(t('reservations.workStarted'), {
-        icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
-      });
+      if (success) {
+        toast.success(t('reservations.workStarted'), {
+          icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
+        });
+      }
     },
-    [reservations, updateReservationsCache, t],
+    [optimisticMutation, t],
   );
 
   const handleEndWork = useCallback(
@@ -353,39 +346,24 @@ export function useReservationMutations({
 
   const handleReleaseVehicle = useCallback(
     async (reservationId: string) => {
-      const reservation = reservations.find((r) => r.id === reservationId);
-      if (!reservation) return;
-
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({
-          status: 'released',
-          released_at: new Date().toISOString(),
-        })
-        .eq('id', reservationId);
-
-      if (updateError) {
-        toast.error(t('errors.generic'));
-        console.error('Update error:', updateError);
-        return;
-      }
-
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: 'released',
-              }
-            : r,
-        ),
+      const released_at = new Date().toISOString();
+      const success = await optimisticMutation(
+        reservationId,
+        { status: 'released', released_at },
+        () =>
+          supabase
+            .from('reservations')
+            .update({ status: 'released', released_at })
+            .eq('id', reservationId),
+        { errorMessage: 'Update error:' },
       );
-
-      toast.success(t('reservations.vehicleReleased'), {
-        icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
-      });
+      if (success) {
+        toast.success(t('reservations.vehicleReleased'), {
+          icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
+        });
+      }
     },
-    [reservations, updateReservationsCache, t],
+    [optimisticMutation, t],
   );
 
   const handleSendPickupSms = useCallback(
@@ -566,78 +544,44 @@ export function useReservationMutations({
 
   const handleRevertToConfirmed = useCallback(
     async (reservationId: string) => {
-      const reservation = reservations.find((r) => r.id === reservationId);
-      if (!reservation) return;
-
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({
-          status: 'confirmed',
-          started_at: null,
-          completed_at: null,
-        })
-        .eq('id', reservationId);
-
-      if (updateError) {
-        toast.error(t('errors.generic'));
-        console.error('Update error:', updateError);
-        return;
-      }
-
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: 'confirmed',
-              }
-            : r,
-        ),
+      const success = await optimisticMutation(
+        reservationId,
+        { status: 'confirmed', started_at: null, completed_at: null },
+        () =>
+          supabase
+            .from('reservations')
+            .update({ status: 'confirmed', started_at: null, completed_at: null })
+            .eq('id', reservationId),
+        { errorMessage: 'Update error:' },
       );
-
-      toast.success(t('reservations.revertedToConfirmed'), {
-        icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
-      });
+      if (success) {
+        toast.success(t('reservations.revertedToConfirmed'), {
+          icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
+        });
+      }
     },
-    [reservations, updateReservationsCache, t],
+    [optimisticMutation, t],
   );
 
   const handleRevertToInProgress = useCallback(
     async (reservationId: string) => {
-      const reservation = reservations.find((r) => r.id === reservationId);
-      if (!reservation) return;
-
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({
-          status: 'in_progress',
-          completed_at: null,
-          released_at: null,
-        })
-        .eq('id', reservationId);
-
-      if (updateError) {
-        toast.error(t('errors.generic'));
-        console.error('Update error:', updateError);
-        return;
-      }
-
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: 'in_progress',
-              }
-            : r,
-        ),
+      const success = await optimisticMutation(
+        reservationId,
+        { status: 'in_progress', completed_at: null, released_at: null },
+        () =>
+          supabase
+            .from('reservations')
+            .update({ status: 'in_progress', completed_at: null, released_at: null })
+            .eq('id', reservationId),
+        { errorMessage: 'Update error:' },
       );
-
-      toast.success(t('reservations.revertedToInProgress'), {
-        icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
-      });
+      if (success) {
+        toast.success(t('reservations.revertedToInProgress'), {
+          icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),
+        });
+      }
     },
-    [reservations, updateReservationsCache, t],
+    [optimisticMutation, t],
   );
 
   const handleStatusChange = useCallback(
@@ -664,31 +608,26 @@ export function useReservationMutations({
         }
       }
 
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update(updateData)
-        .eq('id', reservationId);
+      const optimisticChanges: Partial<Reservation> = {
+        status: newStatus,
+        ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
+      };
 
-      if (updateError) {
-        toast.error(t('errors.generic'));
-        console.error('Update error:', updateError);
-        return;
-      }
-
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: newStatus,
-                ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
-              }
-            : r,
-        ),
+      const success = await optimisticMutation(
+        reservationId,
+        optimisticChanges,
+        () =>
+          supabase
+            .from('reservations')
+            .update(updateData)
+            .eq('id', reservationId),
+        { errorMessage: 'Update error:' },
       );
-      toast.success(t('reservations.statusChanged'));
+      if (success) {
+        toast.success(t('reservations.statusChanged'));
+      }
     },
-    [reservations, updateReservationsCache, t],
+    [reservations, optimisticMutation, t],
   );
 
   const handleApproveChangeRequest = useCallback(

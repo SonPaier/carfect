@@ -1,14 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Coffee, X } from 'lucide-react';
-
-interface Break {
-  id: string;
-  station_id: string;
-  break_date: string;
-  start_time: string;
-  end_time: string;
-  note: string | null;
-}
+import type { Break } from './types';
 
 interface BreakBlockProps {
   breakItem: Break;

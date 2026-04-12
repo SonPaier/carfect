@@ -3,14 +3,9 @@ import { cn } from '@/lib/utils';
 import { Phone, FileText, RefreshCw } from 'lucide-react';
 import { parseTime } from './useCalendarWorkingHours';
 import { getStatusColor } from './types';
+import type { Employee } from './types';
 import type { Reservation } from '@/types/reservation';
 import type { HallConfig } from '../AdminCalendar';
-
-interface Employee {
-  id: string;
-  name: string;
-  photo_url: string | null;
-}
 
 interface ReservationBlockProps {
   reservation: Reservation;

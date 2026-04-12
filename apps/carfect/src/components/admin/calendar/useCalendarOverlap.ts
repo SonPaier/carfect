@@ -1,15 +1,7 @@
 import { useCallback } from 'react';
 import { parseTime } from './useCalendarWorkingHours';
 import type { Reservation } from '@/types/reservation';
-
-interface Break {
-  id: string;
-  station_id: string;
-  break_date: string;
-  start_time: string;
-  end_time: string;
-  note: string | null;
-}
+import type { Break } from './types';
 
 interface UseCalendarOverlapOptions {
   reservations: Reservation[];
