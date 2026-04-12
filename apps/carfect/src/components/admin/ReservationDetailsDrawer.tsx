@@ -36,6 +36,7 @@ import { useIsMobile } from '@shared/ui';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePricingMode } from '@/hooks/usePricingMode';
+import { useAdminNotes } from '@/hooks/useAdminNotes';
 import { bruttoToNetto } from '@/utils/pricing';
 import SendSmsDialog from '@/components/admin/SendSmsDialog';
 import { ReservationHistoryDrawer } from './history/ReservationHistoryDrawer';
@@ -154,6 +155,21 @@ const ReservationDetailsDrawer = ({
   const showDelete = !isHallMode || canDeleteInHallMode;
 
   const { t } = useTranslation();
+  const {
+    adminNotes,
+    setAdminNotes,
+    customerNotes,
+    editingNotes,
+    savingNotes,
+    notesTextareaRef,
+    startEditingNotes,
+    handleNotesBlur,
+    handleSaveAdminNotes,
+  } = useAdminNotes({
+    reservationId: reservation?.id ?? null,
+    initialAdminNotes: reservation?.admin_notes || '',
+    initialCustomerNotes: reservation?.customer_notes || '',
+  });
   const [deleting, setDeleting] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -181,9 +197,6 @@ const ReservationDetailsDrawer = ({
   const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
   const [savingService, setSavingService] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [savingNotes, setSavingNotes] = useState(false);
-  const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<{
     id: string;
     name: string;
@@ -216,8 +229,6 @@ const ReservationDetailsDrawer = ({
   const [customerPhone, setCustomerPhone] = useState('');
   const [carModel, setCarModel] = useState('');
   const [carSize, setCarSize] = useState<CarSize | ''>('');
-  const [customerNotes, setCustomerNotes] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
   const [price, setPrice] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -229,8 +240,6 @@ const ReservationDetailsDrawer = ({
       setCustomerPhone(reservation.customer_phone || '');
       setCarModel(reservation.vehicle_plate || '');
       setCarSize(reservation.car_size || '');
-      setCustomerNotes(reservation.customer_notes || '');
-      setAdminNotes(reservation.admin_notes || '');
       setPrice(reservation.price?.toString() || '');
       setStartTime(reservation.start_time || '');
       setEndTime(reservation.end_time || '');
@@ -425,44 +434,6 @@ const ReservationDetailsDrawer = ({
     }
   };
 
-  // Inline save admin notes
-  const handleSaveAdminNotes = async () => {
-    if (!reservation) return;
-    setSavingNotes(true);
-
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ admin_notes: adminNotes || null })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      setEditingNotes(false);
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error saving notes:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingNotes(false);
-    }
-  };
-
-  // Handle notes blur (click outside)
-  const handleNotesBlur = () => {
-    // Small delay to allow button clicks to register first
-    setTimeout(() => {
-      if (editingNotes) {
-        const original = reservation?.admin_notes || '';
-        const current = adminNotes || '';
-        if (current !== original) {
-          handleSaveAdminNotes();
-        } else {
-          setEditingNotes(false);
-        }
-      }
-    }, 100);
-  };
-
   // Handle employee assignment changes
   const handleEmployeeSelect = async (employeeIds: string[]) => {
     if (!reservation) return;
@@ -487,15 +458,6 @@ const ReservationDetailsDrawer = ({
   const handleRemoveEmployee = async (employeeId: string) => {
     const updatedIds = localAssignedEmployeeIds.filter((id) => id !== employeeId);
     await handleEmployeeSelect(updatedIds);
-  };
-
-  // Start editing notes
-  const startEditingNotes = () => {
-    setEditingNotes(true);
-    // Focus textarea after render
-    setTimeout(() => {
-      notesTextareaRef.current?.focus();
-    }, 50);
   };
 
   const handleEdit = () => {
