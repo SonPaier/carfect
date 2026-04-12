@@ -67,6 +67,9 @@ export function useCustomerSearch({
   isEditMode,
   onVehicleAutoFill,
 }: UseCustomerSearchOptions): UseCustomerSearchReturn {
+  // Stable ref for callback to avoid infinite re-render loops
+  const onVehicleAutoFillRef = useRef(onVehicleAutoFill);
+  onVehicleAutoFillRef.current = onVehicleAutoFill;
   const [searchingCustomer, setSearchingCustomer] = useState(false);
   const [foundVehicles, setFoundVehicles] = useState<CustomerVehicle[]>([]);
   const [foundCustomers, setFoundCustomers] = useState<Customer[]>([]);
@@ -233,7 +236,7 @@ export function useCustomerSearch({
           // Default select the first (most recently used)
           setSelectedVehicleId(unique[0].id);
           // Auto-fill model and size via callback
-          onVehicleAutoFill?.({
+          onVehicleAutoFillRef.current?.({
             model: unique[0].model,
             carSize: dbSizeToCarSize(unique[0].car_size),
           });
@@ -245,7 +248,7 @@ export function useCustomerSearch({
         console.error('Failed to load customer vehicles:', err);
       }
     },
-    [instanceId, onVehicleAutoFill],
+    [instanceId],
   );
 
   // Effect to load vehicles when phone is valid E.164
