@@ -38,6 +38,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useStationEmployees } from '@/hooks/useStationEmployees';
 import { useReservations } from '@/hooks/useReservations';
+import { useReservationsRealtime } from '@/hooks/useReservationsRealtime';
 import HallsListView from '@/components/admin/halls/HallsListView';
 import {
   DropdownMenu,
@@ -179,19 +180,6 @@ const AdminDashboard = () => {
 
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 
-  // Realtime connection state
-  const [realtimeConnected, setRealtimeConnected] = useState(true);
-
-  // Debounce mechanism to prevent realtime updates from overwriting local changes
-  const recentlyUpdatedReservationsRef = useRef<Map<string, number>>(new Map());
-
-  const markAsLocallyUpdated = useCallback((reservationId: string, durationMs = 3000) => {
-    recentlyUpdatedReservationsRef.current.set(reservationId, Date.now());
-    setTimeout(() => {
-      recentlyUpdatedReservationsRef.current.delete(reservationId);
-    }, durationMs);
-  }, []);
-
   // Deep link handling ref to prevent infinite loops
   const deepLinkHandledRef = useRef(false);
 
@@ -327,12 +315,6 @@ const AdminDashboard = () => {
     servicesMapRef,
     loadedDateRange,
   } = useReservations({ instanceId, serviceDictMap });
-
-  // Ref to track loadedDateRange for realtime handler (avoids re-subscribing on date change)
-  const loadedDateRangeRef = useRef(loadedDateRange);
-  useEffect(() => {
-    loadedDateRangeRef.current = loadedDateRange;
-  }, [loadedDateRange]);
 
   // Current calendar date (synced from AdminCalendar) - initialize from same localStorage source
   const [calendarDate, setCalendarDate] = useState<Date>(() => {
@@ -603,19 +585,6 @@ const AdminDashboard = () => {
     }
   }, [instanceId, trainingsEnabled]);
 
-  const fetchTrainingsRef = useRef(fetchTrainings);
-  const refetchReservationsRef = useRef(refetchReservations);
-  const lastRealtimeFetchRef = useRef(0);
-  const isFetchingRef = useRef(false);
-
-  useEffect(() => {
-    fetchTrainingsRef.current = fetchTrainings;
-  }, [fetchTrainings]);
-
-  useEffect(() => {
-    refetchReservationsRef.current = refetchReservations;
-  }, [refetchReservations]);
-
   useEffect(() => {
     fetchTrainings();
   }, [fetchTrainings]);
@@ -718,311 +687,96 @@ const AdminDashboard = () => {
     // IMPORTANT: Removed 'reservations' from dependencies to prevent infinite loop
   }, [reservationCodeFromUrl, instanceId, searchParams, setSearchParams]);
 
-  // Play notification sound for new customer reservations
-  const playNotificationSound = () => {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+  // Realtime subscription for reservations and trainings
+  const handleRealtimeInsert = useCallback(
+    (reservation: Reservation) => {
+      updateReservationsCache((prev) => {
+        if (prev.some((r) => r.id === reservation.id)) {
+          return prev.map((r) => (r.id === reservation.id ? reservation : r));
+        }
+        return [...prev, reservation];
+      });
+    },
+    [updateReservationsCache],
+  );
+  const handleRealtimeUpdate = useCallback(
+    (reservation: Reservation) => {
+      updateReservationsCache((prev) =>
+        prev.map((r) => (r.id === reservation.id ? reservation : r)),
+      );
+    },
+    [updateReservationsCache],
+  );
+  const handleRealtimeDelete = useCallback(
+    (reservationId: string) => {
+      updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
+    },
+    [updateReservationsCache],
+  );
+  const handleRealtimeRefetch = useCallback(() => {
+    refetchReservations();
+    fetchTrainings();
+  }, [refetchReservations, fetchTrainings]);
+  const handleNewCustomerReservation = useCallback(
+    (reservation: Reservation) => {
+      toast.success('🔔 Nowa rezerwacja od klienta!', {
+        description: `${reservation.customer_name} - ${reservation.start_time}`,
+      });
+    },
+    [],
+  );
+  const handleRealtimeUpdateSelected = useCallback(
+    (reservation: Reservation) => {
+      setSelectedReservation((prev) =>
+        prev?.id === reservation.id ? reservation : prev,
+      );
+    },
+    [],
+  );
+  const handleTrainingUpsert = useCallback(
+    (data: Record<string, unknown>) => {
+      const mapped: Training = {
+        ...(data as any),
+        assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+          ? data.assigned_employee_ids
+          : [],
+        station: (data as any).stations
+          ? { name: (data as any).stations.name, type: (data as any).stations.type }
+          : null,
+        training_type_record: (data as any).training_type_record || null,
+      };
+      setTrainings((prev) => {
+        const exists = prev.some((t) => t.id === mapped.id);
+        if (exists) return prev.map((t) => (t.id === mapped.id ? mapped : t));
+        return [...prev, mapped];
+      });
+      setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
+    },
+    [],
+  );
+  const handleTrainingDelete = useCallback(
+    (trainingId: string) => {
+      setTrainings((prev) => prev.filter((t) => t.id !== trainingId));
+      setSelectedTraining((prev) => (prev?.id === trainingId ? null : prev));
+    },
+    [],
+  );
 
-      // Pleasant notification melody
-      oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-      oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-      oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+  const { isConnected: realtimeConnected, markAsLocallyUpdated } = useReservationsRealtime({
+    instanceId,
+    servicesMapRef,
+    loadedDateRangeFrom: loadedDateRange.from,
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate,
+    onDelete: handleRealtimeDelete,
+    onRefetch: handleRealtimeRefetch,
+    onNewCustomerReservation: handleNewCustomerReservation,
+    onUpdateSelectedReservation: handleRealtimeUpdateSelected,
+    onTrainingInsert: handleTrainingUpsert,
+    onTrainingUpdate: handleTrainingUpsert,
+    onTrainingDelete: handleTrainingDelete,
+  });
 
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
-    } catch (e) {
-      console.log('Could not play notification sound:', e);
-    }
-  };
-
-  // Subscribe to realtime updates for reservations
-  // IMPORTANT: Only instanceId as dependency to maintain stable WebSocket connection
-  useEffect(() => {
-    if (!instanceId) return;
-
-    let retryCount = 0;
-    const maxRetries = 10;
-    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
-    let retryTimeoutId: NodeJS.Timeout | null = null;
-    let isCleanedUp = false;
-
-    const setupRealtimeChannel = () => {
-      if (isCleanedUp) return;
-
-      // Remove previous channel if exists
-      if (currentChannel) {
-        supabase.removeChannel(currentChannel);
-        currentChannel = null;
-      }
-
-      currentChannel = supabase
-        .channel(`reservations-changes-${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'reservations',
-            filter: `instance_id=eq.${instanceId}`,
-          },
-          (payload) => {
-            console.log('Realtime reservation update:', payload);
-
-            if (payload.eventType === 'INSERT') {
-              const newRecord = payload.new as any;
-              const reservationDate = parseISO(newRecord.reservation_date);
-
-              // Use ref to check date range without causing re-subscription
-              const isWithinRange = reservationDate >= loadedDateRangeRef.current.from;
-
-              if (!isWithinRange) {
-                return;
-              }
-
-              // Play sound only for customer reservations
-              if (newRecord.source === 'customer') {
-                playNotificationSound();
-              }
-
-              // Fetch the new reservation with service and station info
-              supabase
-                .from('reservations')
-                .select(
-                  `
-              id,
-              instance_id,
-              customer_name,
-              customer_phone,
-              vehicle_plate,
-              reservation_date,
-              end_date,
-              start_time,
-              end_time,
-              station_id,
-              status,
-              confirmation_code,
-              price,
-              price_netto,
-              customer_notes,
-              admin_notes,
-              source,
-              car_size,
-              service_ids,
-              service_items,
-              assigned_employee_ids,
-              original_reservation_id,
-              created_by,
-              created_by_username,
-              offer_number,
-              confirmation_sms_sent_at,
-              pickup_sms_sent_at,
-              has_unified_services,
-              photo_urls,
-              checked_service_ids,
-              stations:station_id (name, type)
-            `,
-                )
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
-                  if (data) {
-                    const newReservation = mapRawReservation(
-                      data as RawReservation,
-                      servicesMapRef.current as ServicesMap,
-                    );
-                    updateReservationsCache((prev) => {
-                      // Prevent duplicates (in case fetch also returned this reservation)
-                      if (prev.some((r) => r.id === data.id)) {
-                        return prev.map((r) =>
-                          r.id === data.id ? (newReservation as Reservation) : r,
-                        );
-                      }
-                      return [...prev, newReservation as Reservation];
-                    });
-
-                    const isCustomerReservation = (data as any).source === 'customer';
-                    if (isCustomerReservation) {
-                      toast.success('🔔 Nowa rezerwacja od klienta!', {
-                        description: `${data.customer_name} - ${data.start_time}`,
-                      });
-                    }
-                  }
-                });
-            } else if (payload.eventType === 'UPDATE') {
-              // Skip if recently updated locally (debounce to prevent flickering)
-              const lastLocalUpdate = recentlyUpdatedReservationsRef.current.get(payload.new.id);
-              if (lastLocalUpdate && Date.now() - lastLocalUpdate < 3000) {
-                console.log(
-                  '[Realtime] Skipping update for locally modified reservation:',
-                  payload.new.id,
-                );
-                return;
-              }
-
-              supabase
-                .from('reservations')
-                .select(
-                  `
-              id,
-              instance_id,
-              customer_name,
-              customer_phone,
-              vehicle_plate,
-              reservation_date,
-              end_date,
-              start_time,
-              end_time,
-              station_id,
-              status,
-              confirmation_code,
-              price,
-              price_netto,
-              customer_notes,
-              admin_notes,
-              source,
-              car_size,
-              service_ids,
-              service_items,
-              assigned_employee_ids,
-              original_reservation_id,
-              created_by,
-              created_by_username,
-              offer_number,
-              confirmation_sms_sent_at,
-              pickup_sms_sent_at,
-              has_unified_services,
-              photo_urls,
-              checked_service_ids,
-              stations:station_id (name, type)
-            `,
-                )
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
-                  if (data) {
-                    const updatedReservation = mapRawReservation(
-                      data as RawReservation,
-                      servicesMapRef.current as ServicesMap,
-                    );
-                    updateReservationsCache((prev) =>
-                      prev.map((r) =>
-                        r.id === payload.new.id ? (updatedReservation as Reservation) : r,
-                      ),
-                    );
-                    // Also update selectedReservation if viewing the same reservation
-                    setSelectedReservation((prev) =>
-                      prev?.id === payload.new.id ? (updatedReservation as Reservation) : prev,
-                    );
-                  }
-                });
-            } else if (payload.eventType === 'DELETE') {
-              updateReservationsCache((prev) => prev.filter((r) => r.id !== payload.old.id));
-            }
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'trainings',
-            filter: `instance_id=eq.${instanceId}`,
-          },
-          async (payload) => {
-            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-              const { data } = (await supabase
-                .from('trainings')
-                .select(
-                  '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
-                )
-                .eq('id', payload.new.id)
-                .single()) as any;
-              if (data) {
-                const mapped: Training = {
-                  ...data,
-                  assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
-                    ? data.assigned_employee_ids
-                    : [],
-                  station: data.stations
-                    ? { name: data.stations.name, type: data.stations.type }
-                    : null,
-                  training_type_record: data.training_type_record || null,
-                };
-                // Always upsert — handles both INSERT and UPDATE, prevents duplicates
-                setTrainings((prev) => {
-                  const exists = prev.some((t) => t.id === mapped.id);
-                  if (exists) {
-                    return prev.map((t) => (t.id === mapped.id ? mapped : t));
-                  }
-                  return [...prev, mapped];
-                });
-                setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
-              }
-            } else if (payload.eventType === 'DELETE') {
-              setTrainings((prev) => prev.filter((t) => t.id !== payload.old.id));
-              setSelectedTraining((prev) => (prev?.id === payload.old.id ? null : prev));
-            }
-          },
-        )
-        .subscribe((status) => {
-          console.log('Realtime subscription status:', status);
-
-          if (status === 'SUBSCRIBED') {
-            setRealtimeConnected(true);
-            retryCount = 0;
-            // Sync after reconnect to recover any missed events
-            // Throttle: skip if we fetched less than 5s ago (prevents rapid reconnect loops)
-            const now = Date.now();
-            if (now - lastRealtimeFetchRef.current > 5000 && !isFetchingRef.current) {
-              lastRealtimeFetchRef.current = now;
-              isFetchingRef.current = true;
-              Promise.all([refetchReservationsRef.current(), fetchTrainingsRef.current()]).finally(
-                () => {
-                  isFetchingRef.current = false;
-                },
-              );
-            }
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            setRealtimeConnected(false);
-
-            if (isCleanedUp) return;
-
-            if (retryCount < maxRetries) {
-              retryCount++;
-              const delay = Math.min(1000 * Math.pow(1.5, retryCount), 30000);
-              console.log(`Realtime retry ${retryCount}/${maxRetries} in ${delay}ms`);
-
-              retryTimeoutId = setTimeout(() => {
-                if (isCleanedUp) return;
-                setupRealtimeChannel();
-              }, delay);
-            } else {
-              console.error('Max realtime retries reached, falling back to periodic fetch');
-              retryTimeoutId = setTimeout(() => {
-                if (isCleanedUp) return;
-                retryCount = 0;
-                setupRealtimeChannel();
-              }, 30000);
-            }
-          }
-        });
-    };
-
-    // Initial connection
-    setupRealtimeChannel();
-
-    return () => {
-      isCleanedUp = true;
-      if (retryTimeoutId) clearTimeout(retryTimeoutId);
-      if (currentChannel) supabase.removeChannel(currentChannel);
-    };
-  }, [instanceId]); // Only instanceId - stable subscription
 
   // Calculate free time ranges (gaps) per station
   const getFreeRangesPerStation = () => {
@@ -2844,7 +2598,7 @@ const AdminDashboard = () => {
                 onDeleteTraining={async (id) => {
                   const { error } = await supabase.from('trainings').delete().eq('id', id);
                   if (!error) {
-                    fetchTrainingsRef.current();
+                    fetchTrainings();
                   }
                 }}
                 employees={cachedEmployees}
