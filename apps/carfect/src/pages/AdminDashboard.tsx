@@ -1605,6 +1605,11 @@ const AdminDashboard = () => {
                     yardVehicleCount={yardVehicleCount}
                     selectedReservationId={selectedReservation?.id || editingReservation?.id}
                     slotPreview={slotPreview}
+                    activeDateRange={
+                      (addReservationOpen || addReservationV2Open) && newReservationData.date
+                        ? { from: newReservationData.date, to: newReservationData.endDate || newReservationData.date }
+                        : null
+                    }
                     isLoadingMore={isLoadingMoreReservations}
                     employees={cachedEmployees}
                     stationEmployeesMap={stationEmployeesMap}

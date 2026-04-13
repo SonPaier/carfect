@@ -35,6 +35,8 @@ interface MonthCalendarViewProps {
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
   workingHours?: Record<string, { open?: string; close?: string } | null> | null;
+  activeDateRange?: { from: string; to: string } | null;
+  monthRange?: number;
   monthRange?: number;
 }
 
@@ -377,7 +379,7 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(({
     <div ref={ref} data-month={format(monthDate, 'yyyy-MM')}>
       {/* Month label — large bold, scrolls with content, separated from previous month */}
       <div className="px-4 pt-10 pb-4">
-        <h2 className="text-[22px] font-bold text-foreground">
+        <h2 className="text-[25px] font-bold text-foreground">
           {format(monthDate, 'LLLL yyyy', { locale: pl })}
         </h2>
       </div>
@@ -432,6 +434,7 @@ export const MonthCalendarView = ({
   employees: _employees,
   showNotes,
   workingHours,
+  activeDateRange,
   monthRange = 1,
 }: MonthCalendarViewProps) => {
   const isMobile = useIsMobile();
@@ -442,12 +445,26 @@ export const MonthCalendarView = ({
   const [dragEnd, setDragEnd] = useState<Date | null>(null);
   const isDragging = dragStart !== null;
 
+  // Combine drag highlight with active date range from open form
+  const activeRange = useMemo(() => {
+    if (activeDateRange?.from && activeDateRange?.to) {
+      return {
+        from: toDateOnly(activeDateRange.from),
+        to: toDateOnly(activeDateRange.to),
+      };
+    }
+    return null;
+  }, [activeDateRange]);
+
   const highlightRange = useMemo(() => {
-    if (!dragStart || !dragEnd) return null;
-    const from = dragStart < dragEnd ? dragStart : dragEnd;
-    const to = dragStart < dragEnd ? dragEnd : dragStart;
-    return { from, to };
-  }, [dragStart, dragEnd]);
+    // Drag selection takes priority, then active form range
+    if (dragStart && dragEnd) {
+      const from = dragStart < dragEnd ? dragStart : dragEnd;
+      const to = dragStart < dragEnd ? dragEnd : dragStart;
+      return { from, to };
+    }
+    return activeRange;
+  }, [dragStart, dragEnd, activeRange]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -519,13 +536,35 @@ export const MonthCalendarView = ({
   );
 
   // Build list of months to render: current ± range, plus 2 more into the future
+  // Dynamic month range — expands on scroll
+  const [pastMonths, setPastMonths] = useState(monthRange);
+  const [futureMonths, setFutureMonths] = useState(monthRange + 5);
+
   const months = useMemo(() => {
     const result: Date[] = [];
-    for (let i = -monthRange; i <= monthRange + 2; i++) {
+    for (let i = -pastMonths; i <= futureMonths; i++) {
       result.push(addMonths(currentDate, i));
     }
     return result;
-  }, [currentDate.getTime(), monthRange]);
+  }, [currentDate.getTime(), pastMonths, futureMonths]);
+
+  // Load more months on scroll near edges
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      // Near bottom — load more future months
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 500) {
+        setFutureMonths(prev => prev + 3);
+      }
+      // Near top — load more past months
+      if (el.scrollTop < 500) {
+        setPastMonths(prev => prev + 3);
+      }
+    };
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Scroll to current month on mount (instant, no animation)
   useEffect(() => {

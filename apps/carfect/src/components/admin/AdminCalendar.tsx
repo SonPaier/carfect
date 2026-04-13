@@ -146,6 +146,8 @@ interface AdminCalendarProps {
     endTime: string;
     stationId: string;
   } | null;
+  /** Active date range from open reservation form (highlights days in month/week view) */
+  activeDateRange?: { from: string; to: string } | null;
   /** Whether more reservations are being loaded */
   isLoadingMore?: boolean;
   /** Show protocols button in hall mode */
@@ -240,6 +242,7 @@ const AdminCalendar = ({
   yardVehicleCount = 0,
   selectedReservationId,
   slotPreview,
+  activeDateRange,
   isLoadingMore = false,
   showProtocolsButton = false,
   onProtocolsClick,
@@ -999,6 +1002,7 @@ const AdminCalendar = ({
             employees={employees}
             showNotes={showNotesInBars}
             workingHours={workingHours}
+            activeDateRange={activeDateRange}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
