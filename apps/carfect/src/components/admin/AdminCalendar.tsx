@@ -277,11 +277,23 @@ const AdminCalendar = ({
     const saved = localStorage.getItem('calendar-grouping-mode');
     return (saved === 'station' || saved === 'employee') ? saved : 'station';
   });
-  const [hiddenStationIds, setHiddenStationIds] = useState<Set<string>>(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem('calendar-hidden-stations');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
+  // Per-view hidden stations — each view mode has its own visibility settings
+  const [hiddenStationsMap, setHiddenStationsMap] = useState<Record<string, Set<string>>>(() => {
+    const result: Record<string, Set<string>> = {};
+    for (const v of ['day', 'week', 'month'] as const) {
+      const saved = localStorage.getItem(`calendar-hidden-stations-${v}`);
+      result[v] = saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+    return result;
   });
+  const hiddenStationIds = hiddenStationsMap[viewMode] || new Set<string>();
+  const setHiddenStationIds = (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    setHiddenStationsMap(prev => {
+      const current = prev[viewMode] || new Set<string>();
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      return { ...prev, [viewMode]: next };
+    });
+  };
   // Drag & drop state + handlers extracted to hook
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [weekViewStationId, setWeekViewStationId] = useState<string | null>(null);
@@ -475,10 +487,12 @@ const AdminCalendar = ({
     };
   };
 
-  // Save hidden stations to localStorage
+  // Save hidden stations to localStorage (per view mode)
   useEffect(() => {
-    localStorage.setItem('calendar-hidden-stations', JSON.stringify([...hiddenStationIds]));
-  }, [hiddenStationIds]);
+    for (const [view, ids] of Object.entries(hiddenStationsMap)) {
+      localStorage.setItem(`calendar-hidden-stations-${view}`, JSON.stringify([...ids]));
+    }
+  }, [hiddenStationsMap]);
 
   // Save current date to localStorage
   useEffect(() => {
