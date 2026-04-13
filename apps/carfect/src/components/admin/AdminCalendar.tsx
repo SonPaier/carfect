@@ -16,10 +16,7 @@ import {
   parseISO,
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import {
-  Clock,
-  X,
-} from 'lucide-react';
+import { Clock, X } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import type { Reservation } from '@/types/reservation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
@@ -167,7 +164,6 @@ interface AdminCalendarProps {
   forceCompact?: boolean;
 }
 
-
 const getStatusColor = (status: string, stationType?: string) => {
   // PPF reservations get special colors
   if (stationType === 'ppf') {
@@ -279,7 +275,7 @@ const AdminCalendar = ({
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [groupingMode, setGroupingMode] = useState<GroupBy>(() => {
     const saved = localStorage.getItem('calendar-grouping-mode');
-    return (saved === 'station' || saved === 'employee') ? saved : 'station';
+    return saved === 'station' || saved === 'employee' || saved === 'none' ? saved : 'station';
   });
   // Per-view station visibility + notes toggle
   const {
@@ -327,7 +323,6 @@ const AdminCalendar = ({
       return next;
     });
   }, []);
-
 
   // Listen for fullscreen changes (e.g., user presses ESC)
   useEffect(() => {
@@ -431,9 +426,18 @@ const AdminCalendar = ({
         scrollDirectionRef.current = null;
       };
 
-      el.addEventListener('touchstart', onTouchStart, { passive: true, signal: abortController.signal });
-      el.addEventListener('touchmove', onTouchMove, { passive: false, signal: abortController.signal });
-      el.addEventListener('touchend', onTouchEnd, { passive: true, signal: abortController.signal });
+      el.addEventListener('touchstart', onTouchStart, {
+        passive: true,
+        signal: abortController.signal,
+      });
+      el.addEventListener('touchmove', onTouchMove, {
+        passive: false,
+        signal: abortController.signal,
+      });
+      el.addEventListener('touchend', onTouchEnd, {
+        passive: true,
+        signal: abortController.signal,
+      });
     }, 50);
 
     return () => {
@@ -943,7 +947,6 @@ const AdminCalendar = ({
           onTrainingClick={onTrainingClick}
         />
       )}
-
 
       {/* WEEK VIEW (Tile-based) */}
       {viewMode === 'week' && (

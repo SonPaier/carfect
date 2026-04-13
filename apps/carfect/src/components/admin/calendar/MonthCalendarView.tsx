@@ -51,7 +51,7 @@ const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 
 const BAR_HEIGHT_NORMAL = 22;
 const BAR_HEIGHT_NOTES = 58;
-const BAR_GAP = 2;
+const BAR_GAP = 3;
 const DATE_HEADER_HEIGHT = 38;
 
 interface WeekRowProps {
