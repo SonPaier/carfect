@@ -113,7 +113,7 @@ describe('RollUsageTab — source toggle', () => {
 
     await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
 
-    // Before clicking Pracownik: only note + mb inputs (2 textboxes: note + spinbutton for mb)
+    // Before clicking Pracownik: only note + mb inputs
     expect(screen.queryByText('Imię pracownika')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Pracownik' }));
@@ -154,8 +154,8 @@ describe('RollUsageTab — m² conversion', () => {
 
     await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
 
-    // The mb input is a number (spinbutton role)
-    const mbInput = screen.getByRole('spinbutton');
+    // The mb input uses inputMode="decimal" (NumericInput with type="text")
+    const mbInput = document.querySelector('input[inputmode="decimal"]') as HTMLInputElement;
     await user.type(mbInput, '2');
 
     expect(screen.getByText(/= 2\.00 m²/)).toBeInTheDocument();
@@ -188,7 +188,7 @@ describe('RollUsageTab — submit button disabled state', () => {
 
     await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
 
-    const mbInput = screen.getByRole('spinbutton');
+    const mbInput = document.querySelector('input[inputmode="decimal"]') as HTMLInputElement;
     await user.type(mbInput, '0');
 
     const submitBtn = screen.getByRole('button', { name: 'Dodaj' });
@@ -205,7 +205,7 @@ describe('RollUsageTab — submit button disabled state', () => {
 
     await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
 
-    const mbInput = screen.getByRole('spinbutton');
+    const mbInput = document.querySelector('input[inputmode="decimal"]') as HTMLInputElement;
     await user.type(mbInput, '5');
 
     const submitBtn = screen.getByRole('button', { name: 'Dodaj' });
@@ -352,9 +352,9 @@ describe('RollUsageTab — edit populates form', () => {
     const pencilButton = allButtons[1];
     await user.click(pencilButton);
 
-    // Form should now be visible with pre-filled mb value (spinbutton for number input)
-    const mbInput = screen.getByRole('spinbutton');
-    expect(mbInput).toHaveValue(3.5);
+    // Form should now be visible with pre-filled mb value (NumericInput with type="text")
+    const mbInput = document.querySelector('input[inputmode="decimal"]') as HTMLInputElement;
+    expect(mbInput).toHaveValue('3.5');
 
     // Note input is the second textbox (first is worker name, which is not shown for manual)
     // There is 1 textbox: the note input
