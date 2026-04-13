@@ -128,7 +128,7 @@ const WeekRow = ({
           <div
             key={dateStr}
             className={cn(
-              'rounded-lg group relative cursor-pointer bg-muted/50 hover:bg-muted transition-colors',
+              'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors',
               isClosed && 'bg-red-50',
               isToday && !isClosed && 'ring-2 ring-primary/30',
               !isClosed && isInRange(day, highlightRange) && 'bg-primary/10 ring-2 ring-primary/30',
@@ -548,7 +548,7 @@ export const MonthCalendarView = ({
         {visibleDayNames.map((name) => (
           <div
             key={name}
-            className="text-center text-xs font-medium text-muted-foreground py-2 border-r border-border last:border-r-0"
+            className="text-center text-xs font-bold text-foreground py-2"
           >
             {name}
           </div>
