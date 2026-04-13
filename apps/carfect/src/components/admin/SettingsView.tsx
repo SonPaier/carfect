@@ -11,6 +11,7 @@ import {
   Warehouse,
   GraduationCap,
   Link2,
+  CreditCard,
 } from 'lucide-react';
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, useIsMobile } from '@shared/ui';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ import CompanySettingsForm from './CompanySettingsForm';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
 import { IntegrationsSettingsView } from '@shared/invoicing';
+import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 
 interface SettingsViewProps {
   instanceId: string | null;
@@ -43,7 +45,8 @@ type SettingsTab =
   | 'integrations'
   | 'app'
   | 'sms'
-  | 'users';
+  | 'users'
+  | 'subscription';
 
 const SettingsView = ({
   instanceId,
@@ -78,6 +81,7 @@ const SettingsView = ({
     { key: 'app', label: t('settings.tabs.app'), icon: <Settings2 className="w-4 h-4" /> },
     { key: 'sms', label: t('settings.tabs.sms'), icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'users', label: t('settings.tabs.users'), icon: <Users className="w-4 h-4" /> },
+    { key: 'subscription', label: 'Subskrypcja i faktury', icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const tabs = allTabs.filter((tab) => tab.visible !== false);
@@ -151,6 +155,9 @@ const SettingsView = ({
 
       case 'users':
         return instanceId ? <InstanceUsersTab instanceId={instanceId} /> : null;
+
+      case 'subscription':
+        return <SubscriptionSettingsTab instanceId={instanceId} />;
 
       default:
         return null;

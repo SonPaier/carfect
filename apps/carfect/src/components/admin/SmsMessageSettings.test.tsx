@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SmsMessageSettings from './SmsMessageSettings';
+import { POLISH_MONTH_NAMES } from '@/lib/polishDateUtils';
 
 // ---- Supabase mock ----
 const mockFrom = vi.fn();
@@ -116,24 +117,10 @@ describe('SmsMessageSettings', () => {
     render(<SmsMessageSettings instanceId={INSTANCE_ID} />);
 
     const now = new Date();
-    const monthNames = [
-      'Styczeń',
-      'Luty',
-      'Marzec',
-      'Kwiecień',
-      'Maj',
-      'Czerwiec',
-      'Lipiec',
-      'Sierpień',
-      'Wrzesień',
-      'Październik',
-      'Listopad',
-      'Grudzień',
-    ];
 
     await waitFor(() => {
       expect(
-        screen.getByText(`${monthNames[now.getMonth()]} ${now.getFullYear()}`),
+        screen.getByText(`${POLISH_MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`),
       ).toBeInTheDocument();
     });
   });
@@ -205,24 +192,10 @@ describe('SmsMessageSettings', () => {
 
     const now = new Date();
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const monthNames = [
-      'Styczeń',
-      'Luty',
-      'Marzec',
-      'Kwiecień',
-      'Maj',
-      'Czerwiec',
-      'Lipiec',
-      'Sierpień',
-      'Wrzesień',
-      'Październik',
-      'Listopad',
-      'Grudzień',
-    ];
 
     await waitFor(() => {
       expect(
-        screen.getByText(`${monthNames[prevMonth.getMonth()]} ${prevMonth.getFullYear()}`),
+        screen.getByText(`${POLISH_MONTH_NAMES[prevMonth.getMonth()]} ${prevMonth.getFullYear()}`),
       ).toBeInTheDocument();
     });
   });

@@ -2,32 +2,11 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseISO } from 'date-fns';
 import type { Reservation } from './useReservations';
-
-interface ServiceItem {
-  service_id: string;
-  custom_price: number | null;
-  name?: string;
-  id?: string;
-  short_name?: string | null;
-  price_small?: number | null;
-  price_medium?: number | null;
-  price_large?: number | null;
-  price_from?: number | null;
-}
-
-interface ServiceMap {
-  id: string;
-  name: string;
-  shortcut?: string | null;
-  price_small?: number | null;
-  price_medium?: number | null;
-  price_large?: number | null;
-  price_from?: number | null;
-}
+import { mapRawReservation, type ServicesMap, type ServicesMapEntry, type RawReservation } from '@/lib/reservationMapping';
 
 interface UseReservationsRealtimeOptions {
   instanceId: string | null;
-  servicesMapRef: React.MutableRefObject<Map<string, ServiceMap>>;
+  servicesMapRef: React.MutableRefObject<Map<string, ServicesMapEntry>>;
   loadedDateRangeFrom: Date;
   onInsert: (reservation: Reservation) => void;
   onUpdate: (reservation: Reservation) => void;
@@ -99,53 +78,8 @@ export function useReservationsRealtime({
   }, [onRefetch]);
 
   // Map raw data to Reservation
-  const mapRealtimeData = useCallback((data: Record<string, unknown>): Reservation => {
-    const serviceItems = data.service_items as ServiceItem[] | null;
-    const serviceIds = data.service_ids as string[] | null;
-
-    let servicesDataMapped: Array<{
-      id?: string;
-      name: string;
-      shortcut?: string | null;
-      price_small?: number | null;
-      price_medium?: number | null;
-      price_large?: number | null;
-      price_from?: number | null;
-    }> = [];
-
-    if (serviceItems && serviceItems.length > 0) {
-      servicesDataMapped = serviceItems.map(item => ({
-        id: item.id || item.service_id,
-        name: item.name || 'Usługa',
-        shortcut: item.short_name || null,
-        price_small: item.price_small ?? null,
-        price_medium: item.price_medium ?? null,
-        price_large: item.price_large ?? null,
-        price_from: item.price_from ?? null
-      }));
-    } else if (serviceIds && serviceIds.length > 0) {
-      serviceIds.forEach(id => {
-        const svc = servicesMapRef.current.get(id);
-        if (svc) {
-          servicesDataMapped.push(svc);
-        }
-      });
-    }
-
-    return {
-      ...data,
-      status: data.status || 'pending',
-      service_ids: Array.isArray(data.service_ids) ? data.service_ids : undefined,
-      service_items: Array.isArray(data.service_items) ? data.service_items : undefined,
-      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-      station: data.stations ? {
-        name: (data.stations as { name: string; type: string }).name,
-        type: (data.stations as { name: string; type: string }).type
-      } : undefined,
-      has_unified_services: data.has_unified_services,
-      photo_urls: data.photo_urls,
-      checked_service_ids: Array.isArray(data.checked_service_ids) ? data.checked_service_ids : undefined
-    } as Reservation;
+  const mapRealtimeData = useCallback((data: RawReservation): Reservation => {
+    return mapRawReservation(data, servicesMapRef.current as ServicesMap);
   }, [servicesMapRef]);
 
   useEffect(() => {

@@ -1,14 +1,12 @@
 import { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, subMonths, startOfWeek, subWeeks, addDays, parseISO } from 'date-fns';
-import type { ServiceMapEntry } from '@/hooks/useServiceDictionary';
+import { format, subMonths, startOfWeek, subWeeks, addDays } from 'date-fns';
+import { buildServicesMapFromDictionary, type DictionaryService, type ServiceMapEntry } from '@/hooks/useServiceDictionary';
 import type { Reservation, ServiceItem } from '@/types/reservation';
+import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
 
 export type { Reservation, ServiceItem };
-
-// Re-export ServiceMapEntry as ServiceMap for backward compat
-type ServiceMap = ServiceMapEntry;
 
 interface DateRange {
   from: Date;
@@ -20,7 +18,7 @@ async function fetchReservationsForRange(
   instanceId: string,
   from: Date,
   to: Date | null,
-  servicesMap: Map<string, ServiceMap>,
+  servicesMap: Map<string, ServiceMapEntry>,
 ): Promise<Reservation[]> {
   let query = supabase
     .from('reservations')
@@ -95,107 +93,25 @@ async function fetchReservationsForRange(
 
   // Map reservation data
   return data.map((r) => {
-    const serviceItems = r.service_items as unknown as ServiceItem[] | null;
-    const serviceIds = r.service_ids as string[] | null;
-
-    let servicesDataMapped: Array<{
-      id?: string;
-      name: string;
-      shortcut?: string | null;
-      price_small?: number | null;
-      price_medium?: number | null;
-      price_large?: number | null;
-      price_from?: number | null;
-    }> = [];
-
-    // Priority: service_ids + service_items for metadata
-    if (serviceIds && serviceIds.length > 0) {
-      const itemsById = new Map<string, ServiceItem>();
-      if (serviceItems) {
-        serviceItems.forEach((item) => {
-          const key = item.id || item.service_id;
-          if (key) itemsById.set(key, item);
-        });
-      }
-
-      servicesDataMapped = serviceIds.map((id) => {
-        const item = itemsById.get(id);
-        const svc = servicesMap.get(id);
-
-        return {
-          id,
-          name: item?.name ?? svc?.name ?? 'Usługa',
-          shortcut: item?.short_name ?? svc?.shortcut ?? null,
-          price_small: item?.price_small ?? svc?.price_small ?? null,
-          price_medium: item?.price_medium ?? svc?.price_medium ?? null,
-          price_large: item?.price_large ?? svc?.price_large ?? null,
-          price_from: item?.price_from ?? svc?.price_from ?? null,
-        };
-      });
-    } else if (serviceItems && serviceItems.length > 0) {
-      const seen = new Set<string>();
-      servicesDataMapped = serviceItems
-        .map((item) => {
-          const resolvedId = item.id || item.service_id;
-          const svc = resolvedId ? servicesMap.get(resolvedId) : undefined;
-          return {
-            id: resolvedId,
-            name: item.name ?? svc?.name ?? 'Usługa',
-            shortcut: item.short_name ?? svc?.shortcut ?? null,
-            price_small: item.price_small ?? svc?.price_small ?? null,
-            price_medium: item.price_medium ?? svc?.price_medium ?? null,
-            price_large: item.price_large ?? svc?.price_large ?? null,
-            price_from: item.price_from ?? svc?.price_from ?? null,
-          };
-        })
-        .filter((svc) => {
-          if (!svc.id) return false;
-          if (seen.has(svc.id)) return false;
-          seen.add(svc.id);
-          return true;
-        });
-    }
+    const mapped = mapRawReservation(r as RawReservation, servicesMap as ServicesMap);
 
     const originalReservation = r.original_reservation_id
       ? originalReservationsMap.get(r.original_reservation_id)
       : null;
 
     return {
-      ...r,
-      status: r.status || 'pending',
-      service_ids: Array.isArray(r.service_ids) ? (r.service_ids as string[]) : undefined,
-      service_items: Array.isArray(r.service_items)
-        ? (r.service_items as unknown as ServiceItem[])
-        : undefined,
-      services_data: servicesDataMapped.length > 0 ? servicesDataMapped : undefined,
-      station: r.stations
-        ? {
-            name: r.stations.name,
-            type: r.stations.type,
-          }
-        : undefined,
+      ...mapped,
       original_reservation: originalReservation || null,
-      created_by_username: r.created_by_username || null,
-      has_unified_services: r.has_unified_services ?? null,
-      checked_service_ids: Array.isArray(r.checked_service_ids) ? r.checked_service_ids : undefined,
-    } as Reservation;
+    };
   });
 }
 
 interface UseReservationsOptions {
   instanceId: string | null;
-  services: Array<{
-    id: string;
-    name: string;
-    short_name?: string | null;
-    price_small?: number | null;
-    price_medium?: number | null;
-    price_large?: number | null;
-    price_from?: number | null;
-  }>;
+  serviceDictMap: Map<string, DictionaryService>;
 }
 
-export function useReservations({ instanceId, services }: UseReservationsOptions) {
+export function useReservations({ instanceId, serviceDictMap }: UseReservationsOptions) {
   const queryClient = useQueryClient();
 
   // Calculate initial date range: 1 week back from Monday
@@ -204,7 +120,7 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     const mondayThisWeek = startOfWeek(today, { weekStartsOn: 1 });
     return {
       from: subWeeks(mondayThisWeek, 1),
-      to: null, // All future reservations
+      to: null as null, // All future reservations
     };
   }, []);
 
@@ -220,22 +136,11 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isLoadingMoreMutex = useRef(false);
 
-  // Build services map
-  const servicesMap = useMemo(() => {
-    const map = new Map<string, ServiceMap>();
-    services.forEach((s) =>
-      map.set(s.id, {
-        id: s.id,
-        name: s.name,
-        shortcut: s.short_name,
-        price_small: s.price_small,
-        price_medium: s.price_medium,
-        price_large: s.price_large,
-        price_from: s.price_from,
-      }),
-    );
-    return map;
-  }, [services]);
+  // Build services map from dictionary (same as inline buildServicesMapFromDictionary)
+  const servicesMap = useMemo(
+    () => buildServicesMapFromDictionary(serviceDictMap),
+    [serviceDictMap],
+  );
 
   // Ref for realtime handler
   const servicesMapRef = useRef(servicesMap);
@@ -258,9 +163,9 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
         servicesMapRef.current,
       );
     },
-    enabled: !!instanceId && services.length > 0,
+    enabled: !!instanceId && serviceDictMap.size > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Load more past reservations
@@ -327,32 +232,47 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     [loadMoreReservationsDebounced],
   );
 
-  // Update a single reservation in cache (for realtime updates)
-  const updateReservationInCache = useCallback(
-    (updatedReservation: Reservation) => {
+  // Expand loaded range to include a specific date (e.g., load all history from 2020)
+  const expandDateRange = useCallback(
+    (fromDate: Date) => {
+      if (fromDate < loadedRangeRef.current.from) {
+        setLoadedRange((prev) => ({ ...prev, from: fromDate }));
+      }
+    },
+    [],
+  );
+
+  // General-purpose cache updater — replaces setReservations(fn) pattern
+  const updateReservationsCache = useCallback(
+    (updater: (prev: Reservation[]) => Reservation[]) => {
       queryClient.setQueryData<Reservation[]>(
         ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
-        (old = []) => {
-          const exists = old.some((r) => r.id === updatedReservation.id);
-          if (exists) {
-            return old.map((r) => (r.id === updatedReservation.id ? updatedReservation : r));
-          }
-          return [...old, updatedReservation];
-        },
+        (old = []) => updater(old),
       );
     },
     [instanceId, queryClient],
   );
 
+  // Update a single reservation in cache (for realtime updates)
+  const updateReservationInCache = useCallback(
+    (updatedReservation: Reservation) => {
+      updateReservationsCache((old) => {
+        const exists = old.some((r) => r.id === updatedReservation.id);
+        if (exists) {
+          return old.map((r) => (r.id === updatedReservation.id ? updatedReservation : r));
+        }
+        return [...old, updatedReservation];
+      });
+    },
+    [updateReservationsCache],
+  );
+
   // Remove a reservation from cache
   const removeReservationFromCache = useCallback(
     (reservationId: string) => {
-      queryClient.setQueryData<Reservation[]>(
-        ['reservations', instanceId, format(loadedRangeRef.current.from, 'yyyy-MM-dd')],
-        (old = []) => old.filter((r) => r.id !== reservationId),
-      );
+      updateReservationsCache((old) => old.filter((r) => r.id !== reservationId));
     },
-    [instanceId, queryClient],
+    [updateReservationsCache],
   );
 
   // Invalidate and refetch
@@ -380,8 +300,10 @@ export function useReservations({ instanceId, services }: UseReservationsOptions
     refetch,
     loadMoreReservations: loadMoreReservationsDebounced,
     checkAndLoadMore,
+    expandDateRange,
     updateReservationInCache,
     removeReservationFromCache,
+    updateReservationsCache,
     invalidateReservations,
     servicesMapRef,
     loadedDateRange: loadedRange,

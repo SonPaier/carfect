@@ -24,6 +24,9 @@ export interface InstanceSubscription {
   starts_at: string;
   ends_at: string | null;
   status: string;
+  is_trial: boolean;
+  trial_expires_at: string | null;
+  next_billing_date: string | null;
 }
 
 export interface InstancePlanData {
@@ -63,8 +66,8 @@ export const useInstancePlan = (instanceId: string | null): InstancePlanData => 
       return data;
     },
     enabled: !!instanceId,
-    staleTime: 7 * 24 * 60 * 60 * 1000, // 7 days
-    gcTime: 14 * 24 * 60 * 60 * 1000, // 14 days
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   const plan = useMemo(() => {
@@ -89,6 +92,9 @@ export const useInstancePlan = (instanceId: string | null): InstancePlanData => 
       starts_at: query.data.starts_at,
       ends_at: query.data.ends_at,
       status: query.data.status,
+      is_trial: query.data.is_trial === true,
+      trial_expires_at: query.data.trial_expires_at ?? null,
+      next_billing_date: query.data.next_billing_date ?? null,
     } as InstanceSubscription;
   }, [query.data]);
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { POLISH_MONTH_NAMES_SHORT } from '@/lib/polishDateUtils';
 
 interface PushNotificationParams {
   instanceId: string;
@@ -40,11 +41,9 @@ export async function sendPushNotification({
 export function formatDateForPush(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const dayNames = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
-  const monthNames = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-  
   const dayName = dayNames[d.getDay()];
   const dayNum = d.getDate();
-  const monthName = monthNames[d.getMonth()];
+  const monthName = POLISH_MONTH_NAMES_SHORT[d.getMonth()];
   
   return `${dayName} ${dayNum} ${monthName}`;
 }

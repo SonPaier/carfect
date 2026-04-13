@@ -417,10 +417,12 @@ const AdminCalendar = ({
   useEffect(() => {
     if (!isMobile) return;
 
+    const abortController = new AbortController();
+
     // Small delay to ensure DOM element is mounted after conditional renders
     const timerId = setTimeout(() => {
       const el = gridScrollRef.current;
-      if (!el) return;
+      if (!el || abortController.signal.aborted) return;
 
       const onTouchStart = (e: TouchEvent) => {
         scrollTouchStartRef.current = {
@@ -463,27 +465,14 @@ const AdminCalendar = ({
         scrollDirectionRef.current = null;
       };
 
-      el.addEventListener('touchstart', onTouchStart, { passive: true });
-      el.addEventListener('touchmove', onTouchMove, { passive: false });
-      el.addEventListener('touchend', onTouchEnd, { passive: true });
-
-      // Store cleanup ref
-      (el as HTMLElement & { __axisLockCleanup?: () => void }).__axisLockCleanup = () => {
-        el.removeEventListener('touchstart', onTouchStart);
-        el.removeEventListener('touchmove', onTouchMove);
-        el.removeEventListener('touchend', onTouchEnd);
-      };
+      el.addEventListener('touchstart', onTouchStart, { passive: true, signal: abortController.signal });
+      el.addEventListener('touchmove', onTouchMove, { passive: false, signal: abortController.signal });
+      el.addEventListener('touchend', onTouchEnd, { passive: true, signal: abortController.signal });
     }, 50);
 
-    const capturedEl = gridScrollRef.current as
-      | (HTMLElement & { __axisLockCleanup?: () => void })
-      | null;
     return () => {
       clearTimeout(timerId);
-      if (capturedEl && capturedEl.__axisLockCleanup) {
-        capturedEl.__axisLockCleanup();
-        delete capturedEl.__axisLockCleanup;
-      }
+      abortController.abort();
     };
   }, [isMobile, currentDate, viewMode]);
 

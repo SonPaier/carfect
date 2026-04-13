@@ -364,11 +364,10 @@ const PackageCard = ({
                                 <Label className="text-xs">Rabat zł</Label>
                                 <NumericInput
                                   min={0}
-                                  step={0.01}
                                   value={discountAmountValue > 0 ? discountAmountValue : undefined}
                                   onChange={(v) => {
                                     if (total > 0 && v != null) {
-                                      const newPercent = Math.round((v / total) * 100 * 100) / 100;
+                                      const newPercent = (v / total) * 100;
                                       onUpdateProductDiscount?.(itemKey, Math.min(newPercent, 100));
                                     } else {
                                       onUpdateProductDiscount?.(itemKey, 0);

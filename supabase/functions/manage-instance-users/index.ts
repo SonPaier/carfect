@@ -526,7 +526,14 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Delete user (this will cascade delete from profiles and user_roles due to FK)
+        // Clean up related records before deleting auth user
+        // (profiles and user_roles don't have ON DELETE CASCADE to auth.users)
+        await supabase.from('login_attempts').delete().eq('profile_id', userId);
+        await supabase.from('app_hint_dismissals').delete().eq('user_id', userId);
+        await supabase.from('user_roles').delete().eq('user_id', userId);
+        await supabase.from('profiles').delete().eq('id', userId);
+
+        // Delete auth user
         const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
         if (deleteError) {
