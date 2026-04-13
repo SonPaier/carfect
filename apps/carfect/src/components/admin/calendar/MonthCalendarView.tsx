@@ -545,7 +545,7 @@ export const MonthCalendarView = ({
     <div className="flex flex-col h-full bg-background">
       {/* Sticky day names header */}
       <div
-        className="sticky top-0 z-20 bg-background grid px-2"
+        className="sticky top-0 z-20 bg-background grid px-2 border-b border-border/50"
         style={{ gridTemplateColumns: `repeat(${visibleDayNames.length}, 1fr)` }}
       >
         {visibleDayNames.map((name) => (
