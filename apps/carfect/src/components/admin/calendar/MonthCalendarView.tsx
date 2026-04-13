@@ -570,13 +570,6 @@ export const MonthCalendarView = ({
     return set;
   }, [closedDays]);
 
-  // Polish public holidays map
-  const holidayMap = useMemo(() => {
-    const years = months.map((m) => m.getFullYear());
-    const uniqueYears = [...new Set(years)];
-    return buildHolidayMap(uniqueYears);
-  }, [months]);
-
   // Filter out cancelled/no_show and reservations from hidden stations
   const visibleStationIds = useMemo(() => new Set(stations.map((s) => s.id)), [stations]);
   const visibleReservations = useMemo(
@@ -602,6 +595,13 @@ export const MonthCalendarView = ({
     }
     return result;
   }, [currentDate.getTime(), pastMonths, futureMonths]);
+
+  // Polish public holidays map
+  const holidayMap = useMemo(() => {
+    const years = months.map((m) => m.getFullYear());
+    const uniqueYears = [...new Set(years)];
+    return buildHolidayMap(uniqueYears);
+  }, [months]);
 
   // Load more months on scroll near edges
   useEffect(() => {
