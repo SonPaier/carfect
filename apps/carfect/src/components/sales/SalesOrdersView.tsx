@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { mapProductToInvoicePosition } from './utils/invoicePositionMapper';
 import { type AddressData } from './order-drawer/AddressFields';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
@@ -439,7 +440,7 @@ const SalesOrdersView = () => {
         name: item.name,
         priceNet: Number(item.price_net),
         priceUnit: item.price_unit || 'szt.',
-        productType: (item.product_type as 'roll' | 'other') || 'roll',
+        productType: (item.product_type as 'roll' | 'other') || undefined,
         quantity: item.quantity,
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
@@ -1121,17 +1122,9 @@ const SalesOrdersView = () => {
           customerId={invoiceDrawerState.order.customerId}
           customerName={invoiceDrawerState.order.customerName}
           positions={[
-            ...invoiceDrawerState.order.products.map((p) => ({
-              name: p.name,
-              // For 'other' products (e.g. Wycinanie formatek) with meter unit, use requiredMb as quantity
-              quantity: p.productType === 'other' && p.unit === 'meter' && p.requiredMb
-                ? p.requiredMb
-                : p.quantity,
-              unit_price_gross: p.priceNet,
-              vat_rate: 23,
-              unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
-              discount: p.discountPercent ?? invoiceDrawerState.order!.customerDiscount ?? 0,
-            })),
+            ...invoiceDrawerState.order.products.map((p) =>
+              mapProductToInvoicePosition(p, invoiceDrawerState.order!.customerDiscount),
+            ),
             ...(() => {
               const shippingPkgs = (invoiceDrawerState.order!.packages || []).filter(
                 (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
