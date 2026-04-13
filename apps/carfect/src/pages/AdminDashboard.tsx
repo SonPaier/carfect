@@ -7,7 +7,6 @@ import {
   Calendar,
   LogOut,
   Menu,
-  CheckCircle,
   Settings,
   UserCircle,
   PanelLeftClose,
@@ -38,6 +37,8 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useStationEmployees } from '@/hooks/useStationEmployees';
 import { useReservations } from '@/hooks/useReservations';
+import { useReservationsRealtime } from '@/hooks/useReservationsRealtime';
+import { useReservationMutations } from '@/hooks/useReservationMutations';
 import HallsListView from '@/components/admin/halls/HallsListView';
 import {
   DropdownMenu,
@@ -50,8 +51,8 @@ import { Separator } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { format, addDays, parseISO, getDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { format, addDays, getDay } from 'date-fns';
+import { useFreeTimeSlots } from '@/hooks/useFreeTimeSlots';
 import { useAuth } from '@/hooks/useAuth';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,11 +78,8 @@ import { AddTrainingDrawer } from '@/components/admin/AddTrainingDrawer';
 import { TrainingDetailsDrawer } from '@/components/admin/TrainingDetailsDrawer';
 import type { Training } from '@/components/admin/AddTrainingDrawer';
 import { toast } from 'sonner';
-import { sendPushNotification, formatDateForPush } from '@/lib/pushNotifications';
-import { POLISH_MONTH_NAMES_GENITIVE } from '@/lib/polishDateUtils';
 import { normalizePhone as normalizePhoneForStorage } from '@shared/utils';
 import type { Reservation, ServiceItem } from '@/types/reservation';
-import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
 interface Station {
   id: string;
   name: string;
@@ -134,6 +132,27 @@ const validViews: ViewType[] = [
   'employees',
   'ai_analyst',
 ];
+
+// Pure helper: find nearest working day starting from `date` (checks up to 7 days ahead)
+const findNearestWorkingDay = (
+  date: Date,
+  hours: Record<string, { open: string; close: string } | null>,
+): Date => {
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+  for (let i = 0; i < 7; i++) {
+    const checkDate = addDays(date, i);
+    const dayName = dayNames[getDay(checkDate)];
+    const dayConfig = hours[dayName];
+
+    if (dayConfig && dayConfig.open && dayConfig.close) {
+      return checkDate;
+    }
+  }
+
+  return date;
+};
+
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -178,19 +197,6 @@ const AdminDashboard = () => {
   };
 
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-
-  // Realtime connection state
-  const [realtimeConnected, setRealtimeConnected] = useState(true);
-
-  // Debounce mechanism to prevent realtime updates from overwriting local changes
-  const recentlyUpdatedReservationsRef = useRef<Map<string, number>>(new Map());
-
-  const markAsLocallyUpdated = useCallback((reservationId: string, durationMs = 3000) => {
-    recentlyUpdatedReservationsRef.current.set(reservationId, Date.now());
-    setTimeout(() => {
-      recentlyUpdatedReservationsRef.current.delete(reservationId);
-    }, durationMs);
-  }, []);
 
   // Deep link handling ref to prevent infinite loops
   const deepLinkHandledRef = useRef(false);
@@ -328,12 +334,6 @@ const AdminDashboard = () => {
     loadedDateRange,
   } = useReservations({ instanceId, serviceDictMap });
 
-  // Ref to track loadedDateRange for realtime handler (avoids re-subscribing on date change)
-  const loadedDateRangeRef = useRef(loadedDateRange);
-  useEffect(() => {
-    loadedDateRangeRef.current = loadedDateRange;
-  }, [loadedDateRange]);
-
   // Current calendar date (synced from AdminCalendar) - initialize from same localStorage source
   const [calendarDate, setCalendarDate] = useState<Date>(() => {
     const saved = localStorage.getItem('admin-calendar-date');
@@ -440,28 +440,6 @@ const AdminDashboard = () => {
     fetchUnreadNotificationsCount();
     // Don't fetch yard vehicles eagerly - only when dialog opens
   }, [instanceId]);
-
-  // Helper to find nearest working day
-  const findNearestWorkingDay = (
-    date: Date,
-    hours: Record<string, { open: string; close: string } | null>,
-  ): Date => {
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-    for (let i = 0; i < 7; i++) {
-      const checkDate = addDays(date, i);
-      const dayName = dayNames[getDay(checkDate)];
-      const dayConfig = hours[dayName];
-
-      // Day is open if it has valid open/close times
-      if (dayConfig && dayConfig.open && dayConfig.close) {
-        return checkDate;
-      }
-    }
-
-    // Fallback to original date if no working day found
-    return date;
-  };
 
   // Set calendar to nearest working day when working hours are loaded
   useEffect(() => {
@@ -603,19 +581,6 @@ const AdminDashboard = () => {
     }
   }, [instanceId, trainingsEnabled]);
 
-  const fetchTrainingsRef = useRef(fetchTrainings);
-  const refetchReservationsRef = useRef(refetchReservations);
-  const lastRealtimeFetchRef = useRef(0);
-  const isFetchingRef = useRef(false);
-
-  useEffect(() => {
-    fetchTrainingsRef.current = fetchTrainings;
-  }, [fetchTrainings]);
-
-  useEffect(() => {
-    refetchReservationsRef.current = refetchReservations;
-  }, [refetchReservations]);
-
   useEffect(() => {
     fetchTrainings();
   }, [fetchTrainings]);
@@ -718,311 +683,127 @@ const AdminDashboard = () => {
     // IMPORTANT: Removed 'reservations' from dependencies to prevent infinite loop
   }, [reservationCodeFromUrl, instanceId, searchParams, setSearchParams]);
 
-  // Play notification sound for new customer reservations
-  const playNotificationSound = () => {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+  // Realtime subscription for reservations and trainings
+  const handleRealtimeInsert = useCallback(
+    (reservation: Reservation) => {
+      updateReservationsCache((prev) => {
+        if (prev.some((r) => r.id === reservation.id)) {
+          return prev.map((r) => (r.id === reservation.id ? reservation : r));
+        }
+        return [...prev, reservation];
+      });
+    },
+    [updateReservationsCache],
+  );
+  const handleRealtimeUpdate = useCallback(
+    (reservation: Reservation) => {
+      updateReservationsCache((prev) =>
+        prev.map((r) => (r.id === reservation.id ? reservation : r)),
+      );
+    },
+    [updateReservationsCache],
+  );
+  const handleRealtimeDelete = useCallback(
+    (reservationId: string) => {
+      updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
+    },
+    [updateReservationsCache],
+  );
+  const handleRealtimeRefetch = useCallback(async () => {
+    await Promise.all([refetchReservations(), fetchTrainings()]);
+  }, [refetchReservations, fetchTrainings]);
+  const handleNewCustomerReservation = useCallback(
+    (reservation: Reservation) => {
+      toast.success('🔔 Nowa rezerwacja od klienta!', {
+        description: `${reservation.customer_name} - ${reservation.start_time}`,
+      });
+    },
+    [],
+  );
+  const handleRealtimeUpdateSelected = useCallback(
+    (reservation: Reservation) => {
+      setSelectedReservation((prev) =>
+        prev?.id === reservation.id ? reservation : prev,
+      );
+    },
+    [],
+  );
+  const handleTrainingUpsert = useCallback(
+    (data: Record<string, unknown>) => {
+      const mapped: Training = {
+        ...(data as any),
+        assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+          ? data.assigned_employee_ids
+          : [],
+        station: (data as any).stations
+          ? { name: (data as any).stations.name, type: (data as any).stations.type }
+          : null,
+        training_type_record: (data as any).training_type_record || null,
+      };
+      setTrainings((prev) => {
+        const exists = prev.some((t) => t.id === mapped.id);
+        if (exists) return prev.map((t) => (t.id === mapped.id ? mapped : t));
+        return [...prev, mapped];
+      });
+      setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
+    },
+    [],
+  );
+  const handleTrainingDelete = useCallback(
+    (trainingId: string) => {
+      setTrainings((prev) => prev.filter((t) => t.id !== trainingId));
+      setSelectedTraining((prev) => (prev?.id === trainingId ? null : prev));
+    },
+    [],
+  );
 
-      // Pleasant notification melody
-      oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-      oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-      oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+  const { isConnected: realtimeConnected, markAsLocallyUpdated } = useReservationsRealtime({
+    instanceId,
+    servicesMapRef,
+    loadedDateRangeFrom: loadedDateRange.from,
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate,
+    onDelete: handleRealtimeDelete,
+    onRefetch: handleRealtimeRefetch,
+    onNewCustomerReservation: handleNewCustomerReservation,
+    onUpdateSelectedReservation: handleRealtimeUpdateSelected,
+    onTrainingInsert: handleTrainingUpsert,
+    onTrainingUpdate: handleTrainingUpsert,
+    onTrainingDelete: handleTrainingDelete,
+  });
 
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
-    } catch (e) {
-      console.log('Could not play notification sound:', e);
-    }
-  };
-
-  // Subscribe to realtime updates for reservations
-  // IMPORTANT: Only instanceId as dependency to maintain stable WebSocket connection
-  useEffect(() => {
-    if (!instanceId) return;
-
-    let retryCount = 0;
-    const maxRetries = 10;
-    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
-    let retryTimeoutId: NodeJS.Timeout | null = null;
-    let isCleanedUp = false;
-
-    const setupRealtimeChannel = () => {
-      if (isCleanedUp) return;
-
-      // Remove previous channel if exists
-      if (currentChannel) {
-        supabase.removeChannel(currentChannel);
-        currentChannel = null;
-      }
-
-      currentChannel = supabase
-        .channel(`reservations-changes-${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'reservations',
-            filter: `instance_id=eq.${instanceId}`,
-          },
-          (payload) => {
-            console.log('Realtime reservation update:', payload);
-
-            if (payload.eventType === 'INSERT') {
-              const newRecord = payload.new as any;
-              const reservationDate = parseISO(newRecord.reservation_date);
-
-              // Use ref to check date range without causing re-subscription
-              const isWithinRange = reservationDate >= loadedDateRangeRef.current.from;
-
-              if (!isWithinRange) {
-                return;
-              }
-
-              // Play sound only for customer reservations
-              if (newRecord.source === 'customer') {
-                playNotificationSound();
-              }
-
-              // Fetch the new reservation with service and station info
-              supabase
-                .from('reservations')
-                .select(
-                  `
-              id,
-              instance_id,
-              customer_name,
-              customer_phone,
-              vehicle_plate,
-              reservation_date,
-              end_date,
-              start_time,
-              end_time,
-              station_id,
-              status,
-              confirmation_code,
-              price,
-              price_netto,
-              customer_notes,
-              admin_notes,
-              source,
-              car_size,
-              service_ids,
-              service_items,
-              assigned_employee_ids,
-              original_reservation_id,
-              created_by,
-              created_by_username,
-              offer_number,
-              confirmation_sms_sent_at,
-              pickup_sms_sent_at,
-              has_unified_services,
-              photo_urls,
-              checked_service_ids,
-              stations:station_id (name, type)
-            `,
-                )
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
-                  if (data) {
-                    const newReservation = mapRawReservation(
-                      data as RawReservation,
-                      servicesMapRef.current as ServicesMap,
-                    );
-                    updateReservationsCache((prev) => {
-                      // Prevent duplicates (in case fetch also returned this reservation)
-                      if (prev.some((r) => r.id === data.id)) {
-                        return prev.map((r) =>
-                          r.id === data.id ? (newReservation as Reservation) : r,
-                        );
-                      }
-                      return [...prev, newReservation as Reservation];
-                    });
-
-                    const isCustomerReservation = (data as any).source === 'customer';
-                    if (isCustomerReservation) {
-                      toast.success('🔔 Nowa rezerwacja od klienta!', {
-                        description: `${data.customer_name} - ${data.start_time}`,
-                      });
-                    }
-                  }
-                });
-            } else if (payload.eventType === 'UPDATE') {
-              // Skip if recently updated locally (debounce to prevent flickering)
-              const lastLocalUpdate = recentlyUpdatedReservationsRef.current.get(payload.new.id);
-              if (lastLocalUpdate && Date.now() - lastLocalUpdate < 3000) {
-                console.log(
-                  '[Realtime] Skipping update for locally modified reservation:',
-                  payload.new.id,
-                );
-                return;
-              }
-
-              supabase
-                .from('reservations')
-                .select(
-                  `
-              id,
-              instance_id,
-              customer_name,
-              customer_phone,
-              vehicle_plate,
-              reservation_date,
-              end_date,
-              start_time,
-              end_time,
-              station_id,
-              status,
-              confirmation_code,
-              price,
-              price_netto,
-              customer_notes,
-              admin_notes,
-              source,
-              car_size,
-              service_ids,
-              service_items,
-              assigned_employee_ids,
-              original_reservation_id,
-              created_by,
-              created_by_username,
-              offer_number,
-              confirmation_sms_sent_at,
-              pickup_sms_sent_at,
-              has_unified_services,
-              photo_urls,
-              checked_service_ids,
-              stations:station_id (name, type)
-            `,
-                )
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
-                  if (data) {
-                    const updatedReservation = mapRawReservation(
-                      data as RawReservation,
-                      servicesMapRef.current as ServicesMap,
-                    );
-                    updateReservationsCache((prev) =>
-                      prev.map((r) =>
-                        r.id === payload.new.id ? (updatedReservation as Reservation) : r,
-                      ),
-                    );
-                    // Also update selectedReservation if viewing the same reservation
-                    setSelectedReservation((prev) =>
-                      prev?.id === payload.new.id ? (updatedReservation as Reservation) : prev,
-                    );
-                  }
-                });
-            } else if (payload.eventType === 'DELETE') {
-              updateReservationsCache((prev) => prev.filter((r) => r.id !== payload.old.id));
-            }
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'trainings',
-            filter: `instance_id=eq.${instanceId}`,
-          },
-          async (payload) => {
-            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-              const { data } = (await supabase
-                .from('trainings')
-                .select(
-                  '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
-                )
-                .eq('id', payload.new.id)
-                .single()) as any;
-              if (data) {
-                const mapped: Training = {
-                  ...data,
-                  assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
-                    ? data.assigned_employee_ids
-                    : [],
-                  station: data.stations
-                    ? { name: data.stations.name, type: data.stations.type }
-                    : null,
-                  training_type_record: data.training_type_record || null,
-                };
-                // Always upsert — handles both INSERT and UPDATE, prevents duplicates
-                setTrainings((prev) => {
-                  const exists = prev.some((t) => t.id === mapped.id);
-                  if (exists) {
-                    return prev.map((t) => (t.id === mapped.id ? mapped : t));
-                  }
-                  return [...prev, mapped];
-                });
-                setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
-              }
-            } else if (payload.eventType === 'DELETE') {
-              setTrainings((prev) => prev.filter((t) => t.id !== payload.old.id));
-              setSelectedTraining((prev) => (prev?.id === payload.old.id ? null : prev));
-            }
-          },
-        )
-        .subscribe((status) => {
-          console.log('Realtime subscription status:', status);
-
-          if (status === 'SUBSCRIBED') {
-            setRealtimeConnected(true);
-            retryCount = 0;
-            // Sync after reconnect to recover any missed events
-            // Throttle: skip if we fetched less than 5s ago (prevents rapid reconnect loops)
-            const now = Date.now();
-            if (now - lastRealtimeFetchRef.current > 5000 && !isFetchingRef.current) {
-              lastRealtimeFetchRef.current = now;
-              isFetchingRef.current = true;
-              Promise.all([refetchReservationsRef.current(), fetchTrainingsRef.current()]).finally(
-                () => {
-                  isFetchingRef.current = false;
-                },
-              );
-            }
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            setRealtimeConnected(false);
-
-            if (isCleanedUp) return;
-
-            if (retryCount < maxRetries) {
-              retryCount++;
-              const delay = Math.min(1000 * Math.pow(1.5, retryCount), 30000);
-              console.log(`Realtime retry ${retryCount}/${maxRetries} in ${delay}ms`);
-
-              retryTimeoutId = setTimeout(() => {
-                if (isCleanedUp) return;
-                setupRealtimeChannel();
-              }, delay);
-            } else {
-              console.error('Max realtime retries reached, falling back to periodic fetch');
-              retryTimeoutId = setTimeout(() => {
-                if (isCleanedUp) return;
-                retryCount = 0;
-                setupRealtimeChannel();
-              }, 30000);
-            }
-          }
-        });
-    };
-
-    // Initial connection
-    setupRealtimeChannel();
-
-    return () => {
-      isCleanedUp = true;
-      if (retryTimeoutId) clearTimeout(retryTimeoutId);
-      if (currentChannel) supabase.removeChannel(currentChannel);
-    };
-  }, [instanceId]); // Only instanceId - stable subscription
+  const {
+    handleDeleteReservation,
+    handleRejectReservation,
+    handleReservationSave,
+    handleConfirmReservation,
+    handleStartWork,
+    handleEndWork,
+    handleReleaseVehicle,
+    handleSendPickupSms,
+    handleSendConfirmationSms,
+    handleRevertToConfirmed,
+    handleRevertToInProgress,
+    handleStatusChange,
+    handleApproveChangeRequest,
+    handleRejectChangeRequest,
+    handleNoShow,
+    handleReservationMove,
+  } = useReservationMutations({
+    instanceId,
+    reservations,
+    updateReservationsCache,
+    invalidateReservations,
+    setSelectedReservation,
+    markAsLocallyUpdated,
+    instanceData: instanceData ? {
+      name: instanceData.name,
+      short_name: instanceData.short_name,
+      slug: instanceData.slug,
+      google_maps_url: instanceData.google_maps_url,
+    } : null,
+    userId: user?.id || null,
+  });
 
   // Calculate free time ranges (gaps) per station
   const getFreeRangesPerStation = () => {
@@ -1166,156 +947,6 @@ const AdminDashboard = () => {
     setEditingTraining(null);
     setAddTrainingOpen(true);
   };
-  const handleDeleteReservation = async (
-    reservationId: string,
-    customerData: {
-      name: string;
-      phone: string;
-      email?: string;
-      instance_id: string;
-    },
-  ) => {
-    try {
-      // First, save the customer to customers table (upsert by phone)
-      const { error: customerError } = await supabase.from('customers').upsert(
-        {
-          instance_id: customerData.instance_id,
-          name: customerData.name,
-          phone: customerData.phone,
-          email: customerData.email,
-        },
-        {
-          onConflict: 'instance_id,phone',
-          ignoreDuplicates: false,
-        },
-      );
-      if (customerError) {
-        console.error('Error saving customer:', customerError);
-        // Continue with cancellation even if customer save fails
-      }
-
-      // Soft delete - update status to cancelled with timestamp and user
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancelled_by: user?.id || null,
-        })
-        .eq('id', reservationId);
-
-      if (updateError) {
-        toast.error(t('errors.generic'));
-        console.error('Error cancelling reservation:', updateError);
-        return;
-      }
-
-      // Send push notification for deletion
-      if (instanceId) {
-        sendPushNotification({
-          instanceId,
-          title: `🚫 Rezerwacja anulowana`,
-          body: `${customerData.name} - anulowana przez admina`,
-          url: '/admin',
-          tag: `deleted-reservation-${reservationId}`,
-        });
-      }
-
-      // Remove from local state (cancelled reservations hidden from calendar)
-      updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
-      setSelectedReservation(null);
-      toast.success(t('reservations.reservationRejected'));
-    } catch (error) {
-      console.error('Error in cancel operation:', error);
-      toast.error(t('errors.generic'));
-    }
-  };
-
-  // Reject reservation - soft delete with undo option
-  const handleRejectReservation = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation || !instanceId) return;
-
-    // Immediately hide from UI
-    updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
-
-    // Store timeout ID so we can cancel if user clicks Cofnij
-    let deleteExecuted = false;
-
-    const executeDelete = async () => {
-      if (deleteExecuted) return;
-      deleteExecuted = true;
-
-      try {
-        // Save customer data before deleting
-        await supabase.from('customers').upsert(
-          {
-            instance_id: instanceId,
-            name: reservation.customer_name,
-            phone: reservation.customer_phone,
-          },
-          {
-            onConflict: 'instance_id,phone',
-            ignoreDuplicates: false,
-          },
-        );
-
-        // Soft delete - update status to cancelled with timestamp and user
-        const { error } = await supabase
-          .from('reservations')
-          .update({
-            status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
-            cancelled_by: user?.id || null,
-          })
-          .eq('id', reservationId);
-
-        if (error) {
-          console.error('Error rejecting reservation:', error);
-          // Restore if update failed
-          updateReservationsCache((prev) => [...prev, reservation]);
-          toast.error(t('errors.generic'));
-        }
-      } catch (error) {
-        console.error('Error rejecting reservation:', error);
-        updateReservationsCache((prev) => [...prev, reservation]);
-        toast.error(t('errors.generic'));
-      }
-    };
-
-    // Show toast with undo option - delete happens when toast disappears
-    toast(t('reservations.reservationRejected'), {
-      action: {
-        label: t('common.undo'),
-        onClick: () => {
-          deleteExecuted = true; // Prevent delete
-          updateReservationsCache((prev) => [...prev, reservation]);
-          toast.success(t('common.success'));
-        },
-      },
-      duration: 5000,
-      onDismiss: () => {
-        executeDelete();
-      },
-      onAutoClose: () => {
-        executeDelete();
-      },
-    });
-  };
-  const handleReservationSave = (reservationId: string, data: Partial<Reservation>) => {
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              ...data,
-            }
-          : r,
-      ),
-    );
-    setSelectedReservation(null);
-    toast.success(t('reservations.reservationUpdated'));
-  };
   const handleAddReservation = (stationId: string, date: string, time: string) => {
     const station = stations.find((s) => s.id === stationId);
     // Close details drawer when opening add drawer
@@ -1414,784 +1045,6 @@ const AdminDashboard = () => {
       toast.success(t('common.success'));
     }
   };
-  const handleConfirmReservation = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const previousStatus = reservation.status;
-
-    // Optimistic UI update (so it disappears from "Niepotwierdzone" instantly)
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: 'confirmed',
-            }
-          : r,
-      ),
-    );
-    setSelectedReservation((prev) =>
-      prev && prev.id === reservationId
-        ? {
-            ...prev,
-            status: 'confirmed',
-          }
-        : prev,
-    );
-
-    const { error } = await supabase
-      .from('reservations')
-      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
-      .eq('id', reservationId);
-
-    if (error) {
-      // Rollback optimistic update
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                status: previousStatus,
-              }
-            : r,
-        ),
-      );
-      setSelectedReservation((prev) =>
-        prev && prev.id === reservationId
-          ? {
-              ...prev,
-              status: previousStatus,
-            }
-          : prev,
-      );
-
-      toast.error(t('errors.generic'));
-      console.error('Error confirming reservation:', error);
-      return;
-    }
-
-    // Send confirmation SMS
-    try {
-      const dateObj = new Date(reservation.reservation_date);
-      const dayNum = dateObj.getDate();
-      const monthName = POLISH_MONTH_NAMES_GENITIVE[dateObj.getMonth()];
-      const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
-      const manageUrl = `${window.location.origin}/moja-rezerwacja?code=${reservation.confirmation_code}`;
-      const message = `${instanceName}: Rezerwacja potwierdzona! ${dayNum} ${monthName} o ${reservation.start_time?.slice(0, 5)}. Zmien lub anuluj: ${manageUrl}`;
-      await supabase.functions.invoke('send-sms-message', {
-        body: {
-          phone: reservation.customer_phone,
-          message,
-          instanceId,
-        },
-      });
-      toast.success(t('reservations.reservationConfirmed'));
-    } catch (smsError) {
-      console.error('Failed to send confirmation SMS:', smsError);
-      toast.success(t('reservations.reservationConfirmed'));
-    }
-  };
-  const handleStartWork = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update({
-        status: 'in_progress',
-        started_at: new Date().toISOString(),
-      })
-      .eq('id', reservationId);
-
-    if (updateError) {
-      toast.error(t('errors.generic'));
-      console.error('Update error:', updateError);
-      return;
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: 'in_progress',
-            }
-          : r,
-      ),
-    );
-
-    toast.success(t('reservations.workStarted'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    });
-  };
-
-  const handleEndWork = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const now = new Date();
-    const nowTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-
-    const updateData: Record<string, any> = {
-      status: 'completed',
-      completed_at: now.toISOString(),
-    };
-
-    // Shorten end_time if finishing early
-    if (nowTime < reservation.end_time) {
-      updateData.end_time = nowTime;
-    }
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update(updateData)
-      .eq('id', reservationId);
-
-    if (updateError) {
-      toast.error(t('errors.generic'));
-      console.error('Update error:', updateError);
-      return;
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: 'completed',
-              ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
-            }
-          : r,
-      ),
-    );
-
-    toast.success(t('reservations.workEnded'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    });
-  };
-
-  const handleReleaseVehicle = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update({
-        status: 'released',
-        released_at: new Date().toISOString(),
-      })
-      .eq('id', reservationId);
-
-    if (updateError) {
-      toast.error(t('errors.generic'));
-      console.error('Update error:', updateError);
-      return;
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: 'released',
-            }
-          : r,
-      ),
-    );
-
-    toast.success(t('reservations.vehicleReleased'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    });
-  };
-
-  const handleSendPickupSms = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
-
-    // Optimistic update - set timestamp immediately
-    const now = new Date().toISOString();
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              pickup_sms_sent_at: now,
-            }
-          : r,
-      ),
-    );
-    // Also update selectedReservation for drawer UI
-    setSelectedReservation((prev) =>
-      prev && prev.id === reservationId
-        ? {
-            ...prev,
-            pickup_sms_sent_at: now,
-          }
-        : prev,
-    );
-
-    try {
-      await supabase.functions.invoke('send-sms-message', {
-        body: {
-          phone: reservation.customer_phone,
-          message: `${instanceName}: Twoj samochod jest gotowy do odbioru. Zapraszamy!`,
-          instanceId,
-        },
-      });
-
-      // Save pickup SMS sent timestamp to DB
-      await supabase
-        .from('reservations')
-        .update({ pickup_sms_sent_at: now })
-        .eq('id', reservationId);
-
-      toast.success(t('reservations.pickupSmsSent', { customerName: reservation.customer_name }));
-    } catch (error) {
-      console.error('SMS error:', error);
-      // Rollback optimistic update on error
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                pickup_sms_sent_at: reservation.pickup_sms_sent_at,
-              }
-            : r,
-        ),
-      );
-      setSelectedReservation((prev) =>
-        prev && prev.id === reservationId
-          ? {
-              ...prev,
-              pickup_sms_sent_at: reservation.pickup_sms_sent_at,
-            }
-          : prev,
-      );
-      toast.error(t('errors.generic'));
-    }
-  };
-
-  const handleSendConfirmationSms = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation || !reservation.customer_phone) return;
-
-    // Optimistic update - set timestamp immediately
-    const now = new Date().toISOString();
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              confirmation_sms_sent_at: now,
-            }
-          : r,
-      ),
-    );
-    // Also update selectedReservation for drawer UI
-    setSelectedReservation((prev) =>
-      prev && prev.id === reservationId
-        ? {
-            ...prev,
-            confirmation_sms_sent_at: now,
-          }
-        : prev,
-    );
-
-    try {
-      // Fetch instance data for SMS
-      const { data: instData } = await supabase
-        .from('instances')
-        .select('name, short_name, google_maps_url, slug')
-        .eq('id', instanceId)
-        .single();
-
-      if (!instData) return;
-
-      // Check if SMS edit link feature is enabled
-      const { data: smsEditLinkFeature } = await supabase
-        .from('instance_features')
-        .select('enabled, parameters')
-        .eq('instance_id', instanceId)
-        .eq('feature_key', 'sms_edit_link')
-        .maybeSingle();
-
-      // Determine if edit link should be included
-      let includeEditLink = false;
-      if (smsEditLinkFeature?.enabled) {
-        const params = smsEditLinkFeature.parameters as { phones?: string[] } | null;
-        if (!params || !params.phones || params.phones.length === 0) {
-          includeEditLink = true;
-        } else {
-          const normalizedPhone = normalizePhoneForStorage(reservation.customer_phone) || '';
-          includeEditLink = params.phones.some((p) => {
-            const normalizedAllowed = normalizePhoneForStorage(p) || '';
-            return normalizedPhone === normalizedAllowed;
-          });
-        }
-      }
-
-      // Format date for SMS
-      const dateObj = new Date(reservation.reservation_date);
-      const dayNum = dateObj.getDate();
-      const monthNameFull = POLISH_MONTH_NAMES_GENITIVE[dateObj.getMonth()];
-
-      const instName = instData.short_name || instData.name || 'Myjnia';
-      const mapsLink = instData.google_maps_url ? ` Dojazd: ${instData.google_maps_url}` : '';
-      const reservationUrl = `https://${instData.slug}.carfect.pl/res?code=${reservation.confirmation_code}`;
-      const editLink = includeEditLink ? ` Zmien lub anuluj: ${reservationUrl}` : '';
-
-      const smsMessage = `${instName}: Rezerwacja potwierdzona! ${dayNum} ${monthNameFull} o ${reservation.start_time.slice(0, 5)}.${mapsLink}${editLink}`;
-
-      await supabase.functions.invoke('send-sms-message', {
-        body: {
-          phone: reservation.customer_phone,
-          message: smsMessage,
-          instanceId,
-        },
-      });
-
-      // Save confirmation SMS sent timestamp to DB
-      await supabase
-        .from('reservations')
-        .update({ confirmation_sms_sent_at: now })
-        .eq('id', reservationId);
-
-      toast.success(
-        t('reservations.confirmationSmsSent', { customerName: reservation.customer_name }),
-      );
-    } catch (error) {
-      console.error('SMS error:', error);
-      // Rollback optimistic update on error
-      updateReservationsCache((prev) =>
-        prev.map((r) =>
-          r.id === reservationId
-            ? {
-                ...r,
-                confirmation_sms_sent_at: reservation.confirmation_sms_sent_at,
-              }
-            : r,
-        ),
-      );
-      setSelectedReservation((prev) =>
-        prev && prev.id === reservationId
-          ? {
-              ...prev,
-              confirmation_sms_sent_at: reservation.confirmation_sms_sent_at,
-            }
-          : prev,
-      );
-      toast.error(t('errors.generic'));
-    }
-  };
-
-  const handleRevertToConfirmed = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update({
-        status: 'confirmed',
-        started_at: null,
-        completed_at: null,
-      })
-      .eq('id', reservationId);
-
-    if (updateError) {
-      toast.error(t('errors.generic'));
-      console.error('Update error:', updateError);
-      return;
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: 'confirmed',
-            }
-          : r,
-      ),
-    );
-
-    toast.success(t('reservations.revertedToConfirmed'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    });
-  };
-
-  const handleRevertToInProgress = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update({
-        status: 'in_progress',
-        completed_at: null,
-        released_at: null,
-      })
-      .eq('id', reservationId);
-
-    if (updateError) {
-      toast.error(t('errors.generic'));
-      console.error('Update error:', updateError);
-      return;
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: 'in_progress',
-            }
-          : r,
-      ),
-    );
-
-    toast.success(t('reservations.revertedToInProgress'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    });
-  };
-
-  // Generic status change - allows jumping to any status
-  const handleStatusChange = async (reservationId: string, newStatus: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    const updateData: Record<string, any> = { status: newStatus };
-
-    // Reset timestamps appropriately based on target status
-    if (newStatus === 'confirmed') {
-      updateData.started_at = null;
-      updateData.completed_at = null;
-      updateData.released_at = null;
-    } else if (newStatus === 'in_progress') {
-      updateData.completed_at = null;
-      updateData.released_at = null;
-    } else if (newStatus === 'completed') {
-      updateData.released_at = null;
-      updateData.completed_at = new Date().toISOString();
-      // Shorten end_time if finishing early
-      const now = new Date();
-      const nowTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-      if (nowTime < reservation.end_time) {
-        updateData.end_time = nowTime;
-      }
-    }
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update(updateData)
-      .eq('id', reservationId);
-
-    if (updateError) {
-      toast.error(t('errors.generic'));
-      console.error('Update error:', updateError);
-      return;
-    }
-
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              status: newStatus,
-              ...(updateData.end_time ? { end_time: updateData.end_time } : {}),
-            }
-          : r,
-      ),
-    );
-    toast.success(t('reservations.statusChanged'));
-  };
-
-  const handleApproveChangeRequest = async (changeRequestId: string) => {
-    const changeRequest = reservations.find((r) => r.id === changeRequestId);
-    if (!changeRequest || !instanceId) return;
-
-    const originalId = (changeRequest as any).original_reservation_id;
-    if (!originalId) {
-      toast.error(t('errors.generic'));
-      return;
-    }
-
-    // Get original reservation's confirmation code for SMS link
-    const { data: originalReservation, error: fetchError } = await supabase
-      .from('reservations')
-      .select('confirmation_code')
-      .eq('id', originalId)
-      .single();
-
-    if (fetchError || !originalReservation) {
-      toast.error(t('errors.generic'));
-      return;
-    }
-
-    const originalCode = originalReservation.confirmation_code;
-
-    // Atomic swap: temp code → confirm change request → cancel original
-    const { error: rpcError } = await supabase.rpc('approve_change_request', {
-      p_change_request_id: changeRequestId,
-      p_original_id: originalId,
-    });
-
-    if (rpcError) {
-      console.error('Error approving change request:', rpcError);
-      toast.error(t('errors.generic'));
-      return;
-    }
-
-    // Send SMS to customer with new optimized format
-    try {
-      const dateFormatted = format(new Date(changeRequest.reservation_date), 'd MMMM', {
-        locale: pl,
-      });
-      const timeFormatted = changeRequest.start_time.slice(0, 5);
-      const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalCode}`;
-
-      // Use short_name if available, fallback to name
-      const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
-      const smsMessage = `${instanceName}: Potwierdzamy nowy termin: ${dateFormatted} o ${timeFormatted}. Zmien lub anuluj: ${manageUrl}`;
-
-      await supabase.functions.invoke('send-sms-message', {
-        body: {
-          phone: changeRequest.customer_phone,
-          message: smsMessage,
-          instanceId,
-        },
-      });
-    } catch (smsError) {
-      console.error('SMS error:', smsError);
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev
-        .filter((r) => r.id !== originalId)
-        .map((r) =>
-          r.id === changeRequestId
-            ? ({
-                ...r,
-                confirmation_code: originalCode,
-                status: 'confirmed',
-                original_reservation_id: null,
-              } as any)
-            : r,
-        ),
-    );
-
-    toast.success(t('myReservation.changeApproved'), {
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    });
-  };
-
-  // Reject change request - delete request, keep original
-  const handleRejectChangeRequest = async (changeRequestId: string) => {
-    const changeRequest = reservations.find((r) => r.id === changeRequestId);
-    if (!changeRequest || !instanceId) return;
-
-    const originalId = (changeRequest as any).original_reservation_id;
-
-    // Get original reservation for SMS
-    let originalReservation: any = null;
-    if (originalId) {
-      const { data } = await supabase
-        .from('reservations')
-        .select('reservation_date, start_time, confirmation_code')
-        .eq('id', originalId)
-        .single();
-      originalReservation = data;
-    }
-
-    // Delete the change request
-    const { error: deleteError } = await supabase
-      .from('reservations')
-      .delete()
-      .eq('id', changeRequestId);
-
-    if (deleteError) {
-      toast.error(t('errors.generic'));
-      return;
-    }
-
-    // Send SMS to customer with new optimized format
-    if (originalReservation) {
-      try {
-        const dateFormatted = format(new Date(originalReservation.reservation_date), 'd MMMM', {
-          locale: pl,
-        });
-        const timeFormatted = originalReservation.start_time.slice(0, 5);
-        const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalReservation.confirmation_code}`;
-
-        // Use short_name if available, fallback to name
-        const instanceName = instanceData?.short_name || instanceData?.name || 'Myjnia';
-        const smsMessage = `${instanceName}: Niestety nie mozemy zmienic terminu rezerwacji: ${dateFormatted} o ${timeFormatted}. Wybierz inny lub anuluj: ${manageUrl}`;
-
-        await supabase.functions.invoke('send-sms-message', {
-          body: {
-            phone: changeRequest.customer_phone,
-            message: smsMessage,
-            instanceId,
-          },
-        });
-      } catch (smsError) {
-        console.error('SMS error:', smsError);
-      }
-    }
-
-    // Update local state
-    updateReservationsCache((prev) => prev.filter((r) => r.id !== changeRequestId));
-
-    toast.success(t('myReservation.changeRejected'));
-  };
-
-  const handleNoShow = async (reservationId: string) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation || !instanceId) return;
-
-    // Save customer data before updating
-    await supabase.from('customers').upsert(
-      {
-        instance_id: instanceId,
-        name: reservation.customer_name,
-        phone: reservation.customer_phone,
-      },
-      {
-        onConflict: 'instance_id,phone',
-        ignoreDuplicates: false,
-      },
-    );
-
-    const { error } = await supabase
-      .from('reservations')
-      .update({
-        status: 'no_show',
-        no_show_at: new Date().toISOString(),
-      })
-      .eq('id', reservationId);
-
-    if (error) {
-      toast.error(t('errors.generic'));
-      console.error('Error marking no-show:', error);
-      return;
-    }
-
-    // Update local state - remove from visible list (no_show hides from calendar)
-    updateReservationsCache((prev) => prev.filter((r) => r.id !== reservationId));
-    setSelectedReservation(null);
-    toast.success(t('reservations.noShowMarked'));
-  };
-
-  const handleReservationMove = async (
-    reservationId: string,
-    newStationId: string,
-    newDate: string,
-    newTime?: string,
-  ) => {
-    const reservation = reservations.find((r) => r.id === reservationId);
-    if (!reservation) return;
-
-    // Store original state for undo
-    const originalState = {
-      station_id: reservation.station_id,
-      reservation_date: reservation.reservation_date,
-      start_time: reservation.start_time,
-      end_time: reservation.end_time,
-    };
-    const updates: any = {
-      station_id: newStationId,
-      reservation_date: newDate,
-    };
-    if (newTime) {
-      // Calculate new end time based on duration
-      const [startHours, startMinutes] = newTime.split(':').map(Number);
-      const [endHours, endMinutes] = reservation.end_time.split(':').map(Number);
-      const [origStartHours, origStartMinutes] = reservation.start_time.split(':').map(Number);
-      const durationMinutes = endHours * 60 + endMinutes - (origStartHours * 60 + origStartMinutes);
-      const newEndTotalMinutes = startHours * 60 + startMinutes + durationMinutes;
-      const newEndHours = Math.floor(newEndTotalMinutes / 60);
-      const newEndMins = newEndTotalMinutes % 60;
-      updates.start_time = newTime;
-      updates.end_time = `${newEndHours.toString().padStart(2, '0')}:${newEndMins.toString().padStart(2, '0')}`;
-    }
-
-    // Mark as locally updated to prevent realtime from overwriting
-    markAsLocallyUpdated(reservationId);
-
-    // Update in database
-    const { error } = await supabase.from('reservations').update(updates).eq('id', reservationId);
-    if (error) {
-      toast.error(t('errors.generic'));
-      console.error('Error moving reservation:', error);
-      return;
-    }
-
-    // Update local state
-    updateReservationsCache((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              ...updates,
-            }
-          : r,
-      ),
-    );
-    // Get vehicle model from reservation
-    const vehicleModel = reservation.vehicle_plate || t('addReservation.defaultVehicle');
-
-    // Show toast with reservation details
-    toast.success(t('reservations.reservationMoved'), {
-      description: (
-        <div className="flex flex-col">
-          <span>
-            {updates.start_time} - {updates.end_time}
-          </span>
-          <span>{vehicleModel}</span>
-        </div>
-      ),
-
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-      duration: 5000,
-      action: {
-        label: t('common.undo'),
-        onClick: async () => {
-          // Restore original state in database
-          const { error: undoError } = await supabase
-            .from('reservations')
-            .update(originalState)
-            .eq('id', reservationId);
-          if (undoError) {
-            toast.error(t('errors.generic'));
-            console.error('Error undoing move:', undoError);
-            return;
-          }
-
-          // Restore local state
-          updateReservationsCache((prev) =>
-            prev.map((r) =>
-              r.id === reservationId
-                ? {
-                    ...r,
-                    ...originalState,
-                  }
-                : r,
-            ),
-          );
-          toast.success(t('common.success'));
-        },
-      },
-    });
-  };
-
   // Handle yard vehicle drop onto calendar
   const handleYardVehicleDrop = async (
     vehicle: {
@@ -2844,7 +1697,7 @@ const AdminDashboard = () => {
                 onDeleteTraining={async (id) => {
                   const { error } = await supabase.from('trainings').delete().eq('id', id);
                   if (!error) {
-                    fetchTrainingsRef.current();
+                    fetchTrainings();
                   }
                 }}
                 employees={cachedEmployees}

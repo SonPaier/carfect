@@ -43,12 +43,17 @@ export function useReservationsRealtime({
   onTrainingDelete
 }: UseReservationsRealtimeOptions) {
   const [isConnected, setIsConnected] = useState(true);
-  
+
   // Rate limiting refs
   const lastRefetchTimeRef = useRef<number>(0);
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+  // Polling fallback ref
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Stable ref for onRefetch to avoid effect re-runs
+  const onRefetchRef = useRef(onRefetch);
+  onRefetchRef.current = onRefetch;
+
   // Debounce mechanism to prevent realtime updates from overwriting local changes
   const recentlyUpdatedRef = useRef<Map<string, number>>(new Map());
   
@@ -199,7 +204,7 @@ export function useReservationsRealtime({
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
             retryCountRef.current = 0;
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             setIsConnected(false);
 
             if (isCleanedUp) return;
@@ -242,6 +247,36 @@ export function useReservationsRealtime({
       if (currentChannel) supabase.removeChannel(currentChannel);
     };
   }, [instanceId, mapRealtimeData, onInsert, onUpdate, onDelete, rateLimitedRefetch, onNewCustomerReservation]);
+
+  // Polling fallback for flaky connections (shop floor displays)
+  useEffect(() => {
+    if (isConnected) {
+      // Stop polling when reconnected
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Start polling after grace period when disconnected
+    const startDelay = setTimeout(() => {
+      pollIntervalRef.current = setInterval(() => {
+        const result = onRefetchRef.current();
+        if (result && typeof (result as Promise<void>).then === 'function') {
+          (result as Promise<void>).catch(() => {});
+        }
+      }, 15000);
+    }, 10000);
+
+    return () => {
+      clearTimeout(startDelay);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [isConnected]);
 
   return {
     isConnected,

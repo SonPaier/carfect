@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -24,11 +24,22 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import type { Hall } from '@/components/admin/halls/HallCard';
 import { Button } from '@shared/ui';
-import { cn } from '@/lib/utils';
 import { normalizePhone } from '@shared/utils';
 import { compressImage } from '@shared/utils';
 import type { Reservation } from '@/types/reservation';
-import { mapRawReservation, type ServicesMap, type RawReservation } from '@/lib/reservationMapping';
+import { mapRawReservation, type ServicesMap, type RawReservation, type ServicesMapEntry } from '@/lib/reservationMapping';
+import { useReservationsRealtime } from '@/hooks/useReservationsRealtime';
+const HALL_RESERVATION_SELECT = `
+  id, instance_id, customer_name, customer_phone, vehicle_plate,
+  reservation_date, end_date, start_time, end_time, station_id,
+  status, confirmation_code, price, price_netto, customer_notes, admin_notes,
+  source, car_size, service_ids, service_items, assigned_employee_ids,
+  created_by, created_by_username, offer_number,
+  confirmation_sms_sent_at, pickup_sms_sent_at,
+  has_unified_services, photo_urls, checked_service_ids,
+  stations:station_id (name, type)
+`;
+
 interface Station {
   id: string;
   name: string;
@@ -44,6 +55,50 @@ interface Break {
   start_time: string;
   end_time: string;
   note: string | null;
+}
+
+function buildServicesData(
+  reservation: Pick<Reservation, 'service_ids' | 'service_items'>,
+  servicesMap: Map<string, string>,
+): Array<{ id: string; name: string }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const serviceItems = reservation.service_items as any[] | undefined;
+  const serviceIds = reservation.service_ids;
+
+  if (serviceIds && serviceIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const itemsById = new Map<string, any>();
+    (serviceItems || []).forEach((item) => {
+      const id = item.id || item.service_id;
+      if (id) itemsById.set(id, item);
+    });
+
+    return serviceIds.map((id) => {
+      const item = itemsById.get(id);
+      const globalName = servicesMap.get(id);
+      return {
+        id,
+        name: item?.name ?? globalName ?? 'Usługa',
+      };
+    });
+  }
+
+  if (serviceItems && serviceItems.length > 0) {
+    const seen = new Set<string>();
+    return serviceItems
+      .filter((item) => {
+        const id = item.id || item.service_id;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .map((item) => ({
+        id: item.id || item.service_id,
+        name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
+      }));
+  }
+
+  return [];
 }
 
 interface HallViewProps {
@@ -114,7 +169,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Check if user has hall role (kiosk mode)
   const hasHallRole = roles.some((r) => r.role === 'hall');
   const hasAdminOrEmployeeRole = roles.some((r) => r.role === 'admin' || r.role === 'employee');
-  const effectiveKioskMode = isKioskMode || hasHallRole;
 
   // Check if we're on /admin/... path
   const isAdminPath = location.pathname.startsWith('/admin');
@@ -126,17 +180,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   // Combined features (includes plan + instance features)
   const { hasFeature: hasCombinedFeature } = useCombinedFeatures(instanceId);
   const trainingsEnabled = hasCombinedFeature('trainings');
-
-  // Handle navigation based on role
-  const handleCalendarNavigation = () => {
-    if (hasHallRole && !hasAdminOrEmployeeRole) {
-      // Hall role stays on current hall view
-      navigate(isAdminPath ? `/admin/halls/${hallId || '1'}` : `/halls/${hallId || '1'}`);
-    } else {
-      // Admin/employee goes to main calendar
-      navigate(isAdminPath ? '/admin' : '/admin');
-    }
-  };
 
   const handleProtocolsNavigation = () => {
     setShowProtocolsList(true);
@@ -151,10 +194,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   const handleCalendarFromSidebar = () => {
     setShowProtocolsList(false);
     setShowWorkersList(false);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
   };
 
   // Helper to find customer email for protocol
@@ -613,38 +652,13 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
       // Fetch reservations
       const { data: reservationsData } = await supabase
         .from('reservations')
-        .select(
-          `
-          id,
-          instance_id,
-          customer_name,
-          customer_phone,
-          vehicle_plate,
-          reservation_date,
-          end_date,
-          start_time,
-          end_time,
-          station_id,
-          status,
-          confirmation_code,
-          price,
-          price_netto,
-          service_ids,
-          service_items,
-          has_unified_services,
-          admin_notes,
-          photo_urls,
-          checked_service_ids,
-          assigned_employee_ids,
-          stations:station_id (name, type)
-        `,
-        )
+        .select(HALL_RESERVATION_SELECT)
         .eq('instance_id', instanceId)
         .range(0, 4999);
 
       if (reservationsData) {
-        // Build services map from central dictionary
-        const svcMap = buildServicesMapFromDictionary(serviceDictMap);
+        // Use the synced services map ref (kept current by separate effect)
+        const svcMap = servicesMapRef.current as ServicesMap;
 
         setReservations(
           reservationsData.map((r) =>
@@ -734,384 +748,95 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     };
   }, [instanceId]);
 
-  // Play notification sound for new customer reservations
-  const playNotificationSound = () => {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      // Pleasant notification melody
-      oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-      oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-      oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
-    } catch (e) {
-      console.log('Could not play notification sound:', e);
-    }
-  };
-
   // Reference to services map for realtime updates (same pattern as AdminDashboard)
-  const servicesMapRef = useRef<
-    Map<string, { id: string; name: string; shortcut?: string | null }>
-  >(new Map());
+  const servicesMapRef = useRef<Map<string, ServicesMapEntry>>(new Map());
 
   // Update servicesMapRef when dictionary changes
   useEffect(() => {
     servicesMapRef.current = buildServicesMapFromDictionary(serviceDictMap);
   }, [serviceDictMap]);
 
-  // Subscribe to realtime updates with polling fallback - SYNCED with AdminDashboard logic
-  useEffect(() => {
+  // Fetch all reservations (used as onRefetch for realtime hook)
+  const fetchAllReservations = useCallback(async () => {
     if (!instanceId) return;
+    const { data: reservationsData } = await supabase
+      .from('reservations')
+      .select(HALL_RESERVATION_SELECT)
+      .eq('instance_id', instanceId)
+      .range(0, 4999);
 
-    let pollInterval = 3000; // Initial poll interval 3s
-    let pollTimeoutId: NodeJS.Timeout | null = null;
-    let lastPollTimestamp: string | null = null;
-    let realtimeWorking = false;
-    let retryCount = 0;
-    const maxRetries = 10;
-    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
-    let isCleanedUp = false;
+    if (reservationsData) {
+      setReservations(
+        reservationsData.map((r) =>
+          mapRawReservation(r as RawReservation, servicesMapRef.current as ServicesMap, { includePrices: false }),
+        ),
+      );
+    }
+  }, [instanceId, serviceDictMap]);
 
-    const mapReservationData = (data: any): Reservation =>
-      mapRawReservation(data as RawReservation, servicesMapRef.current as ServicesMap, { includePrices: false });
+  // Realtime callbacks
+  const handleRealtimeInsert = useCallback((reservation: Reservation) => {
+    setReservations((prev) => {
+      const filtered = prev.filter((r) => r.id !== reservation.id);
+      return [...filtered, reservation];
+    });
+  }, []);
 
-    const syncTrainings = async () => {
-      if (!trainingsEnabled) return;
-      try {
-        const { data: trainingsData, error } = (await supabase
-          .from('trainings')
-          .select(
-            '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
-          )
-          .eq('instance_id', instanceId)) as any;
+  const handleRealtimeUpdate = useCallback((reservation: Reservation) => {
+    setReservations((prev) => prev.map((r) => (r.id === reservation.id ? reservation : r)));
+  }, []);
 
-        if (error) {
-          console.error('Sync trainings error:', error);
-          return;
-        }
+  const handleRealtimeDelete = useCallback((reservationId: string) => {
+    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+  }, []);
 
-        if (trainingsData) {
-          setTrainings(
-            trainingsData.map((t: any) => ({
-              ...t,
-              assigned_employee_ids: Array.isArray(t.assigned_employee_ids)
-                ? t.assigned_employee_ids
-                : [],
-            })),
-          );
-        }
-      } catch (err) {
-        console.error('Sync trainings exception:', err);
-      }
+  const handleRealtimeUpdateSelected = useCallback((reservation: Reservation) => {
+    setSelectedReservation((prev) => (prev?.id === reservation.id ? reservation : prev));
+  }, []);
+
+  const handleNewCustomerReservation = useCallback(
+    (reservation: Reservation) => {
+      toast.success(`🔔 ${t('notifications.newReservation')}!`, {
+        description: `${reservation.start_time.slice(0, 5)} - ${reservation.vehicle_plate}`,
+      });
+    },
+    [t],
+  );
+
+  const handleTrainingUpsert = useCallback((training: Record<string, unknown>) => {
+    const mapped: Training = {
+      ...(training as Training),
+      assigned_employee_ids: Array.isArray(training.assigned_employee_ids)
+        ? (training.assigned_employee_ids as string[])
+        : [],
     };
+    setTrainings((prev) => {
+      const exists = prev.some((t) => t.id === mapped.id);
+      return exists ? prev.map((t) => (t.id === mapped.id ? mapped : t)) : [...prev, mapped];
+    });
+    setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
+  }, []);
 
-    // Polling fallback function
-    const pollForUpdates = async () => {
-      if (isCleanedUp) return;
+  const handleTrainingDelete = useCallback((trainingId: string) => {
+    setTrainings((prev) => prev.filter((t) => t.id !== trainingId));
+    setSelectedTraining((prev) => (prev?.id === trainingId ? null : prev));
+  }, []);
 
-      try {
-        // Fetch recent reservations (created/updated since last poll)
-        const query = supabase
-          .from('reservations')
-          .select(
-            `
-            id,
-            instance_id,
-            customer_name,
-            customer_phone,
-            vehicle_plate,
-            reservation_date,
-            end_date,
-            start_time,
-            end_time,
-            station_id,
-            status,
-            confirmation_code,
-            price,
-            service_ids,
-            service_items,
-            has_unified_services,
-            admin_notes,
-            photo_urls,
-            checked_service_ids,
-            updated_at,
-            stations:station_id (name, type)
-          `,
-          )
-          .eq('instance_id', instanceId)
-          .order('updated_at', { ascending: false })
-          .limit(50);
-
-        // If we have a timestamp, only fetch newer records
-        if (lastPollTimestamp) {
-          query.gt('updated_at', lastPollTimestamp);
-        }
-
-        const { data } = await query;
-
-        if (data && data.length > 0) {
-          // Update last poll timestamp
-          lastPollTimestamp = data[0].updated_at;
-
-          // Update local state with new/updated reservations
-          setReservations((prev) => {
-            const updatedReservations = [...prev];
-            for (const newRes of data) {
-              const mappedRes = mapReservationData(newRes);
-              const existingIdx = updatedReservations.findIndex((r) => r.id === newRes.id);
-              if (existingIdx >= 0) {
-                updatedReservations[existingIdx] = mappedRes;
-              } else {
-                updatedReservations.push(mappedRes);
-              }
-            }
-            return updatedReservations;
-          });
-
-          // Reset poll interval when changes detected
-          pollInterval = 3000;
-        } else if (!realtimeWorking) {
-          // Increase poll interval gradually when no changes and realtime not working
-          pollInterval = Math.min(pollInterval * 1.3, 15000); // Cap at 15s
-        }
-      } catch (error) {
-        console.error('Polling reservations error:', error);
-      }
-
-      // Trainings sync is independent from reservations polling so one failure does not hide trainings
-      await syncTrainings();
-
-      // Schedule next poll
-      if (!isCleanedUp) {
-        pollTimeoutId = setTimeout(pollForUpdates, pollInterval);
-      }
-    };
-
-    // Setup realtime channel with retry logic (same as AdminDashboard)
-    const setupRealtimeChannel = () => {
-      if (isCleanedUp) return;
-
-      // Remove previous channel if exists
-      if (currentChannel) {
-        supabase.removeChannel(currentChannel);
-        currentChannel = null;
-      }
-
-      currentChannel = supabase
-        .channel(`hall-reservations-changes-${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'reservations',
-            filter: `instance_id=eq.${instanceId}`,
-          },
-          (payload) => {
-            console.log('[HallView] Realtime reservation update:', payload);
-            realtimeWorking = true;
-            pollInterval = 3000; // Reset poll interval when realtime works
-            retryCount = 0; // Reset retry count on successful message
-
-            if (payload.eventType === 'INSERT') {
-              const newRecord = payload.new as any;
-
-              // Play sound only for customer reservations
-              if (newRecord.source === 'customer') {
-                playNotificationSound();
-              }
-
-              supabase
-                .from('reservations')
-                .select(
-                  `
-                id,
-                instance_id,
-                customer_name,
-                customer_phone,
-                vehicle_plate,
-                reservation_date,
-                end_date,
-                start_time,
-                end_time,
-                station_id,
-                status,
-                confirmation_code,
-                price,
-                source,
-                service_ids,
-                service_items,
-                admin_notes,
-                has_unified_services,
-                photo_urls,
-                checked_service_ids,
-                stations:station_id (name, type)
-              `,
-                )
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
-                  if (data) {
-                    const newReservation = mapReservationData(data);
-                    setReservations((prev) => {
-                      // Deduplicate by ID
-                      const filtered = prev.filter((r) => r.id !== data.id);
-                      return [...filtered, newReservation];
-                    });
-
-                    const isCustomerReservation = (data as any).source === 'customer';
-                    toast.success(
-                      isCustomerReservation
-                        ? `🔔 ${t('notifications.newReservation')}!`
-                        : `${t('notifications.newReservation')}!`,
-                      {
-                        description: `${data.start_time.slice(0, 5)} - ${data.vehicle_plate}`,
-                      },
-                    );
-                  }
-                });
-            } else if (payload.eventType === 'UPDATE') {
-              // Fetch full data from server to ensure complete object
-              supabase
-                .from('reservations')
-                .select(
-                  `
-                id,
-                instance_id,
-                customer_name,
-                customer_phone,
-                vehicle_plate,
-                reservation_date,
-                end_date,
-                start_time,
-                end_time,
-                station_id,
-                status,
-                confirmation_code,
-                price,
-                service_ids,
-                service_items,
-                admin_notes,
-                has_unified_services,
-                photo_urls,
-                checked_service_ids,
-                stations:station_id (name, type)
-              `,
-                )
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
-                  if (data) {
-                    const updatedReservation = mapReservationData(data);
-                    setReservations((prev) =>
-                      prev.map((r) => (r.id === data.id ? updatedReservation : r)),
-                    );
-                    // Also update selectedReservation if it's the same
-                    setSelectedReservation((prev) =>
-                      prev?.id === data.id ? updatedReservation : prev,
-                    );
-                  }
-                });
-            } else if (payload.eventType === 'DELETE') {
-              setReservations((prev) => prev.filter((r) => r.id !== payload.old.id));
-            }
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'trainings',
-            filter: `instance_id=eq.${instanceId}`,
-          },
-          async (payload) => {
-            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-              const { data } = (await supabase
-                .from('trainings')
-                .select(
-                  '*, stations:station_id (name, type), training_type_record:training_type_id (id, name, duration_days, sort_order, active, instance_id)',
-                )
-                .eq('id', payload.new.id)
-                .single()) as any;
-              if (data) {
-                const mapped: Training = {
-                  ...data,
-                  assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
-                    ? data.assigned_employee_ids
-                    : [],
-                };
-
-                // Upsert to prevent disappearing trainings after reconnect or missed INSERT
-                setTrainings((prev) => {
-                  const exists = prev.some((t) => t.id === mapped.id);
-                  return exists
-                    ? prev.map((t) => (t.id === mapped.id ? mapped : t))
-                    : [...prev, mapped];
-                });
-
-                setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
-              }
-            } else if (payload.eventType === 'DELETE') {
-              setTrainings((prev) => prev.filter((t) => t.id !== payload.old.id));
-              setSelectedTraining((prev) => (prev?.id === payload.old.id ? null : prev));
-            }
-          },
-        )
-        .subscribe((status, err) => {
-          console.log('[HallView] Channel status:', status, err);
-          if (status === 'SUBSCRIBED') {
-            realtimeWorking = true;
-            retryCount = 0;
-            void syncTrainings(); // recover possible gaps after reconnect
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            realtimeWorking = false;
-            pollInterval = 3000; // Reset to fast polling when realtime fails
-            void syncTrainings();
-
-            // Auto-retry with exponential backoff
-            if (retryCount < maxRetries && !isCleanedUp) {
-              retryCount++;
-              const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-              console.log(
-                `[HallView] Retrying realtime connection in ${delay}ms (attempt ${retryCount}/${maxRetries})`,
-              );
-              setTimeout(setupRealtimeChannel, delay);
-            }
-          } else if (status === 'CLOSED') {
-            realtimeWorking = false;
-            pollInterval = 3000;
-            void syncTrainings();
-          }
-        });
-    };
-
-    // Start realtime subscription
-    setupRealtimeChannel();
-
-    // Start polling as fallback
-    pollTimeoutId = setTimeout(pollForUpdates, pollInterval);
-
-    return () => {
-      isCleanedUp = true;
-      if (pollTimeoutId) {
-        clearTimeout(pollTimeoutId);
-      }
-      if (currentChannel) {
-        supabase.removeChannel(currentChannel);
-      }
-    };
-  }, [instanceId, t, trainingsEnabled]);
+  // Use shared realtime hook (replaces ~340 lines of inline realtime + polling logic)
+  useReservationsRealtime({
+    instanceId,
+    servicesMapRef,
+    loadedDateRangeFrom: new Date(0), // HallView loads all reservations
+    onInsert: handleRealtimeInsert,
+    onUpdate: handleRealtimeUpdate,
+    onDelete: handleRealtimeDelete,
+    onRefetch: fetchAllReservations,
+    onNewCustomerReservation: handleNewCustomerReservation,
+    onUpdateSelectedReservation: handleRealtimeUpdateSelected,
+    onTrainingInsert: handleTrainingUpsert,
+    onTrainingUpdate: handleTrainingUpsert,
+    onTrainingDelete: handleTrainingDelete,
+  });
 
   const handleReservationClick = (reservation: Reservation) => {
     setSelectedTraining(null);
@@ -1133,18 +858,6 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     setSelectedReservation((prev) =>
       prev?.id === reservationId ? { ...prev, status: newStatus } : prev,
     );
-  };
-
-  const handleDeleteReservation = async (reservationId: string) => {
-    await supabase.from('reservations').delete().eq('id', reservationId);
-    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
-    setSelectedReservation(null);
-    toast.success(t('reservations.deleted'));
-  };
-
-  const handleEditReservation = (reservation: Reservation) => {
-    setSelectedReservation(null);
-    setEditingReservation(reservation);
   };
 
   // Send pickup SMS handler for hall view
@@ -1294,30 +1007,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     // Refresh reservations after edit
     const { data: reservationsData } = await supabase
       .from('reservations')
-      .select(
-        `
-        id,
-        instance_id,
-        customer_name,
-        customer_phone,
-        vehicle_plate,
-        reservation_date,
-        end_date,
-        start_time,
-        end_time,
-        station_id,
-        status,
-        confirmation_code,
-        price,
-        service_ids,
-        service_items,
-        has_unified_services,
-        admin_notes,
-        photo_urls,
-        checked_service_ids,
-        stations:station_id (name, type)
-      `,
-      )
+      .select(HALL_RESERVATION_SELECT)
       .eq('instance_id', instanceId);
 
     if (reservationsData) {
@@ -1409,7 +1099,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-center px-2 text-muted-foreground hover:text-foreground"
-                  onClick={handleLogout}
+                  onClick={() => void signOut()}
                   title={t('auth.logout')}
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
@@ -1476,7 +1166,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
                 <Button
                   variant="ghost"
                   className="w-full justify-center px-2 text-muted-foreground hover:text-foreground"
-                  onClick={handleLogout}
+                  onClick={() => void signOut()}
                   title={t('auth.logout')}
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
@@ -1546,7 +1236,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
               <Button
                 variant="ghost"
                 className="w-full justify-center px-2 text-muted-foreground hover:text-foreground"
-                onClick={handleLogout}
+                onClick={() => void signOut()}
                 title={t('auth.logout')}
               >
                 <LogOut className="w-4 h-4 shrink-0" />
@@ -1563,7 +1253,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
             breaks={breaks}
             workingHours={workingHours}
             onReservationClick={handleReservationClick}
-            allowedViews={['day', 'two-days']}
+            allowedViews={['day']}
             readOnly={true}
             showStationFilter={false}
             showWeekView={false}

@@ -54,7 +54,8 @@
     "clear": "Wyczyść",
     "hide": "Ukryj",
     "total": "Razem",
-    "saved": "Zapisano"
+    "saved": "Zapisano",
+    "unknownService": "Nieznana usługa"
   },
   "carSearch": {
     "useCustom": "Użyj"
@@ -1151,7 +1152,9 @@
     "addYardVehicle": "Dodaj pojazd",
     "reservationType": "Typ rezerwacji",
     "singleDay": "Jednodniowa",
-    "multiDay": "Wielodniowa"
+    "multiDay": "Wielodniowa",
+    "multipleCreated": "Dodano {{count}} rezerwacji",
+    "assignedEmployees": "Przypisani pracownicy"
   },
   "reservationDetails": {
     "editTitle": "Edytuj rezerwację",
@@ -2277,5 +2280,13 @@
     "attemptsRemaining": "Pozostało prób: {{count}}",
     "accountBlocked": "Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.",
     "accountBlockedShort": "Konto zablokowane. Skontaktuj się z administratorem."
+  },
+  "validation": {
+    "phoneRequired": "Telefon jest wymagany",
+    "carModelRequired": "Marka i model jest wymagana",
+    "servicesRequired": "Wybierz co najmniej jedną usługę",
+    "dateRequired": "Wybierz datę dla każdego slotu",
+    "timeRequired": "Wybierz godzinę rozpoczęcia i zakończenia dla każdego slotu",
+    "stationRequired": "Wybierz stanowisko dla każdego slotu"
   }
 }

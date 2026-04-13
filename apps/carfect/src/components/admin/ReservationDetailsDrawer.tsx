@@ -36,13 +36,16 @@ import { useIsMobile } from '@shared/ui';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePricingMode } from '@/hooks/usePricingMode';
+import { useAdminNotes } from '@/hooks/useAdminNotes';
+import { useEmployeeAssignment } from '@/hooks/useEmployeeAssignment';
+import { useServiceManagement } from '@/hooks/useServiceManagement';
 import { bruttoToNetto } from '@/utils/pricing';
 import SendSmsDialog from '@/components/admin/SendSmsDialog';
 import { ReservationHistoryDrawer } from './history/ReservationHistoryDrawer';
 import CustomerEditDrawer from './CustomerEditDrawer';
 import ReservationPhotosDialog from './ReservationPhotosDialog';
 import ReservationPhotosSection from './ReservationPhotosSection';
-import ServiceSelectionDrawer, { ServiceWithCategory } from './ServiceSelectionDrawer';
+import ServiceSelectionDrawer from './ServiceSelectionDrawer';
 import { EmployeeSelectionDrawer } from './EmployeeSelectionDrawer';
 import { AssignedEmployeesChips } from './AssignedEmployeesChips';
 import { Button } from '@shared/ui';
@@ -69,6 +72,8 @@ import {
   AlertDialogTrigger,
 } from '@shared/ui';
 import type { Reservation, CarSize } from '@/types/reservation';
+import { formatTime, getStatusBadge, getSourceLabel } from '@/lib/reservationDisplay';
+import { triggerReservationPhotoUpload } from '@/lib/reservationPhotoUpload';
 
 export interface HallVisibleFields {
   customer_name: boolean;
@@ -152,6 +157,21 @@ const ReservationDetailsDrawer = ({
   const showDelete = !isHallMode || canDeleteInHallMode;
 
   const { t } = useTranslation();
+  const {
+    adminNotes,
+    setAdminNotes,
+    customerNotes,
+    editingNotes,
+    savingNotes,
+    notesTextareaRef,
+    startEditingNotes,
+    handleNotesBlur,
+    handleSaveAdminNotes,
+  } = useAdminNotes({
+    reservationId: reservation?.id ?? null,
+    initialAdminNotes: reservation?.admin_notes || '',
+    initialCustomerNotes: reservation?.customer_notes || '',
+  });
   const [deleting, setDeleting] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -176,12 +196,19 @@ const ReservationDetailsDrawer = ({
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
   const [reservationPhotos, setReservationPhotos] = useState<string[]>([]);
-  const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
-  const [savingService, setSavingService] = useState(false);
+  // Service management (add/remove services)
+  const {
+    savingService,
+    serviceDrawerOpen,
+    setServiceDrawerOpen,
+    handleRemoveService,
+    handleConfirmServices,
+  } = useServiceManagement({
+    reservationId: reservation?.id || null,
+    currentServiceIds: reservation?.service_ids || [],
+    currentServiceItems: reservation?.service_items || null,
+  });
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [savingNotes, setSavingNotes] = useState(false);
-  const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<{
     id: string;
     name: string;
@@ -201,21 +228,23 @@ const ReservationDetailsDrawer = ({
   const { data: instanceSettings } = useInstanceSettings(reservation?.instance_id ?? null);
   const showEmployeeAssignment = instanceSettings?.assign_employees_to_reservations ?? false;
   const { data: employees = [] } = useEmployees(reservation?.instance_id ?? null);
-  const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
-  const [savingEmployees, setSavingEmployees] = useState(false);
-  const [localAssignedEmployeeIds, setLocalAssignedEmployeeIds] = useState<string[]>([]);
-
-  // Sync local employee IDs when reservation changes
-  useEffect(() => {
-    setLocalAssignedEmployeeIds(reservation?.assigned_employee_ids || []);
-  }, [reservation?.assigned_employee_ids]);
+  const {
+    localAssignedEmployeeIds,
+    setLocalAssignedEmployeeIds,
+    savingEmployees,
+    employeeDrawerOpen,
+    setEmployeeDrawerOpen,
+    handleEmployeeSelect,
+    handleRemoveEmployee,
+  } = useEmployeeAssignment({
+    reservationId: reservation?.id ?? null,
+    initialEmployeeIds: reservation?.assigned_employee_ids || [],
+  });
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [carModel, setCarModel] = useState('');
   const [carSize, setCarSize] = useState<CarSize | ''>('');
-  const [customerNotes, setCustomerNotes] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
   const [price, setPrice] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -227,8 +256,6 @@ const ReservationDetailsDrawer = ({
       setCustomerPhone(reservation.customer_phone || '');
       setCarModel(reservation.vehicle_plate || '');
       setCarSize(reservation.car_size || '');
-      setCustomerNotes(reservation.customer_notes || '');
-      setAdminNotes(reservation.admin_notes || '');
       setPrice(reservation.price?.toString() || '');
       setStartTime(reservation.start_time || '');
       setEndTime(reservation.end_time || '');
@@ -336,257 +363,6 @@ const ReservationDetailsDrawer = ({
     onClose();
   };
 
-  // Quick add services to reservation
-  const handleAddServices = async (
-    newServiceIds: string[],
-    servicesData: ServiceWithCategory[],
-  ) => {
-    if (!reservation) return;
-    setSavingService(true);
-
-    try {
-      // Merge existing + new service IDs (deduplicate)
-      const currentIds = reservation.service_ids || [];
-      const mergedIds = [...new Set([...currentIds, ...newServiceIds])];
-
-      // Build service_items with full service data (including names for display)
-      const existingItems = reservation.service_items || [];
-      const existingServiceIds = new Set(existingItems.map((item) => item.service_id));
-
-      const newItems = newServiceIds
-        .filter((id) => !existingServiceIds.has(id))
-        .map((id) => {
-          const svc = servicesData.find((s) => s.id === id);
-          return {
-            service_id: id,
-            id: id,
-            name: svc?.name || 'Usługa',
-            short_name: svc?.short_name || null,
-            custom_price: null,
-            price_small: svc?.price_small ?? null,
-            price_medium: svc?.price_medium ?? null,
-            price_large: svc?.price_large ?? null,
-            price_from: svc?.price_from ?? null,
-          };
-        });
-
-      const mergedItems = [...existingItems, ...newItems];
-
-      // Update database
-      const { error } = await supabase
-        .from('reservations')
-        .update({
-          service_ids: mergedIds,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          service_items: mergedItems as any,
-        })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error adding services:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingService(false);
-    }
-  };
-
-  // Quick remove service from reservation
-  const handleRemoveService = async (serviceId: string) => {
-    if (!reservation) return;
-    setSavingService(true);
-
-    try {
-      const currentIds = reservation.service_ids || [];
-      const updatedIds = currentIds.filter((id) => id !== serviceId);
-      const updatedItems = (reservation.service_items || []).filter(
-        (item) => item.service_id !== serviceId,
-      );
-
-      const { error } = await supabase
-        .from('reservations')
-        .update({
-          service_ids: updatedIds,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          service_items: (updatedItems.length > 0 ? updatedItems : null) as any,
-        })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error removing service:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingService(false);
-    }
-  };
-
-  // Inline save admin notes
-  const handleSaveAdminNotes = async () => {
-    if (!reservation) return;
-    setSavingNotes(true);
-
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ admin_notes: adminNotes || null })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      setEditingNotes(false);
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error saving notes:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingNotes(false);
-    }
-  };
-
-  // Handle notes blur (click outside)
-  const handleNotesBlur = () => {
-    // Small delay to allow button clicks to register first
-    setTimeout(() => {
-      if (editingNotes) {
-        const original = reservation?.admin_notes || '';
-        const current = adminNotes || '';
-        if (current !== original) {
-          handleSaveAdminNotes();
-        } else {
-          setEditingNotes(false);
-        }
-      }
-    }, 100);
-  };
-
-  // Handle employee assignment changes
-  const handleEmployeeSelect = async (employeeIds: string[]) => {
-    if (!reservation) return;
-    setSavingEmployees(true);
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ assigned_employee_ids: employeeIds })
-        .eq('id', reservation.id);
-
-      if (error) throw error;
-      setLocalAssignedEmployeeIds(employeeIds);
-      toast.success(t('common.saved'));
-    } catch (error) {
-      console.error('Error saving employees:', error);
-      toast.error(t('common.error'));
-    } finally {
-      setSavingEmployees(false);
-    }
-  };
-
-  const handleRemoveEmployee = async (employeeId: string) => {
-    const updatedIds = localAssignedEmployeeIds.filter((id) => id !== employeeId);
-    await handleEmployeeSelect(updatedIds);
-  };
-
-  // Start editing notes
-  const startEditingNotes = () => {
-    setEditingNotes(true);
-    // Focus textarea after render
-    setTimeout(() => {
-      notesTextareaRef.current?.focus();
-    }, 50);
-  };
-
-  const getSourceLabel = (source?: string | null, createdByUsername?: string | null) => {
-    if (!source || source === 'admin') {
-      const displayName = createdByUsername || t('reservations.sources.employee');
-      return (
-        <Badge variant="outline" className="text-xs font-normal">
-          {t('reservations.addedBy')}: {displayName}
-        </Badge>
-      );
-    }
-    if (source === 'customer' || source === 'calendar' || source === 'online') {
-      return (
-        <Badge
-          variant="outline"
-          className="text-xs font-normal border-muted-foreground/30 text-muted-foreground"
-        >
-          {t('reservations.addedBy')}: {t('reservations.sources.system')}
-        </Badge>
-      );
-    }
-    if (source === 'booksy') {
-      return (
-        <Badge
-          variant="outline"
-          className="text-xs font-normal border-purple-500/30 text-purple-600"
-        >
-          {t('reservations.addedBy')}: {t('reservations.sources.booksy')}
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="outline" className="text-xs font-normal">
-        {t('reservations.addedBy')}: {source}
-      </Badge>
-    );
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return (
-          <Badge className="bg-success/20 text-success border-success/30">
-            {t('reservations.statuses.confirmed')}
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-warning/20 text-warning border-warning/30">
-            {t('reservations.statuses.pending')}
-          </Badge>
-        );
-      case 'in_progress':
-        return (
-          <Badge className="bg-primary/20 text-primary border-primary/30">
-            {t('reservations.statuses.inProgress')}
-          </Badge>
-        );
-      case 'completed':
-        return (
-          <Badge className="bg-muted text-muted-foreground">
-            {t('reservations.statuses.completed')}
-          </Badge>
-        );
-      case 'released':
-        return (
-          <Badge className="bg-muted text-muted-foreground">
-            {t('reservations.statuses.released')}
-          </Badge>
-        );
-      case 'cancelled':
-        return (
-          <Badge className="bg-destructive/20 text-destructive border-destructive/30">
-            {t('reservations.statuses.cancelled')}
-          </Badge>
-        );
-      case 'no_show':
-        return (
-          <Badge className="bg-orange-500/20 text-orange-600 border-orange-500/30">
-            {t('reservations.statuses.noShow')}
-          </Badge>
-        );
-      case 'change_requested':
-        return (
-          <Badge className="bg-orange-200 text-orange-800 border-orange-400">
-            {t('reservations.statuses.changeRequested')}
-          </Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
   const handleEdit = () => {
     if (!reservation || !onEdit) return;
 
@@ -680,10 +456,6 @@ const ReservationDetailsDrawer = ({
 
   if (!reservation) return null;
 
-  const formatTime = (time: string) => {
-    return time?.substring(0, 5) || '';
-  };
-
   return (
     <>
       <Sheet open={open} onOpenChange={onClose} modal={false}>
@@ -714,8 +486,8 @@ const ReservationDetailsDrawer = ({
                   </span>
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-2 mt-2 flex-wrap">
-                  {getStatusBadge(reservation.status)}
-                  {getSourceLabel(reservation.source, reservation.created_by_username)}
+                  {getStatusBadge(reservation.status, t)}
+                  {getSourceLabel(reservation.source, reservation.created_by_username, t)}
                   {!isHallMode && reservation.confirmation_code && (
                     <Badge variant="outline" className="text-xs font-normal font-mono">
                       #{reservation.confirmation_code}
@@ -1291,69 +1063,11 @@ const ReservationDetailsDrawer = ({
                         <DropdownMenuItem
                           onClick={() => {
                             setActionsMenuOpen(false);
-                            // Trigger file input directly instead of opening dialog
-                            const fileInput = document.createElement('input');
-                            fileInput.type = 'file';
-                            fileInput.accept = 'image/*';
-                            fileInput.multiple = true;
-                            fileInput.capture = 'environment';
-                            fileInput.onchange = async (e) => {
-                              const target = e.target as HTMLInputElement;
-                              const files = target.files;
-                              if (!files || files.length === 0 || !reservation) return;
-
-                              const maxPhotos = 8;
-                              const currentPhotos = reservationPhotos || [];
-                              const remainingSlots = maxPhotos - currentPhotos.length;
-
-                              if (remainingSlots <= 0) {
-                                toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
-                                return;
-                              }
-
-                              const filesToUpload = Array.from(files).slice(0, remainingSlots);
-
-                              try {
-                                const uploadedUrls: string[] = [];
-                                const { compressImage } = await import('@/lib/imageUtils');
-
-                                for (const file of filesToUpload) {
-                                  const compressed = await compressImage(file, 1200, 0.8);
-                                  const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-
-                                  const { error: uploadError } = await supabase.storage
-                                    .from('reservation-photos')
-                                    .upload(fileName, compressed, {
-                                      contentType: 'image/jpeg',
-                                      cacheControl: '3600',
-                                    });
-
-                                  if (uploadError) throw uploadError;
-
-                                  const { data: urlData } = supabase.storage
-                                    .from('reservation-photos')
-                                    .getPublicUrl(fileName);
-
-                                  uploadedUrls.push(urlData.publicUrl);
-                                }
-
-                                const newPhotos = [...currentPhotos, ...uploadedUrls];
-
-                                const { error: updateError } = await supabase
-                                  .from('reservations')
-                                  .update({ photo_urls: newPhotos })
-                                  .eq('id', reservation.id);
-
-                                if (updateError) throw updateError;
-
-                                setReservationPhotos(newPhotos);
-                                toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
-                              } catch (error) {
-                                console.error('Error uploading photos:', error);
-                                toast.error('Błąd podczas przesyłania zdjęć');
-                              }
-                            };
-                            fileInput.click();
+                            triggerReservationPhotoUpload({
+                              reservationId: reservation.id,
+                              currentPhotos: reservationPhotos,
+                              onPhotosUpdated: setReservationPhotos,
+                            });
                           }}
                         >
                           <Camera className="w-4 h-4 mr-2" />
@@ -1517,69 +1231,11 @@ const ReservationDetailsDrawer = ({
                     >
                       <DropdownMenuItem
                         onClick={() => {
-                          // Trigger file input directly instead of opening dialog
-                          const fileInput = document.createElement('input');
-                          fileInput.type = 'file';
-                          fileInput.accept = 'image/*';
-                          fileInput.multiple = true;
-                          fileInput.capture = 'environment';
-                          fileInput.onchange = async (e) => {
-                            const target = e.target as HTMLInputElement;
-                            const files = target.files;
-                            if (!files || files.length === 0 || !reservation) return;
-
-                            const maxPhotos = 8;
-                            const currentPhotos = reservationPhotos || [];
-                            const remainingSlots = maxPhotos - currentPhotos.length;
-
-                            if (remainingSlots <= 0) {
-                              toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
-                              return;
-                            }
-
-                            const filesToUpload = Array.from(files).slice(0, remainingSlots);
-
-                            try {
-                              const uploadedUrls: string[] = [];
-                              const { compressImage } = await import('@/lib/imageUtils');
-
-                              for (const file of filesToUpload) {
-                                const compressed = await compressImage(file, 1200, 0.8);
-                                const fileName = `reservation-${reservation.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-
-                                const { error: uploadError } = await supabase.storage
-                                  .from('reservation-photos')
-                                  .upload(fileName, compressed, {
-                                    contentType: 'image/jpeg',
-                                    cacheControl: '3600',
-                                  });
-
-                                if (uploadError) throw uploadError;
-
-                                const { data: urlData } = supabase.storage
-                                  .from('reservation-photos')
-                                  .getPublicUrl(fileName);
-
-                                uploadedUrls.push(urlData.publicUrl);
-                              }
-
-                              const newPhotos = [...currentPhotos, ...uploadedUrls];
-
-                              const { error: updateError } = await supabase
-                                .from('reservations')
-                                .update({ photo_urls: newPhotos })
-                                .eq('id', reservation.id);
-
-                              if (updateError) throw updateError;
-
-                              setReservationPhotos(newPhotos);
-                              toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
-                            } catch (error) {
-                              console.error('Error uploading photos:', error);
-                              toast.error('Błąd podczas przesyłania zdjęć');
-                            }
-                          };
-                          fileInput.click();
+                          triggerReservationPhotoUpload({
+                            reservationId: reservation.id,
+                            currentPhotos: reservationPhotos,
+                            onPhotosUpdated: setReservationPhotos,
+                          });
                         }}
                       >
                         <Camera className="w-4 h-4 mr-2" />
@@ -1937,15 +1593,7 @@ const ReservationDetailsDrawer = ({
         selectedServiceIds={reservation?.service_ids || []}
         hasUnifiedServices={reservation?.has_unified_services ?? true}
         hideSelectedSection={true}
-        onConfirm={(serviceIds, duration, servicesData) => {
-          // Filter only NEW services (not already in reservation)
-          const currentIds = reservation?.service_ids || [];
-          const newIds = serviceIds.filter((id) => !currentIds.includes(id));
-          if (newIds.length > 0) {
-            handleAddServices(newIds, servicesData);
-          }
-          setServiceDrawerOpen(false);
-        }}
+        onConfirm={handleConfirmServices}
       />
 
       {/* Employee Selection Drawer */}

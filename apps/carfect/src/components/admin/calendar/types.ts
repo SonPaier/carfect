@@ -11,6 +11,34 @@ export interface Station {
   color?: string | null;
 }
 
+export interface Break {
+  id: string;
+  station_id: string;
+  break_date: string;
+  start_time: string;
+  end_time: string;
+  note: string | null;
+}
+
+export interface Training {
+  id: string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  end_date: string | null;
+  start_time: string;
+  end_time: string;
+  station_id: string | null;
+  status: string;
+  assigned_employee_ids: string[];
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  photo_url: string | null;
+}
+
 export interface ClosedDay {
   id: string;
   closed_date: string;
