@@ -40,14 +40,6 @@ export function useCalendarVisibility<T extends { id: string }>({
 
   const hiddenStationIds = hiddenStationsMap[viewMode] || new Set<string>();
 
-  const setHiddenStationIds = (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-    setHiddenStationsMap(prev => {
-      const current = prev[viewMode] || new Set<string>();
-      const next = typeof updater === 'function' ? updater(current) : updater;
-      return { ...prev, [viewMode]: next };
-    });
-  };
-
   // Persist
   useEffect(() => {
     for (const [view, ids] of Object.entries(hiddenStationsMap)) {
@@ -56,19 +48,17 @@ export function useCalendarVisibility<T extends { id: string }>({
   }, [hiddenStationsMap]);
 
   const toggleStationVisibility = useCallback((stationId: string) => {
-    setHiddenStationIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(stationId)) {
-        newSet.delete(stationId);
-      } else {
-        newSet.add(stationId);
-      }
-      return newSet;
+    setHiddenStationsMap(prev => {
+      const current = prev[viewMode] || new Set<string>();
+      const newSet = new Set(current);
+      if (newSet.has(stationId)) newSet.delete(stationId);
+      else newSet.add(stationId);
+      return { ...prev, [viewMode]: newSet };
     });
   }, [viewMode]);
 
   const showAllStations = useCallback(() => {
-    setHiddenStationIds(new Set());
+    setHiddenStationsMap(prev => ({ ...prev, [viewMode]: new Set() }));
   }, [viewMode]);
 
   // Show notes in bars
