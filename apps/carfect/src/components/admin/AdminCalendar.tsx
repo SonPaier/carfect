@@ -1,4 +1,4 @@
-import { useState, DragEvent, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   format,
@@ -48,12 +48,12 @@ import {
   getTimeBasedZIndex,
   DEFAULT_START_HOUR,
   DEFAULT_END_HOUR,
-  SLOT_MINUTES,
   SLOTS_PER_HOUR,
   SLOT_HEIGHT,
   HOUR_HEIGHT,
 } from './calendar/useCalendarWorkingHours';
 import { useCalendarOverlap } from './calendar/useCalendarOverlap';
+import { useCalendarDragDrop } from './calendar/useCalendarDragDrop';
 import { DayViewGrid } from './calendar/DayViewGrid';
 type ViewMode = 'day' | 'week' | 'month';
 interface Station {
@@ -282,13 +282,7 @@ const AdminCalendar = ({
     const saved = localStorage.getItem('calendar-hidden-stations');
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
-  const [draggedReservation, setDraggedReservation] = useState<Reservation | null>(null);
-  const [dragOverStation, setDragOverStation] = useState<string | null>(null);
-  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
-  const [dragOverSlot, setDragOverSlot] = useState<{
-    hour: number;
-    slotIndex: number;
-  } | null>(null);
+  // Drag & drop state + handlers extracted to hook
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [weekViewStationId, setWeekViewStationId] = useState<string | null>(null);
   const [placDrawerOpen, setPlacDrawerOpen] = useState(false);
@@ -535,6 +529,28 @@ const AdminCalendar = ({
     startSlotOffset: START_SLOT_OFFSET,
   } = getHoursForDate(currentDate);
 
+  // Drag & drop
+  const {
+    draggedReservation,
+    dragOverStation,
+    dragOverSlot,
+    dragPreviewStyle,
+    handleDragStart,
+    handleDragEnd,
+    handleDragOver,
+    handleSlotDragOver,
+    handleDragLeave,
+    handleDrop,
+  } = useCalendarDragDrop({
+    reservations,
+    readOnly,
+    isMobile,
+    displayStartTime: DISPLAY_START_TIME,
+    getWorkingHoursForDate,
+    onReservationMove,
+    onYardVehicleDrop,
+  });
+
   // Long-press handling for mobile
   const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
   const longPressTriggered = useRef(false);
@@ -749,187 +765,6 @@ const AdminCalendar = ({
     const targetDate = dateStr || currentDateStr;
     onAddBreak?.(stationId, targetDate, time);
   };
-
-  // Drag and drop handlers
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, reservation: Reservation) => {
-    // Disable drag on mobile and in read-only mode
-    if (readOnly || isMobile) {
-      e.preventDefault();
-      return;
-    }
-    setDraggedReservation(reservation);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', reservation.id);
-  };
-  const handleDragEnd = () => {
-    setDraggedReservation(null);
-    setDragOverStation(null);
-    setDragOverDate(null);
-    setDragOverSlot(null);
-  };
-  const handleDragOver = (e: DragEvent<HTMLDivElement>, stationId: string, dateStr?: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverStation(stationId);
-    if (dateStr) {
-      setDragOverDate(dateStr);
-    }
-  };
-  const handleSlotDragOver = (
-    e: DragEvent<HTMLDivElement>,
-    stationId: string,
-    hour: number,
-    slotIndex: number,
-    dateStr?: string,
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverStation(stationId);
-    setDragOverSlot({
-      hour,
-      slotIndex,
-    });
-    if (dateStr) {
-      setDragOverDate(dateStr);
-    }
-  };
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    // Only clear if we're leaving to an element outside the calendar
-    const relatedTarget = e.relatedTarget as HTMLElement;
-    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
-      setDragOverStation(null);
-      setDragOverSlot(null);
-    }
-  };
-
-  // Check if a time slot overlaps with existing reservations (including multi-day)
-  const checkOverlap = (
-    stationId: string,
-    dateStr: string,
-    startTime: string,
-    endTime: string,
-    excludeReservationId?: string,
-  ): boolean => {
-    const stationReservations = reservations.filter((r) => {
-      if (
-        r.station_id !== stationId ||
-        r.id === excludeReservationId ||
-        r.status === 'cancelled' ||
-        r.status === 'no_show'
-      )
-        return false;
-
-      // Check if date falls within reservation range
-      const startDate = r.reservation_date;
-      const endDate = r.end_date || r.reservation_date;
-      return dateStr >= startDate && dateStr <= endDate;
-    });
-    const newStart = parseTime(startTime);
-    const newEnd = parseTime(endTime);
-    for (const reservation of stationReservations) {
-      const resStart = parseTime(reservation.start_time);
-      const resEnd = parseTime(reservation.end_time);
-
-      // Check if time ranges overlap
-      if (newStart < resEnd && newEnd > resStart) {
-        return true; // Overlap detected
-      }
-    }
-    return false; // No overlap
-  };
-  const handleDrop = (
-    e: DragEvent<HTMLDivElement>,
-    stationId: string,
-    dateStr: string,
-    hour?: number,
-    slotIndex?: number,
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOverStation(null);
-    setDragOverDate(null);
-    setDragOverSlot(null);
-
-    // Check if this is a yard vehicle drop
-    const yardVehicleData = e.dataTransfer.getData('application/yard-vehicle');
-    if (yardVehicleData && hour !== undefined && slotIndex !== undefined) {
-      try {
-        const vehicle = JSON.parse(yardVehicleData) as YardVehicle;
-        const dropTime = formatTimeSlot(hour, slotIndex);
-        onYardVehicleDrop?.(vehicle, stationId, dateStr, dropTime);
-      } catch (err) {
-        console.error('Error parsing yard vehicle data:', err);
-      }
-      return;
-    }
-    if (draggedReservation) {
-      // Check if moving from PPF/Detailing to Washing with special fields
-      const newTime =
-        hour !== undefined && slotIndex !== undefined ? formatTimeSlot(hour, slotIndex) : undefined;
-
-      // Validate that reservation fits within working hours
-      if (newTime) {
-        const { startTime: dayStartTime, closeTime: dayCloseTime } =
-          getWorkingHoursForDate(dateStr);
-        const newStartNum = parseTime(newTime);
-        const dayStartNum = parseTime(dayStartTime);
-
-        // Check if start time is before opening
-        if (newStartNum < dayStartNum) {
-          console.warn('Cannot drop reservation before opening time');
-          setDraggedReservation(null);
-          return;
-        }
-
-        // Calculate end time of reservation
-        const originalStart = parseTime(draggedReservation.start_time);
-        const originalEnd = parseTime(draggedReservation.end_time);
-        const duration = originalEnd - originalStart;
-        const newEndNum = newStartNum + duration;
-        const closeNum = parseTime(dayCloseTime);
-        if (newEndNum > closeNum) {
-          console.warn('Reservation would end after closing time');
-          setDraggedReservation(null);
-          return;
-        }
-
-        // Overlap check disabled - admin has full control over calendar
-        // const newEndTime = `${Math.floor(newEndNum).toString().padStart(2, '0')}:${Math.round(newEndNum % 1 * 60).toString().padStart(2, '0')}`;
-        // if (checkOverlap(stationId, dateStr, newTime, newEndTime, draggedReservation.id)) {
-        //   console.warn('Cannot drop reservation - overlaps with existing reservation');
-        //   setDraggedReservation(null);
-        //   return;
-        // }
-      }
-
-      // Allow drop if station changed OR date changed OR time changed
-      const stationChanged = draggedReservation.station_id !== stationId;
-      const dateChanged = draggedReservation.reservation_date !== dateStr;
-      const timeChanged = newTime && newTime !== draggedReservation.start_time;
-      if (stationChanged || dateChanged || timeChanged) {
-        onReservationMove?.(draggedReservation.id, stationId, dateStr, newTime);
-      }
-    }
-    setDraggedReservation(null);
-  };
-
-  // Calculate drag preview position (relative to displayStartTime)
-  const getDragPreviewStyle = () => {
-    if (!draggedReservation || !dragOverSlot) return null;
-    const start = parseTime(draggedReservation.start_time);
-    const end = parseTime(draggedReservation.end_time);
-    const duration = end - start;
-    const newStartTime = dragOverSlot.hour + (dragOverSlot.slotIndex * SLOT_MINUTES) / 60;
-    const top = (newStartTime - DISPLAY_START_TIME) * HOUR_HEIGHT;
-    const height = duration * HOUR_HEIGHT;
-    return {
-      top: `${top}px`,
-      height: `${Math.max(height, 30)}px`,
-      time: formatTimeSlot(dragOverSlot.hour, dragOverSlot.slotIndex),
-    };
-  };
-  const dragPreviewStyle = getDragPreviewStyle();
 
   // Current time indicator position (relative to displayStartTime)
   const now = new Date();
