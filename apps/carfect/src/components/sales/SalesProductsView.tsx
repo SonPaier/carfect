@@ -258,6 +258,10 @@ const SalesProductsView = () => {
                   </TableCell>
                   <TableCell className="text-right text-sm tabular-nums">
                     {formatCurrency(product.priceNet)}
+                    <span className="text-muted-foreground font-normal">
+                      {' / '}
+                      {product.priceUnit === 'meter' ? 'm²' : 'szt.'}
+                    </span>
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
