@@ -130,7 +130,7 @@ const WeekRow = ({
             className={cn(
               'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors',
               isClosed && 'bg-red-50',
-              !isClosed && isInRange(day, highlightRange) && 'bg-primary/10 ring-2 ring-primary/30',
+              !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
             )}
             onMouseDown={(e) => {
               e.preventDefault();
