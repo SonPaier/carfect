@@ -271,7 +271,7 @@ export function CalendarHeader({
               <Button
                 variant={viewMode === 'day' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => onViewModeChange('day')}
+                onClick={() => { onViewModeChange('day'); onSaveDefaultView('day'); }}
                 className="rounded-none border-0 px-2.5"
                 title="Dzień"
               >
@@ -316,7 +316,7 @@ export function CalendarHeader({
                   <Settings2 className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-56 p-3">
+              <PopoverContent align="end" className="w-56 p-3 z-[300]">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-sm">Widoczność kolumn</h4>
@@ -361,7 +361,7 @@ export function CalendarHeader({
                           name="default-view"
                           value={v}
                           checked={viewMode === v}
-                          onChange={() => onViewModeChange(v)}
+                          onChange={() => { onViewModeChange(v); onSaveDefaultView(v); }}
                           className="accent-primary"
                         />
                         {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}

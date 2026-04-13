@@ -89,7 +89,7 @@ export function EmployeeSelectionDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col !z-[350]">
         <SheetHeader className="p-4 pb-2 border-b shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <button

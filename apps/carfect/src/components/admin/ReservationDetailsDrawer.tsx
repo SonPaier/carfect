@@ -461,7 +461,7 @@ const ReservationDetailsDrawer = ({
       <Sheet open={open} onOpenChange={onClose} modal={false}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[27rem] flex flex-col shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.2)] bg-white !z-[300]"
+          className="w-full sm:max-w-[27rem] flex flex-col shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.2)] bg-white"
           hideCloseButton
           hideOverlay
           // Keep drawer open; allow clicking calendar behind
