@@ -319,7 +319,12 @@ export function CalendarHeader({
               <PopoverContent align="end" className="w-56 p-3 z-[300]">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">Widoczność kolumn</h4>
+                    <div>
+                      <h4 className="font-medium text-sm">Widoczność kolumn</h4>
+                      <p className="text-[10px] text-muted-foreground">
+                        {viewMode === 'day' ? 'Widok dzienny' : viewMode === 'week' ? 'Widok tygodniowy' : 'Widok miesięczny'}
+                      </p>
+                    </div>
                     {hasHiddenStations && (
                       <Button
                         variant="ghost"

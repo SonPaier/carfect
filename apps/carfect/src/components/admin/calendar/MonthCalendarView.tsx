@@ -239,10 +239,14 @@ export const MonthCalendarView = ({
     return result;
   }, [calendarStart, calendarEnd]);
 
-  // Filter out cancelled and no_show reservations
+  // Filter out cancelled/no_show and reservations from hidden stations
+  const visibleStationIds = useMemo(() => new Set(stations.map(s => s.id)), [stations]);
   const visibleReservations = useMemo(
-    () => reservations.filter(r => r.status !== 'cancelled' && r.status !== 'no_show'),
-    [reservations],
+    () => reservations.filter(r =>
+      r.status !== 'cancelled' && r.status !== 'no_show' &&
+      (!r.station_id || visibleStationIds.has(r.station_id))
+    ),
+    [reservations, visibleStationIds],
   );
 
   // Per-week events with lane assignments

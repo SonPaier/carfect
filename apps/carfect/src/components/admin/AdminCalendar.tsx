@@ -973,7 +973,7 @@ const AdminCalendar = ({
         <div className="overflow-x-auto flex-1">
           <WeekTileView
             reservations={reservations}
-            stations={stations}
+            stations={visibleStations}
             currentDate={currentDate}
             closedDays={closedDays}
             groupBy={groupingMode}
@@ -1007,7 +1007,7 @@ const AdminCalendar = ({
         <div className="overflow-x-auto flex-1">
           <MonthCalendarView
             reservations={reservations}
-            stations={stations}
+            stations={visibleStations}
             currentDate={currentDate}
             closedDays={closedDays}
             groupBy={groupingMode}

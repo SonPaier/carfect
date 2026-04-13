@@ -66,10 +66,14 @@ export const WeekTileView = ({
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(weekStartTime), i));
   }, [weekStartTime]);
 
-  // Filter out cancelled and no_show reservations
+  // Filter out cancelled/no_show and reservations from hidden stations
+  const visibleStationIds = useMemo(() => new Set(stations.map(s => s.id)), [stations]);
   const visibleReservations = useMemo(
-    () => reservations.filter(r => r.status !== 'cancelled' && r.status !== 'no_show'),
-    [reservations],
+    () => reservations.filter(r =>
+      r.status !== 'cancelled' && r.status !== 'no_show' &&
+      (!r.station_id || visibleStationIds.has(r.station_id))
+    ),
+    [reservations, visibleStationIds],
   );
 
   // Count reservations per day (all statuses for the header badge)
