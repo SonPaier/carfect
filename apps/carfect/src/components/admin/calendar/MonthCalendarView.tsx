@@ -185,25 +185,34 @@ const WeekRow = ({
           if (visStartCol === undefined) return null;
 
           // Clamp bar to only columns belonging to this month
-          // Find the start day and check if it's in this month
           const startDay = visibleWeek[visStartCol];
-          if (!startDay || !isSameMonth(startDay, monthDate)) return null;
-
-          // Calculate max span within this month's days
-          let clampedSpan = 0;
-          for (let i = visStartCol; i < numCols && i < visStartCol + evt.span; i++) {
-            if (visibleWeek[i] && isSameMonth(visibleWeek[i], monthDate)) {
-              clampedSpan++;
-            } else {
-              break;
+          // If bar starts on out-of-month day, find first in-month column
+          let adjustedStartCol = visStartCol;
+          if (startDay && !isSameMonth(startDay, monthDate)) {
+            let found = false;
+            for (let i = visStartCol + 1; i < numCols; i++) {
+              if (visibleWeek[i] && isSameMonth(visibleWeek[i], monthDate)) {
+                adjustedStartCol = i;
+                found = true;
+                break;
+              }
             }
+            if (!found) return null; // entire bar is outside this month
+          } else if (!startDay) {
+            return null;
+          }
+
+          // Recalculate span from adjusted start
+          let clampedSpan = 0;
+          const remainingSpan = evt.span - (adjustedStartCol - visStartCol);
+          for (let i = adjustedStartCol; i < numCols && i < adjustedStartCol + remainingSpan; i++) {
+            if (visibleWeek[i] && isSameMonth(visibleWeek[i], monthDate)) clampedSpan++;
+            else break;
           }
           if (clampedSpan === 0) return null;
 
-          const maxSpan = numCols - visStartCol;
-          const visSpan = Math.min(clampedSpan, maxSpan);
-          const leftPct = (visStartCol / numCols) * 100;
-          const widthPct = (visSpan / numCols) * 100;
+          const leftPct = (adjustedStartCol / numCols) * 100;
+          const widthPct = (clampedSpan / numCols) * 100;
           const topPx = evt.lane * (barHeight + BAR_GAP);
 
           const reservation = evt.reservation;
@@ -604,6 +613,9 @@ export const MonthCalendarView = ({
     return buildHolidayMap(uniqueYears);
   }, [months]);
 
+  const isLoadingMoreFutureRef = useRef(false);
+  const isLoadingMorePastRef = useRef(false);
+
   // Load more months on scroll near edges
   useEffect(() => {
     const el = scrollContainerRef.current;
@@ -611,13 +623,25 @@ export const MonthCalendarView = ({
     const handleScroll = () => {
       // Near bottom — load more future months
       if (el.scrollHeight - el.scrollTop - el.clientHeight < 500) {
-        setFutureMonths((prev) => prev + 3);
-        onLoadMore?.('future');
+        if (!isLoadingMoreFutureRef.current) {
+          isLoadingMoreFutureRef.current = true;
+          setFutureMonths((prev) => prev + 3);
+          onLoadMore?.('future');
+          setTimeout(() => {
+            isLoadingMoreFutureRef.current = false;
+          }, 1000);
+        }
       }
       // Near top — load more past months
       if (el.scrollTop < 500) {
-        setPastMonths((prev) => prev + 3);
-        onLoadMore?.('past');
+        if (!isLoadingMorePastRef.current) {
+          isLoadingMorePastRef.current = true;
+          setPastMonths((prev) => prev + 3);
+          onLoadMore?.('past');
+          setTimeout(() => {
+            isLoadingMorePastRef.current = false;
+          }, 1000);
+        }
       }
     };
     el.addEventListener('scroll', handleScroll, { passive: true });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -27,7 +27,9 @@ interface UseCalendarVisibilityReturn {
 export function useCalendarVisibility<T extends { id: string }>({
   viewMode,
   stations,
-}: UseCalendarVisibilityOptions & { stations: T[] }): UseCalendarVisibilityReturn & { visibleStations: T[] } {
+}: UseCalendarVisibilityOptions & { stations: T[] }): UseCalendarVisibilityReturn & {
+  visibleStations: T[];
+} {
   // Per-view hidden stations
   const [hiddenStationsMap, setHiddenStationsMap] = useState<Record<string, Set<string>>>(() => {
     const result: Record<string, Set<string>> = {};
@@ -47,18 +49,21 @@ export function useCalendarVisibility<T extends { id: string }>({
     }
   }, [hiddenStationsMap]);
 
-  const toggleStationVisibility = useCallback((stationId: string) => {
-    setHiddenStationsMap(prev => {
-      const current = prev[viewMode] || new Set<string>();
-      const newSet = new Set(current);
-      if (newSet.has(stationId)) newSet.delete(stationId);
-      else newSet.add(stationId);
-      return { ...prev, [viewMode]: newSet };
-    });
-  }, [viewMode]);
+  const toggleStationVisibility = useCallback(
+    (stationId: string) => {
+      setHiddenStationsMap((prev) => {
+        const current = prev[viewMode] || new Set<string>();
+        const newSet = new Set(current);
+        if (newSet.has(stationId)) newSet.delete(stationId);
+        else newSet.add(stationId);
+        return { ...prev, [viewMode]: newSet };
+      });
+    },
+    [viewMode],
+  );
 
   const showAllStations = useCallback(() => {
-    setHiddenStationsMap(prev => ({ ...prev, [viewMode]: new Set() }));
+    setHiddenStationsMap((prev) => ({ ...prev, [viewMode]: new Set() }));
   }, [viewMode]);
 
   // Show notes in bars

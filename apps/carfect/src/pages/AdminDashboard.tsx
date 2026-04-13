@@ -713,50 +713,36 @@ const AdminDashboard = () => {
   const handleRealtimeRefetch = useCallback(async () => {
     await Promise.all([refetchReservations(), fetchTrainings()]);
   }, [refetchReservations, fetchTrainings]);
-  const handleNewCustomerReservation = useCallback(
-    (reservation: Reservation) => {
-      toast.success('🔔 Nowa rezerwacja od klienta!', {
-        description: `${reservation.customer_name} - ${reservation.start_time}`,
-      });
-    },
-    [],
-  );
-  const handleRealtimeUpdateSelected = useCallback(
-    (reservation: Reservation) => {
-      setSelectedReservation((prev) =>
-        prev?.id === reservation.id ? reservation : prev,
-      );
-    },
-    [],
-  );
-  const handleTrainingUpsert = useCallback(
-    (data: Record<string, unknown>) => {
-      const mapped: Training = {
-        ...(data as any),
-        assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
-          ? data.assigned_employee_ids
-          : [],
-        station: (data as any).stations
-          ? { name: (data as any).stations.name, type: (data as any).stations.type }
-          : null,
-        training_type_record: (data as any).training_type_record || null,
-      };
-      setTrainings((prev) => {
-        const exists = prev.some((t) => t.id === mapped.id);
-        if (exists) return prev.map((t) => (t.id === mapped.id ? mapped : t));
-        return [...prev, mapped];
-      });
-      setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
-    },
-    [],
-  );
-  const handleTrainingDelete = useCallback(
-    (trainingId: string) => {
-      setTrainings((prev) => prev.filter((t) => t.id !== trainingId));
-      setSelectedTraining((prev) => (prev?.id === trainingId ? null : prev));
-    },
-    [],
-  );
+  const handleNewCustomerReservation = useCallback((reservation: Reservation) => {
+    toast.success('🔔 Nowa rezerwacja od klienta!', {
+      description: `${reservation.customer_name} - ${reservation.start_time}`,
+    });
+  }, []);
+  const handleRealtimeUpdateSelected = useCallback((reservation: Reservation) => {
+    setSelectedReservation((prev) => (prev?.id === reservation.id ? reservation : prev));
+  }, []);
+  const handleTrainingUpsert = useCallback((data: Record<string, unknown>) => {
+    const mapped: Training = {
+      ...(data as any),
+      assigned_employee_ids: Array.isArray(data.assigned_employee_ids)
+        ? data.assigned_employee_ids
+        : [],
+      station: (data as any).stations
+        ? { name: (data as any).stations.name, type: (data as any).stations.type }
+        : null,
+      training_type_record: (data as any).training_type_record || null,
+    };
+    setTrainings((prev) => {
+      const exists = prev.some((t) => t.id === mapped.id);
+      if (exists) return prev.map((t) => (t.id === mapped.id ? mapped : t));
+      return [...prev, mapped];
+    });
+    setSelectedTraining((prev) => (prev?.id === mapped.id ? mapped : prev));
+  }, []);
+  const handleTrainingDelete = useCallback((trainingId: string) => {
+    setTrainings((prev) => prev.filter((t) => t.id !== trainingId));
+    setSelectedTraining((prev) => (prev?.id === trainingId ? null : prev));
+  }, []);
 
   const { isConnected: realtimeConnected, markAsLocallyUpdated } = useReservationsRealtime({
     instanceId,
@@ -797,12 +783,14 @@ const AdminDashboard = () => {
     invalidateReservations,
     setSelectedReservation,
     markAsLocallyUpdated,
-    instanceData: instanceData ? {
-      name: instanceData.name,
-      short_name: instanceData.short_name,
-      slug: instanceData.slug,
-      google_maps_url: instanceData.google_maps_url,
-    } : null,
+    instanceData: instanceData
+      ? {
+          name: instanceData.name,
+          short_name: instanceData.short_name,
+          slug: instanceData.slug,
+          google_maps_url: instanceData.google_maps_url,
+        }
+      : null,
     userId: user?.id || null,
   });
 
@@ -948,7 +936,12 @@ const AdminDashboard = () => {
     setEditingTraining(null);
     setAddTrainingOpen(true);
   };
-  const handleAddReservation = (stationId: string, date: string, time: string, endDate?: string) => {
+  const handleAddReservation = (
+    stationId: string,
+    date: string,
+    time: string,
+    endDate?: string,
+  ) => {
     const station = stations.find((s) => s.id === stationId);
     // Close details drawer when opening add drawer
     setSelectedReservation(null);
@@ -1607,7 +1600,10 @@ const AdminDashboard = () => {
                     slotPreview={slotPreview}
                     activeDateRange={
                       (addReservationOpen || addReservationV2Open) && newReservationData.date
-                        ? { from: newReservationData.date, to: newReservationData.endDate || newReservationData.date }
+                        ? {
+                            from: newReservationData.date,
+                            to: newReservationData.endDate || newReservationData.date,
+                          }
                         : null
                     }
                     isLoadingMore={isLoadingMoreReservations}
@@ -1628,6 +1624,10 @@ const AdminDashboard = () => {
                         const pastDate = new Date(loadedDateRange.from);
                         pastDate.setMonth(pastDate.getMonth() - 3);
                         checkAndLoadMore(format(pastDate, 'yyyy-MM-dd'));
+                      } else {
+                        const futureDate = new Date(loadedDateRange.to || new Date());
+                        futureDate.setMonth(futureDate.getMonth() + 3);
+                        checkAndLoadMore(format(futureDate, 'yyyy-MM-dd'));
                       }
                     }}
                   />
