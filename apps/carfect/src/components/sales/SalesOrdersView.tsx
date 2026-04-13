@@ -209,6 +209,8 @@ const SalesOrdersView = () => {
             price_net: number;
             price_unit?: string;
             discount_percent?: number;
+            required_mb?: number;
+            product_type?: string;
           }[]
         ).map((item) => ({
           name: item.name,
@@ -218,6 +220,8 @@ const SalesOrdersView = () => {
           unit: item.price_unit || 'szt.',
           discountPercent:
             item.discount_percent != null ? Number(item.discount_percent) : undefined,
+          requiredMb: item.required_mb ?? undefined,
+          productType: (item.product_type as 'roll' | 'other') || undefined,
         })),
         packages: ((o.packages || []) as { shippingMethod?: string; shippingCost?: number }[]).map(
           (pkg) => ({
@@ -347,7 +351,7 @@ const SalesOrdersView = () => {
     const { data: items } = await (supabase
       .from('sales_order_items')
       .select(
-        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_mb',
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_mb, product_type',
       )
       .eq('order_id', order.id)
       .order('sort_order') as any);
@@ -1119,7 +1123,10 @@ const SalesOrdersView = () => {
           positions={[
             ...invoiceDrawerState.order.products.map((p) => ({
               name: p.name,
-              quantity: p.quantity,
+              // For 'other' products (e.g. Wycinanie formatek) with meter unit, use requiredMb as quantity
+              quantity: p.productType === 'other' && p.unit === 'meter' && p.requiredMb
+                ? p.requiredMb
+                : p.quantity,
               unit_price_gross: p.priceNet,
               vat_rate: 23,
               unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
