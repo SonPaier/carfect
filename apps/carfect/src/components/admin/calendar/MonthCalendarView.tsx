@@ -8,6 +8,7 @@ import {
   addMonths,
   format,
   isSameDay,
+  isSameMonth,
   differenceInDays,
   max,
   min,
@@ -57,6 +58,7 @@ interface WeekRowProps {
   weekEvents: WeekEvent[];
   maxLanes: number;
   today: Date;
+  monthDate: Date;
   closedDateSet: Set<string>;
   stations: Station[];
   isMobile: boolean;
@@ -77,6 +79,7 @@ const WeekRow = ({
   weekEvents,
   maxLanes,
   today,
+  monthDate,
   closedDateSet,
   stations,
   isMobile,
@@ -109,6 +112,17 @@ const WeekRow = ({
         const dateStr = formatDateStr(day);
         const isToday = isSameDay(day, today);
         const isClosed = closedDateSet.has(dateStr);
+        const isThisMonth = isSameMonth(day, monthDate);
+
+        // Days outside this month: empty cell with just background
+        if (!isThisMonth) {
+          return (
+            <div
+              key={dateStr}
+              className="border-r border-border last:border-r-0 bg-background"
+            />
+          );
+        }
 
         return (
           <div
@@ -343,9 +357,11 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(({
 
   return (
     <div ref={ref} data-month={format(monthDate, 'yyyy-MM')}>
-      {/* Sticky month label — sits below the day names header (top-[33px]) */}
-      <div className="sticky top-[33px] z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 border-b border-t border-border font-semibold text-sm text-muted-foreground">
-        {format(monthDate, 'LLLL yyyy', { locale: pl })}
+      {/* Month label — large bold, scrolls with content, separated from previous month */}
+      <div className="px-4 pt-10 pb-4">
+        <h2 className="text-[22px] font-bold text-foreground">
+          {format(monthDate, 'LLLL yyyy', { locale: pl })}
+        </h2>
       </div>
 
       {weeklyData.map(({ week, visibleWeek, colToVisibleIndex, events, maxLanes }, weekIdx) => (
@@ -357,6 +373,7 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(({
           weekEvents={events}
           maxLanes={maxLanes}
           today={today}
+          monthDate={monthDate}
           closedDateSet={closedDateSet}
           stations={stations}
           isMobile={isMobile}
@@ -504,10 +521,10 @@ export const MonthCalendarView = ({
   const today = useMemo(() => new Date(), []);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       {/* Sticky day names header */}
       <div
-        className="sticky top-0 z-20 bg-white border-b border-border grid"
+        className="sticky top-0 z-20 bg-background border-b border-border grid"
         style={{ gridTemplateColumns: `repeat(${visibleDayNames.length}, 1fr)` }}
       >
         {visibleDayNames.map((name) => (
