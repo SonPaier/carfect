@@ -667,23 +667,19 @@ const PackageCard = ({
               {paymentMethod === 'cod' && (
                 <div className="space-y-1">
                   <Label className="text-xs">Kwota pobrania (zł)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <NumericInput
+                    min={0}
+                    step={0.01}
                     className="h-9"
                     value={
                       codAmountOverride != null
                         ? codAmountOverride
                         : pkg.shippingCost != null
                           ? Math.round(((pkg.declaredValue ?? 0) + pkg.shippingCost) * 100) / 100
-                          : ''
+                          : undefined
                     }
                     placeholder="—"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      onCodAmountChange?.(val === '' ? undefined : Number(val));
-                    }}
+                    onChange={(v) => onCodAmountChange?.(v)}
                   />
                 </div>
               )}

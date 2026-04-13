@@ -256,8 +256,9 @@ const SalesProductsView = () => {
                   <TableCell className="text-sm text-muted-foreground">
                     {product.categoryName || '—'}
                   </TableCell>
-                  <TableCell className="text-right text-sm tabular-nums">
-                    {formatCurrency(product.priceNet)}
+                  <TableCell className="text-right text-sm tabular-nums whitespace-nowrap">
+                    {formatCurrency(product.priceNet)} /{' '}
+                    {product.priceUnit === 'meter' ? 'm²' : 'szt.'}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
