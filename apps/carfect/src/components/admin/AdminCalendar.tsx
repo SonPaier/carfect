@@ -54,6 +54,7 @@ import {
 } from './calendar/useCalendarWorkingHours';
 import { useCalendarOverlap } from './calendar/useCalendarOverlap';
 import { useCalendarDragDrop } from './calendar/useCalendarDragDrop';
+import { useCalendarVisibility } from './calendar/useCalendarVisibility';
 import { DayViewGrid } from './calendar/DayViewGrid';
 type ViewMode = 'day' | 'week' | 'month';
 interface Station {
@@ -277,27 +278,16 @@ const AdminCalendar = ({
     const saved = localStorage.getItem('calendar-grouping-mode');
     return (saved === 'station' || saved === 'employee') ? saved : 'station';
   });
-  // Per-view hidden stations — each view mode has its own visibility settings
-  const [hiddenStationsMap, setHiddenStationsMap] = useState<Record<string, Set<string>>>(() => {
-    const result: Record<string, Set<string>> = {};
-    for (const v of ['day', 'week', 'month'] as const) {
-      const saved = localStorage.getItem(`calendar-hidden-stations-${v}`);
-      result[v] = saved ? new Set(JSON.parse(saved)) : new Set();
-    }
-    return result;
-  });
-  const hiddenStationIds = hiddenStationsMap[viewMode] || new Set<string>();
-  const setHiddenStationIds = (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-    setHiddenStationsMap(prev => {
-      const current = prev[viewMode] || new Set<string>();
-      const next = typeof updater === 'function' ? updater(current) : updater;
-      return { ...prev, [viewMode]: next };
-    });
-  };
-  // Show notes in week/month swim lane bars
-  const [showNotesInBars, setShowNotesInBars] = useState(() => {
-    return localStorage.getItem('calendar-show-notes-in-bars') === 'true';
-  });
+  // Per-view station visibility + notes toggle
+  const {
+    hiddenStationIds,
+    hasHiddenStations,
+    visibleStations,
+    toggleStationVisibility,
+    showAllStations,
+    showNotesInBars,
+    toggleShowNotesInBars,
+  } = useCalendarVisibility({ viewMode, stations });
   // Drag & drop state + handlers extracted to hook
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [weekViewStationId, setWeekViewStationId] = useState<string | null>(null);
@@ -335,13 +325,6 @@ const AdminCalendar = ({
     });
   }, []);
 
-  const toggleShowNotesInBars = useCallback(() => {
-    setShowNotesInBars((prev) => {
-      const next = !prev;
-      localStorage.setItem('calendar-show-notes-in-bars', String(next));
-      return next;
-    });
-  }, []);
 
   // Listen for fullscreen changes (e.g., user presses ESC)
   useEffect(() => {
@@ -499,13 +482,6 @@ const AdminCalendar = ({
     };
   };
 
-  // Save hidden stations to localStorage (per view mode)
-  useEffect(() => {
-    for (const [view, ids] of Object.entries(hiddenStationsMap)) {
-      localStorage.setItem(`calendar-hidden-stations-${view}`, JSON.stringify([...ids]));
-    }
-  }, [hiddenStationsMap]);
-
   // Save current date to localStorage
   useEffect(() => {
     localStorage.setItem('admin-calendar-date', format(currentDate, 'yyyy-MM-dd'));
@@ -526,21 +502,6 @@ const AdminCalendar = ({
   const handleGroupingModeChange = (mode: GroupBy) => {
     setGroupingMode(mode);
     localStorage.setItem('calendar-grouping-mode', mode);
-  };
-
-  const toggleStationVisibility = (stationId: string) => {
-    setHiddenStationIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(stationId)) {
-        newSet.delete(stationId);
-      } else {
-        newSet.add(stationId);
-      }
-      return newSet;
-    });
-  };
-  const showAllStations = () => {
-    setHiddenStationIds(new Set());
   };
 
   // Calculate hours based on working hours for current day
@@ -658,8 +619,7 @@ const AdminCalendar = ({
   const currentDateClosed = isDateClosed(currentDateStr);
 
   // Filter stations based on hidden station IDs
-  const visibleStations = stations.filter((station) => !hiddenStationIds.has(station.id));
-  const hasHiddenStations = hiddenStationIds.size > 0;
+  // visibleStations and hasHiddenStations come from useCalendarVisibility hook
 
   // Get reservations for a specific date and station (including multi-day reservations)
   const getReservationsForStationAndDate = (stationId: string, dateStr: string) => {
