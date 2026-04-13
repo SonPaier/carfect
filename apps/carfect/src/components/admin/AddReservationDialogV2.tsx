@@ -67,6 +67,7 @@ interface AddReservationDialogV2Props {
   stationId?: string;
   editingYardVehicle?: YardVehicle | null;
   initialDate?: string;
+  initialEndDate?: string;
   initialTime?: string;
   initialStationId?: string;
   onSlotPreviewChange?: (
@@ -95,6 +96,7 @@ const AddReservationDialogV2 = ({
   stationId: propStationId,
   editingYardVehicle = null,
   initialDate,
+  initialEndDate,
   initialTime,
   initialStationId,
   onSlotPreviewChange,
@@ -502,40 +504,43 @@ const AddReservationDialogV2 = ({
           setCarSize('medium');
           setSelectedServices([]);
           const slotDate = new Date(initialDate);
+          const slotEndDate = initialEndDate ? new Date(initialEndDate) : slotDate;
+          const isMultiDay = slotEndDate.getTime() !== slotDate.getTime();
           setSlots([
             {
               id: crypto.randomUUID(),
-              dateRange: { from: slotDate, to: slotDate },
+              dateRange: { from: slotDate, to: slotEndDate },
               startTime: initialTime,
               endTime: '',
               stationId: initialStationId,
             },
           ]);
-          setReservationType('single');
+          setReservationType(isMultiDay ? 'multi' : 'single');
           setAdminNotes('');
           setFinalPrice('');
           setOfferNumber('');
           resetCustomerSearch();
         }
       } else {
-        // Reservation create mode (FAB click)
+        // Reservation create mode (FAB click or week/month "Dodaj" / drag range)
         setCustomerName('');
         setPhone('');
         setCarModel('');
         setCarSize('medium');
         setSelectedServices([]);
-        // Default to today with 1-day range
-        const today = getNextWorkingDay();
+        const fromDate = initialDate ? new Date(initialDate) : getNextWorkingDay();
+        const toDate = initialEndDate ? new Date(initialEndDate) : fromDate;
+        const isMultiDay = toDate.getTime() !== fromDate.getTime();
         setSlots([
           {
             id: crypto.randomUUID(),
-            dateRange: { from: today, to: today },
-            startTime: '',
+            dateRange: { from: fromDate, to: toDate },
+            startTime: initialTime || '',
             endTime: '',
             stationId: null,
           },
         ]);
-        setReservationType('single');
+        setReservationType(isMultiDay ? 'multi' : 'single');
         setAdminNotes('');
         setFinalPrice('');
         setOfferNumber('');

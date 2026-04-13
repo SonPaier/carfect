@@ -114,7 +114,7 @@ interface AdminCalendarProps {
     } | null
   > | null;
   onReservationClick?: (reservation: Reservation) => void;
-  onAddReservation?: (stationId: string, date: string, time: string) => void;
+  onAddReservation?: (stationId: string, date: string, time: string, endDate?: string) => void;
   onAddBreak?: (stationId: string, date: string, time: string) => void;
   onDeleteBreak?: (breakId: string) => void;
   onToggleClosedDay?: (date: string) => void;
@@ -963,15 +963,18 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
-                    onAddReservation('', dateStr, '08:00');
+                    const { startTime } = getWorkingHoursForDate(dateStr);
+                    onAddReservation('', dateStr, startTime || '08:00');
                   }
                 : undefined
             }
             onDateRangeSelect={
               onAddReservation && !readOnly
-                ? (from) => {
-                    const dateStr = format(from, 'yyyy-MM-dd');
-                    onAddReservation('', dateStr, '08:00');
+                ? (from, to) => {
+                    const fromStr = format(from, 'yyyy-MM-dd');
+                    const toStr = format(to, 'yyyy-MM-dd');
+                    const { startTime } = getWorkingHoursForDate(fromStr);
+                    onAddReservation('', fromStr, startTime || '08:00', toStr);
                   }
                 : undefined
             }
@@ -1005,15 +1008,18 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
-                    onAddReservation('', dateStr, '08:00');
+                    const { startTime } = getWorkingHoursForDate(dateStr);
+                    onAddReservation('', dateStr, startTime || '08:00');
                   }
                 : undefined
             }
             onDateRangeSelect={
               onAddReservation && !readOnly
-                ? (from) => {
-                    const dateStr = format(from, 'yyyy-MM-dd');
-                    onAddReservation('', dateStr, '08:00');
+                ? (from, to) => {
+                    const fromStr = format(from, 'yyyy-MM-dd');
+                    const toStr = format(to, 'yyyy-MM-dd');
+                    const { startTime } = getWorkingHoursForDate(fromStr);
+                    onAddReservation('', fromStr, startTime || '08:00', toStr);
                   }
                 : undefined
             }

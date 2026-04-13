@@ -221,6 +221,7 @@ const AdminDashboard = () => {
   const [newReservationData, setNewReservationData] = useState({
     stationId: '',
     date: '',
+    endDate: '' as string,
     time: '',
     stationType: '' as string,
   });
@@ -947,7 +948,7 @@ const AdminDashboard = () => {
     setEditingTraining(null);
     setAddTrainingOpen(true);
   };
-  const handleAddReservation = (stationId: string, date: string, time: string) => {
+  const handleAddReservation = (stationId: string, date: string, time: string, endDate?: string) => {
     const station = stations.find((s) => s.id === stationId);
     // Close details drawer when opening add drawer
     setSelectedReservation(null);
@@ -955,6 +956,7 @@ const AdminDashboard = () => {
     setNewReservationData({
       stationId,
       date,
+      endDate: endDate || '',
       time,
       stationType: station?.type || '',
     });
@@ -1646,6 +1648,7 @@ const AdminDashboard = () => {
                         mode="reservation"
                         stationId={newReservationData.stationId}
                         initialDate={newReservationData.date}
+                        initialEndDate={newReservationData.endDate}
                         initialTime={newReservationData.time}
                         initialStationId={newReservationData.stationId}
                         editingReservation={
