@@ -967,6 +967,14 @@ const AdminCalendar = ({
                   }
                 : undefined
             }
+            onDateRangeSelect={
+              onAddReservation && !readOnly
+                ? (from) => {
+                    const dateStr = format(from, 'yyyy-MM-dd');
+                    onAddReservation('', dateStr, '08:00');
+                  }
+                : undefined
+            }
             onReservationMove={
               onReservationMove
                 ? (id, stationId, date) => onReservationMove(id, stationId, date)
@@ -997,6 +1005,14 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
+                    onAddReservation('', dateStr, '08:00');
+                  }
+                : undefined
+            }
+            onDateRangeSelect={
+              onAddReservation && !readOnly
+                ? (from) => {
+                    const dateStr = format(from, 'yyyy-MM-dd');
                     onAddReservation('', dateStr, '08:00');
                   }
                 : undefined

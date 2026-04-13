@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   startOfWeek,
   addDays,
@@ -24,10 +24,17 @@ interface WeekTileViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  onDateRangeSelect?: (from: Date, to: Date) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
   workingHours?: Record<string, { open?: string; close?: string } | null> | null;
+}
+
+function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
+  if (!range) return false;
+  const d = day.getTime();
+  return d >= range.from.getTime() && d <= range.to.getTime();
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
@@ -45,6 +52,7 @@ export const WeekTileView = ({
   onDayClick,
   onReservationClick,
   onAddClick,
+  onDateRangeSelect,
   // onReservationMove is accepted for backward compat but drag-drop is not implemented in bar view
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onReservationMove: _onReservationMove,
@@ -59,6 +67,32 @@ export const WeekTileView = ({
   const isMobile = useIsMobile();
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
   const today = new Date();
+
+  const [dragStart, setDragStart] = useState<Date | null>(null);
+  const [dragEnd, setDragEnd] = useState<Date | null>(null);
+  const isDragging = dragStart !== null;
+
+  const highlightRange = useMemo(() => {
+    if (!dragStart || !dragEnd) return null;
+    const from = dragStart < dragEnd ? dragStart : dragEnd;
+    const to = dragStart < dragEnd ? dragEnd : dragStart;
+    return { from, to };
+  }, [dragStart, dragEnd]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleUp = () => {
+      if (dragStart && dragEnd && !isSameDay(dragStart, dragEnd)) {
+        const from = dragStart < dragEnd ? dragStart : dragEnd;
+        const to = dragStart < dragEnd ? dragEnd : dragStart;
+        onDateRangeSelect?.(from, to);
+      }
+      setDragStart(null);
+      setDragEnd(null);
+    };
+    document.addEventListener('mouseup', handleUp);
+    return () => document.removeEventListener('mouseup', handleUp);
+  }, [isDragging, dragStart, dragEnd, onDateRangeSelect]);
 
   const closedDateSet = useMemo(() => {
     const set = new Set<string>();
@@ -175,10 +209,29 @@ export const WeekTileView = ({
               className={cn(
                 'border-r border-border last:border-r-0 cursor-pointer group relative',
                 isClosed && 'bg-red-50',
-                isToday && !isClosed && 'bg-primary/5',
-                !isToday && !isClosed && 'bg-background',
+                isToday && !isClosed && !isInRange(day, highlightRange) && 'bg-primary/5',
+                !isToday && !isClosed && !isInRange(day, highlightRange) && 'bg-background',
+                !isClosed && isInRange(day, highlightRange) && 'bg-primary/10',
               )}
-              onClick={() => onDayClick(day)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setDragStart(day);
+                setDragEnd(day);
+              }}
+              onMouseEnter={() => {
+                if (isDragging) setDragEnd(day);
+              }}
+              onMouseUp={() => {
+                if (dragStart && isSameDay(dragStart, day)) {
+                  onDayClick(day);
+                } else if (dragStart && dragEnd && !isSameDay(dragStart, dragEnd)) {
+                  const from = dragStart < dragEnd ? dragStart : dragEnd;
+                  const to = dragStart < dragEnd ? dragEnd : dragStart;
+                  onDateRangeSelect?.(from, to);
+                }
+                setDragStart(null);
+                setDragEnd(null);
+              }}
             >
               {/* Day name + date + count header */}
               <div

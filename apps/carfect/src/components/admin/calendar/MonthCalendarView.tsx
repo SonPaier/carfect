@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   startOfMonth,
   endOfMonth,
@@ -27,10 +27,17 @@ interface MonthCalendarViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  onDateRangeSelect?: (from: Date, to: Date) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
   workingHours?: Record<string, { open?: string; close?: string } | null> | null;
+}
+
+function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
+  if (!range) return false;
+  const d = day.getTime();
+  return d >= range.from.getTime() && d <= range.to.getTime();
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
@@ -52,9 +59,13 @@ interface WeekRowProps {
   stations: Station[];
   isMobile: boolean;
   showNotes?: boolean;
+  highlightRange: { from: Date; to: Date } | null;
   onDayClick: (date: Date) => void;
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
+  onDayMouseDown: (day: Date) => void;
+  onDayMouseEnter: (day: Date) => void;
+  onDayMouseUp: (day: Date) => void;
 }
 
 const WeekRow = ({
@@ -69,9 +80,13 @@ const WeekRow = ({
   stations,
   isMobile,
   showNotes,
+  highlightRange,
   onDayClick,
   onReservationClick,
   onAddClick,
+  onDayMouseDown,
+  onDayMouseEnter,
+  onDayMouseUp,
 }: WeekRowProps) => {
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
   const minRowHeight = DATE_HEADER_HEIGHT + maxLanes * (barHeight + BAR_GAP) + 8;
@@ -99,8 +114,14 @@ const WeekRow = ({
             className={cn(
               'border-r border-border last:border-r-0 group relative cursor-pointer bg-white',
               isClosed && 'bg-red-50',
+              !isClosed && isInRange(day, highlightRange) && 'bg-primary/10',
             )}
-            onClick={() => onDayClick(day)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onDayMouseDown(day);
+            }}
+            onMouseEnter={() => onDayMouseEnter(day)}
+            onMouseUp={() => onDayMouseUp(day)}
           >
             {/* Date number */}
             <div
@@ -224,6 +245,7 @@ export const MonthCalendarView = ({
   onDayClick,
   onReservationClick,
   onAddClick,
+  onDateRangeSelect,
   // onReservationMove is accepted for backward compat but drag-drop is not implemented in bar view
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onReservationMove: _onReservationMove,
@@ -236,6 +258,53 @@ export const MonthCalendarView = ({
   workingHours,
 }: MonthCalendarViewProps) => {
   const isMobile = useIsMobile();
+
+  const [dragStart, setDragStart] = useState<Date | null>(null);
+  const [dragEnd, setDragEnd] = useState<Date | null>(null);
+  const isDragging = dragStart !== null;
+
+  const highlightRange = useMemo(() => {
+    if (!dragStart || !dragEnd) return null;
+    const from = dragStart < dragEnd ? dragStart : dragEnd;
+    const to = dragStart < dragEnd ? dragEnd : dragStart;
+    return { from, to };
+  }, [dragStart, dragEnd]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleUp = () => {
+      if (dragStart && dragEnd && !isSameDay(dragStart, dragEnd)) {
+        const from = dragStart < dragEnd ? dragStart : dragEnd;
+        const to = dragStart < dragEnd ? dragEnd : dragStart;
+        onDateRangeSelect?.(from, to);
+      }
+      setDragStart(null);
+      setDragEnd(null);
+    };
+    document.addEventListener('mouseup', handleUp);
+    return () => document.removeEventListener('mouseup', handleUp);
+  }, [isDragging, dragStart, dragEnd, onDateRangeSelect]);
+
+  const handleDayMouseDown = (day: Date) => {
+    setDragStart(day);
+    setDragEnd(day);
+  };
+
+  const handleDayMouseEnter = (day: Date) => {
+    if (isDragging) setDragEnd(day);
+  };
+
+  const handleDayMouseUp = (day: Date) => {
+    if (dragStart && isSameDay(dragStart, day)) {
+      onDayClick(day);
+    } else if (dragStart && dragEnd && !isSameDay(dragStart, dragEnd)) {
+      const from = dragStart < dragEnd ? dragStart : dragEnd;
+      const to = dragStart < dragEnd ? dragEnd : dragStart;
+      onDateRangeSelect?.(from, to);
+    }
+    setDragStart(null);
+    setDragEnd(null);
+  };
 
   // Determine which day-of-week indices (0=Mon…6=Sun) are working days
   const workingDayIndices = useMemo(() => {
@@ -380,9 +449,13 @@ export const MonthCalendarView = ({
             stations={stations}
             isMobile={isMobile}
             showNotes={showNotes}
+            highlightRange={highlightRange}
             onDayClick={onDayClick}
             onReservationClick={onReservationClick}
             onAddClick={onAddClick}
+            onDayMouseDown={handleDayMouseDown}
+            onDayMouseEnter={handleDayMouseEnter}
+            onDayMouseUp={handleDayMouseUp}
           />
         ))}
       </div>
