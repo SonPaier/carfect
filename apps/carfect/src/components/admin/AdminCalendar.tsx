@@ -963,9 +963,7 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
-                    setCurrentDate(date);
-                    setViewMode('day');
-                    onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+                    onAddReservation('', dateStr, '08:00');
                   }
                 : undefined
             }
@@ -999,9 +997,7 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
-                    setCurrentDate(date);
-                    setViewMode('day');
-                    onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+                    onAddReservation('', dateStr, '08:00');
                   }
                 : undefined
             }

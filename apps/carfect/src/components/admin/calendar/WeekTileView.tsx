@@ -220,10 +220,11 @@ export const WeekTileView = ({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onAddClick(day); }}
-                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded bg-primary/10 hover:bg-primary/20 text-primary"
+                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
                   tabIndex={-1}
                 >
                   <Plus className="w-3 h-3" />
+                  Dodaj
                 </button>
               )}
             </div>
@@ -260,10 +261,11 @@ export const WeekTileView = ({
                 key={`${reservation.id}-${evt.startCol}`}
                 type="button"
                 className={cn(
-                  'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden text-foreground',
+                  'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden',
                   'hover:opacity-80 cursor-pointer transition-opacity',
                   showNotes ? 'flex flex-col justify-start px-1.5 py-0.5' : 'flex items-center gap-1 px-1.5',
                   colorClasses,
+                  '!text-foreground',
                   evt.isStart && evt.isEnd && 'rounded',
                   evt.isStart && !evt.isEnd && 'rounded-l',
                   !evt.isStart && evt.isEnd && 'rounded-r',
@@ -306,7 +308,7 @@ export const WeekTileView = ({
                   </span>
                 )}
                 {showNotes && reservation.admin_notes && (
-                  <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
+                  <span className="text-xs text-foreground/70 truncate w-full leading-tight">
                     {reservation.admin_notes}
                   </span>
                 )}
