@@ -130,7 +130,7 @@ const WeekRow = ({
           <div
             key={dateStr}
             className={cn(
-              'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors',
+              'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
               isClosed && 'bg-red-50',
               !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
             )}
@@ -142,7 +142,7 @@ const WeekRow = ({
             onMouseUp={() => onDayMouseUp(day)}
           >
             {/* Date number + holiday label */}
-            <div className="p-1.5 flex items-center gap-1.5">
+            <div className="p-1.5 flex items-center gap-1.5 overflow-hidden min-w-0">
               <div
                 className={cn(
                   'text-base font-bold w-8 h-8 flex items-center justify-center rounded-full shrink-0',
