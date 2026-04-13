@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Button, Input, Label } from '@shared/ui';
+import { Button, Input, Label, NumericInput } from '@shared/ui';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SalesRoll, SalesRollUsage, RollUsageSource } from '../types/rolls';
@@ -215,12 +215,11 @@ const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
 
       <div>
         <Label className="text-xs">Zużycie (mb)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          value={formMb}
-          onChange={(e) => setFormMb(e.target.value)}
+        <NumericInput
+          min={0}
+          step={0.01}
+          value={parsedMb > 0 ? parsedMb : undefined}
+          onChange={(v) => setFormMb(v != null ? String(v) : '')}
           className="mt-1"
         />
         {isValidMb && (
