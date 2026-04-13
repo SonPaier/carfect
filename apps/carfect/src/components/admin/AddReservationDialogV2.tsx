@@ -67,6 +67,7 @@ interface AddReservationDialogV2Props {
   stationId?: string;
   editingYardVehicle?: YardVehicle | null;
   initialDate?: string;
+  initialEndDate?: string;
   initialTime?: string;
   initialStationId?: string;
   onSlotPreviewChange?: (
@@ -84,6 +85,12 @@ interface AddReservationDialogV2Props {
   inline?: boolean;
 }
 
+/** Parse YYYY-MM-DD as local date (not UTC) to avoid timezone day-shift */
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 const AddReservationDialogV2 = ({
   open,
   onClose,
@@ -95,6 +102,7 @@ const AddReservationDialogV2 = ({
   stationId: propStationId,
   editingYardVehicle = null,
   initialDate,
+  initialEndDate,
   initialTime,
   initialStationId,
   onSlotPreviewChange,
@@ -472,7 +480,7 @@ const AddReservationDialogV2 = ({
         // Slot click
         if (wasOpenRef.current) {
           // Dialog was already open - only update date/time/station of first slot, keep other data
-          const slotDate = new Date(initialDate);
+          const slotDate = parseLocalDate(initialDate);
           // Recalculate end time based on current services duration
           const currentDuration = calculateTotalDuration(selectedServices, services, carSize);
           let endTime = '';
@@ -501,41 +509,46 @@ const AddReservationDialogV2 = ({
           setCarModel('');
           setCarSize('medium');
           setSelectedServices([]);
-          const slotDate = new Date(initialDate);
+          const slotDate = parseLocalDate(initialDate);
+          const slotEndDate = initialEndDate ? parseLocalDate(initialEndDate) : slotDate;
+          const isMultiDay = slotEndDate.getTime() !== slotDate.getTime();
           setSlots([
             {
               id: crypto.randomUUID(),
-              dateRange: { from: slotDate, to: slotDate },
+              dateRange: { from: slotDate, to: slotEndDate },
               startTime: initialTime,
               endTime: '',
               stationId: initialStationId,
             },
           ]);
-          setReservationType('single');
+          setReservationType(isMultiDay ? 'multi' : 'single');
           setAdminNotes('');
           setFinalPrice('');
           setOfferNumber('');
           resetCustomerSearch();
         }
       } else {
-        // Reservation create mode (FAB click)
+        // Reservation create mode (FAB click or week/month "Dodaj" / drag range)
         setCustomerName('');
         setPhone('');
         setCarModel('');
         setCarSize('medium');
         setSelectedServices([]);
-        // Default to today with 1-day range
-        const today = getNextWorkingDay();
+        const fromDate = initialDate ? parseLocalDate(initialDate) : getNextWorkingDay();
+        const toDate = initialEndDate ? parseLocalDate(initialEndDate) : fromDate;
+        const isMultiDay = toDate.getTime() !== fromDate.getTime();
+        // Set endTime from working hours closing time
+        const { max: closingTime } = getWorkingHoursRange(workingHours, fromDate);
         setSlots([
           {
             id: crypto.randomUUID(),
-            dateRange: { from: today, to: today },
-            startTime: '',
-            endTime: '',
+            dateRange: { from: fromDate, to: toDate },
+            startTime: initialTime || '',
+            endTime: closingTime || '',
             stationId: null,
           },
         ]);
-        setReservationType('single');
+        setReservationType(isMultiDay ? 'multi' : 'single');
         setAdminNotes('');
         setFinalPrice('');
         setOfferNumber('');
