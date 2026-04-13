@@ -596,13 +596,20 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                         timeCalculationMode === 'opening_to_stop'
                           ? Math.max(0, summary.total_minutes - preOpeningMinutes)
                           : summary.total_minutes;
-                      const earnings = ((displayMinutes / 60) * emp.hourly_rate).toFixed(2);
+                      const grossEarnings = (displayMinutes / 60) * emp.hourly_rate;
+                      const advanceAmount = advancesByEmployee.get(emp.id) || 0;
+                      const netEarnings = grossEarnings - advanceAmount;
                       return (
                         <TableCell
                           key={emp.id}
                           className="text-center font-bold text-sm py-2 text-foreground border-r last:border-r-0"
                         >
-                          {earnings} zł
+                          <div>{netEarnings.toFixed(2)} zł</div>
+                          {advanceAmount > 0 && (
+                            <div className="text-xs font-medium text-foreground">
+                              ({grossEarnings.toFixed(2)} - {advanceAmount.toFixed(2)} zal.)
+                            </div>
+                          )}
                         </TableCell>
                       );
                     })}
@@ -689,7 +696,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               return (
                 <div
                   key={adv.id}
-                  className="flex items-center justify-between text-sm bg-muted/30 rounded-lg px-3 py-2"
+                  className="flex items-center justify-between text-sm bg-white border border-border/50 rounded-lg px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
                     <Banknote className="w-4 h-4 text-muted-foreground" />
