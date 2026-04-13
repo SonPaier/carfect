@@ -101,7 +101,7 @@ const WeekRow = ({
 
   return (
     <div
-      className="relative grid border-b border-border last:border-b-0"
+      className="relative grid gap-1.5 px-2 mb-1.5"
       style={{
         minHeight: rowHeight,
         gridTemplateColumns: `repeat(${numCols}, 1fr)`,
@@ -128,9 +128,10 @@ const WeekRow = ({
           <div
             key={dateStr}
             className={cn(
-              'border-r border-border last:border-r-0 group relative cursor-pointer bg-white',
+              'rounded-lg group relative cursor-pointer bg-muted/50 hover:bg-muted transition-colors',
               isClosed && 'bg-red-50',
-              !isClosed && isInRange(day, highlightRange) && 'bg-primary/10',
+              isToday && !isClosed && 'ring-2 ring-primary/30',
+              !isClosed && isInRange(day, highlightRange) && 'bg-primary/10 ring-2 ring-primary/30',
             )}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -142,11 +143,10 @@ const WeekRow = ({
             {/* Date number */}
             <div
               className={cn(
-                'text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full m-1',
-                isToday && 'bg-primary text-primary-foreground font-bold',
+                'text-base font-bold p-2',
+                isToday && 'text-primary',
                 !isToday && 'text-foreground',
               )}
-              style={{ height: DATE_HEADER_HEIGHT - 4 }}
             >
               {day.getDate()}
             </div>
@@ -542,7 +542,7 @@ export const MonthCalendarView = ({
     <div className="flex flex-col h-full bg-background">
       {/* Sticky day names header */}
       <div
-        className="sticky top-0 z-20 bg-background border-b border-border grid"
+        className="sticky top-0 z-20 bg-background grid px-2"
         style={{ gridTemplateColumns: `repeat(${visibleDayNames.length}, 1fr)` }}
       >
         {visibleDayNames.map((name) => (
