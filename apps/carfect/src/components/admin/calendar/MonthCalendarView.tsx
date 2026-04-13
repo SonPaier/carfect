@@ -20,6 +20,7 @@ import { useIsMobile } from '@shared/ui';
 import type { Reservation, Station, ClosedDay, GroupBy } from './types';
 import { getStatusColor } from './types';
 import { type WeekEvent, toDateOnly, assignLanes, formatDateStr } from './swimLaneUtils';
+import { buildHolidayMap } from '@/lib/polishHolidays';
 
 interface MonthCalendarViewProps {
   reservations: Reservation[];
@@ -66,6 +67,7 @@ interface WeekRowProps {
   isMobile: boolean;
   showNotes?: boolean;
   highlightRange: { from: Date; to: Date } | null;
+  holidayMap: Map<string, string>;
   onDayClick: (date: Date) => void;
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
@@ -87,6 +89,7 @@ const WeekRow = ({
   isMobile,
   showNotes,
   highlightRange,
+  holidayMap,
   onDayClick,
   onReservationClick,
   onAddClick,
@@ -115,15 +118,12 @@ const WeekRow = ({
         const isToday = isSameDay(day, today);
         const isClosed = closedDateSet.has(dateStr);
         const isThisMonth = isSameMonth(day, monthDate);
+        const holidayName = holidayMap.get(dateStr);
+        const isHoliday = !!holidayName;
 
         // Days outside this month: empty cell with just background
         if (!isThisMonth) {
-          return (
-            <div
-              key={dateStr}
-              className="bg-background"
-            />
-          );
+          return <div key={dateStr} className="bg-background" />;
         }
 
         return (
@@ -141,17 +141,21 @@ const WeekRow = ({
             onMouseEnter={() => onDayMouseEnter(day)}
             onMouseUp={() => onDayMouseUp(day)}
           >
-            {/* Date number */}
-            <div className="p-1.5">
+            {/* Date number + holiday label */}
+            <div className="p-1.5 flex items-center gap-1.5">
               <div
                 className={cn(
-                  'text-base font-bold w-8 h-8 flex items-center justify-center rounded-full',
-                  isToday && 'bg-primary text-primary-foreground',
-                  !isToday && 'text-foreground',
+                  'text-base font-bold w-8 h-8 flex items-center justify-center rounded-full shrink-0',
+                  isToday && !isHoliday && 'bg-primary text-primary-foreground',
+                  isHoliday && 'bg-red-500 text-white',
+                  !isToday && !isHoliday && 'text-foreground',
                 )}
               >
                 {day.getDate()}
               </div>
+              {isHoliday && (
+                <span className="text-xs font-semibold text-red-500 truncate">{holidayName}</span>
+              )}
             </div>
 
             {/* Add button on hover */}
@@ -159,7 +163,10 @@ const WeekRow = ({
               <button
                 type="button"
                 onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); onAddClick(day); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddClick(day);
+                }}
                 className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
                 tabIndex={-1}
               >
@@ -200,10 +207,14 @@ const WeekRow = ({
           const topPx = evt.lane * (barHeight + BAR_GAP);
 
           const reservation = evt.reservation;
-          const station = stations.find(s => s.id === reservation.station_id);
+          const station = stations.find((s) => s.id === reservation.station_id);
           const stationColor = station?.color;
-          const serviceName = reservation.service?.shortcut || reservation.service?.name ||
-            reservation.services_data?.[0]?.shortcut || reservation.services_data?.[0]?.name || '';
+          const serviceName =
+            reservation.service?.shortcut ||
+            reservation.service?.name ||
+            reservation.services_data?.[0]?.shortcut ||
+            reservation.services_data?.[0]?.name ||
+            '';
 
           const colorClasses = getStatusColor(reservation.status, station?.type);
 
@@ -214,7 +225,9 @@ const WeekRow = ({
               className={cn(
                 'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden',
                 'hover:opacity-80 cursor-pointer transition-opacity',
-                showNotes ? 'flex flex-col justify-start px-1.5 py-0.5' : 'flex items-center gap-1 px-1.5',
+                showNotes
+                  ? 'flex flex-col justify-start px-1.5 py-0.5'
+                  : 'flex items-center gap-1 px-1.5',
                 colorClasses,
                 '!text-foreground',
                 evt.isStart && evt.isEnd && 'rounded',
@@ -229,14 +242,22 @@ const WeekRow = ({
                 height: barHeight,
                 borderLeftColor: stationColor || undefined,
               }}
-              onClick={(e) => { e.stopPropagation(); onReservationClick(reservation); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onReservationClick(reservation);
+              }}
             >
               {isMobile ? (
                 <span className="text-[10px] font-semibold truncate">
                   {serviceName || reservation.customer_name}
                 </span>
               ) : (
-                <span className={cn('text-[11px] flex items-center gap-1 w-full', showNotes ? 'flex-wrap' : 'truncate')}>
+                <span
+                  className={cn(
+                    'text-[11px] flex items-center gap-1 w-full',
+                    showNotes ? 'flex-wrap' : 'truncate',
+                  )}
+                >
                   {evt.isStart && reservation.start_time && (
                     <span className="font-bold tabular-nums shrink-0">
                       {reservation.start_time.slice(0, 5)}
@@ -251,7 +272,9 @@ const WeekRow = ({
                   {!isMobile && reservation.vehicle_plate && (
                     <>
                       <span className="text-muted-foreground/50 shrink-0 hidden md:inline">|</span>
-                      <span className="font-semibold shrink-0 hidden md:inline">{reservation.vehicle_plate}</span>
+                      <span className="font-semibold shrink-0 hidden md:inline">
+                        {reservation.vehicle_plate}
+                      </span>
                     </>
                   )}
                   <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
@@ -281,6 +304,7 @@ interface MonthSectionProps {
   isMobile: boolean;
   showNotes?: boolean;
   highlightRange: { from: Date; to: Date } | null;
+  holidayMap: Map<string, string>;
   onDayClick: (date: Date) => void;
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
@@ -290,128 +314,135 @@ interface MonthSectionProps {
   dayNamesCount: number;
 }
 
-const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(({
-  monthDate,
-  visibleReservations,
-  stations,
-  closedDateSet,
-  workingDayIndices,
-  today,
-  isMobile,
-  showNotes,
-  highlightRange,
-  onDayClick,
-  onReservationClick,
-  onAddClick,
-  onDayMouseDown,
-  onDayMouseEnter,
-  onDayMouseUp,
-}, ref) => {
-  const monthStart = startOfMonth(monthDate);
-  const monthEnd = endOfMonth(monthDate);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
+  (
+    {
+      monthDate,
+      visibleReservations,
+      stations,
+      closedDateSet,
+      workingDayIndices,
+      today,
+      isMobile,
+      showNotes,
+      highlightRange,
+      holidayMap,
+      onDayClick,
+      onReservationClick,
+      onAddClick,
+      onDayMouseDown,
+      onDayMouseEnter,
+      onDayMouseUp,
+    },
+    ref,
+  ) => {
+    const monthStart = startOfMonth(monthDate);
+    const monthEnd = endOfMonth(monthDate);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
-  const weeks = useMemo(() => {
-    const result: Date[][] = [];
-    let day = calendarStart;
-    let currentWeek: Date[] = [];
-    while (day <= calendarEnd) {
-      currentWeek.push(day);
-      if (currentWeek.length === 7) {
-        result.push(currentWeek);
-        currentWeek = [];
+    const weeks = useMemo(() => {
+      const result: Date[][] = [];
+      let day = calendarStart;
+      let currentWeek: Date[] = [];
+      while (day <= calendarEnd) {
+        currentWeek.push(day);
+        if (currentWeek.length === 7) {
+          result.push(currentWeek);
+          currentWeek = [];
+        }
+        day = addDays(day, 1);
       }
-      day = addDays(day, 1);
-    }
-    if (currentWeek.length > 0) result.push(currentWeek);
-    return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthDate.getTime()]);
+      if (currentWeek.length > 0) result.push(currentWeek);
+      return result;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [monthDate.getTime()]);
 
-  const weeklyData = useMemo(() => {
-    return weeks.map((week) => {
-      const weekStart = week[0];
-      const weekEnd = week[6];
+    const weeklyData = useMemo(() => {
+      return weeks.map((week) => {
+        const weekStart = week[0];
+        const weekEnd = week[6];
 
-      const visibleWeek = workingDayIndices
-        ? week.filter((_, idx) => workingDayIndices.has(idx))
-        : week;
+        const visibleWeek = workingDayIndices
+          ? week.filter((_, idx) => workingDayIndices.has(idx))
+          : week;
 
-      const colToVisibleIndex = new Map<number, number>();
-      visibleWeek.forEach((day, visIdx) => {
-        const absIdx = differenceInDays(day, weekStart);
-        colToVisibleIndex.set(absIdx, visIdx);
-      });
-
-      const events: WeekEvent[] = [];
-
-      for (const reservation of visibleReservations) {
-        const resStart = toDateOnly(reservation.reservation_date);
-        const resEnd = toDateOnly(reservation.end_date || reservation.reservation_date);
-
-        if (resEnd < weekStart || resStart > weekEnd) continue;
-
-        const clampedStart = max([resStart, weekStart]);
-        const clampedEnd = min([resEnd, weekEnd]);
-
-        const startCol = differenceInDays(clampedStart, weekStart);
-        const span = differenceInDays(clampedEnd, clampedStart) + 1;
-
-        events.push({
-          reservation,
-          startCol,
-          span,
-          lane: 0,
-          isStart: isSameDay(clampedStart, resStart),
-          isEnd: isSameDay(clampedEnd, resEnd),
+        const colToVisibleIndex = new Map<number, number>();
+        visibleWeek.forEach((day, visIdx) => {
+          const absIdx = differenceInDays(day, weekStart);
+          colToVisibleIndex.set(absIdx, visIdx);
         });
-      }
 
-      assignLanes(events);
-      const maxLanes = events.length > 0 ? Math.max(...events.map(e => e.lane)) + 1 : 0;
+        const events: WeekEvent[] = [];
 
-      return { week, visibleWeek, colToVisibleIndex, events, maxLanes };
-    });
-  }, [weeks, visibleReservations, workingDayIndices]);
+        for (const reservation of visibleReservations) {
+          const resStart = toDateOnly(reservation.reservation_date);
+          const resEnd = toDateOnly(reservation.end_date || reservation.reservation_date);
 
-  return (
-    <div ref={ref} data-month={format(monthDate, 'yyyy-MM')}>
-      {/* Month label — large bold, scrolls with content, separated from previous month */}
-      <div className="px-4 pt-10 pb-4">
-        <h2 className="text-[25px] font-bold text-foreground">
-          {format(monthDate, 'LLLL yyyy', { locale: pl })}
-        </h2>
+          if (resEnd < weekStart || resStart > weekEnd) continue;
+
+          const clampedStart = max([resStart, weekStart]);
+          const clampedEnd = min([resEnd, weekEnd]);
+
+          const startCol = differenceInDays(clampedStart, weekStart);
+          const span = differenceInDays(clampedEnd, clampedStart) + 1;
+
+          events.push({
+            reservation,
+            startCol,
+            span,
+            lane: 0,
+            isStart: isSameDay(clampedStart, resStart),
+            isEnd: isSameDay(clampedEnd, resEnd),
+          });
+        }
+
+        assignLanes(events);
+        const maxLanes = events.length > 0 ? Math.max(...events.map((e) => e.lane)) + 1 : 0;
+
+        return { week, visibleWeek, colToVisibleIndex, events, maxLanes };
+      });
+    }, [weeks, visibleReservations, workingDayIndices]);
+
+    return (
+      <div ref={ref} data-month={format(monthDate, 'yyyy-MM')}>
+        {/* Month label — large bold, scrolls with content, separated from previous month */}
+        <div className="px-4 pt-10 pb-4">
+          <h2 className="text-[25px] font-bold text-foreground">
+            {format(monthDate, 'LLLL yyyy', { locale: pl })}
+          </h2>
+        </div>
+
+        {weeklyData
+          .filter(({ visibleWeek: vw }) => vw.some((d) => isSameMonth(d, monthDate)))
+          .map(({ week, visibleWeek, colToVisibleIndex, events, maxLanes }, weekIdx) => (
+            <WeekRow
+              key={weekIdx}
+              week={week}
+              visibleWeek={visibleWeek}
+              colToVisibleIndex={colToVisibleIndex}
+              weekEvents={events}
+              maxLanes={maxLanes}
+              today={today}
+              monthDate={monthDate}
+              closedDateSet={closedDateSet}
+              stations={stations}
+              isMobile={isMobile}
+              showNotes={showNotes}
+              highlightRange={highlightRange}
+              holidayMap={holidayMap}
+              onDayClick={onDayClick}
+              onReservationClick={onReservationClick}
+              onAddClick={onAddClick}
+              onDayMouseDown={onDayMouseDown}
+              onDayMouseEnter={onDayMouseEnter}
+              onDayMouseUp={onDayMouseUp}
+            />
+          ))}
       </div>
-
-      {weeklyData
-        .filter(({ visibleWeek: vw }) => vw.some(d => isSameMonth(d, monthDate)))
-        .map(({ week, visibleWeek, colToVisibleIndex, events, maxLanes }, weekIdx) => (
-        <WeekRow
-          key={weekIdx}
-          week={week}
-          visibleWeek={visibleWeek}
-          colToVisibleIndex={colToVisibleIndex}
-          weekEvents={events}
-          maxLanes={maxLanes}
-          today={today}
-          monthDate={monthDate}
-          closedDateSet={closedDateSet}
-          stations={stations}
-          isMobile={isMobile}
-          showNotes={showNotes}
-          highlightRange={highlightRange}
-          onDayClick={onDayClick}
-          onReservationClick={onReservationClick}
-          onAddClick={onAddClick}
-          onDayMouseDown={onDayMouseDown}
-          onDayMouseEnter={onDayMouseEnter}
-          onDayMouseUp={onDayMouseUp}
-        />
-      ))}
-    </div>
-  );
-});
+    );
+  },
+);
 
 MonthSection.displayName = 'MonthSection';
 
@@ -486,26 +517,40 @@ export const MonthCalendarView = ({
     setDragEnd(day);
   }, []);
 
-  const handleDayMouseEnter = useCallback((day: Date) => {
-    if (isDragging) setDragEnd(day);
-  }, [isDragging]);
+  const handleDayMouseEnter = useCallback(
+    (day: Date) => {
+      if (isDragging) setDragEnd(day);
+    },
+    [isDragging],
+  );
 
-  const handleDayMouseUp = useCallback((day: Date) => {
-    // Single-day click: handle here and reset
-    if (dragStart && isSameDay(dragStart, day)) {
-      setDragStart(null);
-      setDragEnd(null);
-      onDayClick(day);
-    }
-    // Multi-day range: do NOT reset here — document mouseup handler does it
-  }, [dragStart, onDayClick]);
+  const handleDayMouseUp = useCallback(
+    (day: Date) => {
+      // Single-day click: handle here and reset
+      if (dragStart && isSameDay(dragStart, day)) {
+        setDragStart(null);
+        setDragEnd(null);
+        onDayClick(day);
+      }
+      // Multi-day range: do NOT reset here — document mouseup handler does it
+    },
+    [dragStart, onDayClick],
+  );
 
   // Determine which day-of-week indices (0=Mon…6=Sun) are working days
   const workingDayIndices = useMemo(() => {
     if (!workingHours) return null;
     const indices = new Set<number>();
     DAY_NAMES.forEach((_, idx) => {
-      const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx];
+      const dayName = [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ][idx];
       const wh = workingHours[dayName];
       if (wh != null && wh.open != null && wh.close != null) {
         indices.add(idx);
@@ -521,17 +566,27 @@ export const MonthCalendarView = ({
 
   const closedDateSet = useMemo(() => {
     const set = new Set<string>();
-    closedDays.forEach(d => set.add(d.closed_date));
+    closedDays.forEach((d) => set.add(d.closed_date));
     return set;
   }, [closedDays]);
 
+  // Polish public holidays map
+  const holidayMap = useMemo(() => {
+    const years = months.map((m) => m.getFullYear());
+    const uniqueYears = [...new Set(years)];
+    return buildHolidayMap(uniqueYears);
+  }, [months]);
+
   // Filter out cancelled/no_show and reservations from hidden stations
-  const visibleStationIds = useMemo(() => new Set(stations.map(s => s.id)), [stations]);
+  const visibleStationIds = useMemo(() => new Set(stations.map((s) => s.id)), [stations]);
   const visibleReservations = useMemo(
-    () => reservations.filter(r =>
-      r.status !== 'cancelled' && r.status !== 'no_show' &&
-      (!r.station_id || visibleStationIds.has(r.station_id))
-    ),
+    () =>
+      reservations.filter(
+        (r) =>
+          r.status !== 'cancelled' &&
+          r.status !== 'no_show' &&
+          (!r.station_id || visibleStationIds.has(r.station_id)),
+      ),
     [reservations, visibleStationIds],
   );
 
@@ -555,11 +610,11 @@ export const MonthCalendarView = ({
     const handleScroll = () => {
       // Near bottom — load more future months
       if (el.scrollHeight - el.scrollTop - el.clientHeight < 500) {
-        setFutureMonths(prev => prev + 3);
+        setFutureMonths((prev) => prev + 3);
       }
       // Near top — load more past months
       if (el.scrollTop < 500) {
-        setPastMonths(prev => prev + 3);
+        setPastMonths((prev) => prev + 3);
       }
     };
     el.addEventListener('scroll', handleScroll, { passive: true });
@@ -574,8 +629,8 @@ export const MonthCalendarView = ({
       // Use offsetTop relative to scroll container
       scrollContainerRef.current.scrollTop = el.offsetTop;
     }
-  // Only run on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const today = useMemo(() => new Date(), []);
@@ -588,10 +643,7 @@ export const MonthCalendarView = ({
         style={{ gridTemplateColumns: `repeat(${visibleDayNames.length}, 1fr)` }}
       >
         {visibleDayNames.map((name) => (
-          <div
-            key={name}
-            className="text-center text-xs font-bold text-foreground py-2"
-          >
+          <div key={name} className="text-center text-xs font-bold text-foreground py-2">
             {name}
           </div>
         ))}
@@ -617,6 +669,7 @@ export const MonthCalendarView = ({
               isMobile={isMobile}
               showNotes={showNotes}
               highlightRange={highlightRange}
+              holidayMap={holidayMap}
               onDayClick={onDayClick}
               onReservationClick={onReservationClick}
               onAddClick={onAddClick}
