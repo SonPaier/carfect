@@ -49,7 +49,7 @@ const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 const BAR_HEIGHT_NORMAL = 22;
 const BAR_HEIGHT_NOTES = 58;
 const BAR_GAP = 2;
-const DATE_HEADER_HEIGHT = 28;
+const DATE_HEADER_HEIGHT = 38;
 
 interface WeekRowProps {
   week: Date[];
@@ -130,7 +130,6 @@ const WeekRow = ({
             className={cn(
               'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors',
               isClosed && 'bg-red-50',
-              isToday && !isClosed && 'ring-2 ring-primary/30',
               !isClosed && isInRange(day, highlightRange) && 'bg-primary/10 ring-2 ring-primary/30',
             )}
             onMouseDown={(e) => {
@@ -141,20 +140,23 @@ const WeekRow = ({
             onMouseUp={() => onDayMouseUp(day)}
           >
             {/* Date number */}
-            <div
-              className={cn(
-                'text-base font-bold p-2',
-                isToday && 'text-primary',
-                !isToday && 'text-foreground',
-              )}
-            >
-              {day.getDate()}
+            <div className="p-1.5">
+              <div
+                className={cn(
+                  'text-base font-bold w-8 h-8 flex items-center justify-center rounded-full',
+                  isToday && 'bg-primary text-primary-foreground',
+                  !isToday && 'text-foreground',
+                )}
+              >
+                {day.getDate()}
+              </div>
             </div>
 
             {/* Add button on hover */}
             {onAddClick && (
               <button
                 type="button"
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); onAddClick(day); }}
                 className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
                 tabIndex={-1}
@@ -472,12 +474,13 @@ export const MonthCalendarView = ({
   }, [isDragging]);
 
   const handleDayMouseUp = useCallback((day: Date) => {
+    // Single-day click: handle here and reset
     if (dragStart && isSameDay(dragStart, day)) {
+      setDragStart(null);
+      setDragEnd(null);
       onDayClick(day);
     }
-    // Range selection is handled by the document mouseup listener above
-    setDragStart(null);
-    setDragEnd(null);
+    // Multi-day range: do NOT reset here — document mouseup handler does it
   }, [dragStart, onDayClick]);
 
   // Determine which day-of-week indices (0=Mon…6=Sun) are working days
