@@ -106,6 +106,10 @@ export interface CalendarHeaderProps {
 
   // View preference persistence
   onSaveDefaultView: (mode: ViewMode) => void;
+
+  // Show notes in week/month bars
+  showNotesInBars?: boolean;
+  onToggleShowNotesInBars?: () => void;
 }
 
 export function CalendarHeader({
@@ -148,6 +152,8 @@ export function CalendarHeader({
   onToggleFullscreen,
   onPlacDrawerOpen,
   onSaveDefaultView,
+  showNotesInBars,
+  onToggleShowNotesInBars,
 }: CalendarHeaderProps) {
   const { t } = useTranslation();
 
@@ -403,6 +409,19 @@ export function CalendarHeader({
                     </label>
                   </div>
                 </div>
+
+                {/* Show notes toggle — only for week/month views */}
+                {(viewMode === 'week' || viewMode === 'month') && onToggleShowNotesInBars && (
+                  <div className="border-t border-border pt-3">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={showNotesInBars ?? false}
+                        onCheckedChange={() => onToggleShowNotesInBars()}
+                      />
+                      Pokaż notatki na paskach
+                    </label>
+                  </div>
+                )}
               </PopoverContent>
             </Popover>
           )}

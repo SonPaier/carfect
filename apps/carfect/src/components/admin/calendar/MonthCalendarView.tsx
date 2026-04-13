@@ -29,13 +29,15 @@ interface MonthCalendarViewProps {
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
+  showNotes?: boolean;
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 
-const BAR_HEIGHT = 22; // px per lane bar
-const BAR_GAP = 2;    // px gap between bars
-const DATE_HEADER_HEIGHT = 28; // px for the date number row
+const BAR_HEIGHT_NORMAL = 22;
+const BAR_HEIGHT_NOTES = 58; // 3x taller for notes
+const BAR_GAP = 2;
+const DATE_HEADER_HEIGHT = 28;
 
 interface WeekRowProps {
   week: Date[];
@@ -46,6 +48,7 @@ interface WeekRowProps {
   closedDateSet: Set<string>;
   stations: Station[];
   isMobile: boolean;
+  showNotes?: boolean;
   onDayClick: (date: Date) => void;
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
@@ -60,11 +63,13 @@ const WeekRow = ({
   closedDateSet,
   stations,
   isMobile,
+  showNotes,
   onDayClick,
   onReservationClick,
   onAddClick,
 }: WeekRowProps) => {
-  const minRowHeight = DATE_HEADER_HEIGHT + maxLanes * (BAR_HEIGHT + BAR_GAP) + 8;
+  const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
+  const minRowHeight = DATE_HEADER_HEIGHT + maxLanes * (barHeight + BAR_GAP) + 8;
   const rowHeight = Math.max(minRowHeight, 80);
 
   return (
@@ -123,7 +128,7 @@ const WeekRow = ({
         {weekEvents.map((evt) => {
           const leftPct = (evt.startCol / 7) * 100;
           const widthPct = (evt.span / 7) * 100;
-          const topPx = evt.lane * (BAR_HEIGHT + BAR_GAP);
+          const topPx = evt.lane * (barHeight + BAR_GAP);
 
           const reservation = evt.reservation;
           const station = stations.find(s => s.id === reservation.station_id);
@@ -140,7 +145,7 @@ const WeekRow = ({
               className={cn(
                 'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden',
                 'hover:opacity-80 cursor-pointer transition-opacity',
-                'flex items-center gap-1 px-1.5',
+                showNotes ? 'flex flex-col justify-start px-1.5 py-0.5' : 'flex items-center gap-1 px-1.5',
                 colorClasses,
                 evt.isStart && evt.isEnd && 'rounded',
                 evt.isStart && !evt.isEnd && 'rounded-l',
@@ -151,7 +156,7 @@ const WeekRow = ({
                 left: `calc(${leftPct}% + 2px)`,
                 width: `calc(${widthPct}% - 4px)`,
                 top: topPx,
-                height: BAR_HEIGHT,
+                height: barHeight,
                 borderLeftColor: stationColor || undefined,
               }}
               onClick={(e) => { e.stopPropagation(); onReservationClick(reservation); }}
@@ -161,7 +166,7 @@ const WeekRow = ({
                   {serviceName || reservation.customer_name}
                 </span>
               ) : (
-                <span className="text-[11px] truncate flex items-center gap-1 w-full">
+                <span className={cn('text-[11px] flex items-center gap-1 w-full', showNotes ? 'flex-wrap' : 'truncate')}>
                   {evt.isStart && reservation.start_time && (
                     <span className="font-bold tabular-nums shrink-0">
                       {reservation.start_time.slice(0, 5)}
@@ -181,6 +186,11 @@ const WeekRow = ({
                   )}
                   <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
                   <span className="truncate">{reservation.customer_name}</span>
+                </span>
+              )}
+              {showNotes && reservation.admin_notes && (
+                <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
+                  {reservation.admin_notes}
                 </span>
               )}
             </button>
@@ -207,6 +217,7 @@ export const MonthCalendarView = ({
   groupBy: _groupBy,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   employees: _employees,
+  showNotes,
 }: MonthCalendarViewProps) => {
   const isMobile = useIsMobile();
 
@@ -316,6 +327,7 @@ export const MonthCalendarView = ({
             closedDateSet={closedDateSet}
             stations={stations}
             isMobile={isMobile}
+            showNotes={showNotes}
             onDayClick={onDayClick}
             onReservationClick={onReservationClick}
             onAddClick={onAddClick}

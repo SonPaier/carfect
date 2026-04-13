@@ -25,11 +25,13 @@ interface WeekTileViewProps {
   onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
+  showNotes?: boolean;
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 
-const BAR_HEIGHT = 26; // px per lane bar — taller since only 1 week
+const BAR_HEIGHT_NORMAL = 26;
+const BAR_HEIGHT_NOTES = 66; // ~3x taller for notes
 const BAR_GAP = 3;    // px gap between bars
 const DATE_HEADER_HEIGHT = 64; // px for the day name + date number + count header
 
@@ -49,8 +51,10 @@ export const WeekTileView = ({
   groupBy: _groupBy,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   employees: _employees,
+  showNotes,
 }: WeekTileViewProps) => {
   const isMobile = useIsMobile();
+  const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
   const today = new Date();
 
   const closedDateSet = useMemo(() => {
@@ -120,7 +124,7 @@ export const WeekTileView = ({
     return { events: weekEvents, maxLanes: lanes };
   }, [weekDays, weekStart, visibleReservations]);
 
-  const minRowHeight = maxLanes * (BAR_HEIGHT + BAR_GAP) + 16;
+  const minRowHeight = maxLanes * (barHeight + BAR_GAP) + 16;
   const rowHeight = Math.max(minRowHeight, 80);
 
   return (
@@ -207,7 +211,7 @@ export const WeekTileView = ({
           {events.map((evt) => {
             const leftPct = (evt.startCol / 7) * 100;
             const widthPct = (evt.span / 7) * 100;
-            const topPx = evt.lane * (BAR_HEIGHT + BAR_GAP);
+            const topPx = evt.lane * (barHeight + BAR_GAP);
 
             const reservation = evt.reservation;
             const station = stations.find(s => s.id === reservation.station_id);
@@ -224,7 +228,7 @@ export const WeekTileView = ({
                 className={cn(
                   'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden',
                   'hover:opacity-80 cursor-pointer transition-opacity',
-                  'flex items-center gap-1 px-1.5',
+                  showNotes ? 'flex flex-col justify-start px-1.5 py-0.5' : 'flex items-center gap-1 px-1.5',
                   colorClasses,
                   evt.isStart && evt.isEnd && 'rounded',
                   evt.isStart && !evt.isEnd && 'rounded-l',
@@ -235,7 +239,7 @@ export const WeekTileView = ({
                   left: `calc(${leftPct}% + 2px)`,
                   width: `calc(${widthPct}% - 4px)`,
                   top: topPx,
-                  height: BAR_HEIGHT,
+                  height: barHeight,
                   borderLeftColor: stationColor || undefined,
                 }}
                 onClick={(e) => { e.stopPropagation(); onReservationClick(reservation); }}
@@ -245,7 +249,7 @@ export const WeekTileView = ({
                     {serviceName || reservation.customer_name}
                   </span>
                 ) : (
-                  <span className="text-xs truncate flex items-center gap-1 w-full">
+                  <span className={cn('text-xs flex items-center gap-1 w-full', showNotes ? 'flex-wrap' : 'truncate')}>
                     {evt.isStart && reservation.start_time && (
                       <span className="font-bold tabular-nums shrink-0">
                         {reservation.start_time.slice(0, 5)}
@@ -265,6 +269,11 @@ export const WeekTileView = ({
                     )}
                     <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
                     <span className="truncate">{reservation.customer_name}</span>
+                  </span>
+                )}
+                {showNotes && reservation.admin_notes && (
+                  <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
+                    {reservation.admin_notes}
                   </span>
                 )}
               </button>

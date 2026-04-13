@@ -294,6 +294,10 @@ const AdminCalendar = ({
       return { ...prev, [viewMode]: next };
     });
   };
+  // Show notes in week/month swim lane bars
+  const [showNotesInBars, setShowNotesInBars] = useState(() => {
+    return localStorage.getItem('calendar-show-notes-in-bars') === 'true';
+  });
   // Drag & drop state + handlers extracted to hook
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [weekViewStationId, setWeekViewStationId] = useState<string | null>(null);
@@ -327,6 +331,14 @@ const AdminCalendar = ({
     setIsCompact((prev) => {
       const next = !prev;
       localStorage.setItem('calendar-compact-mode', String(next));
+      return next;
+    });
+  }, []);
+
+  const toggleShowNotesInBars = useCallback(() => {
+    setShowNotesInBars((prev) => {
+      const next = !prev;
+      localStorage.setItem('calendar-show-notes-in-bars', String(next));
       return next;
     });
   }, []);
@@ -901,6 +913,8 @@ const AdminCalendar = ({
         onToggleFullscreen={toggleFullscreen}
         onPlacDrawerOpen={() => setPlacDrawerOpen(true)}
         onSaveDefaultView={saveDefaultView}
+        showNotesInBars={showNotesInBars}
+        onToggleShowNotesInBars={toggleShowNotesInBars}
       />
 
       {/* DAY VIEW */}
@@ -978,6 +992,7 @@ const AdminCalendar = ({
             closedDays={closedDays}
             groupBy={groupingMode}
             employees={employees}
+            showNotes={showNotesInBars}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
@@ -1012,6 +1027,7 @@ const AdminCalendar = ({
             closedDays={closedDays}
             groupBy={groupingMode}
             employees={employees}
+            showNotes={showNotesInBars}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
