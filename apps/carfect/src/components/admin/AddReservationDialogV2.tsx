@@ -531,12 +531,14 @@ const AddReservationDialogV2 = ({
         const fromDate = initialDate ? new Date(initialDate) : getNextWorkingDay();
         const toDate = initialEndDate ? new Date(initialEndDate) : fromDate;
         const isMultiDay = toDate.getTime() !== fromDate.getTime();
+        // Set endTime from working hours closing time
+        const { max: closingTime } = getWorkingHoursRange(workingHours, fromDate);
         setSlots([
           {
             id: crypto.randomUUID(),
             dateRange: { from: fromDate, to: toDate },
             startTime: initialTime || '',
-            endTime: '',
+            endTime: closingTime || '',
             stationId: null,
           },
         ]);
