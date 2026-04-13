@@ -18,6 +18,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Z-INDEX SYSTEM
+ * All z-index values in the app should reference these layers.
+ *
+ * --z-calendar-slots:    Reservation/training blocks (time-based: 10-240)
+ * --z-calendar-sticky:   TimeColumn sticky, CalendarHeader sticky
+ * --z-overlay:           Sheet, Dialog, AlertDialog, Drawer
+ * --z-nested-overlay:    Drawers inside drawers (Customer, Service, Employee)
+ * --z-popover:           Radix popper-based: Select, Popover, DropdownMenu, Tooltip
+ */
+:root {
+  --z-calendar-sticky: 250;
+  --z-overlay: 300;
+  --z-nested-overlay: 350;
+  --z-popover: 9999;
+}
+
+/* Force Radix popper wrapper (Select/Popover/Dropdown) above all overlays */
+[data-radix-popper-content-wrapper] {
+  z-index: var(--z-popover) !important;
+}
+
 /* Hatched pattern for non-working hours */
 .hatched-pattern {
   background: repeating-linear-gradient(
@@ -250,4 +272,9 @@
   to {
     opacity: 1;
   }
+}
+
+/* Force Radix Select/Popover/Dropdown portals above Sheet drawers */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
 }
