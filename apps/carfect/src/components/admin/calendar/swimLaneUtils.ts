@@ -16,10 +16,15 @@ export function toDateOnly(dateStr: string): Date {
 }
 
 export function assignLanes(events: WeekEvent[]): void {
-  // Sort: longer spans first, then earlier start
-  events.sort((a, b) => b.span - a.span || a.startCol - b.startCol);
+  // Sort: earlier start column first, then longer spans first, then earlier time
+  events.sort((a, b) =>
+    a.startCol - b.startCol ||
+    b.span - a.span ||
+    (a.reservation.start_time || '').localeCompare(b.reservation.start_time || '')
+  );
   const laneEnds: number[] = []; // tracks end column (exclusive) of last event in each lane
   for (const event of events) {
+    // Find the first lane where this event fits (no overlap)
     let assigned = -1;
     for (let i = 0; i < laneEnds.length; i++) {
       if (laneEnds[i] <= event.startCol) {
