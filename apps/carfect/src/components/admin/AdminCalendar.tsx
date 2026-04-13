@@ -162,6 +162,8 @@ interface AdminCalendarProps {
   trainingsEnabled?: boolean;
   /** Force compact column mode (no min-width) — used when inline drawer is open */
   forceCompact?: boolean;
+  /** Called when month view scrolls near past/future edge — parent should expand loaded date range */
+  onLoadMore?: (direction: 'past' | 'future') => void;
 }
 
 const getStatusColor = (status: string, stationType?: string) => {
@@ -250,6 +252,7 @@ const AdminCalendar = ({
   onTrainingClick,
   trainingsEnabled = false,
   forceCompact = false,
+  onLoadMore,
 }: AdminCalendarProps) => {
   const { t } = useTranslation();
   const {
@@ -1006,6 +1009,7 @@ const AdminCalendar = ({
             showNotes={showNotesInBars}
             workingHours={workingHours}
             activeDateRange={activeDateRange}
+            onLoadMore={onLoadMore}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');

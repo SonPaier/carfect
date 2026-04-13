@@ -85,6 +85,12 @@ interface AddReservationDialogV2Props {
   inline?: boolean;
 }
 
+/** Parse YYYY-MM-DD as local date (not UTC) to avoid timezone day-shift */
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 const AddReservationDialogV2 = ({
   open,
   onClose,
@@ -474,7 +480,7 @@ const AddReservationDialogV2 = ({
         // Slot click
         if (wasOpenRef.current) {
           // Dialog was already open - only update date/time/station of first slot, keep other data
-          const slotDate = new Date(initialDate);
+          const slotDate = parseLocalDate(initialDate);
           // Recalculate end time based on current services duration
           const currentDuration = calculateTotalDuration(selectedServices, services, carSize);
           let endTime = '';
@@ -503,8 +509,8 @@ const AddReservationDialogV2 = ({
           setCarModel('');
           setCarSize('medium');
           setSelectedServices([]);
-          const slotDate = new Date(initialDate);
-          const slotEndDate = initialEndDate ? new Date(initialEndDate) : slotDate;
+          const slotDate = parseLocalDate(initialDate);
+          const slotEndDate = initialEndDate ? parseLocalDate(initialEndDate) : slotDate;
           const isMultiDay = slotEndDate.getTime() !== slotDate.getTime();
           setSlots([
             {
@@ -528,8 +534,8 @@ const AddReservationDialogV2 = ({
         setCarModel('');
         setCarSize('medium');
         setSelectedServices([]);
-        const fromDate = initialDate ? new Date(initialDate) : getNextWorkingDay();
-        const toDate = initialEndDate ? new Date(initialEndDate) : fromDate;
+        const fromDate = initialDate ? parseLocalDate(initialDate) : getNextWorkingDay();
+        const toDate = initialEndDate ? parseLocalDate(initialEndDate) : fromDate;
         const isMultiDay = toDate.getTime() !== fromDate.getTime();
         // Set endTime from working hours closing time
         const { max: closingTime } = getWorkingHoursRange(workingHours, fromDate);

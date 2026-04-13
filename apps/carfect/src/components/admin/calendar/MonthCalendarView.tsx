@@ -38,7 +38,7 @@ interface MonthCalendarViewProps {
   workingHours?: Record<string, { open?: string; close?: string } | null> | null;
   activeDateRange?: { from: string; to: string } | null;
   monthRange?: number;
-  monthRange?: number;
+  onLoadMore?: (direction: 'past' | 'future') => void;
 }
 
 function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
@@ -467,6 +467,7 @@ export const MonthCalendarView = ({
   workingHours,
   activeDateRange,
   monthRange = 1,
+  onLoadMore,
 }: MonthCalendarViewProps) => {
   const isMobile = useIsMobile();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -611,15 +612,17 @@ export const MonthCalendarView = ({
       // Near bottom — load more future months
       if (el.scrollHeight - el.scrollTop - el.clientHeight < 500) {
         setFutureMonths((prev) => prev + 3);
+        onLoadMore?.('future');
       }
       // Near top — load more past months
       if (el.scrollTop < 500) {
         setPastMonths((prev) => prev + 3);
+        onLoadMore?.('past');
       }
     };
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [onLoadMore]);
 
   // Scroll to current month on mount (instant, no animation)
   useEffect(() => {

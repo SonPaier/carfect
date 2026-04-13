@@ -217,15 +217,12 @@ export const WeekTileView = ({
                 if (isDragging) setDragEnd(day);
               }}
               onMouseUp={() => {
+                // Single-day click only — range handled by document mouseup
                 if (dragStart && isSameDay(dragStart, day)) {
+                  setDragStart(null);
+                  setDragEnd(null);
                   onDayClick(day);
-                } else if (dragStart && dragEnd && !isSameDay(dragStart, dragEnd)) {
-                  const from = dragStart < dragEnd ? dragStart : dragEnd;
-                  const to = dragStart < dragEnd ? dragEnd : dragStart;
-                  onDateRangeSelect?.(from, to);
                 }
-                setDragStart(null);
-                setDragEnd(null);
               }}
             >
               {/* Day name + date + count header */}

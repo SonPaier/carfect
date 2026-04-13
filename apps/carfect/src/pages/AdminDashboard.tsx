@@ -1623,6 +1623,13 @@ const AdminDashboard = () => {
                     onTrainingClick={handleTrainingClick}
                     trainingsEnabled={trainingsEnabled}
                     forceCompact={!isMobile && (addReservationOpen || addReservationV2Open)}
+                    onLoadMore={(direction) => {
+                      if (direction === 'past') {
+                        const pastDate = new Date(loadedDateRange.from);
+                        pastDate.setMonth(pastDate.getMonth() - 3);
+                        checkAndLoadMore(format(pastDate, 'yyyy-MM-dd'));
+                      }
+                    }}
                   />
                 </div>
                 {/* Inline reservation drawer on desktop — animated slide */}
