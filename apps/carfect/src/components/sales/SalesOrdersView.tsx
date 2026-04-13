@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { mapProductToInvoicePosition } from './utils/invoicePositionMapper';
 import { type AddressData } from './order-drawer/AddressFields';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
@@ -209,6 +210,8 @@ const SalesOrdersView = () => {
             price_net: number;
             price_unit?: string;
             discount_percent?: number;
+            required_mb?: number;
+            product_type?: string;
           }[]
         ).map((item) => ({
           name: item.name,
@@ -218,6 +221,8 @@ const SalesOrdersView = () => {
           unit: item.price_unit || 'szt.',
           discountPercent:
             item.discount_percent != null ? Number(item.discount_percent) : undefined,
+          requiredMb: item.required_mb ?? undefined,
+          productType: (item.product_type as 'roll' | 'other') || undefined,
         })),
         packages: ((o.packages || []) as { shippingMethod?: string; shippingCost?: number }[]).map(
           (pkg) => ({
@@ -347,7 +352,7 @@ const SalesOrdersView = () => {
     const { data: items } = await (supabase
       .from('sales_order_items')
       .select(
-        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_mb',
+        'id, product_id, variant_id, name, price_net, price_unit, quantity, vehicle, sort_order, discount_percent, required_mb, product_type',
       )
       .eq('order_id', order.id)
       .order('sort_order') as any);
@@ -435,7 +440,7 @@ const SalesOrdersView = () => {
         name: item.name,
         priceNet: Number(item.price_net),
         priceUnit: item.price_unit || 'szt.',
-        productType: (item.product_type as 'roll' | 'other') || 'roll',
+        productType: (item.product_type as 'roll' | 'other') || undefined,
         quantity: item.quantity,
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
@@ -1117,14 +1122,9 @@ const SalesOrdersView = () => {
           customerId={invoiceDrawerState.order.customerId}
           customerName={invoiceDrawerState.order.customerName}
           positions={[
-            ...invoiceDrawerState.order.products.map((p) => ({
-              name: p.name,
-              quantity: p.quantity,
-              unit_price_gross: p.priceNet,
-              vat_rate: 23,
-              unit: p.unit === 'meter' ? 'm2' : p.unit === 'piece' ? 'szt.' : p.unit || 'szt.',
-              discount: p.discountPercent ?? invoiceDrawerState.order!.customerDiscount ?? 0,
-            })),
+            ...invoiceDrawerState.order.products.map((p) =>
+              mapProductToInvoicePosition(p, invoiceDrawerState.order!.customerDiscount),
+            ),
             ...(() => {
               const shippingPkgs = (invoiceDrawerState.order!.packages || []).filter(
                 (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,

@@ -5,6 +5,8 @@ export interface SalesOrderProduct {
   priceGross: number;
   unit?: string;
   discountPercent?: number;
+  requiredMb?: number;
+  productType?: 'roll' | 'other';
 }
 
 export interface SalesOrderPackage {
