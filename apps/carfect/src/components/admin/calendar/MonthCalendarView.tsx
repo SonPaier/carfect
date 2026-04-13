@@ -119,7 +119,7 @@ const WeekRow = ({
           return (
             <div
               key={dateStr}
-              className="border-r border-border last:border-r-0 bg-background"
+              className="bg-background"
             />
           );
         }
@@ -173,8 +173,24 @@ const WeekRow = ({
           const visStartCol = colToVisibleIndex.get(evt.startCol);
           if (visStartCol === undefined) return null;
 
+          // Clamp bar to only columns belonging to this month
+          // Find the start day and check if it's in this month
+          const startDay = visibleWeek[visStartCol];
+          if (!startDay || !isSameMonth(startDay, monthDate)) return null;
+
+          // Calculate max span within this month's days
+          let clampedSpan = 0;
+          for (let i = visStartCol; i < numCols && i < visStartCol + evt.span; i++) {
+            if (visibleWeek[i] && isSameMonth(visibleWeek[i], monthDate)) {
+              clampedSpan++;
+            } else {
+              break;
+            }
+          }
+          if (clampedSpan === 0) return null;
+
           const maxSpan = numCols - visStartCol;
-          const visSpan = Math.min(evt.span, maxSpan);
+          const visSpan = Math.min(clampedSpan, maxSpan);
           const leftPct = (visStartCol / numCols) * 100;
           const widthPct = (visSpan / numCols) * 100;
           const topPx = evt.lane * (barHeight + BAR_GAP);
@@ -364,7 +380,9 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(({
         </h2>
       </div>
 
-      {weeklyData.map(({ week, visibleWeek, colToVisibleIndex, events, maxLanes }, weekIdx) => (
+      {weeklyData
+        .filter(({ visibleWeek: vw }) => vw.some(d => isSameMonth(d, monthDate)))
+        .map(({ week, visibleWeek, colToVisibleIndex, events, maxLanes }, weekIdx) => (
         <WeekRow
           key={weekIdx}
           week={week}
