@@ -953,6 +953,7 @@ const AdminCalendar = ({
             groupBy={groupingMode}
             employees={employees}
             showNotes={showNotesInBars}
+            workingHours={workingHours}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
@@ -988,6 +989,7 @@ const AdminCalendar = ({
             groupBy={groupingMode}
             employees={employees}
             showNotes={showNotesInBars}
+            workingHours={workingHours}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');

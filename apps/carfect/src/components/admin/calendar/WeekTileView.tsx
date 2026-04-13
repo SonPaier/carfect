@@ -6,6 +6,7 @@ import {
   differenceInDays,
   max,
   min,
+  format,
 } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ interface WeekTileViewProps {
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
+  workingHours?: Record<string, { open?: string; close?: string } | null> | null;
 }
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
@@ -52,6 +54,7 @@ export const WeekTileView = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   employees: _employees,
   showNotes,
+  workingHours,
 }: WeekTileViewProps) => {
   const isMobile = useIsMobile();
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
@@ -69,6 +72,26 @@ export const WeekTileView = ({
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(weekStartTime), i));
   }, [weekStartTime]);
+
+  // Determine which days are working days; if no workingHours provided, show all 7
+  const visibleDays = useMemo(() => {
+    if (!workingHours) return weekDays;
+    return weekDays.filter((day) => {
+      const dayName = format(day, 'EEEE').toLowerCase();
+      const wh = workingHours[dayName];
+      return wh != null && wh.open != null && wh.close != null;
+    });
+  }, [weekDays, workingHours]);
+
+  // Map from absolute week column (0-6) to visible column index
+  const colToVisibleIndex = useMemo(() => {
+    const map = new Map<number, number>();
+    visibleDays.forEach((day, visIdx) => {
+      const absIdx = differenceInDays(day, weekDays[0]);
+      map.set(absIdx, visIdx);
+    });
+    return map;
+  }, [visibleDays, weekDays]);
 
   // Filter out cancelled/no_show and reservations from hidden stations
   const visibleStationIds = useMemo(() => new Set(stations.map(s => s.id)), [stations]);
@@ -128,19 +151,23 @@ export const WeekTileView = ({
   const rowHeight = Math.max(minRowHeight, 80);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       {/* Single week row: day headers + event area combined */}
       <div
-        className="relative grid grid-cols-7 border-b border-border"
-        style={{ minHeight: DATE_HEADER_HEIGHT + rowHeight }}
+        className="relative grid border-b border-border"
+        style={{
+          minHeight: DATE_HEADER_HEIGHT + rowHeight,
+          gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)`,
+        }}
       >
         {/* Day background cells (includes date header + click target) */}
-        {weekDays.map((day, idx) => {
+        {visibleDays.map((day) => {
+          const absIdx = differenceInDays(day, weekDays[0]);
           const dateStr = formatDateStr(day);
           const isToday = isSameDay(day, today);
           const isClosed = closedDateSet.has(dateStr);
           const count = reservationCountByDate.get(dateStr) ?? 0;
-          const dayName = DAY_NAMES[idx];
+          const dayName = DAY_NAMES[absIdx];
 
           return (
             <div
@@ -209,8 +236,15 @@ export const WeekTileView = ({
           style={{ top: DATE_HEADER_HEIGHT, height: rowHeight }}
         >
           {events.map((evt) => {
-            const leftPct = (evt.startCol / 7) * 100;
-            const widthPct = (evt.span / 7) * 100;
+            const numCols = visibleDays.length;
+            const visStartCol = colToVisibleIndex.get(evt.startCol);
+            // Skip bars that start on a hidden (non-working) day
+            if (visStartCol === undefined) return null;
+            // Clamp span to visible columns from visStartCol
+            const maxSpan = numCols - visStartCol;
+            const visSpan = Math.min(evt.span, maxSpan);
+            const leftPct = (visStartCol / numCols) * 100;
+            const widthPct = (visSpan / numCols) * 100;
             const topPx = evt.lane * (barHeight + BAR_GAP);
 
             const reservation = evt.reservation;
