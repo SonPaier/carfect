@@ -97,29 +97,26 @@ const WeekRow = ({
           <div
             key={dateStr}
             className={cn(
-              'border-r border-border last:border-r-0 group relative',
-              isCurrentMonth ? 'cursor-pointer' : 'cursor-default',
-              isClosed && isCurrentMonth && 'bg-red-50',
-              !isCurrentMonth && 'bg-white',
-              isCurrentMonth && !isClosed && 'bg-white',
+              'border-r border-border last:border-r-0 group relative cursor-pointer bg-white',
+              isClosed && 'bg-red-50',
             )}
-            onClick={() => isCurrentMonth && onDayClick(day)}
+            onClick={() => onDayClick(day)}
           >
             {/* Date number */}
             <div
               className={cn(
                 'text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full m-1',
-                isToday && isCurrentMonth && 'bg-primary text-primary-foreground font-bold',
+                isToday && 'bg-primary text-primary-foreground font-bold',
                 !isToday && isCurrentMonth && 'text-foreground',
-                !isCurrentMonth && 'text-muted-foreground/40',
+                !isToday && !isCurrentMonth && 'text-muted-foreground/60',
               )}
               style={{ height: DATE_HEADER_HEIGHT - 4 }}
             >
               {day.getDate()}
             </div>
 
-            {/* Add button on hover — only for current month */}
-            {onAddClick && isCurrentMonth && (
+            {/* Add button on hover */}
+            {onAddClick && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onAddClick(day); }}
@@ -140,11 +137,6 @@ const WeekRow = ({
           // Only render bars for current-month days and visible columns
           const visStartCol = colToVisibleIndex.get(evt.startCol);
           if (visStartCol === undefined) return null;
-
-          // Skip bars where the reservation starts in a non-current-month day
-          // (we check by looking at the actual day)
-          const startDay = visibleWeek[visStartCol];
-          if (!isSameMonth(startDay, currentDate)) return null;
 
           const maxSpan = numCols - visStartCol;
           const visSpan = Math.min(evt.span, maxSpan);
