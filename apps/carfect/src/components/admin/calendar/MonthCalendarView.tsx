@@ -168,12 +168,19 @@ const WeekRow = ({
                     </span>
                   )}
                   {serviceName && (
-                    <span className="font-semibold shrink-0 hidden sm:inline">{serviceName}</span>
+                    <>
+                      <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
+                      <span className="font-semibold shrink-0 hidden sm:inline">{serviceName}</span>
+                    </>
                   )}
-                  <span className="truncate">{reservation.customer_name}</span>
                   {!isMobile && reservation.vehicle_plate && (
-                    <span className="font-semibold shrink-0 hidden md:inline">{reservation.vehicle_plate}</span>
+                    <>
+                      <span className="text-muted-foreground/50 shrink-0 hidden md:inline">|</span>
+                      <span className="font-semibold shrink-0 hidden md:inline">{reservation.vehicle_plate}</span>
+                    </>
                   )}
+                  <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
+                  <span className="truncate">{reservation.customer_name}</span>
                 </span>
               )}
             </button>
