@@ -1,13 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import {
-  startOfWeek,
-  addDays,
-  isSameDay,
-  differenceInDays,
-  max,
-  min,
-  format,
-} from 'date-fns';
+import { startOfWeek, addDays, isSameDay, differenceInDays, max, min, format } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@shared/ui';
@@ -41,7 +33,7 @@ const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 
 const BAR_HEIGHT_NORMAL = 26;
 const BAR_HEIGHT_NOTES = 66; // ~3x taller for notes
-const BAR_GAP = 3;    // px gap between bars
+const BAR_GAP = 3; // px gap between bars
 const DATE_HEADER_HEIGHT = 64; // px for the day name + date number + count header
 
 export const WeekTileView = ({
@@ -96,7 +88,7 @@ export const WeekTileView = ({
 
   const closedDateSet = useMemo(() => {
     const set = new Set<string>();
-    closedDays.forEach(d => set.add(d.closed_date));
+    closedDays.forEach((d) => set.add(d.closed_date));
     return set;
   }, [closedDays]);
 
@@ -128,12 +120,15 @@ export const WeekTileView = ({
   }, [visibleDays, weekDays]);
 
   // Filter out cancelled/no_show and reservations from hidden stations
-  const visibleStationIds = useMemo(() => new Set(stations.map(s => s.id)), [stations]);
+  const visibleStationIds = useMemo(() => new Set(stations.map((s) => s.id)), [stations]);
   const visibleReservations = useMemo(
-    () => reservations.filter(r =>
-      r.status !== 'cancelled' && r.status !== 'no_show' &&
-      (!r.station_id || visibleStationIds.has(r.station_id))
-    ),
+    () =>
+      reservations.filter(
+        (r) =>
+          r.status !== 'cancelled' &&
+          r.status !== 'no_show' &&
+          (!r.station_id || visibleStationIds.has(r.station_id)),
+      ),
     [reservations, visibleStationIds],
   );
 
@@ -176,7 +171,7 @@ export const WeekTileView = ({
     }
 
     assignLanes(weekEvents);
-    const lanes = weekEvents.length > 0 ? Math.max(...weekEvents.map(e => e.lane)) + 1 : 0;
+    const lanes = weekEvents.length > 0 ? Math.max(...weekEvents.map((e) => e.lane)) + 1 : 0;
 
     return { events: weekEvents, maxLanes: lanes };
   }, [weekDays, weekStart, visibleReservations]);
@@ -259,10 +254,7 @@ export const WeekTileView = ({
                   {day.getDate()}
                 </div>
                 <div
-                  className={cn(
-                    'text-[10px]',
-                    isClosed ? 'text-red-400' : 'text-muted-foreground',
-                  )}
+                  className={cn('text-[10px]', isClosed ? 'text-red-400' : 'text-muted-foreground')}
                 >
                   {isClosed ? 'zamknięte' : `${count} rez.`}
                 </div>
@@ -272,7 +264,11 @@ export const WeekTileView = ({
               {onAddClick && (
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); onAddClick(day); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddClick(day);
+                  }}
                   className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
                   tabIndex={-1}
                 >
@@ -302,10 +298,14 @@ export const WeekTileView = ({
             const topPx = evt.lane * (barHeight + BAR_GAP);
 
             const reservation = evt.reservation;
-            const station = stations.find(s => s.id === reservation.station_id);
+            const station = stations.find((s) => s.id === reservation.station_id);
             const stationColor = station?.color;
-            const serviceName = reservation.service?.shortcut || reservation.service?.name ||
-              reservation.services_data?.[0]?.shortcut || reservation.services_data?.[0]?.name || '';
+            const serviceName =
+              reservation.service?.shortcut ||
+              reservation.service?.name ||
+              reservation.services_data?.[0]?.shortcut ||
+              reservation.services_data?.[0]?.name ||
+              '';
 
             const colorClasses = getStatusColor(reservation.status, station?.type);
 
@@ -316,7 +316,9 @@ export const WeekTileView = ({
                 className={cn(
                   'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden',
                   'hover:opacity-80 cursor-pointer transition-opacity',
-                  showNotes ? 'flex flex-col justify-start px-1.5 py-0.5' : 'flex items-center gap-1 px-1.5',
+                  showNotes
+                    ? 'flex flex-col justify-start px-1.5 py-0.5'
+                    : 'flex items-center gap-1 px-1.5',
                   colorClasses,
                   '!text-foreground',
                   evt.isStart && evt.isEnd && 'rounded',
@@ -331,14 +333,22 @@ export const WeekTileView = ({
                   height: barHeight,
                   borderLeftColor: stationColor || undefined,
                 }}
-                onClick={(e) => { e.stopPropagation(); onReservationClick(reservation); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReservationClick(reservation);
+                }}
               >
                 {isMobile ? (
                   <span className="text-[10px] font-semibold truncate">
                     {serviceName || reservation.customer_name}
                   </span>
                 ) : (
-                  <span className={cn('text-xs flex items-center gap-1 w-full', showNotes ? 'flex-wrap' : 'truncate')}>
+                  <span
+                    className={cn(
+                      'text-xs flex items-center gap-1 w-full',
+                      showNotes ? 'flex-wrap' : 'truncate',
+                    )}
+                  >
                     {evt.isStart && reservation.start_time && (
                       <span className="font-bold tabular-nums shrink-0">
                         {reservation.start_time.slice(0, 5)}
@@ -346,14 +356,22 @@ export const WeekTileView = ({
                     )}
                     {serviceName && (
                       <>
-                        <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
-                        <span className="font-semibold shrink-0 hidden sm:inline">{serviceName}</span>
+                        <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">
+                          |
+                        </span>
+                        <span className="font-semibold shrink-0 hidden sm:inline">
+                          {serviceName}
+                        </span>
                       </>
                     )}
                     {!isMobile && reservation.vehicle_plate && (
                       <>
-                        <span className="text-muted-foreground/50 shrink-0 hidden md:inline">|</span>
-                        <span className="font-semibold shrink-0 hidden md:inline">{reservation.vehicle_plate}</span>
+                        <span className="text-muted-foreground/50 shrink-0 hidden md:inline">
+                          |
+                        </span>
+                        <span className="font-semibold shrink-0 hidden md:inline">
+                          {reservation.vehicle_plate}
+                        </span>
                       </>
                     )}
                     <span className="text-muted-foreground/50 shrink-0 hidden sm:inline">|</span>
