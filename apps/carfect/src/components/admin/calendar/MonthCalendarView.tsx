@@ -164,7 +164,7 @@ const WeekRow = ({
               key={`${reservation.id}-${evt.startCol}`}
               type="button"
               className={cn(
-                'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden',
+                'absolute pointer-events-auto text-left border-l-[3px] overflow-hidden text-foreground',
                 'hover:opacity-80 cursor-pointer transition-opacity',
                 showNotes ? 'flex flex-col justify-start px-1.5 py-0.5' : 'flex items-center gap-1 px-1.5',
                 colorClasses,
