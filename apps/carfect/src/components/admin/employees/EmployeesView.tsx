@@ -30,7 +30,10 @@ import {
   MoreVertical,
   Trash2,
   KeyRound,
+  Banknote,
 } from 'lucide-react';
+import { useEmployeeAdvances } from '@/hooks/useEmployeeAdvances';
+import { AddAdvanceDialog } from './AddAdvanceDialog';
 import {
   format,
   parseISO,
@@ -93,11 +96,21 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
   const [grantAccessEmployee, setGrantAccessEmployee] = useState<Employee | null>(null);
+  const [advanceEmployee, setAdvanceEmployee] = useState<Employee | null>(null);
 
   // Fetch workers settings to determine if we're in weekly or monthly mode
   const { data: workersSettings, isLoading: loadingSettings } = useWorkersSettings(instanceId);
   const timeTrackingEnabled = workersSettings?.time_tracking_enabled ?? false;
   const isWeeklyMode = workersSettings?.report_frequency === 'weekly';
+
+  // Employee advances for current period
+  const {
+    advances,
+    advancesByEmployee,
+    addAdvance,
+    deleteAdvance,
+    isAdding: isAddingAdvance,
+  } = useEmployeeAdvances({ instanceId, month: currentDate });
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -491,6 +504,15 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setAdvanceEmployee(employee);
+                                }}
+                              >
+                                <Banknote className="w-4 h-4 mr-2" />
+                                Dodaj zaliczkę
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setDeletingEmployee(employee);
                                 }}
                                 className="text-destructive focus:text-destructive"
@@ -619,6 +641,66 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
           employeeName={grantAccessEmployee.name}
         />
       )}
+
+      {/* Advances summary section */}
+      {advances.length > 0 && (
+        <div className="mt-6 border-t pt-4">
+          <h3 className="text-sm font-semibold mb-3">Zaliczki w tym okresie</h3>
+          <div className="space-y-2">
+            {advances.map((adv) => {
+              const emp = employees.find((e) => e.id === adv.employee_id);
+              return (
+                <div
+                  key={adv.id}
+                  className="flex items-center justify-between text-sm bg-muted/30 rounded-lg px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <Banknote className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{emp?.name || '—'}</span>
+                    <span className="text-muted-foreground">
+                      {format(parseISO(adv.advance_date), 'dd.MM')}
+                    </span>
+                    {adv.note && <span className="text-muted-foreground">— {adv.note}</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{Number(adv.amount).toFixed(2)} zł</span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => deleteAdvance(adv.id)}
+                        className="text-destructive hover:text-destructive/80 p-1"
+                        title="Usuń zaliczkę"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex justify-end text-sm font-semibold pt-1">
+              Suma zaliczek: {advances.reduce((sum, a) => sum + Number(a.amount), 0).toFixed(2)} zł
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add advance dialog */}
+      <AddAdvanceDialog
+        open={!!advanceEmployee}
+        onClose={() => setAdvanceEmployee(null)}
+        employeeName={advanceEmployee?.name || ''}
+        onSubmit={(amount, date, note) => {
+          if (!advanceEmployee) return;
+          addAdvance({
+            employeeId: advanceEmployee.id,
+            amount,
+            date,
+            note,
+          });
+        }}
+        isSubmitting={isAddingAdvance}
+      />
     </div>
   );
 };
