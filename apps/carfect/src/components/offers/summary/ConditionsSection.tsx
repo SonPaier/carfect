@@ -15,14 +15,6 @@ interface ConditionsSectionProps {
   instanceId?: string | null;
 }
 
-/** Maps template_type → offer state key */
-const TYPE_TO_KEY: Record<TemplateType, keyof OfferState> = {
-  warranty: 'warranty',
-  payment_terms: 'paymentTerms',
-  service_info: 'serviceInfo',
-  notes: 'notes',
-};
-
 export function ConditionsSection({
   offer,
   onUpdateOffer,
