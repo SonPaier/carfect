@@ -10,6 +10,7 @@ import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { toast } from 'sonner';
 import { GripVertical, Plus, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { ColorPalettePicker } from '@shared/ui';
 import {
   DndContext,
   closestCenter,
@@ -34,16 +35,19 @@ interface Category {
   id: string;
   name: string;
   sort_order: number;
+  color?: string | null;
 }
 
 interface SortableCategoryItemProps {
   category: Category;
   editingId: string | null;
   editName: string;
+  editColor: string | null;
   onStartEdit: (cat: Category) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onEditNameChange: (value: string) => void;
+  onEditColorChange: (color: string | null) => void;
   onDelete: (cat: Category) => void;
   serviceCount: number;
 }
@@ -52,10 +56,12 @@ function SortableCategoryItem({
   category,
   editingId,
   editName,
+  editColor,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
   onEditNameChange,
+  onEditColorChange,
   onDelete,
   serviceCount,
 }: SortableCategoryItemProps) {
@@ -93,26 +99,39 @@ function SortableCategoryItem({
       </button>
 
       {isEditing ? (
-        <div className="flex-1 flex items-center gap-2">
-          <Input
-            value={editName}
-            onChange={(e) => onEditNameChange(e.target.value)}
-            className="h-8"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') onSaveEdit();
-              if (e.key === 'Escape') onCancelEdit();
-            }}
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <Input
+              value={editName}
+              onChange={(e) => onEditNameChange(e.target.value)}
+              className="h-8"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSaveEdit();
+                if (e.key === 'Escape') onCancelEdit();
+              }}
+            />
+            <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={onSaveEdit}>
+              <Check className="w-4 h-4 text-green-600" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={onCancelEdit}>
+              <X className="w-4 h-4 text-destructive" />
+            </Button>
+          </div>
+          <ColorPalettePicker
+            value={editColor}
+            onChange={onEditColorChange}
+            size={24}
           />
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onSaveEdit}>
-            <Check className="w-4 h-4 text-green-600" />
-          </Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancelEdit}>
-            <X className="w-4 h-4 text-destructive" />
-          </Button>
         </div>
       ) : (
         <>
+          {category.color && (
+            <div
+              className="w-4 h-4 rounded-sm shrink-0 border border-border/50"
+              style={{ backgroundColor: category.color }}
+            />
+          )}
           <span className="flex-1 font-medium">{category.name}</span>
           <span className="text-sm text-muted-foreground">({serviceCount})</span>
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onStartEdit(category)}>
@@ -156,7 +175,9 @@ export function CategoryManagementDialog({
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
 
   const sensors = useSensors(
@@ -173,7 +194,7 @@ export function CategoryManagementDialog({
       setLoading(true);
       const { data, error } = await supabase
         .from('unified_categories')
-        .select('id, name, sort_order')
+        .select('id, name, sort_order, color')
         .eq('instance_id', instanceId)
         .eq('category_type', categoryType)
         .eq('active', true)
@@ -223,6 +244,7 @@ export function CategoryManagementDialog({
   const handleStartEdit = (cat: Category) => {
     setEditingId(cat.id);
     setEditName(cat.name);
+    setEditColor(cat.color ?? null);
   };
 
   const handleSaveEdit = async () => {
@@ -234,16 +256,17 @@ export function CategoryManagementDialog({
       
       const { error } = await supabase
         .from('unified_categories')
-        .update({ name: editName.trim(), slug })
+        .update({ name: editName.trim(), slug, color: editColor })
         .eq('id', editingId);
 
       if (error) throw error;
 
-      setCategories(prev => prev.map(c => 
-        c.id === editingId ? { ...c, name: editName.trim() } : c
+      setCategories(prev => prev.map(c =>
+        c.id === editingId ? { ...c, name: editName.trim(), color: editColor } : c
       ));
       setEditingId(null);
       setEditName('');
+      setEditColor(null);
       toast.success('Kategoria zaktualizowana');
       onCategoriesChanged();
     } catch (error) {
@@ -257,6 +280,7 @@ export function CategoryManagementDialog({
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditName('');
+    setEditColor(null);
   };
 
   const handleDelete = async (cat: Category) => {
@@ -307,6 +331,7 @@ export function CategoryManagementDialog({
           sort_order: maxOrder,
           category_type: categoryType,
           active: true,
+          color: newCategoryColor,
         })
         .select()
         .single();
@@ -315,6 +340,7 @@ export function CategoryManagementDialog({
 
       setCategories(prev => [...prev, data]);
       setNewCategoryName('');
+      setNewCategoryColor(null);
       setAddingNew(false);
       toast.success('Kategoria dodana');
       onCategoriesChanged();
@@ -354,10 +380,12 @@ export function CategoryManagementDialog({
                     category={category}
                     editingId={editingId}
                     editName={editName}
+                    editColor={editColor}
                     onStartEdit={handleStartEdit}
                     onSaveEdit={handleSaveEdit}
                     onCancelEdit={handleCancelEdit}
                     onEditNameChange={setEditName}
+                    onEditColorChange={setEditColor}
                     onDelete={handleDelete}
                     serviceCount={serviceCounts[category.id] || 0}
                   />
@@ -372,41 +400,50 @@ export function CategoryManagementDialog({
             )}
 
             {addingNew ? (
-              <div className="flex items-center gap-2 p-3 border rounded-lg border-dashed bg-white">
-                <Input
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Nazwa kategorii..."
-                  className="h-8"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddNew();
-                    if (e.key === 'Escape') {
+              <div className="p-3 border rounded-lg border-dashed bg-white space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nazwa kategorii..."
+                    className="h-8"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddNew();
+                      if (e.key === 'Escape') {
+                        setAddingNew(false);
+                        setNewCategoryName('');
+                        setNewCategoryColor(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 shrink-0"
+                    onClick={handleAddNew}
+                    disabled={saving || !newCategoryName.trim()}
+                  >
+                    <Check className="w-4 h-4 text-green-600" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => {
                       setAddingNew(false);
                       setNewCategoryName('');
-                    }
-                  }}
+                      setNewCategoryColor(null);
+                    }}
+                  >
+                    <X className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+                <ColorPalettePicker
+                  value={newCategoryColor}
+                  onChange={setNewCategoryColor}
+                  size={24}
                 />
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-8 w-8" 
-                  onClick={handleAddNew}
-                  disabled={saving || !newCategoryName.trim()}
-                >
-                  <Check className="w-4 h-4 text-green-600" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-8 w-8" 
-                  onClick={() => {
-                    setAddingNew(false);
-                    setNewCategoryName('');
-                  }}
-                >
-                  <X className="w-4 h-4 text-destructive" />
-                </Button>
               </div>
             ) : (
               <Button

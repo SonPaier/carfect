@@ -74,6 +74,8 @@ interface WeekRowProps {
   onDayMouseDown: (day: Date) => void;
   onDayMouseEnter: (day: Date) => void;
   onDayMouseUp: (day: Date) => void;
+  onDayTouchStart?: (day: Date) => void;
+  onDayTouchEnd?: () => void;
 }
 
 const WeekRow = ({
@@ -96,6 +98,8 @@ const WeekRow = ({
   onDayMouseDown,
   onDayMouseEnter,
   onDayMouseUp,
+  onDayTouchStart,
+  onDayTouchEnd,
 }: WeekRowProps) => {
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
   const minRowHeight = DATE_HEADER_HEIGHT + maxLanes * (barHeight + BAR_GAP) + 8;
@@ -129,6 +133,7 @@ const WeekRow = ({
         return (
           <div
             key={dateStr}
+            data-date={dateStr}
             className={cn(
               'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
               isClosed && 'bg-red-50',
@@ -140,6 +145,11 @@ const WeekRow = ({
             }}
             onMouseEnter={() => onDayMouseEnter(day)}
             onMouseUp={() => onDayMouseUp(day)}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              onDayTouchStart?.(day);
+            }}
+            onTouchEnd={() => onDayTouchEnd?.()}
           >
             {/* Date number + holiday label */}
             <div className="p-1.5 flex items-center gap-1.5 overflow-hidden min-w-0">
@@ -320,6 +330,8 @@ interface MonthSectionProps {
   onDayMouseDown: (day: Date) => void;
   onDayMouseEnter: (day: Date) => void;
   onDayMouseUp: (day: Date) => void;
+  onDayTouchStart?: (day: Date) => void;
+  onDayTouchEnd?: () => void;
   dayNamesCount: number;
 }
 
@@ -342,6 +354,8 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
       onDayMouseDown,
       onDayMouseEnter,
       onDayMouseUp,
+      onDayTouchStart,
+      onDayTouchEnd,
     },
     ref,
   ) => {
@@ -446,6 +460,8 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
               onDayMouseDown={onDayMouseDown}
               onDayMouseEnter={onDayMouseEnter}
               onDayMouseUp={onDayMouseUp}
+              onDayTouchStart={onDayTouchStart}
+              onDayTouchEnd={onDayTouchEnd}
             />
           ))}
       </div>
@@ -485,6 +501,8 @@ export const MonthCalendarView = ({
   const [dragStart, setDragStart] = useState<Date | null>(null);
   const [dragEnd, setDragEnd] = useState<Date | null>(null);
   const isDragging = dragStart !== null;
+  const dragStartRef = useRef<Date | null>(null);
+  const dragEndRef = useRef<Date | null>(null);
 
   // Combine drag highlight with active date range from open form
   const activeRange = useMemo(() => {
@@ -546,6 +564,41 @@ export const MonthCalendarView = ({
     },
     [dragStart, onDayClick],
   );
+
+  const handleDayTouchStart = useCallback((day: Date) => {
+    dragStartRef.current = day;
+    dragEndRef.current = day;
+    setDragStart(day);
+    setDragEnd(day);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const dateAttr = el?.closest('[data-date]')?.getAttribute('data-date');
+    if (dateAttr) {
+      const d = toDateOnly(dateAttr);
+      dragEndRef.current = d;
+      setDragEnd(d);
+    }
+  }, []);
+
+  const handleDayTouchEnd = useCallback(() => {
+    const start = dragStartRef.current;
+    const end = dragEndRef.current;
+    if (start && end && !isSameDay(start, end)) {
+      const from = start < end ? start : end;
+      const to = start < end ? end : start;
+      onDateRangeSelect?.(from, to);
+    } else if (start) {
+      onDayClick(start);
+    }
+    dragStartRef.current = null;
+    dragEndRef.current = null;
+    setDragStart(null);
+    setDragEnd(null);
+  }, [onDateRangeSelect, onDayClick]);
 
   // Determine which day-of-week indices (0=Mon…6=Sun) are working days
   const workingDayIndices = useMemo(() => {
@@ -677,7 +730,7 @@ export const MonthCalendarView = ({
       </div>
 
       {/* Scrollable months container */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" onTouchMove={isDragging ? handleTouchMove : undefined}>
         {months.map((monthDate) => {
           const monthKey = format(monthDate, 'yyyy-MM');
           return (
@@ -703,6 +756,8 @@ export const MonthCalendarView = ({
               onDayMouseDown={handleDayMouseDown}
               onDayMouseEnter={handleDayMouseEnter}
               onDayMouseUp={handleDayMouseUp}
+              onDayTouchStart={handleDayTouchStart}
+              onDayTouchEnd={handleDayTouchEnd}
               dayNamesCount={visibleDayNames.length}
             />
           );

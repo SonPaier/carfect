@@ -227,6 +227,7 @@ const ReservationDetailsDrawer = ({
   // Employee assignment feature
   const { data: instanceSettings } = useInstanceSettings(reservation?.instance_id ?? null);
   const showEmployeeAssignment = instanceSettings?.assign_employees_to_reservations ?? false;
+  const showStatus = instanceSettings?.show_reservation_status ?? false;
   const { data: employees = [] } = useEmployees(reservation?.instance_id ?? null);
   const {
     localAssignedEmployeeIds,
@@ -486,7 +487,7 @@ const ReservationDetailsDrawer = ({
                   </span>
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-2 mt-2 flex-wrap">
-                  {getStatusBadge(reservation.status, t)}
+                  {showStatus && getStatusBadge(reservation.status, t)}
                   {getSourceLabel(reservation.source, reservation.created_by_username, t)}
                   {!isHallMode && reservation.confirmation_code && (
                     <Badge variant="outline" className="text-xs font-normal font-mono">
@@ -1357,7 +1358,7 @@ const ReservationDetailsDrawer = ({
             )}
 
             {/* Confirmed: Start Work with dropdown for all statuses */}
-            {reservation.status === 'confirmed' && onStartWork && (
+            {showStatus && reservation.status === 'confirmed' && onStartWork && (
               <div className="flex gap-0">
                 <Button
                   className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-r-none"
@@ -1426,7 +1427,7 @@ const ReservationDetailsDrawer = ({
             )}
 
             {/* In Progress: End Work with dropdown for all statuses */}
-            {reservation.status === 'in_progress' && onEndWork && (
+            {showStatus && reservation.status === 'in_progress' && onEndWork && (
               <div className="flex gap-0">
                 <Button
                   className="flex-1 gap-2 bg-sky-500 hover:bg-sky-600 text-white rounded-r-none"
@@ -1493,7 +1494,7 @@ const ReservationDetailsDrawer = ({
             )}
 
             {/* Completed: Status change dropdown only (completed is now final status) */}
-            {reservation.status === 'completed' && onStatusChange && (
+            {showStatus && reservation.status === 'completed' && onStatusChange && (
               <div className="flex gap-0">
                 <Button variant="outline" className="flex-1 gap-2 rounded-r-none" disabled>
                   <Check className="w-4 h-4" />

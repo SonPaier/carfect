@@ -49,6 +49,8 @@ interface HallReservationCardProps {
   onServiceToggle?: (serviceId: string, checked: boolean) => Promise<void>;
   onAddService?: (reservation: Reservation) => void;
   onRemoveService?: (serviceId: string, serviceName: string) => Promise<void>;
+  /** When false, hides START/STOP status action buttons */
+  showStatus?: boolean;
 }
 
 const ALL_VISIBLE: VisibleFields = {
@@ -84,6 +86,7 @@ const HallReservationCard = ({
   onRemoveService,
   showEmployees = false,
   employees = [],
+  showStatus = true,
 }: HallReservationCardProps) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState<'start' | 'stop' | 'sms' | null>(null);
@@ -165,6 +168,8 @@ const HallReservationCard = ({
 
   // Render action buttons based on status
   const renderActionButtons = () => {
+    if (!showStatus) return null;
+
     const isPendingOrConfirmed = normalizedStatus === 'pending' || normalizedStatus === 'confirmed';
     const isInProgress = normalizedStatus === 'in_progress';
     const isCompleted = normalizedStatus === 'completed';
