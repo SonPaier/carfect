@@ -199,6 +199,7 @@ export const ProductsSummaryStepV2 = ({
         onOpenChange={() => {}}
         onUpdateOffer={onUpdateOffer}
         getTextareaRows={getTextareaRows}
+        instanceId={instanceId}
       />
 
       {/* Picker Drawer */}

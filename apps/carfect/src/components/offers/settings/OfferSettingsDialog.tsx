@@ -12,7 +12,8 @@ import { Switch } from '@shared/ui';
 import { OfferBrandingSettings, OfferBrandingSettingsRef } from './OfferBrandingSettings';
 import { OfferTrustHeaderSettings, OfferTrustHeaderSettingsRef } from './OfferTrustHeaderSettings';
 import { WidgetSettingsTab } from './WidgetSettingsTab';
-import { Settings, Loader2, FileText, Palette, Award, Code } from 'lucide-react';
+import { Settings, Loader2, FileText, Palette, Award, Code, ClipboardList } from 'lucide-react';
+import { ConditionTemplatesSection } from './ConditionTemplatesSection';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -164,10 +165,14 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <div className="px-6 pt-4 flex-shrink-0">
-              <AdminTabsList columns={4}>
+              <AdminTabsList columns={5}>
                 <AdminTabsTrigger value="general">
                   <FileText className="h-4 w-4" />
                   {t('offerSettings.general')}
+                </AdminTabsTrigger>
+                <AdminTabsTrigger value="templates">
+                  <ClipboardList className="h-4 w-4" />
+                  Szablony
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="branding">
                   <Palette className="h-4 w-4" />
@@ -309,6 +314,10 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                     </div>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="templates" className="mt-6 mb-6">
+                <ConditionTemplatesSection instanceId={instanceId} />
               </TabsContent>
 
               <TabsContent value="branding" className="mt-6 mb-6">

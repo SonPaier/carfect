@@ -6,6 +6,18 @@ import i18n from '@/i18n/config';
 import { ConditionsSection } from './ConditionsSection';
 import type { OfferState } from '@/hooks/useOfferTypes';
 
+vi.mock('@/hooks/useConditionTemplates', () => ({
+  useConditionTemplates: () => ({
+    templates: [],
+    loading: false,
+    byType: () => [],
+    createTemplate: vi.fn(),
+    updateTemplate: vi.fn(),
+    deleteTemplate: vi.fn(),
+    refetch: vi.fn(),
+  }),
+}));
+
 const makeOffer = (overrides: Partial<OfferState> = {}): OfferState => ({
   instanceId: 'instance-1',
   customerData: {
