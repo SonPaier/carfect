@@ -329,7 +329,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
       <div className="space-y-8">
         {/* Customer Info Section */}
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:[grid-template-columns:1fr_minmax(0,1.3fr)_minmax(0,0.7fr)] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2" ref={nameInputRef}>
               <Label htmlFor="customerName">Imię i nazwisko *</Label>
               <ClientSearchAutocomplete
@@ -350,21 +350,6 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
               />
               {validationErrors?.name && (
                 <p className="text-sm text-red-500">{validationErrors.name}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customerEmail">Email *</Label>
-              <Input
-                ref={emailInputRef}
-                id="customerEmail"
-                type="email"
-                value={customerData.email}
-                onChange={handleEmailChange}
-                onPaste={handleEmailPaste}
-                className={hasEmailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
-              />
-              {(validationErrors?.email || emailError) && (
-                <p className="text-sm text-red-500">{validationErrors?.email || emailError}</p>
               )}
             </div>
             <div className="space-y-2 relative" ref={phoneContainerRef}>
@@ -397,6 +382,21 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                 </div>
               )}
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="customerEmail">Email *</Label>
+            <Input
+              ref={emailInputRef}
+              id="customerEmail"
+              type="email"
+              value={customerData.email}
+              onChange={handleEmailChange}
+              onPaste={handleEmailPaste}
+              className={hasEmailError ? 'border-red-500 focus-visible:ring-red-500' : ''}
+            />
+            {(validationErrors?.email || emailError) && (
+              <p className="text-sm text-red-500">{validationErrors?.email || emailError}</p>
+            )}
           </div>
 
           {/* Inquiry Content & Internal Notes */}
