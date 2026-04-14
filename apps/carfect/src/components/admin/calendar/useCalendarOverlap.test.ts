@@ -147,6 +147,93 @@ describe('useCalendarOverlap', () => {
       expect(info.total).toBe(1);
     });
 
+    it('returns sameStartTotal=1 for single reservation', () => {
+      const res = buildReservation({ id: 'r1' });
+      const { result } = renderHook(() => useCalendarOverlap(createHookOptions()));
+
+      const info = result.current.getOverlapInfo(res, [res], '2026-04-13');
+      expect(info.sameStartIndex).toBe(0);
+      expect(info.sameStartTotal).toBe(1);
+    });
+
+    it('returns sameStartTotal=2 when two overlapping reservations share same start time', () => {
+      const r1 = buildReservation({ id: 'r1', start_time: '09:00:00', end_time: '11:00:00' });
+      const r2 = buildReservation({ id: 'r2', start_time: '09:00:00', end_time: '12:00:00' });
+      const all = [r1, r2];
+
+      const { result } = renderHook(() => useCalendarOverlap(createHookOptions()));
+
+      const info1 = result.current.getOverlapInfo(r1, all, '2026-04-13');
+      const info2 = result.current.getOverlapInfo(r2, all, '2026-04-13');
+
+      expect(info1.sameStartTotal).toBe(2);
+      expect(info2.sameStartTotal).toBe(2);
+      expect(info1.sameStartIndex).toBe(0);
+      expect(info2.sameStartIndex).toBe(1);
+    });
+
+    it('returns sameStartTotal=1 when overlapping reservations have different start times', () => {
+      const r1 = buildReservation({ id: 'r1', start_time: '09:00:00', end_time: '11:00:00' });
+      const r2 = buildReservation({ id: 'r2', start_time: '10:00:00', end_time: '12:00:00' });
+      const all = [r1, r2];
+
+      const { result } = renderHook(() => useCalendarOverlap(createHookOptions()));
+
+      const info1 = result.current.getOverlapInfo(r1, all, '2026-04-13');
+      const info2 = result.current.getOverlapInfo(r2, all, '2026-04-13');
+
+      expect(info1.sameStartTotal).toBe(1);
+      expect(info2.sameStartTotal).toBe(1);
+    });
+
+    it('correctly groups same-start within a larger overlap group', () => {
+      // rA starts at 09:00, rB and rC start at 10:00
+      const rA = buildReservation({ id: 'rA', start_time: '09:00:00', end_time: '11:00:00' });
+      const rB = buildReservation({ id: 'rB', start_time: '10:00:00', end_time: '12:00:00' });
+      const rC = buildReservation({ id: 'rC', start_time: '10:00:00', end_time: '12:30:00' });
+      const all = [rA, rB, rC];
+
+      const { result } = renderHook(() => useCalendarOverlap(createHookOptions()));
+
+      const infoA = result.current.getOverlapInfo(rA, all, '2026-04-13');
+      const infoB = result.current.getOverlapInfo(rB, all, '2026-04-13');
+      const infoC = result.current.getOverlapInfo(rC, all, '2026-04-13');
+
+      // All in same overlap group of 3
+      expect(infoA.total).toBe(3);
+      expect(infoB.total).toBe(3);
+
+      // rA alone at 09:00
+      expect(infoA.sameStartTotal).toBe(1);
+
+      // rB and rC share 10:00
+      expect(infoB.sameStartTotal).toBe(2);
+      expect(infoC.sameStartTotal).toBe(2);
+      // sorted by id: rB=0, rC=1
+      expect(infoB.sameStartIndex).toBe(0);
+      expect(infoC.sameStartIndex).toBe(1);
+    });
+
+    it('returns sameStartTotal=3 for three reservations with identical start', () => {
+      const r1 = buildReservation({ id: 'r1', start_time: '08:00:00', end_time: '10:00:00' });
+      const r2 = buildReservation({ id: 'r2', start_time: '08:00:00', end_time: '11:00:00' });
+      const r3 = buildReservation({ id: 'r3', start_time: '08:00:00', end_time: '12:00:00' });
+      const all = [r1, r2, r3];
+
+      const { result } = renderHook(() => useCalendarOverlap(createHookOptions()));
+
+      const info1 = result.current.getOverlapInfo(r1, all, '2026-04-13');
+      const info2 = result.current.getOverlapInfo(r2, all, '2026-04-13');
+      const info3 = result.current.getOverlapInfo(r3, all, '2026-04-13');
+
+      expect(info1.sameStartTotal).toBe(3);
+      expect(info2.sameStartTotal).toBe(3);
+      expect(info3.sameStartTotal).toBe(3);
+      expect(info1.sameStartIndex).toBe(0);
+      expect(info2.sameStartIndex).toBe(1);
+      expect(info3.sameStartIndex).toBe(2);
+    });
+
     it('sorts group by start time, then by id', () => {
       const rB = buildReservation({ id: 'rB', start_time: '10:00:00', end_time: '12:00:00' });
       const rA = buildReservation({ id: 'rA', start_time: '10:00:00', end_time: '12:00:00' });

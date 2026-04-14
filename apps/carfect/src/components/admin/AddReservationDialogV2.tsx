@@ -545,7 +545,7 @@ const AddReservationDialogV2 = ({
             dateRange: { from: fromDate, to: toDate },
             startTime: initialTime || '',
             endTime: closingTime || '',
-            stationId: null,
+            stationId: stations.length === 1 ? stations[0].id : null,
           },
         ]);
         setReservationType(isMultiDay ? 'multi' : 'single');
@@ -1121,7 +1121,7 @@ const AddReservationDialogV2 = ({
                     station: validationErrors.station,
                   }}
                   isMobile={isMobile}
-                  showStationSelector={isEditMode || !initialStationId}
+                  showStationSelector={stations.length > 1 && (isEditMode || !initialStationId)}
                   isEditMode={isEditMode}
                   onUserModifiedEndTime={() => setUserModifiedEndTime(true)}
                 />

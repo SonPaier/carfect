@@ -30,13 +30,13 @@ export function useCalendarOverlap({
       reservation: Reservation,
       allReservations: Reservation[],
       dateStr: string,
-    ): { hasOverlap: boolean; index: number; total: number } => {
+    ): { hasOverlap: boolean; index: number; total: number; sameStartIndex: number; sameStartTotal: number } => {
       const activeReservations = allReservations.filter(
         (r) => r.status !== 'cancelled' && r.status !== 'no_show',
       );
 
       if (activeReservations.length <= 1) {
-        return { hasOverlap: false, index: 0, total: 1 };
+        return { hasOverlap: false, index: 0, total: 1, sameStartIndex: 0, sameStartTotal: 1 };
       }
 
       const doOverlap = (r1: Reservation, r2: Reservation): boolean => {
@@ -87,12 +87,12 @@ export function useCalendarOverlap({
 
       const groupIndex = assignedGroup.get(reservation.id);
       if (groupIndex === undefined) {
-        return { hasOverlap: false, index: 0, total: 1 };
+        return { hasOverlap: false, index: 0, total: 1, sameStartIndex: 0, sameStartTotal: 1 };
       }
 
       const group = groups[groupIndex];
       if (group.length <= 1) {
-        return { hasOverlap: false, index: 0, total: 1 };
+        return { hasOverlap: false, index: 0, total: 1, sameStartIndex: 0, sameStartTotal: 1 };
       }
 
       group.sort((a, b) => {
@@ -104,7 +104,18 @@ export function useCalendarOverlap({
       });
 
       const index = group.findIndex((r) => r.id === reservation.id);
-      return { hasOverlap: true, index, total: group.length };
+
+      // Find sub-group of reservations with the same start time
+      const { displayStart: currentStart } = getDisplayTimesForDate(reservation, dateStr);
+      const currentStartNum = parseTime(currentStart);
+      const sameStartGroup = group.filter((r) => {
+        const { displayStart } = getDisplayTimesForDate(r, dateStr);
+        return parseTime(displayStart) === currentStartNum;
+      });
+      const sameStartIndex = sameStartGroup.findIndex((r) => r.id === reservation.id);
+      const sameStartTotal = sameStartGroup.length;
+
+      return { hasOverlap: true, index, total: group.length, sameStartIndex, sameStartTotal };
     },
     [getDisplayTimesForDate],
   );

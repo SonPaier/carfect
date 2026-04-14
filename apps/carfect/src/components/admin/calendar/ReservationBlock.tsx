@@ -12,7 +12,7 @@ interface ReservationBlockProps {
   displayStart: string;
   displayEnd: string;
   style: { top: string; height: string };
-  overlapInfo: { hasOverlap: boolean; index: number; total: number };
+  overlapInfo: { hasOverlap: boolean; index: number; total: number; sameStartIndex: number; sameStartTotal: number };
   isDragging: boolean;
   isAnyDragging: boolean;
   isSelected: boolean;
@@ -53,8 +53,30 @@ export function ReservationBlock({
   onClick,
 }: ReservationBlockProps) {
   const isMultiDay = reservation.end_date && reservation.end_date !== reservation.reservation_date;
-  const leftOffset = overlapInfo.hasOverlap ? overlapInfo.index * OVERLAP_OFFSET_PX : 0;
   const durationMinutes = (parseTime(displayEnd) - parseTime(displayStart)) * 60;
+
+  // Same start time → split width equally; different start → cascade 10px offset
+  const useSameStartLayout = overlapInfo.hasOverlap && overlapInfo.sameStartTotal > 1;
+  const widthPercent = useSameStartLayout ? 100 / overlapInfo.sameStartTotal : undefined;
+  const leftOffset = overlapInfo.hasOverlap
+    ? useSameStartLayout
+      ? undefined // will use percentage-based left
+      : overlapInfo.index * OVERLAP_OFFSET_PX
+    : 0;
+
+  const positionStyle: React.CSSProperties = useSameStartLayout
+    ? {
+        ...style,
+        left: `calc(${overlapInfo.sameStartIndex * widthPercent!}% + 2px)`,
+        width: `calc(${widthPercent}% - 4px)`,
+        zIndex: isSelected ? 30 : zIndex,
+      }
+    : {
+        ...style,
+        left: `calc(${leftOffset}px + 2px)`,
+        right: '2px',
+        zIndex: isSelected ? 30 : zIndex,
+      };
 
   return (
     <div
@@ -72,12 +94,7 @@ export function ReservationBlock({
         !isDragging && isAnyDragging && 'pointer-events-none',
         isSelected && 'border-4 shadow-lg z-30',
       )}
-      style={{
-        ...style,
-        left: `calc(${leftOffset}px + 2px)`,
-        right: '2px',
-        zIndex: isSelected ? 30 : zIndex,
-      }}
+      style={positionStyle}
       onClick={(e) => {
         e.stopPropagation();
         onClick(reservation);
