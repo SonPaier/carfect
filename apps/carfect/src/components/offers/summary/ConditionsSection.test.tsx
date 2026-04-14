@@ -5,6 +5,21 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n/config';
 import { ConditionsSection } from './ConditionsSection';
 import type { OfferState } from '@/hooks/useOfferTypes';
+import type { ConditionTemplate } from '@/hooks/useConditionTemplates';
+
+const mockByType = vi.fn().mockReturnValue([]);
+
+vi.mock('@/hooks/useConditionTemplates', () => ({
+  useConditionTemplates: () => ({
+    templates: [],
+    loading: false,
+    byType: mockByType,
+    createTemplate: vi.fn(),
+    updateTemplate: vi.fn(),
+    deleteTemplate: vi.fn(),
+    refetch: vi.fn(),
+  }),
+}));
 
 const makeOffer = (overrides: Partial<OfferState> = {}): OfferState => ({
   instanceId: 'instance-1',
@@ -62,6 +77,7 @@ describe('ConditionsSection', () => {
 
   beforeEach(() => {
     user = userEvent.setup();
+    mockByType.mockReturnValue([]);
   });
 
   describe('renders all 5 fields', () => {
@@ -171,6 +187,36 @@ describe('ConditionsSection', () => {
       const textarea = screen.getByLabelText(/uwagi/i);
       await user.type(textarea, 'A note');
       expect(onUpdateOffer).toHaveBeenCalledWith({ notes: expect.stringContaining('A') });
+    });
+  });
+
+  describe('template picker', () => {
+    const makeConditionTemplate = (overrides: Partial<ConditionTemplate> = {}): ConditionTemplate => ({
+      id: 'tpl-1',
+      instance_id: 'instance-1',
+      template_type: 'warranty',
+      name: 'Standard warranty',
+      content: '12 months warranty',
+      sort_order: 0,
+      ...overrides,
+    });
+
+    it('renders template picker placeholder for each field when templates exist', () => {
+      const templates = [makeConditionTemplate()];
+      mockByType.mockReturnValue(templates);
+
+      renderComponent();
+
+      // TemplatePicker renders a SelectTrigger with "z szablonu" placeholder — one per field
+      const pickers = screen.getAllByText('z szablonu');
+      expect(pickers).toHaveLength(4);
+    });
+
+    it('does not render template picker when no templates exist', () => {
+      // mockByType already returns [] from beforeEach
+      renderComponent();
+
+      expect(screen.queryByText('z szablonu')).not.toBeInTheDocument();
     });
   });
 

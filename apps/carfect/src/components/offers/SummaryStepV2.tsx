@@ -429,6 +429,7 @@ export const SummaryStepV2 = ({
         onOpenChange={setConditionsOpen}
         onUpdateOffer={onUpdateOffer}
         getTextareaRows={getTextareaRows}
+        instanceId={instanceId}
       />
 
       {/* Product Edit Dialog */}

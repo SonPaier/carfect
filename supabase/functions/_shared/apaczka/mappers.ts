@@ -187,11 +187,15 @@ export function mapPackagesToShipmentItems(packages: OrderPackage[]): ApaczkaShi
 }
 
 function buildContentDescription(packages: OrderPackage[]): string {
+  const MAX_LENGTH = 100;
   const contents = packages
     .filter((p) => p.shippingMethod === 'shipping' && p.contents)
     .map((p) => p.contents!.trim())
     .filter(Boolean);
-  return contents.length > 0 ? contents.join(', ') : 'Produkty';
+  const description = contents.length > 0 ? contents.join(', ') : 'Produkty';
+  return description.length > MAX_LENGTH
+    ? description.slice(0, MAX_LENGTH - 3) + '...'
+    : description;
 }
 
 function buildCod(totalGross: number, bankAccountNumber: string): ApaczkaCod {
