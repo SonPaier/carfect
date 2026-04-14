@@ -46,6 +46,7 @@ import { CreateInvoiceDrawer, useInvoicingSettings } from '@shared/invoicing';
 import { FileText } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
+import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import type { Reservation } from '@/types/reservation';
 
 interface Service {
@@ -144,6 +145,8 @@ const ReservationsView = ({
   const { settings: invoicingSettings } = useInvoicingSettings(instanceId, supabase);
   const invoicingActive = invoicingSettings?.active ?? false;
   const { hasFeature } = useInstanceFeatures(instanceId);
+  const { data: instanceSettings } = useInstanceSettings(instanceId);
+  const showStatus = instanceSettings?.show_reservation_status ?? false;
 
   const formatDisplayPrice = (r: Reservation) => {
     if (r.price == null) return '—';
@@ -679,24 +682,26 @@ const ReservationsView = ({
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px] shrink-0">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Wszystkie</SelectItem>
-              {Object.entries(statusConfig)
-                .filter(
-                  ([key]) =>
-                    !['pending', 'change_requested', 'released', 'cancelled'].includes(key),
-                )
-                .map(([key, cfg]) => (
-                  <SelectItem key={key} value={key}>
-                    {cfg.label}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          {showStatus && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px] shrink-0">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Wszystkie</SelectItem>
+                {Object.entries(statusConfig)
+                  .filter(
+                    ([key]) =>
+                      !['pending', 'change_requested', 'released', 'cancelled'].includes(key),
+                  )
+                  .map(([key, cfg]) => (
+                    <SelectItem key={key} value={key}>
+                      {cfg.label}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
@@ -723,7 +728,7 @@ const ReservationsView = ({
                   <SortableHeader field="price" className="text-right">
                     Cena brutto / netto
                   </SortableHeader>
-                  <SortableHeader field="status">Status</SortableHeader>
+                  {showStatus && <SortableHeader field="status">Status</SortableHeader>}
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
@@ -760,7 +765,7 @@ const ReservationsView = ({
                         <TableCell className="text-right whitespace-nowrap">
                           {formatDisplayPrice(r)}
                         </TableCell>
-                        <TableCell>{renderStatusBadge(r.status)}</TableCell>
+                        {showStatus && <TableCell>{renderStatusBadge(r.status)}</TableCell>}
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {renderReservationActions(r)}
                         </TableCell>
@@ -822,7 +827,7 @@ const ReservationsView = ({
                   >
                     {/* Top row: status + plate */}
                     <div className="flex items-center justify-between">
-                      {renderStatusBadge(r.status)}
+                      {showStatus && renderStatusBadge(r.status)}
                       <span className="font-medium text-sm shrink-0">{r.vehicle_plate}</span>
                     </div>
                     {/* Customer */}

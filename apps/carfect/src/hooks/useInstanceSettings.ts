@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface InstanceSettings {
   assign_employees_to_stations: boolean;
   assign_employees_to_reservations: boolean;
+  show_reservation_status: boolean;
 }
 
 export const useInstanceSettings = (instanceId: string | null) => {
@@ -14,7 +15,7 @@ export const useInstanceSettings = (instanceId: string | null) => {
       
       const { data, error } = await supabase
         .from('instances')
-        .select('assign_employees_to_stations, assign_employees_to_reservations')
+        .select('assign_employees_to_stations, assign_employees_to_reservations, show_reservation_status')
         .eq('id', instanceId)
         .single();
       
@@ -22,6 +23,7 @@ export const useInstanceSettings = (instanceId: string | null) => {
       return {
         assign_employees_to_stations: data?.assign_employees_to_stations ?? false,
         assign_employees_to_reservations: data?.assign_employees_to_reservations ?? false,
+        show_reservation_status: data?.show_reservation_status ?? true,
       };
     },
     enabled: !!instanceId,

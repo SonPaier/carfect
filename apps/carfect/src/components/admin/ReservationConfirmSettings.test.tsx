@@ -61,6 +61,7 @@ const mockUpdateSetting = vi.fn();
 const mockInstanceSettings = {
   assign_employees_to_stations: false,
   assign_employees_to_reservations: false,
+  show_reservation_status: false,
 };
 
 vi.mock('@/hooks/useInstanceSettings', () => ({
@@ -895,9 +896,9 @@ describe('ReservationConfirmSettings', () => {
 
       await waitFor(() => screen.getByText('Powiadomienia push na tym urządzeniu'));
 
-      // Push switch is the 4th switch (index 3): auto-confirm(0), stations(1), reservations(2), push(3)
+      // Push switch is the 5th switch (index 4): auto-confirm(0), stations(1), reservations(2), status(3), push(4)
       const allSwitches = screen.getAllByRole('switch');
-      const pushSwitch = allSwitches[3];
+      const pushSwitch = allSwitches[4];
 
       await user.click(pushSwitch);
 
@@ -917,7 +918,7 @@ describe('ReservationConfirmSettings', () => {
       await waitFor(() => screen.getByText('Powiadomienia push na tym urządzeniu'));
 
       const allSwitches = screen.getAllByRole('switch');
-      const pushSwitch = allSwitches[3];
+      const pushSwitch = allSwitches[4];
       await user.click(pushSwitch);
 
       await waitFor(() => {
@@ -936,7 +937,7 @@ describe('ReservationConfirmSettings', () => {
       await waitFor(() => screen.getByText('Powiadomienia push na tym urządzeniu'));
 
       const allSwitches = screen.getAllByRole('switch');
-      const pushSwitch = allSwitches[3];
+      const pushSwitch = allSwitches[4];
       await user.click(pushSwitch);
 
       await waitFor(() => {

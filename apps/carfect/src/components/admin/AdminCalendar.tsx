@@ -961,9 +961,16 @@ const AdminCalendar = ({
             employees={employees}
             showNotes={showNotesInBars}
             workingHours={workingHours}
+            activeDateRange={activeDateRange}
             onDayClick={(date) => {
-              setCurrentDate(date);
-              setViewMode('day');
+              if (isMobile && onAddReservation && !readOnly) {
+                const dateStr = format(date, 'yyyy-MM-dd');
+                const { startTime } = getWorkingHoursForDate(dateStr);
+                onAddReservation('', dateStr, startTime || '08:00');
+              } else {
+                setCurrentDate(date);
+                setViewMode('day');
+              }
             }}
             onReservationClick={(r) => onReservationClick?.(r)}
             onAddClick={
@@ -1009,8 +1016,14 @@ const AdminCalendar = ({
             activeDateRange={activeDateRange}
             onLoadMore={onLoadMore}
             onDayClick={(date) => {
-              setCurrentDate(date);
-              setViewMode('day');
+              if (isMobile && onAddReservation && !readOnly) {
+                const dateStr = format(date, 'yyyy-MM-dd');
+                const { startTime } = getWorkingHoursForDate(dateStr);
+                onAddReservation('', dateStr, startTime || '08:00');
+              } else {
+                setCurrentDate(date);
+                setViewMode('day');
+              }
             }}
             onReservationClick={(r) => onReservationClick?.(r)}
             onAddClick={

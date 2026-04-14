@@ -28,7 +28,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
   // Employee assignment settings
   const { data: instanceSettings, isLoading: isSettingsLoading } = useInstanceSettings(instanceId);
   const { updateSetting } = useUpdateInstanceSettings(instanceId);
-  const [savingEmployeeSettings, setSavingEmployeeSettings] = useState(false);
+  const [savingSettings, setSavingEmployeeSettings] = useState(false);
 
   // Pricing mode
   const [pricingMode, setPricingMode] = useState<'netto' | 'brutto'>('brutto');
@@ -105,8 +105,8 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     checkSubscription();
   }, [instanceId, checkSubscription]);
 
-  const handleToggleEmployeeSetting = async (
-    key: 'assign_employees_to_stations' | 'assign_employees_to_reservations',
+  const handleToggleSetting = async (
+    key: keyof import('@/hooks/useInstanceSettings').InstanceSettings,
     checked: boolean,
   ) => {
     setSavingEmployeeSettings(true);
@@ -288,9 +288,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
             id="assign-stations"
             checked={instanceSettings?.assign_employees_to_stations ?? false}
             onCheckedChange={(checked) =>
-              handleToggleEmployeeSetting('assign_employees_to_stations', checked)
+              handleToggleSetting('assign_employees_to_stations', checked)
             }
-            disabled={savingEmployeeSettings || isSettingsLoading}
+            disabled={savingSettings || isSettingsLoading}
           />
         </div>
       </div>
@@ -310,9 +310,47 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
             id="assign-reservations"
             checked={instanceSettings?.assign_employees_to_reservations ?? false}
             onCheckedChange={(checked) =>
-              handleToggleEmployeeSetting('assign_employees_to_reservations', checked)
+              handleToggleSetting('assign_employees_to_reservations', checked)
             }
-            disabled={savingEmployeeSettings || isSettingsLoading}
+            disabled={savingSettings || isSettingsLoading}
+          />
+        </div>
+      </div>
+
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="show-status" className="font-medium">
+              Statusy postępu zleceń
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Pokazuj status rezerwacji i przyciski do zmiany postępu
+            </p>
+            {instanceSettings?.show_reservation_status && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span className="inline-flex items-center gap-1 text-xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  Potwierdzona
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                  W trakcie
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                  Zakończona
+                </span>
+              </div>
+            )}
+          </div>
+          <Switch
+            size="sm"
+            id="show-status"
+            checked={instanceSettings?.show_reservation_status ?? false}
+            onCheckedChange={(checked) =>
+              handleToggleSetting('show_reservation_status', checked)
+            }
+            disabled={savingSettings || isSettingsLoading}
           />
         </div>
       </div>

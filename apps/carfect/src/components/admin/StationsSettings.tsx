@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Loader2, Check, X, GripVertical } from 'lucide-react';
+import { Edit2, Trash2, Loader2, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -17,7 +17,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, ConfirmDialog } from '@shared/ui';
+import { Button, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, ConfirmDialog, ColorPalettePicker } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -466,43 +466,11 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
             {/* Color picker */}
             <div className="space-y-2">
               <Label>Kolor stanowiska</Label>
-              <div className="flex flex-wrap gap-2 items-center">
-                {/* No color option */}
-                <button
-                  type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, color: null }))}
-                  className={cn(
-                    'w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all',
-                    formData.color === null
-                      ? 'border-foreground ring-2 ring-foreground/20'
-                      : 'border-border hover:border-foreground/50',
-                  )}
-                  title="Brak koloru"
-                >
-                  {formData.color === null ? (
-                    <X className="w-3.5 h-3.5 text-muted-foreground" />
-                  ) : (
-                    <X className="w-3 h-3 text-muted-foreground/40" />
-                  )}
-                </button>
-                {STATION_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, color }))}
-                    className={cn(
-                      'w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all',
-                      formData.color === color
-                        ? 'border-foreground ring-2 ring-foreground/20'
-                        : 'border-border hover:border-foreground/50',
-                    )}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  >
-                    {formData.color === color && <Check className="w-4 h-4 text-slate-700" />}
-                  </button>
-                ))}
-              </div>
+              <ColorPalettePicker
+                value={formData.color}
+                onChange={(color) => setFormData((prev) => ({ ...prev, color }))}
+                colors={STATION_COLORS}
+              />
             </div>
             {/* Employee assignment section - only when editing and feature enabled */}
             {editingStation && instanceSettings?.assign_employees_to_stations && (

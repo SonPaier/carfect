@@ -16,6 +16,7 @@ import { useBreaks } from '@/hooks/useBreaks';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useUnifiedServices } from '@/hooks/useUnifiedServices';
 import { useServiceDictionary, buildServicesMapFromDictionary } from '@/hooks/useServiceDictionary';
+import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { Loader2, Calendar, FileText, LogOut, Users } from 'lucide-react';
 import { TrainingDetailsDrawer } from '@/components/admin/TrainingDetailsDrawer';
 import type { Training } from '@/components/admin/AddTrainingDrawer';
@@ -154,6 +155,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
   const { data: cachedWorkingHours } = useWorkingHours(instanceId);
   const { data: cachedServices = [] } = useUnifiedServices(instanceId);
   const { map: serviceDictMap } = useServiceDictionary(instanceId);
+  const { data: instanceSettings } = useInstanceSettings(instanceId);
 
   // Use cached data
   const breaks = cachedBreaks as Break[];
@@ -1275,6 +1277,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           reservation={selectedReservationWithServices}
           visibleFields={hall?.visible_fields}
           allowedActions={hall?.allowed_actions}
+          showStatus={instanceSettings?.show_reservation_status ?? false}
           open={!!selectedReservation}
           onClose={() => setSelectedReservation(null)}
           onStartWork={async (id) => {

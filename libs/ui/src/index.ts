@@ -16,6 +16,7 @@ export * from './components/breadcrumb';
 export * from './components/button';
 export * from './components/calendar';
 export * from './components/card';
+export * from './components/color-palette-picker';
 export * from './components/carousel';
 export * from './components/checkbox';
 export * from './components/checklist-section';

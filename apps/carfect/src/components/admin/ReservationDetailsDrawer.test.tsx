@@ -35,6 +35,15 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+// Mock instance settings — show_reservation_status enabled for tests
+vi.mock('@/hooks/useInstanceSettings', () => ({
+  useInstanceSettings: () => ({
+    data: { assign_employees_to_stations: false, assign_employees_to_reservations: false, show_reservation_status: true },
+    isLoading: false,
+  }),
+  useUpdateInstanceSettings: () => ({ updateSetting: vi.fn() }),
+}));
+
 // Mock SendSmsDialog
 vi.mock('@/components/admin/SendSmsDialog', () => ({
   default: ({ open }: { open: boolean }) => 

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { startOfWeek, addDays, isSameDay, differenceInDays, max, min, format } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ interface WeekTileViewProps {
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
   workingHours?: Record<string, { open?: string; close?: string } | null> | null;
+  activeDateRange?: { from: string; to: string } | null;
 }
 
 function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
@@ -56,6 +57,7 @@ export const WeekTileView = ({
   employees: _employees,
   showNotes,
   workingHours,
+  activeDateRange,
 }: WeekTileViewProps) => {
   const isMobile = useIsMobile();
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
@@ -64,6 +66,9 @@ export const WeekTileView = ({
   const [dragStart, setDragStart] = useState<Date | null>(null);
   const [dragEnd, setDragEnd] = useState<Date | null>(null);
   const isDragging = dragStart !== null;
+  // Refs to avoid stale closures in touch handlers
+  const dragStartRef = useRef<Date | null>(null);
+  const dragEndRef = useRef<Date | null>(null);
 
   const highlightRange = useMemo(() => {
     if (!dragStart || !dragEnd) return null;
@@ -71,6 +76,18 @@ export const WeekTileView = ({
     const to = dragStart < dragEnd ? dragEnd : dragStart;
     return { from, to };
   }, [dragStart, dragEnd]);
+
+  // displayRange: drag highlight takes priority; falls back to activeDateRange
+  const displayRange = useMemo(() => {
+    if (highlightRange) return highlightRange;
+    if (activeDateRange) {
+      return {
+        from: toDateOnly(activeDateRange.from),
+        to: toDateOnly(activeDateRange.to),
+      };
+    }
+    return null;
+  }, [highlightRange, activeDateRange]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -187,6 +204,21 @@ export const WeekTileView = ({
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Sticky day name headers */}
+      <div
+        className="sticky top-0 z-20 bg-background grid px-2 border-b border-border/50"
+        style={{ gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)` }}
+      >
+        {visibleDays.map((day, i) => {
+          const absIdx = differenceInDays(day, weekDays[0]);
+          return (
+            <div key={i} className="text-center py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {DAY_NAMES[absIdx]}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Single week row: day headers + event area combined */}
       <div
         className="relative grid gap-1.5 px-2 pt-2"
@@ -194,25 +226,35 @@ export const WeekTileView = ({
           minHeight: DATE_HEADER_HEIGHT + rowHeight,
           gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)`,
         }}
+        onTouchMove={isDragging ? (e) => {
+          e.preventDefault();
+          const touch = e.touches[0];
+          const el = document.elementFromPoint(touch.clientX, touch.clientY);
+          const dateAttr = el?.closest('[data-date]')?.getAttribute('data-date');
+          if (dateAttr) {
+            const d = toDateOnly(dateAttr);
+            dragEndRef.current = d;
+            setDragEnd(d);
+          }
+        } : undefined}
       >
         {/* Day background cells (includes date header + click target) */}
         {visibleDays.map((day) => {
-          const absIdx = differenceInDays(day, weekDays[0]);
           const dateStr = formatDateStr(day);
           const isToday = isSameDay(day, today);
           const isClosed = closedDateSet.has(dateStr);
           const holidayName = holidayMap.get(dateStr);
           const isHoliday = !!holidayName;
           const count = reservationCountByDate.get(dateStr) ?? 0;
-          const dayName = DAY_NAMES[absIdx];
 
           return (
             <div
               key={dateStr}
+              data-date={dateStr}
               className={cn(
                 'rounded-lg cursor-pointer group relative bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
                 isClosed && 'bg-red-50',
-                !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
+                !isClosed && isInRange(day, displayRange) && 'bg-primary/5 !border-primary/40',
               )}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -229,6 +271,28 @@ export const WeekTileView = ({
                   setDragEnd(null);
                   onDayClick(day);
                 }
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                dragStartRef.current = day;
+                dragEndRef.current = day;
+                setDragStart(day);
+                setDragEnd(day);
+              }}
+              onTouchEnd={() => {
+                const start = dragStartRef.current;
+                const end = dragEndRef.current;
+                if (start && end && !isSameDay(start, end)) {
+                  const from = start < end ? start : end;
+                  const to = start < end ? end : start;
+                  onDateRangeSelect?.(from, to);
+                } else if (start) {
+                  onDayClick(start);
+                }
+                dragStartRef.current = null;
+                dragEndRef.current = null;
+                setDragStart(null);
+                setDragEnd(null);
               }}
             >
               {/* Day name + date header */}
@@ -250,16 +314,6 @@ export const WeekTileView = ({
                   <span className="text-xs font-semibold text-red-500 truncate">{holidayName}</span>
                 ) : (
                   <>
-                    <span
-                      className={cn(
-                        'text-xs font-medium uppercase tracking-wide truncate',
-                        isToday && 'text-primary font-bold',
-                        isClosed && 'text-red-500',
-                        !isToday && !isClosed && 'text-muted-foreground',
-                      )}
-                    >
-                      {dayName}
-                    </span>
                     {count > 0 && !isClosed && (
                       <span className="text-[10px] text-muted-foreground shrink-0">
                         {count} rez.
@@ -351,8 +405,16 @@ export const WeekTileView = ({
                 }}
               >
                 {isMobile ? (
-                  <span className="text-[10px] font-semibold truncate">
-                    {serviceName || reservation.customer_name}
+                  <span className="text-[10px] flex items-center gap-0.5 w-full truncate">
+                    {evt.isStart && reservation.start_time && (
+                      <span className="font-bold tabular-nums shrink-0">
+                        {reservation.start_time.slice(0, 5)}
+                      </span>
+                    )}
+                    {serviceName && (
+                      <span className="font-semibold shrink-0">{serviceName}</span>
+                    )}
+                    <span className="truncate">{reservation.customer_name}</span>
                   </span>
                 ) : (
                   <span
