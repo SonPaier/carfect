@@ -281,9 +281,9 @@ describe('SalesOrdersView', () => {
     render(<SalesOrdersView />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Poprzednia/)).toBeInTheDocument();
+      expect(screen.getByLabelText('Previous page')).toBeInTheDocument();
     });
-    expect(screen.getByText(/Następna/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Next page')).toBeInTheDocument();
   });
 
   it('shows empty state when no orders', async () => {

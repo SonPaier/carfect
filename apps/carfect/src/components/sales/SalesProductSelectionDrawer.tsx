@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, Check, Loader2, Search, X } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Search, X, ScanBarcode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
+import { useRollQuickSearch, type RollMatch } from './hooks/useRollQuickSearch';
 
 export interface SalesProductOption {
   id: string;
@@ -48,7 +49,17 @@ interface SalesProductSelectionDrawerProps {
   instanceId: string;
   selectedProductIds: string[];
   selectedVariantIds?: string[];
-  onConfirm: (products: SelectedProductItem[]) => void;
+  /** Current customer name — used to pick the correct "Wycinanie formatek" variant */
+  customerName?: string;
+  onConfirm: (
+    products: SelectedProductItem[],
+    options?: {
+      addFormatki?: boolean;
+      formatkiProduct?: { productId: string; fullName: string; priceNet: number };
+      /** Auto-assign this roll to the first roll product */
+      rollAssignment?: { rollId: string; widthMm: number; remainingMb: number };
+    },
+  ) => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -66,12 +77,15 @@ const SalesProductSelectionDrawer = ({
   instanceId,
   selectedProductIds: initialSelectedProductIds,
   selectedVariantIds: initialSelectedVariantIds = [],
+  customerName,
   onConfirm,
 }: SalesProductSelectionDrawerProps) => {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<SalesProductOption[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [addFormatki, setAddFormatki] = useState(false);
+  const [pendingRollMatch, setPendingRollMatch] = useState<RollMatch | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -81,6 +95,8 @@ const SalesProductSelectionDrawer = ({
       initialSelectedVariantIds.forEach((id) => keys.add(`variant:${id}`));
       setSelectedKeys(keys);
       setSearchQuery('');
+      setAddFormatki(false);
+      setPendingRollMatch(null);
       setTimeout(() => searchInputRef.current?.focus(), 300);
     }
   }, [open, initialSelectedProductIds, initialSelectedVariantIds]);
@@ -157,6 +173,25 @@ const SalesProductSelectionDrawer = ({
     fetchProducts();
   }, [fetchProducts]);
 
+  const { match: rollMatch, searching: rollSearching } = useRollQuickSearch(
+    instanceId,
+    searchQuery,
+    products,
+  );
+
+  // When a roll match is found and user hasn't manually selected anything, auto-select it
+  const handleRollMatchSelect = useCallback(
+    (match: RollMatch) => {
+      setSelectedKeys((prev) => {
+        const next = new Set(prev);
+        next.add(match.selectionKey);
+        return next;
+      });
+      setPendingRollMatch(match);
+    },
+    [],
+  );
+
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
     const q = searchQuery.toLowerCase();
@@ -178,6 +213,39 @@ const SalesProductSelectionDrawer = ({
   };
 
   const selectedCount = selectedKeys.size;
+
+  // Check if any selected product is a roll type
+  const hasSelectedRoll = useMemo(() => {
+    for (const key of selectedKeys) {
+      if (key.startsWith('variant:')) {
+        for (const product of products) {
+          if (product.variants?.some((v) => v.id === key.slice(8))) {
+            if (product.productType === 'roll' || !product.productType) return true;
+          }
+        }
+      } else {
+        const product = products.find((p) => p.id === key);
+        if (product && (product.productType === 'roll' || !product.productType)) return true;
+      }
+    }
+    return false;
+  }, [selectedKeys, products]);
+
+  // Find the correct "Wycinanie formatek" product based on customer name.
+  // If customer name contains "struzik", use the Struzik-specific formatki product.
+  const formatkiProduct = useMemo(() => {
+    const all = products.filter((p) => p.fullName.toLowerCase().includes('wycinanie formatek'));
+    if (all.length === 0) return undefined;
+    if (all.length === 1) return all[0];
+    const isStruzik = customerName?.toLowerCase().includes('struzik');
+    return (
+      all.find((p) =>
+        isStruzik
+          ? p.fullName.toLowerCase().includes('struzik')
+          : !p.fullName.toLowerCase().includes('struzik'),
+      ) || all[0]
+    );
+  }, [products, customerName]);
 
   const totalNet = useMemo(() => {
     let total = 0;
@@ -242,7 +310,26 @@ const SalesProductSelectionDrawer = ({
       }
     });
 
-    onConfirm(selected);
+    const options: Parameters<typeof onConfirm>[1] = {};
+
+    if (addFormatki && formatkiProduct) {
+      options.addFormatki = true;
+      options.formatkiProduct = {
+        productId: formatkiProduct.id,
+        fullName: formatkiProduct.fullName,
+        priceNet: formatkiProduct.priceNet,
+      };
+    }
+
+    if (pendingRollMatch) {
+      options.rollAssignment = {
+        rollId: pendingRollMatch.rollId,
+        widthMm: pendingRollMatch.rollWidthMm,
+        remainingMb: pendingRollMatch.rollRemainingMb,
+      };
+    }
+
+    onConfirm(selected, Object.keys(options).length > 0 ? options : undefined);
     onClose();
   };
 
@@ -278,7 +365,7 @@ const SalesProductSelectionDrawer = ({
               inputMode="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Szukaj produktu..."
+              placeholder="Szukaj produktu lub wpisz 8 ost. znaków rolki..."
               className="pl-9 pr-9 h-11"
             />
             {searchQuery && (
@@ -307,12 +394,64 @@ const SalesProductSelectionDrawer = ({
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredProducts.length === 0 ? (
+          ) : filteredProducts.length === 0 && !rollMatch ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               {searchQuery.trim() ? 'Brak pasujących produktów' : 'Brak produktów'}
             </div>
           ) : (
             <div className="pb-4">
+              {/* Roll quick match */}
+              {rollMatch && (
+                <button
+                  type="button"
+                  onClick={() => handleRollMatchSelect(rollMatch)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-4 py-3 border-b-2 border-primary/20 transition-colors',
+                    selectedKeys.has(rollMatch.selectionKey)
+                      ? 'bg-primary/10'
+                      : 'bg-primary/5 hover:bg-primary/10',
+                  )}
+                >
+                  <ScanBarcode className="w-5 h-5 text-primary shrink-0" />
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="font-bold text-foreground text-sm">
+                      {rollMatch.product.shortName || rollMatch.product.fullName}
+                    </p>
+                    <p className="font-medium text-foreground text-xs">
+                      {rollMatch.variant.variantName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Rolka {rollMatch.rollCode} · {rollMatch.rollRemainingMb.toFixed(1)} mb dost.
+                    </p>
+                  </div>
+                  <div className="text-right mr-2 shrink-0">
+                    <p className="font-semibold text-foreground text-sm">
+                      {formatCurrency(rollMatch.product.priceNet)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      netto/{formatPriceUnit(rollMatch.product.priceUnit)}
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                      selectedKeys.has(rollMatch.selectionKey)
+                        ? 'bg-primary border-primary'
+                        : 'border-primary/40',
+                    )}
+                  >
+                    {selectedKeys.has(rollMatch.selectionKey) && (
+                      <Check className="w-4 h-4 text-primary-foreground" />
+                    )}
+                  </div>
+                </button>
+              )}
+              {rollSearching && searchQuery.trim().replace(/-/g, '').length >= 8 && (
+                <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground bg-muted/30 border-b">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Szukam rolki...
+                </div>
+              )}
               {filteredProducts.map((product) => {
                 // Product with variants
                 if (product.hasVariants && product.variants && product.variants.length > 0) {
@@ -444,6 +583,36 @@ const SalesProductSelectionDrawer = ({
               </div>
             )}
           </div>
+          {hasSelectedRoll && formatkiProduct && (
+            <button
+              type="button"
+              onClick={() => setAddFormatki((v) => !v)}
+              className={cn(
+                'w-full flex items-center gap-3 rounded-lg border-2 px-4 mb-3 transition-colors',
+                addFormatki
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50',
+              )}
+              style={{ minHeight: 48 }}
+            >
+              <div
+                className={cn(
+                  'w-[28px] h-[28px] rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
+                  addFormatki ? 'bg-primary border-primary' : 'border-muted-foreground/40',
+                )}
+              >
+                {addFormatki && <Check className="w-5 h-5 text-primary-foreground" />}
+              </div>
+              <div className="text-left">
+                <span className="font-medium text-foreground text-sm">
+                  + Wycinanie formatek
+                </span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({formatCurrency(formatkiProduct.priceNet)}/m²)
+                </span>
+              </div>
+            </button>
+          )}
           <Button
             onClick={handleConfirm}
             disabled={selectedCount === 0}

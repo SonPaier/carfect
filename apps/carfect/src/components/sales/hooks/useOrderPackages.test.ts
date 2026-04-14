@@ -948,4 +948,254 @@ describe('useOrderPackages', () => {
       expect(result.current.packages[0].courier).toBe('DHL');
     });
   });
+
+  // handleProductsConfirm with addFormatki option
+  describe('handleProductsConfirm with addFormatki option', () => {
+    function setupWithPackage() {
+      const { result, getProducts } = setupHook();
+      act(() => {
+        result.current.addPackage();
+      });
+      const pkgId = result.current.packages[0].id;
+      act(() => {
+        result.current.setActivePackageId(pkgId);
+      });
+      return { result, getProducts, pkgId };
+    }
+
+    const formatkiProduct = {
+      productId: 'formatki-id',
+      fullName: 'Wycinanie formatek',
+      priceNet: 10,
+    };
+
+    it('adds a paired formatki product after each roll product when addFormatki is true', () => {
+      const { result, getProducts } = setupWithPackage();
+
+      act(() => {
+        result.current.handleProductsConfirm(
+          [{ productId: 'roll-id', fullName: 'PPF Film', priceNet: 200, priceUnit: 'meter' }],
+          { addFormatki: true, formatkiProduct },
+        );
+      });
+
+      const products = getProducts();
+      expect(products).toHaveLength(2);
+      expect(products[0].productType).toBe('roll');
+      expect(products[1].productId).toBe('formatki-id');
+    });
+
+    it('formatki product has linkedToKey pointing to the roll product instanceKey', () => {
+      const { result, getProducts } = setupWithPackage();
+
+      act(() => {
+        result.current.handleProductsConfirm(
+          [{ productId: 'roll-id', fullName: 'PPF Film', priceNet: 200, priceUnit: 'meter' }],
+          { addFormatki: true, formatkiProduct },
+        );
+      });
+
+      const products = getProducts();
+      const rollProduct = products[0];
+      const formatkiEntry = products[1];
+      expect(formatkiEntry.linkedToKey).toBe(rollProduct.instanceKey);
+    });
+
+    it('formatki product has productType "other", priceUnit "meter", quantity 0, excludeFromDiscount true', () => {
+      const { result, getProducts } = setupWithPackage();
+
+      act(() => {
+        result.current.handleProductsConfirm(
+          [{ productId: 'roll-id', fullName: 'PPF Film', priceNet: 200, priceUnit: 'meter' }],
+          { addFormatki: true, formatkiProduct },
+        );
+      });
+
+      const formatkiEntry = getProducts()[1];
+      expect(formatkiEntry.productType).toBe('other');
+      expect(formatkiEntry.priceUnit).toBe('meter');
+      expect(formatkiEntry.quantity).toBe(0);
+      expect(formatkiEntry.excludeFromDiscount).toBe(true);
+    });
+
+    it('does not add formatki for products with productType "other"', () => {
+      const { result, getProducts } = setupWithPackage();
+
+      act(() => {
+        result.current.handleProductsConfirm(
+          [
+            {
+              productId: 'other-id',
+              fullName: 'Cleaning Kit',
+              priceNet: 50,
+              productType: 'other',
+            },
+          ],
+          { addFormatki: true, formatkiProduct },
+        );
+      });
+
+      const products = getProducts();
+      expect(products).toHaveLength(1);
+      expect(products[0].productType).toBe('other');
+    });
+  });
+
+  // handleProductsConfirm with rollAssignment option
+  describe('handleProductsConfirm with rollAssignment option', () => {
+    it('sets rollAssignments on the product when rollAssignment option is provided for a variant product', () => {
+      const { result, getProducts } = setupHook();
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      const pkgId = result.current.packages[0].id;
+
+      act(() => {
+        result.current.setActivePackageId(pkgId);
+      });
+
+      act(() => {
+        result.current.handleProductsConfirm(
+          [
+            {
+              productId: 'roll-id',
+              variantId: 'variant-1',
+              fullName: 'PPF Film',
+              priceNet: 200,
+              priceUnit: 'meter',
+            },
+          ],
+          {
+            rollAssignment: { rollId: 'roll-123', widthMm: 1520, remainingMb: 10 },
+          },
+        );
+      });
+
+      const product = getProducts()[0];
+      expect(product.rollAssignments).toBeDefined();
+      expect(product.rollAssignments).toHaveLength(1);
+      expect(product.rollAssignments![0].rollId).toBe('roll-123');
+      expect(product.rollAssignments![0].widthMm).toBe(1520);
+    });
+  });
+
+  // removeProductFromPackage cascade removes linked formatki
+  describe('removeProductFromPackage cascade removes linked formatki', () => {
+    it('removes the roll product and its linked formatki from the package and products list', () => {
+      const rollProduct = makeProduct({ instanceKey: 'roll-key', productType: 'roll' });
+      const formatkiProduct = makeProduct({
+        instanceKey: 'formatki-key',
+        productType: 'other',
+        linkedToKey: 'roll-key',
+      });
+      const { result, getProducts } = setupHook({
+        initialProducts: [rollProduct, formatkiProduct],
+      });
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      const pkgId = result.current.packages[0].id;
+
+      act(() => {
+        result.current.setPackages((prev) =>
+          prev.map((p) =>
+            p.id === pkgId ? { ...p, productKeys: ['roll-key', 'formatki-key'] } : p,
+          ),
+        );
+      });
+
+      act(() => {
+        result.current.removeProductFromPackage(pkgId, 'roll-key');
+      });
+
+      const products = getProducts();
+      expect(products.find((p) => p.instanceKey === 'roll-key')).toBeUndefined();
+      expect(products.find((p) => p.instanceKey === 'formatki-key')).toBeUndefined();
+    });
+
+    it('removes formatki key from package productKeys when roll is removed', () => {
+      const rollProduct = makeProduct({ instanceKey: 'roll-key', productType: 'roll' });
+      const formatkiProduct = makeProduct({
+        instanceKey: 'formatki-key',
+        productType: 'other',
+        linkedToKey: 'roll-key',
+      });
+      const { result } = setupHook({ initialProducts: [rollProduct, formatkiProduct] });
+
+      act(() => {
+        result.current.addPackage();
+      });
+
+      const pkgId = result.current.packages[0].id;
+
+      act(() => {
+        result.current.setPackages((prev) =>
+          prev.map((p) =>
+            p.id === pkgId ? { ...p, productKeys: ['roll-key', 'formatki-key'] } : p,
+          ),
+        );
+      });
+
+      act(() => {
+        result.current.removeProductFromPackage(pkgId, 'roll-key');
+      });
+
+      expect(result.current.packages[0].productKeys).not.toContain('roll-key');
+      expect(result.current.packages[0].productKeys).not.toContain('formatki-key');
+    });
+  });
+
+  // updateRequiredMb syncs linked formatki quantity
+  describe('updateRequiredMb syncs linked formatki quantity', () => {
+    it('updates linked formatki quantity to widthM * requiredMb when roll product name contains mm width', () => {
+      const rollProduct = makeProduct({
+        instanceKey: 'roll-key',
+        name: 'XP Crystal - 1524mm x 15m',
+        priceUnit: 'meter',
+      });
+      const formatkiProduct = makeProduct({
+        instanceKey: 'formatki-key',
+        productType: 'other',
+        priceUnit: 'meter',
+        linkedToKey: 'roll-key',
+        quantity: 0,
+      });
+      const { result, getProducts } = setupHook({
+        initialProducts: [rollProduct, formatkiProduct],
+      });
+
+      act(() => {
+        result.current.updateRequiredMb('roll-key', 5);
+      });
+
+      const products = getProducts();
+      const updatedRoll = products.find((p) => p.instanceKey === 'roll-key');
+      const updatedFormatki = products.find((p) => p.instanceKey === 'formatki-key');
+
+      expect(updatedRoll?.requiredMb).toBe(5);
+      // 1.524 * 5 = 7.62
+      expect(updatedFormatki?.quantity).toBe(7.62);
+    });
+
+    it('only updates requiredMb on the target product when no linked formatki exists', () => {
+      const p = makeProduct({
+        instanceKey: 'solo-roll',
+        name: 'XP Crystal - 1524mm x 15m',
+        priceUnit: 'meter',
+      });
+      const { result, getProducts } = setupHook({ initialProducts: [p] });
+
+      act(() => {
+        result.current.updateRequiredMb('solo-roll', 3);
+      });
+
+      const products = getProducts();
+      expect(products).toHaveLength(1);
+      expect(products[0].requiredMb).toBe(3);
+    });
+  });
 });

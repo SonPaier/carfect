@@ -18,10 +18,13 @@ create index if not exists idx_employee_advances_lookup
 alter table employee_advances enable row level security;
 
 -- Authenticated users can manage advances for their instance
-create policy "users_manage_advances" on employee_advances
-  for all using (
-    instance_id in (
-      select p.instance_id from profiles p
-      where p.id = auth.uid()
-    )
-  );
+do $$ begin
+  create policy "users_manage_advances" on employee_advances
+    for all using (
+      instance_id in (
+        select p.instance_id from profiles p
+        where p.id = auth.uid()
+      )
+    );
+exception when duplicate_object then null;
+end $$;
