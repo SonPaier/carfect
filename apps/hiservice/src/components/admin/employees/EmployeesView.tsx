@@ -1,17 +1,63 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useEmployees, Employee } from '@/hooks/useEmployees';
-import { useTimeEntriesForDateRange, calculateMonthlySummary, formatMinutesToTime, getEffectiveMinutes, TimeEntry } from '@/hooks/useTimeEntries';
+import {
+  useTimeEntriesForDateRange,
+  calculateMonthlySummary,
+  formatMinutesToTime,
+  getEffectiveMinutes,
+  TimeEntry,
+} from '@/hooks/useTimeEntries';
 import { useEmployeeDaysOff } from '@/hooks/useEmployeeDaysOff';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
 import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, ChevronLeft, ChevronRight, Loader2, User, Settings2, CalendarOff, MoreVertical, FileText, ClipboardList } from 'lucide-react';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableFooter,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  User,
+  Settings2,
+  CalendarOff,
+  MoreVertical,
+  FileText,
+  ClipboardList,
+  Banknote,
+  Trash2,
+} from 'lucide-react';
+import { useEmployeeAdvances } from '@/hooks/useEmployeeAdvances';
+import { AddAdvanceDialog } from './AddAdvanceDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, getISOWeek, addWeeks, subWeeks, eachDayOfInterval, getDay, getWeek } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  getISOWeek,
+  addWeeks,
+  subWeeks,
+  eachDayOfInterval,
+  getDay,
+  getWeek,
+} from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import AddEditEmployeeDialog from './AddEditEmployeeDialog';
@@ -23,8 +69,13 @@ import EmployeeOrdersDrawer from './EmployeeOrdersDrawer';
 import AddEditTimeEntryDialog from './AddEditTimeEntryDialog';
 
 const WEEKDAY_TO_KEY: Record<number, string> = {
-  0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
-  4: 'thursday', 5: 'friday', 6: 'saturday',
+  0: 'sunday',
+  1: 'monday',
+  2: 'tuesday',
+  3: 'wednesday',
+  4: 'thursday',
+  5: 'friday',
+  6: 'saturday',
 };
 
 interface EmployeesViewProps {
@@ -35,7 +86,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const { hasRole } = useAuth();
   const isAdmin = hasRole('admin') || hasRole('super_admin');
   const isMobile = useIsMobile();
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -44,6 +95,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [auditEmployee, setAuditEmployee] = useState<Employee | null>(null);
   const [ordersEmployee, setOrdersEmployee] = useState<Employee | null>(null);
+  const [advanceEmployee, setAdvanceEmployee] = useState<Employee | null>(null);
   const [timeEntryDialogOpen, setTimeEntryDialogOpen] = useState(false);
   const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
   const [prefilledEmployee, setPrefilledEmployee] = useState<string | undefined>();
@@ -53,20 +105,34 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const isWeeklyMode = workersSettings?.report_frequency === 'weekly';
   const isPerOrder = workersSettings?.settlement_type === 'per_order';
 
+  const {
+    advances,
+    advancesByEmployee,
+    addAdvance,
+    deleteAdvance,
+    isAdding: isAddingAdvance,
+  } = useEmployeeAdvances({ instanceId, month: currentDate });
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const weekNumber = getISOWeek(currentDate);
-  
-  const dateFrom = isWeeklyMode ? format(weekStart, 'yyyy-MM-dd') : format(monthStart, 'yyyy-MM-dd');
+
+  const dateFrom = isWeeklyMode
+    ? format(weekStart, 'yyyy-MM-dd')
+    : format(monthStart, 'yyyy-MM-dd');
   const dateTo = isWeeklyMode ? format(weekEnd, 'yyyy-MM-dd') : format(monthEnd, 'yyyy-MM-dd');
-  
+
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees(instanceId);
-  const { data: timeEntries = [], isLoading: loadingEntries } = useTimeEntriesForDateRange(instanceId, dateFrom, dateTo);
+  const { data: timeEntries = [], isLoading: loadingEntries } = useTimeEntriesForDateRange(
+    instanceId,
+    dateFrom,
+    dateTo,
+  );
   const { data: daysOff = [], isLoading: loadingDaysOff } = useEmployeeDaysOff(instanceId, null);
   const { data: workingHours } = useWorkingHours(instanceId);
 
@@ -92,7 +158,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
         const counts = new Map<string, number>();
         if (data) {
-          data.forEach(item => {
+          data.forEach((item) => {
             (item.assigned_employee_ids || []).forEach((empId: string) => {
               counts.set(empId, (counts.get(empId) || 0) + 1);
             });
@@ -125,7 +191,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     const openingTime = getOpeningTime(dateStr);
     if (!openingTime) return 0;
     let preOpeningMinutes = 0;
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       if (!entry.start_time) return;
       const startTime = new Date(entry.start_time);
       if (startTime < openingTime) {
@@ -141,7 +207,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const preOpeningByEmployee = useMemo(() => {
     const result = new Map<string, number>();
     const entriesByEmployeeDate = new Map<string, Map<string, TimeEntry[]>>();
-    timeEntries.forEach(entry => {
+    timeEntries.forEach((entry) => {
       if (!entriesByEmployeeDate.has(entry.employee_id)) {
         entriesByEmployeeDate.set(entry.employee_id, new Map());
       }
@@ -161,14 +227,14 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     return result;
   }, [timeEntries, workingHours]);
 
-  const activeEmployees = employees.filter(e => e.active);
+  const activeEmployees = employees.filter((e) => e.active);
   const periodSummary = useMemo(() => calculateMonthlySummary(timeEntries), [timeEntries]);
   const timeCalculationMode = workersSettings?.time_calculation_mode ?? 'start_to_stop';
 
   // Build entries lookup map by employee+date
   const entriesByEmployeeAndDate = useMemo(() => {
     const map = new Map<string, Map<string, TimeEntry[]>>();
-    timeEntries.forEach(entry => {
+    timeEntries.forEach((entry) => {
       if (!map.has(entry.employee_id)) map.set(entry.employee_id, new Map());
       const employeeMap = map.get(entry.employee_id)!;
       if (!employeeMap.has(entry.entry_date)) employeeMap.set(entry.entry_date, []);
@@ -178,13 +244,16 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   }, [timeEntries]);
 
   // Compute weeks of the month
-  interface WeekGroup { weekNumber: number; days: Date[]; }
+  interface WeekGroup {
+    weekNumber: number;
+    days: Date[];
+  }
   const weeks = useMemo((): WeekGroup[] => {
     const mStart = startOfMonth(new Date(year, month));
     const mEnd = endOfMonth(new Date(year, month));
     const allDays = eachDayOfInterval({ start: mStart, end: mEnd });
     const weekMap = new Map<number, Date[]>();
-    allDays.forEach(day => {
+    allDays.forEach((day) => {
       const wn = getWeek(day, { weekStartsOn: 1, locale: pl });
       if (!weekMap.has(wn)) weekMap.set(wn, []);
       weekMap.get(wn)!.push(day);
@@ -224,9 +293,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       const summary = periodSummary.get(employee.id);
       if (summary && employee.hourly_rate) {
         const preOpeningMinutes = preOpeningByEmployee.get(employee.id) || 0;
-        const displayMinutes = timeCalculationMode === 'opening_to_stop'
-          ? Math.max(0, summary.total_minutes - preOpeningMinutes)
-          : summary.total_minutes;
+        const displayMinutes =
+          timeCalculationMode === 'opening_to_stop'
+            ? Math.max(0, summary.total_minutes - preOpeningMinutes)
+            : summary.total_minutes;
         return sum + (displayMinutes / 60) * employee.hourly_rate;
       }
       return sum;
@@ -234,9 +304,10 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   }, [activeEmployees, periodSummary, preOpeningByEmployee, timeCalculationMode]);
 
   const isEmployeeDayOff = (employeeId: string, dateStr: string) => {
-    return daysOff.some(d => d.employee_id === employeeId && dateStr >= d.date_from && dateStr <= d.date_to);
+    return daysOff.some(
+      (d) => d.employee_id === employeeId && dateStr >= d.date_from && dateStr <= d.date_to,
+    );
   };
-
 
   const handlePrevPeriod = () => {
     if (isWeeklyMode) setCurrentDate(subWeeks(currentDate, 1));
@@ -248,10 +319,23 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     else setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  const handleAddEmployee = () => { setEditingEmployee(null); setDialogOpen(true); };
-  const handleEditEmployee = (e: React.MouseEvent, employee: Employee) => { e.stopPropagation(); setEditingEmployee(employee); setDialogOpen(true); };
-  const handleTileClick = (employee: Employee) => { setWorkerDialogEmployee(employee); };
-  const handleDialogClose = () => { setDialogOpen(false); setEditingEmployee(null); setWorkerDialogEmployee(null); };
+  const handleAddEmployee = () => {
+    setEditingEmployee(null);
+    setDialogOpen(true);
+  };
+  const handleEditEmployee = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    setEditingEmployee(employee);
+    setDialogOpen(true);
+  };
+  const handleTileClick = (employee: Employee) => {
+    setWorkerDialogEmployee(employee);
+  };
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setEditingEmployee(null);
+    setWorkerDialogEmployee(null);
+  };
 
   const formatWeekDisplay = () => {
     const startFormatted = format(weekStart, 'd.MM');
@@ -276,10 +360,22 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         <h2 className="text-xl font-semibold text-foreground">Pracownicy</h2>
         {isAdmin && (
           <div className="flex items-center gap-2">
-            <Button onClick={() => setSettingsDrawerOpen(true)} variant="outline" size="icon" className="h-9 w-9" title="Ustawienia czasu pracy">
+            <Button
+              onClick={() => setSettingsDrawerOpen(true)}
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              title="Ustawienia czasu pracy"
+            >
               <Settings2 className="w-4 h-4" />
             </Button>
-            <Button onClick={() => setDayOffDialogOpen(true)} variant="outline" size="icon" className="h-9 w-9" title="Dodaj nieobecność">
+            <Button
+              onClick={() => setDayOffDialogOpen(true)}
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              title="Dodaj nieobecność"
+            >
               <CalendarOff className="w-4 h-4" />
             </Button>
             <Button onClick={handleAddEmployee} title="Dodaj pracownika">
@@ -308,7 +404,9 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         <div className="py-12 text-center">
           <User className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground">Brak pracowników</p>
-          <p className="text-sm text-muted-foreground mt-1">Dodaj pierwszego pracownika, aby rozpocząć rejestrację czasu pracy</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Dodaj pierwszego pracownika, aby rozpocząć rejestrację czasu pracy
+          </p>
           {isAdmin && (
             <Button onClick={handleAddEmployee} className="mt-4">
               <Plus className="w-4 h-4 mr-1" />
@@ -318,15 +416,25 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         </div>
       ) : (
         <>
-           <div className="rounded-lg border border-border bg-card overflow-x-auto -mx-4 px-0 sm:mx-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div
+            className="rounded-lg border border-border bg-card overflow-x-auto -mx-4 px-0 sm:mx-0"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             <Table className="w-full [&>div]:overflow-visible">
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b">
-                  <TableHead className="sticky left-0 bg-card z-10 w-[70px] min-w-[70px] text-foreground font-medium border-r text-xs sm:text-sm">Data</TableHead>
-                  {activeEmployees.map(emp => (
-                    <TableHead key={emp.id} className="text-center text-foreground font-medium border-r last:border-r-0 px-1">
+                  <TableHead className="sticky left-0 bg-card z-10 w-[70px] min-w-[70px] text-foreground font-medium border-r text-xs sm:text-sm">
+                    Data
+                  </TableHead>
+                  {activeEmployees.map((emp) => (
+                    <TableHead
+                      key={emp.id}
+                      className="text-center text-foreground font-medium border-r last:border-r-0 px-1"
+                    >
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="truncate block max-w-[80px] sm:max-w-[100px] text-xs sm:text-sm">{emp.name}</span>
+                        <span className="truncate block max-w-[80px] sm:max-w-[100px] text-xs sm:text-sm">
+                          {emp.name}
+                        </span>
                         {isAdmin && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -335,14 +443,26 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="center">
-                              <DropdownMenuItem onClick={() => { setEditingEmployee(emp); setDialogOpen(true); }}>
-                                <Settings2 className="w-4 h-4 mr-2" />Edytuj
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEditingEmployee(emp);
+                                  setDialogOpen(true);
+                                }}
+                              >
+                                <Settings2 className="w-4 h-4 mr-2" />
+                                Edytuj
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setAuditEmployee(emp)}>
-                                <FileText className="w-4 h-4 mr-2" />Historia zmian
+                                <FileText className="w-4 h-4 mr-2" />
+                                Historia zmian
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setOrdersEmployee(emp)}>
-                                <ClipboardList className="w-4 h-4 mr-2" />Wykonane zlecenia
+                                <ClipboardList className="w-4 h-4 mr-2" />
+                                Wykonane zlecenia
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setAdvanceEmployee(emp)}>
+                                <Banknote className="w-4 h-4 mr-2" />
+                                Dodaj zaliczkę
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -357,41 +477,53 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                   const visibleDays = week.days;
                   return (
                     <>
-                      {visibleDays.map(day => {
+                      {visibleDays.map((day) => {
                         const dateStr = format(day, 'yyyy-MM-dd');
                         return (
                           <TableRow key={dateStr}>
                             <TableCell className="sticky left-0 bg-card z-10 font-medium whitespace-nowrap py-1.5 text-foreground border-r">
                               {format(day, 'EEE d', { locale: pl })}
                             </TableCell>
-                            {activeEmployees.map(emp => {
+                            {activeEmployees.map((emp) => {
                               const empMap = entriesByEmployeeAndDate.get(emp.id);
                               const entries = empMap?.get(dateStr);
                               const hasEntry = entries && entries.length > 0;
-                              const totalMin = hasEntry ? entries.reduce((s, e) => s + getEffectiveMinutes(e), 0) : 0;
+                              const totalMin = hasEntry
+                                ? entries.reduce((s, e) => s + getEffectiveMinutes(e), 0)
+                                : 0;
                               const displayTime = totalMin > 0 ? formatMinutesToTime(totalMin) : '';
                               const firstEntry = hasEntry ? entries[0] : null;
-                               const startT = firstEntry?.start_time ? firstEntry.start_time.slice(11, 16) : undefined;
-                               const endT = firstEntry?.end_time ? firstEntry.end_time.slice(11, 16) : undefined;
+                              const startT = firstEntry?.start_time
+                                ? firstEntry.start_time.slice(11, 16)
+                                : undefined;
+                              const endT = firstEntry?.end_time
+                                ? firstEntry.end_time.slice(11, 16)
+                                : undefined;
                               const hasStartEnd = startT && endT;
                               const isDayOff = isEmployeeDayOff(emp.id, dateStr);
                               return (
                                 <TableCell
                                   key={emp.id}
                                   className={cn(
-                                    "text-center cursor-pointer hover:bg-primary/5 transition-colors p-1 border-r last:border-r-0",
-                                    isDayOff && "bg-orange-50 dark:bg-orange-950/20"
+                                    'text-center cursor-pointer hover:bg-primary/5 transition-colors p-1 border-r last:border-r-0',
+                                    isDayOff && 'bg-orange-50 dark:bg-orange-950/20',
                                   )}
                                   onClick={() => handleCellClick(emp.id, day)}
                                 >
                                   {isDayOff ? (
-                                    <span className="text-xs font-medium text-orange-500">Wolne</span>
+                                    <span className="text-xs font-medium text-orange-500">
+                                      Wolne
+                                    </span>
                                   ) : displayTime ? (
                                     <div className="flex flex-col items-center">
                                       {hasStartEnd && (
-                                        <span className="text-[10px] text-muted-foreground leading-tight">{startT}-{endT}</span>
+                                        <span className="text-[10px] text-muted-foreground leading-tight">
+                                          {startT}-{endT}
+                                        </span>
                                       )}
-                                      <span className="text-sm font-medium text-foreground">{displayTime}</span>
+                                      <span className="text-sm font-medium text-foreground">
+                                        {displayTime}
+                                      </span>
                                     </div>
                                   ) : (
                                     <span className="text-foreground/20 text-xs">-</span>
@@ -406,11 +538,14 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                         <TableCell className="sticky left-0 bg-card z-10 font-bold whitespace-nowrap py-1.5 text-foreground border-r">
                           Tydzień {wi + 1}
                         </TableCell>
-                        {activeEmployees.map(emp => {
+                        {activeEmployees.map((emp) => {
                           const weekMin = getWeekMinutes(emp.id, visibleDays);
                           const displayTime = weekMin > 0 ? formatMinutesToTime(weekMin) : '-';
                           return (
-                            <TableCell key={emp.id} className="text-center font-bold py-1.5 text-foreground border-r last:border-r-0">
+                            <TableCell
+                              key={emp.id}
+                              className="text-center font-bold py-1.5 text-foreground border-r last:border-r-0"
+                            >
                               {displayTime}
                             </TableCell>
                           );
@@ -420,12 +555,20 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                   );
                 })}
                 <TableRow className="border-t-2 border-foreground/20">
-                  <TableCell className="sticky left-0 bg-card z-10 font-bold text-sm py-2 text-foreground border-r">SUMA</TableCell>
-                  {activeEmployees.map(emp => {
+                  <TableCell className="sticky left-0 bg-card z-10 font-bold text-sm py-2 text-foreground border-r">
+                    SUMA
+                  </TableCell>
+                  {activeEmployees.map((emp) => {
                     const summary = periodSummary.get(emp.id);
-                    const displayTime = summary && summary.total_minutes > 0 ? formatMinutesToTime(summary.total_minutes) : '-';
+                    const displayTime =
+                      summary && summary.total_minutes > 0
+                        ? formatMinutesToTime(summary.total_minutes)
+                        : '-';
                     return (
-                      <TableCell key={emp.id} className="text-center font-bold text-sm py-2 text-foreground border-r last:border-r-0">
+                      <TableCell
+                        key={emp.id}
+                        className="text-center font-bold text-sm py-2 text-foreground border-r last:border-r-0"
+                      >
                         {displayTime}
                       </TableCell>
                     );
@@ -433,19 +576,40 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                 </TableRow>
                 {!isPerOrder && (
                   <TableRow>
-                    <TableCell className="sticky left-0 bg-card z-10 font-bold text-sm py-2 text-foreground border-r">WYPŁATA</TableCell>
-                    {activeEmployees.map(emp => {
+                    <TableCell className="sticky left-0 bg-card z-10 font-bold text-sm py-2 text-foreground border-r">
+                      WYPŁATA
+                    </TableCell>
+                    {activeEmployees.map((emp) => {
                       const summary = periodSummary.get(emp.id);
                       if (!summary || !emp.hourly_rate || summary.total_minutes === 0) {
-                        return <TableCell key={emp.id} className="text-center text-sm text-foreground py-2 border-r last:border-r-0">-</TableCell>;
+                        return (
+                          <TableCell
+                            key={emp.id}
+                            className="text-center text-sm text-foreground py-2 border-r last:border-r-0"
+                          >
+                            -
+                          </TableCell>
+                        );
                       }
                       const preOpeningMinutes = preOpeningByEmployee.get(emp.id) || 0;
-                      const displayMinutes = timeCalculationMode === 'opening_to_stop'
-                        ? Math.max(0, summary.total_minutes - preOpeningMinutes) : summary.total_minutes;
-                      const earnings = ((displayMinutes / 60) * emp.hourly_rate).toFixed(2);
+                      const displayMinutes =
+                        timeCalculationMode === 'opening_to_stop'
+                          ? Math.max(0, summary.total_minutes - preOpeningMinutes)
+                          : summary.total_minutes;
+                      const grossEarnings = (displayMinutes / 60) * emp.hourly_rate;
+                      const advanceAmount = advancesByEmployee.get(emp.id) || 0;
+                      const netEarnings = grossEarnings - advanceAmount;
                       return (
-                        <TableCell key={emp.id} className="text-center font-bold text-sm py-2 text-foreground border-r last:border-r-0">
-                          {earnings} zł
+                        <TableCell
+                          key={emp.id}
+                          className="text-center font-bold text-sm py-2 text-foreground border-r last:border-r-0"
+                        >
+                          <div>{netEarnings.toFixed(2)} zł</div>
+                          {advanceAmount > 0 && (
+                            <div className="text-xs font-medium text-foreground">
+                              ({grossEarnings.toFixed(2)} - {advanceAmount.toFixed(2)} zal.)
+                            </div>
+                          )}
                         </TableCell>
                       );
                     })}
@@ -454,11 +618,16 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               </TableBody>
             </Table>
           </div>
-
         </>
       )}
 
-      <AddEditEmployeeDialog open={dialogOpen} onOpenChange={handleDialogClose} instanceId={instanceId} employee={editingEmployee} isAdmin={isAdmin} />
+      <AddEditEmployeeDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogClose}
+        instanceId={instanceId}
+        employee={editingEmployee}
+        isAdmin={isAdmin}
+      />
 
       {workerDialogEmployee && instanceId && (
         <WorkerTimeDialog
@@ -467,12 +636,24 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
           employee={workerDialogEmployee}
           instanceId={instanceId}
           showEditButton={isAdmin}
-          onEditEmployee={() => { setEditingEmployee(workerDialogEmployee); setDialogOpen(true); }}
+          onEditEmployee={() => {
+            setEditingEmployee(workerDialogEmployee);
+            setDialogOpen(true);
+          }}
         />
       )}
 
-      <AddEmployeeDayOffDialog open={dayOffDialogOpen} onOpenChange={setDayOffDialogOpen} instanceId={instanceId} employees={activeEmployees} />
-      <WorkersSettingsDrawer open={settingsDrawerOpen} onOpenChange={setSettingsDrawerOpen} instanceId={instanceId} />
+      <AddEmployeeDayOffDialog
+        open={dayOffDialogOpen}
+        onOpenChange={setDayOffDialogOpen}
+        instanceId={instanceId}
+        employees={activeEmployees}
+      />
+      <WorkersSettingsDrawer
+        open={settingsDrawerOpen}
+        onOpenChange={setSettingsDrawerOpen}
+        instanceId={instanceId}
+      />
 
       {auditEmployee && instanceId && (
         <TimeEntryAuditDrawer
@@ -503,6 +684,61 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
         entry={editingTimeEntry}
         defaultEmployeeId={prefilledEmployee}
         defaultDate={prefilledDate}
+      />
+
+      {/* Advances summary section */}
+      {advances.length > 0 && (
+        <div className="mt-6 border-t pt-4">
+          <h3 className="text-sm font-semibold mb-3">Zaliczki w tym okresie</h3>
+          <div className="space-y-2">
+            {advances.map((adv) => {
+              const emp = activeEmployees.find((e) => e.id === adv.employee_id);
+              return (
+                <div
+                  key={adv.id}
+                  className="flex items-center justify-between text-sm bg-white border border-border/50 rounded-lg px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <Banknote className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{emp?.name || '—'}</span>
+                    <span className="text-muted-foreground">
+                      {adv.advance_date.slice(8, 10)}.{adv.advance_date.slice(5, 7)}
+                    </span>
+                    {adv.note && <span className="text-muted-foreground">— {adv.note}</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{Number(adv.amount).toFixed(2)} zł</span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => deleteAdvance(adv.id)}
+                        className="text-destructive hover:text-destructive/80 p-1"
+                        title="Usuń zaliczkę"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex justify-end text-sm font-semibold pt-1">
+              Suma zaliczek: {advances.reduce((sum, a) => sum + Number(a.amount), 0).toFixed(2)} zł
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add advance dialog */}
+      <AddAdvanceDialog
+        open={!!advanceEmployee}
+        onClose={() => setAdvanceEmployee(null)}
+        employeeName={advanceEmployee?.name || ''}
+        onSubmit={(amount, date, note) => {
+          if (!advanceEmployee) return;
+          addAdvance({ employeeId: advanceEmployee.id, amount, date, note });
+        }}
+        isSubmitting={isAddingAdvance}
       />
     </div>
   );
