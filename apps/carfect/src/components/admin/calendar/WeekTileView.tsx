@@ -6,6 +6,7 @@ import { useIsMobile } from '@shared/ui';
 import type { Reservation, Station, ClosedDay, GroupBy } from './types';
 import { getStatusColor } from './types';
 import { type WeekEvent, toDateOnly, assignLanes, formatDateStr } from './swimLaneUtils';
+import { buildHolidayMap } from '@/lib/polishHolidays';
 
 interface WeekTileViewProps {
   reservations: Reservation[];
@@ -31,10 +32,10 @@ function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
 
 const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 
-const BAR_HEIGHT_NORMAL = 26;
-const BAR_HEIGHT_NOTES = 66; // ~3x taller for notes
+const BAR_HEIGHT_NORMAL = 22;
+const BAR_HEIGHT_NOTES = 58;
 const BAR_GAP = 3; // px gap between bars
-const DATE_HEADER_HEIGHT = 64; // px for the day name + date number + count header
+const DATE_HEADER_HEIGHT = 48; // px for the day name + date number header + gap below
 
 export const WeekTileView = ({
   reservations,
@@ -91,6 +92,11 @@ export const WeekTileView = ({
     closedDays.forEach((d) => set.add(d.closed_date));
     return set;
   }, [closedDays]);
+
+  const holidayMap = useMemo(() => {
+    const year = currentDate.getFullYear();
+    return buildHolidayMap([year]);
+  }, [currentDate]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekStartTime = weekStart.getTime();
@@ -180,10 +186,10 @@ export const WeekTileView = ({
   const rowHeight = Math.max(minRowHeight, 80);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       {/* Single week row: day headers + event area combined */}
       <div
-        className="relative grid border-b border-border"
+        className="relative grid gap-1.5 px-2 pt-2"
         style={{
           minHeight: DATE_HEADER_HEIGHT + rowHeight,
           gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)`,
@@ -195,6 +201,8 @@ export const WeekTileView = ({
           const dateStr = formatDateStr(day);
           const isToday = isSameDay(day, today);
           const isClosed = closedDateSet.has(dateStr);
+          const holidayName = holidayMap.get(dateStr);
+          const isHoliday = !!holidayName;
           const count = reservationCountByDate.get(dateStr) ?? 0;
           const dayName = DAY_NAMES[absIdx];
 
@@ -202,11 +210,9 @@ export const WeekTileView = ({
             <div
               key={dateStr}
               className={cn(
-                'border-r border-border last:border-r-0 cursor-pointer group relative',
+                'rounded-lg cursor-pointer group relative bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
                 isClosed && 'bg-red-50',
-                isToday && !isClosed && !isInRange(day, highlightRange) && 'bg-primary/5',
-                !isToday && !isClosed && !isInRange(day, highlightRange) && 'bg-background',
-                !isClosed && isInRange(day, highlightRange) && 'bg-primary/10',
+                !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
               )}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -225,36 +231,45 @@ export const WeekTileView = ({
                 }
               }}
             >
-              {/* Day name + date + count header */}
+              {/* Day name + date header */}
               <div
-                className="flex flex-col items-center justify-center gap-0.5 px-1"
+                className="p-1.5 flex items-center gap-1.5 overflow-hidden min-w-0"
                 style={{ height: DATE_HEADER_HEIGHT }}
               >
                 <div
                   className={cn(
-                    'text-xs font-medium uppercase tracking-wide',
-                    isToday && 'text-primary font-bold',
-                    isClosed && 'text-red-500',
-                    !isToday && !isClosed && 'text-muted-foreground',
-                  )}
-                >
-                  {dayName}
-                </div>
-                <div
-                  className={cn(
-                    'text-xl font-bold w-9 h-9 flex items-center justify-center rounded-full',
-                    isToday && 'bg-primary text-primary-foreground',
-                    !isToday && isClosed && 'text-red-500',
-                    !isToday && !isClosed && 'text-foreground',
+                    'text-base font-bold w-8 h-8 flex items-center justify-center rounded-full shrink-0',
+                    isToday && !isHoliday && 'bg-primary text-primary-foreground',
+                    isHoliday && 'bg-red-500 text-white',
+                    !isToday && !isHoliday && 'text-foreground',
                   )}
                 >
                   {day.getDate()}
                 </div>
-                <div
-                  className={cn('text-[10px]', isClosed ? 'text-red-400' : 'text-muted-foreground')}
-                >
-                  {isClosed ? 'zamknięte' : `${count} rez.`}
-                </div>
+                {isHoliday ? (
+                  <span className="text-xs font-semibold text-red-500 truncate">{holidayName}</span>
+                ) : (
+                  <>
+                    <span
+                      className={cn(
+                        'text-xs font-medium uppercase tracking-wide truncate',
+                        isToday && 'text-primary font-bold',
+                        isClosed && 'text-red-500',
+                        !isToday && !isClosed && 'text-muted-foreground',
+                      )}
+                    >
+                      {dayName}
+                    </span>
+                    {count > 0 && !isClosed && (
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {count} rez.
+                      </span>
+                    )}
+                    {isClosed && (
+                      <span className="text-[10px] text-red-400 shrink-0">zamknięte</span>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Add button on hover */}
@@ -342,7 +357,7 @@ export const WeekTileView = ({
                 ) : (
                   <span
                     className={cn(
-                      'text-xs flex items-center gap-1 w-full',
+                      'text-[11px] flex items-center gap-1 w-full',
                       showNotes ? 'flex-wrap' : 'truncate',
                     )}
                   >
@@ -376,7 +391,7 @@ export const WeekTileView = ({
                   </span>
                 )}
                 {showNotes && reservation.admin_notes && (
-                  <span className="text-xs text-foreground/70 truncate w-full leading-tight">
+                  <span className="text-[11px] text-foreground/70 truncate w-full leading-tight">
                     {reservation.admin_notes}
                   </span>
                 )}
