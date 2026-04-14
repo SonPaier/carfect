@@ -16,10 +16,7 @@ import {
   parseISO,
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import {
-  Clock,
-  X,
-} from 'lucide-react';
+import { Clock, X } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import type { Reservation } from '@/types/reservation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
@@ -54,6 +51,7 @@ import {
 } from './calendar/useCalendarWorkingHours';
 import { useCalendarOverlap } from './calendar/useCalendarOverlap';
 import { useCalendarDragDrop } from './calendar/useCalendarDragDrop';
+import { useCalendarVisibility } from './calendar/useCalendarVisibility';
 import { DayViewGrid } from './calendar/DayViewGrid';
 type ViewMode = 'day' | 'week' | 'month';
 interface Station {
@@ -113,7 +111,7 @@ interface AdminCalendarProps {
     } | null
   > | null;
   onReservationClick?: (reservation: Reservation) => void;
-  onAddReservation?: (stationId: string, date: string, time: string) => void;
+  onAddReservation?: (stationId: string, date: string, time: string, endDate?: string) => void;
   onAddBreak?: (stationId: string, date: string, time: string) => void;
   onDeleteBreak?: (breakId: string) => void;
   onToggleClosedDay?: (date: string) => void;
@@ -145,6 +143,8 @@ interface AdminCalendarProps {
     endTime: string;
     stationId: string;
   } | null;
+  /** Active date range from open reservation form (highlights days in month/week view) */
+  activeDateRange?: { from: string; to: string } | null;
   /** Whether more reservations are being loaded */
   isLoadingMore?: boolean;
   /** Show protocols button in hall mode */
@@ -162,8 +162,9 @@ interface AdminCalendarProps {
   trainingsEnabled?: boolean;
   /** Force compact column mode (no min-width) — used when inline drawer is open */
   forceCompact?: boolean;
+  /** Called when month view scrolls near past/future edge — parent should expand loaded date range */
+  onLoadMore?: (direction: 'past' | 'future') => void;
 }
-
 
 const getStatusColor = (status: string, stationType?: string) => {
   // PPF reservations get special colors
@@ -239,6 +240,7 @@ const AdminCalendar = ({
   yardVehicleCount = 0,
   selectedReservationId,
   slotPreview,
+  activeDateRange,
   isLoadingMore = false,
   showProtocolsButton = false,
   onProtocolsClick,
@@ -250,6 +252,7 @@ const AdminCalendar = ({
   onTrainingClick,
   trainingsEnabled = false,
   forceCompact = false,
+  onLoadMore,
 }: AdminCalendarProps) => {
   const { t } = useTranslation();
   const {
@@ -275,13 +278,18 @@ const AdminCalendar = ({
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [groupingMode, setGroupingMode] = useState<GroupBy>(() => {
     const saved = localStorage.getItem('calendar-grouping-mode');
-    return (saved === 'station' || saved === 'employee') ? saved : 'station';
+    return saved === 'station' || saved === 'employee' || saved === 'none' ? saved : 'station';
   });
-  const [hiddenStationIds, setHiddenStationIds] = useState<Set<string>>(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem('calendar-hidden-stations');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
+  // Per-view station visibility + notes toggle
+  const {
+    hiddenStationIds,
+    hasHiddenStations,
+    visibleStations,
+    toggleStationVisibility,
+    showAllStations,
+    showNotesInBars,
+    toggleShowNotesInBars,
+  } = useCalendarVisibility({ viewMode, stations });
   // Drag & drop state + handlers extracted to hook
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [weekViewStationId, setWeekViewStationId] = useState<string | null>(null);
@@ -421,9 +429,18 @@ const AdminCalendar = ({
         scrollDirectionRef.current = null;
       };
 
-      el.addEventListener('touchstart', onTouchStart, { passive: true, signal: abortController.signal });
-      el.addEventListener('touchmove', onTouchMove, { passive: false, signal: abortController.signal });
-      el.addEventListener('touchend', onTouchEnd, { passive: true, signal: abortController.signal });
+      el.addEventListener('touchstart', onTouchStart, {
+        passive: true,
+        signal: abortController.signal,
+      });
+      el.addEventListener('touchmove', onTouchMove, {
+        passive: false,
+        signal: abortController.signal,
+      });
+      el.addEventListener('touchend', onTouchEnd, {
+        passive: true,
+        signal: abortController.signal,
+      });
     }, 50);
 
     return () => {
@@ -475,11 +492,6 @@ const AdminCalendar = ({
     };
   };
 
-  // Save hidden stations to localStorage
-  useEffect(() => {
-    localStorage.setItem('calendar-hidden-stations', JSON.stringify([...hiddenStationIds]));
-  }, [hiddenStationIds]);
-
   // Save current date to localStorage
   useEffect(() => {
     localStorage.setItem('admin-calendar-date', format(currentDate, 'yyyy-MM-dd'));
@@ -500,21 +512,6 @@ const AdminCalendar = ({
   const handleGroupingModeChange = (mode: GroupBy) => {
     setGroupingMode(mode);
     localStorage.setItem('calendar-grouping-mode', mode);
-  };
-
-  const toggleStationVisibility = (stationId: string) => {
-    setHiddenStationIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(stationId)) {
-        newSet.delete(stationId);
-      } else {
-        newSet.add(stationId);
-      }
-      return newSet;
-    });
-  };
-  const showAllStations = () => {
-    setHiddenStationIds(new Set());
   };
 
   // Calculate hours based on working hours for current day
@@ -632,8 +629,7 @@ const AdminCalendar = ({
   const currentDateClosed = isDateClosed(currentDateStr);
 
   // Filter stations based on hidden station IDs
-  const visibleStations = stations.filter((station) => !hiddenStationIds.has(station.id));
-  const hasHiddenStations = hiddenStationIds.size > 0;
+  // visibleStations and hasHiddenStations come from useCalendarVisibility hook
 
   // Get reservations for a specific date and station (including multi-day reservations)
   const getReservationsForStationAndDate = (stationId: string, dateStr: string) => {
@@ -887,6 +883,8 @@ const AdminCalendar = ({
         onToggleFullscreen={toggleFullscreen}
         onPlacDrawerOpen={() => setPlacDrawerOpen(true)}
         onSaveDefaultView={saveDefaultView}
+        showNotesInBars={showNotesInBars}
+        onToggleShowNotesInBars={toggleShowNotesInBars}
       />
 
       {/* DAY VIEW */}
@@ -953,17 +951,18 @@ const AdminCalendar = ({
         />
       )}
 
-
       {/* WEEK VIEW (Tile-based) */}
       {viewMode === 'week' && (
         <div className="overflow-x-auto flex-1">
           <WeekTileView
             reservations={reservations}
-            stations={stations}
+            stations={visibleStations}
             currentDate={currentDate}
             closedDays={closedDays}
             groupBy={groupingMode}
             employees={employees}
+            showNotes={showNotesInBars}
+            workingHours={workingHours}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
@@ -973,9 +972,18 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
-                    setCurrentDate(date);
-                    setViewMode('day');
-                    onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+                    const { startTime } = getWorkingHoursForDate(dateStr);
+                    onAddReservation('', dateStr, startTime || '08:00');
+                  }
+                : undefined
+            }
+            onDateRangeSelect={
+              onAddReservation && !readOnly
+                ? (from, to) => {
+                    const fromStr = format(from, 'yyyy-MM-dd');
+                    const toStr = format(to, 'yyyy-MM-dd');
+                    const { startTime } = getWorkingHoursForDate(fromStr);
+                    onAddReservation('', fromStr, startTime || '08:00', toStr);
                   }
                 : undefined
             }
@@ -993,11 +1001,15 @@ const AdminCalendar = ({
         <div className="overflow-x-auto flex-1">
           <MonthCalendarView
             reservations={reservations}
-            stations={stations}
+            stations={visibleStations}
             currentDate={currentDate}
             closedDays={closedDays}
             groupBy={groupingMode}
             employees={employees}
+            showNotes={showNotesInBars}
+            workingHours={workingHours}
+            activeDateRange={activeDateRange}
+            onLoadMore={onLoadMore}
             onDayClick={(date) => {
               setCurrentDate(date);
               setViewMode('day');
@@ -1007,9 +1019,18 @@ const AdminCalendar = ({
               onAddReservation && !readOnly
                 ? (date) => {
                     const dateStr = format(date, 'yyyy-MM-dd');
-                    setCurrentDate(date);
-                    setViewMode('day');
-                    onAddReservation(stations[0]?.id || '', dateStr, '08:00');
+                    const { startTime } = getWorkingHoursForDate(dateStr);
+                    onAddReservation('', dateStr, startTime || '08:00');
+                  }
+                : undefined
+            }
+            onDateRangeSelect={
+              onAddReservation && !readOnly
+                ? (from, to) => {
+                    const fromStr = format(from, 'yyyy-MM-dd');
+                    const toStr = format(to, 'yyyy-MM-dd');
+                    const { startTime } = getWorkingHoursForDate(fromStr);
+                    onAddReservation('', fromStr, startTime || '08:00', toStr);
                   }
                 : undefined
             }

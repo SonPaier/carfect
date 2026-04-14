@@ -106,6 +106,10 @@ export interface CalendarHeaderProps {
 
   // View preference persistence
   onSaveDefaultView: (mode: ViewMode) => void;
+
+  // Show notes in week/month bars
+  showNotesInBars?: boolean;
+  onToggleShowNotesInBars?: () => void;
 }
 
 export function CalendarHeader({
@@ -148,6 +152,8 @@ export function CalendarHeader({
   onToggleFullscreen,
   onPlacDrawerOpen,
   onSaveDefaultView,
+  showNotesInBars,
+  onToggleShowNotesInBars,
 }: CalendarHeaderProps) {
   const { t } = useTranslation();
 
@@ -157,17 +163,21 @@ export function CalendarHeader({
       <div className="flex items-center justify-between gap-2">
         {/* Navigation */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={onPrev} className="h-8 w-8">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={onNext} className="h-8 w-8">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          {viewMode !== 'month' && (
+            <>
+              <Button variant="outline" size="icon" onClick={onPrev} className="h-8 w-8">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={onNext} className="h-8 w-8">
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
             size="sm"
             onClick={onToday}
-            className={cn(hallMode && 'hidden sm:flex')}
+            className={cn(hallMode && 'hidden sm:flex', viewMode === 'month' && 'hidden')}
           >
             Dziś
           </Button>
@@ -271,7 +281,10 @@ export function CalendarHeader({
               <Button
                 variant={viewMode === 'day' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => { onViewModeChange('day'); onSaveDefaultView('day'); }}
+                onClick={() => {
+                  onViewModeChange('day');
+                  onSaveDefaultView('day');
+                }}
                 className="rounded-none border-0 px-2.5"
                 title="Dzień"
               >
@@ -319,7 +332,16 @@ export function CalendarHeader({
               <PopoverContent align="end" className="w-56 p-3 z-[300]">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">Widoczność kolumn</h4>
+                    <div>
+                      <h4 className="font-medium text-sm">Widoczność kolumn</h4>
+                      <p className="text-[10px] text-muted-foreground">
+                        {viewMode === 'day'
+                          ? 'Widok dzienny'
+                          : viewMode === 'week'
+                            ? 'Widok tygodniowy'
+                            : 'Widok miesięczny'}
+                      </p>
+                    </div>
                     {hasHiddenStations && (
                       <Button
                         variant="ghost"
@@ -361,7 +383,10 @@ export function CalendarHeader({
                           name="default-view"
                           value={v}
                           checked={viewMode === v}
-                          onChange={() => { onViewModeChange(v); onSaveDefaultView(v); }}
+                          onChange={() => {
+                            onViewModeChange(v);
+                            onSaveDefaultView(v);
+                          }}
                           className="accent-primary"
                         />
                         {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}
@@ -374,6 +399,17 @@ export function CalendarHeader({
                 <div className="border-t border-border pt-3 space-y-2">
                   <h4 className="font-medium text-sm">Grupowanie (tydzień/miesiąc)</h4>
                   <div className="space-y-1">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="grouping-mode"
+                        value="none"
+                        checked={groupingMode === 'none'}
+                        onChange={() => onGroupingModeChange('none')}
+                        className="accent-primary"
+                      />
+                      Brak (wg godziny)
+                    </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
                         type="radio"
@@ -398,6 +434,19 @@ export function CalendarHeader({
                     </label>
                   </div>
                 </div>
+
+                {/* Show notes toggle — only for week/month views */}
+                {(viewMode === 'week' || viewMode === 'month') && onToggleShowNotesInBars && (
+                  <div className="border-t border-border pt-3">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={showNotesInBars ?? false}
+                        onCheckedChange={() => onToggleShowNotesInBars()}
+                      />
+                      Pokaż notatki na paskach
+                    </label>
+                  </div>
+                )}
               </PopoverContent>
             </Popover>
           )}
@@ -461,11 +510,7 @@ export function CalendarHeader({
               className="gap-1"
               title={isFullscreen ? t('calendar.exitFullscreen') : t('calendar.enterFullscreen')}
             >
-              {isFullscreen ? (
-                <Minimize2 className="w-4 h-4" />
-              ) : (
-                <Maximize2 className="w-4 h-4" />
-              )}
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
           )}
         </div>
