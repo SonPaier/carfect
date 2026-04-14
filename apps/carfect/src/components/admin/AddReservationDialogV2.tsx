@@ -832,9 +832,15 @@ const AddReservationDialogV2 = ({
             searchingCustomer={searchingCustomer}
             foundVehicles={foundVehicles}
             showPhoneDropdown={showPhoneDropdown}
-            onSelectVehicle={(vehicle) => {
+            onSelectVehicle={async (vehicle) => {
               markUserEditing();
-              selectVehicle(vehicle);
+              const result = await selectVehicle(vehicle);
+              setPhone(result.phone);
+              setCarModel(result.carModel);
+              if (result.carSize) setCarSize(result.carSize);
+              if (result.customerName) setCustomerName(result.customerName);
+              if (result.customerId) setSelectedCustomerId(result.customerId);
+              if (result.discountPercent != null) setCustomerDiscountPercent(result.discountPercent);
             }}
             onCustomerSelect={async (customer) => {
               markUserEditing();

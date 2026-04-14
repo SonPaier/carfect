@@ -51,7 +51,7 @@ import {
 } from './calendar/useCalendarWorkingHours';
 import { useCalendarOverlap } from './calendar/useCalendarOverlap';
 import { useCalendarDragDrop } from './calendar/useCalendarDragDrop';
-import { useCalendarVisibility } from './calendar/useCalendarVisibility';
+import { useCalendarConfig } from '@/hooks/useCalendarConfig';
 import { DayViewGrid } from './calendar/DayViewGrid';
 type ViewMode = 'day' | 'week' | 'month';
 interface Station {
@@ -276,20 +276,25 @@ const AdminCalendar = ({
   });
   const { defaultView, saveDefaultView } = useCalendarViewPreference();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
-  const [groupingMode, setGroupingMode] = useState<GroupBy>(() => {
-    const saved = localStorage.getItem('calendar-grouping-mode');
-    return saved === 'station' || saved === 'employee' || saved === 'none' ? saved : 'station';
-  });
-  // Per-view station visibility + notes toggle
-  const {
-    hiddenStationIds,
-    hasHiddenStations,
-    visibleStations,
-    toggleStationVisibility,
-    showAllStations,
-    showNotesInBars,
-    toggleShowNotesInBars,
-  } = useCalendarVisibility({ viewMode, stations });
+  // Calendar config from DB (per-view settings)
+  const calendarConfig = useCalendarConfig(instanceId);
+  const groupingMode = calendarConfig.getGroupingMode(viewMode);
+  const showNotesInBars = calendarConfig.getShowNotesInBars(viewMode);
+  const hiddenStationIds = calendarConfig.getHiddenStations(viewMode);
+  const hasHiddenStations = hiddenStationIds.size > 0;
+  const visibleStations = stations.filter((s) => !hiddenStationIds.has(s.id));
+  const toggleStationVisibility = useCallback(
+    (stationId: string) => calendarConfig.toggleStationVisibility(viewMode, stationId),
+    [calendarConfig, viewMode],
+  );
+  const showAllStations = useCallback(
+    () => calendarConfig.showAllStations(viewMode),
+    [calendarConfig, viewMode],
+  );
+  const toggleShowNotesInBars = useCallback(
+    () => calendarConfig.toggleShowNotesInBars(viewMode),
+    [calendarConfig, viewMode],
+  );
   // Drag & drop state + handlers extracted to hook
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [weekViewStationId, setWeekViewStationId] = useState<string | null>(null);
@@ -301,9 +306,7 @@ const AdminCalendar = ({
   } | null>(null);
   const [closeDayDialogOpen, setCloseDayDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isCompact, setIsCompact] = useState(() => {
-    return localStorage.getItem('calendar-compact-mode') === 'true';
-  });
+  const isCompact = calendarConfig.getCompactMode(viewMode);
   const isMobile = useIsMobile();
   const effectiveCompact = isCompact || forceCompact;
 
@@ -320,12 +323,8 @@ const AdminCalendar = ({
 
   // Toggle compact mode
   const toggleCompact = useCallback(() => {
-    setIsCompact((prev) => {
-      const next = !prev;
-      localStorage.setItem('calendar-compact-mode', String(next));
-      return next;
-    });
-  }, []);
+    calendarConfig.toggleCompactMode(viewMode);
+  }, [calendarConfig, viewMode]);
 
   // Listen for fullscreen changes (e.g., user presses ESC)
   useEffect(() => {
@@ -510,8 +509,7 @@ const AdminCalendar = ({
   };
 
   const handleGroupingModeChange = (mode: GroupBy) => {
-    setGroupingMode(mode);
-    localStorage.setItem('calendar-grouping-mode', mode);
+    calendarConfig.setGroupingMode(viewMode, mode);
   };
 
   // Calculate hours based on working hours for current day

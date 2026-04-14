@@ -987,6 +987,7 @@ const AdminDashboard = () => {
     // Always refresh reservations to ensure new/updated data shows in calendar
     // Realtime may have delays or miss events, so explicit refetch is more reliable
     invalidateReservations();
+    refetchReservations();
     setEditingReservation(null);
   };
   const handleAddBreak = (stationId: string, date: string, time: string) => {
