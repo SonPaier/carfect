@@ -8,8 +8,6 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   MoreHorizontal,
   ArrowUp,
   ArrowDown,
@@ -19,7 +17,7 @@ import { format, parseISO } from 'date-fns';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, PaginationFooter } from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,12 +25,22 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@shared/ui';
-import { ConfirmDialog, EmptyState } from '@shared/ui';
+import { ConfirmDialog, EmptyState, Checkbox } from '@shared/ui';
 import { CreateInvoiceDrawer } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { type SalesOrder } from '@/data/salesMockData';
 import { VAT_RATE } from './constants';
+
+type PaymentStatus = SalesOrder['paymentStatus'];
+
+const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; className: string }> = {
+  unpaid: { label: 'Do opłacenia', className: 'border-amber-500 text-amber-600' },
+  paid: { label: 'Opłacone', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+  collective: { label: 'Zbiorcza', className: 'bg-blue-600 hover:bg-blue-700 text-white' },
+  collective_paid: { label: 'Zbiorcza opłacona', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+};
 
 const formatCurrency = (value: number, currency: 'PLN' | 'EUR') => {
   if (currency === 'EUR') {
@@ -72,7 +80,7 @@ type SortColumn =
   | 'totalNet';
 type SortDirection = 'asc' | 'desc';
 
-const ITEMS_PER_PAGE = 25;
+const DEFAULT_PAGE_SIZE = 25;
 
 const SalesOrdersView = () => {
   const { roles } = useAuth();
@@ -100,6 +108,7 @@ const SalesOrdersView = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<EditOrderData | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -118,6 +127,11 @@ const SalesOrdersView = () => {
     open: boolean;
     order: SalesOrder | null;
   }>({ open: false, order: null });
+  const [bulkInvoiceState, setBulkInvoiceState] = useState<{
+    open: boolean;
+    orders: SalesOrder[];
+  }>({ open: false, orders: [] });
+  const bulk = useBulkSelection();
 
   // Debounce search
   useEffect(() => {
@@ -143,8 +157,8 @@ const SalesOrdersView = () => {
     const dbSortCol = sortColumnMap[sortColumn] || 'created_at';
 
     // Build query with server-side pagination
-    const from = (currentPage - 1) * ITEMS_PER_PAGE;
-    const to = from + ITEMS_PER_PAGE - 1;
+    const from = (currentPage - 1) * pageSize;
+    const to = from + pageSize - 1;
 
     let query = supabase
       .from('sales_orders')
@@ -233,7 +247,9 @@ const SalesOrdersView = () => {
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
         paymentStatus:
-          inv?.status === 'paid' ? 'paid' : ((o.payment_status || 'unpaid') as 'unpaid' | 'paid'),
+          inv?.status === 'paid'
+            ? (o.payment_status === 'collective' ? 'collective_paid' : 'paid')
+            : ((o.payment_status || 'unpaid') as PaymentStatus),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
         apaczkaOrderId: o.apaczka_order_id || undefined,
@@ -246,7 +262,7 @@ const SalesOrdersView = () => {
     });
 
     setOrders(mapped);
-  }, [instanceId, currentPage, sortColumn, sortDirection, debouncedSearch]);
+  }, [instanceId, currentPage, pageSize, sortColumn, sortDirection, debouncedSearch]);
 
   useEffect(() => {
     fetchOrders();
@@ -262,7 +278,7 @@ const SalesOrdersView = () => {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const toggleExpand = (id: string) => {
     setExpandedRows((prev) => {
@@ -273,7 +289,7 @@ const SalesOrdersView = () => {
     });
   };
 
-  const changePaymentStatus = async (id: string, newStatus: 'unpaid' | 'paid') => {
+  const changePaymentStatus = async (id: string, newStatus: PaymentStatus) => {
     const { error } = await supabase
       .from('sales_orders')
       .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
@@ -332,6 +348,36 @@ const SalesOrdersView = () => {
     } catch (err: unknown) {
       toast.error('Błąd usuwania: ' + ((err as Error).message || ''));
     }
+  };
+
+  const handleBulkInvoice = async () => {
+    const selectedOrders = orders.filter((o) => bulk.isSelected(o.id));
+    if (selectedOrders.length === 0) return;
+
+    // Validate same customer
+    const customerIds = [...new Set(selectedOrders.map((o) => o.customerId).filter(Boolean))];
+    if (customerIds.length > 1) {
+      toast.error('Zaznaczone zamówienia muszą mieć tego samego klienta');
+      return;
+    }
+    if (customerIds.length === 0) {
+      toast.error('Zaznaczone zamówienia nie mają przypisanego klienta');
+      return;
+    }
+
+    // Fetch customer discount
+    let customerDiscount = 0;
+    const { data: cust } = await supabase
+      .from('sales_customers')
+      .select('discount_percent')
+      .eq('id', customerIds[0])
+      .single();
+    customerDiscount = cust?.discount_percent ?? 0;
+
+    setBulkInvoiceState({
+      open: true,
+      orders: selectedOrders.map((o) => ({ ...o, customerDiscount })),
+    });
   };
 
   const handleOpenInvoiceDrawer = async (order: SalesOrder) => {
@@ -433,6 +479,11 @@ const SalesOrdersView = () => {
 
     const editProducts = (items || []).map((item: any) => {
       const usages = usagesByItemId[item.id] || [];
+      // Infer productType from DB or name (legacy data may have wrong type)
+      const isFormatki = (item.name as string)?.toLowerCase().includes('wycinanie formatek');
+      const productType: 'roll' | 'other' = isFormatki
+        ? 'other'
+        : (item.product_type as 'roll' | 'other') || 'roll';
       return {
         instanceKey: item.id, // Use DB id so it can be mapped to package productKeys
         productId: item.product_id || item.name,
@@ -440,7 +491,7 @@ const SalesOrdersView = () => {
         name: item.name,
         priceNet: Number(item.price_net),
         priceUnit: item.price_unit || 'szt.',
-        productType: (item.product_type as 'roll' | 'other') || undefined,
+        productType,
         quantity: item.quantity,
         vehicle: item.vehicle || '',
         excludeFromDiscount: item.product_id ? excludeMap[item.product_id] || false : false,
@@ -626,20 +677,20 @@ const SalesOrdersView = () => {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between shrink-0 pb-4">
         <h2 className="text-xl font-semibold text-foreground">Zamówienia</h2>
         <Button size="sm" onClick={() => setDrawerOpen(true)}>
           <Plus className="w-4 h-4" />
           Dodaj zamówienie
         </Button>
       </div>
-      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
+      <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
       {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="shrink-0 pb-4">
+        <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Szukaj po firmie, mieście, osobie, produkcie..."
@@ -650,11 +701,39 @@ const SalesOrdersView = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="border rounded-lg overflow-hidden bg-white">
+      {/* Bulk action bar */}
+      {bulk.count > 0 && (
+        <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+          <span className="text-sm font-medium">
+            Zaznaczono: {bulk.count}
+          </span>
+          <Button size="sm" variant="outline" onClick={bulk.clear}>
+            Anuluj
+          </Button>
+          <Button size="sm" onClick={handleBulkInvoice}>
+            Wystaw zbiorczą fakturę
+          </Button>
+        </div>
+      )}
+
+      {/* Table — scrollable */}
+      <div className="flex-1 min-h-0 overflow-auto border rounded-lg bg-white">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[40px] px-2">
+                <Checkbox
+                  checked={
+                    bulk.selectionState(orders.map((o) => o.id)) === 'all'
+                      ? true
+                      : bulk.selectionState(orders.map((o) => o.id)) === 'some'
+                        ? 'indeterminate'
+                        : false
+                  }
+                  onCheckedChange={() => bulk.toggleAll(orders.map((o) => o.id))}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </TableHead>
               <SortableHead column="orderNumber" className="w-[120px]">
                 Nr
               </SortableHead>
@@ -681,7 +760,7 @@ const SalesOrdersView = () => {
           <TableBody>
             {orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9}>
+                <TableCell colSpan={10}>
                   <EmptyState
                     icon={ShoppingCart}
                     title="Brak zamówień"
@@ -699,6 +778,12 @@ const SalesOrdersView = () => {
                       className="group hover:bg-hover-strong cursor-pointer"
                       onClick={() => handleEditOrder(order)}
                     >
+                      <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={bulk.isSelected(order.id)}
+                          onCheckedChange={() => bulk.toggle(order.id)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm">
                         <div className="flex items-center gap-1.5">
                           <button
@@ -762,39 +847,39 @@ const SalesOrdersView = () => {
                               className="focus:outline-none"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {order.paymentStatus === 'paid' ? (
-                                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
-                                  Opłacone
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="border-amber-500 text-amber-600 cursor-pointer"
-                                >
-                                  Do opłacenia
-                                </Badge>
-                              )}
+                              {(() => {
+                                const cfg = PAYMENT_STATUS_CONFIG[order.paymentStatus];
+                                const isOutline = order.paymentStatus === 'unpaid';
+                                return (
+                                  <Badge
+                                    variant={isOutline ? 'outline' : 'default'}
+                                    className={`${cfg.className} cursor-pointer`}
+                                  >
+                                    {cfg.label}
+                                  </Badge>
+                                );
+                              })()}
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-0">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                changePaymentStatus(order.id, 'unpaid');
-                              }}
-                            >
-                              <Badge variant="outline" className="border-amber-500 text-amber-600">
-                                Do opłacenia
-                              </Badge>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                changePaymentStatus(order.id, 'paid');
-                              }}
-                            >
-                              <Badge className="bg-emerald-600 text-white">Opłacone</Badge>
-                            </DropdownMenuItem>
+                            {(Object.entries(PAYMENT_STATUS_CONFIG) as [PaymentStatus, { label: string; className: string }][]).map(
+                              ([status, cfg]) => (
+                                <DropdownMenuItem
+                                  key={status}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    changePaymentStatus(order.id, status);
+                                  }}
+                                >
+                                  <Badge
+                                    variant={status === 'unpaid' ? 'outline' : 'default'}
+                                    className={cfg.className}
+                                  >
+                                    {cfg.label}
+                                  </Badge>
+                                </DropdownMenuItem>
+                              ),
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -988,7 +1073,7 @@ const SalesOrdersView = () => {
 
                     {isExpanded && (
                       <TableRow key={`${order.id}-expanded`} className="hover:bg-transparent">
-                        <TableCell colSpan={9} className="p-0">
+                        <TableCell colSpan={10} className="p-0">
                           <div className="bg-card px-6 py-4 border-t border-border/50">
                             {order.comment && (
                               <p className="text-sm text-muted-foreground mb-3">{order.comment}</p>
@@ -1023,69 +1108,21 @@ const SalesOrdersView = () => {
         </Table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-muted-foreground">
-            Strona {currentPage} z {totalPages} ({totalCount} zamówień)
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            >
-              <ChevronLeftIcon className="w-4 h-4" />
-              Poprzednia
-            </Button>
-            {(() => {
-              const pages: (number | 'dots')[] = [];
-              if (totalPages <= 7) {
-                for (let i = 1; i <= totalPages; i++) pages.push(i);
-              } else {
-                pages.push(1);
-                if (currentPage > 3) pages.push('dots');
-                for (
-                  let i = Math.max(2, currentPage - 1);
-                  i <= Math.min(totalPages - 1, currentPage + 1);
-                  i++
-                ) {
-                  pages.push(i);
-                }
-                if (currentPage < totalPages - 2) pages.push('dots');
-                pages.push(totalPages);
-              }
-              return pages.map((page, idx) =>
-                page === 'dots' ? (
-                  <span key={`dots-${idx}`} className="px-2 text-muted-foreground text-sm">
-                    …
-                  </span>
-                ) : (
-                  <Button
-                    key={page}
-                    variant={page === currentPage ? 'default' : 'outline'}
-                    size="sm"
-                    className="w-9"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                ),
-              );
-            })()}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            >
-              Następna
-              <ChevronRightIcon className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Pagination footer — always visible at bottom */}
+      <div className="shrink-0">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalCount}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          itemLabel="zamówień"
+        />
+      </div>
       <AddSalesOrderDrawer
         open={drawerOpen}
         onOpenChange={(open) => {
@@ -1141,6 +1178,46 @@ const SalesOrdersView = () => {
             })(),
           ]}
           onSuccess={fetchOrders}
+          supabaseClient={supabase}
+          customerTable="sales_customers"
+          bankAccounts={bankAccounts}
+        />
+      )}
+      {bulkInvoiceState.open && bulkInvoiceState.orders.length > 0 && (
+        <CreateInvoiceDrawer
+          open={bulkInvoiceState.open}
+          onClose={() => setBulkInvoiceState({ open: false, orders: [] })}
+          instanceId={instanceId!}
+          salesOrderId={bulkInvoiceState.orders[0].id}
+          customerId={bulkInvoiceState.orders[0].customerId}
+          customerName={bulkInvoiceState.orders[0].customerName}
+          positions={bulkInvoiceState.orders.flatMap((order) => [
+            ...order.products.map((p) =>
+              mapProductToInvoicePosition(p, order.customerDiscount),
+            ),
+            ...((order.packages || [])
+              .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
+              .map((pkg, i, arr) => ({
+                name: arr.length === 1 ? `Wysyłka (${order.orderNumber})` : `Wysyłka #${i + 1} (${order.orderNumber})`,
+                quantity: 1,
+                unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
+                vat_rate: 23,
+                unit: 'szt.',
+                discount: 0,
+              }))),
+          ])}
+          onSuccess={async () => {
+            // Mark all bulk orders as 'collective'
+            const ids = bulkInvoiceState.orders.map((o) => o.id);
+            await supabase
+              .from('sales_orders')
+              .update({ payment_status: 'collective', updated_at: new Date().toISOString() })
+              .in('id', ids);
+            setBulkInvoiceState({ open: false, orders: [] });
+            bulk.clear();
+            fetchOrders();
+            toast.success(`Zbiorcza faktura wystawiona dla ${ids.length} zamówień`);
+          }}
           supabaseClient={supabase}
           customerTable="sales_customers"
           bankAccounts={bankAccounts}

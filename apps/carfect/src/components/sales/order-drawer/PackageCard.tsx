@@ -51,12 +51,14 @@ function RollAssignmentWrapper({
   instanceId,
   onSetRollAssignments,
   customerName,
+  excludeOrderId,
 }: {
   p: OrderProduct;
   itemKey: string;
   instanceId: string | null;
   onSetRollAssignments: (productKey: string, assignments: RollAssignment[]) => void;
   customerName?: string;
+  excludeOrderId?: string;
 }) {
   // Extract widthMm from name like "Ultrafit XP Crystal - 1220mm x 30m"
   const widthMatch = p.name.match(/(\d{3,4})\s*mm/);
@@ -77,6 +79,7 @@ function RollAssignmentWrapper({
       customerName={customerName}
       productName={baseName}
       filterWidthMm={widthMm}
+      excludeOrderId={excludeOrderId}
     />
   );
 }
@@ -126,6 +129,8 @@ interface PackageCardProps {
   codAmountOverride?: number;
   onCodAmountChange?: (value: number | undefined) => void;
   isNetPayer?: boolean;
+  /** When editing an order, exclude its own usages from roll remaining calculation */
+  excludeOrderId?: string;
 }
 
 const PackageCard = ({
@@ -163,6 +168,7 @@ const PackageCard = ({
   codAmountOverride,
   onCodAmountChange,
   isNetPayer,
+  excludeOrderId,
 }: PackageCardProps) => {
   const valuation = useApaczkaValuation(
     instanceId,
@@ -277,6 +283,21 @@ const PackageCard = ({
                             placeholder="m²"
                           />
                           <span className="text-xs text-muted-foreground">m²</span>
+                          {/* Formula for linked formatki */}
+                          {p.linkedToKey && (() => {
+                            const parentRoll = packageProducts.find(
+                              (r) => r.instanceKey === p.linkedToKey,
+                            );
+                            if (!parentRoll?.requiredMb) return null;
+                            const wMatch = parentRoll.name.match(/(\d{3,4})\s*mm/);
+                            const widthM = wMatch ? parseInt(wMatch[1]) / 1000 : 0;
+                            if (!widthM) return null;
+                            return (
+                              <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
+                                {widthM.toFixed(2)} m × {parentRoll.requiredMb} mb = {(widthM * parentRoll.requiredMb).toFixed(2)} m²
+                              </span>
+                            );
+                          })()}
                         </div>
                       ) : !p.priceUnit || p.priceUnit === 'szt.' || p.priceUnit === 'piece' ? (
                         <div className="flex items-center gap-1 shrink-0">
@@ -391,6 +412,7 @@ const PackageCard = ({
                           instanceId={instanceId}
                           onSetRollAssignments={onSetRollAssignments}
                           customerName={customerName}
+                          excludeOrderId={excludeOrderId}
                         />
                       )}
                   </div>

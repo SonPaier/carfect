@@ -64,6 +64,8 @@ export interface OrderProduct {
   discountPercent?: number;
   /** Product type: 'roll' (default, with vehicle + mb) or 'other' (generic, no vehicle) */
   productType?: 'roll' | 'other';
+  /** Links this product to a parent roll product (e.g. formatki → roll) */
+  linkedToKey?: string;
 }
 
 export const getItemKey = (p: OrderProduct) => p.instanceKey;
@@ -119,13 +121,30 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
         excludeFromDiscount?: boolean;
         categoryName?: string;
       }>,
+      options?: {
+        /** Auto-add "Wycinanie formatek" paired with each roll product */
+        addFormatki?: boolean;
+        /** Product data for formatki (fetched from DB) */
+        formatkiProduct?: { productId: string; fullName: string; priceNet: number };
+        /** Auto-assign this roll to the first roll product */
+        rollAssignment?: { rollId: string; widthMm: number; remainingMb: number };
+      },
     ) => {
       if (!activePackageId) return;
 
+      const allNewProducts: OrderProduct[] = [];
+
       // Each selected product becomes a new instance with a unique key
-      const newProducts: OrderProduct[] = selected.map((s) => {
+      for (const s of selected) {
         const displayName = s.variantName ? `${s.fullName} - ${s.variantName}` : s.fullName;
-        return {
+        const ra = options?.rollAssignment;
+        // Auto-assign roll if this is the variant that was matched by roll quick search
+        const autoAssign =
+          ra && s.variantId && (s.productType === 'roll' || !s.productType)
+            ? [{ rollId: ra.rollId, usageM2: 0, widthMm: ra.widthMm }]
+            : undefined;
+
+        const rollProduct: OrderProduct = {
           instanceKey: crypto.randomUUID(),
           productId: s.productId,
           variantId: s.variantId,
@@ -137,13 +156,35 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
           excludeFromDiscount: s.excludeFromDiscount,
           categoryName: s.categoryName,
           productType: s.productType || 'roll',
+          rollAssignments: autoAssign,
         };
-      });
+        allNewProducts.push(rollProduct);
 
-      const newKeys = newProducts.map((p) => p.instanceKey);
-      const hasFolia = newProducts.some((p) => p.categoryName?.toLowerCase().includes('folie'));
+        // Auto-add paired "Wycinanie formatek" for roll products
+        if (
+          options?.addFormatki &&
+          options.formatkiProduct &&
+          (s.productType === 'roll' || !s.productType)
+        ) {
+          allNewProducts.push({
+            instanceKey: crypto.randomUUID(),
+            productId: options.formatkiProduct.productId,
+            name: options.formatkiProduct.fullName,
+            priceNet: options.formatkiProduct.priceNet,
+            priceUnit: 'meter',
+            quantity: 0,
+            vehicle: '',
+            excludeFromDiscount: true,
+            productType: 'other',
+            linkedToKey: rollProduct.instanceKey,
+          });
+        }
+      }
 
-      setProducts((prev) => [...prev, ...newProducts]);
+      const newKeys = allNewProducts.map((p) => p.instanceKey);
+      const hasFolia = allNewProducts.some((p) => p.categoryName?.toLowerCase().includes('folie'));
+
+      setProducts((prev) => [...prev, ...allNewProducts]);
 
       setPackages((prev) =>
         prev.map((pkg) => {
@@ -167,13 +208,17 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   );
 
   const removeProductFromPackage = (packageId: string, productKey: string) => {
-    const inOtherPackage = packages.some(
-      (pkg) => pkg.id !== packageId && pkg.productKeys.includes(productKey),
-    );
+    // Find all linked formatki that should also be removed
+    const linkedKeys = products
+      .filter((p) => p.linkedToKey === productKey)
+      .map(getItemKey);
+    const keysToRemove = [productKey, ...linkedKeys];
 
     // Check if any Folia products remain in this package after removal
     const pkg = packages.find((p) => p.id === packageId);
-    const remainingKeys = pkg ? pkg.productKeys.filter((k) => k !== productKey) : [];
+    const remainingKeys = pkg
+      ? pkg.productKeys.filter((k) => !keysToRemove.includes(k))
+      : [];
     const remainingProducts = products.filter((p) => remainingKeys.includes(getItemKey(p)));
     const stillHasFolia = remainingProducts.some((p) =>
       p.categoryName?.toLowerCase().includes('folie'),
@@ -182,7 +227,10 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     setPackages((prev) =>
       prev.map((p) => {
         if (p.id !== packageId) return p;
-        const updated = { ...p, productKeys: p.productKeys.filter((k) => k !== productKey) };
+        const updated = {
+          ...p,
+          productKeys: p.productKeys.filter((k) => !keysToRemove.includes(k)),
+        };
         // Reset Folia defaults if no Folia products remain
         if (!stillHasFolia && updated.shippingMethod === 'shipping') {
           if (updated.packagingType === 'karton') {
@@ -195,8 +243,16 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
       }),
     );
 
-    if (!inOtherPackage) {
-      setProducts((prev) => prev.filter((p) => getItemKey(p) !== productKey));
+    const keysInOtherPackages = new Set<string>();
+    packages.forEach((p) => {
+      if (p.id !== packageId) {
+        p.productKeys.forEach((k) => keysInOtherPackages.add(k));
+      }
+    });
+
+    const orphanedKeys = keysToRemove.filter((k) => !keysInOtherPackages.has(k));
+    if (orphanedKeys.length > 0) {
+      setProducts((prev) => prev.filter((p) => !orphanedKeys.includes(getItemKey(p))));
     }
   };
 
@@ -247,7 +303,20 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
   };
 
   const updateRequiredMb = (key: string, requiredMb: number) => {
-    setProducts((prev) => prev.map((p) => (getItemKey(p) === key ? { ...p, requiredMb } : p)));
+    setProducts((prev) => {
+      // Find the roll product to get its width for m² calculation
+      const rollProduct = prev.find((p) => getItemKey(p) === key);
+      const widthMatch = rollProduct?.name.match(/(\d{3,4})\s*mm/);
+      const widthM = widthMatch ? parseInt(widthMatch[1]) / 1000 : 0;
+      const formatkiM2 = widthM > 0 ? widthM * requiredMb : 0;
+
+      return prev.map((p) => {
+        if (getItemKey(p) === key) return { ...p, requiredMb };
+        // Sync linked formatki quantity (one-directional: roll → formatki)
+        if (p.linkedToKey === key) return { ...p, quantity: parseFloat(formatkiM2.toFixed(2)) };
+        return p;
+      });
+    });
   };
 
   const updateProductDiscount = (key: string, discountPercent: number) => {

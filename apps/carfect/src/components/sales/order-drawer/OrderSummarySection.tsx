@@ -27,7 +27,10 @@ export const OrderSummarySection = ({
   isNetPayer = false,
   paymentMethod,
 }: OrderSummarySectionProps) => {
-  const vatAmount = totalNet * VAT_RATE;
+  const shippingBruttoTotal = shippingCosts.reduce((s, c) => s + c, 0);
+  const shippingNetTotal = shippingBruttoTotal / (1 + VAT_RATE);
+  const productsNet = totalNet - shippingNetTotal;
+  const vatAmount = productsNet * VAT_RATE;
 
   const getProductWidthMm = (p: OrderProduct): number => {
     const match = p.name.match(/(\d{3,4})\s*mm/);
@@ -68,7 +71,7 @@ export const OrderSummarySection = ({
               <div key={i}>
                 <div className="flex justify-between gap-2">
                   <span className="text-muted-foreground truncate">
-                    {p.name} ({qty} {unit} × {formatCurrency(p.priceNet)})
+                    {p.name} ({parseFloat(qty.toFixed(2))} {unit} × {formatCurrency(p.priceNet)})
                   </span>
                   <span className="tabular-nums shrink-0">{formatCurrency(lineNet)}</span>
                 </div>
@@ -84,36 +87,24 @@ export const OrderSummarySection = ({
             );
           })}
 
-          {/* Shipping — shown in product section only for brutto payer */}
-          {!isNetPayer &&
-            shippingCosts.map((cost, i) => (
-              <div key={`ship-${i}`} className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`} (brutto)
-                </span>
-                <span className="tabular-nums">{formatCurrency(cost)}</span>
-              </div>
-            ))}
-
           <Separator className="my-1" />
 
-          {/* Totals */}
+          {/* Totals — "Razem netto" always shows products only, shipping always separate */}
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Razem netto</span>
+            <span className="tabular-nums font-medium">{formatCurrency(productsNet)}</span>
+          </div>
+          {shippingCosts.length > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka (×${shippingCosts.length})`}{' '}
+                (brutto)
+              </span>
+              <span className="tabular-nums">{formatCurrency(shippingBruttoTotal)}</span>
+            </div>
+          )}
           {isNetPayer ? (
             <>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Razem netto</span>
-                <span className="tabular-nums font-medium">
-                  {formatCurrency(totalGross - shippingCosts.reduce((s, c) => s + c, 0))}
-                </span>
-              </div>
-              {shippingCosts.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Wysyłka (brutto)</span>
-                  <span className="tabular-nums">
-                    {formatCurrency(shippingCosts.reduce((s, c) => s + c, 0))}
-                  </span>
-                </div>
-              )}
               <Separator className="my-1" />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Do zapłaty</span>
@@ -124,10 +115,6 @@ export const OrderSummarySection = ({
             </>
           ) : (
             <>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Razem netto</span>
-                <span className="tabular-nums font-medium">{formatCurrency(totalNet)}</span>
-              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">VAT (23%)</span>
                 <span className="tabular-nums">{formatCurrency(vatAmount)}</span>

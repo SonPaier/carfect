@@ -352,11 +352,12 @@ export function InvoiceForm({
             </div>
             <div className="space-y-2">
               <div className="flex gap-2">
-                <div className="space-y-1 w-14 shrink-0">
+                <div className="space-y-1 w-24 shrink-0">
                   <Label className="text-[10px] text-muted-foreground">Ilość</Label>
                   <Input
                     type="number"
-                    min={1}
+                    min={0.01}
+                    step="0.01"
                     value={pos.quantity}
                     onChange={(e) => onUpdatePosition(idx, 'quantity', Number(e.target.value))}
                     className="bg-white h-8 text-sm"
@@ -379,7 +380,7 @@ export function InvoiceForm({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1 flex-1">
+                <div className="space-y-1 w-28 shrink-0">
                   <Label className="text-[10px] text-muted-foreground">{priceLabel}</Label>
                   <Input
                     type="number"

@@ -104,7 +104,7 @@ describe('OrderSummarySection', () => {
     expect(screen.queryByText(/#1/)).not.toBeInTheDocument();
   });
 
-  it('renders multiple shipping costs with numbered labels', () => {
+  it('renders multiple shipping costs as combined total with count', () => {
     render(
       <OrderSummarySection
         products={[makeProduct()]}
@@ -117,8 +117,8 @@ describe('OrderSummarySection', () => {
       />,
     );
 
-    expect(screen.getByText(/Wysyłka #1/)).toBeInTheDocument();
-    expect(screen.getByText(/Wysyłka #2/)).toBeInTheDocument();
+    expect(screen.getByText(/Wysyłka \(×2\)/)).toBeInTheDocument();
+    expect(screen.getByText('55,35 zł')).toBeInTheDocument();
   });
 
   it('renders totals section with netto, VAT, and brutto', () => {
@@ -252,6 +252,94 @@ describe('OrderSummarySection', () => {
 
     // Should show 7.62 m² (from 5mb × 1.524m width), not 1
     expect(screen.getByText(/7.62 m²/)).toBeInTheDocument();
+  });
+
+  it('"Razem netto" shows same productsNet value for both netto and brutto payer', () => {
+    // Regression: switching payer type changed "Razem netto" because shipping netto
+    // was included for brutto payer but not for netto payer
+    const products = [makeProduct({ priceNet: 100, quantity: 1 })];
+    const shippingBrutto = 44.08;
+    const shippingNet = shippingBrutto / 1.23; // ~35.84
+    const productsNet = 100;
+    const totalNet = productsNet + shippingNet;
+
+    const { unmount } = render(
+      <OrderSummarySection
+        products={products}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        shippingCosts={[shippingBrutto]}
+        totalNet={totalNet}
+        totalGross={totalNet * 1.23}
+        isNetPayer={false}
+      />,
+    );
+    const bruttoNettoText = screen.getByText('Razem netto').nextSibling?.textContent;
+
+    unmount();
+
+    render(
+      <OrderSummarySection
+        products={products}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        shippingCosts={[shippingBrutto]}
+        totalNet={totalNet}
+        totalGross={productsNet + shippingBrutto}
+        isNetPayer={true}
+      />,
+    );
+    const nettoNettoText = screen.getByText('Razem netto').nextSibling?.textContent;
+
+    expect(bruttoNettoText).toBe(nettoNettoText);
+    expect(bruttoNettoText).toBe('100,00 zł');
+  });
+
+  it('shows shipping as separate line for brutto payer (not inline in products)', () => {
+    render(
+      <OrderSummarySection
+        products={[makeProduct({ priceNet: 100, quantity: 1 })]}
+        subtotalNet={100}
+        discountAmount={0}
+        customerDiscount={0}
+        shippingCosts={[24.6]}
+        totalNet={120}
+        totalGross={147.6}
+        isNetPayer={false}
+      />,
+    );
+
+    expect(screen.getByText(/Wysyłka \(brutto\)/)).toBeInTheDocument();
+    expect(screen.getByText('24,60 zł')).toBeInTheDocument();
+  });
+
+  it('formats floating-point quantity without artifacts', () => {
+    // Regression: 2.2800000000000002 displayed instead of 2.28
+    const products = [
+      makeProduct({
+        name: 'Folia - 760mm x 30m',
+        priceUnit: 'meter',
+        priceNet: 229,
+        quantity: 1,
+        requiredMb: 3,
+      }),
+    ];
+    render(
+      <OrderSummarySection
+        products={products}
+        subtotalNet={522.12}
+        discountAmount={0}
+        customerDiscount={0}
+        totalNet={522.12}
+        totalGross={642.21}
+      />,
+    );
+
+    // 3 mb × 0.76m = 2.28 m², NOT 2.2800000000000002
+    expect(screen.getByText(/2\.28 m²/)).toBeInTheDocument();
+    expect(screen.queryByText(/2\.28000/)).not.toBeInTheDocument();
   });
 
   it('uses rollAssignments for meter-based product quantity', () => {

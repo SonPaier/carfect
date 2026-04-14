@@ -839,6 +839,7 @@ const AddSalesOrderDrawer = ({
                   setCodAmountOverrides((prev) => ({ ...prev, [pkgId]: value }));
                 }}
                 isNetPayer={isNetPayer}
+                excludeOrderId={editOrder?.id}
               />
 
               {hasShipping && (
@@ -950,6 +951,7 @@ const AddSalesOrderDrawer = ({
             instanceId={instanceId}
             selectedProductIds={[]}
             selectedVariantIds={[]}
+            customerName={customerSearch.selectedCustomer?.name}
             onConfirm={(...args) => {
               markDirty();
               orderPackages.handleProductsConfirm(...args);

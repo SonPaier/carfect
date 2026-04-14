@@ -30,7 +30,7 @@ export interface SalesOrder {
   packages?: SalesOrderPackage[];
   comment?: string;
   status: 'nowy' | 'wysłany' | 'anulowany';
-  paymentStatus: 'unpaid' | 'paid';
+  paymentStatus: 'unpaid' | 'paid' | 'collective' | 'collective_paid';
   trackingNumber?: string;
   trackingUrl?: string;
   apaczkaOrderId?: string;

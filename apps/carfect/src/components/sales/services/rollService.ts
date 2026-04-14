@@ -474,7 +474,7 @@ export async function fetchRollRemainingMb(
 
 // ─── Fetch single roll by ID (with usage) ───────────────────
 
-export async function fetchRollById(rollId: string): Promise<SalesRoll | null> {
+export async function fetchRollById(rollId: string, excludeOrderId?: string): Promise<SalesRoll | null> {
   const { data: row, error } = await supabase
     .from('sales_rolls')
     .select('*')
@@ -485,10 +485,16 @@ export async function fetchRollById(rollId: string): Promise<SalesRoll | null> {
 
   const roll = mapDbRow(row as RollDbRow);
 
-  const { data: usageRows } = await supabase
+  let usageQuery = supabase
     .from('sales_roll_usages')
     .select('used_mb')
     .eq('roll_id', rollId);
+
+  if (excludeOrderId) {
+    usageQuery = usageQuery.neq('order_id', excludeOrderId);
+  }
+
+  const { data: usageRows } = await usageQuery;
 
   const usageMb = (usageRows || []).reduce((sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb), 0);
   const usedMb = (roll.lengthM - roll.initialRemainingMb) + usageMb;

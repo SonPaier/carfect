@@ -18,6 +18,8 @@ interface MultiRollAssignmentProps {
   customerName?: string;
   productName?: string;
   filterWidthMm?: number;
+  /** When editing an order, exclude its own usages from remaining calculation */
+  excludeOrderId?: string;
 }
 
 interface RollInfo {
@@ -34,6 +36,7 @@ const MultiRollAssignment = ({
   customerName,
   productName,
   filterWidthMm,
+  excludeOrderId,
 }: MultiRollAssignmentProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
@@ -47,7 +50,7 @@ const MultiRollAssignment = ({
     if (missingIds.length === 0) return;
 
     let cancelled = false;
-    Promise.all(missingIds.map((id) => fetchRollById(id))).then((results) => {
+    Promise.all(missingIds.map((id) => fetchRollById(id, excludeOrderId))).then((results) => {
       if (cancelled) return;
       setRollInfoMap((prev) => {
         const next = { ...prev };
