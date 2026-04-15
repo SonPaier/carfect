@@ -328,14 +328,39 @@ const SalesOrdersView = () => {
   };
 
   const changePaymentStatus = async (id: string, newStatus: PaymentStatus) => {
-    const { error } = await supabase
-      .from('sales_orders')
-      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) {
-      toast.error('Błąd zmiany statusu płatności');
-      return;
+    const order = orders.find((o) => o.id === id);
+    if (!order) return;
+
+    // For invoice-based statuses, update the invoice record
+    if (newStatus === 'invoice_paid' || newStatus === 'invoice_unpaid') {
+      if (order.invoiceId) {
+        const invoiceStatus = newStatus === 'invoice_paid' ? 'paid' : 'issued';
+        const { error: invError } = await supabase
+          .from('invoices')
+          .update({ status: invoiceStatus, updated_at: new Date().toISOString() })
+          .eq('id', order.invoiceId);
+        if (invError) {
+          toast.error('Błąd zmiany statusu faktury');
+          return;
+        }
+      }
+      // Also update the order's payment_status for consistency
+      const dbStatus = newStatus === 'invoice_paid' ? 'paid' : 'unpaid';
+      await supabase
+        .from('sales_orders')
+        .update({ payment_status: dbStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+    } else {
+      const { error } = await supabase
+        .from('sales_orders')
+        .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) {
+        toast.error('Błąd zmiany statusu płatności');
+        return;
+      }
     }
+
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paymentStatus: newStatus } : o)));
   };
 
