@@ -971,7 +971,7 @@ const Dashboard = () => {
   const renderContent = () => {
     if (currentView === 'dashboard' && instanceId) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <DashboardOverview
             instanceId={instanceId}
             workingHours={workingHours}
@@ -992,7 +992,7 @@ const Dashboard = () => {
 
     if (currentView === 'uslugi' && instanceId) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <ServicesView instanceId={instanceId} />
         </div>
       );
@@ -1000,7 +1000,7 @@ const Dashboard = () => {
 
     if (currentView === 'klienci' && instanceId) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <CustomersView instanceId={instanceId} />
         </div>
       );
@@ -1008,7 +1008,7 @@ const Dashboard = () => {
 
     if (currentView === 'pracownicy' && instanceId) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <EmployeesView instanceId={instanceId} />
         </div>
       );
@@ -1016,7 +1016,7 @@ const Dashboard = () => {
 
     if (currentView === 'protokoly' && instanceId && protocolsEnabled) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <ProtocolsView instanceId={instanceId} />
         </div>
       );
@@ -1024,7 +1024,7 @@ const Dashboard = () => {
 
     if (currentView === 'rozliczenia' && instanceId) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <SettlementsView
             instanceId={instanceId}
             onItemDeleted={(itemId) => {
@@ -1040,7 +1040,7 @@ const Dashboard = () => {
     if (currentView === 'projekty' && instanceId && projectsEnabled) {
       return (
         <>
-          <div className="max-w-screen-2xl mx-auto">
+          <div className="w-full">
             <ProjectsView
               instanceId={instanceId}
               onAddOrder={handleProjectAddOrder}
@@ -1112,7 +1112,7 @@ const Dashboard = () => {
 
     if (currentView === 'powiadomienia-sms') {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <SmsNotificationsView instanceId={instanceId} />
         </div>
       );
@@ -1120,7 +1120,7 @@ const Dashboard = () => {
 
     if (currentView === 'przypomnienia' && instanceId && remindersEnabled) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <RemindersView instanceId={instanceId} />
         </div>
       );
@@ -1128,7 +1128,7 @@ const Dashboard = () => {
 
     if (currentView === 'aktywnosci' && instanceId && activitiesEnabled) {
       return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="w-full">
           <NotificationsView instanceId={instanceId} onItemClick={handleDashboardItemClick} />
         </div>
       );
