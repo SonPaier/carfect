@@ -831,7 +831,7 @@ const SalesOrdersView = () => {
               <SortableHead column="shippedAt" className="w-[110px]">
                 Wysłano
               </SortableHead>
-              <TableHead className="w-[110px]">Dostawa</TableHead>
+              <TableHead className="w-[160px]">Dostawa</TableHead>
               <TableHead className="w-[200px]">List przewozowy</TableHead>
               <SortableHead column="totalNet" className="text-right w-[170px]">
                 Kwota netto
@@ -900,7 +900,7 @@ const SalesOrdersView = () => {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm whitespace-nowrap">
                         {order.deliveryType === 'pickup'
                           ? 'Odbiór osobisty'
                           : order.deliveryType === 'uber'
