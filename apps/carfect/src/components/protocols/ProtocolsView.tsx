@@ -238,7 +238,11 @@ export const ProtocolsView = ({
               else if (def.field_type === 'number') acc[def.id] = 42;
               else acc[def.id] = 'Przykład';
               return acc;
-            }, {} as Record<string, unknown>),
+            }, {
+              ...(config.builtInFields.valuableItemsClause.enabled
+                ? { _valuable_items: 'Laptop, dokumenty, telefon' }
+                : {}),
+            } as Record<string, unknown>),
           };
           const sampleInstance = {
             id: instanceId,

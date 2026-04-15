@@ -1168,25 +1168,27 @@ export const CreateProtocolForm = ({
                   </span>
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => setServiceDrawerOpen(true)}
-                className="text-sm text-primary hover:underline"
+                variant="default"
+                size="sm"
               >
                 + Dodaj usługi
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Show add button when no items yet but feature enabled */}
           {showServices && serviceItems.length === 0 && (
-            <button
+            <Button
               type="button"
               onClick={() => setServiceDrawerOpen(true)}
-              className="text-sm text-primary hover:underline"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              size="sm"
             >
               + Dodaj usługi do protokołu
-            </button>
+            </Button>
           )}
 
           {/* Valuable items */}
@@ -1198,7 +1200,7 @@ export const CreateProtocolForm = ({
                 onChange={(e) =>
                   setCustomFieldValues({ ...customFieldValues, _valuable_items: e.target.value })
                 }
-                placeholder="Wpisz przedmioty pozostawione w pojeździe..."
+                placeholder=""
                 className="resize-none"
                 rows={3}
               />
