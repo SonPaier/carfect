@@ -65,7 +65,7 @@ const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; className: s
     className: 'border-orange-500 text-orange-600',
   },
   invoice_paid: {
-    label: 'Opłacona (FV)',
+    label: 'Opłacone (FV)',
     className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
   },
 };
@@ -813,8 +813,8 @@ const SalesOrdersView = () => {
               <SortableHead column="totalNet" className="text-right w-[120px]">
                 Kwota netto
               </SortableHead>
-              <TableHead className="w-[120px]">Płatność</TableHead>
-              <SortableHead column="status" className="w-[100px]">
+              <TableHead className="w-[160px]">Płatność</TableHead>
+              <SortableHead column="status" className="w-[120px]">
                 Status
               </SortableHead>
               <TableHead className="w-[50px]"></TableHead>
