@@ -10,7 +10,11 @@
       "@shared/ai": ["../../libs/ai/src/index.ts"],
       "@shared/ai/*": ["../../libs/ai/src/*"],
       "@shared/in-app-hints": ["../../libs/in-app-hints/src/index.ts"],
-      "@shared/in-app-hints/*": ["../../libs/in-app-hints/src/*"]
+      "@shared/in-app-hints/*": ["../../libs/in-app-hints/src/*"],
+      "@shared/custom-fields": ["../../libs/custom-fields/src/index.ts"],
+      "@shared/custom-fields/*": ["../../libs/custom-fields/src/*"],
+      "@shared/protocol-config": ["../../libs/protocol-config/src/index.ts"],
+      "@shared/protocol-config/*": ["../../libs/protocol-config/src/*"]
     },
     "strictNullChecks": false
   },

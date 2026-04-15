@@ -588,489 +588,588 @@ INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate
 SELECT 'eb767cf8-ac61-412c-89fd-2c59e313a36d', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '662283182' LIMIT 1), '861a643e-044e-4efe-9a08-3697fd476937'),
   '662283182', 'Honda CR-V', 'KRA5711N', 'JHMRW2760KX208547', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '662283182' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '5196932f-d4e8-41c3-be18-d0b8fe2dcdb3', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '662271176' LIMIT 1), 'f8643ddd-64c3-48b4-9257-30c39a45d8b4'),
   '662271176', 'Kia ProCeed', 'KK8883K', 'UP5YH2G15ARL085869', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '662271176' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'dfaec36c-dc71-4607-acc7-2b6ec6e7da40', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502863346' LIMIT 1), '0dde65ad-6169-4a1d-9125-ba75d81fb37a'),
   '502863346', 'Hyundai i30', 'KK2747L', 'TMAH151D0SJ247325', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502863346' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '81af1028-bb47-4a6c-aa1a-4ee534ac646f', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '508368799' LIMIT 1), '786e90f8-b01e-44a8-8a5a-e624666c89ba'),
   '508368799', 'Volkswagen T-Roc', 'KK1851L', 'WVGZZZA16SV042893', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '508368799' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '13d6b6b1-1a4d-49ee-92c6-56ec21000433', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607535224' LIMIT 1), 'c9160bd9-0fe8-44d3-a81c-2885c0688058'),
   '607535224', 'BMW X7', 'DX15487', 'WBA21EM0409X39927', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607535224' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '71c53de4-b848-4d99-a5f4-84fe1c1883ca', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '503975991' LIMIT 1), '7323e0b2-2e23-4069-ae7a-abf4b9eb04a4'),
   '503975991', 'Cupra Formentor', 'KNS6607T', 'VSSZZZKM9SR004532', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '503975991' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '1cf7969b-ad6c-4368-a8cf-ff274fea9a89', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '501184025' LIMIT 1), 'b0e6874f-49e1-4ee1-8d2a-2e12cf70558d'),
   '501184025', 'Lexus NX', 'KK 3896L', 'JTJCKBFZ202051719', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '501184025' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '1c77ce38-c8d4-4e1f-a3a4-ed960a633003', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '799133199' LIMIT 1), '3bd0e12c-58c9-46ed-8450-d998b742736f'),
   '799133199', 'BMW Seria 3', 'KK8679K', 'WBA28FF0908F08075', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '799133199' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'cde5de76-3c40-4bd3-ae72-514e272cb05e', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '577948692' LIMIT 1), 'd9314d01-6170-4266-bc23-12a89a4f3e65'),
   '577948692', 'Renault Austral', 'KK 3434', 'VF1RHN00471039979', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '577948692' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '2f77a491-313f-489e-bb25-d9ea7ccb7017', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '665832346' LIMIT 1), '3700b862-7f4a-4590-b473-6fcc0e3285bd'),
   '665832346', 'Volkswagen Passat', 'KK30004', 'WVWZZZCJ5RD009689', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '665832346' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '15efc056-3949-49c2-b7de-ed7c8ca24f7f', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '733793733' LIMIT 1), '4beed85c-380c-41a2-8cf4-84ff3a693e8b'),
   '733793733', 'Toyota RAV4', 'KK5404', 'asdasd', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '733793733' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '89578652-653f-4c9a-886f-26a62115f16b', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '693820502' LIMIT 1), '0cf05774-1040-4b8e-befb-b5419cef51cb'),
   '693820502', 'Škoda Karoq', 'KK43387', 'TMBJR7NU0S5026764', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '693820502' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '8962bb7b-15e3-43c0-b36a-e8963794ed72', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '669090409' LIMIT 1), '8b6e7237-db4f-4a01-a2ea-d17dda717b91'),
   '669090409', 'Volvo S90', 'sdsd', 'sdsd', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '669090409' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '83ee5f83-5f00-4e4e-94d2-ceb249bd587c', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '537931015' LIMIT 1), '1c51ab3e-da43-497d-9c3d-d1dd0e3b7e8e'),
   '537931015', 'Civic Honda', 'KK2323', 'asas', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '537931015' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '399d9dd3-1916-4172-a91b-ff471763f3b1', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '501080850' LIMIT 1), '784d618a-d04f-4219-b40a-d39cca8e4103'),
   '501080850', 'Tesla Model 3', 'KK2369E', 'LRW3E7EKC439302', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '501080850' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '34799d23-8dcd-42dc-9e34-e87ce09da8c0', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '574145426' LIMIT 1), '638f2440-ebca-4b83-a1ba-64e4520a249a'),
   '574145426', 'Škoda Octavia', 'KK8650L', '34343434', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '574145426' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'e66774e4-bd21-4158-863e-1f870a64335b', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '795183551' LIMIT 1), 'c5b29cfd-2d6c-4937-b926-8df23b5933b8'),
   '795183551', 'Vw Golf Golf Gti', 'KK5973L', 'WVWZZZAUZKW133451', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '795183551' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'dfeaa10d-0ec8-48a9-8e1a-f8361e8dd036', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '606664700' LIMIT 1), 'b9bed3a2-f1d1-41b9-bcab-6b3c4cba866a'),
   '606664700', 'Toyota RAV4', 'sdsd', 'sadsd', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '606664700' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'fe492742-437f-4910-a092-5a627746e428', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502863346' LIMIT 1), '0dde65ad-6169-4a1d-9125-ba75d81fb37a'),
   '502863346', 'Hyundai i30 N', 'KK2747L', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502863346' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'e955a5f1-13f3-41ea-ade3-fb986b1e75cc', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '513984640' LIMIT 1), '2faec128-8c9d-460b-8570-6c5ad146276a'),
   '513984640', 'Kia ProCeed', 'KK43434', 'asas', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '513984640' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '974b14e0-0806-4dc7-8359-d4b77560ca18', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '886348039' LIMIT 1), '22b35ab4-d53d-45a9-a459-fa86c61488a0'),
   '886348039', 'Opel Corsa', 'KR9G268', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '886348039' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '39bedf4e-c13a-4b41-b641-3d503cd877c7', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '794057266' LIMIT 1), '23f71cfe-c124-44c4-a8e6-c141fa98ea5f'),
   '794057266', 'Dodge Charger', '073X', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '794057266' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '58e3331a-f7dd-4f8a-b17c-f41363591a0e', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604605699' LIMIT 1), '08dc551c-9f57-403e-afe1-c0661fe347b9'),
   '604605699', 'Škoda Karoq', 'KK 7962M', '7MBLD7PS2ST086866', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604605699' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'c37856c1-5d2e-4cc6-9725-73cc4e8a456f', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '504140963' LIMIT 1), 'a2d2b15a-ece0-4099-9c88-c4c55171f523'),
   '504140963', 'Honda Civic', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '504140963' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '72825933-b3df-454f-9e51-579c0e0752e5', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502715205' LIMIT 1), '6e5d4e40-ca70-43af-8a0a-c9e188835b13'),
   '502715205', 'Mazda 3', 'KRA595EN', 'JM4BP6HH401515288', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502715205' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '50012f0d-ff94-47c5-b141-ef2cae5dee0a', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '503531979' LIMIT 1), '17e46071-e8c3-486b-94f9-10dfa5ec72da'),
   '503531979', 'Lexus LX', 'KK6261N', 'JTHUCBDHX02009182', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '503531979' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '7bb05be7-253e-4686-9fa7-631585d9fc77', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '696048878' LIMIT 1), 'bc5ddf74-33c9-4e81-9c33-4ccf6855d398'),
   '696048878', 'Honda CR-V', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '696048878' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '3c03f6dd-cb0b-41bc-ae6e-e00b9eb8929a', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '692438023' LIMIT 1), '8325bcba-7dc4-4e27-a2f8-893dc59a6add'),
   '692438023', 'Škoda Kodiaq', 'KK5397N', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '692438023' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'e1ddc634-0afa-45fc-b997-fd686150bfa7', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '515671807' LIMIT 1), '5f111273-6a66-4e08-beca-94dc3c22aa8b'),
   '515671807', 'Volkswagen Jetta', 'KR7nt57', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '515671807' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'a9fbeb6c-8ca9-4d67-9a46-57cdc9761d92', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509510530' LIMIT 1), 'd62bc86a-bfb2-43a9-a1d6-345fc3ecaa72'),
   '509510530', 'BMW Seria 8', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509510530' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '97038736-5ef8-4fb5-9c2c-a4ee6dd48691', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '578901489' LIMIT 1), '0fbd7863-4b0f-41c5-bb88-63bccd85132b'),
   '578901489', 'Audi RS6', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '578901489' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '9b61210f-644e-4c63-bb4b-0af8cf2a54c1', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '792660511' LIMIT 1), 'f4acc19e-76a0-4a63-bc1e-2e843b0dd947'),
   '792660511', 'Ford EcoSport', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '792660511' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '16787f4e-ec9e-44b0-88db-35b816e76569', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604683502' LIMIT 1), '82a84fe2-c3e8-4125-861a-f65dc40f97cd'),
   '604683502', 'Volkswagen Tiguan', 'WPR6622U', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604683502' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'fdcbaad4-5f02-472d-a43a-918cd53067f7', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '600925136' LIMIT 1), '7f4499f9-e36e-4626-9a64-5db0198802d9'),
   '600925136', 'BMW Seria 3', 'KK 9580N', 'WBA81FF020FV20544', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '600925136' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '2c74e66f-df3e-40c4-a308-797b9c157707', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '724731569' LIMIT 1), '5dd76d83-dc66-49ce-8e76-58cc6f8953a8'),
   '724731569', 'Škoda Octavia', 'KK5231M', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '724731569' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'cb27543f-cc3b-47ad-a8ed-ff47b34a726e', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '662240166' LIMIT 1), '51334582-0d92-426a-bf13-bd5ef6a188a0'),
   '662240166', 'Renault Captur', 'KK2443T', 'VF1RJB00875028933', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '662240166' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '3cdef8f5-c09a-4fc1-9598-7379f82ea0d3', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '606958136' LIMIT 1), '09847504-61e3-49a7-87fd-47c0055ee468'),
   '606958136', 'Toyota RAV4', 'KMY57355', 'JTME63FV40D578135', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '606958136' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '216de255-d41b-401c-a646-c6ecaf812d85', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '788997413' LIMIT 1), '5defa5b6-679a-4145-a7e9-d645312c80f8'),
   '788997413', 'Audi A4', 'KOLXN75', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '788997413' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '92e6b8ad-2c94-4228-b656-8e0e4589a15d', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '600960438' LIMIT 1), '7b6dbdb6-458b-4570-9996-57a5e65bf71e'),
   '600960438', 'SEAT Leon', 'KN150FR', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '600960438' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '0cac5112-aa01-47d9-b6c5-cd4addf9d605', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '505481591' LIMIT 1), '6c542521-e755-4ebf-bc78-c45dbdb96505'),
   '505481591', 'Alfa Romeo Giulia', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '505481591' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'af3ecd69-2135-4ab2-9ae1-f099f5a34802', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607244804' LIMIT 1), 'b9fc700d-4ea7-41e1-83f9-5414d6f1d892'),
   '607244804', 'Mercedes GLC', 'KK32323', 'as', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607244804' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'fc22eaf1-a96b-4f62-ac0b-102d95d538f6', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '501080850' LIMIT 1), '784d618a-d04f-4219-b40a-d39cca8e4103'),
   '501080850', 'Toyota RAV4', NULL, '=-----', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '501080850' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'a7e82376-3f14-43ee-a1ad-79bcf2cc6614', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509357860' LIMIT 1), 'b79bff05-a771-4184-9ede-f29af111ef46'),
   '509357860', 'Audi Q4 e-tron', 'KK1012E', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509357860' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'ca2a20ee-36b2-449c-88f4-7cb1e5fafbf2', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '510497999' LIMIT 1), '46a80f56-0bee-40fb-9496-4e32d9d73c27'),
   '510497999', 'Ford Mustang', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '510497999' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '0b010622-6e0d-4eb7-96e6-0c92af687ca2', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '606915111' LIMIT 1), '9b6c7761-c49c-42ee-8e96-acd578621cbf'),
   '606915111', 'Volkswagen Golf', 'KR3ST98', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '606915111' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'e861a408-1568-4e83-8523-09cbc2718b37', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '603604258' LIMIT 1), '9aec195a-717c-4122-b523-c61fd3588d2e'),
   '603604258', 'Volvo XC60', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '603604258' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '8bcd3aa5-1ddd-48b6-b146-f6f326a560ec', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '570318257' LIMIT 1), '7911f849-0e56-4b99-a434-48169a3bfeff'),
   '570318257', 'Škoda Octavia', 'KK 3494T', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '570318257' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'fca076c7-aade-44fc-9d75-258f097db7f5', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '517177795' LIMIT 1), '20407c33-b3a5-4429-bf67-e478795f433a'),
   '517177795', 'Volkswagen Tayron', 'KK 5040R', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '517177795' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '67c8cd77-ce5c-483a-b003-55c6a27b2e4a', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '514088459' LIMIT 1), 'f60fd8ee-efab-4703-a4b9-ed9023d9bdae'),
   '514088459', 'Kia Picanto', 'KK 7459R', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '514088459' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'fd58ba62-7278-45c7-9cfd-17af03fc4a5a', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '6072341234' LIMIT 1), '01da1b17-f34a-4908-b82a-7b0735816d11'),
   '6072341234', 'Škoda Fabia', 'KSU RR888', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '6072341234' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '655ba621-e2aa-4188-9803-a0627208a7af', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '511450449' LIMIT 1), 'cd9ad1c7-aa98-4af3-aa9b-86607726de89'),
   '511450449', 'Honda ZR-V', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '511450449' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'a8895a7b-2a5e-46f6-a8d6-c839edccb5e4', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '731777753' LIMIT 1), '46936b7b-ba9c-4a59-8740-1f366b06a187'),
   '731777753', 'Škoda Superb', 'KR 9LA67', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '731777753' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '694cfff6-e04d-492f-80d6-d0d73f31be57', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '696048878' LIMIT 1), 'bc5ddf74-33c9-4e81-9c33-4ccf6855d398'),
   '696048878', 'Honda Accord', 'KR4GK80', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '696048878' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'f5b19a82-159e-430c-b894-8c010b606892', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '601871007' LIMIT 1), 'ce1e3582-327f-4d61-8780-a8cbb4e65408'),
   '601871007', 'Volkswagen Passat', 'DW1LH65', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '601871007' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'd7cb7628-52e1-4117-ac60-b54b0835d847', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '663808910' LIMIT 1), 'f88805b9-1ce5-4d45-88af-2b688e76c4c7'),
   '663808910', 'BMW X3', 'KK2827S', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '663808910' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '4b76adae-ff05-445b-9d80-8347c319196a', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509357860' LIMIT 1), 'b79bff05-a771-4184-9ede-f29af111ef46'),
   '509357860', 'BMW X3', 'KK88109', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509357860' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'f3c5d1a5-5e98-4664-a9e8-b94bfe379c93', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607234123' LIMIT 1), 'd9ea95f0-9e50-498c-8b8f-6025a2a360c1'),
   '607234123', 'Škoda Fabia', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607234123' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '499c4f93-c1f3-4c53-855d-f40b35971a29', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '506507059' LIMIT 1), '41ec3cf9-a606-434b-a829-00c3fb0aee38'),
   '506507059', 'BMW i8', 'KK5594S', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '506507059' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'ec802a3e-4f8c-4ce5-9272-533350b0f4c1', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '518515861' LIMIT 1), 'd3181329-3f46-4d44-8406-df357d5de84f'),
   '518515861', 'Volvo XC60', 'KK9383S', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '518515861' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '61a876b7-fecf-4d6e-872e-25e88efb29b6', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '600891541' LIMIT 1), '2342754a-7f47-47bd-8764-853f06598ce4'),
   '600891541', 'Audi Q5', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '600891541' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '38343421-31d4-4014-80b3-e8a031e51f85', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '730496155' LIMIT 1), '1631c39a-a741-476d-ab5b-cb3982b5216f'),
   '730496155', 'Lexus UX', 'KK2092L', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '730496155' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '09e4bbb6-847d-49a8-bf34-5f8a8b543d95', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '668438486' LIMIT 1), '953f8657-2575-4848-82bc-8381db376d46'),
   '668438486', 'Škoda Octavia', 'K0 MAMBA', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '668438486' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '50077eec-15e5-4396-9247-6edac18ba029', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '792485007' LIMIT 1), '9b3ad82f-f7a8-4c81-ae83-aaf9839eecec'),
   '792485007', 'BMW X4', 'KK2926U', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '792485007' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'f30e781e-643c-4808-8854-2e36830094f0', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '695406606' LIMIT 1), '260ad8b1-e7d3-47d0-9655-90c6f81c134c'),
   '695406606', 'Jaecoo J7', 'KK4820U', 'LNNBBDEEXSC205489', 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '695406606' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '5c645422-eb54-4990-b3b0-bee4bee2d6f9', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '692926266' LIMIT 1), 'dd6530d2-ae28-41a2-8ea7-c6aad910099a'),
   '692926266', 'Volvo XC60', 'KK5100U', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '692926266' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'b0a3754c-364f-4aa2-a70c-b228c1723bce', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '503531979' LIMIT 1), '17e46071-e8c3-486b-94f9-10dfa5ec72da'),
   '503531979', 'Lexus UX', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '503531979' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '6e0d8237-e8d2-4641-93bd-e8ad71b3b7d5', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604621352' LIMIT 1), '33d50fb2-7c6b-42f7-adca-5a9b0e9cbc85'),
   '604621352', 'Mercedes CLA', 'KK5596N', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604621352' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'accb76b4-d22b-4ccf-aabb-3693563cd1f4', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '516519916' LIMIT 1), '679ad548-cbf3-497a-bfcb-d333068639e2'),
   '516519916', 'Cupra Formentor', 'KK5845U', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '516519916' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'ac45f82b-6903-4c35-9f94-ab6efb0c7a25', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '668438486' LIMIT 1), '953f8657-2575-4848-82bc-8381db376d46'),
   '668438486', 'Škoda Octavia RS', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '668438486' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '81a088ae-bad8-45f3-83a1-76ab019d17b5', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502306985' LIMIT 1), 'c6f1a775-5bc9-4af3-a41e-6aa4da13e3a7'),
   '502306985', 'Lexus RX', 'KK3022G', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502306985' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '5a302e33-eae4-4c09-abcd-347152e40cf2', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '535018941' LIMIT 1), '94ee1c9b-455b-4e95-b4c1-f0cbb4fd3c9e'),
   '535018941', 'Audi A5', 'WI830RN', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '535018941' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'bbbce21f-3eff-4406-b423-cdc49ef1e95f', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502903983' LIMIT 1), '8ab69c14-8531-4ac9-9602-a1c91892f9ae'),
   '502903983', 'Honda Civic', 'KR1PP88', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '502903983' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '6ea9f963-c629-4156-be3f-ac313af58258', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '510694934' LIMIT 1), '176811ca-d6f8-434e-ab47-3ac27db1d178'),
   '510694934', 'Mazda CX-5', 'KK49504', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '510694934' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'd2706fbc-5ca6-4976-b811-2bd1a870f339', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '737489049' LIMIT 1), '003f7200-2d31-4cbd-aaed-123b7bae9914'),
   '737489049', 'Volvo XC40', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '737489049' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'ede49405-7c82-4b0f-8e7f-d34fafb54a0b', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '505420485' LIMIT 1), '9970fddf-0ee0-4f84-ba45-36dbc238e7b3'),
   '505420485', 'Mazda CX-60', 'KK4538S', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '505420485' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '7f8d2875-66a7-45c1-a7c4-b2ec6fb31216', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '669374607' LIMIT 1), 'af7345cc-725c-4715-bd85-684fddd9cd78'),
   '669374607', 'Škoda Karoq', 'TJE 74282', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '669374607' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '3f52c329-1473-4310-91bf-0324df31e979', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '730931437' LIMIT 1), '2336873b-1d0b-469b-a8a0-bd0b489d39e3'),
   '730931437', 'Audi Q3', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '730931437' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'a7cce187-6921-4aa8-8b7a-708c72b46198', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '507939999' LIMIT 1), '6a5d9a80-1bda-4956-8f81-1b8a5da1fd0e'),
   '507939999', 'BMW X2', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '507939999' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '9ca1454a-f527-4a29-9702-0c61492fc4a4', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '668907901' LIMIT 1), '31a9c843-a67f-489c-a71b-639e0f9ffc5d'),
   '668907901', 'bmw e60', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '668907901' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '371d8c85-fdc1-4d34-839a-95b0f7f77edf', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '695736665' LIMIT 1), '3e4f8120-f89f-429a-8b93-04bc98e2bd43'),
   '695736665', 'Alfa Romeo Giulia', 'KK1263Y', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '695736665' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '3a80e1c8-5e44-4daa-b4c7-049362b3f2b3', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '728427147' LIMIT 1), 'c3a64ff2-21d1-422e-a4b3-e7f120eb2784'),
   '728427147', 'Fiat 126p', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '728427147' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '836388d6-26e5-4561-9036-6f080384663b', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '571945703' LIMIT 1), '66f3cc83-5159-4b72-80f5-0027279d912c'),
   '571945703', 'BMW GS 1250', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '571945703' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'a8847790-db34-4566-bece-dfcf0366b363', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607507378' LIMIT 1), '1f63ac6b-67e4-44ab-b332-e80add37a9e5'),
   '607507378', 'MINI Countryman', 'KR5HC68', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '607507378' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'e6829245-ab05-4497-8bb9-7c45d696ed8f', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '507939999' LIMIT 1), '6a5d9a80-1bda-4956-8f81-1b8a5da1fd0e'),
   '507939999', 'Dacia Dokker', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '507939999' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '4407fc2c-6bcd-44ad-a8e0-1282b77680c6', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '506005165' LIMIT 1), 'c92c60a3-6196-401c-96f7-9bb18d03c7f3'),
   '506005165', 'BMW Seria 3', 'TLW88SN', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '506005165' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'd985a5d5-1b1f-4f32-957b-3b4c06eec95d', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '609055417' LIMIT 1), 'c45edf68-290b-40a9-9372-ccfd97f8e97b'),
   '609055417', 'Lexus NX', 'KK10501U', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '609055417' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '1abf58d1-8e06-42b8-9f01-46a5773b912e', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '602327110' LIMIT 1), '3840bba7-09ca-427a-a394-efd6390ea893'),
   '602327110', 'Honda CR-V', 'KK3820Y', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '602327110' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'ee265e00-4681-4afc-8644-74b263f6c51b', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509094447' LIMIT 1), 'ca27601a-b91f-49eb-b5a8-311950a97d2c'),
   '509094447', 'Mercedes Klasa E', 'KK6188G', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '509094447' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'c541860c-6850-4f47-a730-27b1d8bc81ae', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '515715533' LIMIT 1), 'af20be0f-a39e-42af-be33-13c10ec75cad'),
   '515715533', 'BMW Seria 5', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '515715533' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '974a5694-fca3-4f4f-812c-315fdbc65646', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '790761144' LIMIT 1), '2ae0abb9-b33b-4722-b218-d67617602646'),
   '790761144', 'Audi A1', 'KK1406V', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '790761144' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '0f19355f-f5f2-4940-a55f-c304803d52d3', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604683502' LIMIT 1), '82a84fe2-c3e8-4125-861a-f65dc40f97cd'),
   '604683502', 'BMW Seria 5', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '604683502' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'fc6e8a1a-4a19-486c-9236-691a5488ec40', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '506251271' LIMIT 1), '852c4fa1-1a61-4adf-9683-b6389f930c7b'),
   '506251271', 'Audi RS6', 'KK213Y', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '506251271' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'e2060a01-5c96-483d-b616-2bcab3c7a917', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '514953385' LIMIT 1), '5eb028e7-9b35-42c8-9e1f-994583bc7813'),
   '514953385', 'Honda HR-V', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '514953385' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT 'ff1c6c0f-4530-450c-82c6-02b1958bca3f', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '514536086' LIMIT 1), '5e1a71c4-311c-47ee-b607-6d39e3d53ef1'),
   '514536086', 'BMW M240i', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '514536086' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '82e1ddce-38a3-441d-bed6-e6ee842229da', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '507939999' LIMIT 1), '6a5d9a80-1bda-4956-8f81-1b8a5da1fd0e'),
   '507939999', 'Kia XCeed', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '507939999' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '0cb32793-eca8-45e8-ad4c-2560581d9f52', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '884840144' LIMIT 1), 'ec43721d-021f-48e4-ae03-6e8d853c99ef'),
   '884840144', 'Nissan Qashqai', 'WE3gw36', NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '884840144' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 INSERT INTO customer_vehicles (id, instance_id, customer_id, phone, model, plate, vin, usage_count, last_used_at)
 SELECT '1308ea9d-48bf-4ff1-a633-d65a1a5db3ca', '50230fb6-fca0-4a09-b19c-f80215b2b715',
   COALESCE((SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '792658292' LIMIT 1), 'dd1b68cd-af90-4f55-ae9e-10c224396860'),
   '792658292', 'BMW Seria 4', NULL, NULL, 1, now()
+WHERE (SELECT id FROM customers WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND phone = '792658292' LIMIT 1) IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- STEP 5: Reservations
+-- Temporarily disable FK checks for data import
+SET session_replication_role = 'replica';
 INSERT INTO reservations (
   id, instance_id, reservation_date, start_time, end_date, end_time,
   customer_name, customer_email, customer_phone, vehicle_plate,
@@ -2549,3 +2648,6 @@ INSERT INTO reservations (
 COMMIT;
 
 -- Done! 134 reservations, 88 customers, 97 vehicles
+
+-- Re-enable FK checks
+SET session_replication_role = 'origin';

@@ -6,6 +6,8 @@ import { ProtocolHeader } from './ProtocolHeader';
 import { VehicleDiagram, type BodyType, type DamagePoint, type VehicleView } from './VehicleDiagram';
 import { DamageViewDrawer } from './DamageViewDrawer';
 import { PhotoFullscreenDialog } from './PhotoFullscreenDialog';
+import type { ProtocolConfig } from '@shared/protocol-config';
+import type { CustomFieldDefinition, CustomFieldValues } from '@shared/custom-fields';
 
 export type ProtocolType = 'reception' | 'pickup';
 
@@ -33,6 +35,7 @@ interface Protocol {
   nip: string | null;
   phone: string | null;
   registration_number: string | null;
+  vin?: string | null;
   fuel_level: number | null;
   odometer_reading: number | null;
   body_type: BodyType;
@@ -44,6 +47,7 @@ interface Protocol {
   protocol_type?: ProtocolType;
   photo_urls?: string[];
   service_items?: Array<{ name: string; quantity: number; unit_price: number }> | null;
+  custom_field_values?: CustomFieldValues;
 }
 
 interface PublicProtocolCustomerViewProps {
@@ -51,6 +55,8 @@ interface PublicProtocolCustomerViewProps {
   instance: Instance;
   damagePoints: DamagePoint[];
   offerPublicToken?: string | null;
+  protocolConfig?: ProtocolConfig | null;
+  customFieldDefinitions?: CustomFieldDefinition[];
 }
 
 const DAMAGE_TYPE_LABELS: Record<string, string> = {
@@ -70,6 +76,8 @@ export const PublicProtocolCustomerView = ({
   instance,
   damagePoints,
   offerPublicToken,
+  protocolConfig,
+  customFieldDefinitions = [],
 }: PublicProtocolCustomerViewProps) => {
   const [selectedPoint, setSelectedPoint] = useState<DamagePoint | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -109,6 +117,24 @@ export const PublicProtocolCustomerView = ({
       .map(point => `• ${point.custom_note!.trim()}`);
     return notesWithContent.length > 0 ? notesWithContent.join('\n') : null;
   }, [damagePoints]);
+
+  // Visible custom fields with values (memoized to avoid re-filtering on every render)
+  const visibleCustomFields = useMemo(() => {
+    if (!customFieldDefinitions.length || !protocol.custom_field_values) return [];
+    const values = protocol.custom_field_values;
+    return customFieldDefinitions
+      .filter(d => d.config.visibleToCustomer !== false)
+      .filter(d => {
+        const val = values[d.id];
+        return val !== undefined && val !== null && val !== '';
+      });
+  }, [customFieldDefinitions, protocol.custom_field_values]);
+
+  // Visible consent clauses (memoized)
+  const visibleConsentClauses = useMemo(() => {
+    if (!protocolConfig?.consentClauses.length) return [];
+    return protocolConfig.consentClauses.filter(c => c.visibleToCustomer !== false);
+  }, [protocolConfig]);
 
   // Protocol type label
   const protocolTypeLabel = PROTOCOL_TYPE_LABELS[protocol.protocol_type || 'reception'];
@@ -181,7 +207,14 @@ export const PublicProtocolCustomerView = ({
                 <p className="text-base font-medium">{protocol.registration_number}</p>
               </div>
             )}
-            
+
+            {protocol.vin && (
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-sm">VIN</Label>
+                <p className="text-base font-medium">{protocol.vin}</p>
+              </div>
+            )}
+
             {protocol.fuel_level !== null && (
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-sm">Stan paliwa</Label>
@@ -271,6 +304,56 @@ export const PublicProtocolCustomerView = ({
                   <span>{protocol.service_items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Custom fields */}
+          {visibleCustomFields.length > 0 && protocol.custom_field_values && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {visibleCustomFields.map(def => (
+                <div key={def.id} className="space-y-1">
+                  <Label className="text-muted-foreground text-sm">{def.label}</Label>
+                  <p className="text-base">
+                    {def.field_type === 'checkbox'
+                      ? (protocol.custom_field_values![def.id] ? 'Tak' : 'Nie')
+                      : String(protocol.custom_field_values![def.id])}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Consent clauses */}
+          {visibleConsentClauses.length > 0 && protocol.custom_field_values && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-sm">Oświadczenia</Label>
+              <div className="space-y-3">
+                {visibleConsentClauses.map(clause => (
+                  <div key={clause.id} className="flex items-start gap-2 text-sm">
+                    <span className={protocol.custom_field_values![clause.id] ? 'text-emerald-600' : 'text-muted-foreground'}>
+                      {protocol.custom_field_values![clause.id] ? '✓' : '✗'}
+                    </span>
+                    <div className="space-y-1">
+                      <p>{clause.text}</p>
+                      {clause.requiresSignature && protocol.custom_field_values![`${clause.id}_sig`] && (
+                        <img
+                          src={String(protocol.custom_field_values![`${clause.id}_sig`])}
+                          alt="Podpis"
+                          className="h-12 object-contain border rounded"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Valuable items */}
+          {protocol.custom_field_values?._valuable_items && (
+            <div className="space-y-1">
+              <Label className="text-muted-foreground text-sm">Przedmioty wartościowe</Label>
+              <p className="text-base whitespace-pre-line">{String(protocol.custom_field_values._valuable_items)}</p>
             </div>
           )}
 

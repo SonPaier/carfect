@@ -56,7 +56,7 @@ export function CustomFieldsConfigurator({
       {definitions.length === 0 ? (
         <EmptyState title="Brak pól własnych" />
       ) : (
-        definitions.map((definition: CustomFieldDefinition, index: number) => (
+        definitions.map((definition, index) => (
           <CustomFieldCard
             key={definition.id}
             definition={definition}

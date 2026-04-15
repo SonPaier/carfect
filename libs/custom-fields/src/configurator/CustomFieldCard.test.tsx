@@ -44,7 +44,8 @@ describe('CustomFieldCard', () => {
     const input = screen.getByDisplayValue('Old');
     await user.clear(input);
     await user.type(input, 'New');
-    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ label: expect.any(String) }));
+    await user.tab(); // trigger onBlur
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ label: 'New' }));
   });
 
   it('calls onUpdate when type changes', async () => {

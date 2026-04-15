@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import {
   Button,
@@ -11,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-  cn,
 } from '@shared/ui';
 import type { CustomFieldDefinition, CustomFieldType } from '../types';
 
@@ -41,9 +41,11 @@ export function CustomFieldCard({
   isFirst,
   isLast,
 }: CustomFieldCardProps) {
+  const [localLabel, setLocalLabel] = useState(definition.label);
+
   return (
     <Card className="p-4">
-      <CardContent className={cn('p-0 flex flex-col gap-3')}>
+      <CardContent className="p-0 flex flex-col gap-3">
         {/* Header row: type selector + move/delete buttons */}
         <div className="flex items-center gap-2">
           <div className="flex-1">
@@ -101,8 +103,11 @@ export function CustomFieldCard({
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Etykieta</Label>
           <Input
-            value={definition.label}
-            onChange={(e) => onUpdate({ label: e.target.value })}
+            value={localLabel}
+            onChange={(e) => setLocalLabel(e.target.value)}
+            onBlur={() => {
+              if (localLabel !== definition.label) onUpdate({ label: localLabel });
+            }}
             placeholder="Nazwa pola"
           />
         </div>
@@ -122,21 +127,8 @@ export function CustomFieldCard({
 
           <div className="flex items-center gap-2">
             <Switch
-              id={`width-${definition.id}`}
-              checked={definition.config.width === 'half'}
-              onCheckedChange={(checked) =>
-                onUpdate({ config: { ...definition.config, width: checked ? 'half' : 'full' } })
-              }
-            />
-            <Label htmlFor={`width-${definition.id}`} className="text-sm cursor-pointer">
-              Połowa szerokości
-            </Label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Switch
               id={`visible-${definition.id}`}
-              checked={definition.config.visibleToCustomer ?? false}
+              checked={definition.config.visibleToCustomer ?? true}
               onCheckedChange={(checked) =>
                 onUpdate({ config: { ...definition.config, visibleToCustomer: checked } })
               }

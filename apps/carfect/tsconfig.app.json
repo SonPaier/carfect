@@ -12,7 +12,11 @@
       "@shared/invoicing": ["../../libs/shared-invoicing/src/index.ts"],
       "@shared/invoicing/*": ["../../libs/shared-invoicing/src/*"],
       "@shared/ai": ["../../libs/ai/src/index.ts"],
-      "@shared/ai/*": ["../../libs/ai/src/*"]
+      "@shared/ai/*": ["../../libs/ai/src/*"],
+      "@shared/custom-fields": ["../../libs/custom-fields/src/index.ts"],
+      "@shared/custom-fields/*": ["../../libs/custom-fields/src/*"],
+      "@shared/protocol-config": ["../../libs/protocol-config/src/index.ts"],
+      "@shared/protocol-config/*": ["../../libs/protocol-config/src/*"]
     }
   },
   "include": [
@@ -21,6 +25,8 @@
     "../../libs/shared-utils/src",
     "../../libs/shared-invoicing/src",
     "../../libs/ai/src",
-    "../../libs/pdf/src"
+    "../../libs/pdf/src",
+    "../../libs/custom-fields/src",
+    "../../libs/protocol-config/src"
   ]
 }

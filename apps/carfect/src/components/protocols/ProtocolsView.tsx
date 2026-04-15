@@ -34,7 +34,11 @@ import {
 import { ConfirmDialog } from '@shared/ui';
 import { toast } from 'sonner';
 import { SendProtocolEmailDialog } from './SendProtocolEmailDialog';
-import { ProtocolSettingsDialog } from './ProtocolSettingsDialog';
+import { ProtocolConfiguratorView } from '@shared/protocol-config';
+import type { ProtocolConfig } from '@shared/protocol-config';
+import type { CustomFieldDefinition } from '@shared/custom-fields';
+import { ScrollArea } from '@shared/ui';
+import { PublicProtocolCustomerView } from './PublicProtocolCustomerView';
 
 interface Protocol {
   id: string;
@@ -73,11 +77,13 @@ export const ProtocolsView = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [protocolToDelete, setProtocolToDelete] = useState<Protocol | null>(null);
   const [instanceSlug, setInstanceSlug] = useState<string>('');
+  const [instanceInfo, setInstanceInfo] = useState<{ name: string; logo_url: string | null; phone: string | null; email: string | null; address: string | null } | null>(null);
   const [editingProtocolId, setEditingProtocolId] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [protocolToEmail, setProtocolToEmail] = useState<Protocol | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [showConfigurator, setShowConfigurator] = useState(false);
+  const [emailTemplate, setEmailTemplate] = useState<string>('');
 
   // Handle URL params for opening create/edit form from reservation
   useEffect(() => {
@@ -105,8 +111,12 @@ export const ProtocolsView = ({
   }, [showCreateForm, editingProtocolId, onEditModeChange]);
 
   const fetchInstanceSlug = async () => {
-    const { data } = await supabase.from('instances').select('slug').eq('id', instanceId).single();
-    if (data) setInstanceSlug(data.slug);
+    const { data } = await supabase.from('instances').select('slug, name, logo_url, phone, email, address, protocol_email_template').eq('id', instanceId).single();
+    if (data) {
+      setInstanceSlug(data.slug);
+      setInstanceInfo({ name: data.name, logo_url: data.logo_url, phone: data.phone, email: data.email, address: data.address });
+      setEmailTemplate(data.protocol_email_template || '');
+    }
   };
 
   const fetchProtocols = async () => {
@@ -188,6 +198,72 @@ export const ProtocolsView = ({
     }
   };
 
+  if (showConfigurator) {
+    return (
+      <ProtocolConfiguratorView
+        instanceId={instanceId}
+        supabase={supabase}
+        onBack={() => setShowConfigurator(false)}
+        emailTemplate={emailTemplate}
+        onEmailTemplateChange={async (template) => {
+          await supabase.from('instances').update({ protocol_email_template: template }).eq('id', instanceId);
+          setEmailTemplate(template);
+        }}
+        renderPreview={(config: ProtocolConfig, definitions: CustomFieldDefinition[], protocolType) => {
+          const sampleProtocol = {
+            id: 'preview',
+            public_token: 'preview',
+            offer_number: null,
+            customer_name: 'Jan Kowalski',
+            customer_email: 'jan@example.com',
+            vehicle_model: 'BMW 320d',
+            nip: config.builtInFields.nip.enabled ? '1234567890' : null,
+            phone: '500 100 200',
+            registration_number: 'WA12345',
+            vin: config.builtInFields.vin.enabled ? 'WBAXXXXXXXX12345' : null,
+            fuel_level: config.builtInFields.fuelLevel.enabled ? 50 : null,
+            odometer_reading: config.builtInFields.odometer.enabled ? 45000 : null,
+            body_type: 'sedan' as const,
+            protocol_date: new Date().toISOString().slice(0, 10),
+            protocol_time: '10:30:00',
+            received_by: 'Anna Nowak',
+            status: 'completed',
+            customer_signature: null,
+            protocol_type: protocolType,
+            service_items: config.builtInFields.serviceItems.enabled
+              ? [{ name: 'Usługa przykładowa', quantity: 1, unit_price: 500 }]
+              : null,
+            custom_field_values: definitions.reduce((acc, def) => {
+              if (def.field_type === 'checkbox') acc[def.id] = true;
+              else if (def.field_type === 'number') acc[def.id] = 42;
+              else acc[def.id] = 'Przykład';
+              return acc;
+            }, {} as Record<string, unknown>),
+          };
+          const sampleInstance = {
+            id: instanceId,
+            name: instanceInfo?.name || 'Firma',
+            logo_url: instanceInfo?.logo_url || null,
+            phone: instanceInfo?.phone || null,
+            email: instanceInfo?.email || null,
+            address: instanceInfo?.address || null,
+          };
+          return (
+            <ScrollArea className="h-full">
+              <PublicProtocolCustomerView
+                protocol={sampleProtocol}
+                instance={sampleInstance}
+                damagePoints={[]}
+                protocolConfig={config}
+                customFieldDefinitions={definitions}
+              />
+            </ScrollArea>
+          );
+        }}
+      />
+    );
+  }
+
   if (showCreateForm || editingProtocolId) {
     return (
       <CreateProtocolForm
@@ -220,7 +296,7 @@ export const ProtocolsView = ({
         <h1 className="text-2xl font-medium flex-1">Protokoły</h1>
         <div className="flex items-center gap-2">
           {!kioskMode && (
-            <Button variant="outline" size="icon" onClick={() => setSettingsDialogOpen(true)}>
+            <Button variant="outline" size="icon" onClick={() => setShowConfigurator(true)}>
               <Settings className="h-4 w-4" />
             </Button>
           )}
@@ -433,11 +509,6 @@ export const ProtocolsView = ({
             onSent={fetchProtocols}
           />
 
-          <ProtocolSettingsDialog
-            open={settingsDialogOpen}
-            onOpenChange={setSettingsDialogOpen}
-            instanceId={instanceId}
-          />
         </>
       )}
     </div>
