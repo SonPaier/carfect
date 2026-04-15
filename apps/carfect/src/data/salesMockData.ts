@@ -41,6 +41,7 @@ export interface SalesOrder {
   invoicePdfUrl?: string;
   customerDiscount?: number;
   paymentMethod?: string;
+  deliveryType?: 'shipping' | 'pickup' | 'uber';
 }
 
 export const mockSalesOrders: SalesOrder[] = [];

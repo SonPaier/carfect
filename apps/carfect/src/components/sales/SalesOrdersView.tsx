@@ -17,7 +17,15 @@ import { format, parseISO } from 'date-fns';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, PaginationFooter } from '@shared/ui';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  PaginationFooter,
+} from '@shared/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +47,10 @@ const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; className: s
   unpaid: { label: 'Do opłacenia', className: 'border-amber-500 text-amber-600' },
   paid: { label: 'Opłacone', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
   collective: { label: 'Zbiorcza', className: 'bg-blue-600 hover:bg-blue-700 text-white' },
-  collective_paid: { label: 'Zbiorcza opłacona', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+  collective_paid: {
+    label: 'Zbiorcza opłacona',
+    className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+  },
 };
 
 const formatCurrency = (value: number, currency: 'PLN' | 'EUR') => {
@@ -248,7 +259,9 @@ const SalesOrdersView = () => {
         status: o.status as SalesOrder['status'],
         paymentStatus:
           inv?.status === 'paid'
-            ? (o.payment_status === 'collective' ? 'collective_paid' : 'paid')
+            ? o.payment_status === 'collective'
+              ? 'collective_paid'
+              : 'paid'
             : ((o.payment_status || 'unpaid') as PaymentStatus),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
@@ -258,6 +271,7 @@ const SalesOrdersView = () => {
         invoiceStatus: inv?.status || undefined,
         invoicePdfUrl: inv?.pdf_url || undefined,
         paymentMethod: o.payment_method || undefined,
+        deliveryType: (o.delivery_type as SalesOrder['deliveryType']) || undefined,
       };
     });
 
@@ -704,9 +718,7 @@ const SalesOrdersView = () => {
       {/* Bulk action bar */}
       {bulk.count > 0 && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg">
-          <span className="text-sm font-medium">
-            Zaznaczono: {bulk.count}
-          </span>
+          <span className="text-sm font-medium">Zaznaczono: {bulk.count}</span>
           <Button size="sm" variant="outline" onClick={bulk.clear}>
             Anuluj
           </Button>
@@ -746,6 +758,7 @@ const SalesOrdersView = () => {
               <SortableHead column="shippedAt" className="w-[100px]">
                 Wysłano
               </SortableHead>
+              <TableHead className="w-[100px]">Dostawa</TableHead>
               <TableHead className="w-[180px]">List przewozowy</TableHead>
               <SortableHead column="totalNet" className="text-right w-[120px]">
                 Kwota netto
@@ -760,7 +773,7 @@ const SalesOrdersView = () => {
           <TableBody>
             {orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10}>
+                <TableCell colSpan={11}>
                   <EmptyState
                     icon={ShoppingCart}
                     title="Brak zamówień"
@@ -814,23 +827,37 @@ const SalesOrdersView = () => {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {order.deliveryType === 'pickup'
+                          ? 'Odbiór osobisty'
+                          : order.deliveryType === 'uber'
+                            ? 'Uber'
+                            : 'Wysyłka'}
+                      </TableCell>
                       <TableCell>
                         {order.trackingNumber ? (
-                          <a
-                            href={order.trackingUrl || '#'}
-                            target={order.trackingUrl ? '_blank' : undefined}
-                            rel={order.trackingUrl ? 'noopener noreferrer' : undefined}
-                            className="text-sm text-primary hover:underline truncate block max-w-[160px]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!order.trackingUrl) {
-                                e.preventDefault();
-                                toast.info('Śledzenie przesyłki w przygotowaniu');
-                              }
-                            }}
-                          >
-                            {order.trackingNumber}
-                          </a>
+                          <div className="flex items-center gap-1 text-sm">
+                            <a
+                              href={order.trackingUrl || '#'}
+                              target={order.trackingUrl ? '_blank' : undefined}
+                              rel={order.trackingUrl ? 'noopener noreferrer' : undefined}
+                              className="text-primary hover:underline truncate max-w-[160px]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!order.trackingUrl) {
+                                  e.preventDefault();
+                                  toast.info('Śledzenie przesyłki w przygotowaniu');
+                                }
+                              }}
+                            >
+                              {order.trackingNumber}
+                            </a>
+                            {order.paymentMethod === 'cod' && (
+                              <span className="text-muted-foreground whitespace-nowrap">
+                                (za pobr.)
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-sm text-muted-foreground">—</span>
                         )}
@@ -862,24 +889,27 @@ const SalesOrdersView = () => {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-0">
-                            {(Object.entries(PAYMENT_STATUS_CONFIG) as [PaymentStatus, { label: string; className: string }][]).map(
-                              ([status, cfg]) => (
-                                <DropdownMenuItem
-                                  key={status}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    changePaymentStatus(order.id, status);
-                                  }}
+                            {(
+                              Object.entries(PAYMENT_STATUS_CONFIG) as [
+                                PaymentStatus,
+                                { label: string; className: string },
+                              ][]
+                            ).map(([status, cfg]) => (
+                              <DropdownMenuItem
+                                key={status}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  changePaymentStatus(order.id, status);
+                                }}
+                              >
+                                <Badge
+                                  variant={status === 'unpaid' ? 'outline' : 'default'}
+                                  className={cfg.className}
                                 >
-                                  <Badge
-                                    variant={status === 'unpaid' ? 'outline' : 'default'}
-                                    className={cfg.className}
-                                  >
-                                    {cfg.label}
-                                  </Badge>
-                                </DropdownMenuItem>
-                              ),
-                            )}
+                                  {cfg.label}
+                                </Badge>
+                              </DropdownMenuItem>
+                            ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -1192,19 +1222,20 @@ const SalesOrdersView = () => {
           customerId={bulkInvoiceState.orders[0].customerId}
           customerName={bulkInvoiceState.orders[0].customerName}
           positions={bulkInvoiceState.orders.flatMap((order) => [
-            ...order.products.map((p) =>
-              mapProductToInvoicePosition(p, order.customerDiscount),
-            ),
-            ...((order.packages || [])
+            ...order.products.map((p) => mapProductToInvoicePosition(p, order.customerDiscount)),
+            ...(order.packages || [])
               .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
               .map((pkg, i, arr) => ({
-                name: arr.length === 1 ? `Wysyłka (${order.orderNumber})` : `Wysyłka #${i + 1} (${order.orderNumber})`,
+                name:
+                  arr.length === 1
+                    ? `Wysyłka (${order.orderNumber})`
+                    : `Wysyłka #${i + 1} (${order.orderNumber})`,
                 quantity: 1,
                 unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
                 vat_rate: 23,
                 unit: 'szt.',
                 discount: 0,
-              }))),
+              })),
           ])}
           onSuccess={async () => {
             // Mark all bulk orders as 'collective'
