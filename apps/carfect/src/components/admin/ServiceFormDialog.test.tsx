@@ -119,6 +119,7 @@ interface RenderOptions {
   defaultCategoryId?: string;
   totalServicesCount?: number;
   pricingMode?: 'netto' | 'brutto';
+  initialName?: string;
 }
 
 const renderServiceFormDialog = (options: RenderOptions = {}) => {
@@ -134,6 +135,7 @@ const renderServiceFormDialog = (options: RenderOptions = {}) => {
     onDelete: options.onDelete,
     existingServices: options.existingServices ?? [],
     pricingMode: options.pricingMode,
+    initialName: options.initialName,
   };
 
   const user = userEvent.setup();
@@ -225,6 +227,11 @@ describe('ServiceFormDialog', () => {
       renderServiceFormDialog();
       // Verify form renders on mobile
       expect(screen.getByText(/Pełna, oficjalna nazwa usługi/i)).toBeInTheDocument();
+    });
+
+    it('SVC-U-011a: Pre-fills name input when initialName is provided in create mode', () => {
+      renderServiceFormDialog({ initialName: 'Mycie ręczne' });
+      expect(screen.getByDisplayValue('Mycie ręczne')).toBeInTheDocument();
     });
   });
 

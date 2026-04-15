@@ -86,6 +86,9 @@ interface ServiceFormDialogProps {
   existingServices?: ExistingService[];
   forceAdvancedOpen?: boolean;
   pricingMode?: 'netto' | 'brutto';
+  contentClassName?: string;
+  overlayClassName?: string;
+  initialName?: string;
 }
 
 // Info icon with tooltip component - only shows on click, not on focus
@@ -130,6 +133,7 @@ const ServiceFormContent = ({
   existingServices = [],
   forceAdvancedOpen = false,
   pricingMode = 'brutto',
+  initialName,
 }: {
   service?: ServiceData | null;
   categories: ServiceCategory[];
@@ -143,6 +147,7 @@ const ServiceFormContent = ({
   existingServices?: ExistingService[];
   forceAdvancedOpen?: boolean;
   pricingMode?: 'netto' | 'brutto';
+  initialName?: string;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -190,7 +195,7 @@ const ServiceFormContent = ({
   const [showSizeDurations, setShowSizeDurations] = useState(hasSizeDurations);
 
   const [formData, setFormData] = useState({
-    name: service?.name || '',
+    name: service?.name || initialName || '',
     short_name: service?.short_name || '',
     description: service?.description || '',
     price_from: service?.price_from ?? null,
@@ -969,6 +974,9 @@ export const ServiceFormDialog = ({
   existingServices = [],
   forceAdvancedOpen = false,
   pricingMode,
+  contentClassName,
+  overlayClassName,
+  initialName,
 }: ServiceFormDialogProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -981,7 +989,7 @@ export const ServiceFormDialog = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[100dvh] max-h-[100dvh]">
+        <DrawerContent className={cn("h-[100dvh] max-h-[100dvh]", contentClassName)} overlayClassName={overlayClassName}>
           <DrawerHeader className="flex-shrink-0">
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
@@ -1000,6 +1008,7 @@ export const ServiceFormDialog = ({
               existingServices={existingServices}
               forceAdvancedOpen={forceAdvancedOpen}
               pricingMode={pricingMode}
+              initialName={initialName}
             />
           </div>
         </DrawerContent>
@@ -1010,7 +1019,8 @@ export const ServiceFormDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[80vw] max-w-[1000px] h-[80vh] max-h-[80vh] flex flex-col p-0 gap-0 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-lg [&>button]:bg-transparent [&>button]:hover:bg-hover [&>button]:absolute [&>button]:right-4 [&>button]:top-4"
+        className={cn("w-[80vw] max-w-[1000px] h-[80vh] max-h-[80vh] flex flex-col p-0 gap-0 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-lg [&>button]:bg-transparent [&>button]:hover:bg-hover [&>button]:absolute [&>button]:right-4 [&>button]:top-4", contentClassName)}
+        overlayClassName={overlayClassName}
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -1032,6 +1042,7 @@ export const ServiceFormDialog = ({
             existingServices={existingServices}
             forceAdvancedOpen={forceAdvancedOpen}
             pricingMode={pricingMode}
+            initialName={initialName}
           />
         </div>
       </DialogContent>
