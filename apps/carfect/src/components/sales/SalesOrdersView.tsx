@@ -796,25 +796,23 @@ const SalesOrdersView = () => {
                   onClick={(e) => e.stopPropagation()}
                 />
               </TableHead>
-              <SortableHead column="orderNumber" className="w-[120px]">
+              <SortableHead column="orderNumber" className="w-[100px]">
                 Nr
               </SortableHead>
-              <SortableHead column="customerName" className="w-[200px]">
-                Klient
-              </SortableHead>
-              <SortableHead column="createdAt" className="w-[100px]">
+              <SortableHead column="customerName">Klient</SortableHead>
+              <SortableHead column="createdAt" className="w-[110px]">
                 Utworzono
               </SortableHead>
-              <SortableHead column="shippedAt" className="w-[100px]">
+              <SortableHead column="shippedAt" className="w-[110px]">
                 Wysłano
               </SortableHead>
-              <TableHead className="w-[100px]">Dostawa</TableHead>
-              <TableHead className="w-[180px]">List przewozowy</TableHead>
-              <SortableHead column="totalNet" className="text-right w-[120px]">
+              <TableHead className="w-[110px]">Dostawa</TableHead>
+              <TableHead className="w-[200px]">List przewozowy</TableHead>
+              <SortableHead column="totalNet" className="text-right w-[170px]">
                 Kwota netto
               </SortableHead>
-              <TableHead className="w-[160px]">Płatność</TableHead>
-              <SortableHead column="status" className="w-[120px]">
+              <TableHead className="w-[180px]">Płatność</TableHead>
+              <SortableHead column="status" className="w-[140px]">
                 Status
               </SortableHead>
               <TableHead className="w-[50px]"></TableHead>
