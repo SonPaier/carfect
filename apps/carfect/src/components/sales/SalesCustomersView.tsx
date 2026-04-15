@@ -245,19 +245,19 @@ const SalesCustomersView = () => {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap shrink-0 pb-4">
         <h2 className="text-xl font-semibold text-foreground">Klienci</h2>
         <Button size="sm" onClick={() => openDrawer(null)}>
           <Plus className="w-4 h-4" />
           Dodaj klienta
         </Button>
       </div>
-      <div id="hint-infobox-slot" className="flex flex-col gap-4" />
+      <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
       {/* Search */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 shrink-0 pb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
