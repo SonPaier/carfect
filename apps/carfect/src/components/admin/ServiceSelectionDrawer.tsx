@@ -1,13 +1,14 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Check, Loader2, Search, X } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Package, Plus, Search, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@shared/ui';
+import { Button, EmptyState } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { getServiceDisplayPrice } from '@/utils/pricing';
 import { usePricingMode } from '@/hooks/usePricingMode';
+import { ServiceFormDialog } from '@/components/admin/ServiceFormDialog';
 
 type CarSize = 'small' | 'medium' | 'large';
 
@@ -93,6 +94,9 @@ const ServiceSelectionDrawer = ({
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
   const [searchQuery, setSearchQuery] = useState('');
+  const [addServiceOpen, setAddServiceOpen] = useState(false);
+  const [addServicePrefillName, setAddServicePrefillName] = useState('');
+  const servicesRef = useRef<Service[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Reset selected and search when drawer opens
@@ -100,6 +104,8 @@ const ServiceSelectionDrawer = ({
     if (open) {
       setSelectedIds(initialSelectedIds);
       setSearchQuery('');
+      setAddServiceOpen(false);
+      setAddServicePrefillName('');
       // Focus search input after drawer animation
       setTimeout(() => {
         searchInputRef.current?.focus();
@@ -107,92 +113,130 @@ const ServiceSelectionDrawer = ({
     }
   }, [open, initialSelectedIds]);
 
-  // Fetch services and categories
+  // Keep ref in sync for use in async callbacks (avoids stale closure)
   useEffect(() => {
-    const fetchData = async () => {
-      if (!open || !instanceId) return;
+    servicesRef.current = services;
+  }, [services]);
 
-      setLoading(true);
+  // Fetch services and categories
+  const fetchData = useCallback(async (): Promise<Service[]> => {
+    if (!open || !instanceId) return [];
 
-      // Build query for services based on hasUnifiedServices
-      // hasUnifiedServices=true → only 'both' services (unified model)
-      // hasUnifiedServices=false → only services matching exact context (legacy)
-      let servicesQuery = supabase
-        .from('unified_services')
-        .select(
-          'id, name, short_name, category_id, duration_minutes, duration_small, duration_medium, duration_large, price_from, price_small, price_medium, price_large, sort_order, station_type, service_type, visibility',
-        )
-        .eq('instance_id', instanceId)
-        .eq('active', true);
+    setLoading(true);
 
-      if (hasUnifiedServices) {
-        // Unified model: show only 'both' services
-        servicesQuery = servicesQuery.eq('service_type', 'both');
+    // Build query for services based on hasUnifiedServices
+    // hasUnifiedServices=true → only 'both' services (unified model)
+    // hasUnifiedServices=false → only services matching exact context (legacy)
+    let servicesQuery = supabase
+      .from('unified_services')
+      .select(
+        'id, name, short_name, category_id, duration_minutes, duration_small, duration_medium, duration_large, price_from, price_small, price_medium, price_large, sort_order, station_type, service_type, visibility',
+      )
+      .eq('instance_id', instanceId)
+      .eq('active', true);
+
+    if (hasUnifiedServices) {
+      // Unified model: show only 'both' services
+      servicesQuery = servicesQuery.eq('service_type', 'both');
+    } else {
+      // Legacy: show only services matching exact context (no 'both')
+      servicesQuery = servicesQuery.eq('service_type', context);
+    }
+
+    // Fetch categories - match the same logic as services
+    let categoriesQuery = supabase
+      .from('unified_categories')
+      .select('id, name, sort_order, prices_are_net')
+      .eq('instance_id', instanceId)
+      .eq('active', true);
+
+    if (hasUnifiedServices) {
+      // Unified model: show only 'both' categories
+      categoriesQuery = categoriesQuery.eq('category_type', 'both');
+    } else {
+      // Legacy: show only categories matching exact context
+      categoriesQuery = categoriesQuery.eq('category_type', context);
+    }
+
+    try {
+      const [servicesRes, categoriesRes] = await Promise.all([
+        servicesQuery.order('sort_order'),
+        categoriesQuery.order('sort_order'),
+      ]);
+
+      if (servicesRes.data && categoriesRes.data) {
+        // Create a map of category prices_are_net
+        const categoryNetMap = new Map<string, boolean>();
+        categoriesRes.data.forEach((cat) => {
+          categoryNetMap.set(cat.id, cat.prices_are_net || false);
+        });
+
+        // Filter by visibility — only exclude 'only_offers' in reservation context (#4)
+        const visibilityFiltered =
+          context === 'reservation'
+            ? servicesRes.data.filter((s) => {
+                const vis = (s as { visibility?: string }).visibility || 'everywhere';
+                return vis !== 'only_offers';
+              })
+            : servicesRes.data;
+
+        // Enrich services with category_prices_are_net
+        const enrichedServices = visibilityFiltered.map((s) => ({
+          ...s,
+          category_prices_are_net: s.category_id
+            ? categoryNetMap.get(s.category_id) || false
+            : false,
+        }));
+
+        setServices(enrichedServices);
+        setCategories(categoriesRes.data);
+        return enrichedServices;
       } else {
-        // Legacy: show only services matching exact context (no 'both')
-        servicesQuery = servicesQuery.eq('service_type', context);
+        if (servicesRes.data) setServices(servicesRes.data);
+        if (categoriesRes.data) setCategories(categoriesRes.data);
+        return servicesRes.data ?? [];
       }
-
-      // Fetch categories - match the same logic as services
-      let categoriesQuery = supabase
-        .from('unified_categories')
-        .select('id, name, sort_order, prices_are_net')
-        .eq('instance_id', instanceId)
-        .eq('active', true);
-
-      if (hasUnifiedServices) {
-        // Unified model: show only 'both' categories
-        categoriesQuery = categoriesQuery.eq('category_type', 'both');
-      } else {
-        // Legacy: show only categories matching exact context
-        categoriesQuery = categoriesQuery.eq('category_type', context);
-      }
-
-      try {
-        const [servicesRes, categoriesRes] = await Promise.all([
-          servicesQuery.order('sort_order'),
-          categoriesQuery.order('sort_order'),
-        ]);
-
-        if (servicesRes.data && categoriesRes.data) {
-          // Create a map of category prices_are_net
-          const categoryNetMap = new Map<string, boolean>();
-          categoriesRes.data.forEach((cat) => {
-            categoryNetMap.set(cat.id, cat.prices_are_net || false);
-          });
-
-          // Filter by visibility — only exclude 'only_offers' in reservation context (#4)
-          const visibilityFiltered =
-            context === 'reservation'
-              ? servicesRes.data.filter((s) => {
-                  const vis = (s as { visibility?: string }).visibility || 'everywhere';
-                  return vis !== 'only_offers';
-                })
-              : servicesRes.data;
-
-          // Enrich services with category_prices_are_net
-          const enrichedServices = visibilityFiltered.map((s) => ({
-            ...s,
-            category_prices_are_net: s.category_id
-              ? categoryNetMap.get(s.category_id) || false
-              : false,
-          }));
-
-          setServices(enrichedServices);
-          setCategories(categoriesRes.data);
-        } else {
-          if (servicesRes.data) setServices(servicesRes.data);
-          if (categoriesRes.data) setCategories(categoriesRes.data);
-        }
-      } catch (error) {
-        console.error('Error fetching services:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
   }, [open, instanceId, hasUnifiedServices, context]);
+
+  const handleServiceCreated = useCallback(async () => {
+    const prefillName = addServicePrefillName;
+    const previousServiceIds = new Set(servicesRef.current.map((s) => s.id));
+    setAddServiceOpen(false);
+    setAddServicePrefillName('');
+    setSearchQuery('');
+    const freshServices = await fetchData();
+
+    // Auto-select: try name match first, fall back to finding the new service by diff
+    let newService: Service | undefined;
+    if (prefillName) {
+      const trimmedPrefill = prefillName.trim();
+      newService = freshServices.find(
+        (s) => s.name === trimmedPrefill || s.short_name === trimmedPrefill,
+      );
+    }
+    if (!newService) {
+      newService = freshServices.find((s) => !previousServiceIds.has(s.id));
+    }
+    if (newService) {
+      const id = newService.id;
+      setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    }
+  }, [fetchData, addServicePrefillName]);
+
+  const openAddService = useCallback((name = '') => {
+    setAddServicePrefillName(name);
+    setAddServiceOpen(true);
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Parse search tokens and find matching services
   const { matchingServices, searchTokens } = useMemo(() => {
@@ -204,7 +248,7 @@ const ServiceSelectionDrawer = ({
     const matched: { service: Service; token: string }[] = [];
 
     tokens.forEach((token) => {
-      // First try exact short_name match
+      // Exact short_name match
       let found = services.find(
         (s) =>
           s.short_name?.toUpperCase() === token &&
@@ -212,21 +256,11 @@ const ServiceSelectionDrawer = ({
           !matched.some((m) => m.service.id === s.id),
       );
 
-      // Fallback to partial short_name match
+      // Fallback to partial short_name match (prefix)
       if (!found) {
         found = services.find(
           (s) =>
             s.short_name?.toUpperCase().startsWith(token) &&
-            !selectedIds.includes(s.id) &&
-            !matched.some((m) => m.service.id === s.id),
-        );
-      }
-
-      // Fallback to name match
-      if (!found) {
-        found = services.find(
-          (s) =>
-            s.name.toUpperCase().includes(token) &&
             !selectedIds.includes(s.id) &&
             !matched.some((m) => m.service.id === s.id),
         );
@@ -267,8 +301,26 @@ const ServiceSelectionDrawer = ({
       groups.push({ category, services: categoryServices });
     });
 
+    // Services without a category
+    let uncategorized = services.filter(
+      (s) => !s.category_id || !categories.some((c) => c.id === s.category_id),
+    );
+    if (searchQuery.trim()) {
+      const query = searchQuery.toUpperCase();
+      uncategorized = uncategorized.filter(
+        (s) =>
+          s.short_name?.toUpperCase().includes(query) || s.name.toUpperCase().includes(query),
+      );
+    }
+    if (uncategorized.length > 0) {
+      groups.push({
+        category: { id: '__uncategorized__', name: t('serviceDrawer.uncategorized', 'Inne'), sort_order: 9999, prices_are_net: false },
+        services: uncategorized,
+      });
+    }
+
     return groups;
-  }, [services, categories, searchQuery]);
+  }, [services, categories, searchQuery, t]);
 
   const pricingMode = usePricingMode(instanceId);
 
@@ -354,7 +406,7 @@ const ServiceSelectionDrawer = ({
     });
 
     return { total, hasVariablePrice };
-  }, [selectedIds, services, carSize]);
+  }, [selectedIds, services, carSize, pricingMode]);
 
   // Handle confirm
   const handleConfirm = () => {
@@ -460,9 +512,24 @@ const ServiceSelectionDrawer = ({
             </div>
           )}
 
-          {/* No matches message */}
-          {searchQuery.trim() && matchingServices.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t('serviceDrawer.noMatches')}</p>
+          {/* No matches message — show only when neither chips nor category list have results */}
+          {searchQuery.trim() && matchingServices.length === 0 && groupedServices.every((g) => g.services.length === 0) && (
+            <EmptyState
+              icon={Search}
+              title={t('serviceDrawer.noResults')}
+              description={t('serviceDrawer.noResultsDescription')}
+              className="py-8"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openAddService(searchQuery)}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                {t('serviceDrawer.addService')}
+              </Button>
+            </EmptyState>
           )}
 
           {/* Selected Services Chips - conditionally hidden */}
@@ -494,13 +561,28 @@ const ServiceSelectionDrawer = ({
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
+          ) : services.length === 0 && !searchQuery.trim() ? (
+            <EmptyState
+              icon={Package}
+              title={t('serviceDrawer.noServices')}
+              description={t('serviceDrawer.noServicesDescription')}
+              className="py-12"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openAddService()}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                {t('serviceDrawer.addNewService')}
+              </Button>
+            </EmptyState>
           ) : (
             <div className="pb-4">
               {groupedServices.map(({ category, services: categoryServices }) => {
-                const visibleServices = categoryServices;
-
                 // Hide category if no visible services
-                if (visibleServices.length === 0) {
+                if (categoryServices.length === 0) {
                   return null;
                 }
 
@@ -514,7 +596,7 @@ const ServiceSelectionDrawer = ({
                     </div>
 
                     {/* Services list - flat */}
-                    {visibleServices.map((service) => {
+                    {categoryServices.map((service) => {
                       const isSelected = selectedIds.includes(service.id);
                       const price = getPrice(service);
                       const duration = getDuration(service);
@@ -597,6 +679,16 @@ const ServiceSelectionDrawer = ({
             )}
           </div>
           <Button
+            type="button"
+            variant="outline"
+            className="w-full mb-2"
+            onClick={() => openAddService()}
+            disabled={loading}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            {t('serviceDrawer.addNewService')}
+          </Button>
+          <Button
             onClick={handleConfirm}
             disabled={selectedIds.length === 0}
             className="w-full"
@@ -606,6 +698,17 @@ const ServiceSelectionDrawer = ({
             {t('serviceDrawer.addButton')}
           </Button>
         </div>
+        <ServiceFormDialog
+          open={addServiceOpen}
+          onOpenChange={setAddServiceOpen}
+          instanceId={instanceId}
+          categories={categories}
+          onSaved={handleServiceCreated}
+          initialName={addServicePrefillName}
+          defaultCategoryId={categories[0]?.id}
+          contentClassName="!z-[400]"
+          overlayClassName="!z-[400]"
+        />
       </SheetContent>
     </Sheet>
   );
