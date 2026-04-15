@@ -206,11 +206,10 @@ describe('SalesOrdersView', () => {
     expect(badge.className).toContain('bg-emerald-600');
   });
 
-  it('shows "Opłacone" badge when invoice status is paid (auto-sync)', async () => {
+  it('shows "Opłacona (FV)" badge when invoice status is paid (auto-sync)', async () => {
     // Auto-sync mechanism: SalesOrdersView fetches both sales_orders and invoices.
-    // When an invoice linked to an order has status 'paid', the component overrides
-    // the order's paymentStatus to 'paid', showing "Opłacone" regardless of
-    // the sales_order.payment_status field value.
+    // When an invoice linked to an order has status 'paid', the component sets
+    // paymentStatus to 'invoice_paid', showing "Opłacona (FV)".
     mockFrom.mockImplementation((table: string) => {
       if (table === 'sales_orders') {
         return createChainMock(mockOrdersWithInvoice);
@@ -233,7 +232,7 @@ describe('SalesOrdersView', () => {
     render(<SalesOrdersView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Opłacone')).toBeInTheDocument();
+      expect(screen.getByText('Opłacona (FV)')).toBeInTheDocument();
     });
 
     // Verify that mockFrom was called with 'invoices' (confirming auto-sync fetch ran)

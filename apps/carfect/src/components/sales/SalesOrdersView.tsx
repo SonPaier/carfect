@@ -33,7 +33,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@shared/ui';
-import { ConfirmDialog, EmptyState, Checkbox } from '@shared/ui';
+import {
+  ConfirmDialog,
+  EmptyState,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@shared/ui';
 import { CreateInvoiceDrawer } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +58,14 @@ const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; className: s
   collective: { label: 'Zbiorcza', className: 'bg-blue-600 hover:bg-blue-700 text-white' },
   collective_paid: {
     label: 'Zbiorcza opłacona',
+    className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+  },
+  invoice_unpaid: {
+    label: 'Do opłacenia (FV)',
+    className: 'border-orange-500 text-orange-600',
+  },
+  invoice_paid: {
+    label: 'Opłacona (FV)',
     className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
   },
 };
@@ -142,6 +159,12 @@ const SalesOrdersView = () => {
     open: boolean;
     orders: SalesOrder[];
   }>({ open: false, orders: [] });
+  const [trackingDialog, setTrackingDialog] = useState<{
+    open: boolean;
+    orderId: string;
+    orderNumber: string;
+  }>({ open: false, orderId: '', orderNumber: '' });
+  const [trackingInput, setTrackingInput] = useState('');
   const bulk = useBulkSelection();
 
   // Debounce search
@@ -257,12 +280,13 @@ const SalesOrdersView = () => {
         ),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
-        paymentStatus:
-          inv?.status === 'paid'
+        paymentStatus: inv
+          ? inv.status === 'paid'
             ? o.payment_status === 'collective'
               ? 'collective_paid'
-              : 'paid'
-            : ((o.payment_status || 'unpaid') as PaymentStatus),
+              : 'invoice_paid'
+            : 'invoice_unpaid'
+          : ((o.payment_status || 'unpaid') as PaymentStatus),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
         apaczkaOrderId: o.apaczka_order_id || undefined,
@@ -350,6 +374,32 @@ const SalesOrdersView = () => {
           : o,
       ),
     );
+  };
+
+  const saveManualTracking = async () => {
+    const number = trackingInput.trim();
+    if (!number) return;
+    const url = `https://www.apaczka.pl/sledz-przesylke/?waybill=${number}`;
+    const { error } = await supabase
+      .from('sales_orders')
+      .update({
+        tracking_number: number,
+        apaczka_tracking_url: url,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', trackingDialog.orderId);
+    if (error) {
+      toast.error('Błąd zapisu listu przewozowego');
+      return;
+    }
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === trackingDialog.orderId ? { ...o, trackingNumber: number, trackingUrl: url } : o,
+      ),
+    );
+    setTrackingDialog({ open: false, orderId: '', orderNumber: '' });
+    setTrackingInput('');
+    toast.success('List przewozowy dodany');
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -876,7 +926,9 @@ const SalesOrdersView = () => {
                             >
                               {(() => {
                                 const cfg = PAYMENT_STATUS_CONFIG[order.paymentStatus];
-                                const isOutline = order.paymentStatus === 'unpaid';
+                                const isOutline =
+                                  order.paymentStatus === 'unpaid' ||
+                                  order.paymentStatus === 'invoice_unpaid';
                                 return (
                                   <Badge
                                     variant={isOutline ? 'outline' : 'default'}
@@ -903,7 +955,11 @@ const SalesOrdersView = () => {
                                 }}
                               >
                                 <Badge
-                                  variant={status === 'unpaid' ? 'outline' : 'default'}
+                                  variant={
+                                    status === 'unpaid' || status === 'invoice_unpaid'
+                                      ? 'outline'
+                                      : 'default'
+                                  }
                                   className={cfg.className}
                                 >
                                   {cfg.label}
@@ -988,6 +1044,21 @@ const SalesOrdersView = () => {
                             <DropdownMenuItem onClick={() => handleEditOrder(order)}>
                               Edytuj
                             </DropdownMenuItem>
+                            {!order.trackingNumber && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTrackingDialog({
+                                    open: true,
+                                    orderId: order.id,
+                                    orderNumber: order.orderNumber,
+                                  });
+                                  setTrackingInput('');
+                                }}
+                              >
+                                Dodaj list przewozowy
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             {order.paymentMethod !== 'free' &&
                               (order.invoiceId ? (
@@ -1254,6 +1325,38 @@ const SalesOrdersView = () => {
           bankAccounts={bankAccounts}
         />
       )}
+      <Dialog
+        open={trackingDialog.open}
+        onOpenChange={(open) => {
+          setTrackingDialog((prev) => ({ ...prev, open }));
+          if (!open) setTrackingInput('');
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{trackingDialog.orderNumber} - Dodaj list przewozowy</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Nr listu przewozowego"
+            value={trackingInput}
+            onChange={(e) => setTrackingInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveManualTracking();
+            }}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTrackingDialog({ open: false, orderId: '', orderNumber: '' })}
+            >
+              Anuluj
+            </Button>
+            <Button onClick={saveManualTracking} disabled={!trackingInput.trim()}>
+              Zapisz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
