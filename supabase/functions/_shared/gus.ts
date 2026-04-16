@@ -96,6 +96,11 @@ export async function lookupNip(nip: string): Promise<GusCompanyResult> {
     throw new Error(`Błąd API CEIDG: ${res.status}`);
   }
 
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('API CEIDG tymczasowo niedostępne (przerwa serwisowa)');
+  }
+
   const data = await res.json() as { firma: CeidgFirma[] };
 
   if (!data.firma || data.firma.length === 0) {
