@@ -37,6 +37,7 @@ export interface SalesRollUsage {
   usedMb: number;
   source: RollUsageSource;
   workerName: string | null;
+  vehicleName: string | null;
   note: string | null;
   createdAt: string;
 }

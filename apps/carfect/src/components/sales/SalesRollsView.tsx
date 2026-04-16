@@ -12,6 +12,7 @@ import {
   Disc,
   BarChart3,
   X,
+  Users,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
@@ -46,6 +47,7 @@ import {
 import AddEditRollDrawer from './rolls/AddEditRollDrawer';
 import RollScanDrawer from './rolls/RollScanDrawer';
 import RollDetailsDrawer from './rolls/RollDetailsDrawer';
+import EmployeeRollsDrawer from './rolls/EmployeeRollsDrawer';
 
 type TabType = 'active' | 'sold';
 type SortColumn = 'productName' | 'productCode' | 'widthMm' | 'remainingMb' | 'createdAt';
@@ -91,6 +93,7 @@ const SalesRollsView = () => {
   const [detailsRoll, setDetailsRoll] = useState<SalesRoll | null>(null);
 
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
 
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -295,6 +298,10 @@ const SalesRollsView = () => {
           <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
             <BarChart3 className="w-4 h-4" />
             Zobacz stany
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setEmployeeDrawerOpen(true)}>
+            <Users className="w-4 h-4 mr-1" />
+            Pracownicy i rolki
           </Button>
           <Button variant="outline" size="sm" onClick={handleAddManual}>
             <Plus className="w-4 h-4" />
@@ -551,6 +558,12 @@ const SalesRollsView = () => {
         onConfirm={handleDelete}
         confirmLabel="Usuń"
         variant="destructive"
+      />
+
+      <EmployeeRollsDrawer
+        open={employeeDrawerOpen}
+        onClose={() => setEmployeeDrawerOpen(false)}
+        instanceId={instanceId ?? ''}
       />
 
       {/* Summary drawer */}
