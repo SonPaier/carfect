@@ -597,12 +597,12 @@ export async function createScrapUsage(params: {
 
 export async function fetchWorkerProfiles(instanceId: string): Promise<{ id: string; name: string }[]> {
   const { data } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .eq('instance_id', instanceId);
-  return (data || [])
-    .filter(p => p.full_name && !p.full_name.includes('@'))
-    .map(p => ({ id: p.id, name: p.full_name! }));
+    .from('employees')
+    .select('id, name')
+    .eq('instance_id', instanceId)
+    .eq('active', true)
+    .order('sort_order', { ascending: true });
+  return (data || []).map(e => ({ id: e.id, name: e.name }));
 }
 
 // ─── Worker Roll Usages For Month ────────────────────────────
