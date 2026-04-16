@@ -675,10 +675,8 @@ const Dashboard = () => {
       updateData.end_date = format(addDays(origEnd, daysDiff), 'yyyy-MM-dd');
     }
     if (newTime) {
-      const originalStart =
-        parseFloat(item.start_time.split(':')[0]) + parseFloat(item.start_time.split(':')[1]) / 60;
-      const originalEnd =
-        parseFloat(item.end_time.split(':')[0]) + parseFloat(item.end_time.split(':')[1]) / 60;
+      const originalStart = parseTime(item.start_time);
+      const originalEnd = parseTime(item.end_time);
       const duration = originalEnd - originalStart;
       const newStartParts = newTime.split(':').map(Number);
       const newEndTotal = newStartParts[0] + newStartParts[1] / 60 + duration;

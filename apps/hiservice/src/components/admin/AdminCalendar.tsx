@@ -184,7 +184,8 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const parseTime = (time: string): number => {
+const parseTime = (time: string | null | undefined): number => {
+  if (!time) return 0;
   const [hours, minutes] = time.split(':').map(Number);
   return hours + minutes / 60;
 };
@@ -194,7 +195,8 @@ const formatTimeSlot = (hour: number, slotIndex: number): string => {
   return `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
-const getTimeBasedZIndex = (startTime: string): number => {
+const getTimeBasedZIndex = (startTime: string | null | undefined): number => {
+  if (!startTime) return 5;
   const [hours, minutes] = startTime.split(':').map(Number);
   return 5 + Math.floor(hours - 5 + minutes / 60);
 };
