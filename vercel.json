@@ -3,6 +3,11 @@
   "outputDirectory": "apps/carfect/dist",
   "installCommand": "pnpm install",
   "framework": "vite",
+  "functions": {
+    "api/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "redirects": [
     {
       "source": "/(.*)",
