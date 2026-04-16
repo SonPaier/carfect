@@ -102,8 +102,7 @@ export async function lookupNip(nip: string): Promise<GusCompanyResult> {
     throw new Error('Nie znaleziono firmy o podanym NIP');
   }
 
-  // Take the first active company, or just the first one
-  const firma = data.firma.find(f => f.status === 'AKTYWNY') || data.firma[0];
+  const firma = data.firma[0];
   const addr = firma.adresDzialalnosci || {};
 
   return {
