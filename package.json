@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.47",
+    "@react-pdf/renderer": "^4.3.0",
     "@supabase/supabase-js": "^2.99.3",
     "ai": "^6.0.134",
     "dompurify": "^3.3.3",
