@@ -1,23 +1,18 @@
 import { toast } from 'sonner';
-
-const PDF_API_URL = import.meta.env.DEV
-  ? 'http://localhost:3333/api/generate-offer-pdf'
-  : '/api/generate-offer-pdf';
+import { supabase } from '@/integrations/supabase/client';
 
 export async function openOfferPdf(publicToken: string): Promise<void> {
   try {
-    const response = await fetch(PDF_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ publicToken }),
+    const { data, error } = await supabase.functions.invoke('generate-offer-pdf', {
+      body: { publicToken },
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.error || 'Failed to generate PDF');
+    if (error) {
+      throw new Error(error.message || 'Failed to generate PDF');
     }
 
-    const blob = await response.blob();
+    // data is already a Blob when content-type is application/pdf
+    const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   } catch (error: unknown) {

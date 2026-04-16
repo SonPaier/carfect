@@ -826,7 +826,7 @@ export const useOffer = (instanceId: string) => {
                 .insert({
                   instance_id: instanceId,
                   name: offer.customerData.name || offer.customerData.company || 'Nieznany',
-                  phone: normalizedPhone,
+                  phone: normalizedPhone || '',
                   email: offer.customerData.email || null,
                   company: offer.customerData.company || null,
                   nip: offer.customerData.nip || null,
