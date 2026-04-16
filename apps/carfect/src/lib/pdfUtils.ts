@@ -1,25 +1,25 @@
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+
+const PDF_API_URL = import.meta.env.DEV
+  ? 'http://localhost:3333/api/generate-offer-pdf'
+  : '/api/generate-offer-pdf';
 
 export async function openOfferPdf(publicToken: string): Promise<void> {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-offer-pdf', {
-      body: { token: publicToken },
+    const response = await fetch(PDF_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publicToken }),
     });
 
-    if (error) {
-      throw new Error(error.message || 'Failed to generate PDF');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.error || 'Failed to generate PDF');
     }
 
-    // Edge function returns HTML with auto-print — open in new window
-    const html = typeof data === 'string' ? data : await (data as Blob).text();
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-    } else {
-      toast.error('Odblokuj wyskakujące okna w przeglądarce');
-    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   } catch (error: unknown) {
     console.error('PDF generation error:', error);
     toast.error('Nie udało się wygenerować PDF');
