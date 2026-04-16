@@ -539,6 +539,7 @@ const SalesRollsView = () => {
         open={detailsDrawerOpen}
         onOpenChange={setDetailsDrawerOpen}
         roll={detailsRoll}
+        instanceId={instanceId ?? ''}
         onEdit={handleEditClick}
         onUsageChange={async () => {
           loadRolls();

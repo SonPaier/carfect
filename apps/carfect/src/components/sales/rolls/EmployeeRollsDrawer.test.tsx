@@ -26,7 +26,11 @@ vi.mock('@shared/ui', async (importOriginal) => {
 
 vi.mock('../services/rollService', () => ({
   fetchWorkerRollUsagesForMonth: vi.fn(),
+  fetchWorkerProfiles: vi.fn().mockResolvedValue([]),
+  createScrapUsage: vi.fn().mockResolvedValue(undefined),
 }));
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { fetchWorkerRollUsagesForMonth } from '../services/rollService';
 

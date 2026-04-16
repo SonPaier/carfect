@@ -569,6 +569,30 @@ export async function uploadRollPhoto(file: File, instanceId: string): Promise<s
   return urlData.publicUrl;
 }
 
+// ─── Scrap / Offcut Usage (no roll) ──────────────────────────
+
+export async function createScrapUsage(params: {
+  workerName: string;
+  widthM: number;
+  lengthM: number;
+  vehicleName?: string | null;
+  note?: string | null;
+}): Promise<void> {
+  const usedM2 = params.widthM * params.lengthM;
+  const { error } = await supabase
+    .from('sales_roll_usages')
+    .insert({
+      roll_id: null,
+      used_mb: params.lengthM,
+      used_m2: usedM2,
+      source: 'worker',
+      worker_name: params.workerName,
+      vehicle_name: params.vehicleName || null,
+      note: params.note || null,
+    });
+  if (error) throw error;
+}
+
 // ─── Worker Profiles ─────────────────────────────────────────
 
 export async function fetchWorkerProfiles(instanceId: string): Promise<{ id: string; name: string }[]> {

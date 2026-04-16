@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Button, Input, Label, NumericInput } from '@shared/ui';
+import { Button, Input, Label, NumericInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SalesRoll, SalesRollUsage, RollUsageSource } from '../types/rolls';
@@ -10,6 +10,7 @@ import {
   updateManualRollUsage,
   deleteRollUsage,
   fetchRollUsages,
+  fetchWorkerProfiles,
 } from '../services/rollService';
 
 const SOURCE_LABELS: Record<RollUsageSource, string> = {
@@ -82,10 +83,11 @@ function UsageCard({ usage, onEdit, onDelete }: UsageCardProps) {
 
 interface RollUsageTabProps {
   roll: SalesRoll;
+  instanceId: string;
   onUsageChange?: () => void;
 }
 
-const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
+const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) => {
   const [usages, setUsages] = useState<SalesRollUsage[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -93,8 +95,10 @@ const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
   const [formSource, setFormSource] = useState<'manual' | 'worker'>('manual');
   const [formMb, setFormMb] = useState('');
   const [formWorkerName, setFormWorkerName] = useState('');
+  const [formVehicleName, setFormVehicleName] = useState('');
   const [formNote, setFormNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [workerProfiles, setWorkerProfiles] = useState<{ id: string; name: string }[]>([]);
 
   const parsedMb = parseFloat(formMb);
   const isValidMb = !isNaN(parsedMb) && parsedMb > 0;
@@ -117,9 +121,14 @@ const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
     };
   }, [roll.id]);
 
+  useEffect(() => {
+    if (instanceId) fetchWorkerProfiles(instanceId).then(setWorkerProfiles);
+  }, [instanceId]);
+
   const resetForm = () => {
     setFormMb('');
     setFormWorkerName('');
+    setFormVehicleName('');
     setFormNote('');
     setFormSource('manual');
     setEditingId(null);
@@ -137,6 +146,7 @@ const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
     setFormSource(usage.source === 'order' ? 'manual' : usage.source);
     setFormMb(usage.usedMb.toString());
     setFormWorkerName(usage.workerName || '');
+    setFormVehicleName(usage.vehicleName || '');
     setFormNote(usage.note || '');
     setShowForm(true);
   };
@@ -160,6 +170,7 @@ const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
         usedM2: mbToM2(parsedMb, roll.widthMm),
         source: formSource,
         workerName: formSource === 'worker' ? formWorkerName : undefined,
+        vehicleName: formSource === 'worker' ? formVehicleName || undefined : undefined,
         note: formNote || undefined,
       };
 
@@ -203,14 +214,27 @@ const RollUsageTab = ({ roll, onUsageChange }: RollUsageTabProps) => {
       </div>
 
       {formSource === 'worker' && (
-        <div>
-          <Label className="text-xs">Imię pracownika</Label>
-          <Input
-            value={formWorkerName}
-            onChange={(e) => setFormWorkerName(e.target.value)}
-            className="mt-1"
-          />
-        </div>
+        <>
+          <div>
+            <Label className="text-xs">Pracownik</Label>
+            <Select value={formWorkerName} onValueChange={setFormWorkerName}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Wybierz pracownika" /></SelectTrigger>
+              <SelectContent>
+                {workerProfiles.map((p) => (
+                  <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Samochód</Label>
+            <Input
+              value={formVehicleName}
+              onChange={(e) => setFormVehicleName(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        </>
       )}
 
       <div>
