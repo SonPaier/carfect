@@ -10,7 +10,7 @@
     "./*": "./src/*"
   },
   "dependencies": {
-    "@shared/custom-fields": "*"
+    "@shared/custom-fields": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",
