@@ -1,13 +1,13 @@
 /**
- * GUS BIR1.1 API client (REGON)
- * Docs: https://api.stat.gov.pl/Home/RegonApi
+ * CEIDG / Hurtownia Danych biznes.gov.pl API v3
+ * Docs: https://dane.biznes.gov.pl/
  *
- * Flow: login (get session ID) → search by NIP → get full report → logout
+ * Simple REST API — GET /api/ceidg/v3/firmy?nip={NIP}
+ * Auth: Bearer JWT token in Authorization header
  */
 
-const PROD_URL = 'https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnpsv.svc';
-const TEST_URL = 'https://wyszukiwarkaregontest.stat.gov.pl/wsBIR/UslugaBIRzewnpsv.svc';
-const TEST_KEY = 'abcde12345abcde12345';
+const PROD_URL = 'https://dane.biznes.gov.pl/api/ceidg/v3';
+const TEST_URL = 'https://test-dane.biznes.gov.pl/api/ceidg/v3';
 
 export interface GusCompanyResult {
   name: string;
@@ -19,156 +19,46 @@ export interface GusCompanyResult {
   postalCode: string;
   city: string;
   province: string;
-  type: 'F' | 'P' | 'LP'; // F=osoba fizyczna, P=prawna, LP=lokalna prawna
 }
 
 function getBaseUrl(): string {
-  const key = Deno.env.get('GUS_API_KEY');
-  // If using test key or no key set, use test endpoint
-  if (!key || key === TEST_KEY) return TEST_URL;
+  const env = Deno.env.get('CEIDG_ENV');
+  if (env === 'test') return TEST_URL;
   return PROD_URL;
 }
 
-function getApiKey(): string {
-  return Deno.env.get('GUS_API_KEY') || TEST_KEY;
+function getApiToken(): string {
+  const token = Deno.env.get('CEIDG_API_TOKEN');
+  if (!token) throw new Error('CEIDG_API_TOKEN not configured');
+  return token;
 }
 
-function soapEnvelope(body: string): string {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-               xmlns:ns="http://CIS/BIR/PUBL/2014/07">
-  <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
-    <wsa:Action>http://CIS/BIR/PUBL/2014/07/IUslugaBIRzworki/${body.includes('Zaloguj') ? 'Zaloguj' : body.includes('DaneSzukajPodmioty') ? 'DaneSzukajPodmioty' : body.includes('DanePobierzPelnyRaport') ? 'DanePobierzPelnyRaport' : 'Wyloguj'}</wsa:Action>
-    <wsa:To>${getBaseUrl()}</wsa:To>
-  </soap:Header>
-  <soap:Body>${body}</soap:Body>
-</soap:Envelope>`;
-}
-
-async function soapRequest(body: string, sid?: string): Promise<string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/soap+xml; charset=utf-8',
+interface CeidgFirma {
+  id: string;
+  nazwa: string;
+  adresDzialalnosci: {
+    ulica?: string;
+    budynek?: string;
+    lokal?: string;
+    miasto?: string;
+    kod?: string;
+    wojewodztwo?: string;
+    powiat?: string;
+    gmina?: string;
   };
-  if (sid) {
-    headers['sid'] = sid;
-  }
-
-  const res = await fetch(getBaseUrl(), {
-    method: 'POST',
-    headers,
-    body: soapEnvelope(body),
-  });
-
-  if (!res.ok) {
-    throw new Error(`GUS API HTTP ${res.status}`);
-  }
-
-  return await res.text();
-}
-
-function extractTag(xml: string, tag: string): string {
-  const regex = new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1].trim() : '';
-}
-
-function extractCData(xml: string, tag: string): string {
-  const regex = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1].trim() : '';
-}
-
-async function login(): Promise<string> {
-  const body = `<ns:Zaloguj><ns:pKluczUzytkownika>${getApiKey()}</ns:pKluczUzytkownika></ns:Zaloguj>`;
-  const xml = await soapRequest(body);
-  const sid = extractTag(xml, 'ZalogujResult');
-  if (!sid) throw new Error('GUS login failed');
-  return sid;
-}
-
-async function logout(sid: string): Promise<void> {
-  const body = `<ns:Wyloguj><ns:pIdentyfikatorSesji>${sid}</ns:pIdentyfikatorSesji></ns:Wyloguj>`;
-  await soapRequest(body, sid);
-}
-
-async function searchByNip(sid: string, nip: string): Promise<{ regon: string; type: string; silosId: string }> {
-  const body = `<ns:DaneSzukajPodmioty>
-    <ns:pParametryWyszukiwania>
-      <ns:Nip>${nip}</ns:Nip>
-    </ns:pParametryWyszukiwania>
-  </ns:DaneSzukajPodmioty>`;
-
-  const xml = await soapRequest(body, sid);
-  const data = extractCData(xml, 'DaneSzukajPodmiotyResult') || extractTag(xml, 'DaneSzukajPodmiotyResult');
-
-  if (!data || data.includes('ErrorCode')) {
-    throw new Error('Nie znaleziono podmiotu o podanym NIP');
-  }
-
-  const regon = extractTag(data, 'Regon');
-  const type = extractTag(data, 'Typ');
-  const silosId = extractTag(data, 'SilosID');
-
-  if (!regon) throw new Error('Brak REGON w odpowiedzi');
-
-  return { regon, type, silosId };
-}
-
-function getReportName(type: string, silosId: string): string {
-  // F = osoba fizyczna (JDG), P = osoba prawna, LP = jednostka lokalna osoby prawnej
-  if (type === 'F') {
-    // silosId: 1=JDG, 2=rolnik, 3=inna
-    return 'BIR11OsFizycznaDaneOgolne';
-  }
-  if (type === 'P') {
-    return 'BIR11OsPrawna';
-  }
-  // LP
-  return 'BIR11OsPrawna';
-}
-
-async function getFullReport(sid: string, regon: string, reportName: string): Promise<string> {
-  const body = `<ns:DanePobierzPelnyRaport>
-    <ns:pRegon>${regon}</ns:pRegon>
-    <ns:pNazwaRaportu>${reportName}</ns:pNazwaRaportu>
-  </ns:DanePobierzPelnyRaport>`;
-
-  const xml = await soapRequest(body, sid);
-  return extractCData(xml, 'DanePobierzPelnyRaportResult') || extractTag(xml, 'DanePobierzPelnyRaportResult');
-}
-
-function parseCompanyData(reportXml: string, type: string, nip: string): GusCompanyResult {
-  if (type === 'F') {
-    // Osoba fizyczna — JDG
-    const name = extractTag(reportXml, 'fiz_nazwa') || extractTag(reportXml, 'fiz_nazwaPelna') || '';
-    return {
-      name: name || `${extractTag(reportXml, 'fiz_imie1')} ${extractTag(reportXml, 'fiz_nazwisko')}`.trim(),
-      nip,
-      regon: extractTag(reportXml, 'fiz_regon9'),
-      street: `${extractTag(reportXml, 'fiz_adSiedzUlica_Nazwa')} ${extractTag(reportXml, 'fiz_adSiedzNumerNieruchomosci')}`.trim(),
-      buildingNumber: extractTag(reportXml, 'fiz_adSiedzNumerNieruchomosci'),
-      apartmentNumber: extractTag(reportXml, 'fiz_adSiedzNumerLokalu'),
-      postalCode: extractTag(reportXml, 'fiz_adSiedzKodPocztowy'),
-      city: extractTag(reportXml, 'fiz_adSiedzMiejscowosc_Nazwa'),
-      province: extractTag(reportXml, 'fiz_adSiedzWojewodztwo_Nazwa'),
-      type: 'F',
-    };
-  }
-
-  // Osoba prawna (sp. z o.o., S.A., etc.)
-  const name = extractTag(reportXml, 'praw_nazwa') || '';
-  return {
-    name,
-    nip,
-    regon: extractTag(reportXml, 'praw_regon9') || extractTag(reportXml, 'praw_regon14'),
-    street: `${extractTag(reportXml, 'praw_adSiedzUlica_Nazwa')} ${extractTag(reportXml, 'praw_adSiedzNumerNieruchomosci')}`.trim(),
-    buildingNumber: extractTag(reportXml, 'praw_adSiedzNumerNieruchomosci'),
-    apartmentNumber: extractTag(reportXml, 'praw_adSiedzNumerLokalu'),
-    postalCode: extractTag(reportXml, 'praw_adSiedzKodPocztowy'),
-    city: extractTag(reportXml, 'praw_adSiedzMiejscowosc_Nazwa'),
-    province: extractTag(reportXml, 'praw_adSiedzWojewodztwo_Nazwa'),
-    type: 'P',
+  wlasciciel: {
+    imie?: string;
+    nazwisko?: string;
+    nip?: string;
+    regon?: string;
   };
+  status?: string;
+  dataRozpoczecia?: string;
+}
+
+interface CeidgFirmyResponse {
+  firmy: CeidgFirma[];
+  count: number;
 }
 
 export async function lookupNip(nip: string): Promise<GusCompanyResult> {
@@ -177,18 +67,50 @@ export async function lookupNip(nip: string): Promise<GusCompanyResult> {
     throw new Error('NIP musi mieć 10 cyfr');
   }
 
-  const sid = await login();
-  try {
-    const { regon, type, silosId } = await searchByNip(sid, cleanNip);
-    const reportName = getReportName(type, silosId);
-    const reportXml = await getFullReport(sid, regon, reportName);
+  const baseUrl = getBaseUrl();
+  const token = getApiToken();
 
-    if (!reportXml) {
-      throw new Error('Brak danych w raporcie GUS');
-    }
+  const res = await fetch(`${baseUrl}/firmy?nip=${cleanNip}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
 
-    return parseCompanyData(reportXml, type, cleanNip);
-  } finally {
-    await logout(sid).catch(() => {});
+  if (res.status === 204) {
+    throw new Error('Nie znaleziono firmy o podanym NIP');
   }
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error('Błąd autoryzacji API CEIDG');
+  }
+
+  if (res.status === 429) {
+    throw new Error('Zbyt wiele zapytań — spróbuj za chwilę');
+  }
+
+  if (!res.ok) {
+    throw new Error(`Błąd API CEIDG: ${res.status}`);
+  }
+
+  const data: CeidgFirmyResponse = await res.json();
+
+  if (!data.firmy || data.firmy.length === 0) {
+    throw new Error('Nie znaleziono firmy o podanym NIP');
+  }
+
+  // Take the first active company, or just the first one
+  const firma = data.firmy.find(f => f.status === 'AKTYWNY') || data.firmy[0];
+  const addr = firma.adresDzialalnosci || {};
+
+  return {
+    name: firma.nazwa || '',
+    nip: firma.wlasciciel?.nip || cleanNip,
+    regon: firma.wlasciciel?.regon || '',
+    street: addr.ulica ? `${addr.ulica} ${addr.budynek || ''}`.trim() : '',
+    buildingNumber: addr.budynek || '',
+    apartmentNumber: addr.lokal || '',
+    postalCode: addr.kod || '',
+    city: addr.miasto || '',
+    province: addr.wojewodztwo || '',
+  };
 }
