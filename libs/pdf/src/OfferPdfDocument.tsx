@@ -38,7 +38,11 @@ export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferP
         )}
 
         {config.showTrustTiles && trustTiles && (
-          <PdfTrustTiles tiles={trustTiles} accentColor={config.accentColor} />
+          <PdfTrustTiles
+            tiles={trustTiles}
+            accentColor={config.accentColor}
+            headerTitle={instance.trustHeaderTitle}
+          />
         )}
 
         {offer.scopes.map((scope, index) => (

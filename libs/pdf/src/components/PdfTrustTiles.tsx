@@ -7,32 +7,84 @@ import type { PdfTrustTile } from '../types';
 function getIconPaths(color: string): Record<string, React.ReactNode> {
   return {
     star: (
-      <Polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke={color} fill="none" strokeWidth={1.5} />
+      <Polygon
+        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+        stroke={color}
+        fill="none"
+        strokeWidth={1.5}
+      />
     ),
     shield: (
       <>
-        <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke={color} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-        <Path d="M9 12l2 2 4-4" stroke={color} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+          stroke={color}
+          fill="none"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M9 12l2 2 4-4"
+          stroke={color}
+          fill="none"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </>
     ),
     sparkles: (
       <>
-        <Path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" stroke={color} fill="none" strokeWidth={1.5} strokeLinejoin="round" />
-        <Path d="M19 13l.75 2.25L22 16l-2.25.75L19 19l-.75-2.25L16 16l2.25-.75L19 13z" stroke={color} fill="none" strokeWidth={1.2} strokeLinejoin="round" />
+        <Path
+          d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"
+          stroke={color}
+          fill="none"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M19 13l.75 2.25L22 16l-2.25.75L19 19l-.75-2.25L16 16l2.25-.75L19 13z"
+          stroke={color}
+          fill="none"
+          strokeWidth={1.2}
+          strokeLinejoin="round"
+        />
       </>
     ),
     award: (
       <>
         <Circle cx="12" cy="8" r="6" stroke={color} fill="none" strokeWidth={1.5} />
-        <Path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" stroke={color} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"
+          stroke={color}
+          fill="none"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </>
     ),
     heart: (
-      <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={color} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+        stroke={color}
+        fill="none"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     ),
     car: (
       <>
-        <Path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h8l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2" stroke={color} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h8l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2"
+          stroke={color}
+          fill="none"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         <Circle cx="7.5" cy="17" r="1.5" stroke={color} fill="none" strokeWidth={1.5} />
         <Circle cx="16.5" cy="17" r="1.5" stroke={color} fill="none" strokeWidth={1.5} />
       </>
@@ -54,9 +106,10 @@ function TrustIcon({ name, color }: { name: string; color: string }) {
 interface PdfTrustTilesProps {
   tiles: PdfTrustTile[];
   accentColor: string;
+  headerTitle?: string;
 }
 
-export function PdfTrustTiles({ tiles, accentColor }: PdfTrustTilesProps) {
+export function PdfTrustTiles({ tiles, accentColor, headerTitle }: PdfTrustTilesProps) {
   if (!tiles || tiles.length === 0) return null;
 
   // Split into rows of 3
@@ -67,6 +120,7 @@ export function PdfTrustTiles({ tiles, accentColor }: PdfTrustTilesProps) {
 
   return (
     <View style={[baseStyles.section, styles.container]}>
+      {headerTitle && <Text style={styles.headerTitle}>{headerTitle}</Text>}
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.row}>
           {row.map((tile, colIndex) => (
@@ -87,6 +141,13 @@ export function PdfTrustTiles({ tiles, accentColor }: PdfTrustTilesProps) {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 10,
+    fontWeight: 'bold' as const,
+    color: '#111111',
+    marginBottom: 8,
+    textAlign: 'center' as const,
   },
   row: {
     flexDirection: 'row',
@@ -110,13 +171,13 @@ const styles = StyleSheet.create({
     height: 12,
   },
   tileTitle: {
-    fontSize: 7.5,
+    fontSize: 8.5,
     fontWeight: 'bold',
     color: '#111111',
     flex: 1,
   },
   tileDescription: {
-    fontSize: 6.5,
+    fontSize: 8,
     color: '#666666',
     lineHeight: 1.3,
   },

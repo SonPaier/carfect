@@ -266,22 +266,37 @@ function ProductRow({
           )}
         </div>
         <div className="flex items-center gap-1">
-          {product.isSuggested ? (
-            <span
-              className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer"
-              onClick={() => onToggleSuggested(product.itemId)}
-            >
-              Opcja
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onToggleSuggested(product.itemId)}
-              className="text-xs text-foreground underline hover:text-primary transition-colors"
-            >
-              Dodaj jako opcja
-            </button>
-          )}
+          <div className="flex flex-col items-end gap-1.5">
+            {product.isSuggested ? (
+              <span
+                className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer"
+                onClick={() => onToggleSuggested(product.itemId)}
+              >
+                Opcja
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onToggleSuggested(product.itemId)}
+                className="text-xs text-foreground underline hover:text-primary transition-colors"
+              >
+                Dodaj jako opcja
+              </button>
+            )}
+            {product.price === 0 ? (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                Gratis
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onPriceChange(product.itemId, 0)}
+                className="text-xs text-foreground underline hover:text-primary transition-colors"
+              >
+                Dodaj jako gratis
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => onRemove(product.itemId)}
