@@ -76,7 +76,7 @@ export const baseStyles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: 7,
-    color: '#888888',
+    color: '#444444',
   },
   footerCompanyInfo: {
     flexDirection: 'row',

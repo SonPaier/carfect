@@ -9,6 +9,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+  'Access-Control-Expose-Headers': 'Content-Disposition',
 };
 
 // Trick to prevent Vercel/ncc bundler from converting dynamic import() to require()
@@ -39,9 +40,7 @@ export default async function handler(req: Request) {
   try {
     // Dynamic imports hidden from bundler for ESM-only packages
     const [reactPdf, React, pdfLib] = await Promise.all([
-      dynamicImport('@react-pdf/renderer') as Promise<
-        typeof import('@react-pdf/renderer')
-      >,
+      dynamicImport('@react-pdf/renderer') as Promise<typeof import('@react-pdf/renderer')>,
       dynamicImport('react') as Promise<typeof import('react')>,
       dynamicImport('../libs/pdf/src/index.js') as Promise<
         typeof import('../libs/pdf/src/index.js')
@@ -182,14 +181,27 @@ export default async function handler(req: Request) {
       }),
     );
 
-    const safeOfferNumber = offerPdfData.offerNumber.replace(/[^a-zA-Z0-9\-_]/g, '-');
+    const safeName = (s: string) =>
+      s
+        .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ \-_]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+    const filenameParts = [
+      offerPdfData.offerNumber,
+      offerPdfData.customerData?.name,
+      offerPdfData.vehicleData?.brand,
+      offerPdfData.vehicleData?.model,
+    ]
+      .filter(Boolean)
+      .map(safeName);
+    const filename = `Oferta-${filenameParts.join('-')}.pdf`;
 
     return new Response(pdfBuffer, {
       status: 200,
       headers: {
         ...CORS_HEADERS,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="oferta-${safeOfferNumber}.pdf"`,
+        'Content-Disposition': `inline; filename="${filename}"`,
         'Content-Length': String(pdfBuffer.length),
       },
     });

@@ -34,8 +34,9 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   optionalBadge: {
-    fontSize: 7,
-    color: '#999999',
+    fontSize: 8,
+    color: '#333333',
+    fontWeight: 'bold',
     marginTop: 2,
   },
   itemRight: {
@@ -66,7 +67,12 @@ interface PdfItemsTableProps {
   accentColor: string;
 }
 
-export function PdfItemsTable({ scope, hideUnitPrices, scopeIndex, accentColor }: PdfItemsTableProps) {
+export function PdfItemsTable({
+  scope,
+  hideUnitPrices,
+  scopeIndex,
+  accentColor,
+}: PdfItemsTableProps) {
   return (
     <View
       wrap={true}
@@ -95,16 +101,14 @@ export function PdfItemsTable({ scope, hideUnitPrices, scopeIndex, accentColor }
         <View key={item.id} style={styles.item}>
           <View style={styles.itemLeft}>
             <Text style={styles.itemName}>{item.name}</Text>
-            {item.description && (
-              <Text style={styles.itemDescription}>{item.description}</Text>
-            )}
-            {item.isOptional && (
-              <Text style={styles.optionalBadge}>opcjonalnie</Text>
-            )}
+            {item.description && <Text style={styles.itemDescription}>{item.description}</Text>}
+            {item.isOptional && <Text style={styles.optionalBadge}>Opcja</Text>}
           </View>
           <View style={styles.itemRight}>
-            <Text style={styles.itemPrice}>{item.total.toFixed(2)} zł</Text>
-            <Text style={styles.itemVat}>+ 23% VAT</Text>
+            <Text style={styles.itemPrice}>
+              {item.total === 0 ? 'Gratis!' : `${item.total.toFixed(2)} zł`}
+            </Text>
+            {item.total > 0 && <Text style={styles.itemVat}>+ 23% VAT</Text>}
             {!hideUnitPrices && item.discountPercent > 0 && (
               <Text style={styles.itemDiscount}>rabat {item.discountPercent}%</Text>
             )}

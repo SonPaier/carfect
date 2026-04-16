@@ -4,7 +4,6 @@ function getPdfApiUrl(): string {
   if (import.meta.env.DEV) {
     return 'http://localhost:3333/api/generate-offer-pdf';
   }
-  // Always use main domain for Vercel API routes (subdomains don't serve API)
   return 'https://carfect.pl/api/generate-offer-pdf';
 }
 
@@ -23,7 +22,21 @@ export async function openOfferPdf(publicToken: string): Promise<void> {
 
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+
+    // Extract filename from Content-Disposition header
+    const disposition = response.headers.get('Content-Disposition');
+    const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
+    const filename = filenameMatch?.[1] || 'oferta.pdf';
+
+    // Create download link with proper filename
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   } catch (error: unknown) {
     console.error('PDF generation error:', error);
     toast.error('Nie udało się wygenerować PDF');
