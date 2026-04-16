@@ -583,9 +583,15 @@ export async function fetchWorkerProfiles(instanceId: string): Promise<{ id: str
 
 // ─── Worker Roll Usages For Month ────────────────────────────
 
+export interface WorkerRollUsageWithRoll extends SalesRollUsage {
+  rollProductName: string | null;
+  rollProductCode: string | null;
+  rollWidthMm: number | null;
+}
+
 export async function fetchWorkerRollUsagesForMonth(
   instanceId: string, year: number, month: number
-): Promise<SalesRollUsage[]> {
+): Promise<WorkerRollUsageWithRoll[]> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const endDate = month === 12
     ? `${year + 1}-01-01`
@@ -593,7 +599,7 @@ export async function fetchWorkerRollUsagesForMonth(
 
   const { data, error } = await supabase
     .from('sales_roll_usages')
-    .select('*, sales_rolls!inner(instance_id)')
+    .select('*, sales_rolls!inner(instance_id, product_name, product_code, width_mm)')
     .eq('source', 'worker')
     .eq('sales_rolls.instance_id', instanceId)
     .gte('created_at', startDate)
@@ -601,7 +607,16 @@ export async function fetchWorkerRollUsagesForMonth(
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return (data || []).map(mapUsageRow);
+  return (data || []).map((row) => {
+    const base = mapUsageRow(row);
+    const roll = row.sales_rolls as { product_name?: string; product_code?: string; width_mm?: number } | null;
+    return {
+      ...base,
+      rollProductName: roll?.product_name ?? null,
+      rollProductCode: roll?.product_code ?? null,
+      rollWidthMm: roll?.width_mm ?? null,
+    };
+  });
 }
 
 // ─── File to Base64 ─────────────────────────────────────────

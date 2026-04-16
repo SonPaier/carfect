@@ -105,7 +105,7 @@ describe('AddEditSalesCustomerDrawer', () => {
 
     it('renders GUS button next to NIP', () => {
       render(<AddEditSalesCustomerDrawer {...defaultProps} />);
-      expect(screen.getByRole('button', { name: /Pobierz dane z GUS/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Pobierz dane/i })).toBeInTheDocument();
     });
 
     it('renders contact fields in correct order after separator', () => {

@@ -101,7 +101,7 @@ describe('EmployeeRollsDrawer', () => {
     render(<EmployeeRollsDrawer {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Łącznie: 5.00 m²')).toBeInTheDocument();
+      expect(screen.getByText('5.00 m²')).toBeInTheDocument();
     });
   });
 

@@ -4,9 +4,7 @@ import { pl } from 'date-fns/locale';
 import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@shared/ui';
-import type { SalesRollUsage } from '../types/rolls';
-import { fetchWorkerRollUsagesForMonth } from '../services/rollService';
+import { fetchWorkerRollUsagesForMonth, type WorkerRollUsageWithRoll } from '../services/rollService';
 
 interface EmployeeRollsDrawerProps {
   open: boolean;
@@ -16,7 +14,7 @@ interface EmployeeRollsDrawerProps {
 
 const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerProps) => {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const [usages, setUsages] = useState<SalesRollUsage[]>([]);
+  const [usages, setUsages] = useState<WorkerRollUsageWithRoll[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -46,8 +44,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
 
   const monthLabel = format(currentMonth, 'LLLL yyyy', { locale: pl });
 
-  // Group usages by workerName
-  const grouped = usages.reduce<Record<string, SalesRollUsage[]>>((acc, usage) => {
+  const grouped = usages.reduce<Record<string, WorkerRollUsageWithRoll[]>>((acc, usage) => {
     const name = usage.workerName ?? 'Nieznany pracownik';
     if (!acc[name]) acc[name] = [];
     acc[name].push(usage);
@@ -55,22 +52,21 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
   }, {});
 
   const workerNames = Object.keys(grouped).sort();
-
   const grandTotal = usages.reduce((sum, u) => sum + u.usedM2, 0);
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <SheetContent
         side="right"
-        className="[&>div]:!w-[80vw] [&>div]:!max-w-[80vw] flex flex-col bg-white p-0 gap-0"
+        className="!w-[80vw] !max-w-[80vw] flex flex-col bg-white p-0 gap-0"
         hideCloseButton
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
-          <SheetTitle>Pracownicy i rolki</SheetTitle>
+          <SheetTitle className="text-foreground">Pracownicy i rolki</SheetTitle>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full bg-white hover:bg-hover transition-colors"
+            className="p-2 rounded-full bg-white hover:bg-hover transition-colors absolute top-3 right-3 z-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -87,7 +83,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm font-medium capitalize min-w-[140px] text-center">
+          <span className="text-sm font-semibold capitalize min-w-[140px] text-center text-foreground">
             {monthLabel}
           </span>
           <Button
@@ -118,53 +114,65 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
 
                 return (
                   <div key={workerName}>
-                    <h3 className="font-semibold text-sm mb-2">{workerName}</h3>
+                    <h3 className="font-bold text-sm mb-2 text-foreground">{workerName}</h3>
                     <div className="border rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Samochód</TableHead>
-                            <TableHead className="text-right">Zużycie (mb)</TableHead>
-                            <TableHead className="text-right">Zużycie (m²)</TableHead>
-                            <TableHead>Notatka</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/30 border-b">
+                            <th className="text-left px-3 py-2 font-semibold text-foreground w-[100px]">Data</th>
+                            <th className="text-left px-3 py-2 font-semibold text-foreground">Rolka / Produkt</th>
+                            <th className="text-left px-3 py-2 font-semibold text-foreground w-[180px]">Samochód</th>
+                            <th className="text-right px-3 py-2 font-semibold text-foreground w-[80px]">mb</th>
+                            <th className="text-right px-3 py-2 font-semibold text-foreground w-[80px]">m²</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                           {workerUsages.map((usage) => (
-                            <TableRow key={usage.id}>
-                              <TableCell className="text-sm whitespace-nowrap">
+                            <tr key={usage.id} className="border-b last:border-b-0">
+                              <td className="px-3 py-2 text-foreground whitespace-nowrap">
                                 {format(parseISO(usage.createdAt), 'dd.MM.yyyy')}
-                              </TableCell>
-                              <TableCell className="text-sm">
+                              </td>
+                              <td className="px-3 py-2">
+                                <div className="text-foreground font-medium">
+                                  {usage.rollProductName ?? '—'}
+                                  {usage.rollProductCode && (
+                                    <span className="text-muted-foreground ml-1 text-xs">({usage.rollProductCode})</span>
+                                  )}
+                                  {usage.rollWidthMm && (
+                                    <span className="text-muted-foreground ml-1 text-xs">{usage.rollWidthMm}mm</span>
+                                  )}
+                                </div>
+                                {usage.note && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{usage.note}</p>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-foreground">
                                 {usage.vehicleName ?? '—'}
-                              </TableCell>
-                              <TableCell className="text-right text-sm">
+                              </td>
+                              <td className="px-3 py-2 text-right text-foreground">
                                 {usage.usedMb.toFixed(2)}
-                              </TableCell>
-                              <TableCell className="text-right text-sm">
+                              </td>
+                              <td className="px-3 py-2 text-right text-foreground font-medium">
                                 {usage.usedM2.toFixed(2)}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {usage.note ?? '—'}
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           ))}
-                          <TableRow className="bg-gray-50 font-medium">
-                            <TableCell colSpan={3} />
-                            <TableCell className="text-right text-sm">
-                              Łącznie: {workerTotal.toFixed(2)} m²
-                            </TableCell>
-                            <TableCell />
-                          </TableRow>
-                        </TableBody>
-                      </Table>
+                          <tr className="bg-primary/10">
+                            <td colSpan={4} className="px-3 py-2 text-right text-foreground font-semibold">
+                              Łącznie:
+                            </td>
+                            <td className="px-3 py-2 text-right text-foreground font-bold">
+                              {workerTotal.toFixed(2)} m²
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 );
               })}
 
-              <div className="pt-4 border-t text-sm font-semibold text-right">
+              <div className="pt-4 border-t font-bold text-right text-foreground">
                 Łącznie wszyscy: {grandTotal.toFixed(2)} m²
               </div>
             </>

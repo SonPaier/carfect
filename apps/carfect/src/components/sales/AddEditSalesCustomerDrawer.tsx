@@ -613,19 +613,8 @@ const AddEditSalesCustomerDrawer = ({
 
   const renderFormMode = () => (
     <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-      {/* Section 1: Identyfikacja */}
+      {/* Section 1: NIP + Nazwa */}
       <div className="space-y-3">
-        <div>
-          <Label htmlFor="name">Nazwa *</Label>
-          <Input
-            id="name"
-            value={form.name}
-            onChange={(e) => {
-              setForm({ ...form, name: e.target.value });
-              markDirty();
-            }}
-          />
-        </div>
         <div>
           <Label htmlFor="nip">NIP</Label>
           <div className="flex gap-2">
@@ -651,108 +640,17 @@ const AddEditSalesCustomerDrawer = ({
               ) : (
                 <Search className="w-4 h-4 mr-1" />
               )}
-              Pobierz dane z GUS
+              Pobierz dane
             </Button>
           </div>
         </div>
-      </div>
-
-      <Separator />
-
-      {/* Section 2: Kontakt i warunki */}
-      <div className="space-y-3">
         <div>
-          <Label htmlFor="phone">Telefon *</Label>
+          <Label htmlFor="name">Nazwa *</Label>
           <Input
-            id="phone"
-            value={form.phone}
+            id="name"
+            value={form.name}
             onChange={(e) => {
-              setForm({ ...form, phone: e.target.value });
-              markDirty();
-            }}
-          />
-        </div>
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={form.email}
-            onChange={(e) => {
-              setForm({ ...form, email: e.target.value });
-              markDirty();
-            }}
-          />
-        </div>
-        <div>
-          <Label htmlFor="contact-person">Osoba kontaktowa</Label>
-          <Input
-            id="contact-person"
-            value={form.contactPerson}
-            onChange={(e) => {
-              setForm({ ...form, contactPerson: e.target.value });
-              markDirty();
-            }}
-          />
-        </div>
-        <div>
-          <Label htmlFor="currency">Waluta</Label>
-          <Select
-            value={form.currency}
-            onValueChange={(value) => {
-              setForm({ ...form, currency: value });
-              markDirty();
-            }}
-          >
-            <SelectTrigger id="currency">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>
-                  {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Label htmlFor="discount-toggle">Rabat</Label>
-          <Switch
-            size="sm"
-            id="discount-toggle"
-            checked={form.discountEnabled}
-            onCheckedChange={(checked) => {
-              setForm({ ...form, discountEnabled: checked });
-              markDirty();
-            }}
-          />
-        </div>
-        {form.discountEnabled && (
-          <div className="flex items-center gap-2">
-            <NumericInput
-              min={0}
-              max={100}
-              className="w-20"
-              value={form.discountPercent ?? undefined}
-              onChange={(v) => {
-                setForm((prev) => ({ ...prev, discountPercent: v ?? 0 }));
-                markDirty();
-              }}
-            />
-            <span className="text-sm text-muted-foreground">%</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <Label htmlFor="net-payer-toggle">Płatnik netto</Label>
-          <Switch
-            size="sm"
-            id="net-payer-toggle"
-            checked={form.isNetPayer}
-            onCheckedChange={(checked) => {
-              setForm({ ...form, isNetPayer: checked });
+              setForm({ ...form, name: e.target.value });
               markDirty();
             }}
           />
@@ -761,7 +659,7 @@ const AddEditSalesCustomerDrawer = ({
 
       <Separator />
 
-      {/* Section 3: Adres firmy */}
+      {/* Section 2: Adres firmy */}
       <div className="space-y-3">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Adres firmy
@@ -867,6 +765,114 @@ const AddEditSalesCustomerDrawer = ({
             />
           </CollapsibleContent>
         </Collapsible>
+      </div>
+
+      <Separator />
+
+      {/* Section 4: Kontakt */}
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="phone">Telefon *</Label>
+          <Input
+            id="phone"
+            value={form.phone}
+            onChange={(e) => {
+              setForm({ ...form, phone: e.target.value });
+              markDirty();
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={form.email}
+            onChange={(e) => {
+              setForm({ ...form, email: e.target.value });
+              markDirty();
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor="contact-person">Osoba kontaktowa</Label>
+          <Input
+            id="contact-person"
+            value={form.contactPerson}
+            onChange={(e) => {
+              setForm({ ...form, contactPerson: e.target.value });
+              markDirty();
+            }}
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Section 5: Warunki */}
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="currency">Waluta</Label>
+          <Select
+            value={form.currency}
+            onValueChange={(value) => {
+              setForm({ ...form, currency: value });
+              markDirty();
+            }}
+          >
+            <SelectTrigger id="currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Label htmlFor="discount-toggle">Rabat</Label>
+          <Switch
+            size="sm"
+            id="discount-toggle"
+            checked={form.discountEnabled}
+            onCheckedChange={(checked) => {
+              setForm({ ...form, discountEnabled: checked });
+              markDirty();
+            }}
+          />
+        </div>
+        {form.discountEnabled && (
+          <div className="flex items-center gap-2">
+            <NumericInput
+              min={0}
+              max={100}
+              className="w-20"
+              value={form.discountPercent ?? undefined}
+              onChange={(v) => {
+                setForm((prev) => ({ ...prev, discountPercent: v ?? 0 }));
+                markDirty();
+              }}
+            />
+            <span className="text-sm text-muted-foreground">%</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <Label htmlFor="net-payer-toggle">Płatnik netto</Label>
+          <Switch
+            size="sm"
+            id="net-payer-toggle"
+            checked={form.isNetPayer}
+            onCheckedChange={(checked) => {
+              setForm({ ...form, isNetPayer: checked });
+              markDirty();
+            }}
+          />
+        </div>
       </div>
 
       {/* Notatki — bottom */}
