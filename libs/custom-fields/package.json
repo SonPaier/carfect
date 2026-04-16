@@ -1,0 +1,19 @@
+{
+  "name": "@shared/custom-fields",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@supabase/supabase-js": "^2.0.0",
+    "zod": "^3.0.0"
+  }
+}

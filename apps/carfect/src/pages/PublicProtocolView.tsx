@@ -6,6 +6,8 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@shared/ui';
 import { PublicProtocolCustomerView } from '@/components/protocols/PublicProtocolCustomerView';
 import type { VehicleView, BodyType, DamagePoint } from '@/components/protocols/VehicleDiagram';
+import type { ProtocolConfig } from '@shared/protocol-config';
+import type { CustomFieldDefinition, CustomFieldValues } from '@shared/custom-fields';
 
 interface Instance {
   id: string;
@@ -39,6 +41,7 @@ interface Protocol {
   instance_id: string;
   protocol_type?: ProtocolType;
   photo_urls?: string[];
+  custom_field_values?: CustomFieldValues;
 }
 
 export default function PublicProtocolView() {
@@ -49,6 +52,8 @@ export default function PublicProtocolView() {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [damagePoints, setDamagePoints] = useState<DamagePoint[]>([]);
   const [offerPublicToken, setOfferPublicToken] = useState<string | null>(null);
+  const [protocolConfig, setProtocolConfig] = useState<ProtocolConfig | null>(null);
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<CustomFieldDefinition[]>([]);
 
   useEffect(() => {
     const fetchProtocol = async () => {
@@ -88,11 +93,15 @@ export default function PublicProtocolView() {
             photo_urls?: string[];
           }>;
           offer_public_token: string | null;
+          protocol_config?: ProtocolConfig | null;
+          custom_field_definitions?: CustomFieldDefinition[];
         };
 
         setProtocol(data.protocol);
         setInstance(data.instance);
         setOfferPublicToken(data.offer_public_token);
+        if (data.protocol_config) setProtocolConfig(data.protocol_config);
+        if (data.custom_field_definitions) setCustomFieldDefinitions(data.custom_field_definitions);
 
         if (data.damage_points) {
           setDamagePoints(
@@ -160,6 +169,8 @@ export default function PublicProtocolView() {
         instance={instance}
         damagePoints={damagePoints}
         offerPublicToken={offerPublicToken}
+        protocolConfig={protocolConfig}
+        customFieldDefinitions={customFieldDefinitions}
       />
     </>
   );

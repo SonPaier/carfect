@@ -295,6 +295,72 @@ describe('RollSelectDrawer', () => {
     });
   });
 
+  describe('Product name filter with whitespace normalization', () => {
+    it('matches roll with double spaces in name against filter with single spaces', async () => {
+      const rollWithDoubleSpace = makeRoll({
+        id: 'roll-dbl',
+        productName: 'XP  Retro Matte',
+        remainingMb: 5,
+      });
+      mockFetchRolls.mockResolvedValue([rollWithDoubleSpace]);
+
+      render(
+        <RollSelectDrawer
+          {...defaultProps}
+          filterProductName="Ultrafit XP Retro Matte"
+        />,
+      );
+
+      await waitFor(() => {
+        // Roll should NOT be filtered out — verify it's not showing empty state
+        expect(screen.queryByText('Brak dostępnych rolek')).not.toBeInTheDocument();
+        // The roll name renders with double space — use regex to match normalized
+        expect(screen.getByText(/XP\s+Retro Matte/)).toBeInTheDocument();
+      });
+    });
+
+    it('matches roll with normal name against filter with extra spaces', async () => {
+      const rollNormal = makeRoll({
+        id: 'roll-norm',
+        productName: 'XP Retro Matte',
+        remainingMb: 5,
+      });
+      mockFetchRolls.mockResolvedValue([rollNormal]);
+
+      render(
+        <RollSelectDrawer
+          {...defaultProps}
+          filterProductName="Ultrafit  XP  Retro  Matte"
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByText('Brak dostępnych rolek')).not.toBeInTheDocument();
+        expect(screen.getByText('XP Retro Matte')).toBeInTheDocument();
+      });
+    });
+
+    it('does NOT show roll when product name is completely different', async () => {
+      const rollOther = makeRoll({
+        id: 'roll-other',
+        productName: 'Avery Supreme',
+        remainingMb: 5,
+      });
+      mockFetchRolls.mockResolvedValue([rollOther]);
+
+      render(
+        <RollSelectDrawer
+          {...defaultProps}
+          filterProductName="XP Retro Matte"
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Brak dostępnych rolek')).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Roll order stability', () => {
     it('does not reorder rolls when selecting — order stays by remaining m² descending', async () => {
       render(<RollSelectDrawer {...defaultProps} />);

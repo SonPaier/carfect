@@ -65,6 +65,10 @@ vi.mock('@shared/utils', () => ({
   useGusLookup: () => ({ lookupNip: vi.fn(), loading: false }),
 }));
 
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: { functions: { invoke: vi.fn() } },
+}));
+
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));

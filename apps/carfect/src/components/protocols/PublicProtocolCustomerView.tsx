@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Label } from '@shared/ui';
@@ -6,6 +6,10 @@ import { ProtocolHeader } from './ProtocolHeader';
 import { VehicleDiagram, type BodyType, type DamagePoint, type VehicleView } from './VehicleDiagram';
 import { DamageViewDrawer } from './DamageViewDrawer';
 import { PhotoFullscreenDialog } from './PhotoFullscreenDialog';
+import type { ProtocolConfig } from '@shared/protocol-config';
+import { DEFAULT_SECTION_ORDER } from '@shared/protocol-config';
+import type { SectionId } from '@shared/protocol-config';
+import type { CustomFieldDefinition, CustomFieldValues } from '@shared/custom-fields';
 
 export type ProtocolType = 'reception' | 'pickup';
 
@@ -33,6 +37,7 @@ interface Protocol {
   nip: string | null;
   phone: string | null;
   registration_number: string | null;
+  vin?: string | null;
   fuel_level: number | null;
   odometer_reading: number | null;
   body_type: BodyType;
@@ -44,6 +49,7 @@ interface Protocol {
   protocol_type?: ProtocolType;
   photo_urls?: string[];
   service_items?: Array<{ name: string; quantity: number; unit_price: number }> | null;
+  custom_field_values?: CustomFieldValues;
 }
 
 interface PublicProtocolCustomerViewProps {
@@ -51,6 +57,8 @@ interface PublicProtocolCustomerViewProps {
   instance: Instance;
   damagePoints: DamagePoint[];
   offerPublicToken?: string | null;
+  protocolConfig?: ProtocolConfig | null;
+  customFieldDefinitions?: CustomFieldDefinition[];
 }
 
 const DAMAGE_TYPE_LABELS: Record<string, string> = {
@@ -70,11 +78,12 @@ export const PublicProtocolCustomerView = ({
   instance,
   damagePoints,
   offerPublicToken,
+  protocolConfig,
+  customFieldDefinitions = [],
 }: PublicProtocolCustomerViewProps) => {
   const [selectedPoint, setSelectedPoint] = useState<DamagePoint | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
-  
-  // Photo fullscreen state
+
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
 
@@ -82,26 +91,21 @@ export const PublicProtocolCustomerView = ({
     setSelectedPoint(point);
     setViewerOpen(true);
   };
-  
+
   const handlePhotoClick = (url: string) => {
     setFullscreenPhoto(url);
     setPhotoDialogOpen(true);
   };
 
-  // Check if there are any damage points
   const hasDamagePoints = damagePoints.length > 0;
-  
-  // Check if there are general protocol photos
   const hasProtocolPhotos = protocol.photo_urls && protocol.photo_urls.length > 0;
-  
-  // Collect all damage photos from damage points
+
   const allDamagePhotos = useMemo(() => {
     return damagePoints.flatMap(p => {
       return p.photo_urls || (p.photo_url ? [p.photo_url] : []);
     });
   }, [damagePoints]);
 
-  // Generate notes from damage points
   const generatedNotes = useMemo(() => {
     if (damagePoints.length === 0) return null;
     const notesWithContent = damagePoints
@@ -110,31 +114,38 @@ export const PublicProtocolCustomerView = ({
     return notesWithContent.length > 0 ? notesWithContent.join('\n') : null;
   }, [damagePoints]);
 
-  // Protocol type label
+  const visibleCustomFields = useMemo(() => {
+    if (!customFieldDefinitions.length || !protocol.custom_field_values) return [];
+    const values = protocol.custom_field_values;
+    return customFieldDefinitions
+      .filter(d => d.config.visibleToCustomer !== false)
+      .filter(d => {
+        const val = values[d.id];
+        return val !== undefined && val !== null && val !== '';
+      });
+  }, [customFieldDefinitions, protocol.custom_field_values]);
+
+  const visibleConsentClauses = useMemo(() => {
+    if (!protocolConfig?.consentClauses.length) return [];
+    return protocolConfig.consentClauses.filter(c => c.visibleToCustomer !== false);
+  }, [protocolConfig]);
+
   const protocolTypeLabel = PROTOCOL_TYPE_LABELS[protocol.protocol_type || 'reception'];
   const protocolTitle = `Protokół ${protocolTypeLabel} pojazdu${protocol.vehicle_model ? ` ${protocol.vehicle_model}` : ''}`;
 
-  return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Sticky header */}
-      <div className="w-full max-w-3xl mx-auto bg-white">
-        <ProtocolHeader 
-          instance={instance} 
-          protocolNumber={protocol.offer_number || undefined}
-        />
-      </div>
+  const sectionOrder = protocolConfig?.sectionOrder ?? DEFAULT_SECTION_ORDER;
 
-      {/* Scrollable content */}
-      <main className="flex-1 overflow-y-auto pb-8">
-        <div className="w-full max-w-3xl mx-auto px-4 py-6 space-y-6 bg-white min-h-full">
-          {/* Protocol title */}
+  const renderSection = useCallback((sectionId: SectionId): React.ReactNode => {
+    switch (sectionId) {
+      case 'header':
+        return (
           <div className="space-y-1">
             <h1 className="text-xl font-semibold">{protocolTitle}</h1>
             {protocol.offer_number && (
               <p className="text-muted-foreground text-sm">
                 Oferta{' '}
                 {offerPublicToken ? (
-                  <a 
+                  <a
                     href={`/offers/${offerPublicToken}`}
                     className="text-primary hover:underline"
                     target="_blank"
@@ -148,16 +159,15 @@ export const PublicProtocolCustomerView = ({
               </p>
             )}
           </div>
+        );
 
-          {/* Customer data */}
+      case 'customerInfo':
+        return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label className="text-muted-foreground text-sm">Imię i nazwisko Klienta</Label>
               <p className="text-base font-medium">{protocol.customer_name}</p>
             </div>
-            
-            {/* Phone hidden on public view for privacy */}
-            
             {protocol.nip && (
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-sm">NIP firmy</Label>
@@ -165,8 +175,10 @@ export const PublicProtocolCustomerView = ({
               </div>
             )}
           </div>
+        );
 
-          {/* Vehicle data */}
+      case 'vehicleInfo':
+        return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {protocol.vehicle_model && (
               <div className="space-y-1">
@@ -174,21 +186,31 @@ export const PublicProtocolCustomerView = ({
                 <p className="text-base font-medium">{protocol.vehicle_model}</p>
               </div>
             )}
-            
             {protocol.registration_number && (
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-sm">Numer rejestracyjny</Label>
                 <p className="text-base font-medium">{protocol.registration_number}</p>
               </div>
             )}
-            
+            {protocol.vin && (
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-sm">VIN</Label>
+                <p className="text-base font-medium">{protocol.vin}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'fuelOdometer':
+        if (protocol.fuel_level === null && protocol.odometer_reading === null) return null;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {protocol.fuel_level !== null && (
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-sm">Stan paliwa</Label>
                 <p className="text-base">{protocol.fuel_level}%</p>
               </div>
             )}
-            
             {protocol.odometer_reading !== null && (
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-sm">Stan licznika</Label>
@@ -196,129 +218,216 @@ export const PublicProtocolCustomerView = ({
               </div>
             )}
           </div>
+        );
 
-          {/* General protocol photos */}
-          {hasProtocolPhotos && (
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-sm">Zdjęcia pojazdu</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {protocol.photo_urls!.map((url, index) => (
-                  <div 
-                    key={index} 
-                    className="relative aspect-square cursor-pointer"
-                    onClick={() => handlePhotoClick(url)}
-                  >
-                    <img
-                      src={url}
-                      alt={`Zdjęcie ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Vehicle diagram - show if there are damage points */}
-          {hasDamagePoints && (
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-sm">Stan pojazdu</Label>
-              <p className="text-xs text-muted-foreground">Kliknij na punkt, aby zapoznać się z uszkodzeniem</p>
-              <VehicleDiagram
-                bodyType={protocol.body_type}
-                damagePoints={damagePoints}
-                readOnly
-                onSelectPoint={handleSelectPoint}
-              />
-            </div>
-          )}
-
-          {/* Damage photos - collected from all damage points */}
-          {allDamagePhotos.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-sm">Zdjęcia usterek</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {allDamagePhotos.map((url, index) => (
-                  <div 
-                    key={index} 
-                    className="relative aspect-square cursor-pointer"
-                    onClick={() => handlePhotoClick(url)}
-                  >
-                    <img
-                      src={url}
-                      alt={`Zdjęcie usterki ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Services receipt */}
-          {protocol.service_items && protocol.service_items.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-sm">Usługi</Label>
-              <div className="border rounded-lg overflow-hidden">
-                {protocol.service_items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between px-3 py-2 border-b last:border-b-0 text-sm">
-                    <span>{item.name}</span>
-                    <span className="font-medium">{item.unit_price * item.quantity} zł</span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
-                  <span>Suma</span>
-                  <span>{protocol.service_items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
+      case 'vehicleDiagram':
+        if (!hasDamagePoints && !hasProtocolPhotos) return null;
+        return (
+          <>
+            {hasProtocolPhotos && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground text-sm">Zdjęcia pojazdu</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {protocol.photo_urls!.map((url, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-square cursor-pointer"
+                      onClick={() => handlePhotoClick(url)}
+                    >
+                      <img
+                        src={url}
+                        alt={`Zdjęcie ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label className="text-muted-foreground text-sm">Uwagi</Label>
-            <div className="whitespace-pre-line text-sm">
-              {generatedNotes || '--- brak uwag ---'}
-            </div>
-          </div>
-
-          {/* Protocol metadata */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-sm">Data sporządzenia protokołu</Label>
-              <p className="text-base">
-                {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
-                {protocol.protocol_time && `, ${protocol.protocol_time.slice(0, 5)}`}
-              </p>
-            </div>
-            
-            {protocol.received_by && (
-              <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Przyjął</Label>
-                <p className="text-base">{protocol.received_by}</p>
-              </div>
             )}
-          </div>
-
-          {/* Customer signature */}
-          {protocol.customer_signature && (
-            <div className="space-y-2">
-              <Label className="text-muted-foreground text-sm">Podpis Klienta</Label>
-              <div className="h-24 border rounded-lg bg-white flex items-center justify-center">
-                <img 
-                  src={protocol.customer_signature} 
-                  alt="Podpis klienta" 
-                  className="max-h-20 max-w-full object-contain"
+            {hasDamagePoints && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground text-sm">Stan pojazdu</Label>
+                <p className="text-xs text-muted-foreground">Kliknij na punkt, aby zapoznać się z uszkodzeniem</p>
+                <VehicleDiagram
+                  bodyType={protocol.body_type}
+                  damagePoints={damagePoints}
+                  readOnly
+                  onSelectPoint={handleSelectPoint}
                 />
               </div>
+            )}
+            {allDamagePhotos.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground text-sm">Zdjęcia usterek</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {allDamagePhotos.map((url, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-square cursor-pointer"
+                      onClick={() => handlePhotoClick(url)}
+                    >
+                      <img
+                        src={url}
+                        alt={`Zdjęcie usterki ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+
+      case 'serviceItems':
+        if (!protocol.service_items || protocol.service_items.length === 0) return null;
+        return (
+          <div className="space-y-2">
+            <Label className="text-muted-foreground text-sm">Usługi</Label>
+            <div className="border rounded-lg overflow-hidden">
+              {protocol.service_items.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between px-3 py-2 border-b last:border-b-0 text-sm">
+                  <span>{item.name}</span>
+                  <span className="font-medium">{item.unit_price * item.quantity} zł</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
+                <span>Suma</span>
+                <span>{protocol.service_items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
+              </div>
             </div>
-          )}
+          </div>
+        );
+
+      case 'customFields':
+        if (visibleCustomFields.length === 0 || !protocol.custom_field_values) return null;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {visibleCustomFields.map(def => (
+              <div key={def.id} className="space-y-1">
+                <Label className="text-muted-foreground text-sm">{def.label}</Label>
+                <p className="text-base">
+                  {def.field_type === 'checkbox'
+                    ? (protocol.custom_field_values![def.id] ? 'Tak' : 'Nie')
+                    : String(protocol.custom_field_values![def.id])}
+                </p>
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'consentClauses':
+        if (visibleConsentClauses.length === 0 || !protocol.custom_field_values) return null;
+        return (
+          <div className="space-y-2">
+            <Label className="text-muted-foreground text-sm">Oświadczenia</Label>
+            <div className="space-y-3">
+              {visibleConsentClauses.map(clause => (
+                <div key={clause.id} className="flex items-start gap-2 text-sm">
+                  <span className={protocol.custom_field_values![clause.id] ? 'text-emerald-600' : 'text-muted-foreground'}>
+                    {protocol.custom_field_values![clause.id] ? '✓' : '✗'}
+                  </span>
+                  <div className="space-y-1">
+                    <p>{clause.text}</p>
+                    {clause.requiresSignature && protocol.custom_field_values![`${clause.id}_sig`] && (
+                      <img
+                        src={String(protocol.custom_field_values![`${clause.id}_sig`])}
+                        alt="Podpis"
+                        className="h-12 object-contain border rounded"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'valuableItems':
+        if (!protocol.custom_field_values?._valuable_items) return null;
+        return (
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-sm">Przedmioty wartościowe</Label>
+            <p className="text-base whitespace-pre-line">{String(protocol.custom_field_values._valuable_items)}</p>
+          </div>
+        );
+
+      case 'customerSignature':
+        return (
+          <>
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-sm">Uwagi</Label>
+              <div className="whitespace-pre-line text-sm">
+                {generatedNotes || '--- brak uwag ---'}
+              </div>
+            </div>
+
+            {/* Protocol metadata */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-sm">Data sporządzenia protokołu</Label>
+                <p className="text-base">
+                  {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
+                  {protocol.protocol_time && `, ${protocol.protocol_time.slice(0, 5)}`}
+                </p>
+              </div>
+              {protocol.received_by && (
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground text-sm">Przyjął</Label>
+                  <p className="text-base">{protocol.received_by}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Signature */}
+            {protocol.customer_signature && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground text-sm">Podpis Klienta</Label>
+                <div className="h-24 border rounded-lg bg-white flex items-center justify-center">
+                  <img
+                    src={protocol.customer_signature}
+                    alt="Podpis klienta"
+                    className="max-h-20 max-w-full object-contain"
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        );
+
+      case 'releaseSection':
+        return null; // Release section data not in public view
+
+      default:
+        return null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [protocol, protocolTitle, offerPublicToken, hasDamagePoints, hasProtocolPhotos, allDamagePhotos, visibleCustomFields, visibleConsentClauses, generatedNotes, damagePoints]);
+
+  return (
+    <div className="min-h-screen bg-muted/30 flex flex-col">
+      {/* Sticky header */}
+      <div className="w-full max-w-3xl mx-auto bg-white">
+        <ProtocolHeader
+          instance={instance}
+          protocolNumber={protocol.offer_number || undefined}
+        />
+      </div>
+
+      {/* Scrollable content */}
+      <main className="flex-1 overflow-y-auto pb-8">
+        <div className="w-full max-w-3xl mx-auto px-4 py-6 space-y-6 bg-white min-h-full">
+          {sectionOrder.map((sectionId) => {
+            const content = renderSection(sectionId);
+            if (content === null) return null;
+            return <div key={sectionId}>{content}</div>;
+          })}
 
           {/* Footer with company info */}
           <div className="pt-6 border-t text-center text-sm text-muted-foreground">
             <p className="font-medium">{instance.name}</p>
             {instance.address && <p>{instance.address}</p>}
-            {/* Phone & email hidden on public view for privacy */}
           </div>
 
           {/* App footer */}
@@ -331,14 +440,12 @@ export const PublicProtocolCustomerView = ({
         </div>
       </main>
 
-      {/* Damage view drawer for read-only - constrained width */}
       <DamageViewDrawer
         open={viewerOpen}
         onOpenChange={setViewerOpen}
         point={selectedPoint}
       />
-      
-      {/* Photo fullscreen dialog */}
+
       <PhotoFullscreenDialog
         open={photoDialogOpen}
         onOpenChange={setPhotoDialogOpen}

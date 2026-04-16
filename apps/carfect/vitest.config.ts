@@ -14,6 +14,8 @@ export default defineConfig({
       '../../libs/ui/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/shared-utils/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/billing/src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/custom-fields/src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/protocol-config/src/**/*.{test,spec}.{ts,tsx}',
     ],
     coverage: {
       reporter: ['text', 'html'],
@@ -28,6 +30,8 @@ export default defineConfig({
       '@shared/billing': path.resolve(__dirname, '../../libs/billing/src'),
       '@shared/invoicing': path.resolve(__dirname, '../../libs/shared-invoicing/src/index.ts'),
       '@shared/in-app-hints': path.resolve(__dirname, '../../libs/in-app-hints/src/index.ts'),
+      '@shared/custom-fields': path.resolve(__dirname, '../../libs/custom-fields/src/index.ts'),
+      '@shared/protocol-config': path.resolve(__dirname, '../../libs/protocol-config/src/index.ts'),
     },
   },
 });

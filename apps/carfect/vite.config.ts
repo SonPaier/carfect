@@ -127,6 +127,8 @@ export default defineConfig(({ mode }) => ({
       '@shared/billing': path.resolve(__dirname, '../../libs/billing/src'),
       '@shared/ai': path.resolve(__dirname, '../../libs/ai/src/index.ts'),
       '@shared/in-app-hints': path.resolve(__dirname, '../../libs/in-app-hints/src/index.ts'),
+      '@shared/custom-fields': path.resolve(__dirname, '../../libs/custom-fields/src/index.ts'),
+      '@shared/protocol-config': path.resolve(__dirname, '../../libs/protocol-config/src/index.ts'),
       '@': path.resolve(__dirname, './src'),
     },
   },

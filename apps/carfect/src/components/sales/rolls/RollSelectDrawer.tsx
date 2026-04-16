@@ -86,9 +86,10 @@ const RollSelectDrawer = ({
 
     // Filter by product name if specified
     if (filterProductName) {
-      const filterLower = filterProductName.toLowerCase();
+      const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+      const filterLower = normalize(filterProductName);
       result = result.filter((r) => {
-        const rollName = r.productName.toLowerCase();
+        const rollName = normalize(r.productName);
         const rollBase = rollName.replace(/\s*-\s*\d+mm.*$/, '').replace(/\s*\d+mm.*$/, '');
         const filterBase = filterLower.replace(/\s*-\s*\d+mm.*$/, '').replace(/\s*\d+mm.*$/, '');
         return (

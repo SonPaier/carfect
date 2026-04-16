@@ -4,22 +4,21 @@ import { useGusLookup } from './useGusLookup';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+const mockInvoke = vi.fn();
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
+  },
+}));
 
 import { toast } from 'sonner';
 
-function makeResponse(body: unknown, ok = true, status = 200) {
-  return Promise.resolve({
-    ok,
-    status,
-    json: () => Promise.resolve(body),
-  } as Response);
-}
-
-const VALID_SUBJECT = {
+const VALID_RESPONSE = {
   name: 'ACME Sp. z o.o.',
-  residenceAddress: 'ul. Testowa 12, 00-001 Warszawa',
+  street: 'ul. Testowa 12',
+  postalCode: '00-001',
+  city: 'Warszawa',
+  regon: '123456789',
 };
 
 beforeEach(() => {
@@ -28,9 +27,7 @@ beforeEach(() => {
 
 describe('useGusLookup', () => {
   it('returns company data for a valid NIP', async () => {
-    mockFetch.mockReturnValue(
-      makeResponse({ result: { subject: VALID_SUBJECT } })
-    );
+    mockInvoke.mockResolvedValue({ data: VALID_RESPONSE, error: null });
 
     const { result } = renderHook(() => useGusLookup());
 
@@ -44,11 +41,13 @@ describe('useGusLookup', () => {
       street: 'ul. Testowa 12',
       postalCode: '00-001',
       city: 'Warszawa',
+      regon: '123456789',
     });
     expect(toast.success).toHaveBeenCalledWith('Dane pobrane z GUS');
+    expect(mockInvoke).toHaveBeenCalledWith('gus-lookup', { body: { nip: '1234567890' } });
   });
 
-  it('shows toast.error and does not fetch when NIP has fewer than 10 digits', async () => {
+  it('shows toast.error when NIP has fewer than 10 digits', async () => {
     const { result } = renderHook(() => useGusLookup());
 
     let data: Awaited<ReturnType<typeof result.current.lookupNip>>;
@@ -57,14 +56,12 @@ describe('useGusLookup', () => {
     });
 
     expect(data).toBeNull();
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockInvoke).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith('NIP musi mieć 10 cyfr');
   });
 
-  it('strips dashes and spaces from NIP before fetching', async () => {
-    mockFetch.mockReturnValue(
-      makeResponse({ result: { subject: VALID_SUBJECT } })
-    );
+  it('strips dashes and spaces from NIP before calling', async () => {
+    mockInvoke.mockResolvedValue({ data: VALID_RESPONSE, error: null });
 
     const { result } = renderHook(() => useGusLookup());
 
@@ -72,13 +69,11 @@ describe('useGusLookup', () => {
       await result.current.lookupNip('123-456-78-90');
     });
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/nip/1234567890')
-    );
+    expect(mockInvoke).toHaveBeenCalledWith('gus-lookup', { body: { nip: '1234567890' } });
   });
 
-  it('shows toast.error on network error', async () => {
-    mockFetch.mockRejectedValue(new Error('Network failure'));
+  it('shows toast.error on invoke error', async () => {
+    mockInvoke.mockResolvedValue({ data: null, error: new Error('fail') });
 
     const { result } = renderHook(() => useGusLookup());
 
@@ -88,11 +83,11 @@ describe('useGusLookup', () => {
     });
 
     expect(data).toBeNull();
-    expect(toast.error).toHaveBeenCalledWith('Network failure');
+    expect(toast.error).toHaveBeenCalledWith('Błąd połączenia z GUS');
   });
 
-  it('shows toast.error when API returns non-ok status', async () => {
-    mockFetch.mockReturnValue(makeResponse({}, false, 404));
+  it('shows toast.error when GUS returns error in data', async () => {
+    mockInvoke.mockResolvedValue({ data: { error: 'Nie znaleziono podmiotu o podanym NIP' }, error: null });
 
     const { result } = renderHook(() => useGusLookup());
 
@@ -102,71 +97,23 @@ describe('useGusLookup', () => {
     });
 
     expect(data).toBeNull();
-    expect(toast.error).toHaveBeenCalledWith('Nie znaleziono podmiotu');
+    expect(toast.error).toHaveBeenCalledWith('Nie znaleziono podmiotu o podanym NIP');
   });
 
-  it('shows toast.error when subject is missing in response', async () => {
-    mockFetch.mockReturnValue(makeResponse({ result: {} }));
+  it('loading is true while fetching and false after', async () => {
+    let resolveInvoke!: (v: unknown) => void;
+    mockInvoke.mockReturnValue(new Promise((res) => { resolveInvoke = res; }));
 
     const { result } = renderHook(() => useGusLookup());
 
-    let data: Awaited<ReturnType<typeof result.current.lookupNip>>;
-    await act(async () => {
-      data = await result.current.lookupNip('1234567890');
-    });
-
-    expect(data).toBeNull();
-    expect(toast.error).toHaveBeenCalledWith('Brak danych');
-  });
-
-  it('correctly parses street, postal code and city from formatted address', async () => {
-    const subject = {
-      name: 'Firma ABC',
-      residenceAddress: 'al. Jana Pawła II 23, 30-960 Kraków',
-    };
-    mockFetch.mockReturnValue(makeResponse({ result: { subject } }));
-
-    const { result } = renderHook(() => useGusLookup());
-
-    let data: Awaited<ReturnType<typeof result.current.lookupNip>>;
-    await act(async () => {
-      data = await result.current.lookupNip('9876543210');
-    });
-
-    expect(data).toEqual({
-      name: 'Firma ABC',
-      street: 'al. Jana Pawła II 23',
-      postalCode: '30-960',
-      city: 'Kraków',
-    });
-  });
-
-  it('is true while fetching and false after', async () => {
-    let resolveJson!: (v: unknown) => void;
-    const jsonPromise = new Promise((res) => {
-      resolveJson = res;
-    });
-
-    mockFetch.mockReturnValue(
-      Promise.resolve({
-        ok: true,
-        json: () => jsonPromise,
-      } as unknown as Response)
-    );
-
-    const { result } = renderHook(() => useGusLookup());
-
-    // Start the lookup without awaiting
     act(() => {
       result.current.lookupNip('1234567890');
     });
 
-    // Loading should be true while we haven't resolved json yet
     await waitFor(() => expect(result.current.loading).toBe(true));
 
-    // Now resolve the JSON
     await act(async () => {
-      resolveJson({ result: { subject: VALID_SUBJECT } });
+      resolveInvoke({ data: VALID_RESPONSE, error: null });
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));

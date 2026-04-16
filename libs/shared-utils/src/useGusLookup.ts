@@ -5,11 +5,14 @@ export interface GusResult {
   street: string;
   postalCode: string;
   city: string;
+  regon?: string;
 }
 
 export interface UseGusLookupOptions {
   onSuccess?: (result: GusResult) => void;
   onError?: (message: string) => void;
+  /** Supabase client for calling edge function. Falls back to direct API if not provided. */
+  supabase?: { functions: { invoke: (name: string, options: { body: unknown }) => Promise<{ data: unknown; error: unknown }> } };
 }
 
 export function useGusLookup(options?: UseGusLookupOptions) {
@@ -24,6 +27,37 @@ export function useGusLookup(options?: UseGusLookupOptions) {
 
     setLoading(true);
     try {
+      if (options?.supabase) {
+        // Use GUS BIR API via edge function
+        const { data, error } = await options.supabase.functions.invoke('gus-lookup', {
+          body: { nip: cleanNip },
+        });
+
+        if (error) throw new Error('Błąd połączenia z GUS');
+
+        const gusData = data as {
+          name?: string;
+          street?: string;
+          postalCode?: string;
+          city?: string;
+          regon?: string;
+          error?: string;
+        };
+
+        if (gusData.error) throw new Error(gusData.error);
+
+        const result: GusResult = {
+          name: gusData.name || '',
+          street: gusData.street || '',
+          postalCode: gusData.postalCode || '',
+          city: gusData.city || '',
+          regon: gusData.regon,
+        };
+        options?.onSuccess?.(result);
+        return result;
+      }
+
+      // Fallback: Biała Lista VAT (direct, no edge function needed)
       const today = new Date().toISOString().split('T')[0];
       const res = await fetch(`https://wl-api.mf.gov.pl/api/search/nip/${cleanNip}?date=${today}`);
       if (!res.ok) throw new Error('Nie znaleziono podmiotu');

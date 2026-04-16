@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { SubscriptionSettingsTabContent } from '@shared/billing';
 import type { BillingData } from '@shared/billing';
 import { useGusLookup } from '@shared/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { useSubscriptionSummary } from '@/hooks/useSubscriptionSummary';
 import { useSubscriptionInvoices } from '@/hooks/useSubscriptionInvoices';
 import { useBillingData } from '@/hooks/useBillingData';
@@ -23,6 +24,7 @@ export function SubscriptionSettingsTab({ instanceId }: SubscriptionSettingsTabP
   const { billingData, loading: billingLoading, updateBillingData } = useBillingData(instanceId ?? undefined);
 
   const gusLookup = useGusLookup({
+    supabase,
     onSuccess: () => toast.success('Dane pobrane z GUS'),
     onError: (msg) => toast.error(msg),
   });

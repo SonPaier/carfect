@@ -1,12 +1,16 @@
 import { toast } from 'sonner';
 
-const PDF_API_URL = import.meta.env.DEV
-  ? 'http://localhost:3333/api/generate-offer-pdf'
-  : '/api/generate-offer-pdf';
+function getPdfApiUrl(): string {
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3333/api/generate-offer-pdf';
+  }
+  // Always use main domain for Vercel API routes (subdomains don't serve API)
+  return 'https://carfect.pl/api/generate-offer-pdf';
+}
 
 export async function openOfferPdf(publicToken: string): Promise<void> {
   try {
-    const response = await fetch(PDF_API_URL, {
+    const response = await fetch(getPdfApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ publicToken }),

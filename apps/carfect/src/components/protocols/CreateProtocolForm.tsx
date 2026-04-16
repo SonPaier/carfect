@@ -45,6 +45,7 @@ import {
   CarSearchAutocomplete,
   type CarSearchValue,
 } from '@/components/ui/car-search-autocomplete';
+import ServiceSelectionDrawer, { type ServiceWithCategory } from '@/components/admin/ServiceSelectionDrawer';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +56,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@shared/ui';
+import { useProtocolConfig, ConsentClauseRenderer } from '@shared/protocol-config';
+import {
+  useCustomFields,
+  CustomFieldsRenderer,
+  validateCustomFieldValues,
+  type CustomFieldValues,
+} from '@shared/custom-fields';
 
 type ProtocolType = 'reception' | 'pickup';
 
@@ -103,8 +111,25 @@ export const CreateProtocolForm = ({
 }: CreateProtocolFormProps) => {
   const [searchParams] = useSearchParams();
   const { hasFeature } = useInstanceFeatures(instanceId);
-  const showVin = hasFeature('vehicle_vin');
-  const showServices = hasFeature('protocol_services');
+
+  // Protocol config from protocol_settings table (overrides hasFeature when loaded)
+  const [protocolType, setProtocolType] = useState<ProtocolType>('reception');
+  const { config: protocolConfig, isLoading: configLoading } = useProtocolConfig(
+    instanceId,
+    protocolType,
+    supabase,
+  );
+  const { definitions: customFieldDefs } = useCustomFields(
+    instanceId,
+    `protocol_${protocolType}`,
+    supabase,
+  );
+
+  // Use protocol config when loaded, fall back to hasFeature
+  const showVin = configLoading ? hasFeature('vehicle_vin') : protocolConfig.builtInFields.vin.enabled;
+  const showServices = configLoading
+    ? hasFeature('protocol_services')
+    : protocolConfig.builtInFields.serviceItems.enabled;
 
   const [instance, setInstance] = useState<Instance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +173,13 @@ export const CreateProtocolForm = ({
   const [protocolDate, setProtocolDate] = useState<Date>(new Date());
   const [receivedBy, setReceivedBy] = useState('');
   const [notes, setNotes] = useState('');
-  const [protocolType, setProtocolType] = useState<ProtocolType>('reception');
+
+  // Custom field values (reset when protocolType changes — field IDs are per-context)
+  const [customFieldValues, setCustomFieldValues] = useState<CustomFieldValues>({});
+  const handleProtocolTypeChange = useCallback((type: ProtocolType) => {
+    setProtocolType(type);
+    setCustomFieldValues({});
+  }, []);
 
   // Protocol photos (general, not per-damage)
   const [protocolPhotoUrls, setProtocolPhotoUrls] = useState<string[]>([]);
@@ -178,6 +209,12 @@ export const CreateProtocolForm = ({
   const [releaseNotes, setReleaseNotes] = useState('Oświadczam, że odbieram pojazd bez zastrzeżeń');
   const [showReleaseSection, setShowReleaseSection] = useState(false);
   const releaseSectionRef = useRef<HTMLDivElement>(null);
+  // Stores the pending consent clause signature callback (ref to avoid re-render/stale closure)
+  const consentSignatureCallbackRef = useRef<((dataUrl: string) => void) | null>(null);
+  const [consentSignatureDialogOpen, setConsentSignatureDialogOpen] = useState(false);
+
+  // Service selection drawer
+  const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
 
   // Email dialog
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -397,6 +434,13 @@ export const CreateProtocolForm = ({
           }
           if (releaseNotesData) {
             setReleaseNotes(releaseNotesData);
+          }
+
+          // Load custom field values
+          const loadedCustomFieldValues =
+            (protocolData as Record<string, unknown>).custom_field_values as CustomFieldValues | null;
+          if (loadedCustomFieldValues) {
+            setCustomFieldValues(loadedCustomFieldValues);
           }
 
           // Fetch damage points
@@ -669,6 +713,16 @@ export const CreateProtocolForm = ({
       return null;
     }
 
+    // Validate custom fields
+    if (customFieldDefs.length > 0) {
+      const cfResult = validateCustomFieldValues(customFieldDefs, customFieldValues);
+      if (!cfResult.valid) {
+        const firstError = Object.values(cfResult.errors)[0];
+        toast.error(firstError || 'Wypełnij wymagane pola dodatkowe');
+        return null;
+      }
+    }
+
     setValidationErrors({});
 
     if (openEmailAfter) {
@@ -706,6 +760,7 @@ export const CreateProtocolForm = ({
         reservation_id: reservationId || null,
         release_signature: releaseSignature,
         release_notes: showReleaseSection ? releaseNotes || null : null,
+        custom_field_values: customFieldValues,
       };
 
       let savedProtocolId = protocolId;
@@ -843,7 +898,7 @@ export const CreateProtocolForm = ({
               <Label>Typ protokołu</Label>
               <Select
                 value={protocolType}
-                onValueChange={(v) => setProtocolType(v as ProtocolType)}
+                onValueChange={(v) => handleProtocolTypeChange(v as ProtocolType)}
               >
                 <SelectTrigger className="bg-white">
                   <SelectValue />
@@ -1079,15 +1134,7 @@ export const CreateProtocolForm = ({
                     className="flex items-center justify-between px-3 py-2 border-b border-foreground/20 last:border-b-0"
                   >
                     <div className="flex-1 min-w-0">
-                      <Input
-                        value={item.name}
-                        onChange={(e) => {
-                          const updated = [...serviceItems];
-                          updated[idx] = { ...updated[idx], name: e.target.value };
-                          setServiceItems(updated);
-                        }}
-                        className="border-0 p-0 h-auto text-sm bg-transparent focus-visible:ring-0"
-                      />
+                      <span className="text-sm">{item.name}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Input
@@ -1121,27 +1168,43 @@ export const CreateProtocolForm = ({
                   </span>
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
-                onClick={() =>
-                  setServiceItems([...serviceItems, { name: '', quantity: 1, unit_price: 0 }])
-                }
-                className="text-sm text-primary hover:underline"
+                onClick={() => setServiceDrawerOpen(true)}
+                variant="default"
+                size="sm"
               >
-                + Dodaj pozycję
-              </button>
+                + Dodaj usługi
+              </Button>
             </div>
           )}
 
           {/* Show add button when no items yet but feature enabled */}
           {showServices && serviceItems.length === 0 && (
-            <button
+            <Button
               type="button"
-              onClick={() => setServiceItems([{ name: '', quantity: 1, unit_price: 0 }])}
-              className="text-sm text-primary hover:underline"
+              onClick={() => setServiceDrawerOpen(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              size="sm"
             >
               + Dodaj usługi do protokołu
-            </button>
+            </Button>
+          )}
+
+          {/* Valuable items */}
+          {!configLoading && protocolConfig.builtInFields.valuableItemsClause.enabled && (
+            <div className="space-y-2">
+              <Label>Przedmioty wartościowe pozostawione w pojeździe</Label>
+              <Textarea
+                value={(customFieldValues._valuable_items as string) || ''}
+                onChange={(e) =>
+                  setCustomFieldValues({ ...customFieldValues, _valuable_items: e.target.value })
+                }
+                placeholder=""
+                className="resize-none"
+                rows={3}
+              />
+            </div>
           )}
 
           {/* Notes - auto-filled with damage points */}
@@ -1199,6 +1262,31 @@ export const CreateProtocolForm = ({
               />
             </div>
           </div>
+
+          {/* Custom fields — rendered inline after standard fields */}
+          {customFieldDefs.length > 0 && (
+            <CustomFieldsRenderer
+              definitions={customFieldDefs}
+              values={customFieldValues}
+              onChange={setCustomFieldValues}
+            />
+          )}
+
+          {/* Consent clauses */}
+          {protocolConfig.consentClauses.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Oświadczenia</Label>
+              <ConsentClauseRenderer
+                clauses={protocolConfig.consentClauses}
+                values={customFieldValues}
+                onChange={setCustomFieldValues}
+                onRequestSignature={(_clauseId, onSigned) => {
+                  consentSignatureCallbackRef.current = onSigned;
+                  setConsentSignatureDialogOpen(true);
+                }}
+              />
+            </div>
+          )}
 
           {/* Customer signature */}
           <div className="space-y-2">
@@ -1351,6 +1439,18 @@ export const CreateProtocolForm = ({
         initialSignature={releaseSignature}
       />
 
+      <SignatureDialog
+        open={consentSignatureDialogOpen}
+        onOpenChange={setConsentSignatureDialogOpen}
+        onSave={(dataUrl) => {
+          if (consentSignatureCallbackRef.current) {
+            consentSignatureCallbackRef.current(dataUrl);
+            consentSignatureCallbackRef.current = null;
+          }
+        }}
+        initialSignature={null}
+      />
+
       <SendProtocolEmailDialog
         open={emailDialogOpen}
         onOpenChange={(open) => {
@@ -1390,6 +1490,26 @@ export const CreateProtocolForm = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ServiceSelectionDrawer
+        open={serviceDrawerOpen}
+        onClose={() => setServiceDrawerOpen(false)}
+        instanceId={instanceId}
+        carSize="medium"
+        selectedServiceIds={[]}
+        hideSelectedSection
+        context="offer"
+        hasUnifiedServices
+        onConfirm={(_ids, _dur, services) => {
+          const newItems = services.map((s) => ({
+            name: s.name,
+            quantity: 1,
+            unit_price: s.price_medium ?? s.price_from ?? 0,
+          }));
+          setServiceItems((prev) => [...prev, ...newItems]);
+          setServiceDrawerOpen(false);
+        }}
+      />
 
       <PhotoFullscreenDialog
         open={!!fullscreenPhoto}
