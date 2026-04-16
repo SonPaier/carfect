@@ -32,8 +32,12 @@ const createChainMock = (resolveData: unknown = null, resolveError: unknown = nu
   return chain;
 };
 
+const mockInvoke = vi.fn();
 vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { from: (...args: unknown[]) => mockFrom(...args) },
+  supabase: {
+    from: (...args: unknown[]) => mockFrom(...args),
+    functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
+  },
 }));
 
 const { mockToast } = vi.hoisted(() => ({
@@ -235,19 +239,16 @@ describe('CustomerDataStep', () => {
   it('shows company name, address, postal code, city fields after successful GUS lookup', async () => {
     const user = userEvent.setup();
 
-    // Mock fetch for GUS API
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        result: {
-          subject: {
-            name: 'Test Firma Sp. z o.o.',
-            workingAddress: 'ul. Testowa 1, 00-001 Warszawa',
-          },
-        },
-      }),
+    mockInvoke.mockResolvedValue({
+      data: {
+        name: 'Test Firma Sp. z o.o.',
+        street: 'ul. Testowa 1',
+        postalCode: '00-001',
+        city: 'Warszawa',
+        regon: '123456789',
+      },
+      error: null,
     });
-    vi.stubGlobal('fetch', mockFetch);
 
     const onCustomerChange = vi.fn();
 
@@ -283,25 +284,20 @@ describe('CustomerDataStep', () => {
     expect(screen.getByLabelText('Adres (ulica i numer)')).toBeInTheDocument();
     expect(screen.getByLabelText('Kod pocztowy')).toBeInTheDocument();
     expect(screen.getByLabelText('Miejscowość')).toBeInTheDocument();
-
-    vi.unstubAllGlobals();
   });
 
   it('calls onCustomerChange with company data after successful GUS lookup', async () => {
     const user = userEvent.setup();
 
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        result: {
-          subject: {
-            name: 'Test Firma Sp. z o.o.',
-            workingAddress: 'ul. Testowa 1, 00-001 Warszawa',
-          },
-        },
-      }),
+    mockInvoke.mockResolvedValue({
+      data: {
+        name: 'Test Firma Sp. z o.o.',
+        street: 'ul. Testowa 1',
+        postalCode: '00-001',
+        city: 'Warszawa',
+      },
+      error: null,
     });
-    vi.stubGlobal('fetch', mockFetch);
 
     const onCustomerChange = vi.fn();
     render(
@@ -321,8 +317,6 @@ describe('CustomerDataStep', () => {
         }),
       );
     });
-
-    vi.unstubAllGlobals();
   });
 
   it('shows error toast when GUS lookup NIP is shorter than 10 digits', async () => {
@@ -339,7 +333,7 @@ describe('CustomerDataStep', () => {
     expect(screen.getByText('GUS')).toBeInTheDocument();
     await user.click(screen.getByText('GUS'));
 
-    expect(mockToast.error).toHaveBeenCalledWith('Wprowadź poprawny NIP (10 cyfr)');
+    expect(mockToast.error).toHaveBeenCalledWith('NIP musi mieć 10 cyfr');
   });
 
   // ---- Vehicle section labels ----

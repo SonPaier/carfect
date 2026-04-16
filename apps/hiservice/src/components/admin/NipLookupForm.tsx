@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useGusLookup } from '@shared/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface NipLookupData {
   nip: string;
@@ -20,47 +21,27 @@ interface NipLookupFormProps {
 }
 
 const NipLookupForm = ({ value, onChange, readOnly = false }: NipLookupFormProps) => {
-  const [loading, setLoading] = useState(false);
+  const { lookupNip: gusLookup, loading } = useGusLookup({
+    supabase,
+    onSuccess: (result) => {
+      onChange({
+        nip: value.nip,
+        company: result.name,
+        billingStreet: result.street,
+        billingPostalCode: result.postalCode,
+        billingCity: result.city,
+      });
+      toast.success('Pobrano dane firmy');
+    },
+    onError: (msg) => toast.error(msg),
+  });
 
   const update = (field: keyof NipLookupData, val: string) => {
     onChange({ ...value, [field]: val });
   };
 
-  const lookupNip = async () => {
-    const nip = value.nip.replace(/[^0-9]/g, '');
-    if (!nip || nip.length !== 10) {
-      toast.error('Wprowadź poprawny NIP (10 cyfr)');
-      return;
-    }
-    setLoading(true);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch(
-        `https://wl-api.mf.gov.pl/api/search/nip/${nip}?date=${today}`
-      );
-      if (!response.ok) throw new Error('Nie znaleziono firmy');
-      const data = await response.json();
-      if (data.result?.subject) {
-        const subject = data.result.subject;
-        const addr = subject.workingAddress || subject.residenceAddress || '';
-        // Parse: "ULICA NR, KOD MIASTO"
-        const match = addr.match(/^(.+),\s*(\d{2}-\d{3})\s+(.+)$/);
-        onChange({
-          nip: value.nip,
-          company: subject.name || '',
-          billingStreet: match ? match[1].trim() : '',
-          billingPostalCode: match ? match[2].trim() : '',
-          billingCity: match ? match[3].trim() : '',
-        });
-        toast.success('Pobrano dane firmy z GUS');
-      } else {
-        toast.error('Nie znaleziono firmy o podanym NIP');
-      }
-    } catch {
-      toast.error('Nie udało się pobrać danych firmy');
-    } finally {
-      setLoading(false);
-    }
+  const handleLookup = () => {
+    gusLookup(value.nip);
   };
 
   if (readOnly) {
@@ -91,11 +72,11 @@ const NipLookupForm = ({ value, onChange, readOnly = false }: NipLookupFormProps
             type="button"
             variant="outline"
             size="sm"
-            onClick={lookupNip}
+            onClick={handleLookup}
             disabled={loading}
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4 mr-1" />}
-            {loading ? 'Szukam...' : 'Pobierz z GUS'}
+            {loading ? 'Szukam...' : 'Pobierz dane'}
           </Button>
         </div>
       </div>

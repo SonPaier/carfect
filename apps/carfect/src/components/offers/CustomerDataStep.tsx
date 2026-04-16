@@ -15,7 +15,7 @@ import ClientSearchAutocomplete, {
 } from '@/components/ui/client-search-autocomplete';
 import { PhoneMaskedInput } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizePhone, formatPhoneDisplay } from '@shared/utils';
+import { normalizePhone, formatPhoneDisplay, useGusLookup } from '@shared/utils';
 
 export interface ValidationErrors {
   name?: string;
@@ -109,7 +109,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
     ref,
   ) => {
     const { t } = useTranslation();
-    const [nipLoading, setNipLoading] = useState(false);
+    // nipLoading is provided by useGusLookup hook below
     const [emailError, setEmailError] = useState<string | null>(null);
     const hasCompanyData = !!(customerData.company || customerData.companyAddress || customerData.companyCity);
     const [companyExpanded, setCompanyExpanded] = useState(
@@ -276,48 +276,22 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
       }
     };
 
-    const lookupNip = async () => {
-      const nip = customerData.nip?.replace(/[^0-9]/g, '');
-      if (!nip || nip.length !== 10) {
-        toast.error('Wprowadź poprawny NIP (10 cyfr)');
-        return;
-      }
+    const { lookupNip: gusLookupNip, loading: nipLoading } = useGusLookup({
+      supabase,
+      onSuccess: (result) => {
+        onCustomerChange({
+          company: result.name,
+          companyAddress: result.street,
+          companyPostalCode: result.postalCode,
+          companyCity: result.city,
+        });
+        setCompanyExpanded(true);
+      },
+      onError: (msg) => toast.error(msg),
+    });
 
-      setNipLoading(true);
-      try {
-        // Use White List API from Polish Ministry of Finance
-        const today = new Date().toISOString().split('T')[0];
-        const response = await fetch(
-          `https://wl-api.mf.gov.pl/api/search/nip/${nip}?date=${today}`,
-        );
-
-        if (!response.ok) {
-          throw new Error('Nie znaleziono firmy');
-        }
-
-        const data = await response.json();
-
-        if (data.result?.subject) {
-          const subject = data.result.subject;
-          const addressStr = subject.workingAddress || subject.residenceAddress || '';
-          const parsed = parseAddress(addressStr);
-
-          onCustomerChange({
-            company: subject.name,
-            companyAddress: parsed.street,
-            companyPostalCode: parsed.postalCode,
-            companyCity: parsed.city,
-          });
-          setCompanyExpanded(true);
-        } else {
-          toast.error('Nie znaleziono firmy o podanym NIP');
-        }
-      } catch (error) {
-        console.error('NIP lookup error:', error);
-        toast.error('Nie udało się pobrać danych firmy');
-      } finally {
-        setNipLoading(false);
-      }
+    const lookupNip = () => {
+      gusLookupNip(customerData.nip || '');
     };
 
     // Determine if field has validation error
