@@ -56,6 +56,10 @@ interface CeidgFirma {
   dataRozpoczecia?: string;
 }
 
+interface CeidgFirmaResponse {
+  firma: CeidgFirma;
+}
+
 interface CeidgFirmyResponse {
   firmy: CeidgFirma[];
   count: number;
@@ -70,7 +74,7 @@ export async function lookupNip(nip: string): Promise<GusCompanyResult> {
   const baseUrl = getBaseUrl();
   const token = getApiToken();
 
-  const res = await fetch(`${baseUrl}/firmy?nip=${cleanNip}`, {
+  const res = await fetch(`${baseUrl}/firma?nip=${cleanNip}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -92,14 +96,14 @@ export async function lookupNip(nip: string): Promise<GusCompanyResult> {
     throw new Error(`Błąd API CEIDG: ${res.status}`);
   }
 
-  const data: CeidgFirmyResponse = await res.json();
+  const data = await res.json() as { firma: CeidgFirma[] };
 
-  if (!data.firmy || data.firmy.length === 0) {
+  if (!data.firma || data.firma.length === 0) {
     throw new Error('Nie znaleziono firmy o podanym NIP');
   }
 
   // Take the first active company, or just the first one
-  const firma = data.firmy.find(f => f.status === 'AKTYWNY') || data.firmy[0];
+  const firma = data.firma.find(f => f.status === 'AKTYWNY') || data.firma[0];
   const addr = firma.adresDzialalnosci || {};
 
   return {
