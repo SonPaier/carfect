@@ -380,10 +380,9 @@ const EmployeeCalendarPage = () => {
 
     const updateData: any = { column_id: newColumnId, item_date: newDate };
     if (newTime) {
-      const originalStart =
-        parseFloat(item.start_time.split(':')[0]) + parseFloat(item.start_time.split(':')[1]) / 60;
-      const originalEnd =
-        parseFloat(item.end_time.split(':')[0]) + parseFloat(item.end_time.split(':')[1]) / 60;
+      const parseT = (t: string | null) => { if (!t) return 0; const [h, m] = t.split(':').map(Number); return h + m / 60; };
+      const originalStart = parseT(item.start_time);
+      const originalEnd = parseT(item.end_time);
       const duration = originalEnd - originalStart;
       const newStartParts = newTime.split(':').map(Number);
       const newEndTotal = newStartParts[0] + newStartParts[1] / 60 + duration;
