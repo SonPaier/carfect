@@ -123,7 +123,8 @@ const viewConfig: Record<
   aktywnosci: { label: 'Aktywności', icon: Bell, description: 'Powiadomienia i aktywności' },
 };
 
-const parseTime = (time: string): number => {
+const parseTime = (time: string | null | undefined): number => {
+  if (!time) return 0;
   const [hours, minutes] = time.split(':').map(Number);
   return hours + minutes / 60;
 };
