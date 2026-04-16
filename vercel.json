@@ -2,7 +2,6 @@
   "buildCommand": "pnpm --filter carfect run build",
   "outputDirectory": "apps/carfect/dist",
   "installCommand": "pnpm install",
-  "framework": null,
   "redirects": [
     {
       "source": "/(.*)",

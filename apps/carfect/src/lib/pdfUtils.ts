@@ -4,8 +4,7 @@ function getPdfApiUrl(): string {
   if (import.meta.env.DEV) {
     return 'http://localhost:3333/api/generate-offer-pdf';
   }
-  // Relative URL — works on any subdomain (*.admin.carfect.pl)
-  return '/api/generate-offer-pdf';
+  return 'https://carfect-pdf-api.vercel.app/api/generate-offer-pdf';
 }
 
 export async function openOfferPdf(publicToken: string): Promise<void> {
