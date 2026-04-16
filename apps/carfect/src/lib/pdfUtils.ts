@@ -4,7 +4,8 @@ function getPdfApiUrl(): string {
   if (import.meta.env.DEV) {
     return 'http://localhost:3333/api/generate-offer-pdf';
   }
-  return 'https://carfect.pl/api/generate-offer-pdf';
+  // Relative URL — works on any subdomain (*.admin.carfect.pl)
+  return '/api/generate-offer-pdf';
 }
 
 export async function openOfferPdf(publicToken: string): Promise<void> {
@@ -23,12 +24,10 @@ export async function openOfferPdf(publicToken: string): Promise<void> {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
 
-    // Extract filename from Content-Disposition header
     const disposition = response.headers.get('Content-Disposition');
     const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
     const filename = filenameMatch?.[1] || 'oferta.pdf';
 
-    // Create download link with proper filename
     const a = document.createElement('a');
     a.href = url;
     a.target = '_blank';
