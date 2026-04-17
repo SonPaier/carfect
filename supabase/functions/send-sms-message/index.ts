@@ -112,7 +112,7 @@ serve(async (req) => {
       format: "json",
       encoding: "utf-8",
     };
-    if (smsSenderName) smsParams.from = smsSenderName;
+    smsParams.from = smsSenderName || 'Carfect';
 
     const smsResponse = await fetch("https://api.smsapi.pl/sms.do", {
       method: "POST",
