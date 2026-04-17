@@ -510,7 +510,7 @@ Deno.test('SRH-025: sendSms - includes sender name in SMSAPI request', async () 
   }
 });
 
-Deno.test("SRH-026: sendSms - no sender name omits 'from' param", async () => {
+Deno.test("SRH-026: sendSms - no sender name defaults to 'Carfect'", async () => {
   let capturedBody: string | undefined;
 
   const fetchStub = stub(
@@ -542,7 +542,7 @@ Deno.test("SRH-026: sendSms - no sender name omits 'from' param", async () => {
       null,
     );
 
-    assertEquals(capturedBody?.includes('from='), false);
+    assertEquals(capturedBody?.includes('from=Carfect'), true);
   } finally {
     fetchStub.restore();
   }
