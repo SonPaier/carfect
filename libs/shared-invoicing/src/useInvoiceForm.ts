@@ -241,20 +241,17 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       return;
     }
 
-    // Always convert positions to brutto for the API, applying discount
+    // Convert positions to brutto for the API, keeping discount visible on invoice
     const grossPositions = positions.map((p) => {
-      const discountMultiplier = 1 - (p.discount || 0) / 100;
-      const discountedPrice = Math.round(p.unit_price_gross * discountMultiplier * 100) / 100;
       if (priceMode === 'netto') {
-        if (p.vat_rate === -1) return { ...p, unit_price_gross: discountedPrice, discount: 0 };
+        if (p.vat_rate === -1) return { ...p };
         const rate = p.vat_rate / 100;
         return {
           ...p,
-          unit_price_gross: Math.round(discountedPrice * (1 + rate) * 100) / 100,
-          discount: 0,
+          unit_price_gross: Math.round(p.unit_price_gross * (1 + rate) * 100) / 100,
         };
       }
-      return { ...p, unit_price_gross: discountedPrice, discount: 0 };
+      return { ...p };
     });
 
     setSubmitting(true);
