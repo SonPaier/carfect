@@ -387,6 +387,13 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
           </Button>
         </div>
 
+        <p className="text-xs text-muted-foreground">
+          Pobierz oświadczenie, podpisz (pieczątka jeśli posiadasz) i odeślij na WhatsApp{' '}
+          <a href="https://wa.me/48666610222" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">666 610 222</a>
+          {' '}(Tomasz) lub e-mail{' '}
+          <a href="mailto:hello@carfect.pl" className="text-primary hover:underline">hello@carfect.pl</a>
+        </p>
+
         {isTrial && (
           <p className="text-xs text-amber-600 font-medium">Dostępne w planie płatnym</p>
         )}
