@@ -48,6 +48,8 @@ export interface SalesOrder {
   customerDiscount?: number;
   paymentMethod?: string;
   deliveryType?: 'shipping' | 'pickup' | 'uber';
+  createdBy?: string;
+  createdByName?: string;
 }
 
 export const mockSalesOrders: SalesOrder[] = [];
