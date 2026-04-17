@@ -42,6 +42,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@shared/ui';
 import { CreateInvoiceDrawer } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
@@ -165,7 +170,30 @@ const SalesOrdersView = () => {
     orderNumber: string;
   }>({ open: false, orderId: '', orderNumber: '' });
   const [trackingInput, setTrackingInput] = useState('');
+  const [filterCreatedBy, setFilterCreatedBy] = useState<string>('all');
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>('all');
+  const [filterDeliveryType, setFilterDeliveryType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [instanceUsers, setInstanceUsers] = useState<{ id: string; name: string }[]>([]);
   const bulk = useBulkSelection();
+
+  // Fetch instance users for creator filter
+  useEffect(() => {
+    if (!instanceId) return;
+    supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('instance_id', instanceId)
+      .then(({ data }) => {
+        if (data) {
+          setInstanceUsers(
+            data
+              .filter((p) => p.full_name && !p.full_name.includes('@'))
+              .map((p) => ({ id: p.id, name: p.full_name! })),
+          );
+        }
+      });
+  }, [instanceId]);
 
   // Debounce search
   useEffect(() => {
@@ -208,6 +236,12 @@ const SalesOrdersView = () => {
       );
     }
 
+    // Server-side filters
+    if (filterCreatedBy !== 'all') query = query.eq('created_by', filterCreatedBy);
+    if (filterPaymentStatus !== 'all') query = query.eq('payment_status', filterPaymentStatus);
+    if (filterDeliveryType !== 'all') query = query.eq('delivery_type', filterDeliveryType);
+    if (filterStatus !== 'all') query = query.eq('status', filterStatus);
+
     query = query.order(dbSortCol, { ascending: sortDirection === 'asc' }).range(from, to);
 
     const { data, error, count } = await query;
@@ -237,11 +271,26 @@ const SalesOrdersView = () => {
       }
     }
 
+    // Resolve creator names
+    const creatorIds = [...new Set((data || []).map((o) => o.created_by).filter(Boolean))] as string[];
+    const creatorMap = new Map<string, string>();
+    if (creatorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', creatorIds);
+      for (const p of profiles || []) {
+        if (p.full_name && !p.full_name.includes('@')) creatorMap.set(p.id, p.full_name);
+      }
+    }
+
     const mapped: SalesOrder[] = (data || []).map((o) => {
       const inv = invoiceMap[o.id];
       return {
         id: o.id,
         orderNumber: o.order_number,
+        createdBy: o.created_by || undefined,
+        createdByName: o.created_by ? creatorMap.get(o.created_by) : undefined,
         createdAt: o.created_at,
         shippedAt: o.shipped_at || undefined,
         customerName: o.customer_name,
@@ -300,7 +349,7 @@ const SalesOrdersView = () => {
     });
 
     setOrders(mapped);
-  }, [instanceId, currentPage, pageSize, sortColumn, sortDirection, debouncedSearch]);
+  }, [instanceId, currentPage, pageSize, sortColumn, sortDirection, debouncedSearch, filterCreatedBy, filterPaymentStatus, filterDeliveryType, filterStatus]);
 
   useEffect(() => {
     fetchOrders();
@@ -777,17 +826,64 @@ const SalesOrdersView = () => {
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
-      {/* Search */}
-      <div className="shrink-0 pb-4">
-        <div className="relative max-w-sm">
+      {/* Search + Filters */}
+      <div className="shrink-0 pb-4 flex flex-wrap items-center gap-3">
+        <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po firmie, mieście, osobie, produkcie..."
+            placeholder="Szukaj po firmie, mieście, osobie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
+        {instanceUsers.length > 0 && (
+          <Select value={filterCreatedBy} onValueChange={(v) => { setFilterCreatedBy(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-[150px] h-9 text-xs">
+              <SelectValue placeholder="Opiekun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Wszyscy opiekunowie</SelectItem>
+              {instanceUsers.map((u) => (
+                <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Select value={filterPaymentStatus} onValueChange={(v) => { setFilterPaymentStatus(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-[160px] h-9 text-xs">
+            <SelectValue placeholder="Płatność" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Wszystkie płatności</SelectItem>
+            <SelectItem value="unpaid">Do opłacenia</SelectItem>
+            <SelectItem value="paid">Opłacone</SelectItem>
+            <SelectItem value="collective">Zbiorcza</SelectItem>
+            <SelectItem value="collective_paid">Zbiorcza opłacona</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterDeliveryType} onValueChange={(v) => { setFilterDeliveryType(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-[140px] h-9 text-xs">
+            <SelectValue placeholder="Dostawa" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Wszystkie dostawy</SelectItem>
+            <SelectItem value="shipping">Wysyłka</SelectItem>
+            <SelectItem value="pickup">Odbiór osobisty</SelectItem>
+            <SelectItem value="uber">Uber</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-[130px] h-9 text-xs">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Wszystkie statusy</SelectItem>
+            <SelectItem value="nowy">Nowy</SelectItem>
+            <SelectItem value="wysłany">Wysłany</SelectItem>
+            <SelectItem value="anulowany">Anulowany</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Bulk action bar */}
@@ -886,7 +982,14 @@ const SalesOrdersView = () => {
                               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                             )}
                           </button>
-                          {order.orderNumber}
+                          <div>
+                            {order.orderNumber}
+                            {order.createdByName && (
+                              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500 text-white leading-none">
+                                {order.createdByName.split(' ')[0]}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">{order.customerName}</TableCell>
