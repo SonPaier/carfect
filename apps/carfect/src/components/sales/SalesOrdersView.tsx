@@ -1044,6 +1044,7 @@ const SalesOrdersView = () => {
                           : formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
                       <TableCell>
+                        <div className="space-y-1">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -1094,6 +1095,12 @@ const SalesOrdersView = () => {
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        {order.paymentMethod && (
+                          <span className="text-xs text-foreground block">
+                            {{ cod: 'Pobranie', transfer: 'Przelew', cash: 'Gotówka', card: 'Karta', free: 'Bezpłatne', tab: 'Na zeszyt' }[order.paymentMethod] ?? order.paymentMethod}
+                          </span>
+                        )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
