@@ -42,7 +42,7 @@ import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChang
 // Re-export types used externally
 export type { OrderPackage, OrderProduct, DeliveryType };
 
-type PaymentMethod = 'cod' | 'transfer' | 'free' | 'cash' | 'card';
+type PaymentMethod = 'cod' | 'transfer' | 'free' | 'cash' | 'card' | 'tab';
 
 export interface EditOrderData {
   id: string;
