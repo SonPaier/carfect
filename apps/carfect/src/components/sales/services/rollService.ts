@@ -34,6 +34,7 @@ interface UsageDbRow {
   used_mb: number | string;
   source: string;
   worker_name: string | null;
+  vehicle_name: string | null;
   note: string | null;
   created_at: string;
 }
@@ -71,6 +72,7 @@ function mapUsageRow(row: UsageDbRow): SalesRollUsage {
     usedMb: Number(row.used_mb),
     source: row.source || 'order',
     workerName: row.worker_name ?? null,
+    vehicleName: row.vehicle_name ?? null,
     note: row.note ?? null,
     createdAt: row.created_at,
   };
@@ -356,6 +358,7 @@ export async function createManualRollUsage(data: {
   usedM2: number;
   source: 'manual' | 'worker';
   workerName?: string;
+  vehicleName?: string | null;
   note?: string;
 }): Promise<string> {
   const { data: row, error } = await supabase
@@ -366,6 +369,7 @@ export async function createManualRollUsage(data: {
       used_m2: data.usedM2,
       source: data.source,
       worker_name: data.workerName || null,
+      vehicle_name: data.vehicleName ?? null,
       note: data.note || null,
     })
     .select('id')
@@ -382,6 +386,7 @@ export async function updateManualRollUsage(
     usedM2: number;
     source: 'manual' | 'worker';
     workerName?: string;
+    vehicleName?: string | null;
     note?: string;
   },
 ): Promise<void> {
@@ -392,6 +397,7 @@ export async function updateManualRollUsage(
       used_m2: data.usedM2,
       source: data.source,
       worker_name: data.workerName || null,
+      vehicle_name: data.vehicleName ?? null,
       note: data.note || null,
     })
     .eq('id', id)
@@ -561,6 +567,80 @@ export async function uploadRollPhoto(file: File, instanceId: string): Promise<s
   const { data: urlData } = supabase.storage.from('roll-photos').getPublicUrl(fileName);
 
   return urlData.publicUrl;
+}
+
+// ─── Scrap / Offcut Usage (no roll) ──────────────────────────
+
+export async function createScrapUsage(params: {
+  workerName: string;
+  widthM: number;
+  lengthM: number;
+  vehicleName?: string | null;
+  note?: string | null;
+}): Promise<void> {
+  const usedM2 = params.widthM * params.lengthM;
+  const { error } = await supabase
+    .from('sales_roll_usages')
+    .insert({
+      roll_id: null,
+      used_mb: params.lengthM,
+      used_m2: usedM2,
+      source: 'worker',
+      worker_name: params.workerName,
+      vehicle_name: params.vehicleName || null,
+      note: params.note || null,
+    });
+  if (error) throw error;
+}
+
+// ─── Worker Profiles ─────────────────────────────────────────
+
+export async function fetchWorkerProfiles(instanceId: string): Promise<{ id: string; name: string }[]> {
+  const { data } = await supabase
+    .from('employees')
+    .select('id, name')
+    .eq('instance_id', instanceId)
+    .eq('active', true)
+    .order('sort_order', { ascending: true });
+  return (data || []).map(e => ({ id: e.id, name: e.name }));
+}
+
+// ─── Worker Roll Usages For Month ────────────────────────────
+
+export interface WorkerRollUsageWithRoll extends SalesRollUsage {
+  rollProductName: string | null;
+  rollProductCode: string | null;
+  rollWidthMm: number | null;
+}
+
+export async function fetchWorkerRollUsagesForMonth(
+  instanceId: string, year: number, month: number
+): Promise<WorkerRollUsageWithRoll[]> {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = month === 12
+    ? `${year + 1}-01-01`
+    : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+  const { data, error } = await supabase
+    .from('sales_roll_usages')
+    .select('*, sales_rolls!inner(instance_id, product_name, product_code, width_mm)')
+    .eq('source', 'worker')
+    .eq('sales_rolls.instance_id', instanceId)
+    .gte('created_at', startDate)
+    .lt('created_at', endDate)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map((row) => {
+    const base = mapUsageRow(row);
+    const roll = row.sales_rolls as { product_name?: string; product_code?: string; width_mm?: number } | null;
+    return {
+      ...base,
+      rollProductName: roll?.product_name ?? null,
+      rollProductCode: roll?.product_code ?? null,
+      rollWidthMm: roll?.width_mm ?? null,
+    };
+  });
 }
 
 // ─── File to Base64 ─────────────────────────────────────────

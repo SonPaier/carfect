@@ -49,6 +49,14 @@ vi.mock('@shared/ui', async () => {
   return { ...actual, useIsMobile: () => false };
 });
 
+vi.mock('@/hooks/useInstancePlan', () => ({
+  useInstancePlan: () => ({ data: { is_trial: false }, isLoading: false }),
+}));
+
+vi.mock('./SmsSenderDeclarationPdf', () => ({
+  generateDeclarationPdf: vi.fn(),
+}));
+
 // ---- Sample data ----
 const INSTANCE_ID = 'inst-123';
 

@@ -556,9 +556,9 @@ describe('useInvoiceForm', () => {
 
       const body = mockFunctionsInvoke.mock.calls[0][1].body;
       const pos = body.invoiceData.positions[0];
-      // 100 * 0.9 (discount) * 1.23 (VAT) = 110.7
-      expect(pos.unit_price_gross).toBe(110.7);
-      expect(pos.discount).toBe(0); // discount baked in, not passed separately
+      // 100 netto * 1.23 (VAT) = 123 brutto (discount passed separately)
+      expect(pos.unit_price_gross).toBe(123);
+      expect(pos.discount).toBe(10); // discount passed to API for visibility on invoice
     });
 
     it('treats missing discount as 0%', async () => {

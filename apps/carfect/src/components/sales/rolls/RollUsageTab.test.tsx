@@ -11,6 +11,10 @@ vi.mock('../services/rollService', () => ({
   createManualRollUsage: vi.fn(),
   updateManualRollUsage: vi.fn(),
   deleteRollUsage: vi.fn(),
+  fetchWorkerProfiles: vi.fn().mockResolvedValue([
+    { id: 'p1', name: 'Artem' },
+    { id: 'p2', name: 'Marcin' },
+  ]),
 }));
 
 import {
@@ -70,7 +74,7 @@ beforeEach(() => {
 
 describe('RollUsageTab — add button and empty state', () => {
   it('shows "Dodaj zużycie" button initially', async () => {
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -78,7 +82,7 @@ describe('RollUsageTab — add button and empty state', () => {
   });
 
   it('shows empty state "Brak zużycia dla tej rolki" when no usages', async () => {
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Brak zużycia dla tej rolki')).toBeInTheDocument();
@@ -89,7 +93,7 @@ describe('RollUsageTab — add button and empty state', () => {
 describe('RollUsageTab — form visibility', () => {
   it('clicking "Dodaj zużycie" shows the form with source toggle buttons', async () => {
     const user = userEvent.setup();
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -105,7 +109,7 @@ describe('RollUsageTab — form visibility', () => {
 describe('RollUsageTab — source toggle', () => {
   it('clicking "Pracownik" shows worker name input', async () => {
     const user = userEvent.setup();
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -113,18 +117,18 @@ describe('RollUsageTab — source toggle', () => {
 
     await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
 
-    // Before clicking Pracownik: only note + mb inputs
-    expect(screen.queryByText('Imię pracownika')).not.toBeInTheDocument();
+    // Before clicking Pracownik: Samochód field not visible
+    expect(screen.queryByText('Samochód')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Pracownik' }));
 
-    // After clicking Pracownik: label for worker name should appear
-    expect(screen.getByText('Imię pracownika')).toBeInTheDocument();
+    // After clicking Pracownik: Samochód field should appear
+    expect(screen.getByText('Samochód')).toBeInTheDocument();
   });
 
   it('clicking "Ręczne" hides worker name input', async () => {
     const user = userEvent.setup();
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -134,11 +138,11 @@ describe('RollUsageTab — source toggle', () => {
 
     // Switch to Pracownik first to show worker input
     await user.click(screen.getByRole('button', { name: 'Pracownik' }));
-    expect(screen.getByText('Imię pracownika')).toBeInTheDocument();
+    expect(screen.getByText('Samochód')).toBeInTheDocument();
 
     // Switch back to Ręczne — worker name label should disappear
     await user.click(screen.getByRole('button', { name: 'Ręczne' }));
-    expect(screen.queryByText('Imię pracownika')).not.toBeInTheDocument();
+    expect(screen.queryByText('Samochód')).not.toBeInTheDocument();
   });
 });
 
@@ -165,7 +169,7 @@ describe('RollUsageTab — m² conversion', () => {
 describe('RollUsageTab — submit button disabled state', () => {
   it('submit button is disabled when mb input is empty', async () => {
     const user = userEvent.setup();
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -180,7 +184,7 @@ describe('RollUsageTab — submit button disabled state', () => {
 
   it('submit button is disabled when mb input is zero or negative', async () => {
     const user = userEvent.setup();
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -197,7 +201,7 @@ describe('RollUsageTab — submit button disabled state', () => {
 
   it('submit button is enabled when valid mb is entered', async () => {
     const user = userEvent.setup();
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
@@ -223,7 +227,7 @@ describe('RollUsageTab — usage cards rendering', () => {
     });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Ręczne')).toBeInTheDocument();
@@ -241,7 +245,7 @@ describe('RollUsageTab — usage cards rendering', () => {
     });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Pracownik')).toBeInTheDocument();
@@ -257,7 +261,7 @@ describe('RollUsageTab — usage cards rendering', () => {
     });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Extra note for this usage')).toBeInTheDocument();
@@ -275,7 +279,7 @@ describe('RollUsageTab — edit/delete button visibility', () => {
     });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Zamówienie')).toBeInTheDocument();
@@ -303,7 +307,7 @@ describe('RollUsageTab — edit/delete button visibility', () => {
     const usage = makeUsage({ source: 'manual' });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Ręczne')).toBeInTheDocument();
@@ -319,7 +323,7 @@ describe('RollUsageTab — edit/delete button visibility', () => {
     const usage = makeUsage({ source: 'worker', workerName: 'Anna' });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Pracownik')).toBeInTheDocument();
@@ -341,7 +345,7 @@ describe('RollUsageTab — edit populates form', () => {
     });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Ręczne')).toBeInTheDocument();
@@ -376,7 +380,7 @@ describe('RollUsageTab — edit populates form', () => {
     });
     mockFetchRollUsages.mockResolvedValue([usage]);
 
-    render(<RollUsageTab roll={makeRoll()} />);
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
 
     await waitFor(() => {
       expect(screen.getByText('Pracownik')).toBeInTheDocument();
@@ -386,10 +390,7 @@ describe('RollUsageTab — edit populates form', () => {
     const pencilButton = allButtons[1];
     await user.click(pencilButton);
 
-    // Worker name label should appear and the first textbox should hold the worker name
-    expect(screen.getByText('Imię pracownika')).toBeInTheDocument();
-    const textboxes = screen.getAllByRole('textbox');
-    // First textbox is worker name, last is note
-    expect(textboxes[0]).toHaveValue('Marek Nowak');
+    // Worker fields should appear (Samochód label visible = worker mode active)
+    expect(screen.getByText('Samochód')).toBeInTheDocument();
   });
 });

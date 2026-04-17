@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@shared/ui';
+import { Input } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SmsUsageCard } from './SmsUsageCard';
 import { POLISH_MONTH_NAMES } from '@/lib/polishDateUtils';
+import { useInstancePlan } from '@/hooks/useInstancePlan';
+import { generateDeclarationPdf } from './SmsSenderDeclarationPdf';
 
 interface SmsLogEntry {
   phone: string;
@@ -102,6 +105,11 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const [smsLogs, setSmsLogs] = useState<SmsLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [senderName, setSenderName] = useState('');
+  const [savingSender, setSavingSender] = useState(false);
+
+  const { subscription } = useInstancePlan(instanceId);
+  const isTrial = subscription?.is_trial === true;
 
   useEffect(() => {
     if (instanceId) {
@@ -123,7 +131,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
     const { data } = await supabase
       .from('instances')
-      .select('name, short_name, phone, reservation_phone, sms_limit')
+      .select('name, short_name, phone, reservation_phone, sms_limit, sms_sender_name')
       .eq('id', instanceId)
       .single();
 
@@ -131,6 +139,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       setCurrentInstanceName(data.short_name || data.name);
       setCurrentReservationPhone(data.reservation_phone || data.phone || '');
       setSmsLimit(data.sms_limit);
+      setSenderName(data.sms_sender_name || '');
     }
   };
 
@@ -173,6 +182,57 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSender = async () => {
+    if (!instanceId) return;
+
+    setSavingSender(true);
+    try {
+      const { error } = await supabase
+        .from('instances')
+        .update({ sms_sender_name: senderName })
+        .eq('id', instanceId);
+
+      if (error) throw error;
+      toast.success('Nadpis SMS zapisany');
+    } catch (error) {
+      console.error('Error saving SMS sender name:', error);
+      toast.error('Błąd zapisywania nadpisu SMS');
+    } finally {
+      setSavingSender(false);
+    }
+  };
+
+  const handleDownloadDeclaration = async () => {
+    if (!instanceId || !senderName.trim()) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('instances')
+        .select('billing_name, billing_nip, billing_street, billing_postal_code, billing_city')
+        .eq('id', instanceId)
+        .single();
+
+      if (error) throw error;
+
+      if (!data?.billing_name || !data?.billing_city) {
+        toast.error('Uzupełnij dane do faktury w ustawieniach subskrypcji');
+        return;
+      }
+
+      await generateDeclarationPdf({
+        billingName: data.billing_name || '',
+        billingStreet: data.billing_street || '',
+        billingPostalCode: data.billing_postal_code || '',
+        billingCity: data.billing_city || '',
+        billingNip: data.billing_nip || '',
+        senderName,
+      });
+    } catch (error) {
+      console.error('Error downloading declaration:', error);
+      toast.error('Błąd generowania oświadczenia');
     }
   };
 
@@ -292,6 +352,53 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
+      {/* Nadpis SMS */}
+      <div className="border rounded-lg p-4 space-y-3 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-sm">Nadpis SMS</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Nadawca SMS może mieć nazwę Twojej firmy, co zwiększa profesjonalizm i wiarygodność.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex-1 max-w-[200px]">
+            <Input
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value.slice(0, 11))}
+              placeholder="np. MójSerwis"
+              maxLength={11}
+              disabled={isTrial}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{senderName.length}/11 znaków</p>
+          </div>
+          <Button size="sm" onClick={handleSaveSender} disabled={isTrial || savingSender}>
+            Zapisz
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadDeclaration}
+            disabled={isTrial || !senderName.trim()}
+          >
+            Pobierz oświadczenie
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Pobierz oświadczenie, podpisz (pieczątka jeśli posiadasz) i odeślij na WhatsApp{' '}
+          <a href="https://wa.me/48666610222" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">666 610 222</a>
+          {' '}(Tomasz) lub e-mail{' '}
+          <a href="mailto:hello@carfect.pl" className="text-primary hover:underline">hello@carfect.pl</a>
+        </p>
+
+        {isTrial && (
+          <p className="text-xs text-amber-600 font-medium">Dostępne w planie płatnym</p>
+        )}
+      </div>
+
       {/* Month Picker */}
       <div className="flex items-center justify-center gap-3">
         <Button variant="ghost" size="icon" onClick={handlePrevMonth}>

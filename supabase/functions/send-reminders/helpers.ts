@@ -234,7 +234,7 @@ export async function sendSms(
       message: message,
       format: 'json',
     };
-    if (senderName) reminderSmsParams.from = senderName;
+    reminderSmsParams.from = senderName || 'Carfect';
 
     const response = await fetch('https://api.smsapi.pl/sms.do', {
       method: 'POST',

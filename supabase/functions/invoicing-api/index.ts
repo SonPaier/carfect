@@ -38,9 +38,11 @@ async function fakturowniaCreateInvoice(
       positions: invoiceData.positions.map((p: any) => ({
         name: p.name,
         tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),
-        total_price_gross: Math.round(Number(p.unit_price_gross) * Number(p.quantity) * 100) / 100,
+        total_price_gross: Math.round(Number(p.unit_price_gross) * Number(p.quantity) * (1 - (Number(p.discount) || 0) / 100) * 100) / 100,
         quantity: Number(p.quantity),
+        ...(p.discount ? { discount_percent: Number(p.discount) } : {}),
       })),
+      ...(invoiceData.positions.some((p: any) => p.discount) ? { show_discount: true, discount_kind: 'percent_unit' } : {}),
       ...(invoiceData.client_id ? { client_id: invoiceData.client_id } : {}),
     },
   };
@@ -368,7 +370,7 @@ Deno.serve(async (req) => {
           seller_person: invoiceData.seller_person || null,
           positions: invoiceData.positions,
           total_gross: invoiceData.positions.reduce(
-            (sum: number, p: any) => sum + p.unit_price_gross * p.quantity,
+            (sum: number, p: any) => sum + p.unit_price_gross * p.quantity * (1 - (Number(p.discount) || 0) / 100),
             0,
           ),
           currency: invoiceData.currency || 'PLN',

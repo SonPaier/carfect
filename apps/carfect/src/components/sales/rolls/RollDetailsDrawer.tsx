@@ -22,6 +22,7 @@ interface RollDetailsDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   roll: SalesRoll | null;
+  instanceId: string;
   onEdit?: (roll: SalesRoll) => void;
   onViewOrder?: (orderId: string) => void;
   onUsageChange?: () => void;
@@ -31,6 +32,7 @@ const RollDetailsDrawer = ({
   open,
   onOpenChange,
   roll,
+  instanceId,
   onEdit,
   onViewOrder,
   onUsageChange,
@@ -252,7 +254,7 @@ const RollDetailsDrawer = ({
           </TabsContent>
 
           <TabsContent value="zuzycie">
-            <RollUsageTab roll={roll} onUsageChange={onUsageChange} />
+            <RollUsageTab roll={roll} instanceId={instanceId} onUsageChange={onUsageChange} />
           </TabsContent>
         </Tabs>
       </SheetContent>
