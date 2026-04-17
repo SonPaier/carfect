@@ -489,6 +489,7 @@ const AddEditSalesCustomerDrawer = ({
                           cash: 'Gotówka',
                           card: 'Karta',
                           free: 'Bezpłatne',
+                          tab: 'Na zeszyt',
                         }[o.payment_method] ?? o.payment_method}
                       </Badge>
                     )}

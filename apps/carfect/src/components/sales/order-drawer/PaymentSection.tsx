@@ -51,6 +51,7 @@ export const PaymentSection = ({
               <SelectItem value="cash">Gotówka</SelectItem>
               <SelectItem value="card">Karta płatnicza</SelectItem>
               <SelectItem value="free">Bezpłatne</SelectItem>
+              <SelectItem value="tab">Na zeszyt</SelectItem>
             </SelectContent>
           </Select>
         </div>
