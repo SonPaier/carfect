@@ -8,8 +8,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// TODO: Superadmin będzie mógł edytować szablony SMS w panelu superadmina
-// Na razie hardcoded templates
+// Human-readable service type names for email
+const SERVICE_TYPE_LABELS: Record<string, string> = {
+  serwis: 'serwis',
+  kontrola: 'bezpłatna kontrola',
+  serwis_gwarancyjny: 'serwis gwarancyjny',
+  odswiezenie_powloki: 'odświeżenie powłoki',
+};
+
 const SMS_TEMPLATES: Record<string, string> = {
   serwis:
     '{short_name}: Zapraszamy na serwis pojazdu {vehicle_plate}. Kontakt: {reservation_phone}',
@@ -113,11 +119,11 @@ Deno.serve(async (req) => {
             vehicle_plate: reminder.vehicle_plate || '',
             reservation_phone: (instance.reservation_phone || instance.phone || '').replace(/\s/g, ''),
             customer_name: reminder.customer_name || '',
-            service_type: reminder.service_type || '',
+            service_type: SERVICE_TYPE_LABELS[reminder.service_type] || reminder.service_type || '',
           };
 
-          const rawSubject = reminderTemplate?.email_subject || `Przypomnienie - ${instance.name || instance.short_name || ''}`;
-          const rawBody = reminderTemplate?.email_body || '';
+          const rawSubject = reminderTemplate?.email_subject || `{short_name} — przypomnienie o {service_type} pojazdu {vehicle_plate}`;
+          const rawBody = reminderTemplate?.email_body || 'Dzień dobry {customer_name},\n\nPrzypominamy o zbliżającym się terminie — {service_type} dla pojazdu {vehicle_plate}.\n\nZapraszamy do kontaktu w celu umówienia wizyty: {reservation_phone}\n\nPozdrawiamy,\n{short_name}';
 
           const subject = resolvePlaceholders(rawSubject, placeholderVars);
           const body = resolvePlaceholders(rawBody, placeholderVars);
@@ -142,6 +148,7 @@ Deno.serve(async (req) => {
             to: customerEmail.trim(),
             subject,
             html: emailHtml,
+            ...(instance.email ? { replyTo: instance.email } : {}),
           });
 
           // Update reminder status
