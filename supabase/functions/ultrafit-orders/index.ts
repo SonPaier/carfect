@@ -120,7 +120,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
         total_net,
         currency,
         tracking_number,
-        tracking_url,
         delivery_type,
         sales_order_items (
           id,
@@ -153,7 +152,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       total_net: raw.total_net as number,
       currency: raw.currency as string,
       tracking_number: raw.tracking_number as string | null,
-      tracking_url: raw.tracking_url as string | null,
+      tracking_url: null,
       delivery_type: raw.delivery_type as string | null,
       items: ((raw.sales_order_items as OrderItemRow[]) ?? []),
     } as OrderRow & { items: OrderItemRow[] }));
@@ -171,6 +170,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     console.error('Error in ultrafit-orders:', err.message, err.stack);
-    return jsonResponse({ error: 'Internal server error' }, 500);
+    return new Response(JSON.stringify({ error: 'Internal server error', detail: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
