@@ -621,17 +621,23 @@ export async function fetchWorkerRollUsagesForMonth(
     ? `${year + 1}-01-01`
     : `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
+  // Left join — scrap usages have roll_id=NULL
   const { data, error } = await supabase
     .from('sales_roll_usages')
-    .select('*, sales_rolls!inner(instance_id, product_name, product_code, width_mm)')
+    .select('*, sales_rolls(instance_id, product_name, product_code, width_mm)')
     .eq('source', 'worker')
-    .eq('sales_rolls.instance_id', instanceId)
     .gte('created_at', startDate)
     .lt('created_at', endDate)
     .order('created_at', { ascending: true });
 
+  // Filter by instance — either through roll or scrap (no roll)
+  const filtered = (data || []).filter((row) => {
+    const roll = row.sales_rolls as { instance_id?: string } | null;
+    return roll ? roll.instance_id === instanceId : true;
+  });
+
   if (error) throw error;
-  return (data || []).map((row) => {
+  return filtered.map((row) => {
     const base = mapUsageRow(row);
     const roll = row.sales_rolls as { product_name?: string; product_code?: string; width_mm?: number } | null;
     return {
