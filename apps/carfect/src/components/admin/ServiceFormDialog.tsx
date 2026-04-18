@@ -61,7 +61,6 @@ export interface ServiceData {
   service_type: 'both' | 'reservation' | 'offer';
   visibility?: 'everywhere' | 'only_reservations' | 'only_offers';
   sort_order?: number | null;
-  reminder_template_id?: string | null;
   is_popular?: boolean | null;
   metadata?: ServiceMetadata | null;
   photo_urls?: string[] | null;
@@ -157,6 +156,7 @@ const ServiceFormContent = ({
   const [saving, setSaving] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [reminderTemplates, setReminderTemplates] = useState<ReminderTemplateOption[]>([]);
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
   const [resolvedPricingMode, setResolvedPricingMode] = useState<'netto' | 'brutto'>(pricingMode);
 
   useEffect(() => {
@@ -179,7 +179,6 @@ const ServiceFormContent = ({
     service?.duration_medium ||
     service?.duration_large ||
     (service?.service_type && service.service_type !== 'both') ||
-    service?.reminder_template_id ||
     service?.is_popular
   );
   const [advancedOpen, setAdvancedOpen] = useState(forceAdvancedOpen || hasAdvancedValues);
@@ -214,7 +213,6 @@ const ServiceFormContent = ({
     category_id: service?.category_id || defaultCategoryId || '',
     service_type: service?.service_type || 'both',
     visibility: 'everywhere',
-    reminder_template_id: service?.reminder_template_id || '__none__',
     is_popular: service?.is_popular ?? false,
     trwalosc_produktu_w_mesiacach: service?.metadata?.trwalosc_produktu_w_mesiacach ?? null,
     produkt_do_lakierow:
@@ -222,7 +220,7 @@ const ServiceFormContent = ({
     photo_urls: service?.photo_urls || [],
   });
 
-  // Fetch reminder templates
+  // Fetch reminder templates and assigned templates for this service
   useEffect(() => {
     const fetchTemplates = async () => {
       const { data } = await supabase
@@ -237,15 +235,20 @@ const ServiceFormContent = ({
         items: Array.isArray(t.items) ? (t.items as unknown as ReminderTemplateItem[]) : [],
       }));
       setReminderTemplates(templates);
+
+      // After fetching templates, load assigned templates for this service
+      if (service?.id) {
+        const { data: assigned } = await supabase
+          .from('service_reminder_templates')
+          .select('reminder_template_id')
+          .eq('service_id', service.id);
+        setSelectedTemplateIds((assigned || []).map((r: { reminder_template_id: string }) => r.reminder_template_id));
+      }
     };
     if (instanceId) {
       fetchTemplates();
     }
-  }, [instanceId]);
-
-  // Get selected template's items
-  const selectedTemplate = reminderTemplates.find((t) => t.id === formData.reminder_template_id);
-  const templateItems = selectedTemplate?.items || [];
+  }, [instanceId, service?.id]);
 
   // Auto-resize textarea
   const adjustTextareaHeight = () => {
@@ -301,13 +304,14 @@ const ServiceFormContent = ({
         category_id: service.category_id || defaultCategoryId || '',
         service_type: service.service_type || 'both',
         visibility: 'everywhere',
-        reminder_template_id: service.reminder_template_id || '__none__',
         is_popular: service.is_popular ?? false,
         trwalosc_produktu_w_mesiacach: service.metadata?.trwalosc_produktu_w_mesiacach ?? null,
         produkt_do_lakierow:
           (service.metadata?.produkt_do_lakierow as 'matowe' | 'ciemne' | 'dowolny' | null) ?? null,
         photo_urls: service.photo_urls || [],
       });
+    } else {
+      setSelectedTemplateIds([]);
     }
   }, [service?.id, defaultCategoryId]);
 
@@ -379,8 +383,6 @@ const ServiceFormContent = ({
         // visibility is meaningful only for unified services (service_type='both')
         visibility: 'everywhere',
         requires_size: showSizePrices || showSizeDurations,
-        reminder_template_id:
-          formData.reminder_template_id === '__none__' ? null : formData.reminder_template_id,
         is_popular: formData.is_popular,
         active: true,
         metadata: updatedMetadata,
@@ -394,13 +396,40 @@ const ServiceFormContent = ({
           .eq('id', service.id);
 
         if (error) throw error;
+
+        // Sync reminder templates via junction table
+        await supabase.from('service_reminder_templates').delete().eq('service_id', service.id);
+        if (selectedTemplateIds.length > 0) {
+          await supabase.from('service_reminder_templates').insert(
+            selectedTemplateIds.map((tid) => ({
+              service_id: service.id,
+              reminder_template_id: tid,
+              instance_id: instanceId,
+            })),
+          );
+        }
+
         toast.success(t('priceList.serviceUpdated'));
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('unified_services')
-          .insert({ ...serviceData, sort_order: totalServicesCount } as Record<string, unknown>);
+          .insert({ ...serviceData, sort_order: totalServicesCount } as Record<string, unknown>)
+          .select('id')
+          .single();
 
         if (error) throw error;
+
+        // Sync reminder templates for new service
+        if (selectedTemplateIds.length > 0) {
+          await supabase.from('service_reminder_templates').insert(
+            selectedTemplateIds.map((tid) => ({
+              service_id: inserted.id,
+              reminder_template_id: tid,
+              instance_id: instanceId,
+            })),
+          );
+        }
+
         toast.success(t('priceList.serviceAdded'));
       }
 
@@ -848,7 +877,7 @@ const ServiceFormContent = ({
               </div>
             </div>
 
-            {/* Reminder Template */}
+            {/* Reminder Templates (multi-select) */}
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
                 <Label className="text-sm">
@@ -856,64 +885,45 @@ const ServiceFormContent = ({
                 </Label>
                 <FieldInfo tooltip="Automatyczne przypomnienia SMS po wykonaniu usługi" />
               </div>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={formData.reminder_template_id}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({ ...prev, reminder_template_id: v }))
-                  }
-                >
-                  <SelectTrigger className="bg-white flex-1">
-                    <SelectValue placeholder={t('reminderTemplates.noTemplate', 'Brak')} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="__none__">
-                      {t('reminderTemplates.noTemplate', 'Brak')}
-                    </SelectItem>
-                    {reminderTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Navigate to new template creation with return params
-                    const isAdminPath = location.pathname.startsWith('/admin');
-                    const remindersPath = isAdminPath ? '/admin/reminders/new' : '/reminders/new';
-                    const params = new URLSearchParams({
-                      returnToService: 'true',
-                    });
-                    if (service?.id) {
-                      params.set('serviceId', service.id);
-                    }
-                    navigate(`${remindersPath}?${params.toString()}`);
-                  }}
-                  className="shrink-0"
-                >
-                  {t('common.add', 'Dodaj')}
-                </Button>
+              <div className="space-y-2">
+                {reminderTemplates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Brak szablonów</p>
+                ) : (
+                  reminderTemplates.map((template) => (
+                    <label
+                      key={template.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedTemplateIds.includes(template.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedTemplateIds((prev) => [...prev, template.id]);
+                          } else {
+                            setSelectedTemplateIds((prev) => prev.filter((id) => id !== template.id));
+                          }
+                        }}
+                      />
+                      <span className="text-sm">{template.name}</span>
+                    </label>
+                  ))
+                )}
               </div>
-              {/* Show reminder items list when template is selected */}
-              {templateItems.length > 0 && (
-                <div className="mt-4 pl-3 border-l-2 border-muted space-y-1.5">
-                  {templateItems.map((item, idx) => (
-                    <div key={idx} className="text-sm text-foreground/50">
-                      {item.months} mies. –{' '}
-                      {item.service_type === 'inspection'
-                        ? 'Przegląd'
-                        : item.service_type === 'maintenance'
-                          ? 'Konserwacja'
-                          : 'Serwis'}
-                      {item.is_paid ? ', płatne' : ''}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const isAdminPath = location.pathname.startsWith('/admin');
+                  const remindersPath = isAdminPath ? '/admin/reminders/new' : '/reminders/new';
+                  const params = new URLSearchParams({ returnToService: 'true' });
+                  if (service?.id) params.set('serviceId', service.id);
+                  navigate(`${remindersPath}?${params.toString()}`);
+                }}
+                className="shrink-0"
+              >
+                {t('common.add', 'Dodaj')}
+              </Button>
             </div>
 
             {/* Zdjęcia usługi */}

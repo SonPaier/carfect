@@ -58,7 +58,6 @@ interface Service {
   is_popular: boolean | null;
   service_type: string | null;
   visibility: string | null;
-  reminder_template_id: string | null;
   metadata: ServiceMetadata | null;
 }
 
@@ -317,9 +316,12 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
         (async () => {
           try {
             const { error } = await supabase
-              .from('unified_services')
-              .update({ reminder_template_id: assignTemplate })
-              .eq('id', serviceId);
+              .from('service_reminder_templates')
+              .upsert({
+                service_id: serviceId,
+                reminder_template_id: assignTemplate,
+                instance_id: instanceId,
+              });
 
             if (error) throw error;
 
@@ -351,9 +353,12 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           try {
             // 1. Assign the template to the service
             const { error } = await supabase
-              .from('unified_services')
-              .update({ reminder_template_id: assignedReminderId })
-              .eq('id', serviceId);
+              .from('service_reminder_templates')
+              .upsert({
+                service_id: serviceId,
+                reminder_template_id: assignedReminderId,
+                instance_id: instanceId,
+              });
 
             if (error) throw error;
 
@@ -819,7 +824,6 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
                   | 'everywhere'
                   | 'only_reservations'
                   | 'only_offers',
-                reminder_template_id: editingService.reminder_template_id || null,
                 is_popular: editingService.is_popular ?? false,
                 metadata: editingService.metadata ?? null,
               }

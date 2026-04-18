@@ -29,6 +29,7 @@ interface Customer {
   company?: string | null;
   nip?: string | null;
   source?: string;
+  preferred_reminder_channel?: 'sms' | 'email';
 }
 
 interface VisitHistory {
@@ -114,7 +115,7 @@ const CustomerEditDrawer = ({
         setEditNip(customer.nip || '');
         setEditDiscountPercent((customer as Customer & { discount_percent?: number }).discount_percent?.toString() || '');
         setEditSmsConsent((customer as Customer & { sms_consent?: boolean }).sms_consent ?? false);
-        setEditPreferredChannel(((customer as Record<string, unknown>).preferred_reminder_channel as 'sms' | 'email') || 'sms');
+        setEditPreferredChannel(customer.preferred_reminder_channel || 'sms');
         setActiveTab('info');
       }
     }

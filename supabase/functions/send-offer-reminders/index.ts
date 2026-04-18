@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import { normalizePhoneOrFallback } from '../_shared/phoneUtils.ts';
-import { resolvePlaceholders, buildReminderEmailHtml } from './helpers.ts';
+import { resolvePlaceholders, buildReminderEmailHtml, resolveSmsTemplate } from './helpers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     const { data: reminders, error: fetchError } = await supabase
       .from('customer_reminders')
       .select(
-        '*, channel, customer_email, instances(short_name, reservation_phone, timezone, sms_sender_name, logo_url, name, phone, email), reminder_templates(email_subject, email_body)',
+        '*, channel, customer_email, instances(short_name, reservation_phone, timezone, sms_sender_name, logo_url, name, phone, email), reminder_templates(email_subject, email_body, sms_template)',
       )
       .lte('scheduled_date', today)
       .eq('status', 'scheduled');
@@ -120,6 +120,20 @@ Deno.serve(async (req) => {
 
         const channel = reminder.channel ?? 'sms';
 
+        // Build placeholder vars once for both channels
+        const placeholderVars: Record<string, string> = {
+          // Legacy English names (backward compat)
+          short_name: instance.short_name || instance.name || '',
+          vehicle_plate: reminder.vehicle_plate || '',
+          reservation_phone: (instance.reservation_phone || instance.phone || '').replace(/\s/g, ''),
+          customer_name: reminder.customer_name || '',
+          service_type: SERVICE_TYPE_LABELS[reminder.service_type] || reminder.service_type || '',
+          // Polish aliases
+          imie_klienta: reminder.customer_name || '',
+          pojazd: reminder.vehicle_plate || '',
+          telefon_firmy: (instance.reservation_phone || instance.phone || '').replace(/\s/g, ''),
+        };
+
         if (channel === 'email') {
           // --- Email branch ---
           const reminderTemplate = reminder.reminder_templates;
@@ -130,14 +144,6 @@ Deno.serve(async (req) => {
             await markFailed(reminder.id);
             continue;
           }
-
-          const placeholderVars: Record<string, string> = {
-            short_name: instance.short_name || instance.name || '',
-            vehicle_plate: reminder.vehicle_plate || '',
-            reservation_phone: (instance.reservation_phone || instance.phone || '').replace(/\s/g, ''),
-            customer_name: reminder.customer_name || '',
-            service_type: SERVICE_TYPE_LABELS[reminder.service_type] || reminder.service_type || '',
-          };
 
           const rawSubject = reminderTemplate?.email_subject || `{short_name} — przypomnienie o {service_type} pojazdu {vehicle_plate}`;
           const rawBody = reminderTemplate?.email_body || 'Dzień dobry {customer_name},\n\nPrzypominamy o zbliżającym się terminie — {service_type} dla pojazdu {vehicle_plate}.\n\nZapraszamy do kontaktu w celu umówienia wizyty: {reservation_phone}\n\nPozdrawiamy,\n{short_name}';
@@ -174,15 +180,12 @@ Deno.serve(async (req) => {
         } else {
           // --- SMS branch (default, backward compat) ---
 
-          // Get SMS template based on service_type (hardcoded for now)
-          const template = SMS_TEMPLATES[reminder.service_type] || SMS_TEMPLATES.serwis;
+          // Use sms_template from DB (if set), fall back to hardcoded
+          const dbSmsTemplate = reminder.reminder_templates?.sms_template;
+          const template = resolveSmsTemplate(dbSmsTemplate, reminder.service_type, SMS_TEMPLATES);
 
           // Build SMS message
-          const message = resolvePlaceholders(template, {
-            short_name: instance.short_name || '',
-            vehicle_plate: reminder.vehicle_plate || '',
-            reservation_phone: (instance.reservation_phone || '').replace(/\s/g, ''),
-          });
+          const message = resolvePlaceholders(template, placeholderVars);
 
           // Normalize phone number
           const normalizedPhone = normalizePhoneOrFallback(reminder.customer_phone, 'PL');

@@ -50,7 +50,6 @@ interface Product {
   duration_large?: number | null;
   service_type?: string;
   visibility?: string;
-  reminder_template_id?: string | null;
 }
 
 // Helper: Map Product to ServiceData for ServiceFormDialog
@@ -74,7 +73,6 @@ const mapProductToServiceData = (product: Product | null | undefined): ServiceDa
     service_type: (product.service_type as 'both' | 'reservation' | 'offer') ?? 'both',
     visibility:
       (product.visibility as 'everywhere' | 'only_reservations' | 'only_offers') ?? 'everywhere',
-    reminder_template_id: product.reminder_template_id ?? null,
   };
 };
 
@@ -749,7 +747,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
             const { data } = await supabase
               .from('unified_services')
               .select(
-                'id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id, description, prices_are_net, duration_minutes, duration_small, duration_medium, duration_large, service_type, visibility, reminder_template_id',
+                'id, name, short_name, default_price, price_from, price_small, price_medium, price_large, category_id, description, prices_are_net, duration_minutes, duration_small, duration_medium, duration_large, service_type, visibility',
               )
               .eq('id', editingProductId)
               .single();

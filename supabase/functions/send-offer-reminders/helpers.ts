@@ -1,3 +1,12 @@
+export function resolveSmsTemplate(
+  dbTemplate: string | null | undefined,
+  serviceType: string,
+  fallbacks: Record<string, string>,
+): string {
+  if (dbTemplate) return dbTemplate;
+  return fallbacks[serviceType] || fallbacks['serwis'] || '';
+}
+
 export function resolvePlaceholders(
   template: string,
   vars: Record<string, string>

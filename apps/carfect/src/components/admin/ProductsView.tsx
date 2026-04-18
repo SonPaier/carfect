@@ -73,7 +73,6 @@ interface Product {
   duration_large?: number | null;
   service_type?: string;
   visibility?: string;
-  reminder_template_id?: string | null;
   metadata: Record<string, unknown> | null;
   source: string;
   instance_id: string | null;
@@ -100,7 +99,6 @@ const mapProductToServiceData = (product: Product | null): ServiceData | null =>
     service_type: (product.service_type as 'both' | 'reservation' | 'offer') ?? 'both',
     visibility:
       (product.visibility as 'everywhere' | 'only_reservations' | 'only_offers') ?? 'everywhere',
-    reminder_template_id: product.reminder_template_id ?? null,
   };
 };
 
