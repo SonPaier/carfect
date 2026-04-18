@@ -49,6 +49,10 @@ interface CustomerRemindersTabProps {
   instanceId: string;
 }
 
+function channelLabel(channel: string | undefined, t: (key: string) => string): string {
+  return channel === 'email' ? t('reminders.channelEmail') : t('reminders.channelSms');
+}
+
 export function CustomerRemindersTab({
   customerPhone,
   customerName,
@@ -254,9 +258,7 @@ export function CustomerRemindersTab({
 
                         {/* Channel badge */}
                         <Badge variant="outline" className="text-xs">
-                          {nextReminder.channel === 'email'
-                            ? t('reminders.channelEmail')
-                            : t('reminders.channelSms')}
+                          {channelLabel(nextReminder.channel, t)}
                         </Badge>
                       </div>
                     </div>
@@ -313,9 +315,7 @@ export function CustomerRemindersTab({
                                 {reminder.months_after} mies.
                               </Badge>
                               <Badge variant="outline" className="text-xs">
-                                {reminder.channel === 'email'
-                                  ? t('reminders.channelEmail')
-                                  : t('reminders.channelSms')}
+                                {channelLabel(reminder.channel, t)}
                               </Badge>
                               {reminder.sent_at && (
                                 <span className="text-xs text-muted-foreground">

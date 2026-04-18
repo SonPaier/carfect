@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { format, addMonths } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
-import { Button } from '@shared/ui';
-import { Input } from '@shared/ui';
-import { Label } from '@shared/ui';
+import { Button, Input, Label } from '@shared/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
@@ -251,7 +249,7 @@ export function AddCustomerReminderDialog({
               value={channel}
               onValueChange={(v) => setChannel(v as 'sms' | 'email')}
             >
-              <SelectTrigger id="channel-select" className="bg-white" aria-label={t('reminders.channel')}>
+              <SelectTrigger id="channel-select" className="bg-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white">
