@@ -34,23 +34,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
       throw new Error('Missing required environment variables');
     }
 
-    // Step 1: Verify JWT — use service role client with getUser(token) to validate
+    // Step 1: Verify user via anon client with request's auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
-    const token = authHeader.replace('Bearer ', '');
-
-    // Service role client used to verify the JWT (recommended pattern)
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token);
+    const { data: { user }, error: userError } = await anonClient.auth.getUser();
     if (userError || !user) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
+
+    // Service role client for data queries (bypass RLS)
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     // Step 2: Parse request body
     let body: UltrafitOrdersRequest;

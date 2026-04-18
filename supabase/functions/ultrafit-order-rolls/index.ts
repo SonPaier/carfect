@@ -46,12 +46,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse({ error: 'Missing Authorization header' }, 401);
     }
 
-    const token = authHeader.replace('Bearer ', '');
     const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+    const { data: { user }, error: authError } = await anonClient.auth.getUser();
     if (authError || !user) {
       return jsonResponse({ error: 'Invalid or expired token' }, 401);
     }

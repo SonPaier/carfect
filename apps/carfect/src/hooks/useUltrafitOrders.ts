@@ -13,21 +13,11 @@ export function useUltrafitOrders({ page, pageSize, search, enabled = true }: Us
   return useQuery<UltrafitOrdersResponse>({
     queryKey: ['ultrafit_orders', page, pageSize, search],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ultrafit-orders`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ page, pageSize, search }),
-        },
-      );
-      if (!res.ok) throw new Error(`ultrafit-orders error ${res.status}`);
-      return res.json() as Promise<UltrafitOrdersResponse>;
+      const { data, error } = await supabase.functions.invoke('ultrafit-orders', {
+        body: { page, pageSize, search },
+      });
+      if (error) throw error;
+      return data as UltrafitOrdersResponse;
     },
     enabled,
   });

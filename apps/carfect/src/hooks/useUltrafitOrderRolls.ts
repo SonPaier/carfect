@@ -15,21 +15,11 @@ export function useUltrafitOrderRolls({ orderId, enabled = false }: UseUltrafitO
   return useQuery<UltrafitOrderRollsResponse>({
     queryKey: ['ultrafit_order_rolls', orderId],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ultrafit-order-rolls`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ orderId }),
-        },
-      );
-      if (!res.ok) throw new Error(`ultrafit-order-rolls error ${res.status}`);
-      return res.json() as Promise<UltrafitOrderRollsResponse>;
+      const { data, error } = await supabase.functions.invoke('ultrafit-order-rolls', {
+        body: { orderId },
+      });
+      if (error) throw error;
+      return data as UltrafitOrderRollsResponse;
     },
     enabled: !!orderId && enabled,
   });
