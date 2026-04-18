@@ -54,7 +54,7 @@ export function IntegrationsView({ instanceId, onNavigateToUltrafit }: Integrati
         <h2 className="text-lg font-semibold">
           {t('integrations.sections.invoicing')}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <IntegrationCard
             logo={fakturowniaLogo}
             logoAlt="Fakturownia"
@@ -81,7 +81,7 @@ export function IntegrationsView({ instanceId, onNavigateToUltrafit }: Integrati
         <h2 className="text-lg font-semibold">
           {t('integrations.sections.ppfDistributors')}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <IntegrationCard
             logo={ultrafitLogo}
             logoAlt="Ultrafit Poland"
