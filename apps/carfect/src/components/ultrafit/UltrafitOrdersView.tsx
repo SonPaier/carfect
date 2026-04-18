@@ -103,28 +103,35 @@ function OrderItemRow({
 }: {
   item: UltrafitOrderItem;
 }) {
+  const unit = formatUnit(item.unit);
+  const lineTotal = item.quantity * item.priceNet;
+  const discountAmount = lineTotal * (item.discountPercent || 0) / 100;
+  const netTotal = lineTotal - discountAmount;
+
   return (
-    <div className="flex items-center justify-between text-sm gap-4">
-      <span className="text-muted-foreground truncate min-w-0">
-        {item.name}
-        {item.vehicle && (
-          <span className="ml-2 text-xs text-muted-foreground/70">({item.vehicle})</span>
-        )}
-      </span>
-      <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs text-muted-foreground">
-        <span>
-          {item.quantity} {formatUnit(item.unit)} × {formatCurrency(item.priceNet, 'PLN')}/{formatUnit(item.unit)}
-          {item.discountPercent > 0 && (
-            <span className="ml-1 text-green-600">-{item.discountPercent}%</span>
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between text-sm gap-4">
+        <span className="text-foreground truncate min-w-0">
+          {item.name}
+          {item.vehicle && (
+            <span className="ml-2 text-xs text-muted-foreground">({item.vehicle})</span>
           )}
+          <span className="ml-2 text-xs text-muted-foreground">
+            ({item.quantity} {unit} × {formatCurrency(item.priceNet, 'PLN')})
+          </span>
         </span>
-        <span className="w-28 text-right font-medium text-foreground">
-          {formatCurrency(
-            item.quantity * item.priceNet * (1 - (item.discountPercent || 0) / 100),
-            'PLN',
-          )}
+        <span className="shrink-0 tabular-nums text-sm text-right w-28">
+          {formatCurrency(lineTotal, 'PLN')}
         </span>
       </div>
+      {item.discountPercent > 0 && (
+        <div className="flex items-center justify-between text-xs text-green-600 gap-4">
+          <span className="pl-1">Rabat {item.discountPercent}%</span>
+          <span className="shrink-0 tabular-nums text-right w-28">
+            -{formatCurrency(discountAmount, 'PLN')}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -258,14 +265,14 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={isMobile ? 'space-y-4 pb-28' : 'flex flex-col h-[calc(100vh-80px)]'}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4">
-        <h1 className="text-lg font-semibold">{t('integrations.orders.title')}</h1>
+      <div className="flex items-center justify-between shrink-0 pb-4">
+        <h1 className="text-2xl font-medium text-foreground">{t('integrations.orders.title')}</h1>
       </div>
 
       {/* Search */}
-      <div className="px-4 pb-4">
+      <div className="shrink-0 pb-4">
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -278,33 +285,33 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-            {t('common.loading')}
-          </div>
-        ) : orders.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title={t('integrations.orders.empty')}
-            description={t('integrations.orders.emptyDescription')}
-          />
-        ) : isMobile ? (
-          /* Mobile: cards */
-          <div className="p-4 space-y-3">
-            {orders.map((order) => (
-              <OrderCardMobile
-                key={order.id}
-                order={order}
-                expanded={expandedRows.has(order.id)}
-                onToggle={() => toggleRow(order.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          /* Desktop: table */
-          <div className="bg-white border border-border/50 rounded-lg overflow-hidden">
-          <Table>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+          {t('common.loading')}
+        </div>
+      ) : orders.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title={t('integrations.orders.empty')}
+          description={t('integrations.orders.emptyDescription')}
+        />
+      ) : isMobile ? (
+        /* Mobile: cards */
+        <div className="space-y-3">
+          {orders.map((order) => (
+            <OrderCardMobile
+              key={order.id}
+              order={order}
+              expanded={expandedRows.has(order.id)}
+              onToggle={() => toggleRow(order.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <>
+        {/* Desktop: table */}
+        <div className="rounded-lg border border-border/50 bg-white overflow-auto flex-1 min-h-0">
+          <Table wrapperClassName="overflow-visible">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8" />
@@ -383,12 +390,7 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
               })}
             </TableBody>
           </Table>
-          </div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {orders.length > 0 && (
+        </div>
         <div className="shrink-0">
           <PaginationFooter
             currentPage={currentPage}
@@ -402,6 +404,22 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
             itemLabel={t('integrations.orders.orderNumber')}
           />
         </div>
+        </>
+      )}
+
+      {/* Mobile pagination */}
+      {isMobile && orders.length > 0 && (
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalCount}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={() => {
+            setCurrentPage(1);
+          }}
+          itemLabel={t('integrations.orders.orderNumber')}
+        />
       )}
     </div>
   );
