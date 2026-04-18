@@ -37,6 +37,7 @@ interface AddCustomerReminderDialogProps {
   customerPhone: string;
   customerName: string;
   customerEmail: string | null;
+  preferredChannel?: 'sms' | 'email';
   instanceId: string;
   onReminderAdded: () => void;
 }
@@ -47,13 +48,14 @@ export function AddCustomerReminderDialog({
   customerPhone,
   customerName,
   customerEmail,
+  preferredChannel,
   instanceId,
   onReminderAdded,
 }: AddCustomerReminderDialogProps) {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
-  const [channel, setChannel] = useState<'sms' | 'email'>('sms');
+  const [channel, setChannel] = useState<'sms' | 'email'>(preferredChannel || 'sms');
   const [emailAddress, setEmailAddress] = useState<string>(customerEmail ?? '');
 
   const [serviceDate, setServiceDate] = useState<Date | undefined>(undefined);

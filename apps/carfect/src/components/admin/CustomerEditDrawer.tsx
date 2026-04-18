@@ -81,6 +81,7 @@ const CustomerEditDrawer = ({
   const [editDiscountPercent, setEditDiscountPercent] = useState('');
   const [editVehicles, setEditVehicles] = useState<VehicleChip[]>([]);
   const [editSmsConsent, setEditSmsConsent] = useState(false);
+  const [editPreferredChannel, setEditPreferredChannel] = useState<'sms' | 'email'>('sms');
   const [saving, setSaving] = useState(false);
   const [phoneExistsWarning, setPhoneExistsWarning] = useState<string | null>(null);
 
@@ -113,6 +114,7 @@ const CustomerEditDrawer = ({
         setEditNip(customer.nip || '');
         setEditDiscountPercent((customer as Customer & { discount_percent?: number }).discount_percent?.toString() || '');
         setEditSmsConsent((customer as Customer & { sms_consent?: boolean }).sms_consent ?? false);
+        setEditPreferredChannel(((customer as Record<string, unknown>).preferred_reminder_channel as 'sms' | 'email') || 'sms');
         setActiveTab('info');
       }
     }
@@ -337,6 +339,7 @@ const CustomerEditDrawer = ({
               nip: editNip.trim() || null,
               discount_percent: editDiscountPercent ? parseInt(editDiscountPercent, 10) : null,
               sms_consent: editSmsConsent,
+              preferred_reminder_channel: editPreferredChannel,
             })
             .eq('id', existingCustomer.id);
 
@@ -357,6 +360,7 @@ const CustomerEditDrawer = ({
               nip: editNip.trim() || null,
               discount_percent: editDiscountPercent ? parseInt(editDiscountPercent, 10) : null,
               sms_consent: editSmsConsent,
+              preferred_reminder_channel: editPreferredChannel,
             })
             .select('id')
             .single();
@@ -397,6 +401,7 @@ const CustomerEditDrawer = ({
             nip: editNip.trim() || null,
             discount_percent: editDiscountPercent ? parseInt(editDiscountPercent, 10) : null,
             sms_consent: editSmsConsent,
+              preferred_reminder_channel: editPreferredChannel,
           })
           .eq('id', customer.id);
 
@@ -700,6 +705,29 @@ const CustomerEditDrawer = ({
                       ochronnych oraz informacji o statusie zleconej usługi.
                     </label>
                   </div>
+
+                  {/* Preferred reminder channel */}
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs text-muted-foreground">Kanał przypomnień</span>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        className={`px-3 py-1 text-xs rounded-md border transition-colors ${editPreferredChannel === 'sms' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white hover:bg-hover border-border'}`}
+                        onClick={() => setEditPreferredChannel('sms')}
+                      >
+                        SMS
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-3 py-1 text-xs rounded-md border transition-colors ${editPreferredChannel === 'email' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white hover:bg-hover border-border'}`}
+                        onClick={() => setEditPreferredChannel('email')}
+                        disabled={!editEmail}
+                        title={!editEmail ? 'Dodaj email klienta' : undefined}
+                      >
+                        Email
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 // View mode with tabs
@@ -856,6 +884,7 @@ const CustomerEditDrawer = ({
                         customerPhone={customer.phone}
                         customerName={customer.name}
                         customerEmail={customer.email || null}
+                        preferredChannel={editPreferredChannel}
                         instanceId={instanceId}
                       />
                     )}

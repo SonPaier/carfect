@@ -46,6 +46,7 @@ interface CustomerRemindersTabProps {
   customerPhone: string;
   customerName: string;
   customerEmail: string | null;
+  preferredChannel?: 'sms' | 'email';
   instanceId: string;
 }
 
@@ -57,6 +58,7 @@ export function CustomerRemindersTab({
   customerPhone,
   customerName,
   customerEmail,
+  preferredChannel,
   instanceId,
 }: CustomerRemindersTabProps) {
   const { t } = useTranslation();
@@ -371,6 +373,7 @@ export function CustomerRemindersTab({
         customerPhone={customerPhone}
         customerName={customerName}
         customerEmail={customerEmail}
+        preferredChannel={preferredChannel}
         instanceId={instanceId}
         onReminderAdded={handleReminderAdded}
       />
