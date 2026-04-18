@@ -162,6 +162,9 @@ describe('ServiceFormDialog', () => {
     // Mock reminder templates fetch
     mockSupabaseQuery('reminder_templates', { data: [], error: null });
 
+    // Mock junction table for service reminder templates
+    mockSupabaseQuery('service_reminder_templates', { data: [], error: null });
+
     // Mock unified_services insert/update
     mockSupabaseQuery('unified_services', { data: { id: 'new-id' }, error: null }, 'insert');
     mockSupabaseQuery('unified_services', { data: { id: 'updated-id' }, error: null }, 'update');
@@ -735,10 +738,11 @@ describe('ServiceFormDialog', () => {
     });
 
     it('SVC-U-086: Po błędzie INSERT pokazuje toast error', async () => {
+      // insert().select().single() chain resolves via 'select' in mock
       mockSupabaseQuery(
         'unified_services',
         { data: null, error: { message: 'DB error' } },
-        'insert',
+        'select',
       );
 
       const { user } = renderServiceFormDialog();

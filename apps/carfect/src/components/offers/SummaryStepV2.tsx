@@ -97,7 +97,7 @@ export const SummaryStepV2 = ({
     const { data } = await supabase
       .from('unified_services')
       .select(
-        'id, name, short_name, description, price_from, price_small, price_medium, price_large, prices_are_net, duration_minutes, duration_small, duration_medium, duration_large, category_id, service_type, visibility, reminder_template_id',
+        'id, name, short_name, description, price_from, price_small, price_medium, price_large, prices_are_net, duration_minutes, duration_small, duration_medium, duration_large, category_id, service_type, visibility',
       )
       .eq('id', productId)
       .single();
@@ -122,7 +122,6 @@ export const SummaryStepV2 = ({
         service_type: (data.service_type as 'both' | 'reservation' | 'offer') ?? 'both',
         visibility:
           (data.visibility as 'everywhere' | 'only_reservations' | 'only_offers') ?? 'everywhere',
-        reminder_template_id: data.reminder_template_id,
       });
       // Also fetch categories
       const { data: categories } = await supabase

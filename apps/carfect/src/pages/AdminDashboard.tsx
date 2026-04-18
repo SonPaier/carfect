@@ -1445,7 +1445,27 @@ const AdminDashboard = () => {
                       {!sidebarCollapsed && 'Asystent AI'}
                     </Button>
                   )} */}
-                  {/* 9. Ustawienia - admin only, always last */}
+                  {/* 9. Przypomnienia */}
+                  {hasFeature('reminders') && (
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'reminders' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('reminders');
+                      }}
+                      title="Przypomnienia"
+                    >
+                      <Bell className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Przypomnienia'}
+                    </Button>
+                  )}
+                  {/* 10. Ustawienia - admin only, always last */}
                   {userRole !== 'employee' && (
                     <Button
                       variant="ghost"
@@ -1783,10 +1803,7 @@ const AdminDashboard = () => {
             )}
 
             {currentView === 'reminders' && instanceId && (
-              <RemindersView
-                instanceId={instanceId}
-                onNavigateBack={() => setCurrentView('pricelist')}
-              />
+              <RemindersView instanceId={instanceId} />
             )}
 
             {currentView === 'ai_analyst' && instanceId && <AiAnalystTab instanceId={instanceId} />}

@@ -31,6 +31,7 @@ interface Reminder {
   vehicle_plate: string;
   reminder_template_id: string;
   reminder_templates: { name: string } | null;
+  channel?: string;
 }
 
 interface GroupedReminder {
@@ -44,12 +45,20 @@ interface GroupedReminder {
 interface CustomerRemindersTabProps {
   customerPhone: string;
   customerName: string;
+  customerEmail: string | null;
+  preferredChannel?: 'sms' | 'email';
   instanceId: string;
+}
+
+function channelLabel(channel: string | undefined, t: (key: string) => string): string {
+  return channel === 'email' ? t('reminders.channelEmail') : t('reminders.channelSms');
 }
 
 export function CustomerRemindersTab({
   customerPhone,
   customerName,
+  customerEmail,
+  preferredChannel,
   instanceId,
 }: CustomerRemindersTabProps) {
   const { t } = useTranslation();
@@ -117,14 +126,15 @@ export function CustomerRemindersTab({
         .from('customer_reminders')
         .select(
           `
-          id, 
-          scheduled_date, 
-          months_after, 
-          service_type, 
+          id,
+          scheduled_date,
+          months_after,
+          service_type,
           status,
           sent_at,
           vehicle_plate,
           reminder_template_id,
+          channel,
           reminder_templates(name)
         `,
         )
@@ -247,6 +257,11 @@ export function CustomerRemindersTab({
                             {nextReminder.months_after} mies.
                           </Badge>
                         )}
+
+                        {/* Channel badge */}
+                        <Badge variant="outline" className="text-xs">
+                          {channelLabel(nextReminder.channel, t)}
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -301,6 +316,9 @@ export function CustomerRemindersTab({
                               <Badge variant="outline" className="text-xs text-muted-foreground">
                                 {reminder.months_after} mies.
                               </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {channelLabel(reminder.channel, t)}
+                              </Badge>
                               {reminder.sent_at && (
                                 <span className="text-xs text-muted-foreground">
                                   (
@@ -354,6 +372,8 @@ export function CustomerRemindersTab({
         onOpenChange={setAddDialogOpen}
         customerPhone={customerPhone}
         customerName={customerName}
+        customerEmail={customerEmail}
+        preferredChannel={preferredChannel}
         instanceId={instanceId}
         onReminderAdded={handleReminderAdded}
       />

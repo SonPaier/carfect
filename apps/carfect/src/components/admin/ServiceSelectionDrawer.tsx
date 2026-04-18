@@ -74,6 +74,8 @@ interface ServiceSelectionDrawerProps {
   hasUnifiedServices?: boolean;
   /** Hide the "Zaznaczone" selected services section */
   hideSelectedSection?: boolean;
+  /** Hide prices, durations, and pricing footer — show only service names with checkmarks */
+  hidePricing?: boolean;
 }
 
 const ServiceSelectionDrawer = ({
@@ -87,6 +89,7 @@ const ServiceSelectionDrawer = ({
   context = 'reservation',
   hasUnifiedServices = false,
   hideSelectedSection = false,
+  hidePricing = false,
 }: ServiceSelectionDrawerProps) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -628,12 +631,14 @@ const ServiceSelectionDrawer = ({
                           </div>
 
                           {/* Price & Duration */}
+                          {!hidePricing && (
                           <div className="text-right mr-4">
                             <p className="font-semibold text-foreground">{formatPrice(price)}</p>
                             <p className="text-xs text-muted-foreground">
                               {formatDuration(duration)}
                             </p>
                           </div>
+                          )}
 
                           {/* Checkmark */}
                           <div
@@ -658,6 +663,7 @@ const ServiceSelectionDrawer = ({
 
         {/* Fixed Footer */}
         <div className="border-t px-4 py-4 shrink-0 bg-background">
+          {!hidePricing && (
           <div className="mb-3 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-lg font-semibold text-foreground">
@@ -678,6 +684,8 @@ const ServiceSelectionDrawer = ({
               </div>
             )}
           </div>
+          )}
+          {!hidePricing && (
           <Button
             type="button"
             variant="outline"
@@ -688,6 +696,7 @@ const ServiceSelectionDrawer = ({
             <Plus className="w-4 h-4 mr-1" />
             {t('serviceDrawer.addNewService')}
           </Button>
+          )}
           <Button
             onClick={handleConfirm}
             disabled={selectedIds.length === 0}
