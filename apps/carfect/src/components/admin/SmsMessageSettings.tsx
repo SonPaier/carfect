@@ -277,6 +277,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
         .select('phone, message, created_at, message_type, status')
         .eq('instance_id', instanceId)
         .neq('status', 'failed')
+        .not('message_type', 'like', '%_email%')
         .gte('created_at', start)
         .lt('created_at', end)
         .order('created_at', { ascending: false })

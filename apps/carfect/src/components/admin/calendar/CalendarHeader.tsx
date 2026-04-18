@@ -158,7 +158,7 @@ export function CalendarHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 z-50 gap-2 mx-0">
+    <div className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 gap-2 mx-0" style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}>
       {/* First line on mobile: navigation + actions, on desktop: full layout */}
       <div className="flex items-center justify-between gap-2">
         {/* Navigation */}

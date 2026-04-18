@@ -128,7 +128,7 @@ const MobileBottomNav = ({
   return (
     <>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border/50 lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border/50 lg:hidden" style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}>
         <div className="flex items-center justify-around py-2 px-2 safe-area-pb">
           {/* Kalendarz */}
           <button
@@ -217,7 +217,7 @@ const MobileBottomNav = ({
                     onClick={() => handleMoreMenuItemClick(item.id)}
                     className={cn(
                       'w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-hover transition-colors',
-                      currentView === item.id && 'bg-muted text-primary',
+                      currentView === item.id && 'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                   >
                     <item.icon className="w-5 h-5" />

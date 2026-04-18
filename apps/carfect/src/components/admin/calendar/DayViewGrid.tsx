@@ -217,7 +217,8 @@ export function DayViewGrid({
         <div
           ref={headerScrollRef}
           onScroll={handleHeaderScroll}
-          className="flex border-b border-border/50 bg-card sticky top-0 z-40 overflow-x-auto"
+          className="flex border-b border-border/50 bg-card sticky top-0 overflow-x-auto"
+          style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}
         >
           {renderDayStationHeaders()}
         </div>
@@ -231,7 +232,7 @@ export function DayViewGrid({
       >
         {/* Station Headers - inside grid on mobile (native sticky, no JS sync needed) */}
         {isMobile && (
-          <div className="flex border-b border-border/50 bg-card sticky top-0 z-40">
+          <div className="flex border-b border-border/50 bg-card sticky top-0" style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}>
             {renderDayStationHeaders()}
           </div>
         )}
