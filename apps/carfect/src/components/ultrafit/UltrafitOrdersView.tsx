@@ -71,18 +71,30 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function DeliveryBadge({ deliveryType }: { deliveryType: string | null }) {
+  const { t } = useTranslation();
   if (!deliveryType) return <span className="text-muted-foreground">—</span>;
 
-  const label =
-    deliveryType === 'wysyłka' || deliveryType === 'shipment'
-      ? 'wysyłka'
-      : deliveryType === 'odbiór' || deliveryType === 'pickup'
-        ? 'odbiór'
-        : deliveryType === 'uber'
-          ? 'uber'
-          : deliveryType;
+  const labelMap: Record<string, string> = {
+    wysyłka: t('integrations.orders.deliveryShipping'),
+    shipment: t('integrations.orders.deliveryShipping'),
+    shipping: t('integrations.orders.deliveryShipping'),
+    odbiór: t('integrations.orders.deliveryPickup'),
+    pickup: t('integrations.orders.deliveryPickup'),
+    uber: 'Uber',
+  };
 
-  return <Badge variant="outline">{label}</Badge>;
+  return <Badge variant="outline">{labelMap[deliveryType] ?? deliveryType}</Badge>;
+}
+
+function formatUnit(unit: string): string {
+  const unitMap: Record<string, string> = {
+    meter: 'mb',
+    piece: 'szt.',
+    szt: 'szt.',
+    'szt.': 'szt.',
+    m2: 'm²',
+  };
+  return unitMap[unit?.toLowerCase()] ?? unit;
 }
 
 function RollsSubRow({ orderId, itemId }: { orderId: string; itemId: string }) {
@@ -149,9 +161,11 @@ function OrderItemRow({
         </div>
         <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs text-muted-foreground">
           <span>
-            {item.quantity} {item.unit}
+            {item.quantity} {formatUnit(item.unit)} × {formatCurrency(item.priceNet, 'PLN')}/{formatUnit(item.unit)}
           </span>
-          <span className="w-24 text-right">{formatCurrency(item.priceNet, 'PLN')}</span>
+          <span className="w-28 text-right font-medium text-foreground">
+            {formatCurrency(item.quantity * item.priceNet, 'PLN')}
+          </span>
         </div>
       </div>
       {rollsExpanded && hasRolls && (
@@ -335,6 +349,7 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
           </div>
         ) : (
           /* Desktop: table */
+          <div className="bg-white border border-border/50 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -418,6 +433,7 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
               })}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
 

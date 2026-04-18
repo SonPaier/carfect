@@ -2395,7 +2395,9 @@
       "rolls": "Rolki",
       "statusNew": "Nowy",
       "statusShipped": "Wysłany",
-      "statusCancelled": "Anulowany"
+      "statusCancelled": "Anulowany",
+      "deliveryShipping": "Wysyłka",
+      "deliveryPickup": "Odbiór"
     }
   }
 }
