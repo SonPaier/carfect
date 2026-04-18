@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import { normalizePhoneOrFallback } from '../_shared/phoneUtils.ts';
+import { resolvePlaceholders, buildReminderEmailHtml } from './helpers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,7 +38,9 @@ Deno.serve(async (req) => {
     // Fetch due reminders from customer_reminders table
     const { data: reminders, error: fetchError } = await supabase
       .from('customer_reminders')
-      .select('*, instances(short_name, reservation_phone, timezone, sms_sender_name)')
+      .select(
+        '*, channel, customer_email, instances(short_name, reservation_phone, timezone, sms_sender_name, logo_url, name, phone, email), reminder_templates(email_subject, email_body)',
+      )
       .lte('scheduled_date', today)
       .eq('status', 'scheduled');
 
@@ -64,88 +68,182 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Get SMS template based on service_type (hardcoded for now)
-        const template = SMS_TEMPLATES[reminder.service_type] || SMS_TEMPLATES.serwis;
+        const channel: string = reminder.channel ?? 'sms';
 
-        // Build SMS message
-        let message = template;
-        message = message.replace('{short_name}', instance.short_name || '');
-        message = message.replace('{vehicle_plate}', reminder.vehicle_plate || '');
-        message = message.replace(
-          '{reservation_phone}',
-          (instance.reservation_phone || '').replace(/\s/g, ''),
-        );
+        if (channel === 'email') {
+          // --- Email branch ---
+          const reminderTemplate = reminder.reminder_templates;
+          const customerEmail: string | null = reminder.customer_email;
 
-        // Normalize phone number
-        const normalizedPhone = normalizePhoneOrFallback(reminder.customer_phone, 'PL');
-        console.log(`Normalized phone: ${reminder.customer_phone} -> ${normalizedPhone}`);
-
-        // Validate phone number length
-        const digitsOnly = normalizedPhone.replace(/\D/g, '');
-        if (digitsOnly.length < 11 || digitsOnly.length > 15) {
-          console.error(
-            `Invalid phone for reminder ${reminder.id}: ${normalizedPhone} (${digitsOnly.length} digits)`,
-          );
-          await supabase
-            .from('customer_reminders')
-            .update({ status: 'failed' })
-            .eq('id', reminder.id);
-          continue;
-        }
-
-        // Demo instance - simulate SMS
-        const DEMO_INSTANCE_IDS = ['b3c29bfe-f393-4e1a-a837-68dd721df420'];
-        if (DEMO_INSTANCE_IDS.includes(reminder.instance_id)) {
-          console.log(`[DEMO] Simulating SMS to ${normalizedPhone}: ${message}`);
-        } else if (smsApiToken) {
-          // Send SMS if token available
-          const offerReminderParams: Record<string, string> = {
-            to: normalizedPhone.replace('+', ''),
-            message: message,
-            format: 'json',
-          };
-          if (instance.sms_sender_name) {
-            offerReminderParams.from = instance.sms_sender_name;
-          }
-
-          const smsResponse = await fetch('https://api.smsapi.pl/sms.do', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${smsApiToken}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams(offerReminderParams),
-          });
-
-          if (!smsResponse.ok) {
-            console.error(`SMS API error for reminder ${reminder.id}`);
+          if (!customerEmail) {
+            console.error(`No customer_email for email reminder ${reminder.id}`);
             await supabase
               .from('customer_reminders')
               .update({ status: 'failed' })
               .eq('id', reminder.id);
             continue;
           }
+
+          const placeholderVars: Record<string, string> = {
+            short_name: instance.short_name || instance.name || '',
+            vehicle_plate: reminder.vehicle_plate || '',
+            reservation_phone: (instance.reservation_phone || instance.phone || '').replace(/\s/g, ''),
+          };
+
+          const rawSubject: string = reminderTemplate?.email_subject || `Przypomnienie - ${instance.name || instance.short_name || ''}`;
+          const rawBody: string = reminderTemplate?.email_body || '';
+
+          const subject = resolvePlaceholders(rawSubject, placeholderVars);
+          const body = resolvePlaceholders(rawBody, placeholderVars);
+
+          const emailHtml = buildReminderEmailHtml({
+            instanceName: instance.name || instance.short_name || '',
+            instanceLogoUrl: instance.logo_url,
+            instancePhone: instance.phone || instance.reservation_phone,
+            body,
+          });
+
+          const smtpHost = Deno.env.get('SMTP_HOST');
+          const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
+          const smtpUser = Deno.env.get('SMTP_USER');
+          const smtpPass = Deno.env.get('SMTP_PASS');
+          const smtpFrom = Deno.env.get('SMTP_FROM') || smtpUser;
+
+          if (!smtpHost || !smtpUser || !smtpPass) {
+            console.error(`Missing SMTP config for email reminder ${reminder.id}`);
+            await supabase
+              .from('customer_reminders')
+              .update({ status: 'failed' })
+              .eq('id', reminder.id);
+            continue;
+          }
+
+          const smtpClient = new SMTPClient({
+            connection: {
+              hostname: smtpHost,
+              port: smtpPort,
+              tls: true,
+              auth: {
+                username: smtpUser,
+                password: smtpPass,
+              },
+            },
+          });
+
+          const fromName = instance.name || instance.short_name || 'Carfect';
+
+          await smtpClient.send({
+            from: `${fromName} <${smtpFrom}>`,
+            to: customerEmail.trim(),
+            subject,
+            html: emailHtml,
+          });
+
+          await smtpClient.close();
+
+          // Update reminder status
+          await supabase
+            .from('customer_reminders')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', reminder.id);
+
+          // Log email
+          await supabase.from('sms_logs').insert({
+            instance_id: reminder.instance_id,
+            phone: customerEmail,
+            message: subject,
+            status: 'sent',
+            message_type: 'customer_reminder_email',
+          });
+
+          sentCount++;
+          console.log(`Sent email reminder ${reminder.id} to ${customerEmail}`);
         } else {
-          console.log(`[DEV] Would send SMS to ${normalizedPhone}: ${message}`);
+          // --- SMS branch (default, backward compat) ---
+
+          // Get SMS template based on service_type (hardcoded for now)
+          const template = SMS_TEMPLATES[reminder.service_type] || SMS_TEMPLATES.serwis;
+
+          // Build SMS message
+          let message = template;
+          message = message.replace('{short_name}', instance.short_name || '');
+          message = message.replace('{vehicle_plate}', reminder.vehicle_plate || '');
+          message = message.replace(
+            '{reservation_phone}',
+            (instance.reservation_phone || '').replace(/\s/g, ''),
+          );
+
+          // Normalize phone number
+          const normalizedPhone = normalizePhoneOrFallback(reminder.customer_phone, 'PL');
+          console.log(`Normalized phone: ${reminder.customer_phone} -> ${normalizedPhone}`);
+
+          // Validate phone number length
+          const digitsOnly = normalizedPhone.replace(/\D/g, '');
+          if (digitsOnly.length < 11 || digitsOnly.length > 15) {
+            console.error(
+              `Invalid phone for reminder ${reminder.id}: ${normalizedPhone} (${digitsOnly.length} digits)`,
+            );
+            await supabase
+              .from('customer_reminders')
+              .update({ status: 'failed' })
+              .eq('id', reminder.id);
+            continue;
+          }
+
+          // Demo instance - simulate SMS
+          const DEMO_INSTANCE_IDS = ['b3c29bfe-f393-4e1a-a837-68dd721df420'];
+          if (DEMO_INSTANCE_IDS.includes(reminder.instance_id)) {
+            console.log(`[DEMO] Simulating SMS to ${normalizedPhone}: ${message}`);
+          } else if (smsApiToken) {
+            // Send SMS if token available
+            const offerReminderParams: Record<string, string> = {
+              to: normalizedPhone.replace('+', ''),
+              message: message,
+              format: 'json',
+            };
+            if (instance.sms_sender_name) {
+              offerReminderParams.from = instance.sms_sender_name;
+            }
+
+            const smsResponse = await fetch('https://api.smsapi.pl/sms.do', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${smsApiToken}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams(offerReminderParams),
+            });
+
+            if (!smsResponse.ok) {
+              console.error(`SMS API error for reminder ${reminder.id}`);
+              await supabase
+                .from('customer_reminders')
+                .update({ status: 'failed' })
+                .eq('id', reminder.id);
+              continue;
+            }
+          } else {
+            console.log(`[DEV] Would send SMS to ${normalizedPhone}: ${message}`);
+          }
+
+          // Update reminder status
+          await supabase
+            .from('customer_reminders')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', reminder.id);
+
+          // Log SMS
+          await supabase.from('sms_logs').insert({
+            instance_id: reminder.instance_id,
+            phone: normalizedPhone,
+            message: message,
+            status: 'sent',
+            message_type: 'customer_reminder',
+          });
+
+          sentCount++;
+          console.log(`Sent reminder ${reminder.id} to ${normalizedPhone}`);
         }
-
-        // Update reminder status
-        await supabase
-          .from('customer_reminders')
-          .update({ status: 'sent', sent_at: new Date().toISOString() })
-          .eq('id', reminder.id);
-
-        // Log SMS
-        await supabase.from('sms_logs').insert({
-          instance_id: reminder.instance_id,
-          phone: normalizedPhone,
-          message: message,
-          status: 'sent',
-          message_type: 'customer_reminder',
-        });
-
-        sentCount++;
-        console.log(`Sent reminder ${reminder.id} to ${normalizedPhone}`);
       } catch (err) {
         console.error(`Error processing reminder ${reminder.id}:`, err);
         await supabase

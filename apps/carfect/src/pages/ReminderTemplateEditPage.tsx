@@ -27,6 +27,8 @@ interface ReminderTemplate {
   description: string | null;
   items: ReminderItem[];
   sms_template: string;
+  email_subject: string | null;
+  email_body: string | null;
 }
 
 const SERVICE_TYPES = [
@@ -80,6 +82,10 @@ export default function ReminderTemplateEditPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [items, setItems] = useState<ReminderItem[]>([{ months: 12, service_type: 'serwis' }]);
+  const [emailSubject, setEmailSubject] = useState('Przypomnienie o wizycie');
+  const [emailBody, setEmailBody] = useState(
+    '{short_name}: Zapraszamy na {service_type} pojazdu {vehicle_plate}. Kontakt: {reservation_phone}',
+  );
 
   const fetchTemplate = useCallback(async () => {
     if (!instanceId || !shortId) return;
@@ -107,6 +113,8 @@ export default function ReminderTemplateEditPage() {
           ? (template.items as unknown as ReminderItem[])
           : [];
         setItems(parsedItems.length > 0 ? parsedItems : [{ months: 12, service_type: 'serwis' }]);
+        if (template.email_subject) setEmailSubject(template.email_subject);
+        if (template.email_body) setEmailBody(template.email_body);
       } else {
         toast.error(t('reminderTemplates.notFound'));
         navigate(remindersBasePath);
@@ -165,6 +173,8 @@ export default function ReminderTemplateEditPage() {
             description: description.trim() || null,
             items: itemsJson,
             sms_template: smsTemplate,
+            email_subject: emailSubject.trim(),
+            email_body: emailBody.trim(),
           })
           .select('id')
           .single();
@@ -180,6 +190,8 @@ export default function ReminderTemplateEditPage() {
             description: description.trim() || null,
             items: itemsJson,
             sms_template: smsTemplate,
+            email_subject: emailSubject.trim(),
+            email_body: emailBody.trim(),
           })
           .eq('id', templateId);
 
@@ -381,6 +393,33 @@ export default function ReminderTemplateEditPage() {
                 <p className="text-sm font-mono">{getSmsExample()}</p>
               </div>
               <p className="text-xs text-muted-foreground">{t('reminders.smsTemplateReadonly')}</p>
+            </div>
+
+            {/* Email Template */}
+            <div className="space-y-4 pt-2">
+              <Label className="text-base font-semibold">{t('reminders.emailTemplate')}</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="email-subject">{t('reminders.emailSubject')}</Label>
+                <Input
+                  id="email-subject"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder={t('reminders.emailSubjectPlaceholder')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email-body">{t('reminders.emailBody')}</Label>
+                <Textarea
+                  id="email-body"
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder={t('reminders.emailBodyPlaceholder')}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">{t('reminders.emailPlaceholderHint')}</p>
+              </div>
             </div>
           </div>
         </TabsContent>

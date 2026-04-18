@@ -4,6 +4,7 @@ import { format, addMonths } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
+import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
@@ -37,6 +38,7 @@ interface AddCustomerReminderDialogProps {
   onOpenChange: (open: boolean) => void;
   customerPhone: string;
   customerName: string;
+  customerEmail: string | null;
   instanceId: string;
   onReminderAdded: () => void;
 }
@@ -46,12 +48,15 @@ export function AddCustomerReminderDialog({
   onOpenChange,
   customerPhone,
   customerName,
+  customerEmail,
   instanceId,
   onReminderAdded,
 }: AddCustomerReminderDialogProps) {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [channel, setChannel] = useState<'sms' | 'email'>('sms');
+  const [emailAddress, setEmailAddress] = useState<string>(customerEmail ?? '');
 
   const [serviceDate, setServiceDate] = useState<Date | undefined>(undefined);
   const [reminderTemplateId, setReminderTemplateId] = useState<string>('');
@@ -127,6 +132,8 @@ export function AddCustomerReminderDialog({
     setSelectedVehicleId(null);
     setServiceDate(undefined);
     setReminderTemplateId('');
+    setChannel('sms');
+    setEmailAddress(customerEmail ?? '');
   };
 
   const handleClose = () => {
@@ -159,6 +166,11 @@ export function AddCustomerReminderDialog({
       return;
     }
 
+    if (channel === 'email' && !emailAddress.trim()) {
+      toast.error(t('reminders.customerEmailRequired'));
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -175,6 +187,8 @@ export function AddCustomerReminderDialog({
           scheduled_date: format(scheduledDate, 'yyyy-MM-dd'),
           months_after: item.months,
           status: 'scheduled',
+          channel,
+          customer_email: channel === 'email' ? emailAddress.trim() : null,
         };
       });
 
@@ -229,6 +243,39 @@ export function AddCustomerReminderDialog({
               <p className="text-xs text-muted-foreground">{t('customers.noTemplatesAvailable')}</p>
             )}
           </div>
+
+          {/* Channel Selector */}
+          <div className="space-y-2">
+            <Label htmlFor="channel-select">{t('reminders.channel')}</Label>
+            <Select
+              value={channel}
+              onValueChange={(v) => setChannel(v as 'sms' | 'email')}
+            >
+              <SelectTrigger id="channel-select" className="bg-white" aria-label={t('reminders.channel')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="sms">{t('reminders.channelSms')}</SelectItem>
+                <SelectItem value="email" disabled={!customerEmail}>
+                  {t('reminders.channelEmail')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Email field - shown only when email channel selected */}
+          {channel === 'email' && (
+            <div className="space-y-2">
+              <Label htmlFor="customer-email">{t('reminders.customerEmail')}</Label>
+              <Input
+                id="customer-email"
+                type="email"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                placeholder={t('reminders.customerEmailPlaceholder')}
+              />
+            </div>
+          )}
 
           {/* Vehicle Selection */}
           <div className="space-y-2">
