@@ -32,7 +32,6 @@ export function IntegrationCard({
     <div
       className={cn(
         'bg-white border border-border/50 rounded-xl p-5 flex flex-col gap-3 transition-all',
-        comingSoon && 'opacity-60',
         onClick && !comingSoon && 'cursor-pointer hover:border-border hover:shadow-sm',
         (!onClick || comingSoon) && 'cursor-default',
         className,
