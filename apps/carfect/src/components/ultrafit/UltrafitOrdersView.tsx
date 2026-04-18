@@ -17,7 +17,6 @@ import {
   PaginationFooter,
 } from '@shared/ui';
 import { useUltrafitOrders } from '@/hooks/useUltrafitOrders';
-import { useUltrafitOrderRolls } from '@/hooks/useUltrafitOrderRolls';
 import type { UltrafitOrder, UltrafitOrderItem } from '@/types/ultrafit';
 
 interface UltrafitOrdersViewProps {
@@ -97,80 +96,28 @@ function formatUnit(unit: string): string {
   return unitMap[unit?.toLowerCase()] ?? unit;
 }
 
-function RollsSubRow({ orderId, itemId }: { orderId: string; itemId: string }) {
-  const { data, isLoading } = useUltrafitOrderRolls({ orderId, enabled: true });
-
-  if (isLoading) {
-    return <div className="text-xs text-muted-foreground py-1">Ładowanie rolek...</div>;
-  }
-
-  const rolls = data?.rolls ?? [];
-  if (rolls.length === 0) return null;
-
-  return (
-    <div className="mt-2 pl-4 border-l-2 border-border/50 space-y-1">
-      {rolls.map((roll, idx) => (
-        <div key={idx} className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="font-medium">{roll.brand}</span>
-          <span>{roll.productName}</span>
-          <span>{roll.widthMm} mm</span>
-          <span>{roll.usedMb} mb</span>
-          <span className="font-mono">{roll.barcode}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function OrderItemRow({
   item,
-  orderId,
-  itemIndex,
 }: {
   item: UltrafitOrderItem;
-  orderId: string;
-  itemIndex: number;
 }) {
-  const [rollsExpanded, setRollsExpanded] = useState(false);
-  const hasRolls = item.productType === 'roll';
-
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm gap-4">
-        <div className="flex items-center gap-2 min-w-0">
-          {hasRolls && (
-            <button
-              type="button"
-              onClick={() => setRollsExpanded((prev) => !prev)}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              aria-label={rollsExpanded ? 'Ukryj rolki' : 'Pokaż rolki'}
-            >
-              {rollsExpanded ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5" />
-              )}
-            </button>
-          )}
-          <span className="text-muted-foreground truncate">
-            {item.name}
-            {item.vehicle && (
-              <span className="ml-2 text-xs text-muted-foreground/70">({item.vehicle})</span>
-            )}
-          </span>
-        </div>
-        <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs text-muted-foreground">
-          <span>
-            {item.quantity} {formatUnit(item.unit)} × {formatCurrency(item.priceNet, 'PLN')}/{formatUnit(item.unit)}
-          </span>
-          <span className="w-28 text-right font-medium text-foreground">
-            {formatCurrency(item.quantity * item.priceNet, 'PLN')}
-          </span>
-        </div>
+    <div className="flex items-center justify-between text-sm gap-4">
+      <span className="text-muted-foreground truncate min-w-0">
+        {item.name}
+        {item.vehicle && (
+          <span className="ml-2 text-xs text-muted-foreground/70">({item.vehicle})</span>
+        )}
+      </span>
+      <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs text-muted-foreground">
+        <span>
+          {item.quantity} {formatUnit(item.unit)} × {formatCurrency(item.priceNet, 'PLN')}/{formatUnit(item.unit)}
+        </span>
+        <span className="w-28 text-right font-medium text-foreground">
+          {formatCurrency(item.quantity * item.priceNet, 'PLN')}
+        </span>
       </div>
-      {rollsExpanded && hasRolls && (
-        <RollsSubRow orderId={orderId} itemId={`${orderId}-item-${itemIndex}`} />
-      )}
     </div>
   );
 }
@@ -179,7 +126,7 @@ function ExpandedOrderItems({ order }: { order: UltrafitOrder }) {
   return (
     <div className="bg-card px-6 py-4 border-t border-border/50 space-y-1.5">
       {order.items.map((item, idx) => (
-        <OrderItemRow key={idx} item={item} orderId={order.id} itemIndex={idx} />
+        <OrderItemRow key={idx} item={item} />
       ))}
     </div>
   );
@@ -306,12 +253,12 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border/50">
+      <div className="flex items-center justify-between px-4 py-4">
         <h1 className="text-lg font-semibold">{t('integrations.orders.title')}</h1>
       </div>
 
       {/* Search */}
-      <div className="px-4 py-3 border-b border-border/50">
+      <div className="px-4 pb-4">
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input

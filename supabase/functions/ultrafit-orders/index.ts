@@ -120,6 +120,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         total_net,
         currency,
         tracking_number,
+        apaczka_tracking_url,
         delivery_type,
         sales_order_items (
           id,
@@ -152,7 +153,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       total_net: raw.total_net as number,
       currency: raw.currency as string,
       tracking_number: raw.tracking_number as string | null,
-      tracking_url: null,
+      tracking_url: (raw.apaczka_tracking_url as string | null) ?? null,
       delivery_type: raw.delivery_type as string | null,
       items: ((raw.sales_order_items as OrderItemRow[]) ?? []),
     } as OrderRow & { items: OrderItemRow[] }));
