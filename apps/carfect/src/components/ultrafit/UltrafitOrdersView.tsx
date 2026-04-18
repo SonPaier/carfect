@@ -303,7 +303,6 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
                 <TableHead className="w-8" />
                 <TableHead>{t('integrations.orders.orderNumber')}</TableHead>
                 <TableHead>{t('integrations.orders.orderDate')}</TableHead>
-                <TableHead>{t('integrations.orders.shippedDate')}</TableHead>
                 <TableHead>{t('integrations.orders.delivery')}</TableHead>
                 <TableHead>{t('integrations.orders.trackingNumber')}</TableHead>
                 <TableHead className="text-right">{t('integrations.orders.totalNet')}</TableHead>
@@ -334,9 +333,6 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
                       </TableCell>
                       <TableCell className="font-medium">{order.orderNumber}</TableCell>
                       <TableCell>{formatDate(order.createdAt)}</TableCell>
-                      <TableCell>
-                        {order.shippedAt ? formatDate(order.shippedAt) : '—'}
-                      </TableCell>
                       <TableCell>
                         <DeliveryBadge deliveryType={order.deliveryType} />
                       </TableCell>
@@ -370,7 +366,7 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
 
                     {isExpanded && (
                       <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={8} className="p-0">
+                        <TableCell colSpan={7} className="p-0">
                           <ExpandedOrderItems order={order} />
                         </TableCell>
                       </TableRow>
