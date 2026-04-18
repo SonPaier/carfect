@@ -127,7 +127,7 @@ export const TemplateAssignedCustomers = ({ templateId, instanceId }: TemplateAs
       <div className="flex items-start gap-3 p-4 mb-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
         <Info className="h-5 w-5 shrink-0 mt-0.5" />
         <p className="text-sm">
-          Aby przypisać klienta do tego szablonu, otwórz kartę klienta w zakładce Klienci i dodaj przypomnienie z tego szablonu.
+          {t('reminders.customerAssignHint')}
         </p>
       </div>
       <CustomersList

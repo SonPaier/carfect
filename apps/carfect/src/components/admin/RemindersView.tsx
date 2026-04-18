@@ -351,12 +351,12 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
       <Table wrapperClassName="overflow-visible">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[180px]">Klient</TableHead>
-            <TableHead className="w-[140px]">Telefon</TableHead>
-            <TableHead>Szablon</TableHead>
-            <TableHead className="w-[120px]">Data wysyłki</TableHead>
-            <TableHead className="w-[80px]">Kanał</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
+            <TableHead className="w-[180px]">{t('reminders.tableClient')}</TableHead>
+            <TableHead className="w-[140px]">{t('reminders.tablePhone')}</TableHead>
+            <TableHead>{t('reminders.tableTemplate')}</TableHead>
+            <TableHead className="w-[120px]">{t('reminders.tableSendDate')}</TableHead>
+            <TableHead className="w-[80px]">{t('reminders.tableChannel')}</TableHead>
+            <TableHead className="w-[100px]">{t('reminders.tableStatus')}</TableHead>
             <TableHead className="w-[50px]" />
           </TableRow>
         </TableHeader>
@@ -472,7 +472,7 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
             pageSize={remindersPageSize}
             onPageChange={handleRemindersPageChange}
             onPageSizeChange={handleRemindersPageSizeChange}
-            itemLabel="przypomnień"
+            itemLabel={t('reminders.itemLabelReminders')}
           />
         </>
       );
@@ -489,7 +489,7 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
             pageSize={remindersPageSize}
             onPageChange={handleRemindersPageChange}
             onPageSizeChange={handleRemindersPageSizeChange}
-            itemLabel="przypomnień"
+            itemLabel={t('reminders.itemLabelReminders')}
           />
         </div>
       </div>
@@ -503,11 +503,11 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
       <Table wrapperClassName="overflow-visible">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead>Nazwa</TableHead>
-            <TableHead className="w-[120px]">Przypomnienia</TableHead>
-            <TableHead className="w-[100px]">Usługi</TableHead>
-            <TableHead className="w-[120px]">Kanał</TableHead>
-            <TableHead className="w-[100px]">Klienci</TableHead>
+            <TableHead>{t('reminders.tableName')}</TableHead>
+            <TableHead className="w-[120px]">{t('reminders.tableReminders')}</TableHead>
+            <TableHead className="w-[100px]">{t('reminders.tableServices')}</TableHead>
+            <TableHead className="w-[120px]">{t('reminders.tableChannel')}</TableHead>
+            <TableHead className="w-[100px]">{t('reminders.tableClients')}</TableHead>
             <TableHead className="w-[50px]" />
           </TableRow>
         </TableHeader>
@@ -585,7 +585,7 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
               </Badge>
               {template.servicesCount > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  {template.servicesCount} {template.servicesCount === 1 ? 'usługa' : 'usług'}
+                  {template.servicesCount} {template.servicesCount === 1 ? t('reminders.serviceCount') : t('reminders.servicesCount')}
                 </Badge>
               )}
               {template.sms_template && <Badge variant="outline" className="text-xs">SMS</Badge>}
@@ -670,7 +670,7 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
             pageSize={templatesPageSize}
             onPageChange={handleTemplatesPageChange}
             onPageSizeChange={handleTemplatesPageSizeChange}
-            itemLabel="szablonów"
+            itemLabel={t('reminders.itemLabelTemplates')}
           />
         </>
       );
@@ -687,7 +687,7 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
             pageSize={templatesPageSize}
             onPageChange={handleTemplatesPageChange}
             onPageSizeChange={handleTemplatesPageSizeChange}
-            itemLabel="szablonów"
+            itemLabel={t('reminders.itemLabelTemplates')}
           />
         </div>
       </div>
@@ -748,7 +748,7 @@ export default function RemindersView({ instanceId }: RemindersViewProps) {
                 <SelectContent>
                   <SelectItem value="scheduled">{t('reminders.statusScheduled')}</SelectItem>
                   <SelectItem value="sent">{t('reminders.statusSent')}</SelectItem>
-                  <SelectItem value="all">Wszystkie</SelectItem>
+                  <SelectItem value="all">{t('reminders.statusAll')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

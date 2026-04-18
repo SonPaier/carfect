@@ -2210,6 +2210,7 @@
     "smsExample": "Przykład",
     "smsTemplateReadonly": "Szablon SMS jest konfigurowany globalnie przez administratora systemu.",
     "placeholderHint": "Wstaw zmienne w klamrach do tekstu: {imie_klienta} — imię i nazwisko klienta, {pojazd} — marka/model pojazdu, {telefon_firmy} — numer telefonu do kontaktu",
+    "channelInfoHint": "Uzupełnij treść SMS, emaila lub oba. Kanał wysyłki (SMS lub Email) ustawiasz na poziomie klienta w zakładce Klienci.",
     "tabs": {
       "template": "Szablon",
       "assignedCustomers": "Przypisani Klienci"
@@ -2239,7 +2240,27 @@
     "reminderDeleted": "Przypomnienie usunięte",
     "statusScheduled": "Zaplanowany",
     "statusSent": "Wysłany",
-    "statusFailed": "Błąd"
+    "statusFailed": "Błąd",
+    "statusAll": "Wszystkie",
+    "tableClient": "Klient",
+    "tablePhone": "Telefon",
+    "tableTemplate": "Szablon",
+    "tableSendDate": "Data wysyłki",
+    "tableChannel": "Kanał",
+    "tableStatus": "Status",
+    "tableName": "Nazwa",
+    "tableReminders": "Przypomnienia",
+    "tableServices": "Usługi",
+    "tableClients": "Klienci",
+    "itemLabelReminders": "przypomnień",
+    "itemLabelTemplates": "szablonów",
+    "assignServices": "Przypisz usługi",
+    "servicesAssigned": "Usługi przypisane",
+    "noAssignedServices": "Brak przypisanych usług",
+    "serviceAutoAssignHint": "Jeśli masz włączone kończenie usług w ustawieniach, przypomnienie zostanie automatycznie ustawione na kliencie po zakończeniu usługi z tym szablonem w kalendarzu.",
+    "customerAssignHint": "Aby przypisać klienta do tego szablonu, otwórz kartę klienta w zakładce Klienci i dodaj przypomnienie z tego szablonu.",
+    "serviceCount": "usługa",
+    "servicesCount": "usług"
   },
   "offerReminders": {
     "markAsCompleted": "Oznacz jako zrealizowane",

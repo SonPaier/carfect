@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Info, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -142,6 +142,14 @@ export default function ReminderTemplateEditPage({ inlineShortId, onBack }: Remi
             <p className="text-sm text-muted-foreground">
               {t('reminders.schedulePreview')}: {hook.schedulePreview}
             </p>
+
+            {/* Channel info */}
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+              <Info className="h-5 w-5 shrink-0 mt-0.5" />
+              <p className="text-sm">
+                {t('reminders.channelInfoHint')}
+              </p>
+            </div>
 
             {/* SMS Template */}
             <div className="space-y-2">

@@ -31,6 +31,12 @@
 - Przed uruchomieniem nowego testu upewnij się, że poprzedni się zakończył
 - Naruszenie tych zasad powoduje dziesiątki zombie procesów node/vitest i wymusza reset komputera
 
+## i18n
+
+- `apps/carfect/` — ZAWSZE używaj `t()` z react-i18next, NIGDY hardcoded polski tekst w JSX
+- `apps/hiservice/` — polski hardcoded OK (nie będzie tłumaczony)
+- Klucze i18n w `apps/carfect/src/i18n/locales/pl.json`
+
 ## Edge Functions (Deno)
 
 - Każda nowa/zmieniona edge function MUSI mieć unit testy

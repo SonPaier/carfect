@@ -75,7 +75,7 @@ export function TemplateAssignedServices({ templateId, instanceId }: TemplateAss
         if (error) throw error;
       }
 
-      toast.success('Usługi przypisane');
+      toast.success(t('reminders.servicesAssigned'));
       fetchAssignedServices();
     } catch (error: unknown) {
       console.error('Error saving assignments:', error);
@@ -114,13 +114,13 @@ export function TemplateAssignedServices({ templateId, instanceId }: TemplateAss
       <div className="flex items-start gap-3 p-4 mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
         <Info className="h-5 w-5 shrink-0 mt-0.5" />
         <p className="text-sm">
-          Jeśli masz włączone kończenie usług w ustawieniach, przypomnienie zostanie automatycznie ustawione na kliencie po zakończeniu usługi z tym szablonem w kalendarzu.
+          {t('reminders.serviceAutoAssignHint')}
         </p>
       </div>
       <div className="space-y-3">
         {services.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            Brak przypisanych usług
+            {t('reminders.noAssignedServices')}
           </p>
         ) : (
           services.map((service) => (
@@ -143,7 +143,7 @@ export function TemplateAssignedServices({ templateId, instanceId }: TemplateAss
 
         <Button onClick={() => setDrawerOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
-          Przypisz usługi
+          {t('reminders.assignServices')}
         </Button>
       </div>
 
