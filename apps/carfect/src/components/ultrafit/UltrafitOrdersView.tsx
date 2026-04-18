@@ -106,7 +106,6 @@ function OrderItemRow({
   const unit = formatUnit(item.unit);
   const lineTotal = item.quantity * item.priceNet;
   const discountAmount = lineTotal * (item.discountPercent || 0) / 100;
-  const netTotal = lineTotal - discountAmount;
 
   return (
     <div className="space-y-0.5">
@@ -126,7 +125,7 @@ function OrderItemRow({
       </div>
       {item.discountPercent > 0 && (
         <div className="flex items-center justify-between text-xs text-green-600 gap-4">
-          <span className="pl-1">Rabat {item.discountPercent}%</span>
+          <span className="pl-1">{t('integrations.orders.discount')} {item.discountPercent}%</span>
           <span className="shrink-0 tabular-nums text-right w-28">
             -{formatCurrency(discountAmount, 'PLN')}
           </span>

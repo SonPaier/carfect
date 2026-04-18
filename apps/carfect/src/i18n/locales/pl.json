@@ -2401,6 +2401,7 @@
       "statusNew": "Nowy",
       "statusShipped": "Wysłany",
       "statusCancelled": "Anulowany",
+      "discount": "Rabat",
       "deliveryShipping": "Wysyłka",
       "deliveryPickup": "Odbiór"
     }

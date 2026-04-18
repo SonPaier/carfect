@@ -46,7 +46,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!payloadBase64) {
       return jsonResponse({ error: 'Invalid token' }, 401);
     }
-    const payload = JSON.parse(atob(payloadBase64));
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
     const userId = payload.sub as string;
     if (!userId) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
@@ -172,9 +173,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     console.error('Error in ultrafit-orders:', err.message, err.stack);
-    return new Response(JSON.stringify({ error: 'Internal server error', detail: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse({ error: 'Internal server error' }, 500);
   }
 });

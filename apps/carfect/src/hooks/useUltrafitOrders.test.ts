@@ -4,25 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useUltrafitOrders } from './useUltrafitOrders';
 
-// Mock supabase auth
-const mockGetSession = vi.fn();
+const mockInvoke = vi.fn();
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    auth: {
-      getSession: () => mockGetSession(),
+    functions: {
+      invoke: (...args: unknown[]) => mockInvoke(...args),
     },
   },
 }));
-
-// Mock fetch globally
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
-
-// Mock import.meta.env
-vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
-vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-anon-key');
-
-const ACCESS_TOKEN = 'test-access-token';
 
 const mockOrdersResponse = {
   orders: [
@@ -56,31 +45,22 @@ function createWrapper() {
 describe('useUltrafitOrders', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSession.mockResolvedValue({
-      data: { session: { access_token: ACCESS_TOKEN } },
-    });
   });
 
-  it('calls fetch with correct URL and JWT', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockOrdersResponse),
-    });
+  it('calls supabase.functions.invoke with correct params', async () => {
+    mockInvoke.mockResolvedValue({ data: mockOrdersResponse, error: null });
 
     const { result } = renderHook(
-      () => useUltrafitOrders({ page: 1, pageSize: 25, search: '' }),
+      () => useUltrafitOrders({ page: 1, pageSize: 25, search: 'test' }),
       { wrapper: createWrapper() },
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockFetch).toHaveBeenCalledOnce();
-    const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toBe('https://test.supabase.co/functions/v1/ultrafit-orders');
-    expect(options.method).toBe('POST');
-    expect(options.headers['Authorization']).toBe(`Bearer ${ACCESS_TOKEN}`);
-    expect(options.headers['apikey']).toBe('test-anon-key');
-    expect(JSON.parse(options.body)).toEqual({ page: 1, pageSize: 25, search: '' });
+    expect(mockInvoke).toHaveBeenCalledOnce();
+    expect(mockInvoke).toHaveBeenCalledWith('ultrafit-orders', {
+      body: { page: 1, pageSize: 25, search: 'test' },
+    });
   });
 
   it('does not send a request when enabled is false', () => {
@@ -90,14 +70,11 @@ describe('useUltrafitOrders', () => {
     );
 
     expect(result.current.isFetching).toBe(false);
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 
   it('returns data on successful response', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockOrdersResponse),
-    });
+    mockInvoke.mockResolvedValue({ data: mockOrdersResponse, error: null });
 
     const { result } = renderHook(
       () => useUltrafitOrders({ page: 1, pageSize: 25, search: '' }),
@@ -111,11 +88,8 @@ describe('useUltrafitOrders', () => {
     expect(result.current.data?.orders[0].orderNumber).toBe('UF-001');
   });
 
-  it('throws an error when response status is 403', async () => {
-    mockFetch.mockResolvedValue({
-      ok: false,
-      status: 403,
-    });
+  it('throws an error when invoke returns error', async () => {
+    mockInvoke.mockResolvedValue({ data: null, error: new Error('Forbidden') });
 
     const { result } = renderHook(
       () => useUltrafitOrders({ page: 1, pageSize: 25, search: '' }),
@@ -123,8 +97,6 @@ describe('useUltrafitOrders', () => {
     );
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-
     expect(result.current.error).toBeInstanceOf(Error);
-    expect((result.current.error as Error).message).toBe('ultrafit-orders error 403');
   });
 });
