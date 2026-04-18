@@ -2209,7 +2209,15 @@
       "template": "Szablon",
       "assignedCustomers": "Przypisani Klienci"
     },
-    "noAssignedCustomers": "Brak klientów przypisanych do tego szablonu"
+    "noAssignedCustomers": "Brak klientów przypisanych do tego szablonu",
+    "channelSms": "SMS",
+    "channelEmail": "Email",
+    "channelLabel": "Kanał",
+    "emailSubject": "Temat emaila",
+    "emailBody": "Treść emaila",
+    "emailPlaceholders": "Dostępne zmienne: {short_name}, {customer_name}, {vehicle_plate}, {service_type}, {reservation_phone}",
+    "smsScheduled": "SMS zaplanowany",
+    "emailScheduled": "Email zaplanowany"
   },
   "offerReminders": {
     "markAsCompleted": "Oznacz jako zrealizowane",
