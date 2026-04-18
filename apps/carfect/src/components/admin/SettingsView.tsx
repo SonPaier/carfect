@@ -229,9 +229,15 @@ const SettingsView = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="bg-white border border-border/50 rounded-lg p-6 pb-24 md:pb-6 bg-secondary-foreground">
-          {renderTabContent()}
-        </div>
+        {activeTab === 'integrations' ? (
+          <div className="pb-24 md:pb-6">
+            {renderTabContent()}
+          </div>
+        ) : (
+          <div className="bg-white border border-border/50 rounded-lg p-6 pb-24 md:pb-6 bg-secondary-foreground">
+            {renderTabContent()}
+          </div>
+        )}
       </div>
     </div>
   );
