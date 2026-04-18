@@ -47,6 +47,8 @@ export function IntegrationsView({ instanceId, onNavigateToUltrafit }: Integrati
 
   return (
     <div className="space-y-10">
+      <h1 className="text-2xl font-bold">{t('integrations.title')}</h1>
+
       {/* Section: Invoicing */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">
