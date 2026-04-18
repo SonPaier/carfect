@@ -2377,7 +2377,11 @@
       "requestAccess": "Poproś o dostęp",
       "contactNumber": "tel. 666 610 222",
       "connected": "Połączono",
-      "goToOrders": "Przejdź do zamówień"
+      "goToOrders": "Przejdź do zamówień",
+      "disconnect": "Wyłącz integrację",
+      "disconnectTitle": "Wyłączyć integrację Ultrafit?",
+      "disconnectDescription": "Po wyłączeniu nie będziesz mieć dostępu do zamówień Ultrafit. Możesz ponownie poprosić o dostęp kontaktując się telefonicznie.",
+      "disconnected": "Integracja Ultrafit została wyłączona"
     },
     "orders": {
       "title": "Moje zamówienia Ultrafit",

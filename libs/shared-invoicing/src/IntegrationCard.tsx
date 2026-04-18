@@ -1,5 +1,17 @@
-import { CheckCircle2, ChevronRight } from 'lucide-react';
-import { cn } from '@shared/ui';
+import { CheckCircle2, ChevronRight, MoreVertical } from 'lucide-react';
+import {
+  cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@shared/ui';
+
+interface IntegrationCardMenuItem {
+  label: string;
+  onClick: () => void;
+  variant?: 'default' | 'destructive';
+}
 
 interface IntegrationCardProps {
   logo: string;
@@ -10,6 +22,7 @@ interface IntegrationCardProps {
   activeLabel?: string;
   comingSoon?: boolean;
   comingSoonLabel?: string;
+  menuItems?: IntegrationCardMenuItem[];
   onClick?: () => void;
   children?: React.ReactNode;
   className?: string;
@@ -24,6 +37,7 @@ export function IntegrationCard({
   activeLabel,
   comingSoon,
   comingSoonLabel,
+  menuItems,
   onClick,
   children,
   className,
@@ -41,17 +55,43 @@ export function IntegrationCard({
     >
       <div className="flex items-start justify-between gap-3">
         <img src={logo} alt={logoAlt} className="h-8 object-contain" />
-        {comingSoon && comingSoonLabel && (
-          <span className="text-xs text-foreground font-medium bg-gray-100 px-2 py-0.5 rounded-full">
-            {comingSoonLabel}
-          </span>
-        )}
-        {!comingSoon && isActive && activeLabel && (
-          <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {activeLabel}
-          </span>
-        )}
+        <div className="flex items-center gap-1">
+          {comingSoon && comingSoonLabel && (
+            <span className="text-xs text-foreground font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+              {comingSoonLabel}
+            </span>
+          )}
+          {!comingSoon && isActive && activeLabel && (
+            <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {activeLabel}
+            </span>
+          )}
+          {!comingSoon && isActive && menuItems && menuItems.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                className="p-1 rounded-md hover:bg-muted transition-colors"
+              >
+                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {menuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      item.onClick();
+                    }}
+                    className={item.variant === 'destructive' ? 'text-destructive' : undefined}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
       <div className="flex-1">
         <div className="font-medium text-sm">{title}</div>

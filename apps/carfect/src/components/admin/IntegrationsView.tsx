@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@shared/ui';
+import { ConfirmDialog } from '@shared/ui';
 import { Phone } from 'lucide-react';
 import { IntegrationCard, FakturowniaSettingsView, IfirmaSettingsView, useInvoicingSettings } from '@shared/invoicing';
 import { useUltrafitLink } from '@/hooks/useUltrafitLink';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import ultrafitLogo from '@/assets/integrations/ultrafit-logo.png';
 import fakturowniaLogo from '@/assets/integrations/fakturownia-logo.png';
 import ifirmaLogo from '@/assets/integrations/ifirma-logo.jpg';
@@ -20,11 +21,22 @@ type ActiveView = 'list' | 'fakturownia' | 'ifirma';
 export function IntegrationsView({ instanceId, onNavigateToUltrafit }: IntegrationsViewProps) {
   const { t } = useTranslation();
   const [activeView, setActiveView] = useState<ActiveView>('list');
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const { settings } = useInvoicingSettings(instanceId, supabase);
-  const { isLinked } = useUltrafitLink(instanceId);
+  const { isLinked, disconnect, isDisconnecting } = useUltrafitLink(instanceId);
 
   const isFakturowniaActive = settings?.provider === 'fakturownia' && settings?.active === true;
   const isIfirmaActive = settings?.provider === 'ifirma' && settings?.active === true;
+
+  const handleDisconnectUltrafit = async () => {
+    try {
+      await disconnect();
+      setShowDisconnectDialog(false);
+      toast.success(t('integrations.ultrafit.disconnected'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+  };
 
   if (activeView === 'fakturownia') {
     return (
@@ -103,6 +115,13 @@ export function IntegrationsView({ instanceId, onNavigateToUltrafit }: Integrati
             isActive={isLinked}
             activeLabel={t('integrations.status.connected')}
             onClick={isLinked ? onNavigateToUltrafit : undefined}
+            menuItems={isLinked ? [
+              {
+                label: t('integrations.ultrafit.disconnect'),
+                onClick: () => setShowDisconnectDialog(true),
+                variant: 'destructive',
+              },
+            ] : undefined}
           >
             {!isLinked && (
               <div className="flex items-center gap-2 pt-1">
@@ -115,6 +134,17 @@ export function IntegrationsView({ instanceId, onNavigateToUltrafit }: Integrati
           </IntegrationCard>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={showDisconnectDialog}
+        onOpenChange={setShowDisconnectDialog}
+        title={t('integrations.ultrafit.disconnectTitle')}
+        description={t('integrations.ultrafit.disconnectDescription')}
+        confirmLabel={t('integrations.ultrafit.disconnect')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDisconnectUltrafit}
+        variant="destructive"
+      />
     </div>
   );
 }
