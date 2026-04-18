@@ -14,6 +14,7 @@ import {
   ClipboardCheck,
   UsersRound,
   ArrowLeftRight,
+  Package,
 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
@@ -32,7 +33,8 @@ type ViewType =
   | 'halls'
   | 'protocols'
   | 'reminders'
-  | 'employees';
+  | 'employees'
+  | 'ultrafit';
 
 interface MobileBottomNavProps {
   currentView: ViewType;
@@ -46,6 +48,7 @@ interface MobileBottomNavProps {
   protocolsEnabled?: boolean;
   userRole?: 'admin' | 'employee' | 'hall' | null;
   currentVersion?: string;
+  ultrafitEnabled?: boolean;
   salesCrmEnabled?: boolean;
   onSwitchToSalesCrm?: () => void;
 }
@@ -62,6 +65,7 @@ const MobileBottomNav = ({
   protocolsEnabled = false,
   userRole = 'admin',
   currentVersion,
+  ultrafitEnabled = false,
   salesCrmEnabled = false,
   onSwitchToSalesCrm,
 }: MobileBottomNavProps) => {
@@ -114,8 +118,12 @@ const MobileBottomNav = ({
           ...(userRole !== 'employee'
             ? [{ id: 'pricelist' as ViewType, icon: FileText, label: 'Usługi' }]
             : []),
-          // 8. Powiadomienia - ukryte
-          // 9. Ustawienia (admin only, always last)
+          // 8. Ultrafit (when linked, admin only)
+          ...(ultrafitEnabled && userRole !== 'employee'
+            ? [{ id: 'ultrafit' as ViewType, icon: Package, label: 'Ultrafit' }]
+            : []),
+          // 9. Powiadomienia - ukryte
+          // 10. Ustawienia (admin only, always last)
           ...(userRole !== 'employee'
             ? [{ id: 'settings' as ViewType, icon: Settings, label: t('navigation.settings') }]
             : []),
