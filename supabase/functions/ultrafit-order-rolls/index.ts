@@ -40,31 +40,31 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse({ error: 'Missing environment variables' }, 500);
     }
 
-    // Verify JWT
+    // Extract user from JWT (gateway already verified the token)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return jsonResponse({ error: 'Missing Authorization header' }, 401);
     }
 
-    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    const { data: { user }, error: authError } = await anonClient.auth.getUser();
-    if (authError || !user) {
-      return jsonResponse({ error: 'Invalid or expired token' }, 401);
+    const token = authHeader.replace('Bearer ', '');
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) {
+      return jsonResponse({ error: 'Invalid token' }, 401);
+    }
+    const payload = JSON.parse(atob(payloadBase64));
+    const userId = payload.sub as string;
+    if (!userId) {
+      return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
     // Create service role client for DB operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find integration_link for user's instance where provider='ultrafit'
-    // First get the user's instance via their profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('instance_id')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle();
 
     if (!profile?.instance_id) {

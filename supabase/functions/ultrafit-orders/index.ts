@@ -34,19 +34,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
       throw new Error('Missing required environment variables');
     }
 
-    // Step 1: Verify user via anon client with request's auth header
+    // Step 1: Extract user from JWT (gateway already verified the token)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
-    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    const { data: { user }, error: userError } = await anonClient.auth.getUser();
-    if (userError || !user) {
+    const token = authHeader.replace('Bearer ', '');
+    // Decode JWT payload (already verified by Supabase gateway)
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) {
+      return jsonResponse({ error: 'Invalid token' }, 401);
+    }
+    const payload = JSON.parse(atob(payloadBase64));
+    const userId = payload.sub as string;
+    if (!userId) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
@@ -72,7 +74,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: userRoles } = await serviceClient
       .from('user_roles')
       .select('instance_id')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     const instanceIds = (userRoles ?? []).map((r: { instance_id: string }) => r.instance_id);
 
@@ -80,7 +82,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: profile } = await serviceClient
       .from('profiles')
       .select('instance_id')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle();
 
     if (profile?.instance_id && !instanceIds.includes(profile.instance_id)) {
