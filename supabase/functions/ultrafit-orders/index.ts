@@ -129,6 +129,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           quantity,
           price_net,
           price_unit,
+          discount_percent,
           vehicle,
           product_type
         )

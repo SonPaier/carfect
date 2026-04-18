@@ -87,11 +87,12 @@ function DeliveryBadge({ deliveryType }: { deliveryType: string | null }) {
 
 function formatUnit(unit: string): string {
   const unitMap: Record<string, string> = {
-    meter: 'mb',
+    meter: 'm²',
     piece: 'szt.',
     szt: 'szt.',
     'szt.': 'szt.',
     m2: 'm²',
+    mb: 'mb',
   };
   return unitMap[unit?.toLowerCase()] ?? unit;
 }
@@ -113,9 +114,15 @@ function OrderItemRow({
       <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs text-muted-foreground">
         <span>
           {item.quantity} {formatUnit(item.unit)} × {formatCurrency(item.priceNet, 'PLN')}/{formatUnit(item.unit)}
+          {item.discountPercent > 0 && (
+            <span className="ml-1 text-green-600">-{item.discountPercent}%</span>
+          )}
         </span>
         <span className="w-28 text-right font-medium text-foreground">
-          {formatCurrency(item.quantity * item.priceNet, 'PLN')}
+          {formatCurrency(
+            item.quantity * item.priceNet * (1 - (item.discountPercent || 0) / 100),
+            'PLN',
+          )}
         </span>
       </div>
     </div>

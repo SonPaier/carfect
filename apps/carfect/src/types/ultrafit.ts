@@ -3,6 +3,7 @@ export interface UltrafitOrderItem {
   quantity: number;
   priceNet: number;
   unit: string;
+  discountPercent: number;
   vehicle: string | null;
   productType: string | null;
 }
