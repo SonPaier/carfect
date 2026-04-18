@@ -855,6 +855,7 @@ const CustomerEditDrawer = ({
                       <CustomerRemindersTab
                         customerPhone={customer.phone}
                         customerName={customer.name}
+                        customerEmail={customer.email || null}
                         instanceId={instanceId}
                       />
                     )}

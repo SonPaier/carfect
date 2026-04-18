@@ -73,6 +73,7 @@ const mockReminders = [
     vehicle_plate: 'BMW X5',
     reminder_template_id: 'tpl-1',
     reminder_templates: { name: 'Ceramika 36 miesięcy' },
+    channel: 'sms',
   },
   {
     id: 'rem-2',
@@ -84,6 +85,7 @@ const mockReminders = [
     vehicle_plate: 'BMW X5',
     reminder_template_id: 'tpl-1',
     reminder_templates: { name: 'Ceramika 36 miesięcy' },
+    channel: 'sms',
   },
 ];
 
@@ -99,12 +101,14 @@ const mockRemindersAfterAdd = [
     vehicle_plate: 'Audi A4',
     reminder_template_id: 'tpl-2',
     reminder_templates: { name: 'PPF Folia' },
+    channel: 'sms',
   },
 ];
 
 const defaultProps = {
   customerPhone: '+48111222333',
   customerName: 'Jan Kowalski',
+  customerEmail: 'test@example.com',
   instanceId: 'inst-1',
 };
 
@@ -201,6 +205,7 @@ describe('CustomerRemindersTab', () => {
         vehicle_plate: 'Audi A4',
         reminder_template_id: 'tpl-2',
         reminder_templates: { name: 'PPF Folia' },
+        channel: 'sms',
       },
     ];
 

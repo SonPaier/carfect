@@ -31,7 +31,16 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const smsApiToken = Deno.env.get('SMSAPI_TOKEN');
 
+    const smtpHost = Deno.env.get('SMTP_HOST');
+    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
+    const smtpUser = Deno.env.get('SMTP_USER');
+    const smtpPass = Deno.env.get('SMTP_PASS');
+    const smtpFrom = Deno.env.get('SMTP_FROM') || smtpUser;
+
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const markFailed = (id: string) =>
+      supabase.from('customer_reminders').update({ status: 'failed' }).eq('id', id);
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -60,6 +69,24 @@ Deno.serve(async (req) => {
 
     let sentCount = 0;
 
+    // Create SMTP client once if there are email reminders to send
+    const hasEmailReminders = reminders.some((r) => (r.channel ?? 'sms') === 'email');
+    const smtpClient =
+      hasEmailReminders && smtpHost && smtpUser && smtpPass
+        ? new SMTPClient({
+            connection: {
+              hostname: smtpHost,
+              port: smtpPort,
+              tls: true,
+              auth: {
+                username: smtpUser,
+                password: smtpPass,
+              },
+            },
+          })
+        : null;
+
+    try {
     for (const reminder of reminders) {
       try {
         const instance = reminder.instances;
@@ -68,7 +95,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const channel: string = reminder.channel ?? 'sms';
+        const channel = reminder.channel ?? 'sms';
 
         if (channel === 'email') {
           // --- Email branch ---
@@ -77,10 +104,7 @@ Deno.serve(async (req) => {
 
           if (!customerEmail) {
             console.error(`No customer_email for email reminder ${reminder.id}`);
-            await supabase
-              .from('customer_reminders')
-              .update({ status: 'failed' })
-              .eq('id', reminder.id);
+            await markFailed(reminder.id);
             continue;
           }
 
@@ -88,10 +112,12 @@ Deno.serve(async (req) => {
             short_name: instance.short_name || instance.name || '',
             vehicle_plate: reminder.vehicle_plate || '',
             reservation_phone: (instance.reservation_phone || instance.phone || '').replace(/\s/g, ''),
+            customer_name: reminder.customer_name || '',
+            service_type: reminder.service_type || '',
           };
 
-          const rawSubject: string = reminderTemplate?.email_subject || `Przypomnienie - ${instance.name || instance.short_name || ''}`;
-          const rawBody: string = reminderTemplate?.email_body || '';
+          const rawSubject = reminderTemplate?.email_subject || `Przypomnienie - ${instance.name || instance.short_name || ''}`;
+          const rawBody = reminderTemplate?.email_body || '';
 
           const subject = resolvePlaceholders(rawSubject, placeholderVars);
           const body = resolvePlaceholders(rawBody, placeholderVars);
@@ -103,32 +129,11 @@ Deno.serve(async (req) => {
             body,
           });
 
-          const smtpHost = Deno.env.get('SMTP_HOST');
-          const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
-          const smtpUser = Deno.env.get('SMTP_USER');
-          const smtpPass = Deno.env.get('SMTP_PASS');
-          const smtpFrom = Deno.env.get('SMTP_FROM') || smtpUser;
-
-          if (!smtpHost || !smtpUser || !smtpPass) {
+          if (!smtpClient) {
             console.error(`Missing SMTP config for email reminder ${reminder.id}`);
-            await supabase
-              .from('customer_reminders')
-              .update({ status: 'failed' })
-              .eq('id', reminder.id);
+            await markFailed(reminder.id);
             continue;
           }
-
-          const smtpClient = new SMTPClient({
-            connection: {
-              hostname: smtpHost,
-              port: smtpPort,
-              tls: true,
-              auth: {
-                username: smtpUser,
-                password: smtpPass,
-              },
-            },
-          });
 
           const fromName = instance.name || instance.short_name || 'Carfect';
 
@@ -138,8 +143,6 @@ Deno.serve(async (req) => {
             subject,
             html: emailHtml,
           });
-
-          await smtpClient.close();
 
           // Update reminder status
           await supabase
@@ -183,10 +186,7 @@ Deno.serve(async (req) => {
             console.error(
               `Invalid phone for reminder ${reminder.id}: ${normalizedPhone} (${digitsOnly.length} digits)`,
             );
-            await supabase
-              .from('customer_reminders')
-              .update({ status: 'failed' })
-              .eq('id', reminder.id);
+            await markFailed(reminder.id);
             continue;
           }
 
@@ -216,10 +216,7 @@ Deno.serve(async (req) => {
 
             if (!smsResponse.ok) {
               console.error(`SMS API error for reminder ${reminder.id}`);
-              await supabase
-                .from('customer_reminders')
-                .update({ status: 'failed' })
-                .eq('id', reminder.id);
+              await markFailed(reminder.id);
               continue;
             }
           } else {
@@ -246,10 +243,12 @@ Deno.serve(async (req) => {
         }
       } catch (err) {
         console.error(`Error processing reminder ${reminder.id}:`, err);
-        await supabase
-          .from('customer_reminders')
-          .update({ status: 'failed' })
-          .eq('id', reminder.id);
+        await markFailed(reminder.id);
+      }
+    }
+    } finally {
+      if (smtpClient) {
+        await smtpClient.close();
       }
     }
 
