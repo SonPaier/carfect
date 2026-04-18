@@ -2355,7 +2355,8 @@
     },
     "status": {
       "connected": "Włączona",
-      "configure": "Skonfiguruj"
+      "configure": "Skonfiguruj",
+      "comingSoon": "Wkrótce"
     },
     "fakturownia": {
       "title": "Fakturownia",
@@ -2363,6 +2364,10 @@
     },
     "ifirma": {
       "title": "iFirma",
+      "description": "Automatyczne wystawianie faktur dla klientów studia"
+    },
+    "infakt": {
+      "title": "inFakt",
       "description": "Automatyczne wystawianie faktur dla klientów studia"
     },
     "ultrafit": {

@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ultrafitLogo from '@/assets/integrations/ultrafit-logo.png';
 import fakturowniaLogo from '@/assets/integrations/fakturownia-logo.png';
 import ifirmaLogo from '@/assets/integrations/ifirma-logo.jpg';
+import infaktLogo from '@/assets/integrations/infakt-logo.png';
 
 interface IntegrationsViewProps {
   instanceId: string | null;
@@ -72,6 +73,14 @@ export function IntegrationsView({ instanceId, onNavigateToUltrafit }: Integrati
             isActive={isIfirmaActive}
             activeLabel={t('integrations.status.connected')}
             onClick={() => setActiveView('ifirma')}
+          />
+          <IntegrationCard
+            logo={infaktLogo}
+            logoAlt="inFakt"
+            title={t('integrations.infakt.title')}
+            description={t('integrations.infakt.description')}
+            comingSoon
+            comingSoonLabel={t('integrations.status.comingSoon')}
           />
         </div>
       </section>
