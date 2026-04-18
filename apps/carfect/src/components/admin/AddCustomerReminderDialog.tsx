@@ -132,7 +132,7 @@ export function AddCustomerReminderDialog({
     setSelectedVehicleId(null);
     setServiceDate(undefined);
     setReminderTemplateId('');
-    setChannel('sms');
+    setChannel(preferredChannel ?? 'sms');
     setEmailAddress(customerEmail ?? '');
   };
 

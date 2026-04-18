@@ -2212,12 +2212,18 @@
     "noAssignedCustomers": "Brak klientów przypisanych do tego szablonu",
     "channelSms": "SMS",
     "channelEmail": "Email",
-    "channelLabel": "Kanał",
+    "channel": "Kanał",
+    "emailTemplate": "Szablon emaila",
     "emailSubject": "Temat emaila",
+    "emailSubjectPlaceholder": "Temat wiadomości",
     "emailBody": "Treść emaila",
-    "emailPlaceholders": "Dostępne zmienne: {short_name}, {customer_name}, {vehicle_plate}, {service_type}, {reservation_phone}",
-    "smsScheduled": "SMS zaplanowany",
-    "emailScheduled": "Email zaplanowany"
+    "emailBodyPlaceholder": "Treść wiadomości email",
+    "emailPlaceholderHint": "Zmienne: {short_name}, {customer_name}, {vehicle_plate}, {service_type}, {reservation_phone}",
+    "customerEmail": "Email klienta",
+    "customerEmailRequired": "Email jest wymagany dla kanału Email",
+    "customerEmailPlaceholder": "jan@example.com",
+    "preferredChannel": "Kanał przypomnień",
+    "addEmailHint": "Dodaj email klienta"
   },
   "offerReminders": {
     "markAsCompleted": "Oznacz jako zrealizowane",

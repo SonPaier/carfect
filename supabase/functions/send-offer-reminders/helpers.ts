@@ -24,10 +24,11 @@ export function buildReminderEmailHtml(params: {
   const safeInstanceName = escapeHtml(instanceName);
   const safeBody = escapeHtml(body);
   const safeInstancePhone = instancePhone ? escapeHtml(instancePhone) : null;
+  const safeLogoUrl = instanceLogoUrl ? escapeHtml(instanceLogoUrl) : null;
 
-  const logoHtml = instanceLogoUrl
+  const logoHtml = safeLogoUrl
     ? `<div style="text-align:center;padding:30px 0 20px;">
-        <img src="${instanceLogoUrl}" alt="${safeInstanceName}" style="max-height:60px;max-width:200px;" />
+        <img src="${safeLogoUrl}" alt="${safeInstanceName}" style="max-height:60px;max-width:200px;" />
       </div>`
     : `<div style="text-align:center;padding:30px 0 20px;">
         <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${safeInstanceName}</h1>

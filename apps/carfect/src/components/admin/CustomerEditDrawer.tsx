@@ -708,7 +708,7 @@ const CustomerEditDrawer = ({
 
                   {/* Preferred reminder channel */}
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-muted-foreground">Kanał przypomnień</span>
+                    <span className="text-xs text-muted-foreground">{t('reminders.preferredChannel')}</span>
                     <div className="flex gap-1">
                       <button
                         type="button"
@@ -722,7 +722,7 @@ const CustomerEditDrawer = ({
                         className={`px-3 py-1 text-xs rounded-md border transition-colors ${editPreferredChannel === 'email' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white hover:bg-hover border-border'}`}
                         onClick={() => setEditPreferredChannel('email')}
                         disabled={!editEmail}
-                        title={!editEmail ? 'Dodaj email klienta' : undefined}
+                        title={!editEmail ? t('reminders.addEmailHint') : undefined}
                       >
                         Email
                       </button>

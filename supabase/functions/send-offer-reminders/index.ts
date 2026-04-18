@@ -48,6 +48,20 @@ Deno.serve(async (req) => {
     const markFailed = (id: string) =>
       supabase.from('customer_reminders').update({ status: 'failed' }).eq('id', id);
 
+    const markSent = async (reminderId: string, instanceId: string, logPhone: string, logMessage: string, messageType: string) => {
+      await supabase
+        .from('customer_reminders')
+        .update({ status: 'sent', sent_at: new Date().toISOString() })
+        .eq('id', reminderId);
+      await supabase.from('sms_logs').insert({
+        instance_id: instanceId,
+        phone: logPhone,
+        message: logMessage,
+        status: 'sent',
+        message_type: messageType,
+      });
+    };
+
     const today = new Date().toISOString().split('T')[0];
 
     // Fetch due reminders from customer_reminders table
@@ -77,8 +91,11 @@ Deno.serve(async (req) => {
 
     // Create SMTP client once if there are email reminders to send
     const hasEmailReminders = reminders.some((r) => (r.channel ?? 'sms') === 'email');
+    if (hasEmailReminders && !smtpFrom) {
+      console.error('SMTP_FROM is not configured — email reminders will be skipped');
+    }
     const smtpClient =
-      hasEmailReminders && smtpHost && smtpUser && smtpPass
+      hasEmailReminders && smtpHost && smtpUser && smtpPass && smtpFrom
         ? new SMTPClient({
             connection: {
               hostname: smtpHost,
@@ -151,21 +168,7 @@ Deno.serve(async (req) => {
             ...(instance.email ? { replyTo: instance.email } : {}),
           });
 
-          // Update reminder status
-          await supabase
-            .from('customer_reminders')
-            .update({ status: 'sent', sent_at: new Date().toISOString() })
-            .eq('id', reminder.id);
-
-          // Log email
-          await supabase.from('sms_logs').insert({
-            instance_id: reminder.instance_id,
-            phone: customerEmail,
-            message: subject,
-            status: 'sent',
-            message_type: 'customer_reminder_email',
-          });
-
+          await markSent(reminder.id, reminder.instance_id, customerEmail, subject, 'customer_reminder_email');
           sentCount++;
           console.log(`Sent email reminder ${reminder.id} to ${customerEmail}`);
         } else {
@@ -175,13 +178,11 @@ Deno.serve(async (req) => {
           const template = SMS_TEMPLATES[reminder.service_type] || SMS_TEMPLATES.serwis;
 
           // Build SMS message
-          let message = template;
-          message = message.replace('{short_name}', instance.short_name || '');
-          message = message.replace('{vehicle_plate}', reminder.vehicle_plate || '');
-          message = message.replace(
-            '{reservation_phone}',
-            (instance.reservation_phone || '').replace(/\s/g, ''),
-          );
+          const message = resolvePlaceholders(template, {
+            short_name: instance.short_name || '',
+            vehicle_plate: reminder.vehicle_plate || '',
+            reservation_phone: (instance.reservation_phone || '').replace(/\s/g, ''),
+          });
 
           // Normalize phone number
           const normalizedPhone = normalizePhoneOrFallback(reminder.customer_phone, 'PL');
@@ -230,21 +231,7 @@ Deno.serve(async (req) => {
             console.log(`[DEV] Would send SMS to ${normalizedPhone}: ${message}`);
           }
 
-          // Update reminder status
-          await supabase
-            .from('customer_reminders')
-            .update({ status: 'sent', sent_at: new Date().toISOString() })
-            .eq('id', reminder.id);
-
-          // Log SMS
-          await supabase.from('sms_logs').insert({
-            instance_id: reminder.instance_id,
-            phone: normalizedPhone,
-            message: message,
-            status: 'sent',
-            message_type: 'customer_reminder',
-          });
-
+          await markSent(reminder.id, reminder.instance_id, normalizedPhone, message, 'customer_reminder');
           sentCount++;
           console.log(`Sent reminder ${reminder.id} to ${normalizedPhone}`);
         }
