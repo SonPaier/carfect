@@ -2359,11 +2359,11 @@
     },
     "fakturownia": {
       "title": "Fakturownia",
-      "description": "Automatyczne wystawianie faktur przez Fakturownia.pl"
+      "description": "Automatyczne wystawianie faktur dla klientów studia"
     },
     "ifirma": {
       "title": "iFirma",
-      "description": "Wystawiaj faktury przez iFirma.pl"
+      "description": "Automatyczne wystawianie faktur dla klientów studia"
     },
     "ultrafit": {
       "title": "Ultrafit Poland",
