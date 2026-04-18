@@ -254,7 +254,7 @@ describe("MobileBottomNav", () => {
       await openMoreMenu();
       
       const customersButton = screen.getByText(/Klienci/i).closest("button");
-      expect(customersButton).toHaveClass("bg-muted");
+      expect(customersButton).toHaveClass("bg-sidebar-accent");
     });
 
   });
