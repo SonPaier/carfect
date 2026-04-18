@@ -127,10 +127,6 @@ const MobileBottomNav = ({
           ...(userRole !== 'employee'
             ? [{ id: 'settings' as ViewType, icon: Settings, label: t('navigation.settings') }]
             : []),
-          // Hale (when enabled)
-          ...(hallViewEnabled
-            ? [{ id: 'halls' as ViewType, icon: Building2, label: t('navigation.halls') }]
-            : []),
         ];
 
   return (
