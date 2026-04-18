@@ -42,7 +42,7 @@ import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChang
 // Re-export types used externally
 export type { OrderPackage, OrderProduct, DeliveryType };
 
-type PaymentMethod = 'cod' | 'transfer' | 'free' | 'cash' | 'card';
+type PaymentMethod = 'cod' | 'transfer' | 'free' | 'cash' | 'card' | 'tab';
 
 export interface EditOrderData {
   id: string;
@@ -483,7 +483,7 @@ const AddSalesOrderDrawer = ({
             return {
               order_id: editOrder.id,
               product_id: p.productId || null,
-              variant_id: p.variantId || null,
+              variant_id: p.productType === 'other' ? null : p.variantId || null,
               name: p.name,
               quantity: qty,
               price_net: p.priceNet,
@@ -570,7 +570,7 @@ const AddSalesOrderDrawer = ({
             return {
               order_id: order.id,
               product_id: p.productId || null,
-              variant_id: p.variantId || null,
+              variant_id: p.productType === 'other' ? null : p.variantId || null,
               name: p.name,
               quantity: qty,
               price_net: p.priceNet,

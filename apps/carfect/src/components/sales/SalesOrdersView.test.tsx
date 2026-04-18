@@ -244,7 +244,7 @@ describe('SalesOrdersView', () => {
     render(<SalesOrdersView />);
 
     const searchInput = screen.getByPlaceholderText(
-      'Szukaj po firmie, mieście, osobie, produkcie...',
+      'Szukaj po firmie, mieście, osobie...',
     );
     expect(searchInput).toBeInTheDocument();
 
