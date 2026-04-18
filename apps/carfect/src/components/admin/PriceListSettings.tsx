@@ -640,17 +640,6 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button
-            onClick={() => {
-              const isAdminPath = location.pathname.startsWith('/admin');
-              navigate(isAdminPath ? '/admin/reminders' : '/reminders');
-            }}
-            variant="outline"
-            className="gap-2 bg-white"
-          >
-            <Bell className="w-4 h-4" />
-            {t('reminders.title')}
-          </Button>
-          <Button
             onClick={() => setCategoryManagementOpen(true)}
             variant="outline"
             className="gap-2 bg-white"

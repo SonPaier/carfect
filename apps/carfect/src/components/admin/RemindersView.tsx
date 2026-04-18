@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Loader2, MoreHorizontal, Trash2, Users, ArrowLeft, Bell } from 'lucide-react';
+import { Plus, Loader2, MoreHorizontal, Trash2, Users, Bell } from 'lucide-react';
+import ReminderTemplateEditPage from '@/pages/ReminderTemplateEditPage';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import {
@@ -36,6 +37,7 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<TemplateWithCount[]>([]);
+  const [editingShortId, setEditingShortId] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     template: ReminderTemplate | null;
@@ -142,23 +144,30 @@ export default function RemindersView({ instanceId, onNavigateBack }: RemindersV
   const handleTemplateClick = (template: ReminderTemplate) => {
     // Use first 8 chars of UUID for short URL
     const shortId = template.id.substring(0, 8);
-    navigate(`${remindersBasePath}/${shortId}`);
+    setEditingShortId(shortId);
   };
 
   const handleAddNew = () => {
-    navigate(`${remindersBasePath}/new`);
+    setEditingShortId('new');
   };
+
+  if (editingShortId) {
+    return (
+      <ReminderTemplateEditPage
+        inlineShortId={editingShortId}
+        onBack={() => {
+          setEditingShortId(null);
+          fetchTemplates();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          {onNavigateBack && (
-            <Button variant="ghost" size="icon" onClick={onNavigateBack} className="shrink-0">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
           <div>
             <h1 className="text-xl font-semibold flex items-center gap-2">
               {t('reminders.title')}

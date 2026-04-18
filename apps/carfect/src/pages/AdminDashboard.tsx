@@ -1803,10 +1803,7 @@ const AdminDashboard = () => {
             )}
 
             {currentView === 'reminders' && instanceId && (
-              <RemindersView
-                instanceId={instanceId}
-                onNavigateBack={() => setCurrentView('pricelist')}
-              />
+              <RemindersView instanceId={instanceId} />
             )}
 
             {currentView === 'ai_analyst' && instanceId && <AiAnalystTab instanceId={instanceId} />}

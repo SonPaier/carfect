@@ -51,11 +51,17 @@ const SMS_TEMPLATES: Record<string, string> = {
     '{short_name}: Zapraszamy na odswiezenie powloki pojazdu {vehicle_model}. Kontakt: {reservation_phone}',
 };
 
-export default function ReminderTemplateEditPage() {
+interface ReminderTemplateEditPageProps {
+  inlineShortId?: string;
+  onBack?: () => void;
+}
+
+export default function ReminderTemplateEditPage({ inlineShortId, onBack }: ReminderTemplateEditPageProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { shortId } = useParams<{ shortId: string }>();
+  const { shortId: routeShortId } = useParams<{ shortId: string }>();
+  const shortId = inlineShortId || routeShortId;
   const [searchParams] = useSearchParams();
   const { user, roles, loading: authLoading } = useAuth();
 
@@ -201,8 +207,9 @@ export default function ReminderTemplateEditPage() {
       }
 
       // If we came from ServiceFormDialog, return with the new template ID
-      if (returnToService === 'true' && serviceId && newTemplateId) {
-        // Navigate back with template ID in URL for assignment
+      if (onBack) {
+        onBack();
+      } else if (returnToService === 'true' && serviceId && newTemplateId) {
         const pricingPath = isAdminPath ? '/admin/pricelist' : '/pricelist';
         navigate(`${pricingPath}?serviceId=${serviceId}&assignedReminderId=${newTemplateId}`);
       } else {
@@ -240,8 +247,11 @@ export default function ReminderTemplateEditPage() {
   };
 
   const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (returnToService === 'true') {
-      // Go back to pricelist without creating template
       const pricingPath = isAdminPath ? '/admin/pricelist' : '/pricelist';
       navigate(pricingPath);
     } else {
