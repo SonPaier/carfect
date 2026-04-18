@@ -1,5 +1,4 @@
-import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { mapRollUsageToResponse } from './helpers.ts';
 import type { RollUsageRow, RollRow } from './helpers.ts';
 
@@ -27,7 +26,7 @@ interface RollUsageWithRoll {
   sales_rolls: RollRow;
 }
 
-serve(async (req: Request): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

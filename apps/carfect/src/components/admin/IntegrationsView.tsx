@@ -7,7 +7,7 @@ import { useUltrafitLink } from '@/hooks/useUltrafitLink';
 import { supabase } from '@/integrations/supabase/client';
 import ultrafitLogo from '@/assets/integrations/ultrafit-logo.png';
 import fakturowniaLogo from '@/assets/integrations/fakturownia-logo.png';
-import ifirmaLogo from '@/assets/integrations/ifirma-logo.png';
+import ifirmaLogo from '@/assets/integrations/ifirma-logo.jpg';
 
 interface IntegrationsViewProps {
   instanceId: string | null;
