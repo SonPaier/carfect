@@ -7,3 +7,6 @@ export { useInvoiceForm } from './useInvoiceForm';
 export type { UseInvoiceFormOptions, PriceMode } from './useInvoiceForm';
 export { CreateInvoiceDrawer } from './CreateInvoiceDrawer';
 export { IntegrationsSettingsView } from './IntegrationsSettingsView';
+export { IntegrationCard } from './IntegrationCard';
+export { FakturowniaSettingsView } from './FakturowniaSettingsView';
+export { IfirmaSettingsView } from './IfirmaSettingsView';
