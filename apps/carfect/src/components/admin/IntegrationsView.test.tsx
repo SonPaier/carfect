@@ -16,14 +16,11 @@ vi.mock('react-i18next', () => ({
         'integrations.ifirma.title': 'iFirma',
         'integrations.ifirma.description': 'Wystawiaj faktury przez iFirma.pl',
         'integrations.ultrafit.title': 'Ultrafit Poland',
-        'integrations.ultrafit.description': 'Zamawiasz folie w Ultrafit Poland? Połącz konto i śledź swoje zamówienia.',
+        'integrations.ultrafit.description': 'Zamawiasz folie w Ultrafit Poland? Połącz konto.',
         'integrations.ultrafit.descriptionConnected': 'Twoje zamówienia Ultrafit są dostępne w Carfect.',
         'integrations.ultrafit.requestAccess': 'Poproś o dostęp',
         'integrations.ultrafit.contactNumber': 'tel. 666 610 222',
-        'integrations.ultrafit.connected': 'Połączono',
-        'integrations.ultrafit.goToOrders': 'Przejdź do zamówień',
-        'integrations.status.connected': 'Połączono',
-        'integrations.status.configure': 'Skonfiguruj',
+        'integrations.status.connected': 'Włączona',
       };
       return translations[key] ?? key;
     },
@@ -97,37 +94,34 @@ describe('IntegrationsView', () => {
     mockUseInvoicingSettings.mockReturnValue({ settings: null, isLoading: false });
   });
 
-  it('renders invoicing section header', () => {
+  it('renders both section headers', () => {
     renderView();
     expect(screen.getByText('Płatności i fakturowanie')).toBeInTheDocument();
-  });
-
-  it('renders PPF distributors section header', () => {
-    renderView();
     expect(screen.getByText('Dystrybutorzy i producenci folii PPF')).toBeInTheDocument();
   });
 
-  it('renders Ultrafit card with "request access" button when not linked', () => {
-    mockUseUltrafitLink.mockReturnValue({ isLinked: false, isLoading: false, externalCustomerId: null });
+  it('renders Ultrafit card with request access info when not linked', () => {
     renderView();
-    expect(screen.getByText('Poproś o dostęp')).toBeInTheDocument();
-    expect(screen.getByText('tel. 666 610 222')).toBeInTheDocument();
+    expect(screen.getByText('Ultrafit Poland')).toBeInTheDocument();
+    expect(screen.getByText(/Poproś o dostęp/)).toBeInTheDocument();
+    expect(screen.getByText(/666 610 222/)).toBeInTheDocument();
   });
 
-  it('renders Ultrafit card with "go to orders" button when linked', () => {
+  it('renders Ultrafit card with active label when linked', () => {
     mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid' });
     renderView();
-    expect(screen.getByText('Przejdź do zamówień')).toBeInTheDocument();
-    expect(screen.queryByText('Poproś o dostęp')).not.toBeInTheDocument();
+    expect(screen.getByText('Włączona')).toBeInTheDocument();
+    expect(screen.queryByText(/Poproś o dostęp/)).not.toBeInTheDocument();
   });
 
-  it('calls onNavigateToUltrafit when "go to orders" button is clicked', async () => {
+  it('calls onNavigateToUltrafit when linked Ultrafit card is clicked', async () => {
     const user = userEvent.setup();
     mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid' });
     const onNavigate = vi.fn();
     renderView(onNavigate);
 
-    await user.click(screen.getByText('Przejdź do zamówień'));
+    const ultrafitCard = screen.getByRole('button', { name: /ultrafit/i });
+    await user.click(ultrafitCard);
     expect(onNavigate).toHaveBeenCalledOnce();
   });
 
@@ -141,17 +135,15 @@ describe('IntegrationsView', () => {
     expect(screen.getByText('FakturowniaSettingsView')).toBeInTheDocument();
   });
 
-  it('returns to list when back button is clicked from FakturowniaSettingsView', async () => {
+  it('returns to list when back button is clicked from settings view', async () => {
     const user = userEvent.setup();
     renderView();
 
     const fakturowniaCard = screen.getByRole('button', { name: /fakturownia/i });
     await user.click(fakturowniaCard);
-
     expect(screen.getByText('FakturowniaSettingsView')).toBeInTheDocument();
 
     await user.click(screen.getByText('Wróć'));
-
     expect(screen.queryByText('FakturowniaSettingsView')).not.toBeInTheDocument();
     expect(screen.getByText('Płatności i fakturowanie')).toBeInTheDocument();
   });

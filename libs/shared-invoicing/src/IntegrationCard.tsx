@@ -1,4 +1,4 @@
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight } from 'lucide-react';
 import { cn } from '@shared/ui';
 
 interface IntegrationCardProps {
@@ -6,9 +6,8 @@ interface IntegrationCardProps {
   logoAlt: string;
   title: string;
   description: string;
-  isConnected: boolean;
-  connectedLabel: string;
-  configureLabel: string;
+  isActive?: boolean;
+  activeLabel?: string;
   onClick?: () => void;
   children?: React.ReactNode;
   className?: string;
@@ -19,9 +18,8 @@ export function IntegrationCard({
   logoAlt,
   title,
   description,
-  isConnected,
-  connectedLabel,
-  configureLabel,
+  isActive,
+  activeLabel,
   onClick,
   children,
   className,
@@ -29,8 +27,9 @@ export function IntegrationCard({
   return (
     <div
       className={cn(
-        'bg-white border border-border/50 rounded-lg p-5 flex flex-col gap-3 cursor-pointer hover:border-border transition-colors',
-        !onClick && 'cursor-default hover:border-border/50',
+        'bg-white border border-border/50 rounded-xl p-5 flex flex-col gap-3 transition-all',
+        onClick && 'cursor-pointer hover:border-border hover:shadow-sm',
+        !onClick && 'cursor-default',
         className,
       )}
       onClick={onClick}
@@ -38,21 +37,23 @@ export function IntegrationCard({
     >
       <div className="flex items-start justify-between gap-3">
         <img src={logo} alt={logoAlt} className="h-8 object-contain" />
-        {isConnected && (
-          <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+        {isActive && activeLabel && (
+          <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            {connectedLabel}
+            {activeLabel}
           </span>
         )}
       </div>
-      <div>
+      <div className="flex-1">
         <div className="font-medium text-sm">{title}</div>
-        <div className="text-xs text-muted-foreground mt-1">{description}</div>
+        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</div>
       </div>
-      {!isConnected && !children && (
-        <div className="text-xs text-muted-foreground">{configureLabel}</div>
-      )}
       {children && <div className="mt-auto">{children}</div>}
+      {onClick && !children && (
+        <div className="flex justify-end">
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
     </div>
   );
 }

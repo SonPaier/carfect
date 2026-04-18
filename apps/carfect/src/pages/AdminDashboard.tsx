@@ -72,7 +72,9 @@ import SettingsView from '@/components/admin/SettingsView';
 import PriceListSettings from '@/components/admin/PriceListSettings';
 import { ProtocolsView } from '@/components/protocols/ProtocolsView';
 import RemindersView from '@/components/admin/RemindersView';
+import UltrafitOrdersView from '@/components/ultrafit/UltrafitOrdersView';
 import AiAnalystTab from '@/components/admin/AiAnalystTab';
+import { useUltrafitLink } from '@/hooks/useUltrafitLink';
 import { EmployeesView } from '@/components/admin/employees';
 import { AddTrainingDrawer } from '@/components/admin/AddTrainingDrawer';
 import { TrainingDetailsDrawer } from '@/components/admin/TrainingDetailsDrawer';
@@ -115,7 +117,8 @@ type ViewType =
   | 'protocols'
   | 'reminders'
   | 'employees'
-  | 'ai_analyst';
+  | 'ai_analyst'
+  | 'ultrafit';
 const validViews: ViewType[] = [
   'calendar',
   'reservations',
@@ -131,6 +134,7 @@ const validViews: ViewType[] = [
   'reminders',
   'employees',
   'ai_analyst',
+  'ultrafit',
 ];
 
 // Pure helper: find nearest working day starting from `date` (checks up to 7 days ahead)
@@ -302,6 +306,7 @@ const AdminDashboard = () => {
 
   // Combined feature check: checks both plan features and instance-level features
   const { hasFeature } = useCombinedFeatures(instanceId);
+  const { isLinked: isUltrafitLinked } = useUltrafitLink(instanceId);
 
   // CACHED HOOKS - using React Query with staleTime for static data
   const { data: cachedStations = [] } = useStations(instanceId);
@@ -1465,7 +1470,27 @@ const AdminDashboard = () => {
                       {!sidebarCollapsed && 'Przypomnienia'}
                     </Button>
                   )}
-                  {/* 10. Ustawienia - admin only, always last */}
+                  {/* 10. Ultrafit - only when linked and not employee */}
+                  {isUltrafitLinked && userRole !== 'employee' && (
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        'w-full gap-3',
+                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                        currentView === 'ultrafit' &&
+                          'bg-sidebar-accent text-sidebar-accent-foreground',
+                      )}
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setCurrentView('ultrafit');
+                      }}
+                      title="Ultrafit"
+                    >
+                      <Package className="w-4 h-4 shrink-0" />
+                      {!sidebarCollapsed && 'Ultrafit'}
+                    </Button>
+                  )}
+                  {/* 11. Ustawienia - admin only, always last */}
                   {userRole !== 'employee' && (
                     <Button
                       variant="ghost"
@@ -1763,6 +1788,7 @@ const AdminDashboard = () => {
                 onWorkingHoursUpdate={() =>
                   queryClient.invalidateQueries({ queryKey: ['working_hours', instanceId] })
                 }
+                onNavigateToUltrafit={() => setCurrentView('ultrafit')}
               />
             )}
 
@@ -1804,6 +1830,10 @@ const AdminDashboard = () => {
 
             {currentView === 'reminders' && instanceId && (
               <RemindersView instanceId={instanceId} />
+            )}
+
+            {currentView === 'ultrafit' && (
+              <UltrafitOrdersView instanceId={instanceId} />
             )}
 
             {currentView === 'ai_analyst' && instanceId && <AiAnalystTab instanceId={instanceId} />}
