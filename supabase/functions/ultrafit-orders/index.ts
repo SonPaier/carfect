@@ -128,7 +128,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           name,
           quantity,
           price_net,
-          unit,
+          price_unit,
           vehicle,
           product_type
         )
@@ -156,7 +156,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       tracking_url: raw.tracking_url as string | null,
       delivery_type: raw.delivery_type as string | null,
       items: ((raw.sales_order_items as OrderItemRow[]) ?? []),
-    } satisfies OrderRow & { items: OrderItemRow[] }));
+    } as OrderRow & { items: OrderItemRow[] }));
 
     // Step 5: Apply search filter
     const filtered = filterOrdersBySearch(orders, search);
@@ -170,7 +170,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse({ orders: responseOrders, totalCount }, 200);
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Error in ultrafit-orders:', err.message);
+    console.error('Error in ultrafit-orders:', err.message, err.stack);
     return jsonResponse({ error: 'Internal server error' }, 500);
   }
 });

@@ -27,7 +27,7 @@ export interface OrderItemRow {
   name: string;
   quantity: number;
   price_net: number;
-  unit: string;
+  price_unit: string;
   vehicle: string | null;
   product_type: string | null;
 }
@@ -43,7 +43,7 @@ export interface UltrafitOrderItemResponse {
   name: string;
   quantity: number;
   priceNet: number;
-  unit: string;
+  price_unit: string;
   vehicle: string | null;
   productType: string | null;
 }
@@ -111,7 +111,7 @@ export function mapOrderToResponse(
       name: item.name,
       quantity: item.quantity,
       priceNet: item.price_net,
-      unit: item.unit,
+      unit: item.price_unit,
       vehicle: item.vehicle,
       productType: item.product_type,
     })),
