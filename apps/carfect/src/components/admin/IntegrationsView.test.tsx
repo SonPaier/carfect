@@ -21,6 +21,10 @@ vi.mock('react-i18next', () => ({
         'integrations.ultrafit.requestAccess': 'Poproś o dostęp',
         'integrations.ultrafit.contactNumber': 'tel. 666 610 222',
         'integrations.status.connected': 'Włączona',
+        'integrations.ultrafit.disconnect': 'Wyłącz integrację',
+        'integrations.ultrafit.disconnectTitle': 'Wyłączyć integrację Ultrafit?',
+        'integrations.ultrafit.disconnectDescription': 'Po wyłączeniu nie będziesz mieć dostępu.',
+        'common.cancel': 'Anuluj',
       };
       return translations[key] ?? key;
     },
@@ -38,7 +42,13 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// Mock sonner toast
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
+
 // Mock useUltrafitLink
+const mockDisconnect = vi.fn();
 const mockUseUltrafitLink = vi.fn();
 vi.mock('@/hooks/useUltrafitLink', () => ({
   useUltrafitLink: (...args: unknown[]) => mockUseUltrafitLink(...args),
@@ -69,7 +79,8 @@ vi.mock('@shared/invoicing', async (importOriginal) => {
 // Mock logo imports
 vi.mock('@/assets/integrations/ultrafit-logo.png', () => ({ default: 'ultrafit-logo.png' }));
 vi.mock('@/assets/integrations/fakturownia-logo.png', () => ({ default: 'fakturownia-logo.png' }));
-vi.mock('@/assets/integrations/ifirma-logo.png', () => ({ default: 'ifirma-logo.png' }));
+vi.mock('@/assets/integrations/ifirma-logo.jpg', () => ({ default: 'ifirma-logo.jpg' }));
+vi.mock('@/assets/integrations/infakt-logo.png', () => ({ default: 'infakt-logo.png' }));
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -90,7 +101,8 @@ function renderView(onNavigateToUltrafit = vi.fn()) {
 describe('IntegrationsView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseUltrafitLink.mockReturnValue({ isLinked: false, isLoading: false, externalCustomerId: null });
+    mockDisconnect.mockResolvedValue(undefined);
+    mockUseUltrafitLink.mockReturnValue({ isLinked: false, isLoading: false, externalCustomerId: null, disconnect: mockDisconnect, isDisconnecting: false });
     mockUseInvoicingSettings.mockReturnValue({ settings: null, isLoading: false });
   });
 
@@ -108,7 +120,7 @@ describe('IntegrationsView', () => {
   });
 
   it('renders Ultrafit card with active label when linked', () => {
-    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid' });
+    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid', disconnect: mockDisconnect, isDisconnecting: false });
     renderView();
     expect(screen.getByText('Włączona')).toBeInTheDocument();
     expect(screen.queryByText(/Poproś o dostęp/)).not.toBeInTheDocument();
@@ -116,7 +128,7 @@ describe('IntegrationsView', () => {
 
   it('calls onNavigateToUltrafit when linked Ultrafit card is clicked', async () => {
     const user = userEvent.setup();
-    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid' });
+    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid', disconnect: mockDisconnect, isDisconnecting: false });
     const onNavigate = vi.fn();
     renderView(onNavigate);
 
@@ -146,5 +158,45 @@ describe('IntegrationsView', () => {
     await user.click(screen.getByText('Wróć'));
     expect(screen.queryByText('FakturowniaSettingsView')).not.toBeInTheDocument();
     expect(screen.getByText('Płatności i fakturowanie')).toBeInTheDocument();
+  });
+
+  it('shows disconnect option in menu when Ultrafit is linked', async () => {
+    const user = userEvent.setup();
+    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid', disconnect: mockDisconnect, isDisconnecting: false });
+    renderView();
+
+    const menuTrigger = screen.getByRole('button', { name: '' });
+    await user.click(menuTrigger);
+
+    expect(screen.getByText('Wyłącz integrację')).toBeInTheDocument();
+  });
+
+  it('shows confirm dialog when disconnect is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid', disconnect: mockDisconnect, isDisconnecting: false });
+    renderView();
+
+    const menuTrigger = screen.getByRole('button', { name: '' });
+    await user.click(menuTrigger);
+    await user.click(screen.getByText('Wyłącz integrację'));
+
+    expect(screen.getByText('Wyłączyć integrację Ultrafit?')).toBeInTheDocument();
+    expect(screen.getByText('Anuluj')).toBeInTheDocument();
+  });
+
+  it('calls disconnect when confirm is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseUltrafitLink.mockReturnValue({ isLinked: true, isLoading: false, externalCustomerId: 'ext-uuid', disconnect: mockDisconnect, isDisconnecting: false });
+    renderView();
+
+    const menuTrigger = screen.getByRole('button', { name: '' });
+    await user.click(menuTrigger);
+    await user.click(screen.getByText('Wyłącz integrację'));
+
+    const confirmButtons = screen.getAllByText('Wyłącz integrację');
+    const confirmButton = confirmButtons[confirmButtons.length - 1];
+    await user.click(confirmButton);
+
+    expect(mockDisconnect).toHaveBeenCalledOnce();
   });
 });
