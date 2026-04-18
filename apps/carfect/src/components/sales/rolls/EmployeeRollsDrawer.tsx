@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { X, ChevronLeft, ChevronRight, Loader2, Plus } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import { ConfirmDialog } from '@shared/ui';
 import { toast } from 'sonner';
-import { fetchWorkerRollUsagesForMonth, fetchWorkerProfiles, createScrapUsage, type WorkerRollUsageWithRoll } from '../services/rollService';
+import { fetchWorkerRollUsagesForMonth, fetchWorkerProfiles, createScrapUsage, deleteRollUsage, type WorkerRollUsageWithRoll } from '../services/rollService';
 
 interface EmployeeRollsDrawerProps {
   open: boolean;
@@ -29,6 +30,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
   const [addNote, setAddNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !instanceId) return;
@@ -53,6 +55,19 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
       toast.error('Nie udało się dodać zużycia');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteUsage = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteRollUsage(deleteTarget);
+      toast.success('Zużycie usunięte');
+      setRefreshKey((k) => k + 1);
+    } catch {
+      toast.error('Nie udało się usunąć');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -253,6 +268,15 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
                               <td className="px-3 py-2 text-right text-foreground font-medium">
                                 {usage.usedM2.toFixed(2)}
                               </td>
+                              <td className="px-1 py-2 w-[30px]">
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteTarget(usage.id)}
+                                  className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
                             </tr>
                           ))}
                           <tr className="bg-primary/10">
@@ -262,6 +286,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
                             <td className="px-3 py-2 text-right text-foreground font-bold">
                               {workerTotal.toFixed(2)} m²
                             </td>
+                            <td />
                           </tr>
                         </tbody>
                       </table>
@@ -277,6 +302,16 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
           )}
         </div>
       </SheetContent>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Usuń zużycie"
+        description="Czy na pewno chcesz usunąć ten wpis zużycia?"
+        confirmLabel="Usuń"
+        onConfirm={handleDeleteUsage}
+        variant="destructive"
+      />
     </Sheet>
   );
 };

@@ -1407,25 +1407,23 @@ const AdminDashboard = () => {
                     </Button>
                   )}
                   {/* 7. Usługi - admin only */}
-                  {userRole !== 'employee' && (
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        'w-full gap-3',
-                        sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
-                        currentView === 'pricelist' &&
-                          'bg-sidebar-accent text-sidebar-accent-foreground',
-                      )}
-                      onClick={() => {
-                        setSidebarOpen(false);
-                        setCurrentView('pricelist');
-                      }}
-                      title="Usługi"
-                    >
-                      <BadgeDollarSign className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Usługi'}
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      'w-full gap-3',
+                      sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
+                      currentView === 'pricelist' &&
+                        'bg-sidebar-accent text-sidebar-accent-foreground',
+                    )}
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      setCurrentView('pricelist');
+                    }}
+                    title="Usługi"
+                  >
+                    <BadgeDollarSign className="w-4 h-4 shrink-0" />
+                    {!sidebarCollapsed && 'Usługi'}
+                  </Button>
                   {/* 8. Powiadomienia - ukryte */}
                   {/* AI Analyst - hidden until env vars deployed */}
                   {/* {hasFeature('ai_analyst') && (
