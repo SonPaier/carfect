@@ -42,7 +42,7 @@ export function IntegrationCard({
       <div className="flex items-start justify-between gap-3">
         <img src={logo} alt={logoAlt} className="h-8 object-contain" />
         {comingSoon && comingSoonLabel && (
-          <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-full">
+          <span className="text-xs text-foreground font-medium bg-gray-100 px-2 py-0.5 rounded-full">
             {comingSoonLabel}
           </span>
         )}
