@@ -5601,7 +5601,9 @@
     "faultPhotos": "Fehlerfotos",
     "damagePhotoAlt": "Schadensfoto {{number}}",
     "services": "Dienstleistungen",
-    "total": "Summe"
+    "total": "Summe",
+    "protocolTypeReception": "Annahme",
+    "protocolTypePickup": "Abholung"
   },
   "common:currency": "Common:currency",
   "salesDashboard": {

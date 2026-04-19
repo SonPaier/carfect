@@ -5636,7 +5636,9 @@
     "faultPhotos": "Zdjęcia usterek",
     "damagePhotoAlt": "Zdjęcie uszkodzenia {{number}}",
     "services": "Usługi",
-    "total": "Suma"
+    "total": "Suma",
+    "protocolTypeReception": "przyjęcia",
+    "protocolTypePickup": "odbioru"
   },
   "common:currency": "Common:currency"
 }

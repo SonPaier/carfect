@@ -5638,7 +5638,9 @@
     "faultPhotos": "Fault photos",
     "damagePhotoAlt": "Damage photo {{number}}",
     "services": "Services",
-    "total": "Total"
+    "total": "Total",
+    "protocolTypeReception": "reception",
+    "protocolTypePickup": "pickup"
   },
   "common:currency": "Common:currency"
 }
