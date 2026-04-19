@@ -195,7 +195,7 @@ export function TrainingDetailsDrawer({
                         : 'bg-pink-200 text-pink-900 hover:bg-pink-300'
                     }
                   >
-                    {isSoldOut ? 'Zamknięte' : 'Otwarte'}
+                    {isSoldOut ? t('trainingDetails.closed') : t('trainingDetails.open')}
                   </Badge>
                   {!readOnly && (
                     <Switch
@@ -228,19 +228,19 @@ export function TrainingDetailsDrawer({
               {/* Station */}
               {training.station && (
                 <div>
-                  <div className="text-xs text-muted-foreground">Stanowisko</div>
+                  <div className="text-xs text-muted-foreground">{t('trainingDetails.station')}</div>
                   <div className="font-medium text-foreground">{training.station.name}</div>
                 </div>
               )}
 
               {/* Employees */}
               <div>
-                <div className="text-xs text-muted-foreground mb-1">Przypisani pracownicy</div>
+                <div className="text-xs text-muted-foreground mb-1">{t('trainingDetails.assignedEmployees')}</div>
                 <div className="flex flex-wrap gap-2 items-center">
                   {training.assigned_employee_ids?.length > 0 &&
                     training.assigned_employee_ids.map((empId) => {
                       const emp = employees.find((e) => e.id === empId);
-                      const name = emp?.name || 'Usunięty';
+                      const name = emp?.name || t('trainingDetails.removed');
                       return (
                         <span
                           key={empId}
@@ -257,7 +257,7 @@ export function TrainingDetailsDrawer({
                       onClick={() => setEmployeeDrawerOpen(true)}
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Dodaj
+                      {t('common.add')}
                     </button>
                   )}
                 </div>
@@ -265,7 +265,7 @@ export function TrainingDetailsDrawer({
 
               {/* Internal Notes */}
               <div>
-                <div className="text-xs text-muted-foreground mb-1">Notatki wewnętrzne</div>
+                <div className="text-xs text-muted-foreground mb-1">{t('trainingDetails.internalNotes')}</div>
                 {editingNotes ? (
                   <Textarea
                     ref={notesRef}
@@ -285,7 +285,7 @@ export function TrainingDetailsDrawer({
                     }`}
                     onClick={() => !readOnly && setEditingNotes(true)}
                   >
-                    {localDescription || 'Brak notatek wewnętrznych'}
+                    {localDescription || t('trainingDetails.noInternalNotes')}
                   </p>
                 )}
               </div>

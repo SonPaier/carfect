@@ -161,7 +161,7 @@ function EmbedLeadFormContent() {
     if (!formData.phone.trim()) {
       errors.phone = t('embed.validation.phoneRequired');
     } else if (phoneDigits.length < 9) {
-      errors.phone = 'Numer telefonu musi mieć minimum 9 cyfr';
+      errors.phone = t('embedLeadForm.phoneMinDigits');
     }
 
     if (!formData.vehicleModel.trim()) {
@@ -169,11 +169,11 @@ function EmbedLeadFormContent() {
     }
 
     if (!formData.paintColor.trim()) {
-      errors.paintColor = 'Kolor lakieru jest wymagany';
+      errors.paintColor = t('embedLeadForm.paintColorRequired');
     }
 
     if (!formData.paintFinish) {
-      errors.paintFinish = 'Wybierz rodzaj lakieru';
+      errors.paintFinish = t('embedLeadForm.selectPaintType');
     }
 
     if (formData.selectedTemplates.length === 0) {
@@ -468,7 +468,7 @@ function EmbedLeadFormContent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paintColor">Kolor lakieru *</Label>
+              <Label htmlFor="paintColor">{t('embedLeadForm.paintColor')} *</Label>
               <Input
                 id="paintColor"
                 value={formData.paintColor}
@@ -478,7 +478,7 @@ function EmbedLeadFormContent() {
                     setValidationErrors((prev) => ({ ...prev, paintColor: '' }));
                   }
                 }}
-                placeholder="np. Czarny metalik, Biały perłowy"
+                placeholder={t('embedLeadForm.paintColorPlaceholder')}
                 className={validationErrors.paintColor ? 'border-destructive' : ''}
               />
               {validationErrors.paintColor && (
@@ -487,7 +487,7 @@ function EmbedLeadFormContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>Rodzaj lakieru *</Label>
+              <Label>{t('embedLeadForm.paintType')} *</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -501,7 +501,7 @@ function EmbedLeadFormContent() {
                     }
                   }}
                 >
-                  Połysk
+                  {t('customerData.paintGloss')}
                 </Button>
                 <Button
                   type="button"
@@ -515,7 +515,7 @@ function EmbedLeadFormContent() {
                     }
                   }}
                 >
-                  Mat
+                  {t('customerData.paintMatte')}
                 </Button>
               </div>
               {validationErrors.paintFinish && (

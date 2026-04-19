@@ -128,13 +128,13 @@ export function EmployeeSelectionDrawer({
         <ScrollArea className="flex-1 px-4">
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground">
-              Ładowanie...
+              {t('common.loading')}
             </div>
           ) : filteredEmployees.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
-              {searchQuery 
-                ? 'Brak wyników wyszukiwania'
-                : 'Brak aktywnych pracowników'
+              {searchQuery
+                ? t('employeeSelection.noSearchResults')
+                : t('employeeSelection.noActiveEmployees')
               }
             </div>
           ) : (
@@ -183,7 +183,7 @@ export function EmployeeSelectionDrawer({
             className="w-full"
             disabled={isLoading}
           >
-            Dodaj ({localSelectedIds.length})
+            {t('employeeSelection.addCount', { count: localSelectedIds.length })}
           </Button>
         </div>
       </SheetContent>

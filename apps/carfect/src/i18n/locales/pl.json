@@ -4265,6 +4265,72 @@
     "adding": "Dodawanie...",
     "addBreak": "Dodaj przerwę"
   },
+  "employeeSelection": {
+    "noSearchResults": "Brak wyników wyszukiwania",
+    "noActiveEmployees": "Brak aktywnych pracowników",
+    "addCount": "Dodaj ({{count}})"
+  },
+  "scopeProductSelection": {
+    "title": "Dodaj usługi",
+    "searchPlaceholder": "Szukaj usługi...",
+    "noSearchResults": "Nie znaleziono usług",
+    "noServices": "Brak dostępnych usług",
+    "addSelected": "Dodaj wybrane ({{count}})"
+  },
+  "trainingDetails": {
+    "closed": "Zamknięte",
+    "open": "Otwarte",
+    "station": "Stanowisko",
+    "assignedEmployees": "Przypisani pracownicy",
+    "removed": "Usunięty",
+    "internalNotes": "Notatki wewnętrzne",
+    "noInternalNotes": "Brak notatek wewnętrznych"
+  },
+  "resetPassword": {
+    "title": "Resetuj hasło",
+    "description": "Ustaw nowe hasło dla użytkownika <strong>{{username}}</strong>.",
+    "newPassword": "Nowe hasło",
+    "confirmPassword": "Potwierdź hasło",
+    "minLength": "Minimum 8 znaków",
+    "hasUppercase": "Wielka litera (A-Z)",
+    "hasLowercase": "Mała litera (a-z)",
+    "hasNumber": "Cyfra (0-9)",
+    "hasSpecial": "Znak specjalny (!@#$%...)",
+    "noSequence": "Brak sekwencji klawiszowych",
+    "noRepeating": "Brak powtarzających się znaków",
+    "notCommon": "Nie jest popularnym hasłem",
+    "submit": "Resetuj hasło"
+  },
+  "payment": {
+    "method": "Sposób płatności",
+    "cod": "Za pobraniem",
+    "transfer": "Przelew",
+    "cash": "Gotówka",
+    "card": "Karta płatnicza",
+    "free": "Bezpłatne",
+    "tab": "Na zeszyt",
+    "payer": "Płatnik",
+    "brutto": "Brutto",
+    "netto": "Netto",
+    "accountNumber": "Numer konta",
+    "selectAccount": "Wybierz konto"
+  },
+  "embedLeadForm": {
+    "phoneMinDigits": "Numer telefonu musi mieć minimum 9 cyfr",
+    "paintColorRequired": "Kolor lakieru jest wymagany",
+    "selectPaintType": "Wybierz rodzaj lakieru",
+    "paintColor": "Kolor lakieru",
+    "paintColorPlaceholder": "np. Czarny metalik, Biały perłowy",
+    "paintType": "Rodzaj lakieru"
+  },
+  "myReservation": {
+    "noCode": "Brak kodu rezerwacji",
+    "confirmed": "Potwierdzona",
+    "cancelled": "Anulowana",
+    "inProgress": "W trakcie",
+    "notFound": "Nie znaleziono rezerwacji",
+    "checkSms": "Sprawdź kod w SMS-ie i spróbuj ponownie"
+  },
   "pages": {
     "auth": {
       "instanceLoadError": "Wystąpił błąd podczas wczytywania instancji",

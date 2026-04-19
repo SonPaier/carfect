@@ -69,7 +69,7 @@ const MojaRezerwacja = () => {
   useEffect(() => {
     const fetchReservation = async () => {
       if (!code) {
-        setError('Brak kodu rezerwacji');
+        setError(t('myReservation.noCode'));
         setLoading(false);
         return;
       }
@@ -261,15 +261,15 @@ const MojaRezerwacja = () => {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return { label: 'Potwierdzona', color: 'text-green-600 bg-green-500/10', icon: Check };
+        return { label: t('myReservation.confirmed'), color: 'text-green-600 bg-green-500/10', icon: Check };
       case 'pending':
         return { label: t('pages.reservation.statusPending'), color: 'text-yellow-600 bg-yellow-500/10', icon: Clock };
       case 'cancelled':
-        return { label: 'Anulowana', color: 'text-red-600 bg-red-500/10', icon: X };
+        return { label: t('myReservation.cancelled'), color: 'text-red-600 bg-red-500/10', icon: X };
       case 'completed':
         return { label: t('pages.reservation.statusCompleted'), color: 'text-blue-600 bg-blue-500/10', icon: Check };
       case 'in_progress':
-        return { label: 'W trakcie', color: 'text-primary bg-primary/10', icon: Clock };
+        return { label: t('myReservation.inProgress'), color: 'text-primary bg-primary/10', icon: Clock };
       default:
         return { label: status, color: 'text-muted-foreground bg-muted', icon: Clock };
     }
@@ -293,9 +293,9 @@ const MojaRezerwacja = () => {
           <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
-          <h1 className="text-lg font-semibold mb-2">{error || 'Nie znaleziono rezerwacji'}</h1>
+          <h1 className="text-lg font-semibold mb-2">{error || t('myReservation.notFound')}</h1>
           <p className="text-sm text-muted-foreground mb-6 text-center">
-            Sprawdź kod w SMS-ie i spróbuj ponownie
+            {t('myReservation.checkSms')}
           </p>
           <Button onClick={() => (window.location.href = '/')}>{t('pages.reservation.bookVisit')}</Button>
         </div>

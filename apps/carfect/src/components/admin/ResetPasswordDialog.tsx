@@ -32,6 +32,7 @@ const ResetPasswordDialog = ({
   instanceId,
   user,
 }: ResetPasswordDialogProps) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const {
     password,
@@ -112,17 +113,17 @@ const ResetPasswordDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="w-5 h-5" />
-            Resetuj hasło
+            {t('resetPassword.title')}
           </DialogTitle>
           <DialogDescription>
-            Ustaw nowe hasło dla użytkownika <strong>{user.username}</strong>.
+            {t('resetPassword.description', { username: user.username })}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* New password — always visible, no eye toggle */}
           <PasswordInput
-            label="Nowe hasło"
+            label={t('resetPassword.newPassword')}
             value={password}
             onChange={setPassword}
             validation={validation}
@@ -132,7 +133,7 @@ const ResetPasswordDialog = ({
           />
 
           <PasswordConfirmInput
-            label="Potwierdź hasło"
+            label={t('resetPassword.confirmPassword')}
             value={confirmPassword}
             onChange={setConfirmPassword}
             match={confirmMatch}
@@ -148,23 +149,7 @@ const ResetPasswordDialog = ({
                   className={`flex items-center gap-1.5 transition-colors ${req.met ? 'text-green-600' : 'text-muted-foreground'}`}
                 >
                   {req.met ? '✓' : '✗'}{' '}
-                  {req.key === 'minLength'
-                    ? 'Minimum 8 znaków'
-                    : req.key === 'hasUppercase'
-                      ? 'Wielka litera (A-Z)'
-                      : req.key === 'hasLowercase'
-                        ? 'Mała litera (a-z)'
-                        : req.key === 'hasNumber'
-                          ? 'Cyfra (0-9)'
-                          : req.key === 'hasSpecial'
-                            ? 'Znak specjalny (!@#$%...)'
-                            : req.key === 'noSequence'
-                              ? 'Brak sekwencji klawiszowych'
-                              : req.key === 'noRepeating'
-                                ? 'Brak powtarzających się znaków'
-                                : req.key === 'notCommon'
-                                  ? 'Nie jest popularnym hasłem'
-                                  : req.key}
+                  {t(`resetPassword.${req.key}`, { defaultValue: req.key })}
                 </li>
               ))}
             </ul>
@@ -177,11 +162,11 @@ const ResetPasswordDialog = ({
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={loading || !isFormValid}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Resetuj hasło
+              {t('resetPassword.submit')}
             </Button>
           </DialogFooter>
         </form>
