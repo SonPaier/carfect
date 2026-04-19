@@ -117,12 +117,12 @@ const ResetPassword = () => {
   if (!isRecoveryMode && !success) {
     return (
       <>
-        <Helmet><title>Nieprawidłowy link</title></Helmet>
+        <Helmet><title>{t('auth.invalidLink')}</title></Helmet>
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="w-full max-w-md text-center space-y-4">
             <h1 className="text-xl font-bold text-foreground">{t('pages.resetPassword.linkExpired')}</h1>
             <p className="text-muted-foreground">
-              Poproś ponownie o link do resetowania hasła.
+              {t('auth.requestNewResetLink')}
             </p>
             <Button onClick={() => navigate('/login', { replace: true })} variant="outline">
               Wróć do logowania
@@ -144,7 +144,7 @@ const ResetPassword = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground">{t('pages.resetPassword.passwordChanged')}</h1>
             <p className="text-muted-foreground">
-              Za chwilę zostaniesz przekierowany do strony logowania.
+              {t('auth.redirectToLogin')}
             </p>
           </div>
         </div>
@@ -165,7 +165,7 @@ const ResetPassword = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground">{t('pages.resetPassword.setNewPassword')}</h1>
             <p className="text-muted-foreground">
-              Wprowadź nowe hasło dla swojego konta.
+              {t('auth.enterNewPassword')}
             </p>
           </div>
 

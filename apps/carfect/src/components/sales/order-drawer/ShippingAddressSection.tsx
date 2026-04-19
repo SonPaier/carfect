@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@shared/ui';
 import { AddressFields, type AddressData } from './AddressFields';
@@ -9,6 +10,7 @@ interface ShippingAddressSectionProps {
 }
 
 export const ShippingAddressSection = ({ address, onChange }: ShippingAddressSectionProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const update = (patch: Partial<AddressData>) => onChange({ ...address, ...patch });
@@ -40,7 +42,7 @@ export const ShippingAddressSection = ({ address, onChange }: ShippingAddressSec
       <CollapsibleContent>
         <div className="mt-2 rounded-md border border-border bg-background px-3 py-3 space-y-3">
           <p className="text-xs text-muted-foreground">
-            Zmiany dotyczą wyłącznie tego zamówienia i nie nadpisują adresu klienta.
+            {t('sales.orders.shippingAddressNote')}
           </p>
           <AddressFields
             prefix="order-ship"

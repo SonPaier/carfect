@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   GroupedChange,
@@ -35,7 +36,7 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
         content = (
           <div className="space-y-0.5">
             {added.length > 0 && <div>• Dodano: {added.join(', ')}</div>}
-            {removed.length > 0 && <div>• Usunięto: {removed.join(', ')}</div>}
+            {removed.length > 0 && <div>• {t('history.removed')}: {removed.join(', ')}</div>}
           </div>
         );
         break;
@@ -91,11 +92,11 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
 
       case 'admin_notes':
         if (!change.old_value && change.new_value) {
-          content = <div>• Dodano notatkę</div>;
+          content = <div>• {t('history.noteAdded')}</div>;
         } else if (change.old_value && !change.new_value) {
-          content = <div>• Usunięto notatkę</div>;
+          content = <div>• {t('history.noteRemoved')}</div>;
         } else {
-          content = <div>• Zmieniono notatkę</div>;
+          content = <div>• {t('history.noteChanged')}</div>;
         }
         break;
 
@@ -111,8 +112,8 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
         );
         content = (
           <div className="space-y-0.5">
-            {added.length > 0 && <div>• Dodano pracowników: {added.join(', ')}</div>}
-            {removed.length > 0 && <div>• Usunięto pracowników: {removed.join(', ')}</div>}
+            {added.length > 0 && <div>• {t('history.employeesAdded')}: {added.join(', ')}</div>}
+            {removed.length > 0 && <div>• {t('history.employeesRemoved')}: {removed.join(', ')}</div>}
           </div>
         );
         break;

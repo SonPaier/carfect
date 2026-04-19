@@ -1,4 +1,5 @@
 import { ReactNode, forwardRef, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Car, Phone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 interface Instance {
@@ -14,6 +15,7 @@ interface ClientLayoutProps {
 }
 const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(
   ({ children, hideHeader = false, hideFooter = false }, ref) => {
+  const { t } = useTranslation();
     const [instance, setInstance] = useState<Instance | null>(null);
     useEffect(() => {
       const fetchInstance = async () => {
@@ -127,7 +129,7 @@ const ClientLayout = forwardRef<HTMLDivElement, ClientLayoutProps>(
 
               {/* Bottom bar */}
               <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground text-center">
-                © {new Date().getFullYear()} Carfect. Wszelkie prawa zastrzeżone.
+                © {new Date().getFullYear()} Carfect. {t('common.allRightsReserved')}
               </div>
             </div>
           </footer>

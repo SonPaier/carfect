@@ -241,7 +241,7 @@ function ErrorRow({
       <TableCell colSpan={7}>
         <div className="space-y-1">
           <p className="text-xs font-medium text-amber-800">
-            Nie udało się odczytać — {item.error}
+            {t('sales.rolls.readFailed')} — {item.error}
           </p>
           {onRetry && (
             <>

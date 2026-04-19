@@ -207,7 +207,7 @@ export const CreateProtocolForm = ({
   // Release (vehicle pickup)
   const [releaseSignature, setReleaseSignature] = useState<string | null>(null);
   const [releaseSignatureDialogOpen, setReleaseSignatureDialogOpen] = useState(false);
-  const [releaseNotes, setReleaseNotes] = useState('Oświadczam, że odbieram pojazd bez zastrzeżeń');
+  const [releaseNotes, setReleaseNotes] = useState(t('protocols.form.releaseNotesPlaceholder'));
   const [showReleaseSection, setShowReleaseSection] = useState(false);
   const releaseSectionRef = useRef<HTMLDivElement>(null);
   // Stores the pending consent clause signature callback (ref to avoid re-render/stale closure)
@@ -523,7 +523,7 @@ export const CreateProtocolForm = ({
 
         setServiceItems(
           items.map((item) => ({
-            name: item.name || nameMap.get(item.service_id) || 'Usługa',
+            name: item.name || nameMap.get(item.service_id) || t('common.services'),
             quantity: 1,
             unit_price: item.custom_price ?? perServicePrice,
           })),

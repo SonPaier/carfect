@@ -239,7 +239,7 @@ export const PhotoFullscreenDialog = ({
                 type="button"
                 onClick={goPrev}
                 className="fixed left-3 top-1/2 -translate-y-1/2 z-[10000] flex items-center justify-center h-12 w-12 rounded-full bg-white/80 text-black shadow-xl hover:bg-white active:bg-gray-200 transition-colors"
-                aria-label="Poprzednie zdjęcie"
+                aria-label={t('protocols.prevPhoto')}
               >
                 <ChevronLeft className="h-7 w-7" />
               </button>
@@ -251,7 +251,7 @@ export const PhotoFullscreenDialog = ({
                 type="button"
                 onClick={goNext}
                 className="fixed right-3 top-1/2 -translate-y-1/2 z-[10000] flex items-center justify-center h-12 w-12 rounded-full bg-white/80 text-black shadow-xl hover:bg-white active:bg-gray-200 transition-colors"
-                aria-label="Następne zdjęcie"
+                aria-label={t('protocols.nextPhoto')}
               >
                 <ChevronRight className="h-7 w-7" />
               </button>
@@ -273,7 +273,7 @@ export const PhotoFullscreenDialog = ({
             >
               <img
                 src={currentPhoto}
-                alt="Zdjęcie uszkodzenia"
+                alt={t('protocols.damagePhoto')}
                 className="max-w-full max-h-full object-contain transition-transform duration-75"
                 style={{
                   transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,

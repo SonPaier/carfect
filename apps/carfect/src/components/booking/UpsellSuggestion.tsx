@@ -172,7 +172,7 @@ export default function UpsellSuggestion({
             A co powiesz o dodatkowych {extraMinutes} minutach?
           </h4>
           <p className="text-xs text-muted-foreground mb-3">
-            Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na{' '}
+            {t('booking.upsellSuggestion')}{' '}
             <span className="font-medium text-foreground">{service.name}</span>?
           </p>
 

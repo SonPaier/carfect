@@ -60,7 +60,13 @@
     "send": "Wyślij",
     "copy": "Kopiuj",
     "download": "Pobierz",
-    "services": "Usługi"
+    "services": "Usługi",
+    "allRightsReserved": "Wszelkie prawa zastrzeżone.",
+    "collapse": "Zwiń",
+    "expand": "Rozwiń",
+    "app": "aplikację",
+    "change": "Zmień",
+    "redo": "Ponów"
   },
   "carSearch": {
     "useCustom": "Użyj"
@@ -88,7 +94,11 @@
     "confirmPassword": "Powtórz hasło",
     "passwordsMismatch": "Hasła nie są identyczne",
     "changePassword": "Zmień hasło",
-    "passwordChanged": "Hasło zmienione"
+    "passwordChanged": "Hasło zmienione",
+    "invalidLink": "Nieprawidłowy link",
+    "requestNewResetLink": "Poproś ponownie o link do resetowania hasła.",
+    "redirectToLogin": "Za chwilę zostaniesz przekierowany do strony logowania.",
+    "enterNewPassword": "Wprowadź nowe hasło dla swojego konta."
   },
   "navigation": {
     "reservations": "Rezerwacje",
@@ -426,7 +436,15 @@
     "reserveFor": "Zarezerwuj za {{price}} zł",
     "smsConfirmationNote": "Otrzymasz SMS z kodem potwierdzającym rezerwację",
     "availableHours": "Dostępne godziny",
-    "noSlotsForDayAlt": "Brak dostępnych terminów w tym dniu."
+    "noSlotsForDayAlt": "Brak dostępnych terminów w tym dniu.",
+    "dayMon": "PON",
+    "dayTue": "WT",
+    "dayWed": "ŚR",
+    "dayThu": "CZW",
+    "dayFri": "PT",
+    "daySat": "SOB",
+    "daySun": "NIEDZ",
+    "upsellSuggestion": "Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na"
   },
   "calendar": {
     "title": "Kalendarz",
@@ -504,7 +522,14 @@
     "stopWork": "Stop",
     "trainingOpen": "Szkolenie (otwarte)",
     "trainingClosed": "Szkolenie (zamknięte)",
-    "moveTo": "Przenieś na"
+    "moveTo": "Przenieś na",
+    "daySun": "ND",
+    "dayMon": "PN",
+    "dayTue": "WT",
+    "dayWed": "ŚR",
+    "dayThu": "CZ",
+    "dayFri": "PT",
+    "daySat": "SB"
   },
   "customers": {
     "title": "Klienci",
@@ -598,7 +623,14 @@
     "description": "Usługi będą widoczne do wyboru w rezerwacjach i przy tworzeniu szablonów ofert. Kategorie są opcjonalne.",
     "noTemplates": "Brak szablonów",
     "searchPlaceholder": "Szukaj usługi...",
-    "photos": "Zdjęcia"
+    "photos": "Zdjęcia",
+    "defaultCategory": "Usługa samochodowa",
+    "tooltipDisplayName": "Nazwa wyświetlana klientom w ofercie i cenniku",
+    "tooltipInternalName": "Wewnętrzna nazwa robocza widoczna tylko dla Ciebie",
+    "tooltipCategory": "Grupowanie usług w cenniku",
+    "tooltipDescription": "Opis wyświetlany klientom podczas rezerwacji",
+    "tooltipDuration": "Czas trwania usługi w minutach",
+    "tooltipReminders": "Automatyczne przypomnienia SMS po wykonaniu usługi"
   },
   "stations": {
     "title": "Stanowiska",
@@ -883,7 +915,10 @@
     "showLess": "Zobacz mniej",
     "showMore": "Zobacz więcej",
     "addCoating": "+Powłoka",
-    "selectScopesOrAdd": "Wybierz zakresy w poprzednim kroku lub dodaj opcję ręcznie"
+    "selectScopesOrAdd": "Wybierz zakresy w poprzednim kroku lub dodaj opcję ręcznie",
+    "serviceDescFromTab": "Opisy usług są pobierane z zakładki",
+    "photoAlt": "Zdjęcie {{index}}",
+    "createFirstOffer": "Utwórz pierwszą ofertę dla klienta"
   },
   "summary": {
     "customer": "Klient",
@@ -1157,7 +1192,9 @@
       "invoiceCity": "Miasto",
       "invoiceGusButton": "Pobierz z GUS",
       "invoiceSaveButton": "Zapisz dane do faktury"
-    }
+    },
+    "namePlaceholder": "np. Auto Spa Gdańsk",
+    "addressPlaceholder": "ul. Przykładowa 123, 80-000 Gdańsk"
   },
   "widget": {
     "title": "Widget na stronę",
@@ -1239,7 +1276,10 @@
     "userDeleted": "Użytkownik usunięty",
     "passwordReset": "Hasło zresetowane",
     "deleteConfirmTitle": "Usunąć użytkownika?",
-    "deleteConfirmDescription": "Ta akcja jest nieodwracalna."
+    "deleteConfirmDescription": "Ta akcja jest nieodwracalna.",
+    "roleEmployeeDesc": "Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)",
+    "roleSalesDesc": "Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)",
+    "hallPickerDesc": "Użytkownik po zalogowaniu zobaczy wybrany kalendarz"
   },
   "sms": {
     "title": "SMS",
@@ -1336,7 +1376,9 @@
       "reservationReminder1hour": "Przypominamy o rezerwacji za godzinę. Kod: {{code}}",
       "reservationCancelled": "Twoja rezerwacja została anulowana.",
       "reservationUpdated": "Twoja rezerwacja została zmieniona. Nowy termin: {{date}} o godz. {{time}}"
-    }
+    },
+    "reminderToday": "Przyp. dziś",
+    "manual": "Ręczny"
   },
   "errors": {
     "generic": "Wystąpił błąd. Spróbuj ponownie.",
@@ -1352,7 +1394,8 @@
     "minLength": "Minimalna długość: {{min}} znaków.",
     "maxLength": "Maksymalna długość: {{max}} znaków.",
     "tryAgain": "Spróbuj ponownie",
-    "homepage": "Strona główna"
+    "homepage": "Strona główna",
+    "unexpectedError": "Wystąpił nieoczekiwany błąd. Nasz zespół został powiadomiony."
   },
   "dates": {
     "today": "Dziś",
@@ -1504,31 +1547,21 @@
     "servicesSection": "Usługi"
   },
   "superAdmin": {
-    "title": "Super Admin",
-    "instances": "Instancje",
-    "newInstance": "Nowa instancja",
-    "editInstance": "Edytuj instancję",
-    "instanceName": "Nazwa",
-    "instanceSlug": "Slug",
-    "smsLimit": "Limit SMS",
-    "smsUsed": "Wykorzystano SMS",
-    "active": "Aktywna",
-    "inactive": "Nieaktywna",
     "panelTitle": "Panel zarządzania",
-    "nav": {
-      "instances": "Instancje",
-      "cars": "Samochody",
-      "admins": "Administratorzy",
-      "settings": "Ustawienia",
-      "hints": "Wskazówki"
-    },
+    "navInstances": "Instancje",
+    "navCars": "Samochody",
+    "navAdmins": "Administratorzy",
+    "navSettings": "Ustawienia",
+    "navHints": "Wskazówki",
     "logout": "Wyloguj się",
-    "instancesTitle": "Instancje",
-    "instancesDescription": "Zarządzaj wszystkimi instancjami aplikacji",
-    "allInstances": "Wszystkie instancje",
-    "activeInstances": "Aktywne",
-    "adminsCount": "Administratorzy",
-    "reservationsToday": "Rezerwacji dzisiaj",
+    "pageTitle": "Super Admin - Panel zarządzania",
+    "instancesHeading": "Instancje",
+    "instancesSubheading": "Zarządzaj wszystkimi instancjami aplikacji",
+    "newInstance": "Nowa instancja",
+    "statAllInstances": "Wszystkie instancje",
+    "statActive": "Aktywne",
+    "statAdmins": "Administratorzy",
+    "statTodayReservations": "Rezerwacji dzisiaj",
     "instancesList": "Lista instancji",
     "viewAsClient": "Zobacz jako klient",
     "openAdminPanel": "Otwórz panel admina",
@@ -1539,310 +1572,72 @@
     "disableInstance": "Wyłącz instancję",
     "enableInstance": "Włącz instancję",
     "deleteInstance": "Usuń instancję",
-    "instanceToggled": "Instancja {{state}}",
-    "instanceToggledOn": "włączona",
-    "instanceToggledOff": "wyłączona",
-    "instanceDeleted": "Instancja została usunięta",
-    "confirmDeleteInstance": "Czy na pewno chcesz usunąć instancję \"{{name}}\"? Instancja zostanie ukryta, ale dane pozostaną w bazie.",
-    "toggleStatusError": "Błąd podczas zmiany statusu instancji",
-    "deleteError": "Błąd podczas usuwania instancji",
-    "viewingAsClient": "Otwieranie widoku klienta dla: {{slug}}",
     "sectionInProgress": "Sekcja w przygotowaniu",
     "featuresDialogTitle": "Funkcje płatne - {{name}}",
     "usersDialogTitle": "Użytkownicy - {{name}}",
     "planDialogTitle": "Plan i subskrypcja - {{name}}",
-    "carModels": {
-      "title": "Baza samochodów",
-      "modelsCount": "{{count}} modeli",
-      "importJson": "Importuj z JSON",
-      "exportCsv": "Eksportuj CSV",
-      "addModel": "Dodaj model",
-      "approved": "Zatwierdzone",
-      "pendingApproval": "Do akceptacji",
-      "all": "Wszystkie",
-      "searchPlaceholder": "Szukaj marki lub modelu...",
-      "allBrands": "Wszystkie marki",
-      "allSizes": "Wszystkie",
-      "smallSize": "Mały (S)",
-      "mediumSize": "Średni (M)",
-      "largeSize": "Duży (L)",
-      "brand": "Marka",
-      "model": "Model",
-      "size": "Rozmiar",
-      "status": "Status",
-      "actions": "Akcje",
-      "noProposals": "Brak propozycji do akceptacji",
-      "noModels": "Brak modeli w bazie. Kliknij \"Importuj z JSON\" aby załadować dane.",
-      "noFilterResults": "Brak wyników dla podanych filtrów",
-      "importSuccess": "Zaimportowano {{inserted}} modeli ({{skipped}} już istniało)",
-      "importError": "Błąd podczas importu danych",
-      "exportSuccess": "Wyeksportowano do CSV",
-      "deleteConfirm": "Czy na pewno chcesz usunąć {{brand}} {{name}}?",
-      "deleteSuccess": "Usunięto {{brand}} {{name}}",
-      "deleteError": "Błąd podczas usuwania",
-      "acceptSuccess": "Zaakceptowano {{brand}} {{name}}",
-      "acceptError": "Błąd podczas akceptacji",
-      "rejectSuccess": "Odrzucono {{brand}} {{name}}",
-      "rejectError": "Błąd podczas odrzucania",
-      "proposal": "Propozycja",
-      "activeStatus": "Aktywny",
-      "editBeforeAccept": "Edytuj przed akceptacją",
-      "accept": "Akceptuj",
-      "reject": "Odrzuć",
-      "previous": "Poprzednia",
-      "next": "Następna",
-      "page": "Strona {{current}} z {{total}}",
-      "showing": "Pokazuję {{from}}-{{to}} z {{total}}",
-      "sizeSmall": "Mały",
-      "sizeMedium": "Średni",
-      "sizeLarge": "Duży"
-    },
-    "addCarModelDialog": {
-      "title": "Dodaj nowy model samochodu",
-      "brand": "Marka",
-      "model": "Model",
-      "size": "Rozmiar",
-      "brandPlaceholder": "np. Toyota",
-      "modelPlaceholder": "np. Corolla",
-      "sizeSmall": "Mały (S) - kompaktowe, hatchbacki",
-      "sizeMedium": "Średni (M) - sedany, kombi",
-      "sizeLarge": "Duży (L) - SUV, vany, pickupy",
-      "fillAllFields": "Wypełnij wszystkie pola",
-      "alreadyExists": "Model {{brand}} {{name}} już istnieje",
-      "addSuccess": "Dodano {{brand}} {{name}}",
-      "addError": "Błąd podczas dodawania modelu",
-      "submit": "Dodaj"
-    },
-    "editCarModelDialog": {
-      "title": "Edytuj model samochodu",
-      "brand": "Marka",
-      "model": "Model",
-      "size": "Rozmiar",
-      "brandPlaceholder": "np. Toyota",
-      "modelPlaceholder": "np. Corolla",
-      "sizeSmall": "Mały (S) - kompaktowe, hatchbacki",
-      "sizeMedium": "Średni (M) - sedany, kombi",
-      "sizeLarge": "Duży (L) - SUV, vany, pickupy",
-      "fillAllFields": "Wypełnij wszystkie pola",
-      "alreadyExists": "Model {{brand}} {{name}} już istnieje",
-      "updateSuccess": "Zaktualizowano {{brand}} {{name}}",
-      "updateError": "Błąd podczas aktualizacji modelu",
-      "submit": "Zapisz"
-    },
-    "hintFormDialog": {
-      "editTitle": "Edytuj wskazówkę",
-      "newTitle": "Nowa wskazówka",
-      "type": "Typ",
-      "typePopup": "Popup (wyśrodkowany modal)",
-      "typeInfobox": "Infobox (baner na górze)",
-      "typeTooltip": "Tooltip (zakotwiczony do elementu)",
-      "titleLabel": "Tytuł",
-      "titlePlaceholder": "Tytuł wskazówki",
-      "body": "Treść",
-      "bodyPlaceholder": "Opis wskazówki...",
-      "image": "Obrazek (opcjonalnie)",
-      "imagePreviewAlt": "Podgląd",
-      "removeImageAriaLabel": "Usuń obrazek",
-      "addImageLabel": "Kliknij, aby dodać obrazek",
-      "elementId": "ID elementu",
-      "elementIdHint": "(wartość atrybutu data-hint-id)",
-      "elementIdPlaceholder": "np. add-employee-button",
-      "route": "Trasa",
-      "routeHint": "(pusty lub * = wszystkie strony)",
-      "routePlaceholder": "np. /admin lub /halls",
-      "targetRoles": "Role docelowe",
-      "delay": "Opóźnienie (ms)",
-      "active": "Aktywna",
-      "saveChanges": "Zapisz zmiany",
-      "addHint": "Dodaj wskazówkę",
-      "titleRequired": "Tytuł jest wymagany",
-      "bodyRequired": "Treść jest wymagana",
-      "rolesRequired": "Wybierz co najmniej jedną rolę",
-      "tooltipElementRequired": "Dla tooltipa podaj ID elementu (data-hint-id)",
-      "uploadError": "Błąd podczas przesyłania obrazka",
-      "saveError": "Błąd podczas zapisywania",
-      "updateSuccess": "Wskazówka zaktualizowana",
-      "createSuccess": "Wskazówka dodana"
-    },
-    "hintsManager": {
-      "title": "Wskazówki in-app",
-      "description": "Zarządzaj tooltipami, popupami i infoboxami dla adminów instancji",
-      "newHint": "Nowa wskazówka",
-      "noHints": "Brak wskazówek. Dodaj pierwszą.",
-      "tableType": "Typ",
-      "tableTitle": "Tytuł",
-      "tableRoute": "Trasa",
-      "tableRoles": "Role",
-      "tableActive": "Aktywna",
-      "fetchError": "Błąd podczas pobierania wskazówek",
-      "statusError": "Błąd podczas zmiany statusu",
-      "deleteSuccess": "Wskazówka usunięta",
-      "deleteError": "Błąd podczas usuwania",
-      "deactivate": "Dezaktywuj",
-      "activate": "Aktywuj",
-      "editAriaLabel": "Edytuj",
-      "deleteAriaLabel": "Usuń",
-      "deleteDialogTitle": "Usuń wskazówkę",
-      "deleteDialogDescription": "Czy na pewno chcesz usunąć wskazówkę \"{{title}}\"? Tej operacji nie można cofnąć.",
-      "deleteConfirmLabel": "Usuń",
-      "deleteCancelLabel": "Anuluj"
-    },
-    "addInstanceDialog": {
-      "title": "Nowa instancja",
-      "sectionCompany": "Dane firmy",
-      "companyName": "Nazwa firmy *",
-      "companyNamePlaceholder": "np. Auto Spa Gdańsk",
-      "slug": "Slug (URL) *",
-      "slugPlaceholder": "np. auto-spa-gdansk",
-      "slugInvalid": "Tylko małe litery, cyfry i myślniki",
-      "slugTaken": "Ten slug jest już zajęty",
-      "shortName": "Skrócona nazwa (dla SMS)",
-      "shortNamePlaceholder": "np. Auto Spa",
-      "phone": "Telefon",
-      "email": "Email",
-      "address": "Adres",
-      "nip": "NIP",
-      "sectionPlan": "Plan i subskrypcja",
-      "selectPlan": "Wybierz plan *",
-      "selectPlanPlaceholder": "Wybierz plan",
-      "planDescription": "{{name}} ({{basePrice}} zł z 1 stanowiskiem, +{{perStation}} zł/dodatkowe)",
-      "stationLimit": "Limit stanowisk *",
-      "estimatedPrice": "Szacunkowa cena miesięczna:",
-      "trial": "Okres próbny",
-      "trialDays": "dni",
-      "sectionAdmin": "Konto administratora",
-      "adminUsername": "Nazwa użytkownika *",
-      "adminUsernamePlaceholder": "np. admin",
-      "adminEmail": "Email administratora *",
-      "adminEmailPlaceholder": "np. admin@firma.pl",
-      "adminEmailInvalid": "Nieprawidłowy format adresu email",
-      "adminPassword": "Hasło *",
-      "adminPasswordPlaceholder": "Min. 6 znaków",
-      "adminPasswordTooShort": "Hasło musi mieć min. 6 znaków",
-      "dnsTitle": "Po utworzeniu skonfiguruj DNS:",
-      "dnsPublic": "widok klienta",
-      "dnsAdmin": "panel admina",
-      "createInstance": "Utwórz instancję",
-      "slugTakenError": "Ten slug jest już zajęty. Wybierz inny.",
-      "createError": "Błąd: {{message}}",
-      "createErrorFallback": "Nie udało się utworzyć instancji"
-    },
-    "instancePlanSettings": {
-      "selectPlan": "Wybierz plan",
-      "perMonth": "/mies.",
-      "moreFeatures": "+{{count}} więcej",
-      "stationLimit": "Limit stanowisk",
-      "stationLimitDescription": "Admin instancji nie będzie mógł dodać więcej niż {{count}} stanowisk",
-      "summary": "Podsumowanie",
-      "basePlan": "Plan bazowy ({{name}})",
-      "extraStations": "Dodatkowe stanowiska ({{count}} × {{price}} zł)",
-      "totalMonthly": "Razem miesięcznie",
-      "totalPrice": "{{price}} zł netto",
-      "saveChanges": "Zapisz zmiany",
-      "selectPlanError": "Wybierz plan",
-      "saveSuccess": "Plan zapisany",
-      "saveError": "Błąd podczas zapisywania planu",
-      "loadError": "Błąd podczas ładowania danych planu",
-      "featureLabels": {
-        "calendar": "Główny kalendarz",
-        "online_booking": "Rezerwacje online 24/7",
-        "sms_notifications": "Powiadomienia SMS",
-        "customer_crm": "Zarządzanie klientami",
-        "team_management": "Zarządzanie zespołem",
-        "yard_vehicles": "Obsługa aut z placu",
-        "employee_view": "Widok dla pracowników",
-        "analytics": "Analityka i raporty",
-        "offers": "Moduł ofert",
-        "vehicle_reception_protocol": "Protokół przyjęcia",
-        "followup": "Wsparcie sprzedaży",
-        "reminders": "Automatyczne przypomnienia"
-      }
-    },
-    "instanceCreatedSuccessDialog": {
-      "title": "Instancja utworzona!",
-      "successMessage": "Instancja \"{{name}}\" została pomyślnie utworzona.",
-      "configureDns": "Skonfiguruj DNS",
-      "copyDomains": "Kopiuj",
-      "publicDomain": "Publiczny:",
-      "adminDomain": "Admin:",
-      "dnsNote": "Dodaj rekordy CNAME w DNS, wskazujące na serwer Vercel.",
-      "adminCredentials": "Dane logowania administratora",
-      "copyCredentials": "Kopiuj",
-      "loginLabel": "Login:",
-      "emailLabel": "Email:",
-      "passwordLabel": "Hasło:",
-      "copyAll": "Kopiuj wszystko",
-      "copiedAll": "Skopiowano dane do schowka",
-      "copiedDomains": "Skopiowano domeny",
-      "copiedCredentials": "Skopiowano dane logowania",
-      "close": "Zamknij",
-      "clipboardInstance": "Instancja: {{name}}",
-      "clipboardSubdomains": "Subdomeny:",
-      "clipboardPublic": "• Publiczna: {{domain}}",
-      "clipboardAdmin": "• Admin: {{domain}}",
-      "clipboardLoginData": "Dane logowania:",
-      "clipboardLogin": "• Login: {{login}}",
-      "clipboardEmail": "• Email: {{email}}",
-      "clipboardPassword": "• Hasło: {{password}}"
-    },
-    "manageAllInstances": "Zarządzaj wszystkimi instancjami aplikacji",
-    "managementPanel": "Panel zarządzania",
-    "hints": "Wskazówki"
+    "toastViewingClient": "Otwieranie widoku klienta dla: {{slug}}",
+    "toastInstanceEnabled": "Instancja włączona",
+    "toastInstanceDisabled": "Instancja wyłączona",
+    "toastToggleError": "Błąd podczas zmiany statusu instancji",
+    "toastInstanceDeleted": "Instancja została usunięta",
+    "toastDeleteError": "Błąd podczas usuwania instancji",
+    "confirmDelete": "Czy na pewno chcesz usunąć instancję \"{{name}}\"? Instancja zostanie ukryta, ale dane pozostaną w bazie.",
+    "smsUsageAll": "Zużycie SMS - Wszystkie instancje",
+    "smsTotal": "Łącznie: {{used}} / {{limit}}"
   },
   "instanceFeatures": {
     "cardTitle": "Funkcje dodatkowe",
     "cardDescription": "Zarządzaj funkcjami dla tej instancji",
-    "inPlan": "W planie",
-    "additional": "Dodatkowe",
-    "featureEnabled": "Funkcja włączona",
-    "featureDisabled": "Funkcja wyłączona",
-    "toggleError": "Błąd podczas zmiany ustawienia",
-    "parametersSaved": "Parametry zapisane",
-    "parametersError": "Błąd podczas zapisu parametrów",
-    "features": {
-      "offers": {
-        "name": "Moduł Oferty",
-        "description": "Generator ofert z PDF i wysyłką do klienta"
-      },
-      "upsell": {
-        "name": "Sugestie upsell",
-        "description": "Sugeruje usługi pasujące do wolnych slotów przy rezerwacji klienta"
-      },
-      "sms_edit_link": {
-        "name": "Link do edycji w SMS",
-        "description": "Dodaje frazę \"Zmień lub anuluj: [link]\" do wiadomości SMS",
-        "parameterLabel": "Numery telefonów (opcjonalne)",
-        "parameterDescription": "Wpisz numery telefonów (po przecinku), które otrzymają link. Puste = wszyscy.",
-        "parameterPlaceholder": "+48501234567, +48600111222"
-      },
-      "hall_view": {
-        "name": "Widok Hali",
-        "description": "Uproszczony widok kalendarza dla pracowników hali z konfigurowalnymi stanowiskami"
-      },
-      "vehicle_reception_protocol": {
-        "name": "Protokół przyjęcia pojazdu",
-        "description": "Formularz do dokumentowania stanu pojazdu przy przyjęciu z zaznaczaniem uszkodzeń na diagramie"
-      },
-      "followup": {
-        "name": "Wsparcie sprzedaży",
-        "description": "System follow-up i przypomnień dla klientów"
-      },
-      "reminders": {
-        "name": "Automatyczne przypomnienia",
-        "description": "Automatyczne wysyłanie przypomnień SMS do klientów"
-      },
-      "trainings": {
-        "name": "Szkolenia",
-        "description": "Zarządzanie szkoleniami w kalendarzu"
-      },
-      "sales_crm": {
-        "name": "CRM Sprzedaży",
-        "description": "Moduł CRM do zarządzania sprzedażą produktów"
-      },
-      "vehicle_vin": {
-        "name": "Numer VIN pojazdu",
-        "description": "Dodaj pole VIN przy pojazdach klienta"
-      }
+    "badgeInPlan": "W planie",
+    "badgeAdditional": "Dodatkowe",
+    "toastEnabled": "Funkcja włączona",
+    "toastDisabled": "Funkcja wyłączona",
+    "toastToggleError": "Błąd podczas zmiany ustawienia",
+    "toastParamsSaved": "Parametry zapisane",
+    "toastParamsError": "Błąd podczas zapisu parametrów",
+    "offers": {
+      "name": "Moduł Oferty",
+      "description": "Generator ofert z PDF i wysyłką do klienta"
+    },
+    "upsell": {
+      "name": "Sugestie upsell",
+      "description": "Sugeruje usługi pasujące do wolnych slotów przy rezerwacji klienta"
+    },
+    "sms_edit_link": {
+      "name": "Link do edycji w SMS",
+      "description": "Dodaje frazę \"Zmień lub anuluj: [link]\" do wiadomości SMS",
+      "parameterLabel": "Numery telefonów (opcjonalne)",
+      "parameterDescription": "Wpisz numery telefonów (po przecinku), które otrzymają link. Puste = wszyscy.",
+      "parameterPlaceholder": "+48501234567, +48600111222"
+    },
+    "hall_view": {
+      "name": "Widok Hali",
+      "description": "Uproszczony widok kalendarza dla pracowników hali z konfigurowalnymi stanowiskami"
+    },
+    "vehicle_reception_protocol": {
+      "name": "Protokół przyjęcia pojazdu",
+      "description": "Formularz do dokumentowania stanu pojazdu przy przyjęciu z zaznaczaniem uszkodzeń na diagramie"
+    },
+    "followup": {
+      "name": "Wsparcie sprzedaży",
+      "description": "System follow-up i przypomnień dla klientów"
+    },
+    "reminders": {
+      "name": "Automatyczne przypomnienia",
+      "description": "Automatyczne wysyłanie przypomnień SMS do klientów"
+    },
+    "trainings": {
+      "name": "Szkolenia",
+      "description": "Zarządzanie szkoleniami w kalendarzu"
+    },
+    "sales_crm": {
+      "name": "CRM Sprzedaży",
+      "description": "Moduł CRM do zarządzania sprzedażą produktów"
+    },
+    "vehicle_vin": {
+      "name": "Numer VIN pojazdu",
+      "description": "Dodaj pole VIN przy pojazdach klienta"
     }
   },
   "resetPassword": {
@@ -2112,7 +1907,13 @@
     "protocolDate": "Data sporządzenia protokołu",
     "receivedBy": "Przyjął",
     "vehicleReceptionProtocol": "Protokół przyjęcia pojazdu",
-    "protocol": "Protokół"
+    "protocol": "Protokół",
+    "noOffersFound": "Nie znaleziono ofert. Możesz wpisać numer ręcznie.",
+    "createdUsing": "Protokół sporządzono przy użyciu",
+    "damagePhotoAlt": "Zdjęcie uszkodzenia {{index}}",
+    "prevPhoto": "Poprzednie zdjęcie",
+    "nextPhoto": "Następne zdjęcie",
+    "damagePhoto": "Zdjęcie uszkodzenia"
   },
   "adminDashboard": {
     "title": "Panel Admina",
@@ -2310,7 +2111,8 @@
     "statusCancelled": "Anulowane",
     "call": "Zadzwoń",
     "sendSms": "Wyślij SMS",
-    "reservationPhotos": "Zdjęcia rezerwacji"
+    "reservationPhotos": "Zdjęcia rezerwacji",
+    "maxPhotos": "Możesz dodać maksymalnie {{max}} zdjęć do tej rezerwacji ({{current}}/{{max}})"
   },
   "instanceSettings": {
     "title": "Ustawienia instancji",
@@ -2854,7 +2656,9 @@
       "cannotDeleteWithServices": "Nie można usunąć kategorii z {{count}} usługami"
     },
     "coatingRefresh": "Odświeżenie powłoki",
-    "serviceCategories": "Kategorie usług"
+    "serviceCategories": "Kategorie usług",
+    "abbreviation": "Skrót",
+    "templatesDesc": "Na ich podstawie możesz tworzyć własne szablony oraz wykorzystywać je w ofertach."
   },
   "productDialog": {
     "addTitle": "Dodaj usługę",
@@ -3120,7 +2924,8 @@
     "widgetPreview": "Podgląd widgetu",
     "settingsInherited": "Te ustawienia będą dziedziczone przez każdą nowo utworzoną usługę.",
     "discountsAbility": "Możliwość dodawania rabatów do usług w ofertach",
-    "conditionTemplatesDesc": "Twórz szablony warunków, które możesz szybko wstawiać przy tworzeniu oferty."
+    "conditionTemplatesDesc": "Twórz szablony warunków, które możesz szybko wstawiać przy tworzeniu oferty.",
+    "templateContentPlaceholder": "Treść szablonu..."
   },
   "priceList": {
     "title": "Cennik usług",
@@ -4266,7 +4071,11 @@
       "usage": "Zużycie",
       "used": "Zużyto",
       "remaining": "Pozostało",
-      "lengthM": "Dł. (m)"
+      "lengthM": "Dł. (m)",
+      "dragPhotos": "Przeciągnij zdjęcia etykiet rolek lub kliknij",
+      "supportedFormats": "Obsługiwane formaty: JPG, PNG, HEIC. Możesz wgrać wiele zdjęć na raz.",
+      "readFailed": "Nie udało się odczytać",
+      "notePlaceholder": "np. ścinki z realizacji"
     },
     "packages": {
       "addProduct": "Dodaj produkt",
@@ -4372,14 +4181,21 @@
     },
     "settings": {
       "saveSuccess": "Dane firmy zapisane",
-      "saveError": "Nie udało się zapisać danych firmy"
+      "saveError": "Nie udało się zapisać danych firmy",
+      "changeLogo": "Zmień logo",
+      "uploadLogo": "Załaduj logo",
+      "removeLogo": "Usuń logo",
+      "shortCompanyName": "Skrócona nazwa firmy (do SMS) *",
+      "shortNameDesc": "Używana w wiadomościach SMS, max 20 znaków"
     },
     "customers": {
       "lastOrder": "Ostatnie zamówienie",
-      "payer": "Płatnik"
+      "payer": "Płatnik",
+      "pageOf": "Strona {{page}} z {{totalPages}} ({{count}} klientów)"
     },
     "products": {
-      "fullName": "Nazwa pełna"
+      "fullName": "Nazwa pełna",
+      "pageOf": "Strona {{page}} z {{totalPages}} ({{count}} produktów)"
     },
     "productSelection": {
       "title": "Wybierz produkty",
@@ -4533,7 +4349,17 @@
       "diameterCm": "Średnica (cm)",
       "lengthCmShort": "Dł. (cm)",
       "packageContents": "Zawartość przesyłki",
-      "order": "Zamówienie"
+      "order": "Zamówienie",
+      "trackingInPreparation": "Śledzenie przesyłki w przygotowaniu",
+      "invoicePdfUnavailable": "PDF faktury niedostępny",
+      "pdfDownloadFailed": "Nie udało się pobrać PDF",
+      "ordersLabel": "zamówień",
+      "enableDiscount": "Włącz rabat",
+      "disableDiscount": "Wyłącz rabat",
+      "shippingPrice": "Cena wysyłki",
+      "shippingAddressNote": "Zmiany dotyczą wyłącznie tego zamówienia i nie nadpisują adresu klienta.",
+      "addAnotherPackage": "Dodaj kolejną paczkę",
+      "addPackage": "Dodaj paczkę"
     },
     "companySettings": {
       "title": "Dane firmy",
@@ -4742,7 +4568,13 @@
     "companyAddress": "Adres firmy",
     "deliveryAddress": "Adres dostawy",
     "sameAsBilling": "Taki sam jak adres firmy",
-    "salesPanel": "Panel Sprzedaży"
+    "salesPanel": "Panel Sprzedaży",
+    "crm": {
+      "fetchServicesFailed": "Nie udało się pobrać serwisów"
+    },
+    "unsavedChanges": "Masz niezapisane zmiany. Co chcesz zrobić?",
+    "continueEditing": "Kontynuuj edycję",
+    "discardChanges": "Odrzuć zmiany"
   },
   "hooks": {
     "conditions": {
@@ -5244,7 +5076,15 @@
     "noDaysOff": "Brak nieobecności",
     "noEntriesThisMonth": "Brak wpisów w tym miesiącu",
     "employeeList": "Lista pracowników",
-    "deleteTimeOff": "Usuń Wolne"
+    "deleteTimeOff": "Usuń Wolne",
+    "deleted": "Usunięty",
+    "addEmployeesToTrackTime": "Dodaj pracowników, aby móc rejestrować czas pracy",
+    "entriesCount": "{{count}} wpisów",
+    "deleteEntry": "Usuń wpis",
+    "deleteEntryConfirm": "Czy na pewno chcesz usunąć ten wpis czasu pracy?",
+    "deleteDayOff": "Usuń nieobecność",
+    "deleteDayOffConfirm": "Czy na pewno chcesz usunąć tę nieobecność?",
+    "addFirstEmployee": "Dodaj pierwszego pracownika, aby rozpocząć rejestrację czasu pracy"
   },
   "notificationsView": {
     "title": "Powiadomienia",
@@ -5311,96 +5151,15 @@
     "noReminderTemplates": "Brak szablonów",
     "servicePhotos": "Zdjęcia usługi"
   },
-  "instanceFeatures": {
-    "cardTitle": "Funkcje dodatkowe",
-    "cardDescription": "Zarządzaj funkcjami dla tej instancji",
-    "badgeInPlan": "W planie",
-    "badgeAdditional": "Dodatkowe",
-    "toastEnabled": "Funkcja włączona",
-    "toastDisabled": "Funkcja wyłączona",
-    "toastToggleError": "Błąd podczas zmiany ustawienia",
-    "toastParamsSaved": "Parametry zapisane",
-    "toastParamsError": "Błąd podczas zapisu parametrów",
-    "offers": {
-      "name": "Moduł Oferty",
-      "description": "Generator ofert z PDF i wysyłką do klienta"
-    },
-    "upsell": {
-      "name": "Sugestie upsell",
-      "description": "Sugeruje usługi pasujące do wolnych slotów przy rezerwacji klienta"
-    },
-    "sms_edit_link": {
-      "name": "Link do edycji w SMS",
-      "description": "Dodaje frazę \"Zmień lub anuluj: [link]\" do wiadomości SMS",
-      "parameterLabel": "Numery telefonów (opcjonalne)",
-      "parameterDescription": "Wpisz numery telefonów (po przecinku), które otrzymają link. Puste = wszyscy.",
-      "parameterPlaceholder": "+48501234567, +48600111222"
-    },
-    "hall_view": {
-      "name": "Widok Hali",
-      "description": "Uproszczony widok kalendarza dla pracowników hali z konfigurowalnymi stanowiskami"
-    },
-    "vehicle_reception_protocol": {
-      "name": "Protokół przyjęcia pojazdu",
-      "description": "Formularz do dokumentowania stanu pojazdu przy przyjęciu z zaznaczaniem uszkodzeń na diagramie"
-    },
-    "followup": {
-      "name": "Wsparcie sprzedaży",
-      "description": "System follow-up i przypomnień dla klientów"
-    },
-    "reminders": {
-      "name": "Automatyczne przypomnienia",
-      "description": "Automatyczne wysyłanie przypomnień SMS do klientów"
-    },
-    "trainings": {
-      "name": "Szkolenia",
-      "description": "Zarządzanie szkoleniami w kalendarzu"
-    },
-    "sales_crm": {
-      "name": "CRM Sprzedaży",
-      "description": "Moduł CRM do zarządzania sprzedażą produktów"
-    },
-    "vehicle_vin": {
-      "name": "Numer VIN pojazdu",
-      "description": "Dodaj pole VIN przy pojazdach klienta"
-    }
+  "vehicles": {
+    "vinValidation": "VIN musi mieć 17 znaków (bez I, O, Q)"
   },
-  "superAdmin": {
-    "panelTitle": "Panel zarządzania",
-    "navInstances": "Instancje",
-    "navCars": "Samochody",
-    "navAdmins": "Administratorzy",
-    "navSettings": "Ustawienia",
-    "navHints": "Wskazówki",
-    "logout": "Wyloguj się",
-    "pageTitle": "Super Admin - Panel zarządzania",
-    "instancesHeading": "Instancje",
-    "instancesSubheading": "Zarządzaj wszystkimi instancjami aplikacji",
-    "newInstance": "Nowa instancja",
-    "statAllInstances": "Wszystkie instancje",
-    "statActive": "Aktywne",
-    "statAdmins": "Administratorzy",
-    "statTodayReservations": "Rezerwacji dzisiaj",
-    "instancesList": "Lista instancji",
-    "viewAsClient": "Zobacz jako klient",
-    "openAdminPanel": "Otwórz panel admina",
-    "whitelabelSettings": "Ustawienia whitelabel",
-    "planAndSubscription": "Plan i subskrypcja",
-    "paidFeatures": "Funkcje płatne",
-    "manageUsers": "Zarządzaj użytkownikami",
-    "disableInstance": "Wyłącz instancję",
-    "enableInstance": "Włącz instancję",
-    "deleteInstance": "Usuń instancję",
-    "sectionInProgress": "Sekcja w przygotowaniu",
-    "featuresDialogTitle": "Funkcje płatne - {{name}}",
-    "usersDialogTitle": "Użytkownicy - {{name}}",
-    "planDialogTitle": "Plan i subskrypcja - {{name}}",
-    "toastViewingClient": "Otwieranie widoku klienta dla: {{slug}}",
-    "toastInstanceEnabled": "Instancja włączona",
-    "toastInstanceDisabled": "Instancja wyłączona",
-    "toastToggleError": "Błąd podczas zmiany statusu instancji",
-    "toastInstanceDeleted": "Instancja została usunięta",
-    "toastDeleteError": "Błąd podczas usuwania instancji",
-    "confirmDelete": "Czy na pewno chcesz usunąć instancję \"{{name}}\"? Instancja zostanie ukryta, ale dane pozostaną w bazie."
+  "history": {
+    "removed": "Usunięto",
+    "noteAdded": "Dodano notatkę",
+    "noteRemoved": "Usunięto notatkę",
+    "noteChanged": "Zmieniono notatkę",
+    "employeesAdded": "Dodano pracowników",
+    "employeesRemoved": "Usunięto pracowników"
   }
 }

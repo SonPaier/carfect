@@ -234,7 +234,7 @@ function TemplateForm({
       <Textarea
         value={content}
         onChange={(e) => onContentChange(e.target.value)}
-        placeholder="Treść szablonu..."
+        placeholder={t('offerSettings.templateContentPlaceholder')}
         rows={3}
         onKeyDown={(e) => {
           if (e.key === 'Escape') onCancel();

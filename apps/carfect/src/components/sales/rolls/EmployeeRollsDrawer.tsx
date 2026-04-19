@@ -200,7 +200,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
             </div>
             <div>
               <Label className="text-xs">{t('sales.rolls.employeeLabelNote')}</Label>
-              <Input className="h-8 text-sm" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="np. ścinki z realizacji" />
+              <Input className="h-8 text-sm" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder={t('sales.rolls.notePlaceholder')} />
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleAddScrap} disabled={saving}>

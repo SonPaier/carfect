@@ -152,7 +152,7 @@ export const PackagesSection = ({
 
       <Button variant="outline" size="sm" className="gap-2" onClick={onAddPackage}>
         <Plus className="w-4 h-4" />
-        {packages.length > 0 ? 'Dodaj kolejną paczkę' : 'Dodaj paczkę'}
+        {packages.length > 0 ? t('sales.orders.addAnotherPackage') : t('sales.orders.addPackage')}
       </Button>
     </div>
   );

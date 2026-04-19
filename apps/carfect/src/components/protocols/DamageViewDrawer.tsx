@@ -74,7 +74,7 @@ export const DamageViewDrawer = ({
                   >
                     <img
                       src={url}
-                      alt={`Zdjęcie uszkodzenia ${index + 1}`}
+                      alt={t('protocols.damagePhotoAlt', { index: index + 1 })}
                       className="w-full h-full object-cover rounded-lg border"
                     />
                   </div>

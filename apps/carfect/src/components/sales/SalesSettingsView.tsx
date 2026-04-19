@@ -208,7 +208,7 @@ const SalesSettingsView = () => {
               disabled={uploadingLogo}
             >
               <Upload className="w-4 h-4 mr-2" />
-              {companyForm.logo_url ? 'Zmień logo' : 'Załaduj logo'}
+              {companyForm.logo_url ? t('sales.settings.changeLogo') : t('sales.settings.uploadLogo')}
             </Button>
             {companyForm.logo_url && (
               <Button
@@ -219,7 +219,7 @@ const SalesSettingsView = () => {
                 className="text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Usuń logo
+                {t('sales.settings.removeLogo')}
               </Button>
             )}
           </div>
@@ -245,14 +245,14 @@ const SalesSettingsView = () => {
 
       {/* Short Name */}
       <div className="space-y-2">
-        <Label htmlFor="sales-short_name">Skrócona nazwa firmy (do SMS) *</Label>
+        <Label htmlFor="sales-short_name">{t('sales.settings.shortCompanyName')}</Label>
         <Input
           id="sales-short_name"
           value={companyForm.short_name}
           onChange={(e) => handleInputChange('short_name', e.target.value)}
           maxLength={20}
         />
-        <p className="text-xs text-muted-foreground">Używana w wiadomościach SMS, max 20 znaków</p>
+        <p className="text-xs text-muted-foreground">{t('sales.settings.shortNameDesc')}</p>
       </div>
 
       {/* Invoice Company Name */}

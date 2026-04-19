@@ -68,11 +68,11 @@ const MESSAGE_TYPE_LABELS: Record<string, string> = {
   reservation_confirmed_by_admin: 'Potw. admin',
   reservation_edited: 'Zmiana',
   reminder_1day: 'Przyp. 1d',
-  reminder_1hour: 'Przyp. dziś',
+  reminder_1hour: t('sms.reminderToday'),
   vehicle_ready: 'Gotowy',
   confirmation: 'Potw.',
   pending_confirmation: 'Oczek.',
-  manual: 'Ręczny',
+  manual: t('sms.manual'),
   customer_reminder: 'Oferta',
   payment_blik: 'BLIK',
   payment_bank_transfer: 'Przelew',
@@ -80,7 +80,7 @@ const MESSAGE_TYPE_LABELS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   sent: { label: t('sales.orders.shipped'), className: 'text-green-700 bg-green-50' },
-  failed: { label: 'Błąd', className: 'text-red-700 bg-red-50' },
+  failed: { label: t('common.error'), className: 'text-red-700 bg-red-50' },
   simulated: { label: 'Demo', className: 'text-blue-700 bg-blue-50' },
 };
 

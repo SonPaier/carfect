@@ -117,7 +117,7 @@ export default function NotificationsView({
         if (serviceItems && Array.isArray(serviceItems) && serviceItems.length > 0) {
           // Use embedded names from service_items
           servicesData = serviceItems.map((item) => ({
-            name: item.name || 'Usługa',
+            name: item.name || t('common.services'),
             shortcut: item.short_name || null,
           }));
         } else if (serviceIds && Array.isArray(serviceIds) && serviceIds.length > 0) {

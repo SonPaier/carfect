@@ -117,7 +117,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
           <Clock className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground">{t('employees.noActiveEmployees')}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Dodaj pracowników, aby móc rejestrować czas pracy
+            {t('employees.addEmployeesToTrackTime')}
           </p>
         </CardContent>
       </Card>
@@ -177,7 +177,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
               <CardContent>
                 <div className="text-2xl font-bold">{totalHours}</div>
                 <div className="text-xs text-muted-foreground">
-                  {summary?.entries_count || 0} wpisów
+                  {t('employees.entriesCount', { count: summary?.entries_count || 0 })}
                   {earnings && ` • ${earnings} zł`}
                 </div>
               </CardContent>
@@ -283,8 +283,8 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title="Usuń wpis"
-        description="Czy na pewno chcesz usunąć ten wpis czasu pracy?"
+        title={t('employees.deleteEntry')}
+        description={t('employees.deleteEntryConfirm')}
         confirmLabel={t('common.delete')}
         onConfirm={handleDeleteEntry}
         variant="destructive"

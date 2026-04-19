@@ -297,7 +297,7 @@ const SalesProductsView = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
-            Strona {currentPage} z {totalPages} ({sortedProducts.length} produktów)
+            {t('sales.products.pageOf', { page: currentPage, totalPages, count: sortedProducts.length })}
           </p>
           <div className="flex items-center gap-1">
             <Button

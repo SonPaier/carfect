@@ -1,4 +1,5 @@
 import { Label } from '@shared/ui';
+import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 
 interface HallOption {
@@ -31,7 +32,7 @@ const HallPickerField = ({ value, onChange, halls }: HallPickerFieldProps) => {
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground">
-        Użytkownik po zalogowaniu zobaczy wybrany kalendarz
+        {t('users.hallPickerDesc')}
       </p>
     </div>
   );

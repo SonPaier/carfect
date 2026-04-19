@@ -60,7 +60,13 @@
     "send": "Send",
     "copy": "Copy",
     "download": "Download",
-    "services": "Services"
+    "services": "Services",
+    "allRightsReserved": "All rights reserved.",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "app": "app",
+    "change": "Change",
+    "redo": "Redo"
   },
   "carSearch": {
     "useCustom": "Use"
@@ -88,7 +94,11 @@
     "confirmPassword": "Confirm password",
     "passwordsMismatch": "Passwords do not match",
     "changePassword": "Change password",
-    "passwordChanged": "Password changed"
+    "passwordChanged": "Password changed",
+    "invalidLink": "Invalid link",
+    "requestNewResetLink": "Request a new password reset link.",
+    "redirectToLogin": "You will be redirected to the login page shortly.",
+    "enterNewPassword": "Enter a new password for your account."
   },
   "navigation": {
     "reservations": "Bookings",
@@ -426,7 +436,15 @@
     "reserveFor": "Book for {{price}} zł",
     "smsConfirmationNote": "You will receive an SMS with a code confirming your booking",
     "availableHours": "Available times",
-    "noSlotsForDayAlt": "No available appointments on this day."
+    "noSlotsForDayAlt": "No available appointments on this day.",
+    "dayMon": "MON",
+    "dayTue": "TUE",
+    "dayWed": "WED",
+    "dayThu": "THU",
+    "dayFri": "FRI",
+    "daySat": "SAT",
+    "daySun": "SUN",
+    "upsellSuggestion": "You still have some time before your next booking. How about"
   },
   "calendar": {
     "title": "Customers",
@@ -504,7 +522,14 @@
     "stopWork": "Stop",
     "trainingOpen": "Training (open)",
     "trainingClosed": "Training (closed)",
-    "moveTo": "Move to"
+    "moveTo": "Move to",
+    "daySun": "SUN",
+    "dayMon": "MON",
+    "dayTue": "TUE",
+    "dayWed": "WED",
+    "dayThu": "THU",
+    "dayFri": "FRI",
+    "daySat": "SAT"
   },
   "customers": {
     "title": "Customers",
@@ -598,7 +623,14 @@
     "description": "Services will be available for selection in bookings and when creating quote templates. Categories are optional.",
     "noTemplates": "No templates",
     "searchPlaceholder": "Search service...",
-    "photos": "Photos"
+    "photos": "Photos",
+    "defaultCategory": "Car service",
+    "tooltipDisplayName": "Name displayed to customers in quotes and price list",
+    "tooltipInternalName": "Internal working name visible only to you",
+    "tooltipCategory": "Grouping services in price list",
+    "tooltipDescription": "Description displayed to customers during booking",
+    "tooltipDuration": "Service duration in minutes",
+    "tooltipReminders": "Automatic SMS reminders after service completion"
   },
   "stations": {
     "title": "Services",
@@ -883,7 +915,10 @@
     "showLess": "Show less",
     "showMore": "Show more",
     "addCoating": "+Coating",
-    "selectScopesOrAdd": "Select scopes in the previous step or add an option manually"
+    "selectScopesOrAdd": "Select scopes in the previous step or add an option manually",
+    "serviceDescFromTab": "Service descriptions are loaded from the tab",
+    "photoAlt": "Photo {{index}}",
+    "createFirstOffer": "Create the first quote for a customer"
   },
   "summary": {
     "customer": "Customer",
@@ -1157,7 +1192,9 @@
       "invoiceCity": "City",
       "invoiceGusButton": "Fetch from Companies House",
       "invoiceSaveButton": "Save billing details"
-    }
+    },
+    "namePlaceholder": "e.g. Auto Spa London",
+    "addressPlaceholder": "e.g. 123 Example St, London"
   },
   "widget": {
     "title": "SMS",
@@ -1239,7 +1276,10 @@
     "userDeleted": "User deleted",
     "passwordReset": "Password reset",
     "deleteConfirmTitle": "Delete user?",
-    "deleteConfirmDescription": "This action is irreversible."
+    "deleteConfirmDescription": "This action is irreversible.",
+    "roleEmployeeDesc": "Simplified view: calendar, time tracking, protocols (e.g. workshop tablet)",
+    "roleSalesDesc": "Access to CRM sales panel (orders, customers, products)",
+    "hallPickerDesc": "User will see the selected calendar after login"
   },
   "sms": {
     "title": "SMS",
@@ -1336,7 +1376,9 @@
       "reservationReminder1hour": "Reminder about your reservation in one hour. Code: {{code}}",
       "reservationCancelled": "Your reservation has been cancelled.",
       "reservationUpdated": "Your reservation has been changed. New date: {{date}} at {{time}}"
-    }
+    },
+    "reminderToday": "Rem. today",
+    "manual": "Manual"
   },
   "errors": {
     "generic": "An error occurred. Please try again.",
@@ -1352,7 +1394,8 @@
     "minLength": "Minimum 8 characters",
     "maxLength": "Maximum length: {{max}} characters.",
     "tryAgain": "Try again",
-    "homepage": "Homepage"
+    "homepage": "Homepage",
+    "unexpectedError": "An unexpected error occurred. Our team has been notified."
   },
   "dates": {
     "today": "Today",
@@ -1506,345 +1549,97 @@
     "generatingPdf": "Generowanie..."
   },
   "superAdmin": {
-    "title": "New inspection report",
-    "instances": "Instances",
-    "newInstance": "New instance",
-    "editInstance": "Edit instance",
-    "instanceName": "Name",
-    "instanceSlug": "Slug",
-    "smsLimit": "SMS limit",
-    "smsUsed": "SMS used",
-    "active": "Active",
-    "inactive": "Inactive",
-    "panelTitle": "Management panel",
-    "nav": {
-      "instances": "Instances",
-      "cars": "Cars",
-      "admins": "Administrators",
-      "settings": "Settings",
-      "hints": "Hints"
-    },
+    "panelTitle": "Management Panel",
+    "navInstances": "Instances",
+    "navCars": "Cars",
+    "navAdmins": "Administrators",
+    "navSettings": "Settings",
+    "navHints": "Hints",
     "logout": "Log out",
-    "instancesTitle": "Instances",
-    "instancesDescription": "Manage all application instances",
-    "allInstances": "All instances",
-    "activeInstances": "Active",
-    "adminsCount": "Administrators",
-    "reservationsToday": "Reservations today",
+    "pageTitle": "Super Admin - Management Panel",
+    "instancesHeading": "Instances",
+    "instancesSubheading": "Manage all application instances",
+    "newInstance": "New instance",
+    "statAllInstances": "All instances",
+    "statActive": "Active",
+    "statAdmins": "Administrators",
+    "statTodayReservations": "Bookings today",
     "instancesList": "Instances list",
     "viewAsClient": "View as client",
     "openAdminPanel": "Open admin panel",
     "whitelabelSettings": "Whitelabel settings",
-    "planAndSubscription": "Plan and subscription",
+    "planAndSubscription": "Plan & subscription",
     "paidFeatures": "Paid features",
     "manageUsers": "Manage users",
     "disableInstance": "Disable instance",
     "enableInstance": "Enable instance",
     "deleteInstance": "Delete instance",
-    "instanceToggled": "Instance {{state}}",
-    "instanceToggledOn": "enabled",
-    "instanceToggledOff": "disabled",
-    "instanceDeleted": "Instance has been deleted",
-    "confirmDeleteInstance": "Are you sure you want to delete the instance \"{{name}}\"? The instance and all its data will be permanently removed.",
-    "toggleStatusError": "Error changing instance status",
-    "deleteError": "Failed to delete inspection report",
-    "viewingAsClient": "Opening client view for: {{slug}}",
     "sectionInProgress": "Section in progress",
-    "featuresDialogTitle": "Paid features - {{name}}",
-    "usersDialogTitle": "Users - {{name}}",
-    "carModels": {
-      "title": "New inspection report",
-      "modelsCount": "{{count}} models",
-      "importJson": "Import from JSON",
-      "exportCsv": "Export CSV",
-      "addModel": "Add model",
-      "approved": "Approved",
-      "pendingApproval": "Pending approval",
-      "all": "All",
-      "searchPlaceholder": "Search by client, vehicle...",
-      "allBrands": "All makes",
-      "allSizes": "All",
-      "smallSize": "Small (S)",
-      "mediumSize": "Medium (M)",
-      "largeSize": "Large (L)",
-      "brand": "Make",
-      "model": "Model",
-      "size": "Size",
-      "status": "Status",
-      "actions": "Actions",
-      "noProposals": "No proposals to approve",
-      "noModels": "No models in the database. Click \"Import from JSON\" to load data.",
-      "noFilterResults": "No results for the given filters",
-      "importSuccess": "Imported {{inserted}} models ({{skipped}} already existed)",
-      "importError": "Error importing data",
-      "exportSuccess": "Exported to CSV",
-      "deleteConfirm": "Are you sure you want to delete {{brand}} {{name}}?",
-      "deleteSuccess": "Inspection report deleted",
-      "deleteError": "Failed to delete inspection report",
-      "acceptSuccess": "Approved {{brand}} {{name}}",
-      "acceptError": "Error approving",
-      "rejectSuccess": "Rejected {{brand}} {{name}}",
-      "rejectError": "Error rejecting",
-      "proposal": "Proposal",
-      "activeStatus": "Active",
-      "editBeforeAccept": "Edit before approving",
-      "accept": "Approve",
-      "reject": "Reject",
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {{current}} of {{total}}",
-      "showing": "Showing {{from}}-{{to}} of {{total}}",
-      "sizeSmall": "Small",
-      "sizeMedium": "Medium",
-      "sizeLarge": "Large"
-    },
-    "addCarModelDialog": {
-      "title": "Add new car model",
-      "brand": "Make",
-      "model": "Model",
-      "size": "Size",
-      "brandPlaceholder": "e.g. Toyota",
-      "modelPlaceholder": "e.g. Corolla",
-      "sizeSmall": "Small (S) - compact, hatchbacks",
-      "sizeMedium": "Medium (M) - saloons, estates",
-      "sizeLarge": "Large (L) - SUVs, vans, pickups",
-      "fillAllFields": "Please fill in all fields",
-      "alreadyExists": "Model {{brand}} {{name}} already exists",
-      "addSuccess": "Added {{brand}} {{name}}",
-      "addError": "Error adding model",
-      "submit": "Add"
-    },
-    "editCarModelDialog": {
-      "title": "Edit car model",
-      "brand": "Make",
-      "model": "Model",
-      "size": "Size",
-      "brandPlaceholder": "e.g. Toyota",
-      "modelPlaceholder": "e.g. Corolla",
-      "sizeSmall": "Small (S) - compact, hatchbacks",
-      "sizeMedium": "Medium (M) - saloons, estates",
-      "sizeLarge": "Large (L) - SUVs, vans, pickups",
-      "fillAllFields": "Please fill in all fields",
-      "alreadyExists": "Model {{brand}} {{name}} already exists",
-      "updateSuccess": "Updated {{brand}} {{name}}",
-      "updateError": "Error updating model",
-      "submit": "Save"
-    },
-    "hintFormDialog": {
-      "editTitle": "Edit hint",
-      "newTitle": "New hint",
-      "type": "Type",
-      "typePopup": "Popup (centred modal)",
-      "typeInfobox": "Infobox (banner at top)",
-      "typeTooltip": "Tooltip (anchored to element)",
-      "titleLabel": "Title",
-      "titlePlaceholder": "Hint title",
-      "body": "Content",
-      "bodyPlaceholder": "Hint description...",
-      "image": "Image (optional)",
-      "imagePreviewAlt": "Preview",
-      "removeImageAriaLabel": "Remove image",
-      "addImageLabel": "Click to add image",
-      "elementId": "Element ID",
-      "elementIdHint": "(value of data-hint-id attribute)",
-      "elementIdPlaceholder": "e.g. add-employee-button",
-      "route": "Route",
-      "routeHint": "(empty or * = all pages)",
-      "routePlaceholder": "e.g. /admin or /halls",
-      "targetRoles": "Target roles",
-      "delay": "Delay (ms)",
-      "active": "Active",
-      "saveChanges": "Save changes",
-      "addHint": "Add hint",
-      "titleRequired": "Title is required",
-      "bodyRequired": "Content is required",
-      "rolesRequired": "Select at least one role",
-      "tooltipElementRequired": "For a tooltip, provide the element ID (data-hint-id)",
-      "uploadError": "Error uploading image",
-      "saveError": "Error saving",
-      "updateSuccess": "Hint updated",
-      "createSuccess": "Hint added"
-    },
-    "hintsManager": {
-      "title": "In-app hints",
-      "description": "Manage tooltips, popups and infoboxes for instance administrators",
-      "newHint": "New hint",
-      "noHints": "No hints yet. Add the first one.",
-      "tableType": "Type",
-      "tableTitle": "Title",
-      "tableRoute": "Route",
-      "tableRoles": "Roles",
-      "tableActive": "Active",
-      "fetchError": "Error fetching hints",
-      "statusError": "Error changing status",
-      "deleteSuccess": "Hint deleted",
-      "deleteError": "Error deleting",
-      "deactivate": "Deactivate",
-      "activate": "Activate",
-      "editAriaLabel": "Edit",
-      "deleteAriaLabel": "Delete",
-      "deleteDialogTitle": "Delete hint",
-      "deleteDialogDescription": "Are you sure you want to delete the hint \"{{title}}\"? This action cannot be undone.",
-      "deleteConfirmLabel": "Delete",
-      "deleteCancelLabel": "Cancel"
-    },
-    "addInstanceDialog": {
-      "title": "New instance",
-      "sectionCompany": "Company details",
-      "companyName": "Company name *",
-      "companyNamePlaceholder": "e.g. Auto Spa Gdańsk",
-      "slug": "Slug (URL) *",
-      "slugPlaceholder": "e.g. auto-spa-gdansk",
-      "slugInvalid": "Only lowercase letters, digits and hyphens",
-      "slugTaken": "This slug is already taken",
-      "shortName": "Short name (for SMS)",
-      "shortNamePlaceholder": "e.g. Auto Spa",
-      "phone": "Phone",
-      "email": "Email",
-      "address": "Address",
-      "nip": "VAT number",
-      "sectionPlan": "Plan & subscription",
-      "selectPlan": "Select plan *",
-      "selectPlanPlaceholder": "Select plan",
-      "planDescription": "{{name}} ({{basePrice}} zł with 1 station, +{{perStation}} zł/additional)",
-      "stationLimit": "Station limit *",
-      "estimatedPrice": "Estimated monthly price:",
-      "trial": "Trial period",
-      "trialDays": "days",
-      "sectionAdmin": "Administrator account",
-      "adminUsername": "Username *",
-      "adminUsernamePlaceholder": "e.g. admin",
-      "adminEmail": "Admin email *",
-      "adminEmailPlaceholder": "e.g. admin@company.com",
-      "adminEmailInvalid": "Invalid email address format",
-      "adminPassword": "Password *",
-      "adminPasswordPlaceholder": "Min. 6 characters",
-      "adminPasswordTooShort": "Password must be at least 6 characters",
-      "dnsTitle": "After creation, configure DNS:",
-      "dnsPublic": "client view",
-      "dnsAdmin": "admin panel",
-      "createInstance": "Create instance",
-      "slugTakenError": "This slug is already taken. Please choose another.",
-      "createError": "Error: {{message}}",
-      "createErrorFallback": "Failed to create instance"
-    },
-    "instancePlanSettings": {
-      "selectPlan": "Select plan",
-      "perMonth": "/mo.",
-      "moreFeatures": "+{{count}} more",
-      "stationLimit": "Station limit",
-      "stationLimitDescription": "The instance administrator will not be able to add more than {{count}} stations",
-      "summary": "Summary",
-      "basePlan": "Base plan ({{name}})",
-      "extraStations": "Additional stations ({{count}} × {{price}} zł)",
-      "totalMonthly": "Total monthly",
-      "totalPrice": "{{price}} zł net",
-      "saveChanges": "Save changes",
-      "selectPlanError": "Please select a plan",
-      "saveSuccess": "Plan saved",
-      "saveError": "Error saving plan",
-      "loadError": "Error loading plan data",
-      "featureLabels": {
-        "calendar": "Main calendar",
-        "online_booking": "Online bookings 24/7",
-        "sms_notifications": "SMS notifications",
-        "customer_crm": "Customer management",
-        "team_management": "Team management",
-        "yard_vehicles": "Yard vehicle handling",
-        "employee_view": "Employee view",
-        "analytics": "Analytics & reports",
-        "offers": "Offers module",
-        "vehicle_reception_protocol": "Reception protocol",
-        "followup": "Sales support",
-        "reminders": "Automatic reminders"
-      }
-    },
-    "instanceCreatedSuccessDialog": {
-      "title": "Instance created!",
-      "successMessage": "Instance \"{{name}}\" has been successfully created.",
-      "configureDns": "Configure DNS",
-      "copyDomains": "Copy",
-      "publicDomain": "Public:",
-      "adminDomain": "Admin:",
-      "dnsNote": "Add CNAME records in DNS pointing to the Vercel server.",
-      "adminCredentials": "Administrator login details",
-      "copyCredentials": "Copy",
-      "loginLabel": "Username:",
-      "emailLabel": "Email:",
-      "passwordLabel": "Password:",
-      "copyAll": "Copy all",
-      "copiedAll": "Copied to clipboard",
-      "copiedDomains": "Domains copied",
-      "copiedCredentials": "Login details copied",
-      "close": "Close",
-      "clipboardInstance": "Instance: {{name}}",
-      "clipboardSubdomains": "Subdomains:",
-      "clipboardPublic": "• Public: {{domain}}",
-      "clipboardAdmin": "• Admin: {{domain}}",
-      "clipboardLoginData": "Login details:",
-      "clipboardLogin": "• Username: {{login}}",
-      "clipboardEmail": "• Email: {{email}}",
-      "clipboardPassword": "• Password: {{password}}"
-    },
-    "planDialogTitle": "Plan i subskrypcja - {{name}}",
-    "manageAllInstances": "Manage all application instances",
-    "managementPanel": "Management panel",
-    "hints": "Hints"
+    "featuresDialogTitle": "Paid features — {{name}}",
+    "usersDialogTitle": "Users — {{name}}",
+    "planDialogTitle": "Plan & subscription — {{name}}",
+    "toastViewingClient": "Opening client view for: {{slug}}",
+    "toastInstanceEnabled": "Instance enabled",
+    "toastInstanceDisabled": "Instance disabled",
+    "toastToggleError": "Error changing instance status",
+    "toastInstanceDeleted": "Instance deleted",
+    "toastDeleteError": "Error deleting instance",
+    "confirmDelete": "Are you sure you want to delete the instance \"{{name}}\"? The instance will be hidden but data will remain in the database.",
+    "smsUsageAll": "SMS usage - All instances",
+    "smsTotal": "Total: {{used}} / {{limit}}"
   },
   "instanceFeatures": {
-    "cardTitle": "Additional features",
+    "cardTitle": "Additional Features",
     "cardDescription": "Manage features for this instance",
-    "inPlan": "In plan",
-    "additional": "Additional",
-    "featureEnabled": "Feature enabled",
-    "featureDisabled": "Feature disabled",
-    "toggleError": "Error changing setting",
-    "parametersSaved": "Parameters saved",
-    "parametersError": "Error saving parameters",
-    "features": {
-      "offers": {
-        "name": "Offers Module",
-        "description": "Offer generator with PDF and delivery to the customer"
-      },
-      "upsell": {
-        "name": "Upsell suggestions",
-        "description": "Suggests services matching free slots when a customer books"
-      },
-      "sms_edit_link": {
-        "name": "Edit link in SMS",
-        "description": "Appends \"Change or cancel: [link]\" to SMS messages",
-        "parameterLabel": "Phone numbers (optional)",
-        "parameterDescription": "Enter phone numbers (comma-separated) that will receive the link. Empty = everyone.",
-        "parameterPlaceholder": "+48501234567, +48600111222"
-      },
-      "hall_view": {
-        "name": "Workshop View",
-        "description": "Simplified calendar view for workshop staff with configurable bays"
-      },
-      "vehicle_reception_protocol": {
-        "name": "Vehicle reception protocol",
-        "description": "Form for documenting vehicle condition on arrival with damage marking on a diagram"
-      },
-      "followup": {
-        "name": "Sales support",
-        "description": "Follow-up and reminder system for customers"
-      },
-      "reminders": {
-        "name": "Automatic reminders",
-        "description": "Automatic SMS reminders sent to customers"
-      },
-      "trainings": {
-        "name": "Trainings",
-        "description": "Manage trainings in the calendar"
-      },
-      "sales_crm": {
-        "name": "Sales CRM",
-        "description": "CRM module for managing product sales"
-      },
-      "vehicle_vin": {
-        "name": "Vehicle VIN number",
-        "description": "Add a VIN field to customer vehicles"
-      }
+    "badgeInPlan": "Included in plan",
+    "badgeAdditional": "Add-on",
+    "toastEnabled": "Feature enabled",
+    "toastDisabled": "Feature disabled",
+    "toastToggleError": "Error changing feature setting",
+    "toastParamsSaved": "Parameters saved",
+    "toastParamsError": "Error saving parameters",
+    "offers": {
+      "name": "Offers Module",
+      "description": "Quote generator with PDF export and client delivery"
+    },
+    "upsell": {
+      "name": "Upsell Suggestions",
+      "description": "Suggests services matching free slots when a client books"
+    },
+    "sms_edit_link": {
+      "name": "Edit Link in SMS",
+      "description": "Appends \"Change or cancel: [link]\" to SMS messages",
+      "parameterLabel": "Phone numbers (optional)",
+      "parameterDescription": "Enter phone numbers (comma-separated) that will receive the link. Leave empty for all.",
+      "parameterPlaceholder": "+48501234567, +48600111222"
+    },
+    "hall_view": {
+      "name": "Hall View",
+      "description": "Simplified calendar view for hall staff with configurable bays"
+    },
+    "vehicle_reception_protocol": {
+      "name": "Vehicle Reception Protocol",
+      "description": "Form for documenting vehicle condition at intake, with damage marking on a diagram"
+    },
+    "followup": {
+      "name": "Sales Support",
+      "description": "Follow-up and reminder system for clients"
+    },
+    "reminders": {
+      "name": "Automatic Reminders",
+      "description": "Automatically sends SMS reminders to clients"
+    },
+    "trainings": {
+      "name": "Trainings",
+      "description": "Manage trainings in the calendar"
+    },
+    "sales_crm": {
+      "name": "Sales CRM",
+      "description": "CRM module for managing product sales"
+    },
+    "vehicle_vin": {
+      "name": "Vehicle VIN Number",
+      "description": "Add a VIN field to client vehicles"
     }
   },
   "resetPassword": {
@@ -2114,7 +1909,13 @@
     "protocolDate": "Protocol creation date",
     "receivedBy": "Received by",
     "vehicleReceptionProtocol": "Vehicle reception protocol",
-    "protocol": "Protocol"
+    "protocol": "Protocol",
+    "noOffersFound": "No quotes found. You can enter the number manually.",
+    "createdUsing": "Protocol created using",
+    "damagePhotoAlt": "Damage photo {{index}}",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "damagePhoto": "Damage photo"
   },
   "adminDashboard": {
     "title": "Admin Panel",
@@ -2319,7 +2120,8 @@
     "statusCancelled": "Anulowane",
     "call": "Zadzwoń",
     "sendSms": "Wyślij SMS",
-    "reservationPhotos": "Reservation photos"
+    "reservationPhotos": "Reservation photos",
+    "maxPhotos": "You can add up to {{max}} photos to this reservation ({{current}}/{{max}})"
   },
   "instanceSettings": {
     "title": "Services",
@@ -2863,7 +2665,9 @@
       "cannotDeleteWithServices": "Cannot delete category with {{count}} services"
     },
     "coatingRefresh": "Coating refresh",
-    "serviceCategories": "Service categories"
+    "serviceCategories": "Service categories",
+    "abbreviation": "Abbreviation",
+    "templatesDesc": "Based on these you can create your own templates and use them in quotes."
   },
   "productDialog": {
     "addTitle": "Add service",
@@ -3129,7 +2933,8 @@
     "widgetPreview": "Widget preview",
     "settingsInherited": "These settings will be inherited by every newly created service.",
     "discountsAbility": "Ability to add discounts to services in quotes",
-    "conditionTemplatesDesc": "Create condition templates that you can quickly insert when creating a quote."
+    "conditionTemplatesDesc": "Create condition templates that you can quickly insert when creating a quote.",
+    "templateContentPlaceholder": "Template content..."
   },
   "priceList": {
     "title": "Service price list",
@@ -4275,7 +4080,11 @@
       "usage": "Usage",
       "used": "Used",
       "remaining": "Remaining",
-      "lengthM": "L. (m)"
+      "lengthM": "L. (m)",
+      "dragPhotos": "Drag roll label photos or click",
+      "supportedFormats": "Supported formats: JPG, PNG, HEIC. You can upload multiple photos at once.",
+      "readFailed": "Failed to read",
+      "notePlaceholder": "e.g. offcuts from job"
     },
     "packages": {
       "addProduct": "Add product",
@@ -4381,14 +4190,21 @@
     },
     "settings": {
       "saveSuccess": "Company details saved",
-      "saveError": "Failed to save company details"
+      "saveError": "Failed to save company details",
+      "changeLogo": "Change logo",
+      "uploadLogo": "Upload logo",
+      "removeLogo": "Remove logo",
+      "shortCompanyName": "Short company name (for SMS) *",
+      "shortNameDesc": "Used in SMS messages, max 20 characters"
     },
     "customers": {
       "lastOrder": "Last order",
-      "payer": "Payer"
+      "payer": "Payer",
+      "pageOf": "Page {{page}} of {{totalPages}} ({{count}} customers)"
     },
     "products": {
-      "fullName": "Full name"
+      "fullName": "Full name",
+      "pageOf": "Page {{page}} of {{totalPages}} ({{count}} products)"
     },
     "productSelection": {
       "title": "Select products",
@@ -4542,7 +4358,17 @@
       "diameterCm": "Diameter (cm)",
       "lengthCmShort": "L. (cm)",
       "packageContents": "Package contents",
-      "order": "Order"
+      "order": "Order",
+      "trackingInPreparation": "Shipment tracking in preparation",
+      "invoicePdfUnavailable": "Invoice PDF unavailable",
+      "pdfDownloadFailed": "Failed to download PDF",
+      "ordersLabel": "orders",
+      "enableDiscount": "Enable discount",
+      "disableDiscount": "Disable discount",
+      "shippingPrice": "Shipping price",
+      "shippingAddressNote": "Changes apply only to this order and do not overwrite the customer address.",
+      "addAnotherPackage": "Add another package",
+      "addPackage": "Add package"
     },
     "companySettings": {
       "title": "Company details",
@@ -4751,7 +4577,13 @@
     "companyAddress": "Company address",
     "deliveryAddress": "Delivery address",
     "sameAsBilling": "Same as company address",
-    "salesPanel": "Sales Panel"
+    "salesPanel": "Sales Panel",
+    "crm": {
+      "fetchServicesFailed": "Failed to fetch services"
+    },
+    "unsavedChanges": "You have unsaved changes. What would you like to do?",
+    "continueEditing": "Continue editing",
+    "discardChanges": "Discard changes"
   },
   "hooks": {
     "conditions": {
@@ -5218,7 +5050,15 @@
     "noDaysOff": "No days off",
     "noEntriesThisMonth": "No entries this month",
     "employeeList": "Employee list",
-    "deleteTimeOff": "Delete time off"
+    "deleteTimeOff": "Delete time off",
+    "deleted": "Deleted",
+    "addEmployeesToTrackTime": "Add employees to start tracking work time",
+    "entriesCount": "{{count}} entries",
+    "deleteEntry": "Delete entry",
+    "deleteEntryConfirm": "Are you sure you want to delete this time entry?",
+    "deleteDayOff": "Delete day off",
+    "deleteDayOffConfirm": "Are you sure you want to delete this day off?",
+    "addFirstEmployee": "Add the first employee to start tracking work time"
   },
   "notificationsView": {
     "title": "Notifications",
@@ -5320,96 +5160,15 @@
     "nextPhoto": "Następne zdjęcie",
     "damagePhoto": "Zdjęcie uszkodzenia"
   },
-  "instanceFeatures": {
-    "cardTitle": "Additional Features",
-    "cardDescription": "Manage features for this instance",
-    "badgeInPlan": "Included in plan",
-    "badgeAdditional": "Add-on",
-    "toastEnabled": "Feature enabled",
-    "toastDisabled": "Feature disabled",
-    "toastToggleError": "Error changing feature setting",
-    "toastParamsSaved": "Parameters saved",
-    "toastParamsError": "Error saving parameters",
-    "offers": {
-      "name": "Offers Module",
-      "description": "Quote generator with PDF export and client delivery"
-    },
-    "upsell": {
-      "name": "Upsell Suggestions",
-      "description": "Suggests services matching free slots when a client books"
-    },
-    "sms_edit_link": {
-      "name": "Edit Link in SMS",
-      "description": "Appends \"Change or cancel: [link]\" to SMS messages",
-      "parameterLabel": "Phone numbers (optional)",
-      "parameterDescription": "Enter phone numbers (comma-separated) that will receive the link. Leave empty for all.",
-      "parameterPlaceholder": "+48501234567, +48600111222"
-    },
-    "hall_view": {
-      "name": "Hall View",
-      "description": "Simplified calendar view for hall staff with configurable bays"
-    },
-    "vehicle_reception_protocol": {
-      "name": "Vehicle Reception Protocol",
-      "description": "Form for documenting vehicle condition at intake, with damage marking on a diagram"
-    },
-    "followup": {
-      "name": "Sales Support",
-      "description": "Follow-up and reminder system for clients"
-    },
-    "reminders": {
-      "name": "Automatic Reminders",
-      "description": "Automatically sends SMS reminders to clients"
-    },
-    "trainings": {
-      "name": "Trainings",
-      "description": "Manage trainings in the calendar"
-    },
-    "sales_crm": {
-      "name": "Sales CRM",
-      "description": "CRM module for managing product sales"
-    },
-    "vehicle_vin": {
-      "name": "Vehicle VIN Number",
-      "description": "Add a VIN field to client vehicles"
-    }
+  "vehicles": {
+    "vinValidation": "VIN must be 17 characters (without I, O, Q)"
   },
-  "superAdmin": {
-    "panelTitle": "Management Panel",
-    "navInstances": "Instances",
-    "navCars": "Cars",
-    "navAdmins": "Administrators",
-    "navSettings": "Settings",
-    "navHints": "Hints",
-    "logout": "Log out",
-    "pageTitle": "Super Admin - Management Panel",
-    "instancesHeading": "Instances",
-    "instancesSubheading": "Manage all application instances",
-    "newInstance": "New instance",
-    "statAllInstances": "All instances",
-    "statActive": "Active",
-    "statAdmins": "Administrators",
-    "statTodayReservations": "Bookings today",
-    "instancesList": "Instances list",
-    "viewAsClient": "View as client",
-    "openAdminPanel": "Open admin panel",
-    "whitelabelSettings": "Whitelabel settings",
-    "planAndSubscription": "Plan & subscription",
-    "paidFeatures": "Paid features",
-    "manageUsers": "Manage users",
-    "disableInstance": "Disable instance",
-    "enableInstance": "Enable instance",
-    "deleteInstance": "Delete instance",
-    "sectionInProgress": "Section in progress",
-    "featuresDialogTitle": "Paid features — {{name}}",
-    "usersDialogTitle": "Users — {{name}}",
-    "planDialogTitle": "Plan & subscription — {{name}}",
-    "toastViewingClient": "Opening client view for: {{slug}}",
-    "toastInstanceEnabled": "Instance enabled",
-    "toastInstanceDisabled": "Instance disabled",
-    "toastToggleError": "Error changing instance status",
-    "toastInstanceDeleted": "Instance deleted",
-    "toastDeleteError": "Error deleting instance",
-    "confirmDelete": "Are you sure you want to delete the instance \"{{name}}\"? The instance will be hidden but data will remain in the database."
+  "history": {
+    "removed": "Removed",
+    "noteAdded": "Note added",
+    "noteRemoved": "Note removed",
+    "noteChanged": "Note changed",
+    "employeesAdded": "Employees added",
+    "employeesRemoved": "Employees removed"
   }
 }

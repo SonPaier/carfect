@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, FileText, Loader2 } from 'lucide-react';
@@ -29,9 +30,10 @@ export const OfferSearchAutocomplete = ({
   value,
   onChange,
   onOfferSelect,
-  placeholder = 'Wyszukaj ofertę po numerze lub nazwisku...',
+  placeholder = '',
   inputClassName,
 }: OfferSearchAutocompleteProps) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [offers, setOffers] = useState<OfferData[]>([]);
@@ -153,7 +155,7 @@ export const OfferSearchAutocomplete = ({
 
       {isOpen && value.length >= 2 && offers.length === 0 && !isLoading && (
         <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg p-4 text-center text-sm text-muted-foreground">
-          Nie znaleziono ofert. Możesz wpisać numer ręcznie.
+          {t('protocols.noOffersFound')}
         </div>
       )}
     </div>

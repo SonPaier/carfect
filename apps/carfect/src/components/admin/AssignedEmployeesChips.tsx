@@ -1,4 +1,5 @@
 import { X, Plus, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@shared/ui';
 import { Employee } from '@/hooks/useEmployees';
@@ -32,7 +33,7 @@ export function AssignedEmployeesChips({
     const employee = employeeMap.get(id);
     return {
       id,
-      name: employee?.name || 'Usunięty',
+      name: employee?.name || t('employees.deleted'),
       shortName: employee ? getShortName(employee.name) : '?',
     };
   });

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PhotoFullscreenDialog } from '@/components/protocols/PhotoFullscreenDialog';
@@ -9,6 +10,7 @@ interface ScopePhotoCarouselProps {
 }
 
 export const ScopePhotoCarousel = ({ photos, className }: ScopePhotoCarouselProps) => {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export const ScopePhotoCarousel = ({ photos, className }: ScopePhotoCarouselProp
         >
           <img
             src={photos[currentIndex]}
-            alt={`Zdjęcie ${currentIndex + 1}`}
+            alt={t('offers.photoAlt', { index: currentIndex + 1 })}
             className="w-full h-full object-cover"
           />
         </div>

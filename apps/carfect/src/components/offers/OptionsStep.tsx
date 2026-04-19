@@ -693,7 +693,7 @@ export const OptionsStep = ({
     <>
       {/* Info about product descriptions */}
       <p className="text-sm text-muted-foreground mb-4">
-        Opisy usług są pobierane z zakładki{' '}
+        {t('offers.serviceDescFromTab')}{' '}
         <a
           href="/admin/products"
           target="_blank"

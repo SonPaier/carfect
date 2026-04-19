@@ -431,7 +431,7 @@ export const PublicProtocolCustomerView = ({
 
           {/* App footer */}
           <div className="text-center text-xs text-muted-foreground pt-4">
-            Protokół sporządzono przy użyciu{' '}
+            {t('protocols.createdUsing')}{' '}
             <a href="https://carfect.pl" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 transition-opacity">
               carfect.pl
             </a>

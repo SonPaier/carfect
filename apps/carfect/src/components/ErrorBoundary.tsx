@@ -20,7 +20,7 @@ const ErrorFallback = ({ error, resetError }: FallbackProps) => {
           </div>
           <CardTitle>Coś poszło nie tak</CardTitle>
           <CardDescription>
-            Wystąpił nieoczekiwany błąd. Nasz zespół został powiadomiony.
+            {t('errors.unexpectedError')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

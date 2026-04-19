@@ -655,7 +655,7 @@ export default function OffersView({
                   ? t('offers.noOffers')
                   : t('offers.noOffersForStatus')
             }
-            description={!searchQuery ? 'Utwórz pierwszą ofertę dla klienta' : undefined}
+            description={!searchQuery ? t('offers.createFirstOffer') : undefined}
           />
         ) : (
           <>

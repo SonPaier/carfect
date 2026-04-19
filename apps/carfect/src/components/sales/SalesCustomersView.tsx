@@ -463,7 +463,7 @@ const SalesCustomersView = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
-            Strona {page} z {totalPages} ({filtered.length} klientów)
+            {t('sales.customers.pageOf', { page, totalPages, count: filtered.length })}
           </p>
           <div className="flex items-center gap-1">
             <Button

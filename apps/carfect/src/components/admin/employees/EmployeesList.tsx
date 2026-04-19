@@ -113,7 +113,7 @@ const EmployeesList = ({ instanceId, centered = false }: EmployeesListProps) => 
           <User className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground">{t('employees.noEmployees')}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Dodaj pierwszego pracownika, aby rozpocząć rejestrację czasu pracy
+            {t('employees.addFirstEmployee')}
           </p>
           {canAddEmployee && (
             <Button onClick={() => setDialogOpen(true)} className="mt-4">

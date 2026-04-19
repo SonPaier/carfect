@@ -54,7 +54,7 @@ const ReservationPhotosDialog = ({
         <DialogHeader>
           <DialogTitle>{t('reservationDetails.reservationPhotos')}</DialogTitle>
           <DialogDescription>
-            Możesz dodać maksymalnie {maxPhotos} zdjęć do tej rezerwacji ({photos.length}/{maxPhotos})
+            {t('reservationDetails.maxPhotos', { max: maxPhotos, current: photos.length })}
           </DialogDescription>
         </DialogHeader>
 

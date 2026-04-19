@@ -163,8 +163,8 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title="Usuń nieobecność"
-        description="Czy na pewno chcesz usunąć tę nieobecność?"
+        title={t('employees.deleteDayOff')}
+        description={t('employees.deleteDayOffConfirm')}
         confirmLabel={t('common.delete')}
         onConfirm={handleDeleteDayOff}
         variant="destructive"

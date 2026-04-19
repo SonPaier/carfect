@@ -260,7 +260,7 @@ const PackageCard = ({
                                 onToggleDiscount?.(itemKey);
                               }}
                             >
-                              {p.excludeFromDiscount ? 'Włącz rabat' : 'Wyłącz rabat'}
+                              {p.excludeFromDiscount ? t('sales.orders.enableDiscount') : t('sales.orders.disableDiscount')}
                             </button>
                           )}
                         </div>
@@ -679,7 +679,7 @@ const PackageCard = ({
                 </Button>
                 {pkg.shippingCost != null && (
                   <span className="text-sm font-medium text-foreground">
-                    Cena wysyłki: {formatCurrency(pkg.shippingCost)}
+                    {t('sales.orders.shippingPrice')}: {formatCurrency(pkg.shippingCost)}
                   </span>
                 )}
                 {valuation.error && (

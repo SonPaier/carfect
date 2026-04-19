@@ -157,7 +157,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         body: { instanceId },
       });
       if (error) {
-        throw new Error(error.message || 'Nie udało się pobrać serwisów');
+        throw new Error(error.message || t('sales.crm.fetchServicesFailed'));
       }
       if (data?.error) {
         throw new Error(data.error);

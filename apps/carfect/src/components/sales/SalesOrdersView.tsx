@@ -735,7 +735,7 @@ const SalesOrdersView = () => {
         const valPrice = data.valuation?.price_gross
           ? ` | Wycena: ${data.valuation.price_gross} PLN`
           : '';
-        toast.error('Błąd: ' + data.error + valPrice, { duration: 10000 });
+        toast.error(t('common.error') + ': ' + data.error + valPrice, { duration: 10000 });
         return;
       }
       toast.success(t('sales.orders.toastShipmentCreated', { waybill: data.waybill_number }));
@@ -833,7 +833,7 @@ const SalesOrdersView = () => {
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po firmie, mieście, osobie..."
+            placeholder={t('sales.orders.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -1024,7 +1024,7 @@ const SalesOrdersView = () => {
                                 e.stopPropagation();
                                 if (!order.trackingUrl) {
                                   e.preventDefault();
-                                  toast.info('Śledzenie przesyłki w przygotowaniu');
+                                  toast.info(t('sales.orders.trackingInPreparation'));
                                 }
                               }}
                             >
@@ -1042,7 +1042,7 @@ const SalesOrdersView = () => {
                       </TableCell>
                       <TableCell className="text-right text-sm tabular-nums">
                         {order.paymentMethod === 'free'
-                          ? 'Bezpłatne'
+                          ? t('sales.orders.free')
                           : formatCurrency(order.totalNet, order.currency)}
                       </TableCell>
                       <TableCell>
@@ -1099,7 +1099,7 @@ const SalesOrdersView = () => {
                         </DropdownMenu>
                         {order.paymentMethod && (
                           <span className="text-xs text-foreground block">
-                            {{ cod: 'Pobranie', transfer: 'Przelew', cash: 'Gotówka', card: 'Karta', free: 'Bezpłatne', tab: 'Na zeszyt' }[order.paymentMethod] ?? order.paymentMethod}
+                            {{ cod: t('sales.orders.paymentCod'), transfer: t('sales.orders.paymentTransfer'), cash: t('sales.orders.paymentCash'), card: t('sales.orders.paymentCard'), free: t('sales.orders.free'), tab: t('sales.orders.paymentTab') }[order.paymentMethod] ?? order.paymentMethod}
                           </span>
                         )}
                         </div>
@@ -1235,11 +1235,11 @@ const SalesOrdersView = () => {
                                         if (json.pdf_url) {
                                           window.open(json.pdf_url, '_blank');
                                         } else {
-                                          toast.error('PDF faktury niedostępny');
+                                          toast.error(t('sales.orders.invoicePdfUnavailable'));
                                         }
                                       }
                                     } catch {
-                                      toast.error('Nie udało się pobrać PDF');
+                                      toast.error(t('sales.orders.pdfDownloadFailed'));
                                     }
                                   }}
                                 >
@@ -1356,7 +1356,7 @@ const SalesOrdersView = () => {
             setPageSize(size);
             setCurrentPage(1);
           }}
-          itemLabel="zamówień"
+          itemLabel={t('sales.orders.ordersLabel')}
         />
       </div>
       <AddSalesOrderDrawer

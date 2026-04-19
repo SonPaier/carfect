@@ -28,14 +28,14 @@ export const UnsavedChangesDialog = ({
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>Niezapisane zmiany</AlertDialogTitle>
-        <AlertDialogDescription>Masz niezapisane zmiany. Co chcesz zrobić?</AlertDialogDescription>
+        <AlertDialogDescription>{t('sales.unsavedChanges')}</AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter className="flex-col sm:flex-row gap-2">
         <Button variant="outline" className="sm:mr-auto" onClick={onContinue}>
-          Kontynuuj edycję
+          {t('sales.continueEditing')}
         </Button>
         <Button variant="destructive" onClick={onDiscard}>
-          Odrzuć zmiany
+          {t('sales.discardChanges')}
         </Button>
         <Button onClick={onSave}>{t('common.save')}</Button>
       </AlertDialogFooter>

@@ -96,7 +96,7 @@ export function OfferSelectionDialog({ open, onOpenChange, offer }: OfferSelecti
       
       if (foundItem) {
         selections.push({
-          name: foundItem.custom_name || foundOption?.name || 'Usługa',
+          name: foundItem.custom_name || foundOption?.name || t('common.services'),
           price: calculateItemPrice(foundItem)
         });
       }

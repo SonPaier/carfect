@@ -25,7 +25,7 @@ export function TrainingBlock({ training, style, zIndex, employees, onClick }: T
   const statusLabel = training.status === 'sold_out' ? t('trainingDetails.closed') : t('trainingDetails.open');
 
   const getDayAbbr = (dateStr: string) => {
-    const dayNames = ['ND', 'PN', 'WT', 'ŚR', 'CZ', 'PT', 'SB'];
+    const dayNames = [t('calendar.daySun'), t('calendar.dayMon'), t('calendar.dayTue'), t('calendar.dayWed'), t('calendar.dayThu'), t('calendar.dayFri'), t('calendar.daySat')];
     const d = new Date(dateStr + 'T00:00:00');
     return dayNames[d.getDay()];
   };

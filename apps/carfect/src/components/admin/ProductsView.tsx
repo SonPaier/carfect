@@ -380,7 +380,7 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
           </div>
         </div>
         <p className="text-muted-foreground text-sm">
-          Na ich podstawie możesz tworzyć własne szablony oraz wykorzystywać je w ofertach.
+          {t('products.templatesDesc')}
         </p>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4" />
