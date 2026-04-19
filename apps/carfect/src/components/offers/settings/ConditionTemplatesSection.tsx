@@ -97,7 +97,9 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
         return (
           <div key={type} className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="font-medium">{TEMPLATE_TYPE_LABELS[type]}</Label>
+              <Label className="font-medium">
+                {t(`offers.settings.conditionTemplates.types.${type}`)}
+              </Label>
               <Button
                 variant="ghost"
                 size="sm"
@@ -106,7 +108,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
                 disabled={!!editing}
               >
                 <Plus className="w-3 h-3" />
-                Dodaj
+                {t('common.add')}
               </Button>
             </div>
 
@@ -243,11 +245,7 @@ function TemplateForm({
           <X className="w-3.5 h-3.5 mr-1" />
           Anuluj
         </Button>
-        <Button
-          size="sm"
-          onClick={onSave}
-          disabled={saving || !name.trim() || !content.trim()}
-        >
+        <Button size="sm" onClick={onSave} disabled={saving || !name.trim() || !content.trim()}>
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
           ) : (
