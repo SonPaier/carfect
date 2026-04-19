@@ -77,7 +77,7 @@ export const PublicProtocolCustomerView = ({
   protocolConfig,
   customFieldDefinitions = [],
 }: PublicProtocolCustomerViewProps) => {
-  const { t, i18n } = useTranslation('protocols');
+  const { t, i18n } = useTranslation();
   const [selectedPoint, setSelectedPoint] = useState<DamagePoint | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
