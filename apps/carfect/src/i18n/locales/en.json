@@ -4508,5 +4508,13 @@
     "photoDeleted": "Photo deleted",
     "deleteError": "Error deleting photo",
     "updateError": "Error updating photos"
+  },
+  "smsUsage": {
+    "title": "SMS usage",
+    "overLimitCost": "{{count}} SMS over limit = {{cost}} zł net",
+    "limitExhausted": "Limit exhausted",
+    "remaining": "{{count}} SMS remaining",
+    "percentUsed": "{{percent}}% used",
+    "overLimitInfo": "1 SMS over limit = 0.12 zł net. Will be added to the next invoice."
   }
 }

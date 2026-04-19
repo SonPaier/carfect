@@ -640,10 +640,9 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       {/* Header with buttons inline on desktop */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-medium">Usługi</h2>
+          <h2 className="text-2xl font-medium">{t('services.title')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Usługi będą widoczne do wyboru w rezerwacjach i przy tworzeniu szablonów ofert.
-            Kategorie są opcjonalne.
+            {t('services.description')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -664,7 +663,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Szukaj po nazwie lub skrócie..."
+          placeholder={t('services.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"

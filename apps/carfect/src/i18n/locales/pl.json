@@ -4508,5 +4508,31 @@
     "photoDeleted": "Zdjęcie usunięte",
     "deleteError": "Błąd usuwania zdjęcia",
     "updateError": "Błąd podczas aktualizacji zdjęć"
+  },
+  "companySettings": {
+    "companyData": "Dane firmy",
+    "changeLogo": "Zmień",
+    "shortNameHint": "Używana w wiadomościach SMS, max 11 znaków",
+    "bankAccountLabel": "Nr konta bankowego",
+    "bankAccountNamePlaceholder": "Nazwa konta",
+    "bankAccountNumberPlaceholder": "00 0000 0000 0000 0000 0000 0000",
+    "bankAccountNameAriaLabel": "Nazwa konta {{index}}",
+    "bankAccountNumberAriaLabel": "Numer konta {{index}}",
+    "removeBankAccount": "Usuń",
+    "addBankAccount": "+ Dodaj kolejne konto bankowe",
+    "errorNameRequired": "Nazwa myjni jest wymagana",
+    "errorShortNameMax": "Maksymalnie 11 znaków",
+    "errorNipDigits": "NIP musi mieć dokładnie 10 cyfr",
+    "errorEmailInvalid": "Podaj poprawny adres email",
+    "errorPhoneMin": "Numer telefonu musi mieć co najmniej 9 cyfr",
+    "errorUrlInvalid": "Adres musi zaczynać się od http:// lub https://"
+  },
+  "smsUsage": {
+    "title": "Zużycie SMS",
+    "overLimitCost": "{{count}} SMS ponad limit = {{cost}} zł netto",
+    "limitExhausted": "Limit wyczerpany",
+    "remaining": "Pozostało {{count}} SMS",
+    "percentUsed": "{{percent}}% wykorzystane",
+    "overLimitInfo": "1 SMS ponad limit = 0,12 zł netto. Zostanie doliczone do najbliższej faktury."
   }
 }

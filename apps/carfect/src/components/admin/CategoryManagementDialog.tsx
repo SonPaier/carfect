@@ -452,7 +452,7 @@ export function CategoryManagementDialog({
                 onClick={() => setAddingNew(true)}
               >
                 <Plus className="w-4 h-4" />
-                Dodaj kategorię
+                {t('services.addCategory')}
               </Button>
             )}
           </div>

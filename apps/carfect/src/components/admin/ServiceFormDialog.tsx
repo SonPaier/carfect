@@ -928,7 +928,7 @@ const ServiceFormContent = ({
 
             {/* Zdjęcia usługi */}
             <div className="space-y-2 pt-2 border-t border-border">
-              <Label className="text-sm font-medium text-muted-foreground">Zdjęcia usługi</Label>
+              <Label className="text-sm font-medium text-muted-foreground">{t('services.photos')}</Label>
               <ProtocolPhotosUploader
                 photos={formData.photo_urls as string[]}
                 onPhotosChange={(photos) =>

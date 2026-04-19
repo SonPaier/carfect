@@ -4508,5 +4508,13 @@
     "photoDeleted": "Foto gelöscht",
     "deleteError": "Fehler beim Löschen",
     "updateError": "Fehler beim Aktualisieren der Fotos"
+  },
+  "smsUsage": {
+    "title": "SMS-Verbrauch",
+    "overLimitCost": "{{count}} SMS über Limit = {{cost}} zł netto",
+    "limitExhausted": "Limit erschöpft",
+    "remaining": "{{count}} SMS verbleibend",
+    "percentUsed": "{{percent}}% verwendet",
+    "overLimitInfo": "1 SMS über Limit = 0,12 zł netto. Wird der nächsten Rechnung hinzugefügt."
   }
 }
