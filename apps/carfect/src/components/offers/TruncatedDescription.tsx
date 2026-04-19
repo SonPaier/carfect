@@ -62,7 +62,7 @@ export const TruncatedDescription = ({
           className="text-sm font-medium hover:underline mt-1 transition-colors"
           style={{ color: textColor ? textColor : undefined }}
         >
-          {isExpanded ? 'Zobacz mniej' : 'Zobacz więcej'}
+          {isExpanded ? t('offers.showLess') : t('offers.showMore')}
         </button>
       )}
     </div>

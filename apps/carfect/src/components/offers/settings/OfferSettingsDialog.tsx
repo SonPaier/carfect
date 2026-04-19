@@ -172,7 +172,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="templates">
                   <ClipboardList className="h-4 w-4" />
-                  {t('offerSettingsDialog.templatesTab')}
+                  {t('offerSettings.templatesTab')}
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="branding">
                   <Palette className="h-4 w-4" />
@@ -180,11 +180,11 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="trustHeader">
                   <Award className="h-4 w-4" />
-                  {t('offerSettingsDialog.headerTab')}
+                  {t('offerSettings.headerTab')}
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="widget">
                   <Code className="h-4 w-4" />
-                  {t('offerSettingsDialog.pluginTab')}
+                  {t('offerSettings.widgetTab')}
                 </AdminTabsTrigger>
               </AdminTabsList>
             </div>
@@ -200,13 +200,13 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                   <div className="space-y-6">
                     {/* Bank payment details */}
                     <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
-                      <h4 className="font-medium">{t('offerSettingsDialog.paymentDetails')}</h4>
+                      <h4 className="font-medium">{t('offerSettings.paymentDetails')}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {t('offerSettingsDialog.paymentDetailsDescription')}
+                        {t('offerSettings.paymentDetailsDesc')}
                       </p>
 
                       <div className="space-y-2">
-                        <Label>{t('offerSettingsDialog.companyNameForInvoice')}</Label>
+                        <Label>{t('offerSettings.companyNameForInvoice')}</Label>
                         <Input
                           value={bankCompanyName}
                           onChange={(e) => {
@@ -218,7 +218,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       </div>
 
                       <div className="space-y-2">
-                        <Label>{t('offerSettings.bankName')}</Label>
+                        <Label>{t('offerSettings.bankNameLabel')}</Label>
                         <Input
                           value={bankName}
                           onChange={(e) => {
@@ -230,7 +230,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       </div>
 
                       <div className="space-y-2">
-                        <Label>{t('offerSettings.bankAccountNumber')}</Label>
+                        <Label>{t('offerSettings.accountNumber')}</Label>
                         <Input
                           value={bankAccountNumber}
                           onChange={(e) => {

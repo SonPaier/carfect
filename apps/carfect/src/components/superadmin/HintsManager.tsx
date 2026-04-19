@@ -15,6 +15,7 @@ import {
 import { Plus, Pencil, Trash2, Loader2, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { HintFormDialog } from './HintFormDialog';
+import { useTranslation } from 'react-i18next';
 
 interface HintRow {
   id: string;
@@ -30,12 +31,6 @@ interface HintRow {
   created_at: string;
 }
 
-const TYPE_LABELS: Record<HintRow['type'], string> = {
-  popup: 'Popup',
-  infobox: 'Infobox',
-  tooltip: 'Tooltip',
-};
-
 const TYPE_VARIANTS: Record<HintRow['type'], 'default' | 'secondary' | 'outline'> = {
   popup: 'default',
   infobox: 'secondary',
@@ -43,12 +38,19 @@ const TYPE_VARIANTS: Record<HintRow['type'], 'default' | 'secondary' | 'outline'
 };
 
 export function HintsManager() {
+  const { t } = useTranslation();
   const [hints, setHints] = useState<HintRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingHint, setEditingHint] = useState<HintRow | null>(null);
   const [deleteHint, setDeleteHint] = useState<HintRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const TYPE_LABELS: Record<HintRow['type'], string> = {
+    popup: 'Popup',
+    infobox: 'Infobox',
+    tooltip: 'Tooltip',
+  };
 
   const fetchHints = useCallback(async () => {
     setLoading(true);
@@ -61,11 +63,11 @@ export function HintsManager() {
       if (error) throw error;
       setHints((data ?? []) as HintRow[]);
     } catch (error: unknown) {
-      toast.error((error as Error).message ?? 'Błąd podczas pobierania wskazówek');
+      toast.error((error as Error).message ?? t('superAdmin.hintsManager.fetchError'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchHints();
@@ -82,7 +84,7 @@ export function HintsManager() {
 
       setHints((prev) => prev.map((h) => (h.id === hint.id ? { ...h, active: !hint.active } : h)));
     } catch (error: unknown) {
-      toast.error((error as Error).message ?? 'Błąd podczas zmiany statusu');
+      toast.error((error as Error).message ?? t('superAdmin.hintsManager.statusError'));
     }
   };
 
@@ -107,10 +109,10 @@ export function HintsManager() {
       if (error) throw error;
 
       setHints((prev) => prev.filter((h) => h.id !== deleteHint.id));
-      toast.success('Wskazówka usunięta');
+      toast.success(t('superAdmin.hintsManager.deleteSuccess'));
       setDeleteHint(null);
     } catch (error: unknown) {
-      toast.error((error as Error).message ?? 'Błąd podczas usuwania');
+      toast.error((error as Error).message ?? t('superAdmin.hintsManager.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -140,32 +142,36 @@ export function HintsManager() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Wskazówki in-app</h1>
-            <p className="text-muted-foreground">
-              Zarządzaj tooltipami, popupami i infoboxami dla adminów instancji
-            </p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {t('superAdmin.hintsManager.title')}
+            </h1>
+            <p className="text-muted-foreground">{t('superAdmin.hintsManager.description')}</p>
           </div>
           <Button className="gap-2" onClick={openAdd}>
             <Plus className="w-4 h-4" />
-            Nowa wskazówka
+            {t('superAdmin.hintsManager.newHint')}
           </Button>
         </div>
 
         {hints.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
             <MessageSquare className="w-10 h-10 opacity-30" />
-            <p>Brak wskazówek. Dodaj pierwszą.</p>
+            <p>{t('superAdmin.hintsManager.noHints')}</p>
           </div>
         ) : (
           <div className="rounded-md border border-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Typ</TableHead>
-                  <TableHead>Tytuł</TableHead>
-                  <TableHead className="hidden md:table-cell">Trasa</TableHead>
-                  <TableHead className="hidden lg:table-cell">Role</TableHead>
-                  <TableHead>Aktywna</TableHead>
+                  <TableHead>{t('superAdmin.hintsManager.tableType')}</TableHead>
+                  <TableHead>{t('superAdmin.hintsManager.tableTitle')}</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    {t('superAdmin.hintsManager.tableRoute')}
+                  </TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    {t('superAdmin.hintsManager.tableRoles')}
+                  </TableHead>
+                  <TableHead>{t('superAdmin.hintsManager.tableActive')}</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
@@ -194,7 +200,11 @@ export function HintsManager() {
                       <Switch
                         checked={hint.active}
                         onCheckedChange={() => handleToggleActive(hint)}
-                        aria-label={hint.active ? 'Dezaktywuj' : 'Aktywuj'}
+                        aria-label={
+                          hint.active
+                            ? t('superAdmin.hintsManager.deactivate')
+                            : t('superAdmin.hintsManager.activate')
+                        }
                       />
                     </TableCell>
                     <TableCell>
@@ -202,7 +212,7 @@ export function HintsManager() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="Edytuj"
+                          aria-label={t('superAdmin.hintsManager.editAriaLabel')}
                           onClick={() => openEdit(hint)}
                         >
                           <Pencil className="w-4 h-4" />
@@ -210,7 +220,7 @@ export function HintsManager() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label="Usuń"
+                          aria-label={t('superAdmin.hintsManager.deleteAriaLabel')}
                           className="text-destructive hover:text-destructive"
                           onClick={() => setDeleteHint(hint)}
                         >
@@ -238,10 +248,12 @@ export function HintsManager() {
         onOpenChange={(open) => {
           if (!open) setDeleteHint(null);
         }}
-        title="Usuń wskazówkę"
-        description={`Czy na pewno chcesz usunąć wskazówkę "${deleteHint?.title}"? Tej operacji nie można cofnąć.`}
-        confirmLabel="Usuń"
-        cancelLabel="Anuluj"
+        title={t('superAdmin.hintsManager.deleteDialogTitle')}
+        description={t('superAdmin.hintsManager.deleteDialogDescription', {
+          title: deleteHint?.title,
+        })}
+        confirmLabel={t('superAdmin.hintsManager.deleteConfirmLabel')}
+        cancelLabel={t('superAdmin.hintsManager.deleteCancelLabel')}
         variant="destructive"
         loading={deleting}
         onConfirm={handleDelete}

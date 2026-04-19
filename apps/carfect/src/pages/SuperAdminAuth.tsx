@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, Phone } from 'lucide-react';
@@ -14,6 +15,7 @@ interface FormErrors {
 }
 
 const SuperAdminAuth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading: authLoading, signIn, hasRole } = useAuth();
 
@@ -45,13 +47,13 @@ const SuperAdminAuth = () => {
     const newErrors: FormErrors = {};
 
     if (!email.trim()) {
-      newErrors.email = 'Email jest wymagany';
+      newErrors.email = t('superAdmin.auth.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Nieprawidłowy format email';
+      newErrors.email = t('superAdmin.auth.emailInvalid');
     }
 
     if (!password) {
-      newErrors.password = 'Hasło jest wymagane';
+      newErrors.password = t('superAdmin.auth.passwordRequired');
     }
 
     setErrors(newErrors);
@@ -73,7 +75,7 @@ const SuperAdminAuth = () => {
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          setErrors({ general: 'Nieprawidłowy email lub hasło' });
+          setErrors({ general: t('superAdmin.auth.invalidCredentials') });
         } else {
           setErrors({ general: error.message });
         }
@@ -87,12 +89,12 @@ const SuperAdminAuth = () => {
       setTimeout(() => {
         // Give time for auth state to update
         if (!hasRole('super_admin')) {
-          setErrors({ general: 'Brak uprawnień Super Admina' });
+          setErrors({ general: t('superAdmin.auth.noPermissions') });
           setLoading(false);
         }
       }, 1000);
     } catch (err) {
-      setErrors({ general: 'Wystąpił błąd. Spróbuj ponownie.' });
+      setErrors({ general: t('pages.auth.genericError') });
       setLoading(false);
     }
   };
@@ -131,10 +133,10 @@ const SuperAdminAuth = () => {
                   </div>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-                  Panel Super Admina
+                  {t('superAdmin.auth.panelTitle')}
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400">
-                  Zaloguj się używając swojego adresu email
+                  {t('pages.auth.loginWithEmail')}
                 </p>
               </div>
 
@@ -210,7 +212,7 @@ const SuperAdminAuth = () => {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Zaloguj się
+                      {t('pages.auth.signIn')}
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}

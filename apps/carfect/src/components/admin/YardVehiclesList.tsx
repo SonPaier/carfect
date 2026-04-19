@@ -1,4 +1,6 @@
+  const { t } = useTranslation();
 import { useState, useEffect, DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, isToday, isTomorrow, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Phone, Clock, Trash2, Plus, Pencil } from 'lucide-react';
 import { Button } from '@shared/ui';
@@ -334,7 +336,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
               Usuń
             </AlertDialogAction>

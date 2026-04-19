@@ -115,7 +115,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
       <Card>
         <CardContent className="py-12 text-center">
           <Clock className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">Brak aktywnych pracowników</p>
+          <p className="text-muted-foreground">{t('employees.noActiveEmployees')}</p>
           <p className="text-sm text-muted-foreground mt-1">
             Dodaj pracowników, aby móc rejestrować czas pracy
           </p>
@@ -285,7 +285,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
         onOpenChange={setDeleteConfirmOpen}
         title="Usuń wpis"
         description="Czy na pewno chcesz usunąć ten wpis czasu pracy?"
-        confirmLabel="Usuń"
+        confirmLabel={t('common.delete')}
         onConfirm={handleDeleteEntry}
         variant="destructive"
       />

@@ -187,7 +187,7 @@ export function CalendarHeader({
           {isLoadingMore && (
             <div className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="hidden sm:inline">Ładowanie...</span>
+              <span className="hidden sm:inline">{t('common.loading')}</span>
             </div>
           )}
           {/* Date picker button */}
@@ -200,7 +200,7 @@ export function CalendarHeader({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
                   <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Data</span>
+                  <span className="hidden sm:inline">{t('common.date')}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -509,7 +509,7 @@ export function CalendarHeader({
           {showProtocolsButton && onProtocolsClick && (
             <Button variant="outline" size="sm" onClick={onProtocolsClick} className="gap-1">
               <ClipboardCheck className="w-4 h-4" />
-              <span className="hidden md:inline">Protokół</span>
+              <span className="hidden md:inline">{t('protocols.protocol')}</span>
             </Button>
           )}
 

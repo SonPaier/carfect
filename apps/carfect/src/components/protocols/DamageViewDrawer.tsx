@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { X } from 'lucide-react';
@@ -24,6 +25,7 @@ export const DamageViewDrawer = ({
   onOpenChange,
   point,
 }: DamageViewDrawerProps) => {
+  const { t } = useTranslation();
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
 
   if (!point) return null;
@@ -44,7 +46,7 @@ export const DamageViewDrawer = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="min-h-[75vh] max-h-[90vh] mx-auto" style={{ maxWidth: '768px' }}>
           <DrawerHeader className="flex items-center justify-between pb-2">
-            <DrawerTitle>Szczegóły uszkodzenia</DrawerTitle>
+            <DrawerTitle>{t('protocols.damageDetails')}</DrawerTitle>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4" />
             </Button>

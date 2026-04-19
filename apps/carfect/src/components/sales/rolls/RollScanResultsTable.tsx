@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@shared/ui';
 import {
@@ -28,6 +29,7 @@ function InlineEditCell({
   onChange: (val: string) => void;
   suffix?: string;
 }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value ?? ''));
 
@@ -101,10 +103,10 @@ const RollScanResultsTable = ({
               <TableHead>Kod produktu</TableHead>
               <TableHead>Kod kreskowy</TableHead>
               <TableHead>Szer. (mm)</TableHead>
-              <TableHead>Dł. (m)</TableHead>
+              <TableHead>{t('sales.rolls.lengthM')}</TableHead>
               <TableHead>Na stanie</TableHead>
-              <TableHead>Zużyto</TableHead>
-              <TableHead>Pozostało</TableHead>
+              <TableHead>{t('sales.rolls.used')}</TableHead>
+              <TableHead>{t('sales.rolls.remaining')}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>

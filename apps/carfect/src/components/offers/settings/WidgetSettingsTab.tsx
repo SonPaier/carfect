@@ -612,7 +612,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         {/* Widget branding */}
         <div className="space-y-3">
           <div>
-            <h3 className="font-medium">Wygląd widgetu</h3>
+            <h3 className="font-medium">{t('offerSettings.widgetAppearance')}</h3>
             <p className="text-sm text-muted-foreground">
               Osobne kolory dla widgetu. Gdy wyłączone, używane są kolory z ustawień oferty.
             </p>
@@ -628,7 +628,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
       {/* Right side - Preview */}
       <div className="border rounded-lg bg-muted/50 overflow-hidden">
         <div className="p-2 bg-muted border-b">
-          <p className="text-xs text-center text-muted-foreground">Podgląd widgetu</p>
+          <p className="text-xs text-center text-muted-foreground">{t('offerSettings.widgetPreview')}</p>
         </div>
         <ScrollArea className="h-[600px]">
           <EmbedLeadFormPreview

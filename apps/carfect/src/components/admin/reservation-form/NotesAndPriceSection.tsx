@@ -42,7 +42,7 @@ export const NotesAndPriceSection = ({
     ? finalPrice
     : (finalPrice !== '' ? finalPrice : (discountedPrice || ''));
 
-  const priceLabel = pricingMode === 'netto' ? 'Kwota netto' : 'Kwota brutto';
+  const priceLabel = pricingMode === 'netto' ? t('addReservation.netAmount') : t('addReservation.grossAmount');
 
   // Calculate the other price for preview
   const currentPrice = finalPrice !== '' ? parseFloat(finalPrice) : discountedPrice;

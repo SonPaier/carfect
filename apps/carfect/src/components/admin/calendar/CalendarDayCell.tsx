@@ -151,7 +151,7 @@ export const CalendarDayCell = ({
             className="flex items-center justify-center gap-1 text-xs font-bold text-black hover:text-primary transition-all mt-auto pt-1 w-full md:opacity-0 md:group-hover/cell:opacity-100"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Dodaj</span>
+            <span>{t('common.add')}</span>
           </button>
         )}
       </div>

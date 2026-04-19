@@ -218,7 +218,7 @@ const RollDetailsDrawer = ({
             </p>
 
             {loadingUsages ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Ładowanie...</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t('common.loading')}</p>
             ) : usages.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Brak zamówień dla tej rolki
@@ -227,9 +227,9 @@ const RollDetailsDrawer = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Zamówienie</TableHead>
+                    <TableHead>{t('sales.orders.order')}</TableHead>
                     <TableHead>Klient</TableHead>
-                    <TableHead className="text-right">Zużycie</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.usage')}</TableHead>
                     <TableHead>Data</TableHead>
                   </TableRow>
                 </TableHeader>

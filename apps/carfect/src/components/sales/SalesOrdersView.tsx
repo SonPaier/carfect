@@ -391,7 +391,7 @@ const SalesOrdersView = () => {
           .update({ status: invoiceStatus, updated_at: new Date().toISOString() })
           .eq('id', order.invoiceId);
         if (invError) {
-          toast.error(t('sales.orders.errorInvoiceStatus'));
+          toast.error(t('sales.orders.toastInvoiceStatusError'));
           return;
         }
       }
@@ -407,7 +407,7 @@ const SalesOrdersView = () => {
         .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) {
-        toast.error(t('sales.orders.errorPaymentStatus'));
+        toast.error(t('sales.orders.toastPaymentStatusError'));
         return;
       }
     }
@@ -433,7 +433,7 @@ const SalesOrdersView = () => {
     }
     const { error } = await supabase.from('sales_orders').update(updates).eq('id', id);
     if (error) {
-      toast.error(t('sales.orders.errorStatus'));
+      toast.error(t('sales.orders.toastStatusError'));
       return;
     }
     setOrders((prev) =>
@@ -465,7 +465,7 @@ const SalesOrdersView = () => {
       })
       .eq('id', trackingDialog.orderId);
     if (error) {
-      toast.error(t('sales.orders.errorTracking'));
+      toast.error(t('sales.orders.toastTrackingError'));
       return;
     }
     setOrders((prev) =>
@@ -475,7 +475,7 @@ const SalesOrdersView = () => {
     );
     setTrackingDialog({ open: false, orderId: '', orderNumber: '' });
     setTrackingInput('');
-    toast.success(t('salesOrdersView.trackingAdded'));
+    toast.success(t('sales.orders.toastTrackingSaved'));
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -484,9 +484,9 @@ const SalesOrdersView = () => {
       await supabase.from('sales_order_items').delete().eq('order_id', orderId);
       await supabase.from('sales_orders').delete().eq('id', orderId);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      toast.success(t('salesOrdersView.orderDeleted'));
+      toast.success(t('sales.orders.toastOrderDeleted'));
     } catch (err: unknown) {
-      toast.error(t('salesOrdersView.deleteError', { error: (err as Error).message || '' }));
+      toast.error(t('sales.orders.toastOrderDeleteError', { message: (err as Error).message || '' }));
     }
   };
 
@@ -497,11 +497,11 @@ const SalesOrdersView = () => {
     // Validate same customer
     const customerIds = [...new Set(selectedOrders.map((o) => o.customerId).filter(Boolean))];
     if (customerIds.length > 1) {
-      toast.error(t('salesOrdersView.bulkSameCustomer'));
+      toast.error(t('sales.orders.toastBulkDifferentCustomers'));
       return;
     }
     if (customerIds.length === 0) {
-      toast.error(t('salesOrdersView.bulkNoCustomer'));
+      toast.error(t('sales.orders.toastBulkNoCustomer'));
       return;
     }
 
@@ -716,7 +716,7 @@ const SalesOrdersView = () => {
     if (shipmentInFlight) return;
     setShipmentInFlight(orderId);
     try {
-      toast.info(t('salesOrdersView.creatingShipment'));
+      toast.info(t('sales.orders.toastCreatingShipment'));
       const { data, error } = await supabase.functions.invoke('create-apaczka-shipment', {
         body: { orderId },
       });
@@ -728,20 +728,20 @@ const SalesOrdersView = () => {
         } catch {
           /* ignore */
         }
-        toast.error(t('salesOrdersView.shipmentCreateError') + (errDetail ? ': ' + errDetail : ''));
+        toast.error(t('sales.orders.toastShipmentError') + (errDetail ? ': ' + errDetail : ''));
         return;
       }
       if (data?.error) {
         const valPrice = data.valuation?.price_gross
           ? ` | Wycena: ${data.valuation.price_gross} PLN`
           : '';
-        toast.error(t('common.error') + ': ' + data.error + valPrice, { duration: 10000 });
+        toast.error('Błąd: ' + data.error + valPrice, { duration: 10000 });
         return;
       }
-      toast.success(t('salesOrdersView.shipmentCreated', { waybill: data.waybill_number }));
+      toast.success(t('sales.orders.toastShipmentCreated', { waybill: data.waybill_number }));
       fetchOrders();
     } catch {
-      toast.error(t('salesOrdersView.shipmentCreateFailed'));
+      toast.error(t('sales.orders.toastShipmentCreateFailed'));
     } finally {
       setShipmentInFlight(null);
     }
@@ -749,7 +749,7 @@ const SalesOrdersView = () => {
 
   const handleCancelShipment = async (orderId: string) => {
     try {
-      toast.info(t('salesOrdersView.cancellingShipment'));
+      toast.info(t('sales.orders.toastCancellingShipment'));
       const { data, error } = await supabase.functions.invoke('cancel-apaczka-shipment', {
         body: { orderId },
       });
@@ -767,27 +767,27 @@ const SalesOrdersView = () => {
             : o,
         ),
       );
-      toast.success(t('salesOrdersView.shipmentCancelled'));
+      toast.success(t('sales.orders.toastShipmentCancelled'));
     } catch (err: any) {
-      toast.error(t('salesOrdersView.shipmentCancelFailed') + (err.message ? ': ' + err.message : ''));
+      toast.error(t('sales.orders.toastShipmentCancelFailed') + (err.message ? ': ' + err.message : ''));
     }
   };
 
   const handlePrintLabel = async (orderId: string) => {
     try {
-      toast.info(t('salesOrdersView.fetchingLabel'));
+      toast.info(t('sales.orders.toastFetchingLabel'));
       const { data, error } = await supabase.functions.invoke('get-apaczka-label', {
         body: { orderId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (!data?.pdf_base64) throw new Error('Brak danych etykiety');
+      if (!data?.pdf_base64) throw new Error(t('sales.orders.toastNoLabelData'));
       const pdfBytes = Uint8Array.from(atob(data.pdf_base64), (c) => c.charCodeAt(0));
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err: any) {
-      toast.error(t('salesOrdersView.labelFetchFailed') + (err.message ? ': ' + err.message : ''));
+      toast.error(t('sales.orders.toastLabelFetchFailed') + (err.message ? ': ' + err.message : ''));
     }
   };
 
@@ -820,7 +820,7 @@ const SalesOrdersView = () => {
     <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0 pb-4">
-        <h2 className="text-xl font-semibold text-foreground">Zamówienia</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('sales.orders.title')}</h2>
         <Button size="sm" onClick={() => setDrawerOpen(true)}>
           <Plus className="w-4 h-4" />
           Dodaj zamówienie
@@ -833,7 +833,7 @@ const SalesOrdersView = () => {
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder={t('salesOrdersView.searchPlaceholder')}
+            placeholder="Szukaj po firmie, mieście, osobie..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -854,14 +854,14 @@ const SalesOrdersView = () => {
         )}
         <Select value={filterPaymentStatus} onValueChange={(v) => { setFilterPaymentStatus(v); setCurrentPage(1); }}>
           <SelectTrigger className="w-[160px] h-9 text-xs">
-            <SelectValue placeholder="Płatność" />
+            <SelectValue placeholder={t('sales.orders.payment')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Wszystkie płatności</SelectItem>
-            <SelectItem value="unpaid">Do opłacenia</SelectItem>
-            <SelectItem value="paid">Opłacone</SelectItem>
+            <SelectItem value="all">{t('sales.orders.allPayments')}</SelectItem>
+            <SelectItem value="unpaid">{t('sales.orders.unpaid')}</SelectItem>
+            <SelectItem value="paid">{t('sales.orders.paid')}</SelectItem>
             <SelectItem value="collective">Zbiorcza</SelectItem>
-            <SelectItem value="collective_paid">Zbiorcza opłacona</SelectItem>
+            <SelectItem value="collective_paid">{t('sales.orders.collectivePaid')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterDeliveryType} onValueChange={(v) => { setFilterDeliveryType(v); setCurrentPage(1); }}>
@@ -870,8 +870,8 @@ const SalesOrdersView = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Wszystkie dostawy</SelectItem>
-            <SelectItem value="shipping">Wysyłka</SelectItem>
-            <SelectItem value="pickup">Odbiór osobisty</SelectItem>
+            <SelectItem value="shipping">{t('sales.orders.shipping')}</SelectItem>
+            <SelectItem value="pickup">{t('sales.orders.pickup')}</SelectItem>
             <SelectItem value="uber">Uber</SelectItem>
           </SelectContent>
         </Select>
@@ -882,7 +882,7 @@ const SalesOrdersView = () => {
           <SelectContent>
             <SelectItem value="all">Wszystkie statusy</SelectItem>
             <SelectItem value="nowy">Nowy</SelectItem>
-            <SelectItem value="wysłany">Wysłany</SelectItem>
+            <SelectItem value="wysłany">{t('sales.orders.shipped')}</SelectItem>
             <SelectItem value="anulowany">Anulowany</SelectItem>
           </SelectContent>
         </Select>
@@ -934,7 +934,7 @@ const SalesOrdersView = () => {
               <SortableHead column="totalNet" className="text-right w-[170px]">
                 Kwota netto
               </SortableHead>
-              <TableHead className="w-[180px]">Płatność</TableHead>
+              <TableHead className="w-[180px]">{t('sales.orders.payment')}</TableHead>
               <SortableHead column="status" className="w-[140px]">
                 Status
               </SortableHead>
@@ -947,7 +947,7 @@ const SalesOrdersView = () => {
                 <TableCell colSpan={11}>
                   <EmptyState
                     icon={ShoppingCart}
-                    title="Brak zamówień"
+                    title={t('sales.orders.noOrders')}
                     description="Utwórz pierwsze zamówienie dla klienta"
                   />
                 </TableCell>
@@ -1007,10 +1007,10 @@ const SalesOrdersView = () => {
                       </TableCell>
                       <TableCell className="text-sm whitespace-nowrap">
                         {order.deliveryType === 'pickup'
-                          ? 'Odbiór osobisty'
+                          ? t('sales.orders.pickup')
                           : order.deliveryType === 'uber'
                             ? 'Uber'
-                            : 'Wysyłka'}
+                            : t('sales.orders.shipping')}
                       </TableCell>
                       <TableCell>
                         {order.trackingNumber ? (
@@ -1024,7 +1024,7 @@ const SalesOrdersView = () => {
                                 e.stopPropagation();
                                 if (!order.trackingUrl) {
                                   e.preventDefault();
-                                  toast.info(t('salesOrdersView.trackingPending'));
+                                  toast.info('Śledzenie przesyłki w przygotowaniu');
                                 }
                               }}
                             >
@@ -1032,7 +1032,7 @@ const SalesOrdersView = () => {
                             </a>
                             {order.paymentMethod === 'cod' && (
                               <span className="text-muted-foreground whitespace-nowrap">
-                                {t('salesOrdersView.codSuffix')}
+                                (za pobr.)
                               </span>
                             )}
                           </div>
@@ -1099,7 +1099,7 @@ const SalesOrdersView = () => {
                         </DropdownMenu>
                         {order.paymentMethod && (
                           <span className="text-xs text-foreground block">
-                            {{ cod: t('salesOrdersView.paymentCod'), transfer: t('salesOrdersView.paymentTransfer'), cash: t('salesOrdersView.paymentCash'), card: t('salesOrdersView.paymentCard'), free: t('salesOrdersView.paymentFree'), tab: t('salesOrdersView.paymentTab') }[order.paymentMethod] ?? order.paymentMethod}
+                            {{ cod: 'Pobranie', transfer: 'Przelew', cash: 'Gotówka', card: 'Karta', free: 'Bezpłatne', tab: 'Na zeszyt' }[order.paymentMethod] ?? order.paymentMethod}
                           </span>
                         )}
                         </div>
@@ -1124,7 +1124,7 @@ const SalesOrdersView = () => {
                                 {order.status === 'nowy'
                                   ? 'Nowy'
                                   : order.status === 'wysłany'
-                                    ? 'Wysłany'
+                                    ? t('sales.orders.shipped')
                                     : order.status === 'anulowany'
                                       ? 'Anulowany'
                                       : order.status}
@@ -1148,7 +1148,7 @@ const SalesOrdersView = () => {
                                 changeStatus(order.id, 'wysłany');
                               }}
                             >
-                              <Badge className="bg-emerald-600 text-white">Wysłany</Badge>
+                              <Badge className="bg-emerald-600 text-white">{t('sales.orders.shipped')}</Badge>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={(e) => {
@@ -1205,7 +1205,7 @@ const SalesOrdersView = () => {
                                       return;
                                     }
                                     try {
-                                      toast.info(t('salesOrdersView.fetchingPdf'));
+                                      toast.info('Pobieram PDF...');
                                       const session = await supabase.auth.getSession();
                                       const token = session.data.session?.access_token;
                                       const res = await fetch(
@@ -1235,11 +1235,11 @@ const SalesOrdersView = () => {
                                         if (json.pdf_url) {
                                           window.open(json.pdf_url, '_blank');
                                         } else {
-                                          toast.error(t('salesOrdersView.pdfUnavailable'));
+                                          toast.error('PDF faktury niedostępny');
                                         }
                                       }
                                     } catch {
-                                      toast.error(t('salesOrdersView.pdfFetchFailed'));
+                                      toast.error('Nie udało się pobrać PDF');
                                     }
                                   }}
                                 >
@@ -1373,16 +1373,16 @@ const SalesOrdersView = () => {
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
         title="Usuń zamówienie"
         description={`Czy na pewno chcesz usunąć zamówienie ${deleteConfirm.orderNumber}? Tej operacji nie można cofnąć.`}
-        confirmLabel="Usuń"
+        confirmLabel={t('common.delete')}
         variant="destructive"
         onConfirm={() => handleDeleteOrder(deleteConfirm.orderId)}
       />
       <ConfirmDialog
         open={cancelShipmentConfirm.open}
         onOpenChange={(open) => setCancelShipmentConfirm((prev) => ({ ...prev, open }))}
-        title="Anuluj przesyłkę"
+        title={t('sales.orders.cancelShipment')}
         description={`Czy na pewno chcesz anulować przesyłkę dla zamówienia ${cancelShipmentConfirm.orderNumber}? Dane śledzenia zostaną usunięte.`}
-        confirmLabel="Anuluj przesyłkę"
+        confirmLabel={t('sales.orders.cancelShipment')}
         variant="destructive"
         onConfirm={() => handleCancelShipment(cancelShipmentConfirm.orderId)}
       />
@@ -1403,7 +1403,7 @@ const SalesOrdersView = () => {
                 (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
               );
               return shippingPkgs.map((pkg, i) => ({
-                name: shippingPkgs.length === 1 ? 'Wysyłka' : `Wysyłka #${i + 1}`,
+                name: shippingPkgs.length === 1 ? t('sales.orders.shipping') : `Wysyłka #${i + 1}`,
                 quantity: 1,
                 // shippingCost is brutto from Apaczka — convert to netto to match product positions
                 unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
@@ -1453,7 +1453,7 @@ const SalesOrdersView = () => {
             setBulkInvoiceState({ open: false, orders: [] });
             bulk.clear();
             fetchOrders();
-            toast.success(t('salesOrdersView.bulkInvoiceCreated', { count: ids.length }));
+            toast.success(`Zbiorcza faktura wystawiona dla ${ids.length} zamówień`);
           }}
           supabaseClient={supabase}
           customerTable="sales_customers"

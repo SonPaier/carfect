@@ -1,4 +1,6 @@
+  const { t } = useTranslation();
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -35,7 +37,7 @@ export const UnsavedChangesDialog = ({
         <Button variant="destructive" onClick={onDiscard}>
           Odrzuć zmiany
         </Button>
-        <Button onClick={onSave}>Zapisz</Button>
+        <Button onClick={onSave}>{t('common.save')}</Button>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

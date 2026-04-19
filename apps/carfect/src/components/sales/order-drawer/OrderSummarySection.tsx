@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Separator } from '@shared/ui';
 import { formatCurrency } from '../constants';
@@ -27,6 +28,7 @@ export const OrderSummarySection = ({
   isNetPayer = false,
   paymentMethod,
 }: OrderSummarySectionProps) => {
+  const { t } = useTranslation();
   const shippingBruttoTotal = shippingCosts.reduce((s, c) => s + c, 0);
   const shippingNetTotal = shippingBruttoTotal / (1 + VAT_RATE);
   const productsNet = totalNet - shippingNetTotal;
@@ -51,7 +53,7 @@ export const OrderSummarySection = ({
     <>
       <Separator />
       <div className="space-y-3">
-        <Label>Podsumowanie</Label>
+        <Label>{t('sales.orderSummary.title')}</Label>
 
         <div className="bg-card border border-border rounded-md p-3 space-y-1.5 text-sm">
           {/* Individual products with their discounts */}
@@ -77,7 +79,7 @@ export const OrderSummarySection = ({
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between gap-2 text-destructive">
-                    <span className="text-xs pl-2">Rabat {discount}%</span>
+                    <span className="text-xs pl-2">{t('sales.orderSummary.discountLabel', { discount })}</span>
                     <span className="tabular-nums text-xs shrink-0">
                       -{formatCurrency(lineNet - lineNetAfterDiscount)}
                     </span>
@@ -91,14 +93,16 @@ export const OrderSummarySection = ({
 
           {/* Totals — "Razem netto" always shows products only, shipping always separate */}
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Razem netto</span>
+            <span className="text-muted-foreground">{t('sales.orderSummary.totalNet')}</span>
             <span className="tabular-nums font-medium">{formatCurrency(productsNet)}</span>
           </div>
           {shippingCosts.length > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                {shippingCosts.length === 1 ? 'Wysyłka' : `Wysyłka (×${shippingCosts.length})`}{' '}
-                (brutto)
+                {shippingCosts.length === 1
+                  ? t('sales.orderSummary.shipping')
+                  : t('sales.orderSummary.shippingMultiple', { count: shippingCosts.length })}{' '}
+                {t('sales.orderSummary.gross')}
               </span>
               <span className="tabular-nums">{formatCurrency(shippingBruttoTotal)}</span>
             </div>
@@ -107,9 +111,9 @@ export const OrderSummarySection = ({
             <>
               <Separator className="my-1" />
               <div className="flex justify-between font-semibold text-lg">
-                <span>Do zapłaty</span>
+                <span>{t('sales.orderSummary.toPay')}</span>
                 <span className="tabular-nums">
-                  {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalGross)}
+                  {paymentMethod === 'free' ? t('sales.orderSummary.free') : formatCurrency(totalGross)}
                 </span>
               </div>
             </>
@@ -121,9 +125,9 @@ export const OrderSummarySection = ({
               </div>
               <Separator className="my-1" />
               <div className="flex justify-between font-semibold text-lg">
-                <span>Razem brutto</span>
+                <span>{t('sales.orderSummary.totalGross')}</span>
                 <span className="tabular-nums">
-                  {paymentMethod === 'free' ? 'Bezpłatne' : formatCurrency(totalGross)}
+                  {paymentMethod === 'free' ? t('sales.orderSummary.free') : formatCurrency(totalGross)}
                 </span>
               </div>
             </>

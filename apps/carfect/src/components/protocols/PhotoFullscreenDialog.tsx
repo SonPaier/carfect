@@ -1,4 +1,6 @@
+  const { t } = useTranslation();
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { PhotoAnnotationDialog } from './PhotoAnnotationDialog';
@@ -224,7 +226,7 @@ export const PhotoFullscreenDialog = ({
                     onOpenChange(false);
                   }}
                   className="flex items-center justify-center h-12 w-12 rounded-full bg-white text-black shadow-2xl border-2 border-gray-300 hover:bg-gray-100 active:bg-gray-200"
-                  aria-label="Zamknij"
+                  aria-label={t('common.close')}
                 >
                   <X className="h-7 w-7" />
                 </button>

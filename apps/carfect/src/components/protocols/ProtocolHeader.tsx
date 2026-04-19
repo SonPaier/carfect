@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Instance {
   id: string;
@@ -15,6 +16,7 @@ interface ProtocolHeaderProps {
 }
 
 export const ProtocolHeader = ({ instance, protocolNumber, onClose }: ProtocolHeaderProps) => {
+  const { t } = useTranslation();
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="w-full max-w-3xl mx-auto px-4 py-3 sm:py-4">
@@ -35,11 +37,11 @@ export const ProtocolHeader = ({ instance, protocolNumber, onClose }: ProtocolHe
               </div>
             )}
             <div>
-              <h1 className="font-bold text-base sm:text-lg">{instance?.name || 'Protokół'}</h1>
+              <h1 className="font-bold text-base sm:text-lg">{instance?.name || t('protocols.protocol')}</h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {protocolNumber 
                   ? `Protokół #${protocolNumber}` 
-                  : 'Protokół przyjęcia pojazdu'}
+                  : t('protocols.vehicleReceptionProtocol')}
               </p>
             </div>
           </div>

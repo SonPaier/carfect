@@ -342,7 +342,7 @@ export const PhotoAnnotationDialog = ({
                 <button type="button" className={circleButtonClass} onClick={handleRedo} disabled={!canRedo} aria-label="Ponów">
                   <Redo2 className="h-5 w-5" />
                 </button>
-                <button type="button" className={circleButtonClass} onClick={handleClear} disabled={!hasStrokes} aria-label="Wyczyść">
+                <button type="button" className={circleButtonClass} onClick={handleClear} disabled={!hasStrokes} aria-label={t('protocols.clear')}>
                   <Trash2 className="h-5 w-5" />
                 </button>
               </div>

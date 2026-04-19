@@ -530,7 +530,7 @@ export const ProtocolsView = ({
             onOpenChange={setDeleteDialogOpen}
             title="Usuń protokół"
             description={`Czy na pewno chcesz usunąć protokół dla ${protocolToDelete?.customer_name}? Tej operacji nie można cofnąć.`}
-            confirmLabel="Usuń"
+            confirmLabel={t('common.delete')}
             onConfirm={handleDeleteProtocol}
             variant="destructive"
           />

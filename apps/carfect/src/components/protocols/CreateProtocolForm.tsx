@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,6 +22,8 @@ import {
   Car,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { normalizePhone } from '@shared/utils';
@@ -57,13 +58,13 @@ import {
   AlertDialogTitle,
 } from '@shared/ui';
 import { useProtocolConfig, ConsentClauseRenderer } from '@shared/protocol-config';
-import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   useCustomFields,
   CustomFieldsRenderer,
   validateCustomFieldValues,
   type CustomFieldValues,
 } from '@shared/custom-fields';
+import { useTranslation } from 'react-i18next';
 
 type ProtocolType = 'reception' | 'pickup';
 
@@ -82,27 +83,7 @@ interface CreateProtocolFormProps {
   onOpenSettings?: () => void;
 }
 
-const BODY_TYPES: { value: BodyType; labelKey?: string; label?: string }[] = [
-  { value: 'sedan', label: 'Sedan' },
-  { value: 'suv', label: 'SUV' },
-  { value: 'coupe', label: 'Coupe' },
-  { value: 'cabrio', labelKey: 'protocol.bodyTypes.cabrio' },
-  { value: 'van', labelKey: 'protocol.bodyTypes.van' },
-  { value: 'kombi', labelKey: 'protocol.bodyTypes.kombi' },
-  { value: 'hatchback', labelKey: 'protocol.bodyTypes.hatchback' },
-];
-
-const VIEW_LABELS: Record<VehicleView, string> = {
-  full: 'Diagram pojazdu',
-};
-
-const DAMAGE_TYPE_LABELS: Record<string, string> = {
-  scratch: 'rysa',
-  dent: 'wgniecenie',
-  damage: 'uszkodzenie',
-  chip: 'odprysek',
-  custom: 'inne',
-};
+const BODY_TYPE_VALUES: BodyType[] = ['sedan', 'suv', 'coupe', 'cabrio', 'van', 'kombi', 'hatchback'];
 
 export const CreateProtocolForm = ({
   instanceId,
@@ -111,6 +92,24 @@ export const CreateProtocolForm = ({
   onOpenSettings,
 }: CreateProtocolFormProps) => {
   const { t } = useTranslation();
+
+  const BODY_TYPES = BODY_TYPE_VALUES.map((v) => ({
+    value: v,
+    label: t(`protocol.bodyTypes.${v}`, v.charAt(0).toUpperCase() + v.slice(1)),
+  }));
+
+  const DAMAGE_TYPE_LABELS: Record<string, string> = {
+    scratch: t('protocols.form.scratch'),
+    dent: t('protocols.form.dent'),
+    damage: t('protocols.form.damage'),
+    chip: t('protocols.form.chip'),
+    custom: t('protocols.form.other'),
+  };
+
+  const VIEW_LABELS: Record<string, string> = {
+    full: t('protocols.form.vehicleDiagram'),
+  };
+
   const [searchParams] = useSearchParams();
   const { hasFeature } = useInstanceFeatures(instanceId);
 
@@ -696,7 +695,7 @@ export const CreateProtocolForm = ({
     // Validate customer name
     if (!customerName.trim()) {
       setValidationErrors({ customerName: true });
-      toast.error(t('protocol.customerNameRequired'));
+      toast.error(t('protocols.form.customerNameError'));
       // Scroll to customer name field using ref
       setTimeout(() => {
         customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -706,7 +705,7 @@ export const CreateProtocolForm = ({
 
     // Validate email if sending
     if (openEmailAfter && !customerEmail.trim()) {
-      toast.error(t('protocol.emailRequiredForSend'));
+      toast.error(t('protocols.form.emailRequiredForSend'));
       // Scroll to email field using ref
       setTimeout(() => {
         customerEmailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -720,7 +719,7 @@ export const CreateProtocolForm = ({
       const cfResult = validateCustomFieldValues(customFieldDefs, customFieldValues);
       if (!cfResult.valid) {
         const firstError = Object.values(cfResult.errors)[0];
-        toast.error(firstError || t('protocol.fillRequiredCustomFields'));
+        toast.error(firstError || t('protocols.form.fillRequiredCustomFields'));
         return null;
       }
     }
@@ -828,14 +827,14 @@ export const CreateProtocolForm = ({
       }
 
       if (openEmailAfter && savedProtocolId) {
-        toast.success(t('protocol.saved'));
+        toast.success(t('protocols.form.protocolSaved'));
         setSavedProtocolIdForEmail(savedProtocolId);
         setEmailDialogOpen(true);
         hasBeenSavedRef.current = true;
         setUploadedPhotosInSession([]); // Clear tracked photos after save
         return savedProtocolId;
       } else {
-        toast.success(isEditMode ? t('protocol.updated') : t('protocol.saved'));
+        toast.success(isEditMode ? t('protocols.form.protocolUpdated') : t('protocols.form.protocolSaved'));
         hasBeenSavedRef.current = true;
         setUploadedPhotosInSession([]); // Clear tracked photos after save
         onBack();
@@ -843,7 +842,7 @@ export const CreateProtocolForm = ({
       }
     } catch (error) {
       console.error('Error saving protocol:', error);
-      toast.error(t('protocol.saveError'));
+      toast.error(t('protocols.form.protocolSaveError'));
       return null;
     } finally {
       setSaving(false);
@@ -878,7 +877,7 @@ export const CreateProtocolForm = ({
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-lg font-semibold">
-            {isEditMode ? 'Edycja protokołu' : 'Nowy protokół'}
+            {isEditMode ? t('protocols.form.editProtocol') : t('protocols.form.newProtocol')}
           </h1>
           {onOpenSettings && (
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onOpenSettings}>
@@ -897,7 +896,7 @@ export const CreateProtocolForm = ({
           {/* Protocol type selector */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Typ protokołu</Label>
+              <Label>{t('protocols.form.protocolType')}</Label>
               <Select
                 value={protocolType}
                 onValueChange={(v) => handleProtocolTypeChange(v as ProtocolType)}
@@ -906,13 +905,13 @@ export const CreateProtocolForm = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="reception">{t('protocol.receptionType')}</SelectItem>
-                  <SelectItem value="pickup">{t('protocol.pickupType')}</SelectItem>
+                  <SelectItem value="reception">{t('protocols.form.receptionProtocol')}</SelectItem>
+                  <SelectItem value="pickup">{t('protocols.form.pickupProtocol')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.linkedOffer')}</Label>
+              <Label>{t('protocols.form.linkedOffer')}</Label>
               <OfferSearchAutocomplete
                 instanceId={instanceId}
                 value={offerNumber}
@@ -926,7 +925,7 @@ export const CreateProtocolForm = ({
           {/* Customer data */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2" ref={customerNameRef}>
-              <Label>{t('protocol.customerFullName')}</Label>
+              <Label>{t('protocols.form.customerNameRequired')}</Label>
               <ClientSearchAutocomplete
                 instanceId={instanceId}
                 value={customerName}
@@ -941,7 +940,7 @@ export const CreateProtocolForm = ({
                 suppressAutoSearch={isEditMode || hasPrefilledData}
               />
               {validationErrors.customerName && (
-                <p className="text-xs text-destructive">{t('protocol.customerNameValidation')}</p>
+                <p className="text-xs text-destructive">{t('protocols.form.customerNameValidation')}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -958,7 +957,7 @@ export const CreateProtocolForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.customerEmail')}</Label>
+              <Label>{t('protocols.form.customerEmail')}</Label>
               <Input
                 ref={customerEmailRef}
                 type="email"
@@ -968,7 +967,7 @@ export const CreateProtocolForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.vehicleModel')}</Label>
+              <Label>{t('protocols.form.vehicleModel')}</Label>
               <CarSearchAutocomplete
                 value={vehicleModel}
                 onChange={(val: CarSearchValue) => {
@@ -984,11 +983,11 @@ export const CreateProtocolForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.companyNip')}</Label>
+              <Label>{t('protocols.form.companyNip')}</Label>
               <Input value={nip} onChange={(e) => setNip(e.target.value)} className="" />
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.registrationNumber')}</Label>
+              <Label>{t('protocols.form.registrationNumber')}</Label>
               <Input
                 value={registrationNumber}
                 onChange={(e) => setRegistrationNumber(e.target.value)}
@@ -1002,13 +1001,13 @@ export const CreateProtocolForm = ({
                   value={vin}
                   onChange={(e) => setVin(e.target.value.toUpperCase())}
                   maxLength={17}
-                  placeholder="np. WBA1234567890ABCD"
+                  placeholder={t('protocols.form.vinPlaceholder')}
                   className="font-mono"
                 />
               </div>
             )}
             <div className="space-y-2">
-              <Label>{t('protocol.fuelLevel')}</Label>
+              <Label>{t('protocols.form.fuelLevel')}</Label>
               <Input
                 type="number"
                 min="0"
@@ -1019,7 +1018,7 @@ export const CreateProtocolForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.mileage')}</Label>
+              <Label>{t('protocols.form.odometerReading')}</Label>
               <Input
                 type="number"
                 min="0"
@@ -1039,11 +1038,11 @@ export const CreateProtocolForm = ({
               onClick={() => setShowPhotosSection(true)}
             >
               <Camera className="h-4 w-4 mr-2" />
-              {t('protocol.addPhotos')}
+              {t('protocols.form.addPhotos')}
             </Button>
           ) : (
             <div className="space-y-2">
-              <Label>{t('protocol.vehiclePhotos')}</Label>
+              <Label>{t('protocols.vehiclePhotos')}</Label>
               <ProtocolPhotosUploader
                 photos={protocolPhotoUrls}
                 onPhotosChange={setProtocolPhotoUrls}
@@ -1062,13 +1061,13 @@ export const CreateProtocolForm = ({
               onClick={() => setShowDamageSection(true)}
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
-              {t('protocol.addDamagePoints')}
+              {t('protocols.form.addDamage')}
             </Button>
           ) : (
             <>
               {/* Body type selector */}
               <div className="space-y-2">
-                <Label>{t('protocol.bodyType')}</Label>
+                <Label>{t('protocols.form.bodyType')}</Label>
                 <Select value={bodyType} onValueChange={(v) => setBodyType(v as BodyType)}>
                   <SelectTrigger className="bg-white">
                     <SelectValue />
@@ -1076,7 +1075,7 @@ export const CreateProtocolForm = ({
                   <SelectContent>
                     {BODY_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
-                        {type.labelKey ? t(type.labelKey) : type.label}
+                        {type.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1086,8 +1085,7 @@ export const CreateProtocolForm = ({
               {/* Vehicle diagram */}
               <div className="space-y-2">
                 <Label>
-                  Zaznacz ewentualne usterki na diagramie pojazdu przetrzymując palec w danym
-                  miejscu
+                  {t('protocols.form.damageInstruction')}
                 </Label>
                 <VehicleDiagram
                   bodyType={bodyType}
@@ -1104,7 +1102,7 @@ export const CreateProtocolForm = ({
                 (p) => (p.photo_urls && p.photo_urls.length > 0) || p.photo_url,
               ) && (
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Zdjęcia usterek</Label>
+                  <Label className="text-muted-foreground">{t('protocols.faultPhotos')}</Label>
                   <div className="grid grid-cols-4 gap-2">
                     {damagePoints.flatMap((p) => {
                       const urls = p.photo_urls || (p.photo_url ? [p.photo_url] : []);
@@ -1112,7 +1110,7 @@ export const CreateProtocolForm = ({
                         <div key={`${p.id}-${idx}`} className="relative aspect-square">
                           <img
                             src={url}
-                            alt={`Zdjęcie usterki`}
+                            alt={t('protocols.form.damagePhotoAlt')}
                             className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => setFullscreenPhoto(url)}
                           />
@@ -1128,7 +1126,7 @@ export const CreateProtocolForm = ({
           {/* Services receipt */}
           {showServices && serviceItems.length > 0 && (
             <div className="space-y-2">
-              <Label>{t('protocol.services')}</Label>
+              <Label>{t('protocols.form.servicesLabel')}</Label>
               <div className="border rounded-lg overflow-hidden">
                 {serviceItems.map((item, idx) => (
                   <div
@@ -1164,7 +1162,7 @@ export const CreateProtocolForm = ({
                   </div>
                 ))}
                 <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
-                  <span>Suma</span>
+                  <span>{t('protocols.form.totalLabel')}</span>
                   <span>
                     {serviceItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł
                   </span>
@@ -1176,7 +1174,7 @@ export const CreateProtocolForm = ({
                 variant="default"
                 size="sm"
               >
-                {t('protocol.addServices')}
+                {t('protocols.form.addServices')}
               </Button>
             </div>
           )}
@@ -1189,14 +1187,14 @@ export const CreateProtocolForm = ({
               className="bg-amber-500 hover:bg-amber-600 text-white"
               size="sm"
             >
-              {t('protocol.addServicesToProtocol')}
+              {t('protocols.form.addServicesToProtocol')}
             </Button>
           )}
 
           {/* Valuable items */}
           {!configLoading && protocolConfig.builtInFields.valuableItemsClause.enabled && (
             <div className="space-y-2">
-              <Label>{t('protocol.valuableItems')}</Label>
+              <Label>{t('protocols.form.valuablesLabel')}</Label>
               <Textarea
                 value={(customFieldValues._valuable_items as string) || ''}
                 onChange={(e) =>
@@ -1211,7 +1209,7 @@ export const CreateProtocolForm = ({
 
           {/* Notes - auto-filled with damage points */}
           <div className="space-y-2">
-            <Label>{t('protocol.notesLabel')}</Label>
+            <Label>{t('protocols.form.notesLabel')}</Label>
             <Textarea
               ref={notesRef}
               value={notes}
@@ -1225,7 +1223,7 @@ export const CreateProtocolForm = ({
           {/* Protocol metadata */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t('protocol.protocolDate')}</Label>
+              <Label>{t('protocols.form.protocolDateLabel')}</Label>
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -1236,7 +1234,7 @@ export const CreateProtocolForm = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {protocolDate ? format(protocolDate, 'PPP', { locale: getDateLocale() }) : 'Wybierz datę'}
+                    {protocolDate ? format(protocolDate, 'PPP', { locale: getDateLocale() }) : t('protocols.form.selectDate')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-white" align="start">
@@ -1256,7 +1254,7 @@ export const CreateProtocolForm = ({
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>{t('protocol.preparedBy')}</Label>
+              <Label>{t('protocols.form.createdBy')}</Label>
               <Input
                 value={receivedBy}
                 onChange={(e) => setReceivedBy(e.target.value)}
@@ -1277,7 +1275,7 @@ export const CreateProtocolForm = ({
           {/* Consent clauses */}
           {protocolConfig.consentClauses.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-base font-semibold">{t('protocol.consents')}</Label>
+              <Label className="text-base font-semibold">{t('protocols.form.declarationsLabel')}</Label>
               <ConsentClauseRenderer
                 clauses={protocolConfig.consentClauses}
                 values={customFieldValues}
@@ -1292,7 +1290,7 @@ export const CreateProtocolForm = ({
 
           {/* Customer signature */}
           <div className="space-y-2">
-            <Label>{t('protocol.customerSignature')}</Label>
+            <Label>{t('protocols.form.customerSignature')}</Label>
             {customerSignature ? (
               <div
                 className="h-24 border rounded-lg bg-white flex items-center justify-center cursor-pointer hover:bg-hover transition-colors"
@@ -1300,7 +1298,7 @@ export const CreateProtocolForm = ({
               >
                 <img
                   src={customerSignature}
-                  alt="Podpis klienta"
+                  alt={t('protocols.form.customerSignature')}
                   className="max-h-20 max-w-full object-contain"
                 />
               </div>
@@ -1312,7 +1310,7 @@ export const CreateProtocolForm = ({
                 onClick={() => setSignatureDialogOpen(true)}
               >
                 <PenLine className="h-5 w-5 mr-2" />
-                {t('protocol.clickToSign')}
+                {t('protocols.form.clickToSign')}
               </Button>
             )}
           </div>
@@ -1323,21 +1321,21 @@ export const CreateProtocolForm = ({
               ref={releaseSectionRef}
               className="border-t-2 border-primary/30 pt-8 mt-8 space-y-4"
             >
-              <h2 className="text-2xl font-bold text-center">{t('protocol.vehicleRelease')}</h2>
+              <h2 className="text-2xl font-bold text-center">{t('protocols.form.vehicleRelease')}</h2>
 
               <div className="space-y-2">
-                <Label>{t('protocol.releaseNotes')}</Label>
+                <Label>{t('protocols.form.releaseNotes')}</Label>
                 <Textarea
                   value={releaseNotes}
                   onChange={(e) => setReleaseNotes(e.target.value)}
                   rows={3}
                   className=""
-                  placeholder={t('protocol.releaseNotesPlaceholder')}
+                  placeholder={t('protocols.form.releaseNotesPlaceholder')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>{t('protocol.releaseSignature')}</Label>
+                <Label>{t('protocols.form.releaseSignature')}</Label>
                 {releaseSignature ? (
                   <div
                     className="h-24 border rounded-lg bg-white flex items-center justify-center cursor-pointer hover:bg-hover transition-colors"
@@ -1345,7 +1343,7 @@ export const CreateProtocolForm = ({
                   >
                     <img
                       src={releaseSignature}
-                      alt="Podpis odbioru"
+                      alt={t('protocols.form.releaseSignatureAlt')}
                       className="max-h-20 max-w-full object-contain"
                     />
                   </div>
@@ -1357,7 +1355,7 @@ export const CreateProtocolForm = ({
                     onClick={() => setReleaseSignatureDialogOpen(true)}
                   >
                     <PenLine className="h-5 w-5 mr-2" />
-                    {t('protocol.clickToSignRelease')}
+                    {t('protocols.form.clickToSignRelease')}
                   </Button>
                 )}
               </div>
@@ -1390,7 +1388,7 @@ export const CreateProtocolForm = ({
                 className="bg-white"
               >
                 <Car className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">{t('protocol.vehicleRelease')}</span>
+                <span className="hidden sm:inline">{t('protocols.form.vehicleRelease')}</span>
               </Button>
             )}
             {onOpenSettings && (
@@ -1406,7 +1404,7 @@ export const CreateProtocolForm = ({
             >
               {savingAndSending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               <Mail className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">{t('protocol.saveAndSend')}</span>
+              <span className="hidden sm:inline">{t('protocols.form.saveAndSend')}</span>
             </Button>
             <Button onClick={() => handleSave(false)} disabled={saving || savingAndSending}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -1472,9 +1470,9 @@ export const CreateProtocolForm = ({
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
         <AlertDialogContent className="bg-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('protocol.unsavedChangesTitle')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('protocols.form.unsavedChanges')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('protocol.unsavedChangesMessage')}
+              {t('protocols.form.unsavedChangesMessage')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -1486,7 +1484,7 @@ export const CreateProtocolForm = ({
               onClick={handleDiscardChanges}
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              {t('protocol.dontSave')}
+              {t('protocols.form.dontSave')}
             </Button>
             <AlertDialogAction onClick={handleSaveAndExit}>{t('common.save')}</AlertDialogAction>
           </AlertDialogFooter>

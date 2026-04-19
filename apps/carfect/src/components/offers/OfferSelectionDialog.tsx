@@ -177,7 +177,7 @@ export function OfferSelectionDialog({ open, onOpenChange, offer }: OfferSelecti
 
         <div className="flex justify-end pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common.close', 'Zamknij')}
+            {t('common.close', t('common.close'))}
           </Button>
         </div>
       </DialogContent>

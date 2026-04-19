@@ -887,7 +887,7 @@ const ServiceFormContent = ({
               </div>
               <div className="space-y-2">
                 {reminderTemplates.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Brak szablonów</p>
+                  <p className="text-sm text-muted-foreground">{t('offers.noTemplates')}</p>
                 ) : (
                   reminderTemplates.map((template) => (
                     <label
@@ -922,7 +922,7 @@ const ServiceFormContent = ({
                 }}
                 className="shrink-0"
               >
-                {t('common.add', 'Dodaj')}
+                {t('common.add', t('common.add'))}
               </Button>
             </div>
 
@@ -953,7 +953,7 @@ const ServiceFormContent = ({
             className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            {t('common.delete', 'Usuń')}
+            {t('common.delete', t('common.delete'))}
           </Button>
         )}
         <div className="flex-1" />

@@ -41,7 +41,7 @@ const SERVICE_TYPES = [
   { value: 'serwis', label: 'Serwis' },
   { value: 'kontrola', label: 'Kontrola' },
   { value: 'serwis_gwarancyjny', label: 'Serwis gwarancyjny' },
-  { value: 'odswiezenie_powloki', label: 'Odświeżenie powłoki' },
+  { value: 'odswiezenie_powloki', label: t('products.coatingRefresh') },
 ];
 
 const DEFAULT_SMS_TEMPLATE =

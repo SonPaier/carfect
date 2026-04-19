@@ -62,6 +62,7 @@ interface Instance {
 }
 
 const SuperAdminDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, signOut, hasRole } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -216,7 +217,7 @@ const SuperAdminDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Super Admin - Panel zarządzania</title>
+        <title>{t('superAdmin.pageTitle')}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -245,7 +246,7 @@ const SuperAdminDashboard = () => {
                 </div>
                 <div>
                   <h1 className="font-bold text-foreground">Super Admin</h1>
-                  <p className="text-xs text-muted-foreground">Panel zarządzania</p>
+                  <p className="text-xs text-muted-foreground">{t('superAdmin.panelTitle')}</p>
                 </div>
               </div>
             </div>
@@ -258,7 +259,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('instances')}
               >
                 <Building2 className="w-4 h-4" />
-                Instancje
+                {t('superAdmin.navInstances')}
               </Button>
               <Button
                 variant={activeSection === 'cars' ? 'secondary' : 'ghost'}
@@ -266,7 +267,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('cars')}
               >
                 <Car className="w-4 h-4" />
-                Samochody
+                {t('superAdmin.navCars')}
               </Button>
               <Button
                 variant={activeSection === 'admins' ? 'secondary' : 'ghost'}
@@ -274,7 +275,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('admins')}
               >
                 <Users className="w-4 h-4" />
-                Administratorzy
+                {t('superAdmin.navAdmins')}
               </Button>
               <Button
                 variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
@@ -282,7 +283,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('settings')}
               >
                 <Settings className="w-4 h-4" />
-                Ustawienia
+                {t('superAdmin.navSettings')}
               </Button>
               <Button
                 variant={activeSection === 'hints' ? 'secondary' : 'ghost'}
@@ -290,7 +291,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('hints')}
               >
                 <MessageSquare className="w-4 h-4" />
-                Wskazówki
+                {t('superAdmin.navHints')}
               </Button>
             </nav>
 

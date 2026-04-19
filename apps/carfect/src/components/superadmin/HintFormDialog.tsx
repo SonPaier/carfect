@@ -19,6 +19,7 @@ import {
 } from '@shared/ui';
 import { X, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const ALL_ROLES = ['admin', 'employee', 'hall', 'sales', 'super_admin'] as const;
 
@@ -60,6 +61,7 @@ function extractFileName(url: string): string | null {
 }
 
 export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintFormDialogProps) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -133,7 +135,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
       const { data: urlData } = supabase.storage.from('hint-images').getPublicUrl(fileName);
       setForm((p) => ({ ...p, image_url: urlData.publicUrl }));
     } catch (error: unknown) {
-      toast.error((error as Error).message ?? 'Błąd podczas przesyłania obrazka');
+      toast.error((error as Error).message ?? t('superAdmin.hintFormDialog.uploadError'));
     } finally {
       setUploading(false);
     }
@@ -157,19 +159,19 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
     e.preventDefault();
 
     if (!form.title.trim()) {
-      toast.error('Tytuł jest wymagany');
+      toast.error(t('superAdmin.hintFormDialog.titleRequired'));
       return;
     }
     if (!form.body.trim()) {
-      toast.error('Treść jest wymagana');
+      toast.error(t('superAdmin.hintFormDialog.bodyRequired'));
       return;
     }
     if (form.target_roles.length === 0) {
-      toast.error('Wybierz co najmniej jedną rolę');
+      toast.error(t('superAdmin.hintFormDialog.rolesRequired'));
       return;
     }
     if (form.type === 'tooltip' && !form.target_element_id?.trim()) {
-      toast.error('Dla tooltipa podaj ID elementu (data-hint-id)');
+      toast.error(t('superAdmin.hintFormDialog.tooltipElementRequired'));
       return;
     }
 
@@ -191,17 +193,17 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
       if (hint) {
         const { error } = await supabase.from('app_hints').update(payload).eq('id', hint.id);
         if (error) throw error;
-        toast.success('Wskazówka zaktualizowana');
+        toast.success(t('superAdmin.hintFormDialog.updateSuccess'));
       } else {
         const { error } = await supabase.from('app_hints').insert(payload);
         if (error) throw error;
-        toast.success('Wskazówka dodana');
+        toast.success(t('superAdmin.hintFormDialog.createSuccess'));
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (error: unknown) {
-      toast.error((error as Error).message ?? 'Błąd podczas zapisywania');
+      toast.error((error as Error).message ?? t('superAdmin.hintFormDialog.saveError'));
     } finally {
       setSubmitting(false);
     }
@@ -211,13 +213,17 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{hint ? 'Edytuj wskazówkę' : 'Nowa wskazówka'}</DialogTitle>
+          <DialogTitle>
+            {hint
+              ? t('superAdmin.hintFormDialog.editTitle')
+              : t('superAdmin.hintFormDialog.newTitle')}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type */}
           <div className="space-y-1.5">
-            <Label htmlFor="hint-type">Typ</Label>
+            <Label htmlFor="hint-type">{t('superAdmin.hintFormDialog.type')}</Label>
             <Select
               value={form.type}
               onValueChange={(v) => setForm((p) => ({ ...p, type: v as HintRow['type'] }))}
@@ -226,33 +232,33 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="popup">Popup (wyśrodkowany modal)</SelectItem>
-                <SelectItem value="infobox">Infobox (baner na górze)</SelectItem>
-                <SelectItem value="tooltip">Tooltip (zakotwiczony do elementu)</SelectItem>
+                <SelectItem value="popup">{t('superAdmin.hintFormDialog.typePopup')}</SelectItem>
+                <SelectItem value="infobox">{t('superAdmin.hintFormDialog.typeInfobox')}</SelectItem>
+                <SelectItem value="tooltip">{t('superAdmin.hintFormDialog.typeTooltip')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Title */}
           <div className="space-y-1.5">
-            <Label htmlFor="hint-title">Tytuł</Label>
+            <Label htmlFor="hint-title">{t('superAdmin.hintFormDialog.titleLabel')}</Label>
             <Input
               id="hint-title"
               value={form.title}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-              placeholder="Tytuł wskazówki"
+              placeholder={t('superAdmin.hintFormDialog.titlePlaceholder')}
             />
           </div>
 
           {/* Body */}
           <div className="space-y-1.5">
-            <Label htmlFor="hint-body">Treść</Label>
+            <Label htmlFor="hint-body">{t('superAdmin.hintFormDialog.body')}</Label>
             <textarea
               id="hint-body"
               value={form.body}
               onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))}
               rows={3}
-              placeholder="Opis wskazówki..."
+              placeholder={t('superAdmin.hintFormDialog.bodyPlaceholder')}
               className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
           </div>
@@ -260,7 +266,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
           {/* Image upload — hidden for infobox type */}
           {form.type !== 'infobox' && (
             <div className="space-y-1.5">
-              <Label>Obrazek (opcjonalnie)</Label>
+              <Label>{t('superAdmin.hintFormDialog.image')}</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -272,7 +278,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
                 <div className="relative rounded-md overflow-hidden border border-border">
                   <img
                     src={form.image_url}
-                    alt="Podgląd"
+                    alt={t('superAdmin.hintFormDialog.imagePreviewAlt')}
                     className="w-full rounded-md object-cover max-h-48"
                   />
                   <button
@@ -280,7 +286,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
                     onClick={handleRemoveImage}
                     disabled={uploading}
                     className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-ring"
-                    aria-label="Usuń obrazek"
+                    aria-label={t('superAdmin.hintFormDialog.removeImageAriaLabel')}
                   >
                     {uploading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -301,7 +307,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
                   ) : (
                     <>
                       <ImageIcon className="h-5 w-5" />
-                      <span>Kliknij, aby dodać obrazek</span>
+                      <span>{t('superAdmin.hintFormDialog.addImageLabel')}</span>
                     </>
                   )}
                 </button>
@@ -313,9 +319,9 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
           {form.type === 'tooltip' && (
             <div className="space-y-1.5">
               <Label htmlFor="hint-element-id">
-                ID elementu{' '}
+                {t('superAdmin.hintFormDialog.elementId')}{' '}
                 <span className="font-normal text-muted-foreground">
-                  (wartość atrybutu data-hint-id)
+                  {t('superAdmin.hintFormDialog.elementIdHint')}
                 </span>
               </Label>
               <Input
@@ -324,7 +330,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
                 onChange={(e) =>
                   setForm((p) => ({ ...p, target_element_id: e.target.value || null }))
                 }
-                placeholder="np. add-employee-button"
+                placeholder={t('superAdmin.hintFormDialog.elementIdPlaceholder')}
               />
             </div>
           )}
@@ -332,22 +338,22 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
           {/* Route pattern */}
           <div className="space-y-1.5">
             <Label htmlFor="hint-route">
-              Trasa{' '}
+              {t('superAdmin.hintFormDialog.route')}{' '}
               <span className="font-normal text-muted-foreground">
-                (pusty lub * = wszystkie strony)
+                {t('superAdmin.hintFormDialog.routeHint')}
               </span>
             </Label>
             <Input
               id="hint-route"
               value={form.route_pattern ?? ''}
               onChange={(e) => setForm((p) => ({ ...p, route_pattern: e.target.value || null }))}
-              placeholder="np. /admin lub /halls"
+              placeholder={t('superAdmin.hintFormDialog.routePlaceholder')}
             />
           </div>
 
           {/* Target roles */}
           <div className="space-y-2">
-            <Label>Role docelowe</Label>
+            <Label>{t('superAdmin.hintFormDialog.targetRoles')}</Label>
             <div className="flex flex-wrap gap-3">
               {ALL_ROLES.map((role) => (
                 <label key={role} className="flex items-center gap-1.5 cursor-pointer text-sm">
@@ -363,7 +369,7 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
 
           {/* Delay */}
           <div className="space-y-1.5">
-            <Label htmlFor="hint-delay">Opóźnienie (ms)</Label>
+            <Label htmlFor="hint-delay">{t('superAdmin.hintFormDialog.delay')}</Label>
             <Input
               id="hint-delay"
               type="number"
@@ -382,17 +388,19 @@ export function HintFormDialog({ open, onOpenChange, hint, onSuccess }: HintForm
               onCheckedChange={(checked) => setForm((p) => ({ ...p, active: checked }))}
             />
             <Label htmlFor="hint-active" className="cursor-pointer">
-              Aktywna
+              {t('superAdmin.hintFormDialog.active')}
             </Label>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {hint ? 'Zapisz zmiany' : 'Dodaj wskazówkę'}
+              {hint
+                ? t('superAdmin.hintFormDialog.saveChanges')
+                : t('superAdmin.hintFormDialog.addHint')}
             </Button>
           </DialogFooter>
         </form>

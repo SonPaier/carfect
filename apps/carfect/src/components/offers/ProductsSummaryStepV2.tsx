@@ -1,4 +1,6 @@
+  const { t } = useTranslation();
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Input } from '@shared/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -168,7 +170,7 @@ export const ProductsSummaryStepV2 = ({
     <div className="space-y-6">
       {/* Products */}
       <div className="space-y-3">
-        <h3 className="font-semibold">Wybrane usługi, ceny netto</h3>
+        <h3 className="font-semibold">{t('offers.selectedServicesNetPrices')}</h3>
 
         <div className="space-y-2">
           {products.map((product) => (

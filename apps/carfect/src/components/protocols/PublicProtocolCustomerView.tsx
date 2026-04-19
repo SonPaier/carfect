@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import { Label } from '@shared/ui';
 import { ProtocolHeader } from './ProtocolHeader';
 import { VehicleDiagram, type BodyType, type DamagePoint, type VehicleView } from './VehicleDiagram';
@@ -9,14 +11,8 @@ import type { ProtocolConfig } from '@shared/protocol-config';
 import { DEFAULT_SECTION_ORDER } from '@shared/protocol-config';
 import type { SectionId } from '@shared/protocol-config';
 import type { CustomFieldDefinition, CustomFieldValues } from '@shared/custom-fields';
-import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 export type ProtocolType = 'reception' | 'pickup';
-
-const PROTOCOL_TYPE_LABELS: Record<ProtocolType, string> = {
-  reception: 'przyjęcia',
-  pickup: 'odbioru',
-};
 
 interface Instance {
   id: string;
@@ -81,6 +77,7 @@ export const PublicProtocolCustomerView = ({
   protocolConfig,
   customFieldDefinitions = [],
 }: PublicProtocolCustomerViewProps) => {
+  const { t, i18n } = useTranslation('protocols');
   const [selectedPoint, setSelectedPoint] = useState<DamagePoint | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
@@ -130,8 +127,10 @@ export const PublicProtocolCustomerView = ({
     return protocolConfig.consentClauses.filter(c => c.visibleToCustomer !== false);
   }, [protocolConfig]);
 
-  const protocolTypeLabel = PROTOCOL_TYPE_LABELS[protocol.protocol_type || 'reception'];
-  const protocolTitle = `Protokół ${protocolTypeLabel} pojazdu${protocol.vehicle_model ? ` ${protocol.vehicle_model}` : ''}`;
+  const protocolTypeKey = protocol.protocol_type === 'pickup' ? 'publicView.protocolTypePickup' : 'publicView.protocolTypeReception';
+  const protocolTitle = protocol.vehicle_model
+    ? t('publicView.protocolTitleWithModel', { model: protocol.vehicle_model, type: t(protocolTypeKey) })
+    : t('publicView.protocolTitle', { type: t(protocolTypeKey) });
 
   const sectionOrder = protocolConfig?.sectionOrder ?? DEFAULT_SECTION_ORDER;
 
@@ -143,7 +142,7 @@ export const PublicProtocolCustomerView = ({
             <h1 className="text-xl font-semibold">{protocolTitle}</h1>
             {protocol.offer_number && (
               <p className="text-muted-foreground text-sm">
-                Oferta{' '}
+                {t('publicView.offer')}{' '}
                 {offerPublicToken ? (
                   <a
                     href={`/offers/${offerPublicToken}`}
@@ -165,12 +164,12 @@ export const PublicProtocolCustomerView = ({
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-sm">Imię i nazwisko Klienta</Label>
+              <Label className="text-muted-foreground text-sm">{t('publicView.customerName')}</Label>
               <p className="text-base font-medium">{protocol.customer_name}</p>
             </div>
             {protocol.nip && (
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">NIP firmy</Label>
+                <Label className="text-muted-foreground text-sm">{t('publicView.companyNip')}</Label>
                 <p className="text-base">{protocol.nip}</p>
               </div>
             )}
@@ -182,13 +181,13 @@ export const PublicProtocolCustomerView = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {protocol.vehicle_model && (
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Model samochodu</Label>
+                <Label className="text-muted-foreground text-sm">{t('publicView.vehicleModel')}</Label>
                 <p className="text-base font-medium">{protocol.vehicle_model}</p>
               </div>
             )}
             {protocol.registration_number && (
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Numer rejestracyjny</Label>
+                <Label className="text-muted-foreground text-sm">{t('publicView.registrationNumber')}</Label>
                 <p className="text-base font-medium">{protocol.registration_number}</p>
               </div>
             )}
@@ -207,14 +206,14 @@ export const PublicProtocolCustomerView = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {protocol.fuel_level !== null && (
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Stan paliwa</Label>
+                <Label className="text-muted-foreground text-sm">{t('publicView.fuelLevel')}</Label>
                 <p className="text-base">{protocol.fuel_level}%</p>
               </div>
             )}
             {protocol.odometer_reading !== null && (
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Stan licznika</Label>
-                <p className="text-base">{protocol.odometer_reading.toLocaleString('pl-PL')} km</p>
+                <Label className="text-muted-foreground text-sm">{t('publicView.odometer')}</Label>
+                <p className="text-base">{protocol.odometer_reading.toLocaleString(i18n.language)} km</p>
               </div>
             )}
           </div>
@@ -226,7 +225,7 @@ export const PublicProtocolCustomerView = ({
           <>
             {hasProtocolPhotos && (
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">Zdjęcia pojazdu</Label>
+                <Label className="text-muted-foreground text-sm">{t('publicView.vehiclePhotos')}</Label>
                 <div className="grid grid-cols-4 gap-2">
                   {protocol.photo_urls!.map((url, index) => (
                     <div
@@ -236,7 +235,7 @@ export const PublicProtocolCustomerView = ({
                     >
                       <img
                         src={url}
-                        alt={`Zdjęcie ${index + 1}`}
+                        alt={t('publicView.photoAlt', { number: index + 1 })}
                         className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
                       />
                     </div>
@@ -246,8 +245,8 @@ export const PublicProtocolCustomerView = ({
             )}
             {hasDamagePoints && (
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">Stan pojazdu</Label>
-                <p className="text-xs text-muted-foreground">Kliknij na punkt, aby zapoznać się z uszkodzeniem</p>
+                <Label className="text-muted-foreground text-sm">{t('publicView.vehicleCondition')}</Label>
+                <p className="text-xs text-muted-foreground">{t('publicView.clickDamagePoint')}</p>
                 <VehicleDiagram
                   bodyType={protocol.body_type}
                   damagePoints={damagePoints}
@@ -258,7 +257,7 @@ export const PublicProtocolCustomerView = ({
             )}
             {allDamagePhotos.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">Zdjęcia usterek</Label>
+                <Label className="text-muted-foreground text-sm">{t('publicView.faultPhotos')}</Label>
                 <div className="grid grid-cols-4 gap-2">
                   {allDamagePhotos.map((url, index) => (
                     <div
@@ -268,7 +267,7 @@ export const PublicProtocolCustomerView = ({
                     >
                       <img
                         src={url}
-                        alt={`Zdjęcie usterki ${index + 1}`}
+                        alt={t('publicView.damagePhotoAlt', { number: index + 1 })}
                         className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
                       />
                     </div>
@@ -283,17 +282,17 @@ export const PublicProtocolCustomerView = ({
         if (!protocol.service_items || protocol.service_items.length === 0) return null;
         return (
           <div className="space-y-2">
-            <Label className="text-muted-foreground text-sm">Usługi</Label>
+            <Label className="text-muted-foreground text-sm">{t('publicView.services')}</Label>
             <div className="border rounded-lg overflow-hidden">
               {protocol.service_items.map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between px-3 py-2 border-b last:border-b-0 text-sm">
                   <span>{item.name}</span>
-                  <span className="font-medium">{item.unit_price * item.quantity} zł</span>
+                  <span className="font-medium">{item.unit_price * item.quantity} {t('common:currency')}</span>
                 </div>
               ))}
               <div className="flex items-center justify-between px-3 py-2 bg-muted/50 font-medium text-sm">
-                <span>Suma</span>
-                <span>{protocol.service_items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} zł</span>
+                <span>{t('publicView.total')}</span>
+                <span>{protocol.service_items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)} {t('common:currency')}</span>
               </div>
             </div>
           </div>
@@ -320,7 +319,7 @@ export const PublicProtocolCustomerView = ({
         if (visibleConsentClauses.length === 0 || !protocol.custom_field_values) return null;
         return (
           <div className="space-y-2">
-            <Label className="text-muted-foreground text-sm">Oświadczenia</Label>
+            <Label className="text-muted-foreground text-sm">{t('protocols.declarations')}</Label>
             <div className="space-y-3">
               {visibleConsentClauses.map(clause => (
                 <div key={clause.id} className="flex items-start gap-2 text-sm">
@@ -332,7 +331,7 @@ export const PublicProtocolCustomerView = ({
                     {clause.requiresSignature && protocol.custom_field_values![`${clause.id}_sig`] && (
                       <img
                         src={String(protocol.custom_field_values![`${clause.id}_sig`])}
-                        alt="Podpis"
+                        alt={t('protocols.signature')}
                         className="h-12 object-contain border rounded"
                       />
                     )}
@@ -347,7 +346,7 @@ export const PublicProtocolCustomerView = ({
         if (!protocol.custom_field_values?._valuable_items) return null;
         return (
           <div className="space-y-1">
-            <Label className="text-muted-foreground text-sm">Przedmioty wartościowe</Label>
+            <Label className="text-muted-foreground text-sm">{t('protocols.valuables')}</Label>
             <p className="text-base whitespace-pre-line">{String(protocol.custom_field_values._valuable_items)}</p>
           </div>
         );
@@ -366,7 +365,7 @@ export const PublicProtocolCustomerView = ({
             {/* Protocol metadata */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-sm">Data sporządzenia protokołu</Label>
+                <Label className="text-muted-foreground text-sm">{t('protocols.protocolDate')}</Label>
                 <p className="text-base">
                   {format(new Date(protocol.protocol_date), 'PPP', { locale: getDateLocale() })}
                   {protocol.protocol_time && `, ${protocol.protocol_time.slice(0, 5)}`}
@@ -374,7 +373,7 @@ export const PublicProtocolCustomerView = ({
               </div>
               {protocol.received_by && (
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-sm">Przyjął</Label>
+                  <Label className="text-muted-foreground text-sm">{t('protocols.receivedBy')}</Label>
                   <p className="text-base">{protocol.received_by}</p>
                 </div>
               )}

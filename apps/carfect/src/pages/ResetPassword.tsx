@@ -136,7 +136,7 @@ const ResetPassword = () => {
   if (success) {
     return (
       <>
-        <Helmet><title>Hasło zmienione</title></Helmet>
+        <Helmet><title>{t('auth.passwordChanged')}</title></Helmet>
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="w-full max-w-md text-center space-y-6">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto">
@@ -155,7 +155,7 @@ const ResetPassword = () => {
   return (
     <>
       <Helmet>
-        <title>Nowe hasło</title>
+        <title>{t('auth.newPassword')}</title>
       </Helmet>
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">

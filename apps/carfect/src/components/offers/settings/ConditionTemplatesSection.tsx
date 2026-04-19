@@ -113,7 +113,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
             </div>
 
             {items.length === 0 && !isAddingThis && (
-              <p className="text-xs text-muted-foreground pl-1">Brak szablonów</p>
+              <p className="text-xs text-muted-foreground pl-1">{t('offers.noTemplates')}</p>
             )}
 
             {items.map((template) => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useParams, Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
@@ -12,6 +13,7 @@ interface ForgotPasswordProps {
 }
 
 const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
+  const { t } = useTranslation();
   const { slug: paramSlug } = useParams<{ slug: string }>();
   const slug = subdomainSlug || paramSlug;
   const [email, setEmail] = useState('');
@@ -24,7 +26,7 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
     setError(null);
 
     if (!email.trim()) {
-      setError('Podaj adres e-mail');
+      setError(t('pages.auth.emailRequired'));
       return;
     }
 
@@ -60,22 +62,21 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
     return (
       <>
         <Helmet>
-          <title>Sprawdź swoją skrzynkę</title>
+          <title>{t('pages.auth.checkInbox')}</title>
         </Helmet>
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="w-full max-w-md space-y-6 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto">
               <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Sprawdź swoją skrzynkę</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('pages.auth.checkInbox')}</h1>
             <p className="text-muted-foreground">
-              Jeśli konto z podanym adresem e-mail istnieje, wysłaliśmy link do zresetowania hasła.
-              Sprawdź również folder spam.
+              {t('pages.auth.checkInboxMessage')}
             </p>
             <Link to={loginPath}>
               <Button variant="outline" className="gap-2 mt-4">
                 <ArrowLeft className="w-4 h-4" />
-                Wróć do logowania
+                {t('pages.auth.backToLogin')}
               </Button>
             </Link>
           </div>
@@ -87,16 +88,15 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
   return (
     <>
       <Helmet>
-        <title>Resetowanie hasła</title>
-        <meta name="description" content="Zresetuj swoje hasło" />
+        <title>{t('pages.auth.resetPassword')}</title>
+        <meta name="description" content={t('pages.auth.adminEmailHint')} />
       </Helmet>
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">Resetowanie hasła</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('pages.auth.resetPassword')}</h1>
             <p className="text-muted-foreground">
-              Podaj adres e-mail powiązany z Twoim kontem administratora.
-              Wyślemy link do zresetowania hasła.
+              {t('pages.auth.adminEmailHint')}
             </p>
           </div>
 
@@ -108,7 +108,7 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Adres e-mail</Label>
+              <Label htmlFor="email">{t('pages.auth.emailLabel')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -128,7 +128,7 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                'Wyślij link resetujący'
+                t('pages.auth.sendResetLink')
               )}
             </Button>
           </form>

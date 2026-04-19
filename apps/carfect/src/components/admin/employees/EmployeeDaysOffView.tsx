@@ -85,7 +85,7 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
     <div className="space-y-4">
       {/* Header with add button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Nieobecności</h2>
+        <h2 className="text-lg font-semibold">{t('employees.daysOff')}</h2>
         <Button onClick={() => setDialogOpen(true)} size="sm">
           <Plus className="w-4 h-4 mr-1" />
           Dodaj nieobecność
@@ -165,7 +165,7 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
         onOpenChange={setDeleteConfirmOpen}
         title="Usuń nieobecność"
         description="Czy na pewno chcesz usunąć tę nieobecność?"
-        confirmLabel="Usuń"
+        confirmLabel={t('common.delete')}
         onConfirm={handleDeleteDayOff}
         variant="destructive"
       />

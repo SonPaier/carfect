@@ -219,8 +219,8 @@ const SalesProductsView = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead column="shortName">Nazwa</SortableHead>
-              <SortableHead column="fullName">Nazwa pełna</SortableHead>
+              <SortableHead column="shortName">{t('sales.orders.productName')}</SortableHead>
+              <SortableHead column="fullName">{t('sales.products.fullName')}</SortableHead>
               <SortableHead column="categoryName">Kategoria</SortableHead>
               <SortableHead column="priceNet" className="text-right w-[120px]">
                 Cena netto
@@ -233,7 +233,7 @@ const SalesProductsView = () => {
               <TableRow>
                 <TableCell colSpan={5}>
                   {loading ? (
-                    <div className="text-center text-muted-foreground py-8">Ładowanie...</div>
+                    <div className="text-center text-muted-foreground py-8">{t('common.loading')}</div>
                   ) : (
                     <EmptyState
                       icon={Package}

@@ -79,7 +79,7 @@ const MESSAGE_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  sent: { label: 'Wysłany', className: 'text-green-700 bg-green-50' },
+  sent: { label: t('sales.orders.shipped'), className: 'text-green-700 bg-green-50' },
   failed: { label: 'Błąd', className: 'text-red-700 bg-red-50' },
   simulated: { label: 'Demo', className: 'text-blue-700 bg-blue-50' },
 };

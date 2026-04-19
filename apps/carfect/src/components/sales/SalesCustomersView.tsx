@@ -278,12 +278,12 @@ const SalesCustomersView = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead field="name">Nazwa</SortableHead>
+              <SortableHead field="name">{t('sales.orders.productName')}</SortableHead>
               <SortableHead field="city">Miasto</SortableHead>
-              <SortableHead field="last_order">Ostatnie zamówienie</SortableHead>
+              <SortableHead field="last_order">{t('sales.customers.lastOrder')}</SortableHead>
               <TableHead>Telefon</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Płatnik</TableHead>
+              <TableHead>{t('sales.customers.payer')}</TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
@@ -524,7 +524,7 @@ const SalesCustomersView = () => {
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
         title="Usuń klienta"
         description={`Czy na pewno chcesz usunąć klienta "${deleteConfirm.name}"?`}
-        confirmLabel="Usuń"
+        confirmLabel={t('common.delete')}
         variant="destructive"
         onConfirm={() => handleDelete(deleteConfirm.id)}
       />

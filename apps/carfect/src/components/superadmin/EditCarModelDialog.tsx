@@ -19,6 +19,7 @@ import {
 } from '@shared/ui';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface EditCarModelDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export const EditCarModelDialog: React.FC<EditCarModelDialogProps> = ({
   model,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const [brand, setBrand] = useState(model.brand);
   const [name, setName] = useState(model.name);
   const [size, setSize] = useState<'S' | 'M' | 'L'>(model.size as 'S' | 'M' | 'L');
@@ -51,9 +53,9 @@ export const EditCarModelDialog: React.FC<EditCarModelDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!brand.trim() || !name.trim()) {
-      toast.error('Wypełnij wszystkie pola');
+      toast.error(t('superAdmin.editCarModelDialog.fillAllFields'));
       return;
     }
 
@@ -72,19 +74,19 @@ export const EditCarModelDialog: React.FC<EditCarModelDialogProps> = ({
 
       if (error) {
         if (error.code === '23505') {
-          toast.error(`Model ${brand} ${name} już istnieje`);
+          toast.error(t('superAdmin.editCarModelDialog.alreadyExists', { brand, name }));
         } else {
           throw error;
         }
         return;
       }
 
-      toast.success(`Zaktualizowano ${brand} ${name}`);
+      toast.success(t('superAdmin.editCarModelDialog.updateSuccess', { brand, name }));
       onOpenChange(false);
       await onSuccess();
     } catch (error) {
       console.error('Error updating car model:', error);
-      toast.error('Błąd podczas aktualizacji modelu');
+      toast.error(t('superAdmin.editCarModelDialog.updateError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -94,48 +96,48 @@ export const EditCarModelDialog: React.FC<EditCarModelDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edytuj model samochodu</DialogTitle>
+          <DialogTitle>{t('superAdmin.editCarModelDialog.title')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="brand">Marka</Label>
+            <Label htmlFor="brand">{t('superAdmin.editCarModelDialog.brand')}</Label>
             <Input
               id="brand"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              placeholder="np. Toyota"
+              placeholder={t('superAdmin.editCarModelDialog.brandPlaceholder')}
               autoFocus
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Model</Label>
+            <Label htmlFor="name">{t('superAdmin.editCarModelDialog.model')}</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="np. Corolla"
+              placeholder={t('superAdmin.editCarModelDialog.modelPlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="size">Rozmiar</Label>
+            <Label htmlFor="size">{t('superAdmin.editCarModelDialog.size')}</Label>
             <Select value={size} onValueChange={(v: 'S' | 'M' | 'L') => setSize(v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="S">Mały (S) - kompaktowe, hatchbacki</SelectItem>
-                <SelectItem value="M">Średni (M) - sedany, kombi</SelectItem>
-                <SelectItem value="L">Duży (L) - SUV, vany, pickupy</SelectItem>
+                <SelectItem value="S">{t('superAdmin.editCarModelDialog.sizeSmall')}</SelectItem>
+                <SelectItem value="M">{t('superAdmin.editCarModelDialog.sizeMedium')}</SelectItem>
+                <SelectItem value="L">{t('superAdmin.editCarModelDialog.sizeLarge')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Zapisz
+              {t('superAdmin.editCarModelDialog.submit')}
             </Button>
           </DialogFooter>
         </form>

@@ -161,7 +161,7 @@ function EmbedLeadFormContent() {
     if (!formData.phone.trim()) {
       errors.phone = t('embed.validation.phoneRequired');
     } else if (phoneDigits.length < 9) {
-      errors.phone = t('embedLeadForm.phoneMinDigits');
+      errors.phone = t('embed.validation.phoneMinLength');
     }
 
     if (!formData.vehicleModel.trim()) {
@@ -169,11 +169,11 @@ function EmbedLeadFormContent() {
     }
 
     if (!formData.paintColor.trim()) {
-      errors.paintColor = t('embedLeadForm.paintColorRequired');
+      errors.paintColor = t('embed.validation.paintColorRequired');
     }
 
     if (!formData.paintFinish) {
-      errors.paintFinish = t('embedLeadForm.selectPaintType');
+      errors.paintFinish = t('embed.validation.paintFinishRequired');
     }
 
     if (formData.selectedTemplates.length === 0) {
@@ -468,7 +468,7 @@ function EmbedLeadFormContent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paintColor">{t('embedLeadForm.paintColor')} *</Label>
+              <Label htmlFor="paintColor">{t('embed.paintColor')} *</Label>
               <Input
                 id="paintColor"
                 value={formData.paintColor}
@@ -478,7 +478,7 @@ function EmbedLeadFormContent() {
                     setValidationErrors((prev) => ({ ...prev, paintColor: '' }));
                   }
                 }}
-                placeholder={t('embedLeadForm.paintColorPlaceholder')}
+                placeholder={t('embed.paintColorPlaceholder')}
                 className={validationErrors.paintColor ? 'border-destructive' : ''}
               />
               {validationErrors.paintColor && (
@@ -487,7 +487,7 @@ function EmbedLeadFormContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('embedLeadForm.paintType')} *</Label>
+              <Label>{t('embed.paintFinish')} *</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -501,7 +501,7 @@ function EmbedLeadFormContent() {
                     }
                   }}
                 >
-                  {t('customerData.paintGloss')}
+                  {t('embed.paintFinishGloss')}
                 </Button>
                 <Button
                   type="button"
@@ -515,7 +515,7 @@ function EmbedLeadFormContent() {
                     }
                   }}
                 >
-                  {t('customerData.paintMatte')}
+                  {t('embed.paintFinishMatte')}
                 </Button>
               </div>
               {validationErrors.paintFinish && (
@@ -585,7 +585,7 @@ function EmbedLeadFormContent() {
                                 className="text-sm font-medium whitespace-nowrap"
                                 style={{ color: primaryColor }}
                               >
-                                od {template.price_from} zł
+                                {t('embed.priceFrom', { price: template.price_from })}
                               </span>
                             )}
                           </div>
@@ -598,7 +598,7 @@ function EmbedLeadFormContent() {
                       template.available_durations &&
                       template.available_durations.length > 0 && (
                         <div className="ml-8 p-3 bg-muted/30 rounded-lg space-y-2">
-                          <p className="text-sm font-medium">Pakiet powłoki:</p>
+                          <p className="text-sm font-medium">{t('embed.coatingPackage')}</p>
                           <div className="grid gap-1.5">
                             {template.available_durations.map((months) => (
                               <label
@@ -685,7 +685,7 @@ function EmbedLeadFormContent() {
                                     />
                                   )}
                               </div>
-                              <span className="text-sm">Nie wiem, proszę o propozycję</span>
+                              <span className="text-sm">{t('embed.dontKnowSuggest')}</span>
                               <input
                                 type="radio"
                                 name={`duration-${template.id}`}
@@ -710,7 +710,7 @@ function EmbedLeadFormContent() {
                           className="text-sm hover:underline flex items-center gap-1"
                           style={{ color: primaryColor }}
                         >
-                          Czytaj więcej...
+                          {t('embed.readMore')}
                           {isExpanded ? (
                             <ChevronUp className="w-3 h-3" />
                           ) : (
@@ -737,8 +737,8 @@ function EmbedLeadFormContent() {
           {config?.extras && config.extras.length > 0 && (
             <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
               <div>
-                <h2 className="font-semibold text-lg">Dodatki</h2>
-                <p className="text-sm opacity-70">Opcjonalne usługi dodatkowe</p>
+                <h2 className="font-semibold text-lg">{t('embed.extras')}</h2>
+                <p className="text-sm opacity-70">{t('embed.optionalExtras')}</p>
               </div>
 
               <div className="grid gap-2">
@@ -785,8 +785,8 @@ function EmbedLeadFormContent() {
           {/* Planned Timeframe Section */}
           <div className="rounded-lg p-4 shadow-sm space-y-4" style={sectionStyle}>
             <div>
-              <h2 className="font-semibold text-lg">Planowany termin realizacji</h2>
-              <p className="text-sm opacity-70">Kiedy chciałbyś zrealizować usługę?</p>
+              <h2 className="font-semibold text-lg">{t('embed.plannedDate')}</h2>
+              <p className="text-sm opacity-70">{t('embed.whenService')}</p>
             </div>
 
             <Select
@@ -796,13 +796,13 @@ function EmbedLeadFormContent() {
               }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Wybierz (opcjonalne)" />
+                <SelectValue placeholder={t('embed.selectOptional')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="asap">Jak najszybciej</SelectItem>
-                <SelectItem value="1_3_months">W ciągu 1–3 miesięcy</SelectItem>
-                <SelectItem value="later">Później niż za 3 miesiące</SelectItem>
-                <SelectItem value="not_sure">Jeszcze nie wiem / chcę się tylko rozeznać</SelectItem>
+                <SelectItem value="asap">{t('embed.asap')}</SelectItem>
+                <SelectItem value="1_3_months">{t('embed.within1to3months')}</SelectItem>
+                <SelectItem value="later">{t('embed.laterThan3months')}</SelectItem>
+                <SelectItem value="not_sure">{t('embed.notSure')}</SelectItem>
               </SelectContent>
             </Select>
           </div>

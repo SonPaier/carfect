@@ -272,7 +272,7 @@ export const PublicOfferCustomerView = ({
         const inferredScopeName = opt.scope_id
           ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
           : (inferredNameFromTitle ??
-            (offer.offer_format === 'v2' ? 'Usługi' : t('publicOffer.otherFallback')));
+            (offer.offer_format === 'v2' ? t('common.services') : t('publicOffer.otherFallback')));
 
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
 

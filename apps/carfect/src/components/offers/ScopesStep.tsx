@@ -1,4 +1,6 @@
+  const { t } = useTranslation();
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@shared/ui';
 import { Badge } from '@shared/ui';
@@ -58,7 +60,7 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Ładowanie szablonów...</div>;
+    return <div className="text-center py-8 text-muted-foreground">{t('offers.loadingTemplates')}</div>;
   }
 
   if (scopes.length === 0) {

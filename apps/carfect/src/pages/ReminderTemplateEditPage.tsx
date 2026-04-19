@@ -91,7 +91,7 @@ export default function ReminderTemplateEditPage({ inlineShortId, onBack }: Remi
         {!isNew && (
           <AdminTabsList columns={3}>
             <AdminTabsTrigger value="template">{t('reminders.tabs.template')}</AdminTabsTrigger>
-            <AdminTabsTrigger value="services">Usługi</AdminTabsTrigger>
+            <AdminTabsTrigger value="services">{t('common.services')}</AdminTabsTrigger>
             <AdminTabsTrigger value="customers">
               {t('reminders.tabs.assignedCustomers')}
             </AdminTabsTrigger>

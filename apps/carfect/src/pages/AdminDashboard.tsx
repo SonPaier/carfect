@@ -1595,7 +1595,7 @@ const AdminDashboard = () => {
                     <DropdownMenuContent side="top" align="start" className="w-56">
                       <DropdownMenuItem onClick={handleLogout} className="gap-2">
                         <LogOut className="w-4 h-4" />
-                        Wyloguj się
+                        {t('navigation.logout')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

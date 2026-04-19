@@ -37,6 +37,7 @@ import {
   EyeOff,
   Info,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AddInstanceDialogProps {
   open: boolean;
@@ -62,6 +63,8 @@ interface SubscriptionPlan {
 type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
 export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstanceDialogProps) {
+  const { t } = useTranslation();
+
   // Form state
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -253,11 +256,15 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
       const err = error as { code?: string; message?: string };
       if (err.code === '23505' && err.message?.includes('instances_slug_key')) {
         setSlugStatus('taken');
-        toast.error('Ten slug jest już zajęty. Wybierz inny.');
+        toast.error(t('superAdmin.addInstanceDialog.slugTakenError'));
         return;
       }
 
-      toast.error(`Błąd: ${err.message || 'Nie udało się utworzyć instancji'}`);
+      toast.error(
+        err.message
+          ? t('superAdmin.addInstanceDialog.createError', { message: err.message })
+          : t('superAdmin.addInstanceDialog.createErrorFallback'),
+      );
     } finally {
       setLoading(false);
     }
@@ -307,7 +314,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Nowa instancja
+            {t('superAdmin.addInstanceDialog.title')}
           </DialogTitle>
         </DialogHeader>
 
@@ -317,29 +324,31 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Building2 className="h-4 w-4" />
-                <span className="font-medium">Dane firmy</span>
+                <span className="font-medium">
+                  {t('superAdmin.addInstanceDialog.sectionCompany')}
+                </span>
               </div>
               <Separator />
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nazwa firmy *</Label>
+                  <Label htmlFor="name">{t('superAdmin.addInstanceDialog.companyName')}</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
-                    placeholder="np. Auto Spa Gdańsk"
+                    placeholder={t('superAdmin.addInstanceDialog.companyNamePlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Slug (URL) *</Label>
+                  <Label htmlFor="slug">{t('superAdmin.addInstanceDialog.slug')}</Label>
                   <div className="relative">
                     <Input
                       id="slug"
                       value={slug}
                       onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                      placeholder="np. auto-spa-gdansk"
+                      placeholder={t('superAdmin.addInstanceDialog.slugPlaceholder')}
                       className={
                         slugStatus === 'taken' || slugStatus === 'invalid'
                           ? 'border-destructive'
@@ -351,33 +360,37 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     </div>
                   </div>
                   {slugStatus === 'invalid' && (
-                    <p className="text-xs text-destructive">Tylko małe litery, cyfry i myślniki</p>
+                    <p className="text-xs text-destructive">
+                      {t('superAdmin.addInstanceDialog.slugInvalid')}
+                    </p>
                   )}
                   {slugStatus === 'taken' && (
-                    <p className="text-xs text-destructive">Ten slug jest już zajęty</p>
+                    <p className="text-xs text-destructive">
+                      {t('superAdmin.addInstanceDialog.slugTaken')}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="shortName">Skrócona nazwa (dla SMS)</Label>
+                  <Label htmlFor="shortName">{t('superAdmin.addInstanceDialog.shortName')}</Label>
                   <Input
                     id="shortName"
                     value={shortName}
                     onChange={(e) => setShortName(e.target.value)}
-                    placeholder="np. Auto Spa"
+                    placeholder={t('superAdmin.addInstanceDialog.shortNamePlaceholder')}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" /> Telefon
+                      <Phone className="h-3 w-3" /> {t('superAdmin.addInstanceDialog.phone')}
                     </Label>
                     <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" /> Email
+                      <Mail className="h-3 w-3" /> {t('superAdmin.addInstanceDialog.email')}
                     </Label>
                     <Input
                       id="email"
@@ -390,7 +403,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
 
                 <div className="space-y-2">
                   <Label htmlFor="address" className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> Adres
+                    <MapPin className="h-3 w-3" /> {t('superAdmin.addInstanceDialog.address')}
                   </Label>
                   <Input
                     id="address"
@@ -401,7 +414,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
 
                 <div className="space-y-2">
                   <Label htmlFor="nip" className="flex items-center gap-1">
-                    <Hash className="h-3 w-3" /> NIP
+                    <Hash className="h-3 w-3" /> {t('superAdmin.addInstanceDialog.nip')}
                   </Label>
                   <Input id="nip" value={nip} onChange={(e) => setNip(e.target.value)} />
                 </div>
@@ -412,22 +425,33 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Globe className="h-4 w-4" />
-                <span className="font-medium">Plan i subskrypcja</span>
+                <span className="font-medium">
+                  {t('superAdmin.addInstanceDialog.sectionPlan')}
+                </span>
               </div>
               <Separator />
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Wybierz plan *</Label>
+                  <Label>{t('superAdmin.addInstanceDialog.selectPlan')}</Label>
                   <Select value={planId} onValueChange={setPlanId} disabled={loadingPlans}>
                     <SelectTrigger>
-                      <SelectValue placeholder={loadingPlans ? 'Ładowanie...' : 'Wybierz plan'} />
+                      <SelectValue
+                        placeholder={
+                          loadingPlans
+                            ? t('common.loading')
+                            : t('superAdmin.addInstanceDialog.selectPlanPlaceholder')
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} ({plan.base_price} zł z 1 stanowiskiem, +
-                          {plan.price_per_station} zł/dodatkowe)
+                          {t('superAdmin.addInstanceDialog.planDescription', {
+                            name: plan.name,
+                            basePrice: plan.base_price,
+                            perStation: plan.price_per_station,
+                          })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -435,7 +459,9 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="stationLimit">Limit stanowisk *</Label>
+                  <Label htmlFor="stationLimit">
+                    {t('superAdmin.addInstanceDialog.stationLimit')}
+                  </Label>
                   <Input
                     id="stationLimit"
                     type="number"
@@ -448,7 +474,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
 
                 {selectedPlan && (
                   <div className="text-sm text-muted-foreground">
-                    Szacunkowa cena miesięczna:{' '}
+                    {t('superAdmin.addInstanceDialog.estimatedPrice')}{' '}
                     <span className="font-medium text-foreground">{monthlyPrice} zł</span>
                   </div>
                 )}
@@ -460,7 +486,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     onCheckedChange={(checked) => setTrialDays(checked ? 7 : null)}
                   />
                   <Label htmlFor="trial" className="text-sm font-normal cursor-pointer">
-                    Okres próbny
+                    {t('superAdmin.addInstanceDialog.trial')}
                   </Label>
                   {trialDays !== null && (
                     <div className="flex items-center gap-2">
@@ -472,7 +498,9 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                         onChange={(e) => setTrialDays(Math.max(1, parseInt(e.target.value) || 7))}
                         className="w-20 h-8"
                       />
-                      <span className="text-sm text-muted-foreground">dni</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t('superAdmin.addInstanceDialog.trialDays')}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -483,39 +511,47 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span className="font-medium">Konto administratora</span>
+                <span className="font-medium">
+                  {t('superAdmin.addInstanceDialog.sectionAdmin')}
+                </span>
               </div>
               <Separator />
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="adminUsername">Nazwa użytkownika *</Label>
+                  <Label htmlFor="adminUsername">
+                    {t('superAdmin.addInstanceDialog.adminUsername')}
+                  </Label>
                   <Input
                     id="adminUsername"
                     value={adminUsername}
                     onChange={(e) => setAdminUsername(e.target.value)}
-                    placeholder="np. admin"
+                    placeholder={t('superAdmin.addInstanceDialog.adminUsernamePlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="adminEmail">Email administratora *</Label>
+                  <Label htmlFor="adminEmail">
+                    {t('superAdmin.addInstanceDialog.adminEmail')}
+                  </Label>
                   <Input
                     id="adminEmail"
                     type="email"
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
-                    placeholder="np. admin@firma.pl"
+                    placeholder={t('superAdmin.addInstanceDialog.adminEmailPlaceholder')}
                     className={adminEmail && !isValidEmail(adminEmail) ? 'border-destructive' : ''}
                   />
                   {adminEmail && !isValidEmail(adminEmail) && (
-                    <p className="text-xs text-destructive">Nieprawidłowy format adresu email</p>
+                    <p className="text-xs text-destructive">
+                      {t('superAdmin.addInstanceDialog.adminEmailInvalid')}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="adminPassword" className="flex items-center gap-1">
-                    <Lock className="h-3 w-3" /> Hasło *
+                    <Lock className="h-3 w-3" /> {t('superAdmin.addInstanceDialog.adminPassword')}
                   </Label>
                   <div className="relative">
                     <Input
@@ -523,7 +559,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                       type={showPassword ? 'text' : 'password'}
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="Min. 6 znaków"
+                      placeholder={t('superAdmin.addInstanceDialog.adminPasswordPlaceholder')}
                       className={
                         adminPassword && adminPassword.length < 6 ? 'border-destructive' : ''
                       }
@@ -539,7 +575,9 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
                     </Button>
                   </div>
                   {adminPassword && adminPassword.length < 6 && (
-                    <p className="text-xs text-destructive">Hasło musi mieć min. 6 znaków</p>
+                    <p className="text-xs text-destructive">
+                      {t('superAdmin.addInstanceDialog.adminPasswordTooShort')}
+                    </p>
                   )}
                 </div>
               </div>
@@ -550,10 +588,12 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
               <Alert className="bg-muted/50">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  <p className="font-medium mb-2">Po utworzeniu skonfiguruj DNS:</p>
+                  <p className="font-medium mb-2">
+                    {t('superAdmin.addInstanceDialog.dnsTitle')}
+                  </p>
                   <div className="space-y-1 font-mono text-[11px]">
-                    <div>• {slug}.carfect.pl → widok klienta</div>
-                    <div>• {slug}.admin.carfect.pl → panel admina</div>
+                    <div>• {slug}.carfect.pl → {t('superAdmin.addInstanceDialog.dnsPublic')}</div>
+                    <div>• {slug}.admin.carfect.pl → {t('superAdmin.addInstanceDialog.dnsAdmin')}</div>
                   </div>
                 </AlertDescription>
               </Alert>
@@ -563,7 +603,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
 
         <div className="flex justify-end gap-2 p-6 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            Anuluj
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -571,7 +611,7 @@ export function AddInstanceDialog({ open, onOpenChange, onSuccess }: AddInstance
             className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
           >
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Utwórz instancję
+            {t('superAdmin.addInstanceDialog.createInstance')}
           </Button>
         </div>
       </DialogContent>

@@ -287,7 +287,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
     <>
       <Helmet>
         <title>Logowanie - {instance?.name || 'Panel'}</title>
-        <meta name="description" content={`Zaloguj się do panelu ${instance?.name}`} />
+        <meta name="description" content={t('pages.auth.metaLoginToPanel', { name: instance?.name })} />
       </Helmet>
 
       <div className="min-h-screen flex">
@@ -307,7 +307,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                   </div>
                 )}
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-                  Logowanie do panelu administracyjnego
+                  {t('pages.auth.loginTitle')}
                 </h1>
               </div>
 
@@ -317,7 +317,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                   <p className="text-sm text-destructive">{errors.general}</p>
                   {remainingAttempts !== null && remainingAttempts > 0 && (
                     <p className="text-xs text-destructive/80 mt-1">
-                      Pozostało prób: {remainingAttempts}
+                      {t('pages.auth.remainingAttempts', { count: remainingAttempts })}
                     </p>
                   )}
                 </div>
@@ -385,7 +385,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                     }
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Zapomniałeś hasła?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
 
@@ -398,7 +398,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Zaloguj się
+                      {t('pages.auth.signIn')}
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}
