@@ -870,8 +870,8 @@ export const SummaryStep = ({
                       <span className="text-sm">{t('summaryStep.loadTemplate')}</span>
                     </SelectTrigger>
                     <SelectContent>
-                      {templates.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      {templates.map(tmpl => (
+                        <SelectItem key={tmpl.id} value={tmpl.id}>{tmpl.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

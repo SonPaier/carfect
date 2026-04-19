@@ -25,6 +25,7 @@ export function AssignedEmployeesChips({
   maxVisible,
   loading = false,
 }: AssignedEmployeesChipsProps) {
+  const { t } = useTranslation();
   // Build a map for quick lookups
   const employeeMap = new Map(employees.map(e => [e.id, e]));
   

@@ -51,6 +51,7 @@ export const ProductsSummaryStepV2 = ({
   const [editingService, setEditingService] = useState<ServiceData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const { t } = useTranslation();
 
   // Fetch categories once for ServiceFormDialog
   useEffect(() => {
@@ -59,7 +60,6 @@ export const ProductsSummaryStepV2 = ({
       .select('id, name')
       .eq('instance_id', instanceId)
       .then(({ data }) => {
-  const { t } = useTranslation();
         if (data) setCategories(data);
       });
   }, [instanceId]);
