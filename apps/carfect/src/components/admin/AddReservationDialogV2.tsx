@@ -13,7 +13,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
-import { Sheet, SheetContent } from '@shared/ui';
+import { Sheet, SheetContent, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
@@ -1228,6 +1228,7 @@ const AddReservationDialogV2 = ({
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={onClose}
         >
+          <SheetTitle className="sr-only">{getDialogTitle()}</SheetTitle>
           {formContent}
         </SheetContent>
       </Sheet>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format, addMonths } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Button, Input, Label } from '@shared/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@shared/ui';
@@ -12,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone } from '@shared/utils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface ReminderTemplateItem {
   months: number;
@@ -323,7 +323,7 @@ export function AddCustomerReminderDialog({
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {serviceDate
-                    ? format(serviceDate, 'd MMMM yyyy', { locale: pl })
+                    ? format(serviceDate, 'd MMMM yyyy', { locale: getDateLocale() })
                     : t('common.selectDate')}
                 </Button>
               </PopoverTrigger>
@@ -333,7 +333,7 @@ export function AddCustomerReminderDialog({
                   selected={serviceDate}
                   onSelect={setServiceDate}
                   initialFocus
-                  locale={pl}
+                  locale={getDateLocale()}
                   className="pointer-events-auto"
                 />
               </PopoverContent>

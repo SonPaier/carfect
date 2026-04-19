@@ -62,6 +62,7 @@ interface Instance {
 }
 
 const SuperAdminDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, signOut, hasRole } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -143,16 +144,16 @@ const SuperAdminDashboard = () => {
       setInstances((prev) =>
         prev.map((i) => (i.id === instanceId ? { ...i, active: !currentState } : i)),
       );
-      toast.success(`Instancja ${currentState ? 'wyłączona' : 'włączona'}`);
+      toast.success(currentState ? t('superAdmin.instanceDisabled') : t('superAdmin.instanceEnabled'));
     } catch (error) {
-      toast.error('Błąd podczas zmiany statusu instancji');
+      toast.error(t('superAdmin.statusChangeError'));
     }
   };
 
   const handleDeleteInstance = async (instance: Instance) => {
     if (
       !confirm(
-        `Czy na pewno chcesz usunąć instancję "${instance.name}"? Instancja zostanie ukryta, ale dane pozostaną w bazie.`,
+        t('superAdmin.deleteConfirm', { name: instance.name }),
       )
     )
       return;
@@ -165,9 +166,9 @@ const SuperAdminDashboard = () => {
       if (error) throw error;
 
       setInstances((prev) => prev.filter((i) => i.id !== instance.id));
-      toast.success('Instancja została usunięta');
+      toast.success(t('superAdmin.instanceDeleted'));
     } catch (error) {
-      toast.error('Błąd podczas usuwania instancji');
+      toast.error(t('superAdmin.instanceDeleteError'));
     }
   };
 
@@ -216,7 +217,7 @@ const SuperAdminDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Super Admin - Panel zarządzania</title>
+        <title>{t('superAdmin.pageTitle')}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -245,7 +246,7 @@ const SuperAdminDashboard = () => {
                 </div>
                 <div>
                   <h1 className="font-bold text-foreground">Super Admin</h1>
-                  <p className="text-xs text-muted-foreground">Panel zarządzania</p>
+                  <p className="text-xs text-muted-foreground">{t('superAdmin.panelTitle')}</p>
                 </div>
               </div>
             </div>
@@ -258,7 +259,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('instances')}
               >
                 <Building2 className="w-4 h-4" />
-                Instancje
+                {t('superAdmin.navInstances')}
               </Button>
               <Button
                 variant={activeSection === 'cars' ? 'secondary' : 'ghost'}
@@ -266,7 +267,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('cars')}
               >
                 <Car className="w-4 h-4" />
-                Samochody
+                {t('superAdmin.navCars')}
               </Button>
               <Button
                 variant={activeSection === 'admins' ? 'secondary' : 'ghost'}
@@ -274,7 +275,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('admins')}
               >
                 <Users className="w-4 h-4" />
-                Administratorzy
+                {t('superAdmin.navAdmins')}
               </Button>
               <Button
                 variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
@@ -282,7 +283,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('settings')}
               >
                 <Settings className="w-4 h-4" />
-                Ustawienia
+                {t('superAdmin.navSettings')}
               </Button>
               <Button
                 variant={activeSection === 'hints' ? 'secondary' : 'ghost'}
@@ -290,7 +291,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setActiveSection('hints')}
               >
                 <MessageSquare className="w-4 h-4" />
-                Wskazówki
+                {t('superAdmin.navHints')}
               </Button>
             </nav>
 
@@ -305,7 +306,7 @@ const SuperAdminDashboard = () => {
                 onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4" />
-                Wyloguj się
+                {t('auth.logout')}
               </Button>
             </div>
           </div>
@@ -342,7 +343,7 @@ const SuperAdminDashboard = () => {
                   <div>
                     <h1 className="text-2xl font-bold text-foreground">Instancje</h1>
                     <p className="text-muted-foreground">
-                      Zarządzaj wszystkimi instancjami aplikacji
+                      {t('superAdmin.manageAllInstances')}
                     </p>
                   </div>
                   <Button
@@ -451,7 +452,7 @@ const SuperAdminDashboard = () => {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                   <ExternalLink className="w-4 h-4 mr-2" />
-                                  Otwórz panel admina
+                                  {t('superAdmin.openAdminPanel')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleOpenSettings(instance)}>
                                   <Settings className="w-4 h-4 mr-2" />
@@ -463,25 +464,25 @@ const SuperAdminDashboard = () => {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleOpenFeatures(instance)}>
                                   <FileText className="w-4 h-4 mr-2" />
-                                  Funkcje płatne
+                                  {t('superAdmin.paidFeatures')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleOpenUsers(instance)}>
                                   <Users className="w-4 h-4 mr-2" />
-                                  Zarządzaj użytkownikami
+                                  {t('superAdmin.manageUsers')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleInstance(instance.id, instance.active)}
                                   className={instance.active ? 'text-destructive' : 'text-success'}
                                 >
                                   <Power className="w-4 h-4 mr-2" />
-                                  {instance.active ? 'Wyłącz instancję' : 'Włącz instancję'}
+                                  {instance.active ? t('superAdmin.disableInstance') : t('superAdmin.enableInstance')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDeleteInstance(instance)}
                                   className="text-destructive"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
-                                  Usuń instancję
+                                  {t('superAdmin.deleteInstance')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -512,7 +513,7 @@ const SuperAdminDashboard = () => {
         <Dialog open={featuresOpen} onOpenChange={setFeaturesOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Funkcje płatne - {selectedInstance.name}</DialogTitle>
+              <DialogTitle>{t('superAdmin.paidFeaturesTitle', { name: selectedInstance.name })}</DialogTitle>
             </DialogHeader>
             <InstanceFeaturesSettings instanceId={selectedInstance.id} />
           </DialogContent>
@@ -526,7 +527,7 @@ const SuperAdminDashboard = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Użytkownicy - {selectedInstance.name}
+                {t('superAdmin.usersTitle', { name: selectedInstance.name })}
               </DialogTitle>
             </DialogHeader>
             <InstanceUsersTab instanceId={selectedInstance.id} />

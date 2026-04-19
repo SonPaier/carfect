@@ -13,10 +13,6 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -118,7 +114,7 @@ describe('useAdminNotes', () => {
       expect(fromMock).toHaveBeenCalledWith('reservations');
       expect(updateMock).toHaveBeenCalledWith({ admin_notes: 'updated note' });
       expect(eqMock).toHaveBeenCalledWith('id', 'res-1');
-      expect(toast.success).toHaveBeenCalledWith('common.saved');
+      expect(toast.success).toHaveBeenCalledWith('Zapisano');
       expect(result.current.editingNotes).toBe(false);
     });
 
@@ -153,7 +149,7 @@ describe('useAdminNotes', () => {
         await result.current.handleSaveAdminNotes();
       });
 
-      expect(toast.error).toHaveBeenCalledWith('common.error');
+      expect(toast.error).toHaveBeenCalledWith('Błąd');
       expect(result.current.savingNotes).toBe(false);
     });
 

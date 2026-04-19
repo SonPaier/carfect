@@ -22,13 +22,13 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DEFAULT_BRANDING, OfferBranding, getContrastTextColor } from '@shared/utils';
 import { TrustTilesSection } from './public/TrustTilesSection';
 import { ExpertContactCard } from './public/ExpertContactCard';
 import { BankTransferCard } from './public/BankTransferCard';
 import { SocialMediaCard } from './public/SocialMediaCard';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface OfferScopeRef {
   id: string;
@@ -272,7 +272,7 @@ export const PublicOfferCustomerView = ({
         const inferredScopeName = opt.scope_id
           ? (opt.scope?.name ?? inferredNameFromTitle ?? t('publicOffer.serviceFallback'))
           : (inferredNameFromTitle ??
-            (offer.offer_format === 'v2' ? 'Usługi' : t('publicOffer.otherFallback')));
+            (offer.offer_format === 'v2' ? t('common.services') : t('publicOffer.otherFallback')));
 
         const isExtrasScope = opt.scope?.is_extras_scope ?? false;
 
@@ -850,7 +850,7 @@ export const PublicOfferCustomerView = ({
                   <span>
                     {t('publicOffer.offerValidUntil')}:{' '}
                     <strong>
-                      {format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: pl })}
+                      {format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: getDateLocale() })}
                     </strong>
                   </span>
                 </div>
@@ -860,7 +860,7 @@ export const PublicOfferCustomerView = ({
                 <div style={{ color: branding.offer_section_text_color }}>
                   <div className="flex items-center gap-2 font-medium mb-1">
                     <CreditCard className="w-4 h-4 opacity-70" />
-                    Warunki płatności
+                    {t('offers.paymentTerms')}
                   </div>
                   <div
                     className="pl-6 opacity-80 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[15px] md:text-sm"

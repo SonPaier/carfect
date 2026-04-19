@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, AlertCircle, Package } from 'lucide-react';
 import { Input, Button, Label, NumericInput } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
@@ -20,6 +21,7 @@ const RollSelectAutocomplete = ({
   selectedRollId,
   onSelect,
 }: RollSelectAutocompleteProps) => {
+  const { t } = useTranslation();
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(!!(instanceId && productName));
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -105,33 +107,33 @@ const RollSelectAutocomplete = ({
 
   return (
     <div ref={containerRef} className="mt-2 space-y-2">
-      <Label className="text-xs text-muted-foreground">Rolka</Label>
+      <Label className="text-xs text-muted-foreground">{t('integrations.rolls.label')}</Label>
 
       {/* Selected roll display */}
       {selectedRollId && !selectedRoll && loading ? (
         <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground">Ładowanie rolki...</span>
+          <span className="text-xs text-muted-foreground">{t('integrations.rolls.loadingRoll')}</span>
         </div>
       ) : selectedRoll ? (
         <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
           <div className="flex-1 min-w-0">
             <span className="font-mono text-xs">
-              {selectedRoll.barcode || selectedRoll.productCode || 'Brak kodu'}
+              {selectedRoll.barcode || selectedRoll.productCode || t('integrations.rolls.noCode')}
             </span>
             <span className="text-muted-foreground ml-2 text-xs">
-              Pozostało: {remainingM2.toFixed(2)} m²
+              {t('integrations.rolls.remaining', { value: remainingM2.toFixed(2) })}
             </span>
           </div>
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleClear}>
-            Zmień
+            {t('integrations.rolls.change')}
           </Button>
         </div>
       ) : (
         <div className="relative">
           <Input
-            placeholder={loading ? 'Ładowanie rolek...' : 'Wybierz rolkę (barcode/kod)...'}
+            placeholder={loading ? t('integrations.rolls.loadingRolls') : t('integrations.rolls.selectRoll')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -180,7 +182,7 @@ const RollSelectAutocomplete = ({
 
           {dropdownOpen && filteredRolls.length === 0 && !loading && (
             <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-3 text-xs text-muted-foreground text-center">
-              Brak dostępnych rolek dla „{productName}"
+              {t('integrations.rolls.noRollsFor', { name: productName })}
             </div>
           )}
         </div>
@@ -198,7 +200,7 @@ const RollSelectAutocomplete = ({
               className="h-8 text-xs w-24"
               placeholder="m²"
             />
-            <span className="text-xs text-muted-foreground">m² z tej rolki</span>
+            <span className="text-xs text-muted-foreground">{t('integrations.rolls.usageFromRoll')}</span>
           </div>
 
           {/* Shortage error */}
@@ -206,7 +208,7 @@ const RollSelectAutocomplete = ({
             <div className="flex items-center gap-1.5 text-xs text-destructive">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>
-                Zostało {remainingM2.toFixed(2)} m², brakuje {shortage.toFixed(2)} m²
+                {t('integrations.rolls.shortage', { remaining: remainingM2.toFixed(2), shortage: shortage.toFixed(2) })}
               </span>
             </div>
           )}

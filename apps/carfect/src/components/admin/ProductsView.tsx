@@ -367,7 +367,7 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
               className="sm:w-auto sm:px-4 w-10 h-10"
             >
               <FolderOpen className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Kategorie usług</span>
+              <span className="hidden sm:inline ml-2">{t('products.serviceCategories')}</span>
             </Button>
             <Button
               size="icon"
@@ -380,7 +380,7 @@ export default function ProductsView({ instanceId }: ProductsViewProps) {
           </div>
         </div>
         <p className="text-muted-foreground text-sm">
-          Na ich podstawie możesz tworzyć własne szablony oraz wykorzystywać je w ofertach.
+          {t('products.templatesDesc')}
         </p>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4" />

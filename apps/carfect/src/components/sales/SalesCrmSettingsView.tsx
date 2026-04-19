@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IntegrationsSettingsView } from '@shared/invoicing';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
@@ -57,6 +58,7 @@ const tabs: { key: SettingsTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsViewProps) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -122,9 +124,9 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         })
         .eq('id', instanceId);
       if (error) throw error;
-      toast.success('Ustawienia Apaczka zapisane');
+      toast.success(t('sales.crmSettings.successApaczkaSaved'));
     } catch (err: unknown) {
-      toast.error('Błąd zapisu: ' + ((err as Error).message || ''));
+      toast.error(t('sales.crmSettings.errorApaczkaSave', { message: (err as Error).message || '' }));
     } finally {
       setSavingApaczka(false);
     }
@@ -137,7 +139,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
   const handleFetchServices = async () => {
     if (!instanceId) return;
     if (!apaczkaAppId || !apaczkaAppSecret) {
-      toast.error('Najpierw uzupełnij App ID i App Secret');
+      toast.error(t('sales.crmSettings.errorApaczkaCredentials'));
       return;
     }
     setFetchingServices(true);
@@ -155,15 +157,15 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
         body: { instanceId },
       });
       if (error) {
-        throw new Error(error.message || 'Nie udało się pobrać serwisów');
+        throw new Error(error.message || t('sales.crm.fetchServicesFailed'));
       }
       if (data?.error) {
         throw new Error(data.error);
       }
       setAvailableServices(data.services || []);
-      toast.success(`Pobrano ${data.services?.length || 0} serwisów z Apaczka`);
+      toast.success(t('sales.crmSettings.successFetchServices', { count: data.services?.length || 0 }));
     } catch (err: unknown) {
-      toast.error('Błąd pobierania serwisów: ' + ((err as Error).message || ''));
+      toast.error(t('sales.crmSettings.errorFetchServicesWithReason', { message: (err as Error).message || '' }));
     } finally {
       setFetchingServices(false);
     }
@@ -291,8 +293,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
 
                   {availableServices.length === 0 && apaczkaServices.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Brak skonfigurowanych serwisów. Kliknij "Pobierz z Apaczka" aby załadować
-                      dostępne serwisy.
+                      {t('sales.crm.noServicesConfiguredFull')}
                     </p>
                   )}
 

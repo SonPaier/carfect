@@ -25,6 +25,7 @@ import TrainingTypesSettings from './TrainingTypesSettings';
 import CompanySettingsForm from './CompanySettingsForm';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
+import LanguageSelector from './LanguageSelector';
 import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 import { IntegrationsView } from './IntegrationsView';
 
@@ -82,7 +83,7 @@ const SettingsView = ({
     { key: 'app', label: t('settings.tabs.app'), icon: <Settings2 className="w-4 h-4" /> },
     { key: 'sms', label: t('settings.tabs.sms'), icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'users', label: t('settings.tabs.users'), icon: <Users className="w-4 h-4" /> },
-    { key: 'subscription', label: 'Subskrypcja i faktury', icon: <CreditCard className="w-4 h-4" /> },
+    { key: 'subscription', label: t('settings.tabs.subscription'), icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const tabs = allTabs.filter((tab) => tab.visible !== false);
@@ -124,11 +125,16 @@ const SettingsView = ({
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold">Ustawienia aplikacji</h3>
+              <h3 className="text-lg font-semibold">{t('settings.tabs.app')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Dostosuj aplikację Carfect pod potrzeby Twojego studia
+                {t('settings.appDescription')}
               </p>
             </div>
+            <LanguageSelector
+              instanceId={instanceId}
+              currentLanguage={(instanceData?.language as string) || 'pl'}
+              onLanguageChange={() => onInstanceUpdate(instanceData)}
+            />
             <ReservationConfirmSettings instanceId={instanceId} />
           </div>
         );
@@ -137,9 +143,9 @@ const SettingsView = ({
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold">Wiadomości SMS</h3>
+              <h3 className="text-lg font-semibold">{t('settings.tabs.sms')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Zarządzaj treścią wiadomości SMS wysyłanych do klientów
+                {t('settings.smsDescription')}
               </p>
             </div>
             <SmsMessageSettings

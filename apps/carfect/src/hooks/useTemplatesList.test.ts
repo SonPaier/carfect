@@ -2,13 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useTemplatesList } from './useTemplatesList';
 
-const { stableT } = vi.hoisted(() => ({
-  stableT: (key: string) => key,
-}));
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: stableT }),
-}));
-
 const { mockToast } = vi.hoisted(() => ({
   mockToast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -122,7 +115,7 @@ describe('useTemplatesList', () => {
 
     await waitFor(() => {
       expect(mockDeleteTemplate).toHaveBeenCalledWith('tmpl-1');
-      expect(mockToast.success).toHaveBeenCalledWith('reminderTemplates.deleted');
+      expect(mockToast.success).toHaveBeenCalledWith('Szablon usunięty');
     });
   });
 
@@ -138,7 +131,7 @@ describe('useTemplatesList', () => {
     });
 
     await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalledWith('reminderTemplates.templateInUse');
+      expect(mockToast.error).toHaveBeenCalledWith('Szablon jest używany i nie może zostać usunięty');
     });
   });
 

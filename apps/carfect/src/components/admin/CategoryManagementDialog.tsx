@@ -202,7 +202,7 @@ export function CategoryManagementDialog({
 
       if (error) {
         console.error('Error fetching categories:', error);
-        toast.error('Błąd ładowania kategorii');
+        toast.error(t('categories.fetchError'));
       } else {
         setCategories(data || []);
       }
@@ -231,11 +231,11 @@ export function CategoryManagementDialog({
           .eq('id', newCategories[i].id);
       }
 
-      toast.success('Kolejność zapisana');
+      toast.success(t('categories.orderSaved'));
       onCategoriesChanged();
     } catch (error) {
       console.error('Error updating order:', error);
-      toast.error('Błąd zapisywania kolejności');
+      toast.error(t('categories.orderSaveError'));
     } finally {
       setSaving(false);
     }
@@ -267,11 +267,11 @@ export function CategoryManagementDialog({
       setEditingId(null);
       setEditName('');
       setEditColor(null);
-      toast.success('Kategoria zaktualizowana');
+      toast.success(t('categories.updated'));
       onCategoriesChanged();
     } catch (error) {
       console.error('Error updating category:', error);
-      toast.error('Błąd aktualizacji kategorii');
+      toast.error(t('categories.updateError'));
     } finally {
       setSaving(false);
     }
@@ -286,11 +286,11 @@ export function CategoryManagementDialog({
   const handleDelete = async (cat: Category) => {
     const count = serviceCounts[cat.id] || 0;
     if (count > 0) {
-      toast.error(`Nie można usunąć kategorii z ${count} usługami. Najpierw przenieś usługi do innej kategorii.`);
+      toast.error(t('categories.hasServices', { count }));
       return;
     }
 
-    if (!confirm('Czy na pewno chcesz usunąć tę kategorię?')) return;
+    if (!confirm(t('categories.deleteConfirm'))) return;
 
     setSaving(true);
     try {
@@ -302,11 +302,11 @@ export function CategoryManagementDialog({
       if (error) throw error;
 
       setCategories(prev => prev.filter(c => c.id !== cat.id));
-      toast.success('Kategoria usunięta');
+      toast.success(t('categories.deleted'));
       onCategoriesChanged();
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('Błąd usuwania kategorii');
+      toast.error(t('categories.deleteError'));
     } finally {
       setSaving(false);
     }
@@ -342,11 +342,11 @@ export function CategoryManagementDialog({
       setNewCategoryName('');
       setNewCategoryColor(null);
       setAddingNew(false);
-      toast.success('Kategoria dodana');
+      toast.success(t('categories.added'));
       onCategoriesChanged();
     } catch (error) {
       console.error('Error adding category:', error);
-      toast.error('Błąd dodawania kategorii');
+      toast.error(t('categories.addError'));
     } finally {
       setSaving(false);
     }
@@ -356,7 +356,7 @@ export function CategoryManagementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Zarządzaj kategoriami</DialogTitle>
+          <DialogTitle>{t('categoryManagement.title')}</DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -395,7 +395,7 @@ export function CategoryManagementDialog({
 
             {categories.length === 0 && (
               <p className="text-center text-muted-foreground py-4">
-                Brak kategorii. Dodaj pierwszą kategorię.
+                {t('categoryManagement.noCategories')}
               </p>
             )}
 
@@ -405,7 +405,7 @@ export function CategoryManagementDialog({
                   <Input
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Nazwa kategorii..."
+                    placeholder={t('categoryManagement.namePlaceholder')}
                     className="h-8"
                     autoFocus
                     onKeyDown={(e) => {
@@ -452,7 +452,7 @@ export function CategoryManagementDialog({
                 onClick={() => setAddingNew(true)}
               >
                 <Plus className="w-4 h-4" />
-                Dodaj kategorię
+                {t('services.addCategory')}
               </Button>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useEmployeeDaysOff, useDeleteEmployeeDayOff, EmployeeDayOff, DAY_OFF_TYPE_LABELS } from '@/hooks/useEmployeeDaysOff';
 import { Button } from '@shared/ui';
@@ -7,16 +8,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@shared/ui';
 import { Plus, Loader2, CalendarOff, Trash2 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import AddEmployeeDayOffDialog from './AddEmployeeDayOffDialog';
 import { ConfirmDialog } from '@shared/ui';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface EmployeeDaysOffViewProps {
   instanceId: string | null;
 }
 
 const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [dayOffToDelete, setDayOffToDelete] = useState<EmployeeDayOff | null>(null);
@@ -32,16 +34,16 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
     
     try {
       await deleteDayOff.mutateAsync(dayOffToDelete.id);
-      toast.success('Nieobecność została usunięta');
+      toast.success(t('admin.daysOff.deleted'));
       setDeleteConfirmOpen(false);
       setDayOffToDelete(null);
     } catch (error) {
-      toast.error('Błąd podczas usuwania nieobecności');
+      toast.error(t('admin.daysOff.deleteError'));
     }
   };
 
   const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Nieznany';
+    return employees.find(e => e.id === employeeId)?.name || t('admin.daysOff.unknownEmployee');
   };
 
   const getDaysCount = (from: string, to: string) => {
@@ -71,9 +73,9 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
     return (
       <div className="py-12 text-center">
         <CalendarOff className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-        <p className="text-muted-foreground">Brak aktywnych pracowników</p>
+        <p className="text-muted-foreground">{t('admin.daysOff.noActiveEmployees')}</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Dodaj pracowników, aby móc rejestrować nieobecności
+          {t('admin.daysOff.noActiveEmployeesHint')}
         </p>
       </div>
     );
@@ -83,10 +85,10 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
     <div className="space-y-4">
       {/* Header with add button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Nieobecności</h2>
+        <h2 className="text-lg font-semibold">{t('employees.daysOff')}</h2>
         <Button onClick={() => setDialogOpen(true)} size="sm">
           <Plus className="w-4 h-4 mr-1" />
-          Dodaj nieobecność
+          {t('employees.addDayOff')}
         </Button>
       </div>
 
@@ -108,12 +110,12 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
                 <TableRow key={dayOff.id}>
                   <TableCell>{getEmployeeName(dayOff.employee_id)}</TableCell>
                   <TableCell>
-                    {format(parseISO(dayOff.date_from), 'd MMM', { locale: pl })}
+                    {format(parseISO(dayOff.date_from), 'd MMM', { locale: getDateLocale() })}
                     {dayOff.date_from !== dayOff.date_to && (
-                      <> - {format(parseISO(dayOff.date_to), 'd MMM yyyy', { locale: pl })}</>
+                      <> - {format(parseISO(dayOff.date_to), 'd MMM yyyy', { locale: getDateLocale() })}</>
                     )}
                     {dayOff.date_from === dayOff.date_to && (
-                      <> {format(parseISO(dayOff.date_from), 'yyyy', { locale: pl })}</>
+                      <> {format(parseISO(dayOff.date_from), 'yyyy', { locale: getDateLocale() })}</>
                     )}
                   </TableCell>
                   <TableCell>
@@ -142,7 +144,7 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
               {daysOff.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Brak nieobecności
+                    {t('employees.noDaysOff')}
                   </TableCell>
                 </TableRow>
               )}
@@ -161,9 +163,9 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title="Usuń nieobecność"
-        description="Czy na pewno chcesz usunąć tę nieobecność?"
-        confirmLabel="Usuń"
+        title={t('employees.deleteDayOff')}
+        description={t('employees.deleteDayOffConfirm')}
+        confirmLabel={t('common.delete')}
         onConfirm={handleDeleteDayOff}
         variant="destructive"
       />

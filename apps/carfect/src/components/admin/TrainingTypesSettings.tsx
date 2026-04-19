@@ -19,15 +19,15 @@ interface TrainingTypesSettingsProps {
 }
 
 const DURATION_OPTIONS = [
-  { value: '1', label: '1 dzień' },
-  { value: '1.5', label: '1,5 dnia' },
-  { value: '2', label: '2 dni' },
-  { value: '2.5', label: '2,5 dnia' },
-  { value: '3', label: '3 dni' },
-  { value: '3.5', label: '3,5 dnia' },
-  { value: '4', label: '4 dni' },
-  { value: '4.5', label: '4,5 dnia' },
-  { value: '5', label: '5 dni' },
+  { value: '1', labelKey: 'trainingTypes.duration1day' },
+  { value: '1.5', labelKey: 'trainingTypes.duration1halfDay' },
+  { value: '2', labelKey: 'trainingTypes.duration2days' },
+  { value: '2.5', labelKey: 'trainingTypes.duration2halfDays' },
+  { value: '3', labelKey: 'trainingTypes.duration3days' },
+  { value: '3.5', labelKey: 'trainingTypes.duration3halfDays' },
+  { value: '4', labelKey: 'trainingTypes.duration4days' },
+  { value: '4.5', labelKey: 'trainingTypes.duration4halfDays' },
+  { value: '5', labelKey: 'trainingTypes.duration5days' },
 ];
 
 export default function TrainingTypesSettings({ instanceId }: TrainingTypesSettingsProps) {
@@ -94,7 +94,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
           } as { name: string; duration_days: number })
           .eq('id', editingType.id);
         if (error) throw error;
-        toast.success('Typ szkolenia zaktualizowany');
+        toast.success(t('trainingTypes.updated'));
       } else {
         const maxOrder =
           trainingTypes.length > 0 ? Math.max(...trainingTypes.map((t) => t.sort_order)) + 1 : 0;
@@ -105,13 +105,13 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
           sort_order: maxOrder,
         } as { instance_id: string; name: string; duration_days: number; sort_order: number });
         if (error) throw error;
-        toast.success('Typ szkolenia dodany');
+        toast.success(t('trainingTypes.added'));
       }
       setDialogOpen(false);
       fetchTypes();
     } catch (err) {
       console.error('Error saving training type:', err);
-      toast.error('Błąd zapisu');
+      toast.error(t('trainingTypes.saveError'));
     } finally {
       setSaving(false);
     }
@@ -126,13 +126,13 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
         .update({ active: false } as { active: boolean })
         .eq('id', deletingType.id);
       if (error) throw error;
-      toast.success('Typ szkolenia usunięty');
+      toast.success(t('trainingTypes.deleted'));
       setDeleteDialogOpen(false);
       setDeletingType(null);
       fetchTypes();
     } catch (err) {
       console.error('Error deleting training type:', err);
-      toast.error('Błąd usuwania');
+      toast.error(t('trainingTypes.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -140,7 +140,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
 
   const getDurationLabel = (days: number) => {
     const opt = DURATION_OPTIONS.find((o) => parseFloat(o.value) === days);
-    return opt?.label || `${days} dni`;
+    return opt ? t(opt.labelKey) : `${days} ${t('trainingTypes.days')}`;
   };
 
   if (loading) {
@@ -155,21 +155,21 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Typy szkoleń</h3>
+          <h3 className="text-lg font-semibold">{t('trainingTypes.title')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Zarządzaj typami szkoleń dostępnymi w kalendarzu
+            {t('trainingTypes.description')}
           </p>
         </div>
         <Button onClick={openAdd} size="sm">
-          Dodaj typ
+          {t('trainingTypes.addType')}
         </Button>
       </div>
 
       {trainingTypes.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          <p>Brak typów szkoleń</p>
-          <p className="text-sm">Dodaj pierwszy typ szkolenia</p>
+          <p>{t('trainingTypes.empty')}</p>
+          <p className="text-sm">{t('trainingTypes.emptyHint')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -218,20 +218,20 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
         <DialogContent className="bg-white dark:bg-card">
           <DialogHeader>
             <DialogTitle>
-              {editingType ? 'Edytuj typ szkolenia' : 'Dodaj typ szkolenia'}
+              {editingType ? t('trainingTypes.editTitle') : t('trainingTypes.addTitle')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Nazwa</Label>
+              <Label>{t('trainingTypes.nameLabel')}</Label>
               <Input
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="np. Grupowe podstawowe"
+                placeholder={t('trainingTypes.namePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Czas trwania</Label>
+              <Label>{t('trainingTypes.durationLabel')}</Label>
               <Select value={formDuration} onValueChange={setFormDuration}>
                 <SelectTrigger>
                   <SelectValue />
@@ -239,7 +239,7 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
                 <SelectContent className="bg-white dark:bg-card">
                   {DURATION_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -248,11 +248,11 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving || !formName.trim()}>
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {editingType ? 'Zapisz' : 'Dodaj'}
+              {editingType ? t('common.save') : t('common.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -261,8 +261,8 @@ export default function TrainingTypesSettings({ instanceId }: TrainingTypesSetti
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Usuń typ szkolenia"
-        description={`Czy na pewno chcesz usunąć typ "${deletingType?.name}"?`}
+        title={t('trainingTypes.deleteTitle')}
+        description={t('trainingTypes.deleteDescription', { name: deletingType?.name })}
         onConfirm={handleDelete}
         loading={deleting}
         variant="destructive"

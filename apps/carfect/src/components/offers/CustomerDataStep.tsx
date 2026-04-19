@@ -56,9 +56,10 @@ const parseAddress = (fullAddress: string) => {
   return { street: fullAddress, postalCode: '', city: '' };
 };
 
-const paintTypes = [
-  { value: 'gloss', label: 'Połysk' },
-  { value: 'matte', label: 'Mat' },
+// Paint type labels resolved via t() in component render
+const paintTypeKeys = [
+  { value: 'gloss', labelKey: 'customerData.paintGloss' },
+  { value: 'matte', labelKey: 'customerData.paintMatte' },
 ];
 
 // Auto-resizing textarea component
@@ -216,7 +217,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        return 'Nieprawidłowy format adresu email';
+        return t('customerData.invalidEmail');
       }
 
       // Check for common domain typos
@@ -224,7 +225,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
 
       // Gmail typos
       if (domain.match(/^g?mail\.com[a-z]+/i) || domain.match(/^gmail\.[a-z]{2,}\.[a-z]+$/i)) {
-        return 'Sprawdź domenę - czy chodziło o gmail.com?';
+        return t('customerData.checkGmail');
       }
       if (
         domain === 'gmial.com' ||
@@ -232,17 +233,17 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
         domain === 'gmali.com' ||
         domain === 'gmaill.com'
       ) {
-        return 'Sprawdź domenę - czy chodziło o gmail.com?';
+        return t('customerData.checkGmail');
       }
 
       // Other common typos
       if (domain.match(/\.(com|pl|eu|net|org)[a-z]+$/i)) {
-        return 'Sprawdź domenę - wygląda na literówkę';
+        return t('customerData.checkDomainTypo');
       }
 
       // Double dots in domain
       if (domain.includes('..')) {
-        return 'Nieprawidłowa domena - podwójna kropka';
+        return t('customerData.invalidDomainDoubleDot');
       }
 
       return null;
@@ -305,7 +306,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2" ref={nameInputRef}>
-              <Label htmlFor="customerName">Imię i nazwisko *</Label>
+              <Label htmlFor="customerName">{t('customerData.fullName')}</Label>
               <ClientSearchAutocomplete
                 instanceId={instanceId}
                 value={customerData.name}
@@ -327,7 +328,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
               )}
             </div>
             <div className="space-y-2 relative" ref={phoneContainerRef}>
-              <Label htmlFor="customerPhone">Telefon</Label>
+              <Label htmlFor="customerPhone">{t('customerData.phone')}</Label>
               <PhoneMaskedInput
                 id="customerPhone"
                 value={customerData.phone}
@@ -376,7 +377,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
           {/* Inquiry Content & Internal Notes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="inquiryContent">Treść zapytania</Label>
+              <Label htmlFor="inquiryContent">{t('customerData.inquiryContent')}</Label>
               <AutoResizeTextarea
                 id="inquiryContent"
                 value={customerData.inquiryContent || ''}
@@ -387,7 +388,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
             </div>
             {onInternalNotesChange && (
               <div className="space-y-2">
-                <Label htmlFor="internalNotes">Notatka własna</Label>
+                <Label htmlFor="internalNotes">{t('customerData.internalNotes')}</Label>
                 <AutoResizeTextarea
                   id="internalNotes"
                   value={internalNotes || ''}
@@ -408,12 +409,12 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
             className="text-lg font-semibold flex items-center gap-2 hover:text-primary transition-colors"
           >
             <ChevronRight className={cn('w-4 h-4 transition-transform', companyExpanded && 'rotate-90')} />
-            Dane firmy (opcjonalne)
+            {t('customerData.companyDataOptional')}
           </button>
           {companyExpanded && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="companyNip">NIP</Label>
+                <Label htmlFor="companyNip">{t('customerData.nip')}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="companyNip"
@@ -424,7 +425,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                     variant="outline"
                     onClick={lookupNip}
                     disabled={nipLoading}
-                    title="Pobierz dane z GUS"
+                    title={t('customerData.fetchGus')}
                     className="gap-2 shrink-0"
                   >
                     {nipLoading ? (
@@ -439,7 +440,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
               {hasCompanyData && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="companyName">Nazwa firmy</Label>
+                    <Label htmlFor="companyName">{t('customerData.companyName')}</Label>
                     <Input
                       id="companyName"
                       value={customerData.company}
@@ -447,7 +448,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="companyAddress">Adres (ulica i numer)</Label>
+                    <Label htmlFor="companyAddress">{t('customerData.addressStreet')}</Label>
                     <Input
                       id="companyAddress"
                       value={customerData.companyAddress}
@@ -456,7 +457,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="companyPostalCode">Kod pocztowy</Label>
+                      <Label htmlFor="companyPostalCode">{t('customerData.postalCode')}</Label>
                       <Input
                         id="companyPostalCode"
                         value={customerData.companyPostalCode}
@@ -464,7 +465,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="companyCity">Miejscowość</Label>
+                      <Label htmlFor="companyCity">{t('customerData.city')}</Label>
                       <Input
                         id="companyCity"
                         value={customerData.companyCity}
@@ -482,7 +483,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2" ref={brandModelRef}>
-              <Label htmlFor="vehicleBrandModel">Marka i model pojazdu *</Label>
+              <Label htmlFor="vehicleBrandModel">{t('customerData.vehicleBrandModel')}</Label>
               <CarSearchAutocomplete
                 value={vehicleData.brandModel || ''}
                 onChange={(val: CarSearchValue) => {
@@ -501,7 +502,7 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paintColor">Kolor lakieru</Label>
+              <Label htmlFor="paintColor">{t('customerData.paintColor')}</Label>
               <Input
                 id="paintColor"
                 value={vehicleData.paintColor || ''}
@@ -514,20 +515,20 @@ export const CustomerDataStep = forwardRef<CustomerDataStepHandle, CustomerDataS
           {/* Paint Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Typ lakieru</Label>
+              <Label>{t('customerData.paintType')}</Label>
               <RadioGroup
                 value={vehicleData.paintType || 'gloss'}
                 onValueChange={(value) => onVehicleChange({ paintType: value })}
                 className="flex items-center gap-6"
               >
-                {paintTypes.map((type) => (
+                {paintTypeKeys.map((type) => (
                   <div key={type.value} className="flex items-center gap-2">
                     <RadioGroupItem value={type.value} id={`paintType-${type.value}`} />
                     <Label
                       htmlFor={`paintType-${type.value}`}
                       className="cursor-pointer font-normal"
                     >
-                      {type.label}
+                      {t(type.labelKey)}
                     </Label>
                   </div>
                 ))}

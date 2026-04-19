@@ -4,6 +4,7 @@ import { Button, Input, Sheet, SheetContent, SheetHeader, SheetTitle } from '@sh
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { bruttoToNetto, nettoToBrutto } from '@/utils/pricing';
+import { useTranslation } from 'react-i18next';
 
 export interface PickedProduct {
   id: string;
@@ -51,6 +52,7 @@ export function OfferProductPickerDrawer({
   alreadyAddedProductIds,
   onConfirm,
 }: OfferProductPickerDrawerProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -166,11 +168,11 @@ export function OfferProductPickerDrawer({
 
   const formatServicePrice = (s: Service): string => {
     const raw = getServicePrice(s);
-    if (raw === null) return 'wycena';
+    if (raw === null) return t('offerProductPicker.quotation');
     if (isCategoryNet(s.category_id)) {
-      return `${raw.toFixed(0)} zł netto`;
+      return `${raw.toFixed(0)} ${t('offerProductPicker.netSuffix')}`;
     }
-    return `${bruttoToNetto(raw).toFixed(0)} zł netto`;
+    return `${bruttoToNetto(raw).toFixed(0)} ${t('offerProductPicker.netSuffix')}`;
   };
 
   const alreadyAddedSet = useMemo(() => new Set(alreadyAddedProductIds), [alreadyAddedProductIds]);
@@ -192,7 +194,7 @@ export function OfferProductPickerDrawer({
         >
           <SheetTitle className="flex items-center gap-3 text-lg font-semibold">
             <ArrowLeft className="w-5 h-5" />
-            Wybierz usługi
+            {t('offerProductPicker.title')}
           </SheetTitle>
         </SheetHeader>
 
@@ -206,7 +208,7 @@ export function OfferProductPickerDrawer({
               inputMode="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Szukaj usługi..."
+              placeholder={t('offerProductPicker.searchPlaceholder')}
               className="pl-9 pr-9 h-11"
             />
             {searchQuery && (
@@ -229,7 +231,7 @@ export function OfferProductPickerDrawer({
             </div>
           ) : groupedServices.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground text-sm">
-              {searchQuery ? 'Nie znaleziono usług' : 'Brak dostępnych usług'}
+              {searchQuery ? t('offerProductPicker.noSearchResults') : t('offerProductPicker.noServices')}
             </div>
           ) : (
             <div className="pb-4">
@@ -317,7 +319,7 @@ export function OfferProductPickerDrawer({
             className="w-full h-12 text-base font-semibold"
             data-testid="confirm-button"
           >
-            Dodaj wybrane ({selectedIds.size})
+            {t('offerProductPicker.addSelected', { count: selectedIds.size })}
           </Button>
         </div>
       </SheetContent>

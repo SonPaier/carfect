@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format, addDays } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   ChevronLeft,
   ChevronRight,
@@ -158,7 +158,10 @@ export function CalendarHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 gap-2 mx-0" style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}>
+    <div
+      className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 gap-2 mx-0"
+      style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}
+    >
       {/* First line on mobile: navigation + actions, on desktop: full layout */}
       <div className="flex items-center justify-between gap-2">
         {/* Navigation */}
@@ -179,12 +182,12 @@ export function CalendarHeader({
             onClick={onToday}
             className={cn(hallMode && 'hidden sm:flex', viewMode === 'month' && 'hidden')}
           >
-            Dziś
+            {t('calendar.today')}
           </Button>
           {isLoadingMore && (
             <div className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="hidden sm:inline">Ładowanie...</span>
+              <span className="hidden sm:inline">{t('common.loading')}</span>
             </div>
           )}
           {/* Date picker button */}
@@ -197,7 +200,7 @@ export function CalendarHeader({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
                   <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Data</span>
+                  <span className="hidden sm:inline">{t('common.date')}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -213,7 +216,7 @@ export function CalendarHeader({
                   }}
                   initialFocus
                   className="pointer-events-auto"
-                  locale={pl}
+                  locale={getDateLocale()}
                 />
               </PopoverContent>
             </Popover>
@@ -233,7 +236,7 @@ export function CalendarHeader({
                     hallMode && 'flex-1 text-center',
                   )}
                 >
-                  {format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                  {format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="bg-popover">
@@ -265,10 +268,10 @@ export function CalendarHeader({
               )}
             >
               {viewMode === 'month'
-                ? format(currentDate, 'LLLL yyyy', { locale: pl })
+                ? format(currentDate, 'LLLL yyyy', { locale: getDateLocale() })
                 : viewMode === 'week'
-                  ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                  : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                  ? `${format(weekStart, 'd MMM', { locale: getDateLocale() })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: getDateLocale() })}`
+                  : format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
             </h2>
           ))}
 
@@ -286,7 +289,7 @@ export function CalendarHeader({
                   onSaveDefaultView('day');
                 }}
                 className="rounded-none border-0 px-2.5"
-                title="Dzień"
+                title={t('calendar.viewDay')}
               >
                 <CalendarIcon className="w-4 h-4" />
               </Button>
@@ -300,7 +303,7 @@ export function CalendarHeader({
                   onSaveDefaultView('week');
                 }}
                 className="rounded-none border-0 px-2.5"
-                title="Tydzień"
+                title={t('calendar.viewWeek')}
               >
                 <CalendarDays className="w-4 h-4" />
               </Button>
@@ -314,7 +317,7 @@ export function CalendarHeader({
                   onSaveDefaultView('month');
                 }}
                 className="rounded-none border-0 px-2.5"
-                title="Miesiąc"
+                title={t('calendar.viewMonth')}
               >
                 <CalendarRange className="w-4 h-4" />
               </Button>
@@ -325,7 +328,12 @@ export function CalendarHeader({
           {showStationFilter && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9" title="Kolumny">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  title={t('calendar.columnVisibility')}
+                >
                   <Settings2 className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
@@ -333,13 +341,13 @@ export function CalendarHeader({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-sm">Widoczność kolumn</h4>
+                      <h4 className="font-medium text-sm">{t('calendar.columnVisibility')}</h4>
                       <p className="text-[10px] text-muted-foreground">
                         {viewMode === 'day'
-                          ? 'Widok dzienny'
+                          ? t('calendar.viewDay')
                           : viewMode === 'week'
-                            ? 'Widok tygodniowy'
-                            : 'Widok miesięczny'}
+                            ? t('calendar.viewWeek')
+                            : t('calendar.viewMonth')}
                       </p>
                     </div>
                     {hasHiddenStations && (
@@ -349,7 +357,7 @@ export function CalendarHeader({
                         onClick={onShowAllStations}
                         className="h-7 text-xs"
                       >
-                        Pokaż wszystkie
+                        {t('calendar.showAllColumns')}
                       </Button>
                     )}
                   </div>
@@ -374,7 +382,7 @@ export function CalendarHeader({
 
                 {/* Default view preference */}
                 <div className="border-t border-border pt-3 space-y-2">
-                  <h4 className="font-medium text-sm">Domyślny widok</h4>
+                  <h4 className="font-medium text-sm">{t('calendar.defaultView')}</h4>
                   <div className="space-y-1">
                     {(['day', 'week', 'month'] as const).map((v) => (
                       <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -389,7 +397,11 @@ export function CalendarHeader({
                           }}
                           className="accent-primary"
                         />
-                        {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}
+                        {v === 'day'
+                          ? t('calendar.viewDay')
+                          : v === 'week'
+                            ? t('calendar.viewWeek')
+                            : t('calendar.viewMonth')}
                       </label>
                     ))}
                   </div>
@@ -397,7 +409,7 @@ export function CalendarHeader({
 
                 {/* Grouping mode for week/month views */}
                 <div className="border-t border-border pt-3 space-y-2">
-                  <h4 className="font-medium text-sm">Grupowanie (tydzień/miesiąc)</h4>
+                  <h4 className="font-medium text-sm">{t('calendar.grouping')}</h4>
                   <div className="space-y-1">
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -408,7 +420,7 @@ export function CalendarHeader({
                         onChange={() => onGroupingModeChange('none')}
                         className="accent-primary"
                       />
-                      Brak (wg godziny)
+                      {t('calendar.groupNone')}
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -419,7 +431,7 @@ export function CalendarHeader({
                         onChange={() => onGroupingModeChange('station')}
                         className="accent-primary"
                       />
-                      Wg stanowiska
+                      {t('calendar.groupByStation')}
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -430,7 +442,7 @@ export function CalendarHeader({
                         onChange={() => onGroupingModeChange('employee')}
                         className="accent-primary"
                       />
-                      Wg pracownika
+                      {t('calendar.groupByEmployee')}
                     </label>
                   </div>
                 </div>
@@ -443,7 +455,7 @@ export function CalendarHeader({
                         checked={showNotesInBars ?? false}
                         onCheckedChange={() => onToggleShowNotesInBars()}
                       />
-                      Pokaż notatki na paskach
+                      {t('calendar.showNotes')}
                     </label>
                   </div>
                 )}
@@ -458,7 +470,7 @@ export function CalendarHeader({
               size="icon"
               className="h-9 w-9"
               onClick={onToggleHallDataVisibility}
-              title={hallDataVisible ? 'Ukryj dane klienta' : 'Pokaż dane klienta'}
+              title={hallDataVisible ? t('calendar.hideClientData') : t('calendar.showClientData')}
             >
               {hallDataVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </Button>
@@ -471,7 +483,7 @@ export function CalendarHeader({
               size="sm"
               onClick={onToggleCompact}
               className="gap-1 h-9"
-              title={isCompact ? 'Rozwiń kolumny' : 'Zwiń kolumny'}
+              title={isCompact ? t('calendar.expandColumns') : t('calendar.collapseColumns')}
             >
               <ChevronsLeftRight className="w-4 h-4" />
             </Button>
@@ -485,7 +497,7 @@ export function CalendarHeader({
             className="gap-1 h-9 relative"
           >
             <ParkingSquare className="w-4 h-4" />
-            <span className="hidden md:inline">Plac</span>
+            <span className="hidden md:inline">{t('calendar.yard')}</span>
             {yardVehicleCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {yardVehicleCount > 99 ? '99+' : yardVehicleCount}
@@ -497,7 +509,7 @@ export function CalendarHeader({
           {showProtocolsButton && onProtocolsClick && (
             <Button variant="outline" size="sm" onClick={onProtocolsClick} className="gap-1">
               <ClipboardCheck className="w-4 h-4" />
-              <span className="hidden md:inline">Protokół</span>
+              <span className="hidden md:inline">{t('protocols.protocol')}</span>
             </Button>
           )}
 
@@ -528,7 +540,7 @@ export function CalendarHeader({
                 currentDateClosed && 'text-red-500',
               )}
             >
-              {format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+              {format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
             </button>
             <Sheet open={datePickerOpen} onOpenChange={onDatePickerOpenChange}>
               <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>
@@ -544,7 +556,7 @@ export function CalendarHeader({
                       }
                     }}
                     className="pointer-events-auto"
-                    locale={pl}
+                    locale={getDateLocale()}
                   />
 
                   <Button
@@ -582,8 +594,8 @@ export function CalendarHeader({
               )}
             >
               {viewMode === 'week'
-                ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                ? `${format(weekStart, 'd MMM', { locale: getDateLocale() })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: getDateLocale() })}`
+                : format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
             </button>
             <Sheet open={datePickerOpen} onOpenChange={onDatePickerOpenChange}>
               <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>
@@ -599,7 +611,7 @@ export function CalendarHeader({
                       }
                     }}
                     className="pointer-events-auto"
-                    locale={pl}
+                    locale={getDateLocale()}
                   />
                 </div>
               </SheetContent>

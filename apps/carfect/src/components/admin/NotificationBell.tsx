@@ -5,11 +5,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@shared/ui';
 import { ScrollArea } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Notification {
   id: string;
@@ -241,7 +241,7 @@ export const NotificationBell = ({
                           <p className="text-xs text-primary flex-1">
                             {formatDistanceToNow(new Date(notification.created_at), { 
                               addSuffix: true, 
-                              locale: pl 
+                              locale: getDateLocale() 
                             })}
                           </p>
                           {notification.type === 'reservation_new' && notification.entity_id && onConfirmReservation && (
@@ -289,7 +289,7 @@ export const NotificationBell = ({
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(notification.created_at), { 
                             addSuffix: true, 
-                            locale: pl 
+                            locale: getDateLocale() 
                           })}
                         </p>
                       </div>

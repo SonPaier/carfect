@@ -103,6 +103,7 @@ function OrderItemRow({
 }: {
   item: UltrafitOrderItem;
 }) {
+  const { t } = useTranslation();
   const unit = formatUnit(item.unit);
   const lineTotal = item.quantity * item.priceNet;
   const discountAmount = lineTotal * (item.discountPercent || 0) / 100;
@@ -335,7 +336,7 @@ export default function UltrafitOrdersView({ instanceId }: UltrafitOrdersViewPro
                         <button
                           type="button"
                           className="p-1 rounded text-muted-foreground hover:text-foreground"
-                          aria-label={isExpanded ? 'Zwiń' : 'Rozwiń'}
+                          aria-label={isExpanded ? t('common.collapse') : t('common.expand')}
                         >
                           {isExpanded ? (
                             <ChevronDown className="w-4 h-4" />

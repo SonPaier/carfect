@@ -145,8 +145,7 @@ export const CustomerSection = ({
           <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3">
             <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <span className="text-sm">
-              Klient <strong>{noShowWarning.customerName}</strong> był nieobecny na wizycie{' '}
-              {noShowWarning.date}, usługa: {noShowWarning.serviceName}
+              {t('reservationForm.noShowText', { name: noShowWarning.customerName, date: noShowWarning.date, service: noShowWarning.serviceName })}
             </span>
           </div>
         )}

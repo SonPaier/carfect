@@ -44,7 +44,7 @@ const IOSInstallPrompt = ({
     }
   };
 
-  const displayName = instanceName || 'aplikację';
+  const displayName = instanceName || t('common.app');
   const logoUrl = instanceLogo || '/pwa-192x192.png';
 
   return (

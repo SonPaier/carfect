@@ -15,7 +15,6 @@ import {
   eachDayOfInterval,
   parseISO,
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Clock, X } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import type { Reservation } from '@/types/reservation';
@@ -53,6 +52,7 @@ import { useCalendarOverlap } from './calendar/useCalendarOverlap';
 import { useCalendarDragDrop } from './calendar/useCalendarDragDrop';
 import { useCalendarConfig } from '@/hooks/useCalendarConfig';
 import { DayViewGrid } from './calendar/DayViewGrid';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 type ViewMode = 'day' | 'week' | 'month';
 interface Station {
   id: string;
@@ -1059,25 +1059,25 @@ const AdminCalendar = ({
       <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t border-border/50 mt-4">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-orange-400/80 border border-orange-500/70" />
-          <span className="text-xs text-muted-foreground">W trakcie</span>
+          <span className="text-xs text-muted-foreground">{t('reservations.statuses.inProgress')}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-green-400/80 border border-green-500/70" />
-          <span className="text-xs text-muted-foreground">Potwierdzona</span>
+          <span className="text-xs text-muted-foreground">{t('reservations.statuses.confirmed')}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-slate-400/80 border border-slate-500/70" />
-          <span className="text-xs text-muted-foreground">Zakończona</span>
+          <span className="text-xs text-muted-foreground">{t('reservations.statuses.completed')}</span>
         </div>
         {trainingsEnabled && (
           <>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-pink-300/80 border border-pink-400/70" />
-              <span className="text-xs text-muted-foreground">Szkolenie (otwarte)</span>
+              <span className="text-xs text-muted-foreground">{t('calendar.trainingOpen')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-fuchsia-600 border border-fuchsia-700" />
-              <span className="text-xs text-muted-foreground">Szkolenie (zamknięte)</span>
+              <span className="text-xs text-muted-foreground">{t('calendar.trainingClosed')}</span>
             </div>
           </>
         )}
@@ -1092,7 +1092,7 @@ const AdminCalendar = ({
           onInteractOutside={(e) => e.preventDefault()}
         >
           <SheetHeader className="flex flex-row items-center justify-between border-b border-border px-4 py-3 space-y-0">
-            <SheetTitle className="text-lg font-semibold text-slate-900">Plac</SheetTitle>
+            <SheetTitle className="text-lg font-semibold text-slate-900">{t('calendar.yard')}</SheetTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -1130,10 +1130,10 @@ const AdminCalendar = ({
             <AlertDialogDescription>
               {currentDateClosed
                 ? t('calendar.openDayDescription', {
-                    date: format(currentDate, 'd MMMM yyyy', { locale: pl }),
+                    date: format(currentDate, 'd MMMM yyyy', { locale: getDateLocale() }),
                   })
                 : t('calendar.closeDayDescription', {
-                    date: format(currentDate, 'd MMMM yyyy', { locale: pl }),
+                    date: format(currentDate, 'd MMMM yyyy', { locale: getDateLocale() }),
                   })}
             </AlertDialogDescription>
           </AlertDialogHeader>

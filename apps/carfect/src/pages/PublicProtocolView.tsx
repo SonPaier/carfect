@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet-async';
 import { Loader2 } from 'lucide-react';
@@ -45,6 +46,7 @@ interface Protocol {
 }
 
 export default function PublicProtocolView() {
+  const { t } = useTranslation();
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export default function PublicProtocolView() {
   useEffect(() => {
     const fetchProtocol = async () => {
       if (!token) {
-        setError('Brak tokena protokołu');
+        setError(t('pages.protocol.noToken'));
         setLoading(false);
         return;
       }
@@ -71,7 +73,7 @@ export default function PublicProtocolView() {
 
         if (rpcError) {
           if (rpcError.message?.includes('not found')) {
-            setError('Protokół nie został znaleziony');
+            setError(t('pages.protocol.notFound'));
           } else {
             throw rpcError;
           }
@@ -119,7 +121,7 @@ export default function PublicProtocolView() {
         }
       } catch (err) {
         console.error('Error fetching protocol:', err);
-        setError('Wystąpił błąd podczas ładowania protokołu');
+        setError(t('pages.protocol.loadError'));
       } finally {
         setLoading(false);
       }
@@ -142,10 +144,10 @@ export default function PublicProtocolView() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <h1 className="text-xl font-semibold mb-2">
-              {error || 'Protokół nie został znaleziony'}
+              {error || t('pages.protocol.notFound')}
             </h1>
             <p className="text-muted-foreground">
-              Sprawdź poprawność linku lub skontaktuj się z serwisem.
+              {t('publicProtocol.checkLinkOrContact')}
             </p>
           </CardContent>
         </Card>
@@ -156,10 +158,10 @@ export default function PublicProtocolView() {
   return (
     <>
       <Helmet>
-        <title>Protokół przyjęcia pojazdu | {instance.name}</title>
+        <title>{t('protocols.vehicleReceptionProtocol')} | {instance.name}</title>
         <meta
           name="description"
-          content={`Protokół przyjęcia pojazdu ${protocol.vehicle_model || ''} ${protocol.registration_number || ''}`}
+          content={t('protocols.vehicleReceptionProtocol') + ' ' + (protocol.vehicle_model || '') + ' ' + (protocol.registration_number || '')}
         />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>

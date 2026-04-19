@@ -1,4 +1,5 @@
 import { AiAnalystView, type AiAnalystSuggestion } from '@shared/ai';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 
 const SUGGESTIONS: AiAnalystSuggestion[] = [

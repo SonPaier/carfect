@@ -1,4 +1,5 @@
 import { Search, X, Plus, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -38,6 +39,7 @@ export const CustomerSearchSection = ({
   handleSelectCustomer,
   onAddNewCustomer,
 }: CustomerSearchSectionProps) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <Label>Klient</Label>
@@ -88,7 +90,7 @@ export const CustomerSearchSection = ({
                 ))
               ) : !searching ? (
                 <div className="p-4 text-center space-y-3">
-                  <p className="text-sm text-muted-foreground">Nie znaleziono klientów</p>
+                  <p className="text-sm text-muted-foreground">{t('sales.orders.noCustomersFound')}</p>
                   <Button type="button" onClick={onAddNewCustomer}>
                     <Plus className="w-4 h-4 mr-1" />
                     Dodaj klienta

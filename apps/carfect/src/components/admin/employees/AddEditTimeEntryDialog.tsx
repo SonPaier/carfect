@@ -18,8 +18,9 @@ import { Employee } from '@/hooks/useEmployees';
 import { toast } from 'sonner';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface AddEditTimeEntryDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ const AddEditTimeEntryDialog = ({
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('16:00');
 
+  const { t } = useTranslation();
   const createEntry = useCreateTimeEntry(instanceId);
   const updateEntry = useUpdateTimeEntry(instanceId);
 
@@ -63,15 +65,15 @@ const AddEditTimeEntryDialog = ({
 
   const handleSubmit = async () => {
     if (!employeeId) {
-      toast.error('Wybierz pracownika');
+      toast.error(t('timeEntry.selectEmployee'));
       return;
     }
     if (!date) {
-      toast.error('Wybierz datę');
+      toast.error(t('timeEntry.selectDate'));
       return;
     }
     if (startTime >= endTime) {
-      toast.error('Godzina końca musi być późniejsza niż godzina początku');
+      toast.error(t('timeEntry.endAfterStart'));
       return;
     }
 
@@ -85,18 +87,18 @@ const AddEditTimeEntryDialog = ({
 
       if (isEditing && entry) {
         await updateEntry.mutateAsync({ id: entry.id, ...data });
-        toast.success('Wpis został zaktualizowany');
+        toast.success(t('timeEntry.updated'));
       } else {
         await createEntry.mutateAsync(data);
-        toast.success('Wpis został dodany');
+        toast.success(t('timeEntry.added'));
       }
 
       onOpenChange(false);
     } catch (error: unknown) {
       if ((error as Error)?.message?.includes('overlap')) {
-        toast.error('Wpis nakłada się z istniejącym wpisem');
+        toast.error(t('timeEntry.overlapError'));
       } else {
-        toast.error('Wystąpił błąd');
+        toast.error(t('errors.generic'));
       }
     }
   };
@@ -106,17 +108,17 @@ const AddEditTimeEntryDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? 'Edytuj wpis czasu pracy' : 'Dodaj wpis czasu pracy'}
+            {isEditing ? t('timeEntry.editTitle') : t('timeEntry.addTitle')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Employee select */}
           <div className="space-y-2">
-            <Label>Pracownik *</Label>
+            <Label>{t('timeEntry.employee')}</Label>
             <Select value={employeeId} onValueChange={setEmployeeId} disabled={isEditing}>
               <SelectTrigger>
-                <SelectValue placeholder="Wybierz pracownika" />
+                <SelectValue placeholder={t('timeEntry.employeePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {employees.map(emp => (
@@ -128,7 +130,7 @@ const AddEditTimeEntryDialog = ({
 
           {/* Date picker */}
           <div className="space-y-2">
-            <Label>Data *</Label>
+            <Label>{t('timeEntry.dateLabel')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -139,7 +141,7 @@ const AddEditTimeEntryDialog = ({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'd MMMM yyyy', { locale: pl }) : 'Wybierz datę'}
+                  {date ? format(date, 'd MMMM yyyy', { locale: getDateLocale() }) : t('common.selectDate')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -147,7 +149,7 @@ const AddEditTimeEntryDialog = ({
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  locale={pl}
+                  locale={getDateLocale()}
                   disabled={isEditing}
                 />
               </PopoverContent>
@@ -157,7 +159,7 @@ const AddEditTimeEntryDialog = ({
           {/* Time inputs */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startTime">Od *</Label>
+              <Label htmlFor="startTime">{t('timeEntry.from')}</Label>
               <Input
                 id="startTime"
                 type="time"
@@ -166,7 +168,7 @@ const AddEditTimeEntryDialog = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endTime">Do *</Label>
+              <Label htmlFor="endTime">{t('timeEntry.to')}</Label>
               <Input
                 id="endTime"
                 type="time"
@@ -180,11 +182,11 @@ const AddEditTimeEntryDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Anuluj
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isEditing ? 'Zapisz' : 'Dodaj'}
+            {isEditing ? t('common.save') : t('common.add')}
           </Button>
         </DialogFooter>
       </DialogContent>

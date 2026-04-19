@@ -17,13 +17,6 @@ vi.mock('react-helmet-async', () => ({
   ),
 }));
 
-// Mock i18n
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
 // Mock useAuth — default: unauthenticated user
 const mockUseAuth = vi.fn().mockReturnValue({
   user: null,
@@ -185,7 +178,7 @@ describe('PublicOfferView — RPC-based data fetching', () => {
       renderPage();
 
       await waitFor(() => {
-        expect(screen.getByText('common.error')).toBeInTheDocument();
+        expect(screen.getByText('Błąd')).toBeInTheDocument();
       });
     });
 
@@ -200,7 +193,7 @@ describe('PublicOfferView — RPC-based data fetching', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('publicOffer.invalidLink')).toBeInTheDocument();
+        expect(screen.getByText('Nieprawidłowy link do oferty')).toBeInTheDocument();
       });
     });
 

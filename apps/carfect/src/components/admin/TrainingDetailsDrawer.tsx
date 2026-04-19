@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Pencil, Trash2, X, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -16,6 +15,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { ConfirmDialog } from '@shared/ui';
 import { EmployeeSelectionDrawer } from '@/components/admin/EmployeeSelectionDrawer';
 import type { Training } from './AddTrainingDrawer';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface TrainingDetailsDrawerProps {
   open: boolean;
@@ -88,7 +88,7 @@ export function TrainingDetailsDrawer({
     } catch (err) {
       console.error('Error toggling status:', err);
       setLocalStatus(prevStatus);
-      toast.error('Błąd zmiany statusu');
+      toast.error(t('trainings.statusChangeError'));
     } finally {
       setTogglingStatus(false);
     }
@@ -104,7 +104,7 @@ export function TrainingDetailsDrawer({
       onClose();
     } catch (err) {
       console.error('Error deleting training:', err);
-      toast.error('Błąd usuwania szkolenia');
+      toast.error(t('trainings.deleteError'));
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -123,10 +123,10 @@ export function TrainingDetailsDrawer({
         .update({ description: localDescription || null } as { description: string | null })
         .eq('id', training.id);
       if (error) throw error;
-      toast.success('Notatki zapisane');
+      toast.success(t('trainings.notesSaved'));
     } catch (err) {
       console.error('Error saving notes:', err);
-      toast.error('Błąd zapisu notatek');
+      toast.error(t('trainings.notesSaveError'));
     } finally {
       setSavingNotes(false);
       setEditingNotes(false);
@@ -140,16 +140,16 @@ export function TrainingDetailsDrawer({
         .update({ assigned_employee_ids: employeeIds } as { assigned_employee_ids: string[] })
         .eq('id', training.id);
       if (error) throw error;
-      toast.success('Pracownicy zaktualizowani');
+      toast.success(t('trainingDetails.employeesUpdated'));
     } catch (err) {
       console.error('Error updating employees:', err);
-      toast.error('Błąd aktualizacji pracowników');
+      toast.error(t('trainingDetails.employeesUpdateError'));
     }
   };
 
   const formatDate = (dateStr: string) => {
     try {
-      return format(parseISO(dateStr), 'EEEE, d MMM yyyy', { locale: pl });
+      return format(parseISO(dateStr), 'EEEE, d MMM yyyy', { locale: getDateLocale() });
     } catch {
       return dateStr;
     }
@@ -195,7 +195,7 @@ export function TrainingDetailsDrawer({
                         : 'bg-pink-200 text-pink-900 hover:bg-pink-300'
                     }
                   >
-                    {isSoldOut ? 'Zamknięte' : 'Otwarte'}
+                    {isSoldOut ? t('trainingDetails.closed') : t('trainingDetails.open')}
                   </Badge>
                   {!readOnly && (
                     <Switch
@@ -228,19 +228,19 @@ export function TrainingDetailsDrawer({
               {/* Station */}
               {training.station && (
                 <div>
-                  <div className="text-xs text-muted-foreground">Stanowisko</div>
+                  <div className="text-xs text-muted-foreground">{t('trainingDetails.station')}</div>
                   <div className="font-medium text-foreground">{training.station.name}</div>
                 </div>
               )}
 
               {/* Employees */}
               <div>
-                <div className="text-xs text-muted-foreground mb-1">Przypisani pracownicy</div>
+                <div className="text-xs text-muted-foreground mb-1">{t('trainingDetails.assignedEmployees')}</div>
                 <div className="flex flex-wrap gap-2 items-center">
                   {training.assigned_employee_ids?.length > 0 &&
                     training.assigned_employee_ids.map((empId) => {
                       const emp = employees.find((e) => e.id === empId);
-                      const name = emp?.name || 'Usunięty';
+                      const name = emp?.name || t('trainingDetails.removed');
                       return (
                         <span
                           key={empId}
@@ -257,7 +257,7 @@ export function TrainingDetailsDrawer({
                       onClick={() => setEmployeeDrawerOpen(true)}
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Dodaj
+                      {t('common.add')}
                     </button>
                   )}
                 </div>
@@ -265,7 +265,7 @@ export function TrainingDetailsDrawer({
 
               {/* Internal Notes */}
               <div>
-                <div className="text-xs text-muted-foreground mb-1">Notatki wewnętrzne</div>
+                <div className="text-xs text-muted-foreground mb-1">{t('trainingDetails.internalNotes')}</div>
                 {editingNotes ? (
                   <Textarea
                     ref={notesRef}
@@ -285,7 +285,7 @@ export function TrainingDetailsDrawer({
                     }`}
                     onClick={() => !readOnly && setEditingNotes(true)}
                   >
-                    {localDescription || 'Brak notatek wewnętrznych'}
+                    {localDescription || t('trainingDetails.noInternalNotes')}
                   </p>
                 )}
               </div>

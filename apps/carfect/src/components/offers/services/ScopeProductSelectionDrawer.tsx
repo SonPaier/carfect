@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Check, Search, X } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -40,6 +41,7 @@ export function ScopeProductSelectionDrawer({
   categoryOrder = {},
   onConfirm,
 }: ScopeProductSelectionDrawerProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const initRef = useRef(false);
@@ -150,7 +152,7 @@ export function ScopeProductSelectionDrawer({
         >
           <SheetTitle className="flex items-center gap-3 text-lg font-semibold">
             <ArrowLeft className="w-5 h-5" />
-            Dodaj usługi
+            {t('scopeProductSelection.title')}
           </SheetTitle>
         </SheetHeader>
 
@@ -163,7 +165,7 @@ export function ScopeProductSelectionDrawer({
               inputMode="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Szukaj usługi..."
+              placeholder={t('scopeProductSelection.searchPlaceholder')}
               className="pl-9 pr-9 h-11"
             />
             {searchQuery && (
@@ -186,7 +188,7 @@ export function ScopeProductSelectionDrawer({
           <div className="pb-4">
             {filteredProducts.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
-                {searchQuery ? 'Nie znaleziono usług' : 'Brak dostępnych usług'}
+                {searchQuery ? t('scopeProductSelection.noSearchResults') : t('scopeProductSelection.noServices')}
               </div>
             ) : (
               groupedProducts.map((group, groupIndex) => (
@@ -251,7 +253,7 @@ export function ScopeProductSelectionDrawer({
             disabled={selectedIds.length === 0}
             className="w-full h-12 text-base font-semibold"
           >
-            Dodaj wybrane ({selectedIds.length})
+            {t('scopeProductSelection.addSelected', { count: selectedIds.length })}
           </Button>
         </div>
       </SheetContent>

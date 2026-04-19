@@ -1,6 +1,7 @@
 import { TimeSlot } from '@/types';
 import { cn } from '@/lib/utils';
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface TimeSlotPickerProps {
   slots: TimeSlot[];
@@ -9,6 +10,7 @@ interface TimeSlotPickerProps {
 }
 
 const TimeSlotPicker = ({ slots, selectedSlot, onSelectSlot }: TimeSlotPickerProps) => {
+  const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
@@ -19,7 +21,7 @@ const TimeSlotPicker = ({ slots, selectedSlot, onSelectSlot }: TimeSlotPickerPro
       const selected = selectedRef.current;
       const containerRect = container.getBoundingClientRect();
       const selectedRect = selected.getBoundingClientRect();
-      
+
       const scrollLeft = selected.offsetLeft - container.offsetWidth / 2 + selected.offsetWidth / 2;
       container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
@@ -30,22 +32,22 @@ const TimeSlotPicker = ({ slots, selectedSlot, onSelectSlot }: TimeSlotPickerPro
   if (availableSlots.length === 0) {
     return (
       <div className="text-center py-6">
-        <p className="text-muted-foreground text-base">Brak dostępnych terminów w tym dniu.</p>
+        <p className="text-muted-foreground text-base">{t('booking.noSlotsForDayAlt')}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-medium text-muted-foreground px-1">Dostępne godziny</h4>
-      <div 
+      <h4 className="text-sm font-medium text-muted-foreground px-1">{t('booking.availableHours')}</h4>
+      <div
         ref={scrollContainerRef}
         className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {availableSlots.map((slot) => {
           const isSelected = selectedSlot?.id === slot.id;
-          
+
           return (
             <button
               key={slot.id}
@@ -53,8 +55,8 @@ const TimeSlotPicker = ({ slots, selectedSlot, onSelectSlot }: TimeSlotPickerPro
               onClick={() => onSelectSlot(slot)}
               className={cn(
                 "flex-shrink-0 py-3 px-5 rounded-2xl text-base font-medium transition-all duration-200 min-w-[80px]",
-                isSelected 
-                  ? "bg-primary text-primary-foreground shadow-lg" 
+                isSelected
+                  ? "bg-primary text-primary-foreground shadow-lg"
                   : "bg-card border-2 border-border hover:border-primary/50"
               )}
             >

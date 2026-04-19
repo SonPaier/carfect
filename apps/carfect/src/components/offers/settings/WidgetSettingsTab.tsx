@@ -352,7 +352,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   };
 
   const getServiceName = (serviceId: string): string => {
-    return services.find((s) => s.id === serviceId)?.name || 'Nieznana usługa';
+    return services.find((s) => s.id === serviceId)?.name || t('common.unknownService');
   };
 
   // Build products for drawer (use service ID as the main ID)
@@ -421,7 +421,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
   const handleCopyCode = () => {
     navigator.clipboard.writeText(iframeCode);
     setCopied(true);
-    toast.success('Kod skopiowany');
+    toast.success(t('offers.settings.widget.codeCopied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -456,9 +456,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         {/* Templates visibility and pricing */}
         <div className="space-y-4">
           <div>
-            <h3 className="font-medium">Szablony w formularzu</h3>
+            <h3 className="font-medium">{t('offers.settings.widget.templatesTitle')}</h3>
             <p className="text-sm text-muted-foreground">
-              Wybierz które szablony będą widoczne i ustaw ceny "od"
+              {t('offers.settings.widget.templatesDescription')}
             </p>
           </div>
 
@@ -481,7 +481,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="text-sm text-muted-foreground whitespace-nowrap">od</Label>
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">{t('offers.settings.widget.priceFromLabel')}</Label>
                     <Input
                       type="number"
                       value={template.price_from ?? ''}
@@ -489,7 +489,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
                       placeholder="—"
                       className="w-24 h-8 text-right"
                     />
-                    <span className="text-sm text-muted-foreground">zł</span>
+                    <span className="text-sm text-muted-foreground">{t('common.currency')}</span>
                   </div>
                 </div>
               );
@@ -497,7 +497,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
 
             {templates.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Brak aktywnych szablonów z usługami zunifikowanymi
+                {t('offers.settings.widget.noActiveTemplates')}
               </p>
             )}
           </div>
@@ -508,9 +508,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         {/* Extras configuration */}
         <div className="space-y-4">
           <div>
-            <h3 className="font-medium">Dodatki do wyboru</h3>
+            <h3 className="font-medium">{t('offers.settings.widget.extrasTitle')}</h3>
             <p className="text-sm text-muted-foreground">
-              Dodaj usługi jako "dodatki" z opcjonalnymi własnymi nazwami
+              {t('offers.settings.widget.extrasDescription')}
             </p>
           </div>
 
@@ -528,7 +528,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
                   <Input
                     value={extra.custom_label || ''}
                     onChange={(e) => handleExtraLabelChange(extra.service_id, e.target.value)}
-                    placeholder="Własna nazwa (opcjonalna)"
+                    placeholder={t('offers.settings.widget.customLabelPlaceholder')}
                     className="mt-1 h-8"
                   />
                 </div>
@@ -549,7 +549,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
               className="w-full justify-start gap-2 h-11"
             >
               <Plus className="w-4 h-4" />
-              Wybierz usługi...
+              {t('offers.settings.widget.selectServices')}
             </Button>
           </div>
         </div>
@@ -569,10 +569,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         {/* Embed code */}
         <div className="space-y-4">
           <div>
-            <h3 className="font-medium">Udostępnij wtyczkę</h3>
+            <h3 className="font-medium">{t('offers.settings.widget.embedTitle')}</h3>
             <p className="text-sm text-muted-foreground">
-              Przekieruj klientów bezpośrednio do formularza, lub skopiuj kod iframe i wklej na
-              swojej stronie
+              {t('offers.settings.widget.embedDescription')}
             </p>
           </div>
 
@@ -613,9 +612,9 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
         {/* Widget branding */}
         <div className="space-y-3">
           <div>
-            <h3 className="font-medium">Wygląd widgetu</h3>
+            <h3 className="font-medium">{t('offerSettings.widgetAppearance')}</h3>
             <p className="text-sm text-muted-foreground">
-              Osobne kolory dla widgetu. Gdy wyłączone, używane są kolory z ustawień oferty.
+              {t('offerSettings.widgetColorsDesc')}
             </p>
           </div>
           <WidgetBrandingSettings
@@ -629,7 +628,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
       {/* Right side - Preview */}
       <div className="border rounded-lg bg-muted/50 overflow-hidden">
         <div className="p-2 bg-muted border-b">
-          <p className="text-xs text-center text-muted-foreground">Podgląd widgetu</p>
+          <p className="text-xs text-center text-muted-foreground">{t('offerSettings.widgetPreview')}</p>
         </div>
         <ScrollArea className="h-[600px]">
           <EmbedLeadFormPreview

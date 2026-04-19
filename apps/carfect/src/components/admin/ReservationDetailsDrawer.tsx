@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import {
   User,
   Phone,
@@ -74,6 +73,7 @@ import {
 import type { Reservation, CarSize } from '@/types/reservation';
 import { formatTime, getStatusBadge, getSourceLabel } from '@/lib/reservationDisplay';
 import { triggerReservationPhotoUpload } from '@/lib/reservationPhotoUpload';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 export interface HallVisibleFields {
   customer_name: boolean;
@@ -480,20 +480,22 @@ const ReservationDetailsDrawer = ({
                   <span className="text-muted-foreground font-normal hidden sm:inline">•</span>
                   <span className="font-normal text-muted-foreground sm:text-foreground">
                     {reservation.end_date && reservation.end_date !== reservation.reservation_date
-                      ? `${format(new Date(reservation.reservation_date), 'd MMM', { locale: pl })} - ${format(new Date(reservation.end_date), 'd MMM yyyy', { locale: pl })}`
+                      ? `${format(new Date(reservation.reservation_date), 'd MMM', { locale: getDateLocale() })} - ${format(new Date(reservation.end_date), 'd MMM yyyy', { locale: getDateLocale() })}`
                       : format(new Date(reservation.reservation_date), 'd MMMM yyyy', {
-                          locale: pl,
+                          locale: getDateLocale(),
                         })}
                   </span>
                 </SheetTitle>
-                <SheetDescription className="flex items-center gap-2 mt-2 flex-wrap">
-                  {showStatus && getStatusBadge(reservation.status, t)}
-                  {getSourceLabel(reservation.source, reservation.created_by_username, t)}
-                  {!isHallMode && reservation.confirmation_code && (
-                    <Badge variant="outline" className="text-xs font-normal font-mono">
-                      #{reservation.confirmation_code}
-                    </Badge>
-                  )}
+                <SheetDescription asChild>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap text-sm text-muted-foreground">
+                    {showStatus && getStatusBadge(reservation.status, t)}
+                    {getSourceLabel(reservation.source, reservation.created_by_username, t)}
+                    {!isHallMode && reservation.confirmation_code && (
+                      <Badge variant="outline" className="text-xs font-normal font-mono">
+                        #{reservation.confirmation_code}
+                      </Badge>
+                    )}
+                  </div>
                 </SheetDescription>
               </div>
               <button
@@ -577,7 +579,7 @@ const ReservationDetailsDrawer = ({
                 className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg text-sm font-medium text-primary hover:bg-primary/20 transition-colors w-full"
               >
                 <FileText className="w-4 h-4 shrink-0" />
-                <span>Protokół przyjęcia pojazdu</span>
+                <span>{t('reservationDetails.protocolLink')}</span>
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </button>
             )}
@@ -646,12 +648,12 @@ const ReservationDetailsDrawer = ({
             {showEmployeeAssignment && !isHallMode && (
               <div className="flex-1">
                 <div>
-                  <div className="text-xs text-foreground">Przypisani pracownicy</div>
+                  <div className="text-xs text-foreground">{t('reservationDetails.assignedEmployees')}</div>
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     {/* Employee chips - same style as services */}
                     {localAssignedEmployeeIds.map((empId) => {
                       const emp = employees.find((e) => e.id === empId);
-                      const name = emp?.name || 'Usunięty';
+                      const name = emp?.name || t('trainingDetails.removed');
                       return (
                         <span
                           key={empId}
@@ -683,7 +685,7 @@ const ReservationDetailsDrawer = ({
                       ) : (
                         <Plus className="w-4 h-4" />
                       )}
-                      Dodaj
+                      {t('common.add')}
                     </Button>
                   </div>
                 </div>
@@ -737,7 +739,7 @@ const ReservationDetailsDrawer = ({
                 <div className="flex-1">
                   <div>
                     <div className="text-xs text-foreground">
-                      {pricingMode === 'netto' ? 'Kwota netto' : 'Kwota brutto'}
+                      {pricingMode === 'netto' ? t('reservationDetails.amountNet') : t('reservationDetails.amountGross')}
                     </div>
                     <div className="font-semibold text-lg">{displayTotal} zł</div>
                     <div className="text-xs text-muted-foreground">
@@ -783,7 +785,7 @@ const ReservationDetailsDrawer = ({
             {!isHallMode && reservation.offer_number && offerPublicToken && (
               <div className="flex-1">
                 <div>
-                  <div className="text-xs text-foreground">Oferta</div>
+                  <div className="text-xs text-foreground">{t('reservationDetails.offerLink')}</div>
                   <a
                     href={`/offers/${offerPublicToken}?admin=true`}
                     target="_blank"
@@ -823,7 +825,7 @@ const ReservationDetailsDrawer = ({
                       disabled={savingNotes}
                       rows={3}
                       className="w-full text-sm p-2 rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                      placeholder="Wpisz notatki wewnętrzne..."
+                      placeholder={t('reservationDetails.notesPlaceholder')}
                     />
                     {savingNotes && (
                       <div className="absolute right-2 top-2">
@@ -838,7 +840,7 @@ const ReservationDetailsDrawer = ({
                   >
                     {adminNotes || (
                       <span className="text-muted-foreground italic">
-                        Brak notatek wewnętrznych
+                        {t('reservationDetails.noNotes')}
                       </span>
                     )}
                   </div>
@@ -861,7 +863,7 @@ const ReservationDetailsDrawer = ({
                         {format(
                           new Date(reservation.original_reservation.reservation_date),
                           'd MMMM yyyy',
-                          { locale: pl },
+                          { locale: getDateLocale() },
                         )}
                       </span>
                     </div>
@@ -946,7 +948,7 @@ const ReservationDetailsDrawer = ({
                       datetime: format(
                         new Date(reservation.confirmation_sms_sent_at),
                         'dd.MM.yyyy HH:mm',
-                        { locale: pl },
+                        { locale: getDateLocale() },
                       ),
                     })}
                   </div>
@@ -987,7 +989,7 @@ const ReservationDetailsDrawer = ({
                       datetime: format(
                         new Date(reservation.pickup_sms_sent_at),
                         'dd.MM.yyyy HH:mm',
-                        { locale: pl },
+                        { locale: getDateLocale() },
                       ),
                     })}
                   </div>
@@ -1072,7 +1074,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <Camera className="w-4 h-4 mr-2" />
-                          Dodaj zdjęcia
+                          {t('reservationDetails.addPhotos')}
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -1086,7 +1088,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <FileText className="w-4 h-4 mr-2" />
-                          {existingProtocolId ? 'Edytuj protokół' : 'Dodaj protokół'}
+                          {existingProtocolId ? t('reservationDetails.editProtocol') : t('reservationDetails.addProtocol')}
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -1096,7 +1098,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <History className="w-4 h-4 mr-2" />
-                          Zobacz historię
+                          {t('reservationDetails.viewHistory')}
                         </DropdownMenuItem>
 
                         {onCreateOffer && reservation && (
@@ -1111,7 +1113,7 @@ const ReservationDetailsDrawer = ({
                             }}
                           >
                             <FileText className="w-4 h-4 mr-2" />
-                            Przygotuj ofertę
+                            {t('reservationDetails.prepareOffer')}
                           </DropdownMenuItem>
                         )}
 
@@ -1126,7 +1128,7 @@ const ReservationDetailsDrawer = ({
                               }}
                             >
                               <UserX className="w-4 h-4 mr-2" />
-                              Oznacz jako nieobecny
+                              {t('reservationDetails.markNoShow')}
                             </DropdownMenuItem>
                           </>
                         )}
@@ -1139,7 +1141,7 @@ const ReservationDetailsDrawer = ({
                             }}
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Usuń
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -1178,10 +1180,9 @@ const ReservationDetailsDrawer = ({
             <AlertDialog open={noShowDialogOpen} onOpenChange={setNoShowDialogOpen}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Oznacz jako nieobecny</AlertDialogTitle>
+                  <AlertDialogTitle>{t('reservationDetails.noShowConfirmTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Czy na pewno chcesz oznaczyć klienta {customerName} ({customerPhone}) jako
-                    nieobecnego?
+                    {t('reservationDetails.noShowConfirmDescription', { name: customerName, phone: customerPhone })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1240,11 +1241,11 @@ const ReservationDetailsDrawer = ({
                         }}
                       >
                         <Camera className="w-4 h-4 mr-2" />
-                        Dodaj zdjęcia
+                        {t('reservationDetails.addPhotos')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setHistoryDrawerOpen(true)}>
                         <History className="w-4 h-4 mr-2" />
-                        Zobacz historię
+                        {t('reservationDetails.viewHistory')}
                       </DropdownMenuItem>
                       {onCreateOffer && reservation && (
                         <DropdownMenuItem
@@ -1257,7 +1258,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <FileText className="w-4 h-4 mr-2" />
-                          Przygotuj ofertę
+                          {t('reservationDetails.prepareOffer')}
                         </DropdownMenuItem>
                       )}
                       {onNoShow && (
@@ -1278,7 +1279,7 @@ const ReservationDetailsDrawer = ({
                           onClick={() => setDeleteDialogOpen(true)}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Usuń
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>

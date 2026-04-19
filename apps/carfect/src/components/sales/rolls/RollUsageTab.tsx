@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { Button, Input, Label, NumericInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,17 +14,6 @@ import {
   fetchWorkerProfiles,
 } from '../services/rollService';
 
-const SOURCE_LABELS: Record<RollUsageSource, string> = {
-  order: 'Zamówienie',
-  manual: 'Ręczne',
-  worker: 'Pracownik',
-};
-
-const SOURCE_OPTIONS: { value: 'manual' | 'worker'; label: string }[] = [
-  { value: 'manual', label: 'Ręczne' },
-  { value: 'worker', label: 'Pracownik' },
-];
-
 const ACTIVE = 'bg-primary text-primary-foreground border-primary';
 const INACTIVE = 'bg-white hover:bg-hover border-border';
 
@@ -31,16 +21,17 @@ interface UsageCardProps {
   usage: SalesRollUsage;
   onEdit: (usage: SalesRollUsage) => void;
   onDelete: (id: string) => void;
+  sourceLabel: (source: RollUsageSource) => string;
 }
 
-function UsageCard({ usage, onEdit, onDelete }: UsageCardProps) {
+function UsageCard({ usage, onEdit, onDelete, sourceLabel }: UsageCardProps) {
   const canEditDelete = usage.source !== 'order';
 
   return (
     <div className="bg-white border rounded-lg p-3 text-sm space-y-1">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-medium">{SOURCE_LABELS[usage.source]}</span>
+          <span className="font-medium">{sourceLabel(usage.source)}</span>
           {usage.source === 'worker' && usage.workerName && (
             <span className="text-muted-foreground">— {usage.workerName}</span>
           )}
@@ -88,6 +79,7 @@ interface RollUsageTabProps {
 }
 
 const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) => {
+  const { t } = useTranslation();
   const [usages, setUsages] = useState<SalesRollUsage[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -99,6 +91,17 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
   const [formNote, setFormNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [workerProfiles, setWorkerProfiles] = useState<{ id: string; name: string }[]>([]);
+
+  const SOURCE_LABELS: Record<RollUsageSource, string> = {
+    order: t('sales.rolls.usageSourceOrder'),
+    manual: t('sales.rolls.usageSourceManual'),
+    worker: t('sales.rolls.usageSourceWorker'),
+  };
+
+  const SOURCE_OPTIONS: { value: 'manual' | 'worker'; label: string }[] = [
+    { value: 'manual', label: t('sales.rolls.usageSourceManual') },
+    { value: 'worker', label: t('sales.rolls.usageSourceWorker') },
+  ];
 
   const parsedMb = parseFloat(formMb);
   const isValidMb = !isNaN(parsedMb) && parsedMb > 0;
@@ -156,7 +159,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
       await deleteRollUsage(id);
       await refreshUsages();
     } catch {
-      toast.error('Nie udało się usunąć zużycia');
+      toast.error(t('sales.rolls.usageToastDeleteError'));
     }
   };
 
@@ -183,7 +186,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
       await refreshUsages();
       resetForm();
     } catch {
-      toast.error('Nie udało się zapisać zużycia');
+      toast.error(t('sales.rolls.usageToastSaveError'));
     } finally {
       setSaving(false);
     }
@@ -209,16 +212,16 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
           className="flex-1 text-sm py-2 px-3 rounded-md border bg-muted/50 text-muted-foreground cursor-not-allowed"
           disabled
         >
-          Zamówienie
+          {t('sales.rolls.usageSourceOrder')}
         </button>
       </div>
 
       {formSource === 'worker' && (
         <>
           <div>
-            <Label className="text-xs">Pracownik</Label>
+            <Label className="text-xs">{t('sales.rolls.usageLabelWorker')}</Label>
             <Select value={formWorkerName} onValueChange={setFormWorkerName}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="Wybierz pracownika" /></SelectTrigger>
+              <SelectTrigger className="mt-1"><SelectValue placeholder={t('sales.rolls.usagePlaceholderWorker')} /></SelectTrigger>
               <SelectContent>
                 {workerProfiles.map((p) => (
                   <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
@@ -227,7 +230,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Samochód</Label>
+            <Label className="text-xs">{t('sales.rolls.usageLabelCar')}</Label>
             <Input
               value={formVehicleName}
               onChange={(e) => setFormVehicleName(e.target.value)}
@@ -238,7 +241,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
       )}
 
       <div>
-        <Label className="text-xs">Zużycie (mb)</Label>
+        <Label className="text-xs">{t('sales.rolls.usageLabelMb')}</Label>
         <NumericInput
           min={0}
           step={0.01}
@@ -254,7 +257,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
       </div>
 
       <div>
-        <Label className="text-xs">Notatka (opcjonalnie)</Label>
+        <Label className="text-xs">{t('sales.rolls.usageLabelNote')}</Label>
         <Input
           value={formNote}
           onChange={(e) => setFormNote(e.target.value)}
@@ -268,10 +271,14 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
           onClick={handleSubmit}
           disabled={saving || !isValidMb}
         >
-          {saving ? 'Zapisuję...' : editingId ? 'Zapisz' : 'Dodaj'}
+          {saving
+            ? t('sales.rolls.usageBtnSaving')
+            : editingId
+              ? t('sales.rolls.usageBtnSave')
+              : t('sales.rolls.usageBtnAdd')}
         </Button>
         <Button size="sm" variant="ghost" onClick={resetForm}>
-          Anuluj
+          {t('sales.rolls.btnCancel')}
         </Button>
       </div>
     </div>
@@ -287,21 +294,27 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
           onClick={() => { resetForm(); setShowForm(true); }}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Dodaj zużycie
+          {t('sales.rolls.usageBtnAddUsage')}
         </Button>
       ) : (
         renderForm()
       )}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground text-center py-8">Ładowanie...</p>
+        <p className="text-sm text-muted-foreground text-center py-8">{t('sales.rolls.loading')}</p>
       ) : usages.length === 0 && !showForm ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Brak zużycia dla tej rolki
+          {t('sales.rolls.usageEmpty')}
         </p>
       ) : (
         usages.map((u) => (
-          <UsageCard key={u.id} usage={u} onEdit={handleEdit} onDelete={handleDelete} />
+          <UsageCard
+            key={u.id}
+            usage={u}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            sourceLabel={(source) => SOURCE_LABELS[source]}
+          />
         ))
       )}
     </div>

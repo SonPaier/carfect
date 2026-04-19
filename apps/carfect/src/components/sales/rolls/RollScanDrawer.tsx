@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Button, EmptyState } from '@shared/ui';
 import { toast } from 'sonner';
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRollScan } from '../hooks/useRollScan';
 import { createRollsBatch } from '../services/rollService';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,7 @@ interface RollScanDrawerProps {
 }
 
 const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDrawerProps) => {
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -38,7 +40,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
   const handleSave = async () => {
     if (saving) return;
     if (savableResults.length === 0) {
-      toast.error('Brak rolek do zapisania');
+      toast.error(t('sales.rolls.noRollsToSave'));
       return;
     }
     setSaving(true);
@@ -47,7 +49,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
       const d = item.extractedData;
       if (!d.productName || !d.widthMm || !d.lengthM) {
         toast.error(
-          `Rolka "${d.productName || 'bez nazwy'}" nie ma wymaganych danych (nazwa, szerokość, długość)`,
+          t('sales.rolls.missingData', { name: d.productName || 'bez nazwy' }),
         );
         setSaving(false);
         return;
@@ -62,7 +64,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
     const batchDupes = productCodes.filter((code, i) => productCodes.indexOf(code) !== i);
     if (batchDupes.length > 0) {
       toast.error(
-        `Zduplikowane kody produktów w skanowaniu: ${[...new Set(batchDupes)].join(', ')}`,
+        t('sales.rolls.duplicateCodes', { codes: [...new Set(batchDupes)].join(', ') }),
       );
       setSaving(false);
       return;
@@ -78,7 +80,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
 
       const existingCodes = (existing || []).map((r) => r.product_code);
       if (existingCodes.length > 0) {
-        toast.error(`Rolki z tymi kodami już istnieją: ${existingCodes.join(', ')}`);
+        toast.error(t('sales.rolls.existingCodes', { codes: existingCodes.join(', ') }));
         setSaving(false);
         return;
       }
@@ -107,13 +109,13 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
 
       await createRollsBatch(rollsToCreate);
       toast.success(
-        `Zapisano ${savableResults.length} ${savableResults.length === 1 ? 'rolkę' : 'rolek'}`,
+        t(savableResults.length === 1 ? 'sales.rolls.saveSuccess_one' : 'sales.rolls.saveSuccess_other', { count: savableResults.length }),
       );
       scan.reset();
       onOpenChange(false);
       onSaved?.();
     } catch (err: unknown) {
-      toast.error('Błąd zapisu: ' + (err as Error).message);
+      toast.error(t('sales.rolls.saveError', { message: (err as Error).message }));
     } finally {
       setSaving(false);
     }
@@ -128,7 +130,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
-          <SheetTitle>Skanowanie rolek</SheetTitle>
+          <SheetTitle>{t('sales.rolls.scanTitle')}</SheetTitle>
           <button
             type="button"
             onClick={handleClose}
@@ -142,8 +144,8 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
           {scan.results.length === 0 && !scan.processing ? (
             <EmptyState
               icon={ScanLine}
-              title="Wgraj zdjęcia etykiet rolek"
-              description="Obsługiwane formaty: JPG, PNG, HEIC. Możesz wgrać wiele zdjęć na raz."
+              title={t('sales.rolls.scanEmptyTitle')}
+              description={t('sales.rolls.scanEmptyDescription')}
             >
               <input
                 ref={fileInputRef}
@@ -161,7 +163,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
                 }}
               />
               <Button className="mt-2" onClick={() => fileInputRef.current?.click()}>
-                Wgraj rolki
+                {t('rollScan.uploadRolls')}
               </Button>
             </EmptyState>
           ) : (
@@ -185,12 +187,12 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
 
         <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-2">
           <Button variant="outline" onClick={handleClose} disabled={saving}>
-            {scan.results.length > 0 ? 'Anuluj' : 'Zamknij'}
+            {scan.results.length > 0 ? t('common.cancel') : t('common.close')}
           </Button>
           {savableResults.length > 0 && (
             <Button onClick={handleSave} disabled={saving || scan.processing}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Zapisz {savableResults.length} {savableResults.length === 1 ? 'rolkę' : 'rolek'}
+              {t('rollScan.saveRolls', { count: savableResults.length, label: savableResults.length === 1 ? 'rolkę' : 'rolek' })}
             </Button>
           )}
         </div>

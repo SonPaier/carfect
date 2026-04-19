@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   GroupedChange,
   ReservationChange,
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function HistoryTimelineItem({ group, servicesMap, stationsMap, employeesMap = new Map() }: Props) {
+  const { t } = useTranslation();
   const renderChange = (change: ReservationChange) => {
     // Skip car_size changes - don't display them
     if (change.field_name === 'car_size') {
@@ -35,7 +37,7 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
         content = (
           <div className="space-y-0.5">
             {added.length > 0 && <div>• Dodano: {added.join(', ')}</div>}
-            {removed.length > 0 && <div>• Usunięto: {removed.join(', ')}</div>}
+            {removed.length > 0 && <div>• {t('history.removed')}: {removed.join(', ')}</div>}
           </div>
         );
         break;
@@ -68,10 +70,10 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
 
       case 'dates': {
         const oldDate = change.old_value?.reservation_date
-          ? format(new Date(change.old_value.reservation_date), 'd MMM', { locale: pl })
+          ? format(new Date(change.old_value.reservation_date), 'd MMM', { locale: getDateLocale() })
           : '-';
         const newDate = change.new_value?.reservation_date
-          ? format(new Date(change.new_value.reservation_date), 'd MMM', { locale: pl })
+          ? format(new Date(change.new_value.reservation_date), 'd MMM', { locale: getDateLocale() })
           : '-';
         content = <div>• Termin: {oldDate} → {newDate}</div>;
         break;
@@ -91,11 +93,11 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
 
       case 'admin_notes':
         if (!change.old_value && change.new_value) {
-          content = <div>• Dodano notatkę</div>;
+          content = <div>• {t('history.noteAdded')}</div>;
         } else if (change.old_value && !change.new_value) {
-          content = <div>• Usunięto notatkę</div>;
+          content = <div>• {t('history.noteRemoved')}</div>;
         } else {
-          content = <div>• Zmieniono notatkę</div>;
+          content = <div>• {t('history.noteChanged')}</div>;
         }
         break;
 
@@ -111,8 +113,8 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
         );
         content = (
           <div className="space-y-0.5">
-            {added.length > 0 && <div>• Dodano pracowników: {added.join(', ')}</div>}
-            {removed.length > 0 && <div>• Usunięto pracowników: {removed.join(', ')}</div>}
+            {added.length > 0 && <div>• {t('history.employeesAdded')}: {added.join(', ')}</div>}
+            {removed.length > 0 && <div>• {t('history.employeesRemoved')}: {removed.join(', ')}</div>}
           </div>
         );
         break;
@@ -142,7 +144,7 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
           {group.changed_by_username}
           {group.changed_by_type === 'customer' && ' (klient)'}
           {' • '}
-          {format(new Date(group.created_at), 'd MMM, HH:mm', { locale: pl })}
+          {format(new Date(group.created_at), 'd MMM, HH:mm', { locale: getDateLocale() })}
         </div>
       </div>
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Phone, MessageSquare, Mail, Car, Clock, X } from 'lucide-react';
 import { usePricingMode } from '@/hooks/usePricingMode';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
@@ -19,6 +18,7 @@ import SendSmsDialog from './SendSmsDialog';
 import { CustomerRemindersTab } from './CustomerRemindersTab';
 import { CustomerVehiclesEditor, VehicleChip } from './CustomerVehiclesEditor';
 import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Customer {
   id: string;
@@ -171,7 +171,7 @@ const CustomerEditDrawer = ({
         .maybeSingle();
 
       if (data) {
-        setPhoneExistsWarning(`Klient "${data.name}" z tym numerem już istnieje`);
+        setPhoneExistsWarning(t('customerEdit.phoneExists', { name: data.name }));
       } else {
         setPhoneExistsWarning(null);
       }
@@ -284,7 +284,7 @@ const CustomerEditDrawer = ({
         onCustomerUpdated?.();
       } catch (err) {
         console.error('Error deleting vehicle:', err);
-        toast.error('Błąd usuwania pojazdu');
+        toast.error(t('customerEdit.vehicleDeleteError'));
       }
     }
   };
@@ -701,9 +701,7 @@ const CustomerEditDrawer = ({
                       htmlFor="sms-consent"
                       className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
                     >
-                      Klient wyraża zgodę na otrzymywanie drogą elektroniczną (SMS/E-mail)
-                      przypomnień o terminach obowiązkowych przeglądów i konserwacji powłok
-                      ochronnych oraz informacji o statusie zleconej usługi.
+                      {t('customerEdit.smsConsent')}
                     </label>
                   </div>
 
@@ -844,7 +842,7 @@ const CustomerEditDrawer = ({
                             <div className="flex items-center justify-between mb-1">
                               <div className="font-medium text-sm">
                                 {format(new Date(visit.reservation_date), 'd MMMM yyyy', {
-                                  locale: pl,
+                                  locale: getDateLocale(),
                                 })}
                               </div>
                               <div className="text-xs text-muted-foreground flex items-center gap-1">

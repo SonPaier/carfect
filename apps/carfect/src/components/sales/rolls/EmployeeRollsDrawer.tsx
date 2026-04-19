@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmDialog } from '@shared/ui';
 import { toast } from 'sonner';
 import { fetchWorkerRollUsagesForMonth, fetchWorkerProfiles, createScrapUsage, deleteRollUsage, type WorkerRollUsageWithRoll } from '../services/rollService';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface EmployeeRollsDrawerProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface EmployeeRollsDrawerProps {
 }
 
 const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerProps) => {
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [usages, setUsages] = useState<WorkerRollUsageWithRoll[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,18 +43,18 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
     const w = parseFloat(addWidthM);
     const l = parseFloat(addLengthM);
     if (!addWorker || isNaN(w) || isNaN(l) || w <= 0 || l <= 0) {
-      toast.error('Wypełnij pracownika, szerokość i długość');
+      toast.error(t('sales.rolls.employeeToastValidation'));
       return;
     }
     setSaving(true);
     try {
-      await createScrapUsage({ workerName: addWorker, widthM: w, lengthM: l, vehicleName: addVehicle || null, note: addNote || null });
-      toast.success('Zużycie dodane');
+      await createScrapUsage({ instanceId, workerName: addWorker, widthM: w, lengthM: l, vehicleName: addVehicle || null, note: addNote || null });
+      toast.success(t('sales.rolls.employeeToastAdded'));
       setShowAddForm(false);
       setAddWorker(''); setAddWidthM(''); setAddLengthM(''); setAddVehicle(''); setAddNote('');
       setRefreshKey((k) => k + 1);
     } catch {
-      toast.error('Nie udało się dodać zużycia');
+      toast.error(t('sales.rolls.employeeToastAddError'));
     } finally {
       setSaving(false);
     }
@@ -62,10 +64,10 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
     if (!deleteTarget) return;
     try {
       await deleteRollUsage(deleteTarget);
-      toast.success('Zużycie usunięte');
+      toast.success(t('sales.rolls.employeeToastDeleted'));
       setRefreshKey((k) => k + 1);
     } catch {
-      toast.error('Nie udało się usunąć');
+      toast.error(t('sales.rolls.employeeToastDeleteError'));
     } finally {
       setDeleteTarget(null);
     }
@@ -96,11 +98,11 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
     };
   }, [open, instanceId, currentMonth, refreshKey]);
 
-  const monthLabel = format(currentMonth, 'LLLL yyyy', { locale: pl });
+  const monthLabel = format(currentMonth, 'LLLL yyyy', { locale: getDateLocale() });
 
   // Group case-insensitively — normalize to title case for display
   const grouped = usages.reduce<Record<string, WorkerRollUsageWithRoll[]>>((acc, usage) => {
-    const raw = usage.workerName ?? 'Nieznany pracownik';
+    const raw = usage.workerName ?? t('sales.rolls.employeeUnknownWorker');
     // Normalize: capitalize first letter of each word
     const name = raw.replace(/\b\w/g, (c) => c.toUpperCase()).replace(/\b(\w)(\w*)/g, (_, f, r) => f.toUpperCase() + r.toLowerCase());
     if (!acc[name]) acc[name] = [];
@@ -119,7 +121,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
         hideCloseButton
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
-          <SheetTitle className="text-foreground">Pracownicy i rolki</SheetTitle>
+          <SheetTitle className="text-foreground">{t('sales.rolls.employeeDrawerTitle')}</SheetTitle>
           <button
             type="button"
             onClick={onClose}
@@ -137,7 +139,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
             size="icon"
             className="h-8 w-8"
             onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-            aria-label="Poprzedni miesiąc"
+            aria-label={t('sales.rolls.employeeAriaLabelPrevMonth')}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -149,14 +151,14 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
             size="icon"
             className="h-8 w-8"
             onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-            aria-label="Następny miesiąc"
+            aria-label={t('sales.rolls.employeeAriaLabelNextMonth')}
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
           </div>
           <Button size="sm" variant="outline" onClick={() => setShowAddForm(!showAddForm)}>
             <Plus className="w-4 h-4 mr-1" />
-            Dodaj zużycie
+            {t('sales.rolls.employeeBtnAddUsage')}
           </Button>
         </div>
 
@@ -165,9 +167,9 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
           <div className="px-6 py-4 border-b space-y-3 bg-muted/20 shrink-0">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Pracownik *</Label>
+                <Label className="text-xs">{t('sales.rolls.employeeLabelWorker')}</Label>
                 <Select value={addWorker} onValueChange={setAddWorker}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Wybierz" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={t('sales.rolls.employeePlaceholderWorker')} /></SelectTrigger>
                   <SelectContent>
                     {profiles.map((p) => (
                       <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
@@ -176,36 +178,36 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Samochód</Label>
+                <Label className="text-xs">{t('sales.rolls.employeeLabelCar')}</Label>
                 <Input className="h-8 text-sm" value={addVehicle} onChange={(e) => setAddVehicle(e.target.value)} placeholder="np. BMW 320d WA12345" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label className="text-xs">Szerokość (m) *</Label>
+                <Label className="text-xs">{t('sales.rolls.employeeLabelWidthM')}</Label>
                 <Input className="h-8 text-sm" type="number" step="0.01" min="0" value={addWidthM} onChange={(e) => setAddWidthM(e.target.value)} placeholder="np. 1.52" />
               </div>
               <div>
-                <Label className="text-xs">Długość (m) *</Label>
+                <Label className="text-xs">{t('sales.rolls.employeeLabelLengthM')}</Label>
                 <Input className="h-8 text-sm" type="number" step="0.01" min="0" value={addLengthM} onChange={(e) => setAddLengthM(e.target.value)} placeholder="np. 3.00" />
               </div>
               <div>
-                <Label className="text-xs">m² (obliczone)</Label>
+                <Label className="text-xs">{t('sales.rolls.employeeLabelM2Calculated')}</Label>
                 <div className="h-8 flex items-center text-sm font-medium text-foreground">
                   {addWidthM && addLengthM ? (parseFloat(addWidthM) * parseFloat(addLengthM)).toFixed(2) : '—'} m²
                 </div>
               </div>
             </div>
             <div>
-              <Label className="text-xs">Notatka</Label>
-              <Input className="h-8 text-sm" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="np. ścinki z realizacji" />
+              <Label className="text-xs">{t('sales.rolls.employeeLabelNote')}</Label>
+              <Input className="h-8 text-sm" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder={t('sales.rolls.notePlaceholder')} />
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleAddScrap} disabled={saving}>
                 {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                Dodaj
+                {t('sales.rolls.employeeBtnAdd')}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setShowAddForm(false)}>Anuluj</Button>
+              <Button size="sm" variant="outline" onClick={() => setShowAddForm(false)}>{t('sales.rolls.employeeBtnCancel')}</Button>
             </div>
           </div>
         )}
@@ -217,7 +219,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
             </div>
           ) : usages.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-12">
-              Brak zużyć w tym miesiącu
+              {t('sales.rolls.employeeEmpty')}
             </div>
           ) : (
             <>
@@ -232,9 +234,9 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-muted/30 border-b">
-                            <th className="text-left px-3 py-2 font-semibold text-foreground w-[100px]">Data</th>
-                            <th className="text-left px-3 py-2 font-semibold text-foreground">Rolka / Produkt</th>
-                            <th className="text-left px-3 py-2 font-semibold text-foreground w-[180px]">Samochód</th>
+                            <th className="text-left px-3 py-2 font-semibold text-foreground w-[100px]">{t('sales.rolls.employeeColDate')}</th>
+                            <th className="text-left px-3 py-2 font-semibold text-foreground">{t('sales.rolls.employeeColRoll')}</th>
+                            <th className="text-left px-3 py-2 font-semibold text-foreground w-[180px]">{t('sales.rolls.employeeColCar')}</th>
                             <th className="text-right px-3 py-2 font-semibold text-foreground w-[80px]">mb</th>
                             <th className="text-right px-3 py-2 font-semibold text-foreground w-[80px]">m²</th>
                           </tr>
@@ -281,7 +283,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
                           ))}
                           <tr className="bg-primary/10">
                             <td colSpan={4} className="px-3 py-2 text-right text-foreground font-semibold">
-                              Łącznie:
+                              {t('sales.rolls.employeeWorkerTotal')}
                             </td>
                             <td className="px-3 py-2 text-right text-foreground font-bold">
                               {workerTotal.toFixed(2)} m²
@@ -296,7 +298,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
               })}
 
               <div className="pt-4 border-t font-bold text-right text-foreground">
-                Łącznie wszyscy: {grandTotal.toFixed(2)} m²
+                {t('sales.rolls.employeeGrandTotal', { total: grandTotal.toFixed(2) })}
               </div>
             </>
           )}
@@ -306,9 +308,9 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        title="Usuń zużycie"
-        description="Czy na pewno chcesz usunąć ten wpis zużycia?"
-        confirmLabel="Usuń"
+        title={t('sales.rolls.employeeDeleteTitle')}
+        description={t('sales.rolls.employeeDeleteDescription')}
+        confirmLabel={t('sales.rolls.employeeDeleteConfirmLabel')}
         onConfirm={handleDeleteUsage}
         variant="destructive"
       />

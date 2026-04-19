@@ -7,6 +7,7 @@ import { Separator } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface SubscriptionPlan {
   id: string;
@@ -33,29 +34,18 @@ interface InstancePlanSettingsProps {
   onUpdate?: () => void;
 }
 
-const FEATURE_LABELS: Record<string, string> = {
-  calendar: 'Główny kalendarz',
-  online_booking: 'Rezerwacje online 24/7',
-  sms_notifications: 'Powiadomienia SMS',
-  customer_crm: 'Zarządzanie klientami',
-  team_management: 'Zarządzanie zespołem',
-  yard_vehicles: 'Obsługa aut z placu',
-  employee_view: 'Widok dla pracowników',
-  analytics: 'Analityka i raporty',
-  offers: 'Moduł ofert',
-  vehicle_reception_protocol: 'Protokół przyjęcia',
-  followup: 'Wsparcie sprzedaży',
-  reminders: 'Automatyczne przypomnienia',
-};
-
 export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: InstancePlanSettingsProps) => {
+  const { t } = useTranslation();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subscription, setSubscription] = useState<InstanceSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [stationLimit, setStationLimit] = useState(1);
+
+  // instanceName is used by the caller for display in the dialog title
+  void instanceName;
 
   const fetchData = useCallback(async () => {
     try {
@@ -96,18 +86,18 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
       }
     } catch (error) {
       console.error('Error fetching plan data:', error);
-      toast.error('Błąd podczas ładowania danych planu');
+      toast.error(t('superAdmin.instancePlanSettings.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [instanceId]);
+  }, [instanceId, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
-  
+
   const calculateMonthlyPrice = () => {
     if (!selectedPlan) return 0;
     const extraStations = Math.max(0, stationLimit - 1);
@@ -116,7 +106,7 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
 
   const handleSave = async () => {
     if (!selectedPlanId) {
-      toast.error('Wybierz plan');
+      toast.error(t('superAdmin.instancePlanSettings.selectPlanError'));
       return;
     }
 
@@ -151,12 +141,12 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
         if (error) throw error;
       }
 
-      toast.success('Plan zapisany');
+      toast.success(t('superAdmin.instancePlanSettings.saveSuccess'));
       onUpdate?.();
       fetchData();
     } catch (error) {
       console.error('Error saving subscription:', error);
-      toast.error('Błąd podczas zapisywania planu');
+      toast.error(t('superAdmin.instancePlanSettings.saveError'));
     } finally {
       setSaving(false);
     }
@@ -174,7 +164,9 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
     <div className="space-y-6">
       {/* Plan Selection */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">Wybierz plan</Label>
+        <Label className="text-base font-medium">
+          {t('superAdmin.instancePlanSettings.selectPlan')}
+        </Label>
         <RadioGroup value={selectedPlanId} onValueChange={setSelectedPlanId}>
           <div className="grid gap-3">
             {plans.map((plan) => (
@@ -182,8 +174,8 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
                 key={plan.id}
                 className={cn(
                   "relative flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors",
-                  selectedPlanId === plan.id 
-                    ? "border-primary bg-primary/5" 
+                  selectedPlanId === plan.id
+                    ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50"
                 )}
                 onClick={() => setSelectedPlanId(plan.id)}
@@ -196,7 +188,9 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
                     </Label>
                     <span className="text-lg font-bold text-primary">
                       {plan.base_price} zł
-                      <span className="text-sm font-normal text-muted-foreground">/mies.</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {t('superAdmin.instancePlanSettings.perMonth')}
+                      </span>
                     </span>
                   </div>
                   {plan.description && (
@@ -206,12 +200,12 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
                     {plan.included_features.slice(0, 6).map((feature) => (
                       <span key={feature} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <Check className="w-3 h-3 text-success" />
-                        {FEATURE_LABELS[feature] || feature}
+                        {t(`superAdmin.instancePlanSettings.featureLabels.${feature}`, { defaultValue: feature })}
                       </span>
                     ))}
                     {plan.included_features.length > 6 && (
                       <span className="text-xs text-muted-foreground">
-                        +{plan.included_features.length - 6} więcej
+                        {t('superAdmin.instancePlanSettings.moreFeatures', { count: plan.included_features.length - 6 })}
                       </span>
                     )}
                   </div>
@@ -224,7 +218,9 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
 
       {/* Station Limit */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">Limit stanowisk</Label>
+        <Label className="text-base font-medium">
+          {t('superAdmin.instancePlanSettings.stationLimit')}
+        </Label>
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -244,7 +240,7 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Admin instancji nie będzie mógł dodać więcej niż {stationLimit} stanowisk
+          {t('superAdmin.instancePlanSettings.stationLimitDescription', { count: stationLimit })}
         </p>
       </div>
 
@@ -253,37 +249,44 @@ export const InstancePlanSettings = ({ instanceId, instanceName, onUpdate }: Ins
       {/* Price Summary */}
       {selectedPlan && (
         <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
-          <h4 className="font-medium">Podsumowanie</h4>
+          <h4 className="font-medium">{t('superAdmin.instancePlanSettings.summary')}</h4>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Plan bazowy ({selectedPlan.name})</span>
+              <span className="text-muted-foreground">
+                {t('superAdmin.instancePlanSettings.basePlan', { name: selectedPlan.name })}
+              </span>
               <span>{selectedPlan.base_price} zł</span>
             </div>
             {stationLimit > 1 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  Dodatkowe stanowiska ({stationLimit - 1} × {selectedPlan.price_per_station} zł)
+                  {t('superAdmin.instancePlanSettings.extraStations', {
+                    count: stationLimit - 1,
+                    price: selectedPlan.price_per_station,
+                  })}
                 </span>
                 <span>+ {(stationLimit - 1) * selectedPlan.price_per_station} zł</span>
               </div>
             )}
             <Separator className="my-2" />
             <div className="flex justify-between font-semibold text-base">
-              <span>Razem miesięcznie</span>
-              <span className="text-primary">{calculateMonthlyPrice()} zł netto</span>
+              <span>{t('superAdmin.instancePlanSettings.totalMonthly')}</span>
+              <span className="text-primary">
+                {t('superAdmin.instancePlanSettings.totalPrice', { price: calculateMonthlyPrice() })}
+              </span>
             </div>
           </div>
         </div>
       )}
 
       {/* Save Button */}
-      <Button 
-        onClick={handleSave} 
+      <Button
+        onClick={handleSave}
         disabled={saving || !selectedPlanId}
         className="w-full"
       >
         {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Zapisz zmiany
+        {t('superAdmin.instancePlanSettings.saveChanges')}
       </Button>
     </div>
   );

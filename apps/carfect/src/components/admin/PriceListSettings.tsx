@@ -83,6 +83,7 @@ const InlineEditablePrice = ({
   service: Service;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
 }) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -125,7 +126,7 @@ const InlineEditablePrice = ({
     const numValue = editValue.trim() === '' ? null : parseFloat(editValue.replace(',', '.'));
 
     if (editValue.trim() !== '' && (isNaN(numValue!) || numValue! < 0)) {
-      toast.error('Nieprawidłowa cena');
+      toast.error(t('priceList.invalidPrice'));
       setIsEditing(false);
       return;
     }
@@ -183,7 +184,7 @@ const InlineEditablePrice = ({
         !hasSizePrices && 'cursor-pointer hover:bg-primary/10 px-2 py-1 rounded -mx-2 -my-1',
       )}
       title={
-        hasSizePrices ? 'Edytuj w dialogu (ceny zależne od rozmiaru)' : 'Kliknij aby edytować cenę'
+        hasSizePrices ? t('priceList.editInDialog') : t('priceList.clickToEditPrice')
       }
     >
       {formatDisplayPrice()}
@@ -203,6 +204,7 @@ const SortableServiceRow = ({
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
   disabled: boolean;
 }) => {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: service.id,
     disabled,
@@ -230,7 +232,7 @@ const SortableServiceRow = ({
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <span className={cn('truncate', !service.active && 'line-through')}>{service.name}</span>
         {!service.active && (
-          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">nieaktywna</span>
+          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">{t('priceList.inactive')}</span>
         )}
       </div>
 
@@ -251,6 +253,7 @@ const ServiceRow = ({
   onEdit: () => void;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
 }) => {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -267,7 +270,7 @@ const ServiceRow = ({
           {service.name}
         </span>
         {!service.active && (
-          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">nieaktywna</span>
+          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">{t('priceList.inactive')}</span>
         )}
       </div>
 
@@ -600,10 +603,10 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           .eq('id', serviceId);
 
         if (error) throw error;
-        toast.success('Cena zaktualizowana');
+        toast.success(t('priceList.priceUpdated'));
       } catch (error) {
         console.error('Error updating price:', error);
-        toast.error('Błąd aktualizacji ceny');
+        toast.error(t('priceList.priceUpdateError'));
         // Revert on error
         fetchServices();
         throw error;
@@ -637,10 +640,9 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       {/* Header with buttons inline on desktop */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-medium">Usługi</h2>
+          <h2 className="text-2xl font-medium">{t('services.title')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Usługi będą widoczne do wyboru w rezerwacjach i przy tworzeniu szablonów ofert.
-            Kategorie są opcjonalne.
+            {t('services.description')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -661,7 +663,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Szukaj po nazwie lub skrócie..."
+          placeholder={t('services.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"

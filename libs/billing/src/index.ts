@@ -1,7 +1,9 @@
 export * from './billing.types';
 export { SubscriptionSummaryCard } from './SubscriptionSummaryCard';
+export type { SubscriptionSummaryLabels } from './SubscriptionSummaryCard';
 export { TrialBanner } from './TrialBanner';
 export { BillingHistoryTable } from './BillingHistoryTable';
+export type { BillingHistoryLabels } from './BillingHistoryTable';
 export { InvoiceDataForm } from './InvoiceDataForm';
 export type { InvoiceDataFormLabels } from './InvoiceDataForm';
 export { SubscriptionSettingsTabContent } from './SubscriptionSettingsTabContent';

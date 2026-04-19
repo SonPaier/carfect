@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@shared/utils';
 import type { SalesRoll, SalesRollUsage } from '../types/rolls';
@@ -305,9 +306,7 @@ export async function deleteRoll(id: string): Promise<void> {
 
   if (checkErr) throw new Error(checkErr.message);
   if (usages && usages.length > 0) {
-    throw new Error(
-      'Nie można usunąć rolki, która ma przypisane zużycie. Zarchiwizuj ją zamiast tego.',
-    );
+    throw new Error(i18next.t('sales.rolls.errors.deleteWithUsage'));
   }
 
   const { error } = await supabase.from('sales_rolls').delete().eq('id', id);
@@ -334,10 +333,12 @@ export async function createRollUsage(data: {
   orderItemId: string;
   usedM2: number;
   usedMb: number;
+  instanceId?: string;
 }): Promise<string> {
   const { data: row, error } = await supabase
     .from('sales_roll_usages')
     .insert({
+      instance_id: data.instanceId,
       roll_id: data.rollId,
       order_id: data.orderId,
       order_item_id: data.orderItemId,
@@ -360,10 +361,12 @@ export async function createManualRollUsage(data: {
   workerName?: string;
   vehicleName?: string | null;
   note?: string;
+  instanceId?: string;
 }): Promise<string> {
   const { data: row, error } = await supabase
     .from('sales_roll_usages')
     .insert({
+      instance_id: data.instanceId,
       roll_id: data.rollId,
       used_mb: data.usedMb,
       used_m2: data.usedM2,
@@ -406,7 +409,7 @@ export async function updateManualRollUsage(
 
   if (error) throw new Error(error.message);
   if (!rows || rows.length === 0) {
-    throw new Error('Nie udało się zaktualizować zużycia — brak uprawnień lub rekord nie istnieje.');
+    throw new Error(i18next.t('sales.rolls.errors.updateUsageNotFound'));
   }
 }
 
@@ -420,7 +423,7 @@ export async function deleteRollUsage(id: string): Promise<void> {
 
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) {
-    throw new Error('Nie udało się usunąć zużycia — brak uprawnień lub rekord nie istnieje.');
+    throw new Error(i18next.t('sales.rolls.errors.deleteUsageNotFound'));
   }
 }
 
@@ -572,6 +575,7 @@ export async function uploadRollPhoto(file: File, instanceId: string): Promise<s
 // ─── Scrap / Offcut Usage (no roll) ──────────────────────────
 
 export async function createScrapUsage(params: {
+  instanceId: string;
   workerName: string;
   widthM: number;
   lengthM: number;
@@ -582,6 +586,7 @@ export async function createScrapUsage(params: {
   const { error } = await supabase
     .from('sales_roll_usages')
     .insert({
+      instance_id: params.instanceId,
       roll_id: null,
       used_mb: params.lengthM,
       used_m2: usedM2,
@@ -621,23 +626,18 @@ export async function fetchWorkerRollUsagesForMonth(
     ? `${year + 1}-01-01`
     : `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
-  // Left join — scrap usages have roll_id=NULL
+  // Filter by instance_id directly on the table
   const { data, error } = await supabase
     .from('sales_roll_usages')
     .select('*, sales_rolls(instance_id, product_name, product_code, width_mm)')
+    .eq('instance_id', instanceId)
     .eq('source', 'worker')
     .gte('created_at', startDate)
     .lt('created_at', endDate)
     .order('created_at', { ascending: true });
 
-  // Filter by instance — either through roll or scrap (no roll)
-  const filtered = (data || []).filter((row) => {
-    const roll = row.sales_rolls as { instance_id?: string } | null;
-    return roll ? roll.instance_id === instanceId : true;
-  });
-
   if (error) throw error;
-  return filtered.map((row) => {
+  return (data || []).map((row) => {
     const base = mapUsageRow(row);
     const roll = row.sales_rolls as { product_name?: string; product_code?: string; width_mm?: number } | null;
     return {

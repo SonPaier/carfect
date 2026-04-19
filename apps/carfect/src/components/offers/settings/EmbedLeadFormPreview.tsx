@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -40,6 +41,7 @@ export default function EmbedLeadFormPreview({
   extras,
   branding,
 }: EmbedLeadFormPreviewProps) {
+  const { t } = useTranslation();
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [selectedTemplates, setSelectedTemplates] = useState<Set<string>>(new Set());
   const [selectedExtras, setSelectedExtras] = useState<Set<string>>(new Set());
@@ -113,20 +115,20 @@ export default function EmbedLeadFormPreview({
           className="rounded-lg p-3 shadow-sm space-y-3"
           style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
         >
-          <h2 className="font-medium text-sm">Dane kontaktowe</h2>
+          <h2 className="font-medium text-sm">{t('embedLeadForm.contactDetails')}</h2>
 
           <div className="space-y-1">
-            <Label className="text-xs">Imię i nazwisko *</Label>
-            <Input placeholder="Jan Kowalski" className="h-8 text-sm" disabled />
+            <Label className="text-xs">{t('embedLeadForm.fullName')} *</Label>
+            <Input placeholder={t('embedLeadForm.fullNamePlaceholder')} className="h-8 text-sm" disabled />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">E-mail *</Label>
+            <Label className="text-xs">{t('embedLeadForm.email')} *</Label>
             <Input type="email" placeholder="jan@example.com" className="h-8 text-sm" disabled />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Telefon *</Label>
+            <Label className="text-xs">{t('embedLeadForm.phone')} *</Label>
             <Input type="tel" placeholder="+48 123 456 789" className="h-8 text-sm" disabled />
           </div>
         </div>
@@ -136,32 +138,32 @@ export default function EmbedLeadFormPreview({
           className="rounded-lg p-3 shadow-sm space-y-3"
           style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
         >
-          <h2 className="font-medium text-sm">Pojazd</h2>
+          <h2 className="font-medium text-sm">{t('embedLeadForm.vehicle')}</h2>
 
           <div className="space-y-1">
-            <Label className="text-xs">Model auta *</Label>
+            <Label className="text-xs">{t('embedLeadForm.carModel')} *</Label>
             <Input placeholder="BMW X5" className="h-8 text-sm" disabled />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Kolor lakieru *</Label>
-            <Input placeholder="Czarny metalik" className="h-8 text-sm" disabled />
+            <Label className="text-xs">{t('embedLeadForm.paintColor')} *</Label>
+            <Input placeholder={t('embedLeadForm.paintColorPlaceholder')} className="h-8 text-sm" disabled />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Rodzaj lakieru *</Label>
+            <Label className="text-xs">{t('embedLeadForm.paintType')} *</Label>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" disabled>
-                Połysk
+                {t('embedLeadForm.paintTypeGloss')}
               </Button>
               <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" disabled>
-                Mat
+                {t('embedLeadForm.paintTypeMatte')}
               </Button>
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Przebieg (km)</Label>
+            <Label className="text-xs">{t('embedLeadForm.mileage')}</Label>
             <Input type="number" placeholder="50000" className="h-8 text-sm" disabled />
           </div>
         </div>
@@ -172,8 +174,8 @@ export default function EmbedLeadFormPreview({
           style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
         >
           <div>
-            <h2 className="font-medium text-sm">Wybierz pakiet</h2>
-            <p className="text-xs opacity-70">Możesz wybrać kilka</p>
+            <h2 className="font-medium text-sm">{t('embedLeadForm.choosePackage')}</h2>
+            <p className="text-xs opacity-70">{t('embedLeadForm.canChooseMultiple')}</p>
           </div>
 
           <div className="space-y-2">
@@ -215,7 +217,7 @@ export default function EmbedLeadFormPreview({
                               className="text-xs font-medium whitespace-nowrap"
                               style={{ color: primaryColor }}
                             >
-                              od {template.price_from} zł
+                              {t('embedLeadForm.priceFrom', { price: template.price_from })}
                             </span>
                           )}
                         </div>
@@ -229,7 +231,7 @@ export default function EmbedLeadFormPreview({
                       className="ml-6 p-2 rounded-lg space-y-1.5"
                       style={{ backgroundColor: `${primaryColor}10` }}
                     >
-                      <p className="text-xs font-medium">Pakiet powłoki:</p>
+                      <p className="text-xs font-medium">{t('embedLeadForm.coatingPackage')}:</p>
                       <div className="grid gap-1">
                         {template.available_durations!.map((months) => {
                           const isDurationSelected = durationSelections[template.id] === months;
@@ -295,7 +297,7 @@ export default function EmbedLeadFormPreview({
                                   />
                                 )}
                               </div>
-                              <span className="text-xs">Nie wiem, proszę o propozycję</span>
+                              <span className="text-xs">{t('embedLeadForm.dontKnowSuggest')}</span>
                               <input
                                 type="radio"
                                 name={`duration-${template.id}`}
@@ -322,7 +324,7 @@ export default function EmbedLeadFormPreview({
                         className="text-xs hover:underline flex items-center gap-1"
                         style={{ color: primaryColor }}
                       >
-                        Czytaj więcej...
+                        {t('embedLeadForm.readMore')}
                         {isExpanded ? (
                           <ChevronUp className="w-3 h-3" />
                         ) : (
@@ -342,7 +344,7 @@ export default function EmbedLeadFormPreview({
 
             {templates.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-4">
-                Wybierz szablony w konfiguracji
+                {t('embedLeadForm.chooseTemplatesInConfig')}
               </p>
             )}
           </div>
@@ -355,8 +357,8 @@ export default function EmbedLeadFormPreview({
             style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
           >
             <div>
-              <h2 className="font-medium text-sm">Dodatki</h2>
-              <p className="text-xs opacity-70">Opcjonalne usługi</p>
+              <h2 className="font-medium text-sm">{t('embedLeadForm.extras')}</h2>
+              <p className="text-xs opacity-70">{t('embedLeadForm.optionalServices')}</p>
             </div>
 
             <div className="space-y-2">
@@ -399,13 +401,13 @@ export default function EmbedLeadFormPreview({
           style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
         >
           <div>
-            <h2 className="font-medium text-sm">Planowany termin realizacji</h2>
-            <p className="text-xs opacity-70">Kiedy chciałbyś zrealizować usługę?</p>
+            <h2 className="font-medium text-sm">{t('embedLeadForm.plannedDate')}</h2>
+            <p className="text-xs opacity-70">{t('embedLeadForm.plannedDateHint')}</p>
           </div>
 
           <Button variant="outline" className="w-full h-8 justify-start text-sm" disabled>
             <Calendar className="w-4 h-4 mr-2" />
-            Wybierz datę
+            {t('embedLeadForm.chooseDate')}
           </Button>
         </div>
 
@@ -414,17 +416,17 @@ export default function EmbedLeadFormPreview({
           className="rounded-lg p-3 shadow-sm space-y-3"
           style={{ backgroundColor: sectionBgColor, color: sectionTextColor }}
         >
-          <h2 className="font-medium text-sm">Dodatkowe informacje</h2>
+          <h2 className="font-medium text-sm">{t('embedLeadForm.additionalInfo')}</h2>
 
           <div className="space-y-1">
-            <Label className="text-xs">Budżet (zł)</Label>
+            <Label className="text-xs">{t('embedLeadForm.budget')}</Label>
             <Input type="number" placeholder="np. 5000" className="h-8 text-sm" disabled />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Uwagi</Label>
+            <Label className="text-xs">{t('embedLeadForm.notes')}</Label>
             <Textarea
-              placeholder="Dodatkowe informacje..."
+              placeholder={t('embedLeadForm.notesPlaceholder')}
               className="text-sm resize-none"
               rows={2}
               disabled
@@ -440,8 +442,7 @@ export default function EmbedLeadFormPreview({
           <div className="flex items-start gap-2">
             <Checkbox disabled className="mt-0.5" />
             <p className="text-xs opacity-70">
-              <span className="text-red-500 font-medium">*</span> Wyrażam zgodę na przetwarzanie
-              moich danych osobowych...
+              <span className="text-red-500 font-medium">*</span> {t('embedLeadForm.gdprConsent')}
             </p>
           </div>
         </div>
@@ -455,7 +456,7 @@ export default function EmbedLeadFormPreview({
             color: primaryTextColor,
           }}
         >
-          Wyślij zapytanie
+          {t('embedLeadForm.submitRequest')}
         </Button>
       </div>
     </div>

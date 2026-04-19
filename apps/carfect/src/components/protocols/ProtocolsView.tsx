@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeSearchQuery } from '@shared/utils';
 import { Button, EmptyState } from '@shared/ui';
@@ -23,7 +24,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { CreateProtocolForm } from './CreateProtocolForm';
 import {
   DropdownMenu,
@@ -39,6 +39,7 @@ import type { ProtocolConfig } from '@shared/protocol-config';
 import type { CustomFieldDefinition } from '@shared/custom-fields';
 import { ScrollArea } from '@shared/ui';
 import { PublicProtocolCustomerView } from './PublicProtocolCustomerView';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Protocol {
   id: string;
@@ -69,6 +70,7 @@ export const ProtocolsView = ({
   onBack,
   onEditModeChange,
 }: ProtocolsViewProps) => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +79,13 @@ export const ProtocolsView = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [protocolToDelete, setProtocolToDelete] = useState<Protocol | null>(null);
   const [instanceSlug, setInstanceSlug] = useState<string>('');
-  const [instanceInfo, setInstanceInfo] = useState<{ name: string; logo_url: string | null; phone: string | null; email: string | null; address: string | null } | null>(null);
+  const [instanceInfo, setInstanceInfo] = useState<{
+    name: string;
+    logo_url: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+  } | null>(null);
   const [editingProtocolId, setEditingProtocolId] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [protocolToEmail, setProtocolToEmail] = useState<Protocol | null>(null);
@@ -111,10 +119,20 @@ export const ProtocolsView = ({
   }, [showCreateForm, editingProtocolId, onEditModeChange]);
 
   const fetchInstanceSlug = async () => {
-    const { data } = await supabase.from('instances').select('slug, name, logo_url, phone, email, address, protocol_email_template').eq('id', instanceId).single();
+    const { data } = await supabase
+      .from('instances')
+      .select('slug, name, logo_url, phone, email, address, protocol_email_template')
+      .eq('id', instanceId)
+      .single();
     if (data) {
       setInstanceSlug(data.slug);
-      setInstanceInfo({ name: data.name, logo_url: data.logo_url, phone: data.phone, email: data.email, address: data.address });
+      setInstanceInfo({
+        name: data.name,
+        logo_url: data.logo_url,
+        phone: data.phone,
+        email: data.email,
+        address: data.address,
+      });
       setEmailTemplate(data.protocol_email_template || '');
     }
   };
@@ -169,7 +187,7 @@ export const ProtocolsView = ({
     const baseUrl = window.location.origin;
     const url = `${baseUrl}/protocols/${protocol.public_token}`;
     navigator.clipboard.writeText(url);
-    toast.success('Link skopiowany do schowka');
+    toast.success(t('protocols.list.linkCopied'));
   };
 
   const handleDeleteProtocol = async () => {
@@ -188,10 +206,10 @@ export const ProtocolsView = ({
       if (error) throw error;
 
       setProtocols((prev) => prev.filter((p) => p.id !== protocolToDelete.id));
-      toast.success('Protokół został usunięty');
+      toast.success(t('protocols.list.deleteSuccess'));
     } catch (error) {
       console.error('Error deleting protocol:', error);
-      toast.error('Nie udało się usunąć protokołu');
+      toast.error(t('protocols.list.deleteError'));
     } finally {
       setDeleteDialogOpen(false);
       setProtocolToDelete(null);
@@ -206,10 +224,17 @@ export const ProtocolsView = ({
         onBack={() => setShowConfigurator(false)}
         emailTemplate={emailTemplate}
         onEmailTemplateChange={async (template) => {
-          await supabase.from('instances').update({ protocol_email_template: template }).eq('id', instanceId);
+          await supabase
+            .from('instances')
+            .update({ protocol_email_template: template })
+            .eq('id', instanceId);
           setEmailTemplate(template);
         }}
-        renderPreview={(config: ProtocolConfig, definitions: CustomFieldDefinition[], protocolType) => {
+        renderPreview={(
+          config: ProtocolConfig,
+          definitions: CustomFieldDefinition[],
+          protocolType,
+        ) => {
           const sampleProtocol = {
             id: 'preview',
             public_token: 'preview',
@@ -231,18 +256,21 @@ export const ProtocolsView = ({
             customer_signature: null,
             protocol_type: protocolType,
             service_items: config.builtInFields.serviceItems.enabled
-              ? [{ name: 'Usługa przykładowa', quantity: 1, unit_price: 500 }]
+              ? [{ name: t('protocols.sampleServiceName'), quantity: 1, unit_price: 500 }]
               : null,
-            custom_field_values: definitions.reduce((acc, def) => {
-              if (def.field_type === 'checkbox') acc[def.id] = true;
-              else if (def.field_type === 'number') acc[def.id] = 42;
-              else acc[def.id] = 'Przykład';
-              return acc;
-            }, {
-              ...(config.builtInFields.valuableItemsClause.enabled
-                ? { _valuable_items: 'Laptop, dokumenty, telefon' }
-                : {}),
-            } as Record<string, unknown>),
+            custom_field_values: definitions.reduce(
+              (acc, def) => {
+                if (def.field_type === 'checkbox') acc[def.id] = true;
+                else if (def.field_type === 'number') acc[def.id] = 42;
+                else acc[def.id] = t('protocols.sampleFieldValue');
+                return acc;
+              },
+              {
+                ...(config.builtInFields.valuableItemsClause.enabled
+                  ? { _valuable_items: 'Laptop, dokumenty, telefon' }
+                  : {}),
+              } as Record<string, unknown>,
+            ),
           };
           const sampleInstance = {
             id: instanceId,
@@ -294,17 +322,17 @@ export const ProtocolsView = ({
         {kioskMode && onBack && (
           <Button variant="ghost" onClick={onBack} className="gap-1">
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Wróć</span>
+            <span className="hidden sm:inline">{t('protocols.list.back')}</span>
           </Button>
         )}
-        <h1 className="text-2xl font-medium flex-1">Protokoły</h1>
+        <h1 className="text-2xl font-medium flex-1">{t('protocols.list.title')}</h1>
         <div className="flex items-center gap-2">
           {!kioskMode && (
             <Button variant="outline" size="icon" onClick={() => setShowConfigurator(true)}>
               <Settings className="h-4 w-4" />
             </Button>
           )}
-          <Button onClick={() => setShowCreateForm(true)}>Dodaj protokół</Button>
+          <Button onClick={() => setShowCreateForm(true)}>{t('protocols.list.addProtocol')}</Button>
         </div>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4" />
@@ -314,7 +342,7 @@ export const ProtocolsView = ({
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Szukaj po nazwisku, numerze oferty, pojeździe..."
+          placeholder={t('protocols.list.searchPlaceholder')}
           className="pl-10"
         />
       </div>
@@ -326,11 +354,9 @@ export const ProtocolsView = ({
       ) : filteredProtocols.length === 0 ? (
         <EmptyState
           icon={ClipboardCheck}
-          title={searchQuery ? 'Brak wyników' : 'Brak protokołów'}
+          title={searchQuery ? t('protocols.list.noResults') : t('protocols.list.noProtocols')}
           description={
-            searchQuery
-              ? 'Spróbuj zmienić kryteria wyszukiwania'
-              : 'Utwórz pierwszy protokół przyjęcia pojazdu'
+            searchQuery ? t('protocols.list.noResultsHint') : t('protocols.list.noProtocolsHint')
           }
         />
       ) : (
@@ -356,7 +382,9 @@ export const ProtocolsView = ({
                         </div>
                       )}
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
+                        {format(new Date(protocol.protocol_date), 'PPP', {
+                          locale: getDateLocale(),
+                        })}
                       </div>
 
                       {/* Line 4: Offer number + Protocol type + Status (mobile) */}
@@ -366,7 +394,9 @@ export const ProtocolsView = ({
                           <span className="truncate">#{protocol.offer_number}</span>
                         )}
                         <Badge variant="outline" className="text-xs">
-                          {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
+                          {protocol.protocol_type === 'pickup'
+                            ? t('protocols.typePickup')
+                            : t('protocols.typeReception')}
                         </Badge>
                         <Badge
                           variant={protocol.status === 'sent' ? 'default' : 'outline'}
@@ -377,7 +407,9 @@ export const ProtocolsView = ({
                               : 'text-muted-foreground',
                           )}
                         >
-                          {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
+                          {protocol.status === 'sent'
+                            ? t('protocols.statusSent')
+                            : t('protocols.statusDraft')}
                         </Badge>
                       </div>
 
@@ -389,7 +421,9 @@ export const ProtocolsView = ({
                           </Badge>
                         )}
                         <Badge variant="outline" className="text-xs">
-                          {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
+                          {protocol.protocol_type === 'pickup'
+                            ? t('protocols.typePickup')
+                            : t('protocols.typeReception')}
                         </Badge>
                         <Badge
                           variant={protocol.status === 'sent' ? 'default' : 'outline'}
@@ -400,7 +434,9 @@ export const ProtocolsView = ({
                               : 'text-muted-foreground',
                           )}
                         >
-                          {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
+                          {protocol.status === 'sent'
+                            ? t('protocols.statusSent')
+                            : t('protocols.statusDraft')}
                         </Badge>
                       </div>
                     </div>
@@ -434,7 +470,7 @@ export const ProtocolsView = ({
                             className="cursor-pointer"
                           >
                             <Mail className="h-4 w-4 mr-2" />
-                            Wyślij emailem
+                            {t('protocols.sendByEmail')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -444,7 +480,7 @@ export const ProtocolsView = ({
                             className="cursor-pointer text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Usuń
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -492,9 +528,9 @@ export const ProtocolsView = ({
           <ConfirmDialog
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
-            title="Usuń protokół"
-            description={`Czy na pewno chcesz usunąć protokół dla ${protocolToDelete?.customer_name}? Tej operacji nie można cofnąć.`}
-            confirmLabel="Usuń"
+            title={t('protocols.deleteProtocol')}
+            description={t('protocols.deleteConfirmDesc', { name: protocolToDelete?.customer_name })}
+            confirmLabel={t('common.delete')}
             onConfirm={handleDeleteProtocol}
             variant="destructive"
           />
@@ -512,7 +548,6 @@ export const ProtocolsView = ({
             instanceId={instanceId}
             onSent={fetchProtocols}
           />
-
         </>
       )}
     </div>

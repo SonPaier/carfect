@@ -99,7 +99,7 @@ export function EmployeeSelectionDrawer({
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            Wybierz pracowników
+            {t('employeeDrawer.title')}
           </SheetTitle>
         </SheetHeader>
 
@@ -108,7 +108,7 @@ export function EmployeeSelectionDrawer({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Szukaj pracownika..."
+              placeholder={t('employeeDrawer.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9"
@@ -128,13 +128,13 @@ export function EmployeeSelectionDrawer({
         <ScrollArea className="flex-1 px-4">
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground">
-              Ładowanie...
+              {t('common.loading')}
             </div>
           ) : filteredEmployees.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
-              {searchQuery 
-                ? 'Brak wyników wyszukiwania'
-                : 'Brak aktywnych pracowników'
+              {searchQuery
+                ? t('employeeSelection.noSearchResults')
+                : t('employeeSelection.noActiveEmployees')
               }
             </div>
           ) : (
@@ -183,7 +183,7 @@ export function EmployeeSelectionDrawer({
             className="w-full"
             disabled={isLoading}
           >
-            Dodaj ({localSelectedIds.length})
+            {t('employeeSelection.addCount', { count: localSelectedIds.length })}
           </Button>
         </div>
       </SheetContent>

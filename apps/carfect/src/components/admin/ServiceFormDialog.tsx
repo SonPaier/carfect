@@ -456,7 +456,7 @@ const ServiceFormContent = ({
       const { data, error } = await supabase.functions.invoke('generate-product-description', {
         body: {
           productName: formData.name,
-          category: category?.name || 'Usługa samochodowa',
+          category: category?.name || t('services.defaultCategory'),
         },
       });
 
@@ -502,7 +502,7 @@ const ServiceFormContent = ({
               <Label className="text-sm leading-5">
                 {t('priceList.form.fullOfficialName', 'Pełna, oficjalna nazwa usługi')} *
               </Label>
-              <FieldInfo tooltip="Nazwa wyświetlana klientom w ofercie i cenniku" />
+              <FieldInfo tooltip={t('services.tooltipDisplayName')} />
             </div>
             <Input
               ref={nameInputRef}
@@ -530,7 +530,7 @@ const ServiceFormContent = ({
               <Label className="text-sm leading-5">
                 {t('priceList.form.shortNameLabel', 'Twoja nazwa lub skrót')}
               </Label>
-              <FieldInfo tooltip="Wewnętrzna nazwa robocza widoczna tylko dla Ciebie" />
+              <FieldInfo tooltip={t('services.tooltipInternalName')} />
             </div>
             <Input
               value={formData.short_name}
@@ -550,7 +550,7 @@ const ServiceFormContent = ({
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Label className="text-sm leading-5">{t('priceList.form.category')}</Label>
-              <FieldInfo tooltip="Grupowanie usług w cenniku" />
+              <FieldInfo tooltip={t('services.tooltipCategory')} />
             </div>
             <Select
               value={formData.category_id || 'none'}
@@ -578,7 +578,7 @@ const ServiceFormContent = ({
           {!showSizePrices && (
             <div className="flex items-center gap-1.5">
               <Label className="text-sm leading-5">{t('priceList.form.priceType', 'Cena')}</Label>
-              <FieldInfo tooltip="Cena bazowa usługi" />
+              <FieldInfo tooltip={t('services.tooltipBasePrice')} />
             </div>
           )}
 
@@ -616,7 +616,7 @@ const ServiceFormContent = ({
                     <Label className="text-sm leading-5">
                       {t('priceList.form.sizeSmall', 'Mały (S)')}
                     </Label>
-                    <FieldInfo tooltip="Cena bazowa usługi" />
+                    <FieldInfo tooltip={t('services.tooltipBasePrice')} />
                   </div>
                   <Input
                     type="number"
@@ -688,7 +688,7 @@ const ServiceFormContent = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Label className="text-sm">{t('priceList.form.descriptionShort', 'Opis')}</Label>
-              <FieldInfo tooltip="Opis wyświetlany klientom podczas rezerwacji" />
+              <FieldInfo tooltip={t('services.tooltipDescription')} />
             </div>
             {/* AI description generation temporarily disabled */}
           </div>
@@ -718,7 +718,7 @@ const ServiceFormContent = ({
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
                 <Label className="text-sm">{t('priceList.form.duration')}</Label>
-                <FieldInfo tooltip="Czas trwania usługi w minutach" />
+                <FieldInfo tooltip={t('services.tooltipDuration')} />
               </div>
               {!showSizeDurations ? (
                 <div className="space-y-1">
@@ -883,11 +883,11 @@ const ServiceFormContent = ({
                 <Label className="text-sm">
                   {t('productDialog.reminderTemplate', 'Szablon przypomnień')}
                 </Label>
-                <FieldInfo tooltip="Automatyczne przypomnienia SMS po wykonaniu usługi" />
+                <FieldInfo tooltip={t('services.tooltipReminders')} />
               </div>
               <div className="space-y-2">
                 {reminderTemplates.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Brak szablonów</p>
+                  <p className="text-sm text-muted-foreground">{t('offers.noTemplates')}</p>
                 ) : (
                   reminderTemplates.map((template) => (
                     <label
@@ -922,13 +922,13 @@ const ServiceFormContent = ({
                 }}
                 className="shrink-0"
               >
-                {t('common.add', 'Dodaj')}
+                {t('common.add', t('common.add'))}
               </Button>
             </div>
 
             {/* Zdjęcia usługi */}
             <div className="space-y-2 pt-2 border-t border-border">
-              <Label className="text-sm font-medium text-muted-foreground">Zdjęcia usługi</Label>
+              <Label className="text-sm font-medium text-muted-foreground">{t('services.photos')}</Label>
               <ProtocolPhotosUploader
                 photos={formData.photo_urls as string[]}
                 onPhotosChange={(photos) =>
@@ -953,7 +953,7 @@ const ServiceFormContent = ({
             className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            {t('common.delete', 'Usuń')}
+            {t('common.delete', t('common.delete'))}
           </Button>
         )}
         <div className="flex-1" />

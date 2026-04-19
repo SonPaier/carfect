@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -19,6 +20,7 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useInstanceLanguage } from '@/hooks/useInstanceLanguage';
 import * as Sentry from '@sentry/react';
 import { toast } from 'sonner';
 interface Instance {
@@ -28,6 +30,7 @@ interface Instance {
   logo_url: string | null;
   primary_color: string | null;
   active: boolean;
+  language?: string;
 }
 interface InstanceAuthProps {
   subdomainSlug?: string;
@@ -38,6 +41,7 @@ interface FormErrors {
   general?: string;
 }
 const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
+  const { t } = useTranslation();
   const { slug: paramSlug } = useParams<{
     slug: string;
   }>();
@@ -46,6 +50,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
   const { user, loading: authLoading, signIn, hasRole, hasInstanceRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [instance, setInstance] = useState<Instance | null>(null);
+  useInstanceLanguage(instance?.language);
   const [instanceLoading, setInstanceLoading] = useState(true);
   const [instanceError, setInstanceError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
@@ -65,11 +70,11 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       }
       const { data, error } = await supabase
         .from('instances')
-        .select('id, name, slug, logo_url, primary_color, active')
+        .select('id, name, slug, logo_url, primary_color, active, language')
         .eq('slug', slug)
         .maybeSingle();
       if (error) {
-        setInstanceError('Wystąpił błąd podczas wczytywania instancji');
+        setInstanceError(t('pages.auth.instanceLoadError'));
         setInstanceLoading(false);
         return;
       }
@@ -107,7 +112,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
         .then(({ data }) => {
           if (data?.is_blocked) {
             setErrors({
-              general: 'Twoje konto zostało zablokowane',
+              general: t('pages.auth.accountBlocked'),
             });
             return;
           }
@@ -123,7 +128,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       newErrors.username = 'Login jest wymagany';
     }
     if (!password) {
-      newErrors.password = 'Hasło jest wymagane';
+      newErrors.password = t('pages.auth.passwordRequired');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -148,7 +153,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
     }
     if (!instance) {
       setErrors({
-        general: 'Nie można zalogować - brak instancji',
+        general: t('pages.auth.noInstance'),
       });
       return;
     }
@@ -189,14 +194,14 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
 
       if (lookupError || !profile?.email) {
         setErrors({
-          general: 'Nieprawidłowy login lub hasło',
+          general: t('pages.auth.invalidCredentials'),
         });
         setLoading(false);
         return;
       }
       if (profile.is_blocked) {
         setErrors({
-          general: 'Twoje konto zostało zablokowane. Skontaktuj się z administratorem.',
+          general: t('pages.auth.accountBlockedContact'),
         });
         setLoading(false);
         return;
@@ -208,12 +213,11 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
 
         if (trackResult?.blocked) {
           setErrors({
-            general:
-              'Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.',
+            general: t('pages.auth.accountBlockedTooManyAttempts'),
           });
         } else {
           setErrors({
-            general: 'Nieprawidłowy login lub hasło',
+            general: t('pages.auth.invalidCredentials'),
           });
           // Show remaining attempts from 3rd failure
           if (trackResult?.show_warning && trackResult?.remaining_attempts != null) {
@@ -228,7 +232,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       }
     } catch (err) {
       setErrors({
-        general: 'Wystąpił błąd. Spróbuj ponownie.',
+        general: t('pages.auth.genericError'),
       });
     } finally {
       setLoading(false);
@@ -274,7 +278,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
             <Building2 className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground">{instanceError}</h1>
-          <p className="text-muted-foreground">Sprawdź czy adres URL jest poprawny</p>
+          <p className="text-muted-foreground">{t('pages.auth.checkUrl')}</p>
         </div>
       </div>
     );
@@ -283,7 +287,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
     <>
       <Helmet>
         <title>Logowanie - {instance?.name || 'Panel'}</title>
-        <meta name="description" content={`Zaloguj się do panelu ${instance?.name}`} />
+        <meta name="description" content={t('pages.auth.metaLoginToPanel', { name: instance?.name })} />
       </Helmet>
 
       <div className="min-h-screen flex">
@@ -303,7 +307,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                   </div>
                 )}
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-                  Logowanie do panelu administracyjnego
+                  {t('pages.auth.loginTitle')}
                 </h1>
               </div>
 
@@ -313,7 +317,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                   <p className="text-sm text-destructive">{errors.general}</p>
                   {remainingAttempts !== null && remainingAttempts > 0 && (
                     <p className="text-xs text-destructive/80 mt-1">
-                      Pozostało prób: {remainingAttempts}
+                      {t('pages.auth.remainingAttempts', { count: remainingAttempts })}
                     </p>
                   )}
                 </div>
@@ -344,7 +348,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">
-                    Hasło
+                    {t('auth.password')}
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -381,7 +385,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                     }
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Zapomniałeś hasła?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
 
@@ -394,7 +398,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Zaloguj się
+                      {t('pages.auth.signIn')}
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}
@@ -447,8 +451,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
             <div className="max-w-md text-center space-y-6 flex flex-col items-center">
               <img src="/carfect-logo.svg" alt="Carfect" className="h-12" />
               <p className="text-white/60 text-lg">
-                Zarządzaj realizacjami, ofertami i klientami swojego studia detailingowego — w
-                jednym miejscu.
+                {t('auth.manageStudioDesc')}
               </p>
             </div>
           </div>

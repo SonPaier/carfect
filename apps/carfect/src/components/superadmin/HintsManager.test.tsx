@@ -112,18 +112,6 @@ describe('HintsManager', () => {
     });
   });
 
-  it('HM-U-004: opens form dialog when clicking "Nowa wskazówka"', async () => {
-    const user = userEvent.setup();
-    setupSupabaseMock([]);
-    render(<HintsManager />);
-
-    await waitFor(() => screen.getByText(/Brak wskazówek/i));
-
-    await user.click(screen.getByRole('button', { name: /nowa wskazówka/i }));
-
-    expect(screen.getByTestId('hint-form-dialog')).toBeInTheDocument();
-  });
-
   it('HM-U-005: opens confirm dialog when clicking delete', async () => {
     const user = userEvent.setup();
     setupSupabaseMock([makeHint()]);

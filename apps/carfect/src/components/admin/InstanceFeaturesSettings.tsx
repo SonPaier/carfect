@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@shared/ui';
@@ -31,97 +32,26 @@ interface InstanceFeaturesSettingsProps {
 
 interface FeatureDefinition {
   key: string;
-  name: string;
-  description: string;
   icon: React.ComponentType<{ className?: string }>;
   isPaid: boolean;
   hasParameters?: boolean;
-  parameterLabel?: string;
-  parameterDescription?: string;
-  parameterPlaceholder?: string;
 }
 
 const AVAILABLE_FEATURES: FeatureDefinition[] = [
-  {
-    key: 'offers',
-    name: 'Moduł Oferty',
-    description: 'Generator ofert z PDF i wysyłką do klienta',
-    icon: FileText,
-    isPaid: true,
-  },
-  {
-    key: 'upsell',
-    name: 'Sugestie upsell',
-    description: 'Sugeruje usługi pasujące do wolnych slotów przy rezerwacji klienta',
-    icon: TrendingUp,
-    isPaid: false,
-  },
-  {
-    key: 'sms_edit_link',
-    name: 'Link do edycji w SMS',
-    description: 'Dodaje frazę "Zmień lub anuluj: [link]" do wiadomości SMS',
-    icon: Link2,
-    isPaid: false,
-    hasParameters: true,
-    parameterLabel: 'Numery telefonów (opcjonalne)',
-    parameterDescription:
-      'Wpisz numery telefonów (po przecinku), które otrzymają link. Puste = wszyscy.',
-    parameterPlaceholder: '+48501234567, +48600111222',
-  },
-  {
-    key: 'hall_view',
-    name: 'Widok Hali',
-    description:
-      'Uproszczony widok kalendarza dla pracowników hali z konfigurowalnymi stanowiskami',
-    icon: Building2,
-    isPaid: false,
-  },
-  {
-    key: 'vehicle_reception_protocol',
-    name: 'Protokół przyjęcia pojazdu',
-    description:
-      'Formularz do dokumentowania stanu pojazdu przy przyjęciu z zaznaczaniem uszkodzeń na diagramie',
-    icon: ClipboardCheck,
-    isPaid: true,
-  },
-  {
-    key: 'followup',
-    name: 'Wsparcie sprzedaży',
-    description: 'System follow-up i przypomnień dla klientów',
-    icon: TrendingUp,
-    isPaid: true,
-  },
-  {
-    key: 'reminders',
-    name: 'Automatyczne przypomnienia',
-    description: 'Automatyczne wysyłanie przypomnień SMS do klientów',
-    icon: FileText,
-    isPaid: true,
-  },
-  {
-    key: 'trainings',
-    name: 'Szkolenia',
-    description: 'Zarządzanie szkoleniami w kalendarzu',
-    icon: GraduationCap,
-    isPaid: false,
-  },
-  {
-    key: 'sales_crm',
-    name: 'CRM Sprzedaży',
-    description: 'Moduł CRM do zarządzania sprzedażą produktów',
-    icon: TrendingUp,
-    isPaid: true,
-  },
-  {
-    key: 'vehicle_vin',
-    name: 'Numer VIN pojazdu',
-    description: 'Dodaj pole VIN przy pojazdach klienta',
-    icon: Car,
-    isPaid: false,
-  },
+  { key: 'offers', icon: FileText, isPaid: true },
+  { key: 'upsell', icon: TrendingUp, isPaid: false },
+  { key: 'sms_edit_link', icon: Link2, isPaid: false, hasParameters: true },
+  { key: 'hall_view', icon: Building2, isPaid: false },
+  { key: 'vehicle_reception_protocol', icon: ClipboardCheck, isPaid: true },
+  { key: 'followup', icon: TrendingUp, isPaid: true },
+  { key: 'reminders', icon: FileText, isPaid: true },
+  { key: 'trainings', icon: GraduationCap, isPaid: false },
+  { key: 'sales_crm', icon: TrendingUp, isPaid: true },
+  { key: 'vehicle_vin', icon: Car, isPaid: false },
 ];
 
 export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSettingsProps) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [features, setFeatures] = useState<InstanceFeature[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,10 +130,10 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
       // Invalidate features cache
       queryClient.invalidateQueries({ queryKey: ['instance_features', instanceId] });
 
-      toast.success(`Funkcja ${!currentEnabled ? 'włączona' : 'wyłączona'}`);
+      toast.success(!currentEnabled ? t('instanceFeatures.toastEnabled') : t('instanceFeatures.toastDisabled'));
     } catch (error) {
       console.error('Error toggling feature:', error);
-      toast.error('Błąd podczas zmiany ustawienia');
+      toast.error(t('instanceFeatures.toastToggleError'));
     } finally {
       setSaving(null);
     }
@@ -246,10 +176,10 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
       // Invalidate features cache
       queryClient.invalidateQueries({ queryKey: ['instance_features', instanceId] });
 
-      toast.success('Parametry zapisane');
+      toast.success(t('instanceFeatures.toastParamsSaved'));
     } catch (error) {
       console.error('Error saving parameters:', error);
-      toast.error('Błąd podczas zapisu parametrów');
+      toast.error(t('instanceFeatures.toastParamsError'));
     } finally {
       setSaving(null);
     }
@@ -278,8 +208,8 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Funkcje dodatkowe</CardTitle>
-        <CardDescription>Zarządzaj funkcjami dla tej instancji</CardDescription>
+        <CardTitle>{t('instanceFeatures.cardTitle')}</CardTitle>
+        <CardDescription>{t('instanceFeatures.cardDescription')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {AVAILABLE_FEATURES.map((feature) => {
@@ -297,21 +227,21 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Label className="font-medium">{feature.name}</Label>
+                      <Label className="font-medium">{t(`instanceFeatures.${feature.key}.name`)}</Label>
                       {isFromPlan ? (
                         <Badge
                           variant="outline"
                           className="text-xs bg-green-50 text-green-700 border-green-200"
                         >
-                          W planie
+                          {t('instanceFeatures.badgeInPlan')}
                         </Badge>
                       ) : feature.isPaid ? (
                         <Badge variant="secondary" className="text-xs">
-                          Dodatkowe
+                          {t('instanceFeatures.badgeAdditional')}
                         </Badge>
                       ) : null}
                     </div>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <p className="text-sm text-muted-foreground">{t(`instanceFeatures.${feature.key}.description`)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -336,12 +266,12 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
                           [feature.key]: e.target.value,
                         }))
                       }
-                      placeholder={feature.parameterPlaceholder}
+                      placeholder={t(`instanceFeatures.${feature.key}.parameterPlaceholder`)}
                       className="flex-1"
                       onBlur={() => saveParameters(feature.key)}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">{feature.parameterDescription}</p>
+                  <p className="text-xs text-muted-foreground">{t(`instanceFeatures.${feature.key}.parameterDescription`)}</p>
                 </div>
               )}
             </div>

@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import { 
   format, 
   addMonths, 
@@ -17,7 +19,6 @@ import {
   startOfDay,
   isSameMonth 
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
 
 interface DatePickerProps {
   selectedDate: Date | null;
@@ -26,6 +27,7 @@ interface DatePickerProps {
 }
 
 const DatePicker = ({ selectedDate, onSelectDate, daysWithAvailability = [] }: DatePickerProps) => {
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -84,7 +86,7 @@ const DatePicker = ({ selectedDate, onSelectDate, daysWithAvailability = [] }: D
     day = addDays(day, 1);
   }
 
-  const dayNames = ['PON', 'WT', 'ŚR', 'CZW', 'PT', 'SOB', 'NIEDZ'];
+  const dayNames = [t('booking.dayMon'), t('booking.dayTue'), t('booking.dayWed'), t('booking.dayThu'), t('booking.dayFri'), t('booking.daySat'), t('booking.daySun')];
 
   const hasAvailability = (date: Date) => {
     return daysWithAvailability.some(d => isSameDay(d, date));
@@ -109,7 +111,7 @@ const DatePicker = ({ selectedDate, onSelectDate, daysWithAvailability = [] }: D
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <span className="text-base font-semibold capitalize">
-          {format(currentMonth, 'LLLL yyyy', { locale: pl })}
+          {format(currentMonth, 'LLLL yyyy', { locale: getDateLocale() })}
         </span>
         <Button
           variant="ghost"

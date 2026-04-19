@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -44,6 +45,7 @@ export const PhotoUploader = ({
   filePrefix = 'protokol-szkoda',
   onAnnotate,
 }: PhotoUploaderProps) => {
+  const { t } = useTranslation();
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
@@ -61,7 +63,7 @@ export const PhotoUploader = ({
 
     const remainingSlots = maxPhotos - photos.length;
     if (remainingSlots <= 0) {
-      toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
+      toast.error(t('photoUploader.maxPhotosError', { count: maxPhotos }));
       return;
     }
 
@@ -107,13 +109,13 @@ export const PhotoUploader = ({
       }
 
       if (cancelRef.current && uploadedUrls.length > 0) {
-        toast.info(`Przesłano ${uploadedUrls.length} z ${filesToUpload.length} zdjęć`);
+        toast.info(t('photoUploader.uploadPartial', { uploaded: uploadedUrls.length, total: filesToUpload.length }));
       } else if (uploadedUrls.length > 0) {
-        toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
+        toast.success(t('photoUploader.uploadSuccess', { count: uploadedUrls.length }));
       }
     } catch (error) {
       console.error('Error uploading photos:', error);
-      toast.error('Błąd podczas przesyłania zdjęć');
+      toast.error(t('photoUploader.uploadError'));
     } finally {
       setUploadProgress(null);
       cancelRef.current = false;
@@ -190,10 +192,10 @@ export const PhotoUploader = ({
               <>
                 <Camera className="h-14 w-14 text-muted-foreground" />
                 <span className="text-xs font-medium leading-tight text-center text-muted-foreground">
-                  Dodaj zdjęcie
+                  {t('photoUploader.addPhoto')}
                 </span>
                 <span className="text-[10px] text-muted-foreground/60">
-                  max {maxPhotos} zdjęć
+                  {t('photoUploader.maxPhotos', { count: maxPhotos })}
                 </span>
               </>
             )}
@@ -208,7 +210,7 @@ export const PhotoUploader = ({
           >
             <img
               src={url}
-              alt={`Zdjęcie ${index + 1}`}
+              alt={t('photoUploader.photoAlt', { number: index + 1 })}
               className="w-full h-full object-cover rounded-lg"
             />
             {!disabled && (
@@ -253,13 +255,13 @@ export const PhotoUploader = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usuń zdjęcie</AlertDialogTitle>
+            <AlertDialogTitle>{t('photoUploader.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz usunąć to zdjęcie? Tej operacji nie można cofnąć.
+              {t('photoUploader.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel>{t('photoUploader.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deleteConfirmIndex !== null) {
@@ -269,7 +271,7 @@ export const PhotoUploader = ({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Usuń
+              {t('photoUploader.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

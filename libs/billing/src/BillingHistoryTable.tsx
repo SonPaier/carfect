@@ -12,6 +12,36 @@ import {
 import type { SubscriptionInvoice, PaymentStatus } from './billing.types';
 import { formatDate } from './formatDate';
 
+export interface BillingHistoryLabels {
+  period: string;
+  amountNet: string;
+  positions: string;
+  status: string;
+  paymentDue: string;
+  invoice: string;
+  downloadPdf: string;
+  noInvoices: string;
+  itemLabel: string;
+  statusPaid: string;
+  statusPending: string;
+  statusOverdue: string;
+}
+
+const DEFAULT_LABELS: BillingHistoryLabels = {
+  period: 'Okres',
+  amountNet: 'Kwota netto',
+  positions: 'Pozycje',
+  status: 'Status',
+  paymentDue: 'Termin płatności',
+  invoice: 'Faktura',
+  downloadPdf: 'Pobierz PDF',
+  noInvoices: 'Brak faktur',
+  itemLabel: 'faktur',
+  statusPaid: 'Opłacona',
+  statusPending: 'Oczekuje',
+  statusOverdue: 'Po terminie',
+};
+
 interface BillingHistoryTableProps {
   invoices: SubscriptionInvoice[];
   totalCount: number;
@@ -19,21 +49,29 @@ interface BillingHistoryTableProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  labels?: Partial<BillingHistoryLabels>;
 }
 
-interface StatusConfig {
-  label: string;
-  className: string;
+function getStatusConfig(status: PaymentStatus, labels: BillingHistoryLabels) {
+  const config: Record<PaymentStatus, { label: string; className: string }> = {
+    paid: { label: labels.statusPaid, className: 'bg-green-100 text-green-800 border-green-200' },
+    pending: {
+      label: labels.statusPending,
+      className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    },
+    overdue: { label: labels.statusOverdue, className: 'bg-red-100 text-red-800 border-red-200' },
+  };
+  return config[status] ?? { label: status, className: '' };
 }
 
-const STATUS_CONFIG: Record<PaymentStatus, StatusConfig> = {
-  paid: { label: 'Opłacona', className: 'bg-green-100 text-green-800 border-green-200' },
-  pending: { label: 'Oczekuje', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  overdue: { label: 'Po terminie', className: 'bg-red-100 text-red-800 border-red-200' },
-};
-
-function InvoiceCard({ invoice }: { invoice: SubscriptionInvoice }) {
-  const statusConfig = STATUS_CONFIG[invoice.payment_status] ?? { label: invoice.payment_status, className: '' };
+function InvoiceCard({
+  invoice,
+  labels,
+}: {
+  invoice: SubscriptionInvoice;
+  labels: BillingHistoryLabels;
+}) {
+  const statusConfig = getStatusConfig(invoice.payment_status, labels);
   const isOverdue = invoice.payment_status === 'overdue';
 
   return (
@@ -45,11 +83,11 @@ function InvoiceCard({ invoice }: { invoice: SubscriptionInvoice }) {
         <Badge className={statusConfig.className}>{statusConfig.label}</Badge>
       </div>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Kwota netto</span>
+        <span className="text-muted-foreground">{labels.amountNet}</span>
         <span className="font-medium">{invoice.amount_net} zł</span>
       </div>
       <div className="text-sm">
-        <span className="text-muted-foreground">Pozycje: </span>
+        <span className="text-muted-foreground">{labels.positions}: </span>
         {invoice.positions.map((pos, idx) => (
           <span key={idx}>
             {idx > 0 && ', '}
@@ -58,7 +96,7 @@ function InvoiceCard({ invoice }: { invoice: SubscriptionInvoice }) {
         ))}
       </div>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Termin płatności</span>
+        <span className="text-muted-foreground">{labels.paymentDue}</span>
         <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
           {formatDate(invoice.payment_due_date)}
         </span>
@@ -70,7 +108,7 @@ function InvoiceCard({ invoice }: { invoice: SubscriptionInvoice }) {
           rel="noopener noreferrer"
           className="text-sm text-primary underline underline-offset-2 hover:opacity-80"
         >
-          Pobierz PDF
+          {labels.downloadPdf}
         </a>
       )}
     </div>
@@ -84,13 +122,15 @@ export function BillingHistoryTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  labels: labelsProp,
 }: BillingHistoryTableProps) {
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const isMobile = useIsMobile();
   const totalPages = Math.ceil(totalCount / pageSize);
 
   if (invoices.length === 0) {
     return (
-      <div className="py-8 text-center text-muted-foreground text-sm">Brak faktur</div>
+      <div className="py-8 text-center text-muted-foreground text-sm">{labels.noInvoices}</div>
     );
   }
 
@@ -98,7 +138,7 @@ export function BillingHistoryTable({
     return (
       <div className="space-y-3">
         {invoices.map((invoice) => (
-          <InvoiceCard key={invoice.id} invoice={invoice} />
+          <InvoiceCard key={invoice.id} invoice={invoice} labels={labels} />
         ))}
         <PaginationFooter
           currentPage={currentPage}
@@ -108,7 +148,7 @@ export function BillingHistoryTable({
           pageSizeOptions={[12, 24, 48]}
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}
-          itemLabel="faktur"
+          itemLabel={labels.itemLabel}
         />
       </div>
     );
@@ -119,23 +159,24 @@ export function BillingHistoryTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Okres</TableHead>
-            <TableHead>Kwota netto</TableHead>
-            <TableHead>Pozycje</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Termin płatności</TableHead>
-            <TableHead>Faktura</TableHead>
+            <TableHead>{labels.period}</TableHead>
+            <TableHead>{labels.amountNet}</TableHead>
+            <TableHead>{labels.positions}</TableHead>
+            <TableHead>{labels.status}</TableHead>
+            <TableHead>{labels.paymentDue}</TableHead>
+            <TableHead>{labels.invoice}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {invoices.map((invoice) => {
-            const statusConfig = STATUS_CONFIG[invoice.payment_status] ?? { label: invoice.payment_status, className: '' };
+            const statusConfig = getStatusConfig(invoice.payment_status, labels);
             const isOverdue = invoice.payment_status === 'overdue';
 
             return (
               <TableRow key={invoice.id}>
                 <TableCell>
-                  {formatDate(invoice.billing_period_start)}–{formatDate(invoice.billing_period_end)}
+                  {formatDate(invoice.billing_period_start)}–
+                  {formatDate(invoice.billing_period_end)}
                 </TableCell>
                 <TableCell>{invoice.amount_net} zł</TableCell>
                 <TableCell>
@@ -146,9 +187,7 @@ export function BillingHistoryTable({
                 <TableCell>
                   <Badge className={statusConfig.className}>{statusConfig.label}</Badge>
                 </TableCell>
-                <TableCell
-                  className={isOverdue ? 'text-red-600 font-medium' : undefined}
-                >
+                <TableCell className={isOverdue ? 'text-red-600 font-medium' : undefined}>
                   {formatDate(invoice.payment_due_date)}
                 </TableCell>
                 <TableCell>
@@ -159,7 +198,7 @@ export function BillingHistoryTable({
                       rel="noopener noreferrer"
                       className="text-primary underline underline-offset-2 hover:opacity-80"
                     >
-                      Pobierz PDF
+                      {labels.downloadPdf}
                     </a>
                   ) : (
                     '—'
@@ -178,7 +217,7 @@ export function BillingHistoryTable({
         pageSizeOptions={[12, 24, 48]}
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
-        itemLabel="faktur"
+        itemLabel={labels.itemLabel}
       />
     </div>
   );

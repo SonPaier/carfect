@@ -120,7 +120,7 @@ export const CustomerVehiclesEditor = ({
                     disabled={disabled}
                   />
                   {vehicle.vin && !isValidVin(vehicle.vin) && (
-                    <p className="text-xs text-destructive mt-1">VIN musi mieć 17 znaków (bez I, O, Q)</p>
+                    <p className="text-xs text-destructive mt-1">{t('vehicles.vinValidation')}</p>
                   )}
                 </div>
               </div>

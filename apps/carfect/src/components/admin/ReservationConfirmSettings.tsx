@@ -112,9 +112,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     setSavingEmployeeSettings(true);
     try {
       await updateSetting(key, checked);
-      toast.success('Ustawienia zapisane');
+      toast.success(t('reservationSettings.saved'));
     } catch (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
     } finally {
       setSavingEmployeeSettings(false);
     }
@@ -132,10 +132,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       .eq('id', instanceId);
 
     if (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
       setAutoConfirm(!checked);
     } else {
-      toast.success(checked ? 'Auto-potwierdzanie włączone' : 'Auto-potwierdzanie wyłączone');
+      toast.success(checked ? t('reservationSettings.autoConfirmOn') : t('reservationSettings.autoConfirmOff'));
     }
 
     setSaving(false);
@@ -152,9 +152,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       .eq('id', instanceId);
 
     if (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
     } else {
-      toast.success('Ustawienia zapisane');
+      toast.success(t('reservationSettings.saved'));
     }
 
     setSaving(false);
@@ -171,10 +171,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       .eq('id', instanceId);
 
     if (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
       setPricingMode(prev);
     } else {
-      toast.success(mode === 'netto' ? 'Tryb cen netto' : 'Tryb cen brutto');
+      toast.success(mode === 'netto' ? t('reservationSettings.pricingNetto') : t('reservationSettings.pricingBrutto'));
       queryClient.invalidateQueries({ queryKey: ['instance_data'] });
     }
   };
@@ -192,7 +192,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Ładowanie...
+        {t('common.loading')}
       </div>
     );
   }
@@ -202,9 +202,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="p-4 rounded-lg border border-border/50 bg-white">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
-            <Label className="font-medium">Domyślny tryb cen</Label>
+            <Label className="font-medium">{t('reservationSettings.pricingMode')}</Label>
             <p className="text-sm text-muted-foreground">
-              Określa, czy ceny w aplikacji są wyświetlane i wprowadzane jako netto czy brutto
+              {t('reservationSettings.pricingModeDesc')}
             </p>
           </div>
           <RadioGroup
@@ -214,11 +214,11 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
           >
             <div className="flex items-center gap-2">
               <RadioGroupItem value="brutto" id="pricing-brutto" />
-              <Label htmlFor="pricing-brutto">Brutto</Label>
+              <Label htmlFor="pricing-brutto">{t('reservationSettings.brutto')}</Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="netto" id="pricing-netto" />
-              <Label htmlFor="pricing-netto">Netto</Label>
+              <Label htmlFor="pricing-netto">{t('reservationSettings.netto')}</Label>
             </div>
           </RadioGroup>
         </div>
@@ -228,12 +228,12 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label htmlFor="auto-confirm" className="font-medium">
-              Automatyczne potwierdzanie rezerwacji
+              {t('reservationSettings.autoConfirm')}
             </Label>
             <p className="text-sm text-muted-foreground">
               {autoConfirm
-                ? 'Rezerwacje klientów są automatycznie potwierdzane'
-                : 'Przy wyłączonym automatycznym potwierdzaniu, każda rezerwacja wymaga ręcznego potwierdzenia'}
+                ? t('reservationSettings.autoConfirmOn')
+                : t('reservationSettings.autoConfirmOff')}
             </p>
           </div>
           <Switch
@@ -250,10 +250,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label htmlFor="cutoff-hours" className="font-medium">
-              Limit edycji rezerwacji przez klienta
+              {t('reservationSettings.editCutoff')}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Klient może zmienić lub anulować rezerwację do X godzin przed wizytą
+              {t('reservationSettings.editCutoffDesc')}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -268,7 +268,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
               className="w-20"
               disabled={saving}
             />
-            <span className="text-sm text-muted-foreground whitespace-nowrap">godzin</span>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">{t('common.hours')}</span>
           </div>
         </div>
       </div>
@@ -277,10 +277,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label htmlFor="assign-stations" className="font-medium">
-              Przypisanie pracowników do stanowisk
+              {t('reservationSettings.assignStations')}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Pozwala przypisać pracowników do konkretnych stanowisk
+              {t('reservationSettings.assignStationsDesc')}
             </p>
           </div>
           <Switch
@@ -299,10 +299,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label htmlFor="assign-reservations" className="font-medium">
-              Przypisanie pracowników do rezerwacji
+              {t('reservationSettings.assignReservations')}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Pozwala przypisać pracowników wykonujących usługę do rezerwacji
+              {t('reservationSettings.assignReservationsDesc')}
             </p>
           </div>
           <Switch
@@ -321,24 +321,24 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label htmlFor="show-status" className="font-medium">
-              Statusy postępu zleceń
+              {t('reservationSettings.progressStatuses')}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Pokazuj status rezerwacji i przyciski do zmiany postępu
+              {t('reservationSettings.progressStatusesDesc')}
             </p>
             {instanceSettings?.show_reservation_status && (
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="inline-flex items-center gap-1 text-xs">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  Potwierdzona
+                  {t('reservations.statuses.confirmed')}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                  W trakcie
+                  {t('reservations.statuses.inProgress')}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs">
                   <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                  Zakończona
+                  {t('reservations.statuses.completed')}
                 </span>
               </div>
             )}
@@ -358,30 +358,29 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       {!isPushSupported ? (
         <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
           <p className="text-sm text-muted-foreground font-medium">
-            Powiadomienia push nie są wspierane
+            {t('reservationSettings.pushNotSupported')}
           </p>
           <div className="text-sm text-muted-foreground space-y-1">
             <p>
-              <strong>iPhone:</strong> Otwórz w Safari → Dodaj do ekranu głównego → Otwórz
-              zainstalowaną aplikację
+              <strong>iPhone:</strong> {t('reservationSettings.pushIphoneHint')}
             </p>
             <p>
-              <strong>Android:</strong> Chrome/Edge → Zainstaluj aplikację
+              <strong>Android:</strong> {t('reservationSettings.pushAndroidHint')}
             </p>
           </div>
           <p className="text-xs text-muted-foreground/60 mt-2">
-            Chrome na iOS nie wspiera push (ograniczenie Apple)
+            {t('reservationSettings.pushChromeIosNote')}
           </p>
         </div>
       ) : (
         <div className="p-4 rounded-lg border border-border/50 bg-white">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <Label className="font-medium">Powiadomienia push na tym urządzeniu</Label>
+              <Label className="font-medium">{t('reservationSettings.pushOnDevice')}</Label>
               <p className="text-sm text-muted-foreground">
                 {isSubscribed
-                  ? 'Otrzymasz powiadomienia o nowych rezerwacjach'
-                  : 'Włącz, aby otrzymywać powiadomienia o nowych rezerwacjach'}
+                  ? t('reservationSettings.pushEnabled')
+                  : t('reservationSettings.pushDisabled')}
               </p>
             </div>
             <Switch
@@ -399,9 +398,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="p-4 rounded-lg border border-border/50 bg-white">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
-            <Label>Numer VIN pojazdu</Label>
+            <Label>{t('reservationSettings.vinField')}</Label>
             <p className="text-sm text-muted-foreground">
-              Dodaj pole VIN przy pojazdach klienta i w protokole
+              {t('reservationSettings.vinFieldDesc')}
             </p>
           </div>
           <Switch
@@ -415,9 +414,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       <div className="p-4 rounded-lg border border-border/50 bg-white">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
-            <Label>Usługi i kwoty na protokole</Label>
+            <Label>{t('reservationSettings.protocolServices')}</Label>
             <p className="text-sm text-muted-foreground">
-              Wyświetlaj listę usług z cenami na protokole (jak rachunek)
+              {t('reservationSettings.protocolServicesDesc')}
             </p>
           </div>
           <Switch

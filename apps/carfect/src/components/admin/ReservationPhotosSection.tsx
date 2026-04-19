@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@shared/ui';
 import { PhotoFullscreenDialog } from '@/components/protocols/PhotoFullscreenDialog';
 import {
@@ -28,6 +29,7 @@ const ReservationPhotosSection = ({
   onPhotosUpdated,
   readOnly = false,
 }: ReservationPhotosSectionProps) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
@@ -55,10 +57,10 @@ const ReservationPhotosSection = ({
         await supabase.storage.from('reservation-photos').remove([fileName]);
       }
 
-      toast.success('Zdjęcie usunięte');
+      toast.success(t('reservationPhotos.photoDeleted'));
     } catch (error) {
       console.error('Error removing photo:', error);
-      toast.error('Błąd podczas usuwania zdjęcia');
+      toast.error(t('reservationPhotos.deleteError'));
     } finally {
       setDeleteConfirmIndex(null);
     }
@@ -69,7 +71,7 @@ const ReservationPhotosSection = ({
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
           {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          Zobacz zdjęcia ({photos.length})
+          {t('reservationPhotos.viewPhotos', { count: photos.length })}
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="grid grid-cols-4 gap-2 pt-2">
@@ -81,7 +83,7 @@ const ReservationPhotosSection = ({
               >
                 <img
                   src={url}
-                  alt={`Zdjęcie ${index + 1}`}
+                  alt={t('reservationPhotos.photoAlt', { index: index + 1 })}
                   className="w-full h-full object-cover rounded-lg"
                 />
                 {!readOnly && (
@@ -113,18 +115,18 @@ const ReservationPhotosSection = ({
       <AlertDialog open={deleteConfirmIndex !== null} onOpenChange={(open) => !open && setDeleteConfirmIndex(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usuń zdjęcie</AlertDialogTitle>
+            <AlertDialogTitle>{t('reservationPhotos.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz usunąć to zdjęcie? Tej operacji nie można cofnąć.
+              {t('reservationPhotos.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => deleteConfirmIndex !== null && handleRemovePhoto(deleteConfirmIndex)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Usuń
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

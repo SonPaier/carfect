@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Plus, MoreHorizontal, Settings2, ArrowUp, ArrowDown, Package } from 'lucide-react';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Input, EmptyState } from '@shared/ui';
@@ -39,6 +40,7 @@ type SortColumn = 'shortName' | 'fullName' | 'categoryName' | 'priceNet';
 type SortDirection = 'asc' | 'desc';
 
 const SalesProductsView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
@@ -144,10 +146,10 @@ const SalesProductsView = () => {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from('sales_products').delete().eq('id', id);
     if (error) {
-      toast.error('Błąd usuwania');
+      toast.error(t('sales.products.errorDelete'));
       return;
     }
-    toast.success('Produkt usunięty');
+    toast.success(t('sales.products.successDeleted'));
     fetchProducts();
   };
 
@@ -217,8 +219,8 @@ const SalesProductsView = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead column="shortName">Nazwa</SortableHead>
-              <SortableHead column="fullName">Nazwa pełna</SortableHead>
+              <SortableHead column="shortName">{t('sales.orders.productName')}</SortableHead>
+              <SortableHead column="fullName">{t('sales.products.fullName')}</SortableHead>
               <SortableHead column="categoryName">Kategoria</SortableHead>
               <SortableHead column="priceNet" className="text-right w-[120px]">
                 Cena netto
@@ -231,12 +233,12 @@ const SalesProductsView = () => {
               <TableRow>
                 <TableCell colSpan={5}>
                   {loading ? (
-                    <div className="text-center text-muted-foreground py-8">Ładowanie...</div>
+                    <div className="text-center text-muted-foreground py-8">{t('common.loading')}</div>
                   ) : (
                     <EmptyState
                       icon={Package}
-                      title="Brak produktów"
-                      description="Dodaj pierwszy produkt do katalogu"
+                      title={t('sales.products.emptyTitle')}
+                      description={t('sales.products.emptyDescription')}
                     />
                   )}
                 </TableCell>
@@ -280,7 +282,7 @@ const SalesProductsView = () => {
                           className="text-destructive focus:text-destructive"
                           onClick={() => handleDelete(product.id)}
                         >
-                          Usuń
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -295,7 +297,7 @@ const SalesProductsView = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
-            Strona {currentPage} z {totalPages} ({sortedProducts.length} produktów)
+            {t('sales.products.pageOf', { page: currentPage, totalPages, count: sortedProducts.length })}
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -324,7 +326,7 @@ const SalesProductsView = () => {
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
             >
-              Następna
+              {t('common.next')}
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
           </div>

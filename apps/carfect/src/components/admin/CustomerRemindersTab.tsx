@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import {
   Bell,
   Trash2,
@@ -20,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@shared/ui';
 import { AddCustomerReminderDialog } from './AddCustomerReminderDialog';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Reminder {
   id: string;
@@ -223,7 +223,7 @@ export function CustomerRemindersTab({
                       <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         <Calendar className="w-3.5 h-3.5" />
                         {format(new Date(nextReminder.scheduled_date), 'dd MMMM yyyy', {
-                          locale: pl,
+                          locale: getDateLocale(),
                         })}
                       </div>
                       <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -295,7 +295,7 @@ export function CustomerRemindersTab({
                               <span>
                                 {t('customers.smsScheduledAt', {
                                   date: format(new Date(reminder.scheduled_date), 'dd.MM.yyyy', {
-                                    locale: pl,
+                                    locale: getDateLocale(),
                                   }),
                                 })}
                               </span>
@@ -323,7 +323,7 @@ export function CustomerRemindersTab({
                                 <span className="text-xs text-muted-foreground">
                                   (
                                   {format(new Date(reminder.sent_at), 'dd.MM.yyyy HH:mm', {
-                                    locale: pl,
+                                    locale: getDateLocale(),
                                   })}
                                   )
                                 </span>

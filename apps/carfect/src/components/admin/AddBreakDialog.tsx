@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Station {
   id: string;
@@ -64,6 +65,7 @@ const AddBreakDialog = ({
   initialData,
   onBreakAdded,
 }: AddBreakDialogProps) => {
+  const { t } = useTranslation();
   const [startTime, setStartTime] = useState(initialData.time || '08:00');
   const [endTime, setEndTime] = useState('09:00');
   const [note, setNote] = useState('');
@@ -71,12 +73,12 @@ const AddBreakDialog = ({
 
   const handleSubmit = async () => {
     if (!initialData.stationId || !startTime || !endTime) {
-      toast.error('Wypełnij wszystkie pola');
+      toast.error(t('breaks.fillAllFields'));
       return;
     }
 
     if (startTime >= endTime) {
-      toast.error('Godzina końca musi być późniejsza niż godzina początku');
+      toast.error(t('breaks.endTimeError'));
       return;
     }
 
@@ -94,19 +96,19 @@ const AddBreakDialog = ({
 
       if (error) {
         console.error('Error adding break:', error);
-        toast.error('Błąd podczas dodawania przerwy');
+        toast.error(t('breaks.addError'));
         return;
       }
 
-      toast.success('Przerwa została dodana');
+      toast.success(t('breaks.added'));
       onBreakAdded();
       onOpenChange(false);
-      
+
       // Reset form
       setNote('');
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Wystąpił błąd');
+      toast.error(t('errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -114,14 +116,14 @@ const AddBreakDialog = ({
 
   const selectedStation = stations.find(s => s.id === initialData.stationId);
   const formattedDate = initialData.date 
-    ? format(new Date(initialData.date), 'EEEE, d MMMM yyyy', { locale: pl })
+    ? format(new Date(initialData.date), 'EEEE, d MMMM yyyy', { locale: getDateLocale() })
     : '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Dodaj przerwę</DialogTitle>
+          <DialogTitle>{t('breaks.addBreak')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -136,7 +138,7 @@ const AddBreakDialog = ({
           {/* Time range */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Od</Label>
+              <Label>{t('breaks.from')}</Label>
               <Select value={startTime} onValueChange={setStartTime}>
                 <SelectTrigger>
                   <SelectValue />
@@ -181,10 +183,10 @@ const AddBreakDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Anuluj
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Dodawanie...' : 'Dodaj przerwę'}
+            {isSubmitting ? t('breakDialog.adding') : t('breakDialog.addBreak')}
           </Button>
         </DialogFooter>
       </DialogContent>

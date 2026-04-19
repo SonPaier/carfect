@@ -13,10 +13,6 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: { from: fromMock },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const { mockToast } = vi.hoisted(() => ({
   mockToast: { success: vi.fn(), error: vi.fn() },
 }));

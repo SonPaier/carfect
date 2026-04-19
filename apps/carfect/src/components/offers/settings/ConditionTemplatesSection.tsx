@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -9,13 +10,6 @@ import {
   type TemplateType,
   type ConditionTemplate,
 } from '@/hooks/useConditionTemplates';
-
-const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
-  warranty: 'Gwarancja',
-  payment_terms: 'Warunki płatności',
-  service_info: 'Informacje o usłudze',
-  notes: 'Uwagi',
-};
 
 const TEMPLATE_TYPES: TemplateType[] = ['warranty', 'payment_terms', 'service_info', 'notes'];
 
@@ -31,6 +25,7 @@ interface EditState {
 }
 
 export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSectionProps) {
+  const { t } = useTranslation();
   const { templates, loading, byType, createTemplate, updateTemplate, deleteTemplate } =
     useConditionTemplates(instanceId);
 
@@ -76,7 +71,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć ten szablon?')) return;
+    if (!confirm(t('offers.settings.conditionTemplates.confirmDelete'))) return;
     await deleteTemplate(id);
   };
 
@@ -84,7 +79,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
     return (
       <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Ładowanie...
+        {t('common.loading')}
       </div>
     );
   }
@@ -92,7 +87,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Twórz szablony warunków, które możesz szybko wstawiać przy tworzeniu oferty.
+        {t('offerSettings.conditionTemplatesDesc')}
       </p>
 
       {TEMPLATE_TYPES.map((type) => {
@@ -102,7 +97,9 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
         return (
           <div key={type} className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="font-medium">{TEMPLATE_TYPE_LABELS[type]}</Label>
+              <Label className="font-medium">
+                {t(`offers.settings.conditionTemplates.types.${type}`)}
+              </Label>
               <Button
                 variant="ghost"
                 size="sm"
@@ -111,12 +108,12 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
                 disabled={!!editing}
               >
                 <Plus className="w-3 h-3" />
-                Dodaj
+                {t('common.add')}
               </Button>
             </div>
 
             {items.length === 0 && !isAddingThis && (
-              <p className="text-xs text-muted-foreground pl-1">Brak szablonów</p>
+              <p className="text-xs text-muted-foreground pl-1">{t('offers.noTemplates')}</p>
             )}
 
             {items.map((template) => {
@@ -222,6 +219,7 @@ function TemplateForm({
   onCancel: () => void;
   saving: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="p-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 space-y-2">
       <Input
@@ -237,7 +235,7 @@ function TemplateForm({
       <Textarea
         value={content}
         onChange={(e) => onContentChange(e.target.value)}
-        placeholder="Treść szablonu..."
+        placeholder={t('offerSettings.templateContentPlaceholder')}
         rows={3}
         onKeyDown={(e) => {
           if (e.key === 'Escape') onCancel();
@@ -248,11 +246,7 @@ function TemplateForm({
           <X className="w-3.5 h-3.5 mr-1" />
           Anuluj
         </Button>
-        <Button
-          size="sm"
-          onClick={onSave}
-          disabled={saving || !name.trim() || !content.trim()}
-        >
+        <Button size="sm" onClick={onSave} disabled={saving || !name.trim() || !content.trim()}>
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
           ) : (

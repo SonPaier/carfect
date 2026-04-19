@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Check } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Input, Button } from '@shared/ui';
+import { useTranslation } from 'react-i18next';
 import type { SalesRoll } from '../types/rolls';
 import { formatRollSize, mbToM2 } from '../types/rolls';
 import { fetchRolls } from '../services/rollService';
@@ -44,6 +45,7 @@ const RollSelectDrawer = ({
   filterProductName,
   filterWidthMm,
 }: RollSelectDrawerProps) => {
+  const { t } = useTranslation();
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -181,14 +183,14 @@ const RollSelectDrawer = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-lg flex flex-col bg-white text-foreground">
         <SheetHeader>
-          <SheetTitle>Wybierz rolki</SheetTitle>
+          <SheetTitle>{t('sales.rolls.selectTitle')}</SheetTitle>
         </SheetHeader>
 
         {/* Search */}
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po nazwie, kodzie, barcode..."
+            placeholder={t('sales.rolls.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -198,10 +200,10 @@ const RollSelectDrawer = ({
         {/* Roll list */}
         <div className="flex-1 overflow-y-auto mt-4 -mx-6 px-6 space-y-1">
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Ładowanie...</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('sales.rolls.loading')}</p>
           ) : filteredRolls.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              {search ? 'Brak wyników' : 'Brak dostępnych rolek'}
+              {search ? t('sales.rolls.noResults') : t('sales.rolls.noAvailable')}
             </p>
           ) : (
             filteredRolls.map((roll) => {
@@ -263,10 +265,10 @@ const RollSelectDrawer = ({
         {multiSelect && (
           <div className="mt-4 pt-4 border-t flex items-center justify-between">
             <span className="text-sm text-foreground/60">
-              {selected.length > 0 ? `Wybrano: ${selected.length}` : '\u00A0'}
+              {selected.length > 0 ? t('sales.rolls.selectedCount', { count: selected.length }) : '\u00A0'}
             </span>
             <Button onClick={handleConfirm} disabled={selected.length === 0}>
-              Potwierdź wybór
+              {t('sales.rolls.confirmSelection')}
             </Button>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Input } from '@shared/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +51,7 @@ export const ProductsSummaryStepV2 = ({
   const [editingService, setEditingService] = useState<ServiceData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const { t } = useTranslation();
 
   // Fetch categories once for ServiceFormDialog
   useEffect(() => {
@@ -168,7 +170,7 @@ export const ProductsSummaryStepV2 = ({
     <div className="space-y-6">
       {/* Products */}
       <div className="space-y-3">
-        <h3 className="font-semibold">Wybrane usługi, ceny netto</h3>
+        <h3 className="font-semibold">{t('offers.selectedServicesNetPrices')}</h3>
 
         <div className="space-y-2">
           {products.map((product) => (
@@ -189,7 +191,7 @@ export const ProductsSummaryStepV2 = ({
       {/* Add Product Button */}
       <Button type="button" onClick={() => setPickerOpen(true)} className="w-full h-12">
         <Plus className="w-4 h-4 mr-2" />
-        Dodaj usługę
+        {t('offers.addService')}
       </Button>
 
       {/* Conditions */}

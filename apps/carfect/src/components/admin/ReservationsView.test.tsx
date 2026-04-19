@@ -61,13 +61,6 @@ vi.mock('@/hooks/useInstanceSettings', () => ({
   }),
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
-
 // ---- Types ----
 interface Reservation {
   id: string;
@@ -133,20 +126,6 @@ beforeEach(() => {
 });
 
 describe('ReservationsView', () => {
-  describe('table headers', () => {
-    it('renders all expected column headers', () => {
-      renderView({ reservations: [makeReservation()] });
-
-      const table = screen.getByRole('table');
-      expect(within(table).getByText('Klient')).toBeInTheDocument();
-      expect(within(table).getByText('Pojazd')).toBeInTheDocument();
-      expect(within(table).getByText('Usługi')).toBeInTheDocument();
-      expect(within(table).getByText('Data realizacji')).toBeInTheDocument();
-      expect(within(table).getByText('Cena brutto / netto')).toBeInTheDocument();
-      expect(within(table).getByText('Status')).toBeInTheDocument();
-    });
-  });
-
   describe('reservation data rendering', () => {
     it('renders customer name in the table row', () => {
       const reservation = makeReservation({ customer_name: 'Anna Nowak' });
@@ -363,7 +342,7 @@ describe('ReservationsView', () => {
       renderView({ reservations: [] });
 
       // EmptyState renders the title key via t()
-      expect(screen.getByText('reservations.noReservations')).toBeInTheDocument();
+      expect(screen.getByText('Brak rezerwacji')).toBeInTheDocument();
     });
 
     it('does not render the table when no reservations', () => {

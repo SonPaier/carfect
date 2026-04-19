@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Sparkles } from 'lucide-react';
 import { GroupedChange, formatTimeShort } from '@/services/reservationHistoryService';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Props {
   group: GroupedChange;
@@ -27,13 +27,13 @@ export function HistoryCreatedCard({ group, servicesMap, stationsMap }: Props) {
         <span className="font-semibold text-green-800">Rezerwacja utworzona</span>
       </div>
       <div className="text-base font-medium text-foreground mb-2">
-        {group.changed_by_username} • {format(new Date(group.created_at), 'd MMM, HH:mm', { locale: pl })}
+        {group.changed_by_username} • {format(new Date(group.created_at), 'd MMM, HH:mm', { locale: getDateLocale() })}
       </div>
 
       <div className="space-y-1 text-sm">
         {snapshot.reservation_date && (
           <div>
-            • {format(new Date(snapshot.reservation_date), 'd MMM yyyy', { locale: pl })}
+            • {format(new Date(snapshot.reservation_date), 'd MMM yyyy', { locale: getDateLocale() })}
             {snapshot.start_time && snapshot.end_time && (
               <>, {formatTimeShort(snapshot.start_time)}-{formatTimeShort(snapshot.end_time)}</>
             )}

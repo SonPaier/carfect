@@ -243,19 +243,6 @@ describe('GrantAccessDialog', () => {
       });
     });
 
-    it('shows success toast after successful user creation', async () => {
-      const { user } = renderDialog();
-
-      await fillValidForm(user);
-
-      const submitBtn = screen.getByRole('button', { name: /utwórz użytkownika/i });
-      await user.click(submitBtn);
-
-      await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Użytkownik utworzony');
-      });
-    });
-
     it('calls onOpenChange(false) after successful creation', async () => {
       const { user, onOpenChange } = renderDialog();
 

@@ -2,13 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, Plus, X } from 'lucide-react';
 import { format, isSameDay, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { Station, WorkingHours, ReservationSlot } from './types';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface ReservationSlotsSectionProps {
   slots: ReservationSlot[];
@@ -187,7 +187,7 @@ const SlotCard = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5" />
-              Dzień od <span className="text-destructive">*</span>
+              {t('reservationSlots.dayFrom')} <span className="text-destructive">*</span>
             </Label>
             <Button
               type="button"
@@ -204,14 +204,14 @@ const SlotCard = ({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.from
-                ? format(slot.dateRange.from, 'd MMM yyyy', { locale: pl })
-                : 'Wybierz datę'}
+                ? format(slot.dateRange.from, 'd MMM yyyy', { locale: getDateLocale() })
+                : t('common.selectDate')}
             </Button>
           </div>
           <div className="space-y-2" ref={dateToRef}>
             <Label className="flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5" />
-              Dzień do <span className="text-destructive">*</span>
+              {t('reservationSlots.dayTo')} <span className="text-destructive">*</span>
             </Label>
             <Button
               type="button"
@@ -228,8 +228,8 @@ const SlotCard = ({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.to
-                ? format(slot.dateRange.to, 'd MMM yyyy', { locale: pl })
-                : 'Wybierz datę'}
+                ? format(slot.dateRange.to, 'd MMM yyyy', { locale: getDateLocale() })
+                : t('common.selectDate')}
             </Button>
           </div>
         </div>
@@ -243,7 +243,7 @@ const SlotCard = ({
               onSelect={handleDateFromSelect}
               disabled={disabledDate}
               numberOfMonths={1}
-              locale={pl}
+              locale={getDateLocale()}
             />
           </div>
         )}
@@ -256,7 +256,7 @@ const SlotCard = ({
               onSelect={handleDateToSelect}
               disabled={disabledDateTo}
               numberOfMonths={1}
-              locale={pl}
+              locale={getDateLocale()}
             />
           </div>
         )}
@@ -350,6 +350,7 @@ export const ReservationSlotsSection = ({
   isEditMode = false,
   onUserModifiedEndTime,
 }: ReservationSlotsSectionProps) => {
+  const { t } = useTranslation();
   const handleUpdateSlot = (index: number, updated: ReservationSlot) => {
     const newSlots = [...slots];
     newSlots[index] = updated;
@@ -405,7 +406,7 @@ export const ReservationSlotsSection = ({
           className="w-full border-dashed text-muted-foreground"
         >
           <Plus className="w-4 h-4 mr-1.5" />
-          Dodaj slot na innym stanowisku
+          {t('reservationSlots.addSlot')}
         </Button>
       )}
 

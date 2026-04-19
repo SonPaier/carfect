@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface VoiceNoteInputProps {
   onTranscript: (text: string) => void;
@@ -9,6 +10,7 @@ interface VoiceNoteInputProps {
 }
 
 export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInputProps) => {
+  const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef<string>('');
@@ -25,7 +27,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      toast.error('Przeglądarka nie wspiera rozpoznawania mowy. Użyj Chrome lub Edge.');
+      toast.error(t('protocols.voice.browserNotSupported'));
       return;
     }
 
@@ -40,7 +42,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
 
     recognition.onstart = () => {
       setIsRecording(true);
-      toast.info('Słucham... Kliknij ponownie aby zakończyć');
+      toast.info(t('protocols.voice.listening'));
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -60,11 +62,11 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
       recognitionRef.current = null;
       setIsRecording(false);
       if (event.error === 'no-speech') {
-        toast.error('Nie wykryto mowy. Spróbuj ponownie.');
+        toast.error(t('protocols.voice.noSpeech'));
       } else if (event.error === 'not-allowed') {
-        toast.error('Brak dostępu do mikrofonu. Sprawdź uprawnienia.');
+        toast.error(t('protocols.voice.microphoneBlocked'));
       } else if (event.error !== 'aborted') {
-        toast.error('Błąd rozpoznawania mowy');
+        toast.error(t('protocols.voice.recognitionError'));
       }
     };
 
@@ -75,7 +77,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
       const rawTranscript = transcriptRef.current;
       if (rawTranscript) {
         onTranscript(rawTranscript);
-        toast.success('Tekst rozpoznany');
+        toast.success(t('protocols.voice.textRecognized'));
       }
     };
 
@@ -98,7 +100,7 @@ export const VoiceNoteInput = ({ onTranscript, disabled = false }: VoiceNoteInpu
       onClick={handleClick}
       disabled={disabled}
       className={`shrink-0 ${isRecording ? 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30' : 'bg-white'}`}
-      title={isRecording ? 'Zatrzymaj nagrywanie' : 'Nagraj notatkę głosową'}
+      title={isRecording ? t('protocols.voice.stopRecording') : t('protocols.voice.startRecording')}
     >
       {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
     </Button>

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, Minus, Loader2 } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { NumericInput } from '@shared/ui';
@@ -170,6 +171,7 @@ const PackageCard = ({
   isNetPayer,
   excludeOrderId,
 }: PackageCardProps) => {
+  const { t } = useTranslation();
   const valuation = useApaczkaValuation(
     instanceId,
     pkg,
@@ -201,7 +203,7 @@ const PackageCard = ({
     <div className="bg-background border border-border rounded-md p-3 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">Paczka #{index + 1}</span>
+        <span className="text-sm font-semibold">{t('sales.packageCard.packageTitle', { number: index + 1 })}</span>
         <button
           type="button"
           onClick={onRemove}
@@ -258,7 +260,7 @@ const PackageCard = ({
                                 onToggleDiscount?.(itemKey);
                               }}
                             >
-                              {p.excludeFromDiscount ? 'Włącz rabat' : 'Wyłącz rabat'}
+                              {p.excludeFromDiscount ? t('sales.orders.enableDiscount') : t('sales.orders.disableDiscount')}
                             </button>
                           )}
                         </div>
@@ -427,7 +429,7 @@ const PackageCard = ({
             onClick={onAddProduct}
           >
             <Plus className="w-4 h-4" />
-            {packageProducts.length > 0 ? 'Dodaj kolejny produkt' : 'Dodaj produkt'}
+            {packageProducts.length > 0 ? t('sales.packages.addAnotherProduct') : t('sales.packages.addProduct')}
           </Button>
         </div>
 
@@ -437,7 +439,7 @@ const PackageCard = ({
         {/* Right: Shipping */}
         <div className="space-y-3 sm:pl-4">
           <div className="space-y-1.5">
-            <Label className="text-sm">Sposób wysyłki</Label>
+            <Label className="text-sm">{t('sales.orders.shippingMethod')}</Label>
             <ToggleGroup
               type="single"
               value={pkg.shippingMethod}
@@ -449,10 +451,10 @@ const PackageCard = ({
               className="justify-start flex-wrap"
             >
               <ToggleGroupItem value="shipping" className="text-xs px-3 border-border">
-                Wysyłka
+                {t('sales.orders.shipping')}
               </ToggleGroupItem>
               <ToggleGroupItem value="pickup" className="text-xs px-3 border-border">
-                Odbiór osobisty
+                {t('sales.orders.pickup')}
               </ToggleGroupItem>
               <ToggleGroupItem value="uber" className="text-xs px-3 border-border">
                 Uber
@@ -547,7 +549,7 @@ const PackageCard = ({
               ) : pkg.packagingType === 'tuba' ? (
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Długość (cm)</Label>
+                    <Label className="text-xs">{t('sales.orders.lengthCm')}</Label>
                     <NumericInput
                       min={0}
                       value={(pkg.dimensions as TubaDimensions)?.length || undefined}
@@ -556,7 +558,7 @@ const PackageCard = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Średnica (cm)</Label>
+                    <Label className="text-xs">{t('sales.orders.diameterCm')}</Label>
                     <NumericInput
                       min={0}
                       value={(pkg.dimensions as TubaDimensions)?.diameter || undefined}
@@ -578,7 +580,7 @@ const PackageCard = ({
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Dł. (cm)</Label>
+                    <Label className="text-xs">{t('sales.orders.lengthCmShort')}</Label>
                     <NumericInput
                       min={0}
                       value={(pkg.dimensions as KartonDimensions)?.length || undefined}
@@ -635,7 +637,7 @@ const PackageCard = ({
               {/* Contents + Declared value — same line */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-xs">Zawartość przesyłki</Label>
+                  <Label className="text-xs">{t('sales.orders.packageContents')}</Label>
                   <Input
                     type="text"
                     value={pkg.contents || ''}
@@ -673,11 +675,11 @@ const PackageCard = ({
                   disabled={valuation.loading}
                 >
                   {valuation.loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
-                  Sprawdź wycenę
+                  {t('sales.orders.checkPricing')}
                 </Button>
                 {pkg.shippingCost != null && (
                   <span className="text-sm font-medium text-foreground">
-                    Cena wysyłki: {formatCurrency(pkg.shippingCost)}
+                    {t('sales.orders.shippingPrice')}: {formatCurrency(pkg.shippingCost)}
                   </span>
                 )}
                 {valuation.error && (

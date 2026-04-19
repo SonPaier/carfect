@@ -73,13 +73,14 @@ interface EditingItemPriceState {
   value: string;
 }
 
-const paintTypeLabels: Record<string, string> = {
-  matte: 'Mat',
-  dark: 'Ciemny',
-  other: 'Inny',
+const getPaintTypeLabel = (type: string, t: (key: string) => string): string => {
+  const labels: Record<string, string> = {
+    matte: t('summary.paintTypeMat'),
+    dark: t('summary.paintTypeDark'),
+    other: t('summary.paintTypeOther'),
+  };
+  return labels[type] || type;
 };
-
-const getPaintTypeLabel = (type: string) => paintTypeLabels[type] || type;
 
 export const SummaryStep = ({
   instanceId,
@@ -190,11 +191,11 @@ export const SummaryStep = ({
         .order('sort_order');
       
       if (templatesData) {
-        setTemplates(templatesData.map(t => ({
-          id: t.id,
-          name: t.name,
-          payment_terms: t.content.split('|||')[0] || null,
-          notes: t.content.split('|||')[1] || null,
+        setTemplates(templatesData.map(tmpl => ({
+          id: tmpl.id,
+          name: tmpl.name,
+          payment_terms: tmpl.content.split('|||')[0] || null,
+          notes: tmpl.content.split('|||')[1] || null,
         })));
       }
 
@@ -231,7 +232,7 @@ export const SummaryStep = ({
     // Options without scope
     const noScopeOptions = offer.options.filter(o => !o.scopeId && o.isSelected);
     if (noScopeOptions.length > 0) {
-      groups.push({ scopeId: null, scopeName: 'Inne', options: noScopeOptions });
+      groups.push({ scopeId: null, scopeName: t('summary.other'), options: noScopeOptions });
     }
     
     return groups;
@@ -369,7 +370,7 @@ export const SummaryStep = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2 font-semibold">
               <User className="w-4 h-4 text-primary" />
-              Klient
+              {t('summary.customer')}
             </div>
             <div className="text-sm space-y-1 pl-6">
               <p className="font-medium">{offer.customerData.name || '—'}</p>
@@ -385,12 +386,12 @@ export const SummaryStep = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 font-semibold">
                 <Building2 className="w-4 h-4 text-primary" />
-                Firma
+                {t('summary.company')}
               </div>
               <div className="text-sm space-y-1 pl-6">
                 <p className="font-medium">{offer.customerData.company}</p>
                 {offer.customerData.nip && (
-                  <p className="text-muted-foreground">NIP: {offer.customerData.nip}</p>
+                  <p className="text-muted-foreground">{t('summary.nip', { nip: offer.customerData.nip })}</p>
                 )}
               </div>
             </div>
@@ -401,7 +402,7 @@ export const SummaryStep = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 font-semibold">
                 <Car className="w-4 h-4 text-primary" />
-                Pojazd
+                {t('summary.vehicle')}
               </div>
               <div className="text-sm space-y-1 pl-6">
                 <p className="font-medium">{offer.vehicleData.brandModel}</p>
@@ -409,7 +410,7 @@ export const SummaryStep = ({
                   <p className="text-muted-foreground">
                     {offer.vehicleData.paintColor}
                     {offer.vehicleData.paintColor && offer.vehicleData.paintType && ' • '}
-                    {offer.vehicleData.paintType && getPaintTypeLabel(offer.vehicleData.paintType)}
+                    {offer.vehicleData.paintType && getPaintTypeLabel(offer.vehicleData.paintType, t)}
                   </p>
                 )}
               </div>
@@ -459,7 +460,7 @@ export const SummaryStep = ({
                               ? "text-amber-500 bg-amber-50" 
                               : "text-muted-foreground/40 hover:text-amber-400 hover:bg-amber-50/50"
                           )}
-                          title={isDefaultVariant ? "Domyślny wariant" : "Ustaw jako domyślny"}
+                          title={isDefaultVariant ? t('summary.defaultVariant') : t('summary.setAsDefault')}
                         >
                           <Star className={cn("h-4 w-4", isDefaultVariant && "fill-current")} />
                         </button>
@@ -467,7 +468,7 @@ export const SummaryStep = ({
                       <h4 className="font-semibold">{option.name}</h4>
                       {isDefaultVariant && (
                         <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                          domyślny
+                          {t('summary.defaultBadge')}
                         </span>
                       )}
                     </div>
@@ -497,7 +498,7 @@ export const SummaryStep = ({
                             type="button"
                             onClick={() => handleStartEditPrice(option.id, currentTotal)}
                             className="text-right hover:bg-hover-strong rounded px-2 py-1 transition-colors cursor-pointer"
-                            title="Kliknij aby edytować wartość"
+                            title={t('summary.clickToEditValue')}
                           >
                             {optionHasDiscount ? (
                               <div className="flex items-center gap-2">
@@ -511,7 +512,7 @@ export const SummaryStep = ({
                             ) : (
                               <p className="font-semibold">{formatPrice(currentTotal)}</p>
                             )}
-                            <p className="text-xs text-muted-foreground">netto</p>
+                            <p className="text-xs text-muted-foreground">{t('summary.net')}</p>
                           </button>
                         )}
                       </div>
@@ -522,11 +523,11 @@ export const SummaryStep = ({
                   {showUnitPrices ? (
                     <div className="text-sm">
                       <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-muted/50 rounded text-xs font-medium text-muted-foreground">
-                        <div className="col-span-5">Pozycja</div>
-                        <div className="col-span-2 text-right">Ilość</div>
-                        <div className="col-span-2 text-right">Cena</div>
-                        <div className="col-span-1 text-right">Rabat</div>
-                        <div className="col-span-2 text-right">Wartość</div>
+                        <div className="col-span-5">{t('summary.colPosition')}</div>
+                        <div className="col-span-2 text-right">{t('summary.colQuantity')}</div>
+                        <div className="col-span-2 text-right">{t('summary.colPrice')}</div>
+                        <div className="col-span-1 text-right">{t('summary.colDiscount')}</div>
+                        <div className="col-span-2 text-right">{t('summary.colValue')}</div>
                       </div>
                       {option.items.map((item) => {
                         const itemValue = item.quantity * item.unitPrice * (1 - item.discountPercent / 100);
@@ -546,7 +547,7 @@ export const SummaryStep = ({
                                   checked={isDefaultItem}
                                   onCheckedChange={() => handleToggleDefaultOptionalItem(item.id, option)}
                                   className="h-4 w-4"
-                                  title="Domyślnie zaznaczony dodatek"
+                                  title={t('summary.defaultCheckedExtra')}
                                 />
                               )}
                               {/* Default selection for multi-item options (radio) */}
@@ -560,7 +561,7 @@ export const SummaryStep = ({
                                       ? "border-amber-500 bg-amber-500" 
                                       : "border-gray-400 hover:border-amber-400"
                                   )}
-                                  title={isSelectedInMultiOption ? "Domyślna pozycja" : "Ustaw jako domyślną"}
+                                  title={isSelectedInMultiOption ? t('summary.defaultPosition') : t('summary.setAsDefaultPosition')}
                                 >
                                   {isSelectedInMultiOption && (
                                     <div className="h-2 w-2 rounded-full bg-white" />
@@ -604,7 +605,7 @@ export const SummaryStep = ({
                                   type="button"
                                   onClick={() => handleStartEditItemPrice(option.id, item.id, item.unitPrice)}
                                   className="hover:bg-hover rounded px-1 transition-colors cursor-pointer"
-                                  title="Kliknij aby edytować"
+                                  title={t('summaryStep.clickToEdit')}
                                 >
                                   {formatPrice(item.unitPrice)}
                                 </button>
@@ -640,7 +641,7 @@ export const SummaryStep = ({
                                   checked={isDefaultItem}
                                   onCheckedChange={() => handleToggleDefaultOptionalItem(item.id, option)}
                                   className="h-4 w-4"
-                                  title="Domyślnie zaznaczony dodatek"
+                                  title={t('summary.defaultCheckedExtra')}
                                 />
                               )}
                               {/* Default selection for multi-item options (radio) */}
@@ -654,7 +655,7 @@ export const SummaryStep = ({
                                       ? "border-amber-500 bg-amber-500" 
                                       : "border-gray-400 hover:border-amber-400"
                                   )}
-                                  title={isSelectedInMultiOption ? "Domyślna pozycja" : "Ustaw jako domyślną"}
+                                  title={isSelectedInMultiOption ? t('summary.defaultPosition') : t('summary.setAsDefaultPosition')}
                                 >
                                   {isSelectedInMultiOption && (
                                     <div className="h-2 w-2 rounded-full bg-white" />
@@ -697,7 +698,7 @@ export const SummaryStep = ({
                                 type="button"
                                 onClick={() => handleStartEditItemPrice(option.id, item.id, item.unitPrice)}
                                 className="font-medium hover:bg-hover rounded px-1 transition-colors cursor-pointer"
-                                title="Kliknij aby edytować"
+                                title={t('summaryStep.clickToEdit')}
                               >
                                 {formatPrice(itemValue)}
                               </button>
@@ -723,13 +724,13 @@ export const SummaryStep = ({
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="percent" id={`percent-${option.id}`} />
                             <Label htmlFor={`percent-${option.id}`} className="text-sm cursor-pointer">
-                              Rabat procentowy
+                              {t('summaryStep.percentDiscount')}
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="amount" id={`amount-${option.id}`} />
                             <Label htmlFor={`amount-${option.id}`} className="text-sm cursor-pointer">
-                              Rabat kwotowy
+                              {t('summaryStep.amountDiscount')}
                             </Label>
                           </div>
                         </RadioGroup>
@@ -753,14 +754,14 @@ export const SummaryStep = ({
                             size="sm"
                             onClick={() => handleApplyDiscount(option)}
                           >
-                            Zastosuj
+                            {t('summaryStep.apply')}
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setDiscountEditing(null)}
                           >
-                            Anuluj
+                            {t('common.cancel')}
                           </Button>
                         </div>
                       </div>
@@ -773,7 +774,7 @@ export const SummaryStep = ({
                           className="gap-1 text-muted-foreground"
                         >
                           <Tag className="w-3 h-3" />
-                          {optionHasDiscount ? 'Zmień rabat' : 'Dodaj rabat'}
+                          {optionHasDiscount ? t('summaryStep.changeDiscount') : t('summaryStep.addDiscount')}
                         </Button>
                         {optionHasDiscount && (
                           <Button
@@ -783,7 +784,7 @@ export const SummaryStep = ({
                             className="gap-1 text-destructive hover:text-destructive"
                           >
                             <X className="w-3 h-3" />
-                            Usuń rabat
+                            {t('summaryStep.removeDiscount')}
                           </Button>
                         )}
                       </div>
@@ -802,18 +803,18 @@ export const SummaryStep = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Calculator className="w-4 h-4 text-primary" />
-            Podsumowanie
+            {t('summaryStep.totalSummary')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Suma netto</span>
+              <span>{t('summaryStep.netTotal')}</span>
               <span className="font-medium">-</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <div className="flex items-center gap-2">
-                <span>VAT</span>
+                <span>{t('summaryStep.vat')}</span>
                 <Select
                   value={offer.vatRate.toString()}
                   onValueChange={(val) => onUpdateOffer({ vatRate: parseInt(val) })}
@@ -839,7 +840,7 @@ export const SummaryStep = ({
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="validUntil">Oferta ważna do</Label>
+            <Label htmlFor="validUntil">{t('summaryStep.validUntil')}</Label>
             <Input
               id="validUntil"
               type="date"
@@ -851,7 +852,7 @@ export const SummaryStep = ({
           <Collapsible open={conditionsOpen} onOpenChange={setConditionsOpen}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
-                <span className="text-sm font-medium">Dodatkowe warunki</span>
+                <span className="text-sm font-medium">{t('summaryStep.additionalConditions')}</span>
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
                   conditionsOpen && "rotate-180"
@@ -862,15 +863,15 @@ export const SummaryStep = ({
               {templates.length > 0 && (
                 <div className="flex items-center justify-end">
                   <Select onValueChange={(id) => {
-                    const template = templates.find(t => t.id === id);
+                    const template = templates.find(tmpl => tmpl.id === id);
                     if (template) handleApplyTemplate(template);
                   }}>
                     <SelectTrigger className="w-auto h-8">
-                      <span className="text-sm">Wczytaj szablon</span>
+                      <span className="text-sm">{t('summaryStep.loadTemplate')}</span>
                     </SelectTrigger>
                     <SelectContent>
-                      {templates.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      {templates.map(tmpl => (
+                        <SelectItem key={tmpl.id} value={tmpl.id}>{tmpl.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -878,43 +879,43 @@ export const SummaryStep = ({
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="paymentTerms">Warunki płatności</Label>
+                <Label htmlFor="paymentTerms">{t('summaryStep.paymentTerms')}</Label>
                 <Textarea
                   id="paymentTerms"
                   value={offer.paymentTerms || ''}
                   onChange={(e) => onUpdateOffer({ paymentTerms: e.target.value })}
                   rows={4}
-                  placeholder="Np. zaliczka 30%, pozostała kwota przy odbiorze..."
+                  placeholder={t('summaryStep.paymentTermsPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="warranty">Warunki gwarancji</Label>
+                <Label htmlFor="warranty">{t('summaryStep.warrantyTerms')}</Label>
                 <Textarea
                   id="warranty"
                   value={offer.warranty || ''}
                   onChange={(e) => onUpdateOffer({ warranty: e.target.value })}
                   rows={4}
-                  placeholder="Np. 10 lat gwarancji producenta, 2 lata gwarancji na montaż..."
+                  placeholder={t('summaryStep.warrantyPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="serviceInfo">Oferta obejmuje</Label>
+                <Label htmlFor="serviceInfo">{t('summaryStep.offerIncludes')}</Label>
                 <Textarea
                   id="serviceInfo"
                   value={offer.serviceInfo || ''}
                   onChange={(e) => onUpdateOffer({ serviceInfo: e.target.value })}
                   rows={4}
-                  placeholder="Np. kompleksowe czyszczenie pojazdu, dekontaminacja lakieru..."
+                  placeholder={t('summaryStep.offerIncludesPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes">Inne informacje</Label>
+                <Label htmlFor="notes">{t('summaryStep.otherInfo')}</Label>
                 <Textarea
                   id="notes"
                   value={offer.notes || ''}
                   onChange={(e) => onUpdateOffer({ notes: e.target.value })}
                   rows={4}
-                  placeholder="Dodatkowe uwagi..."
+                  placeholder={t('summaryStep.otherInfoPlaceholder')}
                 />
               </div>
             </CollapsibleContent>

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, ImagePlus } from 'lucide-react';
 import { Button } from '@shared/ui';
 
@@ -9,6 +10,7 @@ interface RollScanUploadZoneProps {
 
 const RollScanUploadZone = ({ onFilesSelected, disabled }: RollScanUploadZoneProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
 
   const handleFiles = useCallback(
@@ -82,10 +84,10 @@ const RollScanUploadZone = ({ onFilesSelected, disabled }: RollScanUploadZonePro
         </div>
         <div>
           <p className="text-sm font-medium">
-            Przeciągnij zdjęcia etykiet rolek lub kliknij
+            {t('sales.rolls.dragPhotos')}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Obsługiwane formaty: JPG, PNG, HEIC. Możesz wgrać wiele zdjęć na raz.
+            {t('sales.rolls.supportedFormats')}
           </p>
         </div>
         <Button variant="outline" size="sm" disabled={disabled} type="button">

@@ -6,11 +6,11 @@ import { Badge } from '@shared/ui';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { OfferWithOptions, statusColors, formatPrice } from './offerTypes';
 import { OfferActionsMenu } from './OfferActionsMenu';
 import { OfferFollowUpStatus } from './OfferFollowUpStatus';
 import type { FollowUpPhoneStatus } from './offerTypes';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface OfferListCardProps {
   offer: OfferWithOptions;
@@ -87,7 +87,7 @@ function MetaLine({ offer }: { offer: OfferWithOptions }) {
       <span>·</span>
       <span>
         {t('offers.createdOn', {
-          date: format(new Date(offer.created_at), 'dd.MM.yyyy', { locale: pl }),
+          date: format(new Date(offer.created_at), 'dd.MM.yyyy', { locale: getDateLocale() }),
         })}
       </span>
       {offer.source === 'website' && (

@@ -3,7 +3,7 @@ import { useCarModels } from '@/contexts/CarModelsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
+import { Card, CardContent, CardHeader } from '@shared/ui';
 import {
   Table,
   TableBody,
@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { Plus, Search, Upload, Download, Pencil, Trash2, Loader2, Car, Check, X, Clock } from 'lucide-react';
 import { AddCarModelDialog } from './AddCarModelDialog';
 import { EditCarModelDialog } from './EditCarModelDialog';
+import { useTranslation } from 'react-i18next';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -37,7 +38,8 @@ interface CarModelWithStatus {
 }
 
 export const CarModelsManager: React.FC = () => {
-  const { carModels, isLoading, refetch, getBrands } = useCarModels();
+  const { t } = useTranslation();
+  const { carModels, isLoading, refetch } = useCarModels();
   const [allModels, setAllModels] = useState<CarModelWithStatus[]>([]);
   const [loadingAllModels, setLoadingAllModels] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +74,10 @@ export const CarModelsManager: React.FC = () => {
     fetchAllModels();
   }, []);
 
-  const proposalCount = useMemo(() => 
+  // carModels is used to keep the context fresh after mutations
+  void carModels;
+
+  const proposalCount = useMemo(() =>
     allModels.filter(m => m.status === 'proposal').length,
     [allModels]
   );
@@ -86,7 +91,7 @@ export const CarModelsManager: React.FC = () => {
     return allModels.filter(model => {
       // Status filter
       if (statusFilter !== 'all' && model.status !== statusFilter) return false;
-      
+
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -94,13 +99,13 @@ export const CarModelsManager: React.FC = () => {
         const matchesName = model.name.toLowerCase().includes(query);
         if (!matchesBrand && !matchesName) return false;
       }
-      
+
       // Brand filter
       if (brandFilter !== 'all' && model.brand !== brandFilter) return false;
-      
+
       // Size filter
       if (sizeFilter !== 'all' && model.size !== sizeFilter) return false;
-      
+
       return true;
     });
   }, [allModels, searchQuery, brandFilter, sizeFilter, statusFilter]);
@@ -116,22 +121,26 @@ export const CarModelsManager: React.FC = () => {
     try {
       setIsImporting(true);
       const { data, error } = await supabase.functions.invoke('seed-car-models');
-      
+
       if (error) throw error;
-      
-      toast.success(`Zaimportowano ${data.inserted} modeli (${data.skipped} już istniało)`);
+
+      toast.success(t('superAdmin.carModels.importSuccess', { inserted: data.inserted, skipped: data.skipped }));
       await refetch();
       await fetchAllModels();
     } catch (error) {
       console.error('Import error:', error);
-      toast.error('Błąd podczas importu danych');
+      toast.error(t('superAdmin.carModels.importError'));
     } finally {
       setIsImporting(false);
     }
   };
 
   const handleExportToCsv = () => {
-    const headers = ['Marka', 'Model', 'Rozmiar'];
+    const headers = [
+      t('superAdmin.carModels.brand'),
+      t('superAdmin.carModels.model'),
+      t('superAdmin.carModels.size'),
+    ];
     const activeModels = allModels.filter(m => m.status === 'active');
     const rows = activeModels.map(m => [m.brand, m.name, m.size]);
     const csvContent = [headers, ...rows]
@@ -143,27 +152,27 @@ export const CarModelsManager: React.FC = () => {
     link.href = URL.createObjectURL(blob);
     link.download = `samochody_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    
-    toast.success('Wyeksportowano do CSV');
+
+    toast.success(t('superAdmin.carModels.exportSuccess'));
   };
 
   const handleDeleteModel = async (id: string, brand: string, name: string) => {
-    if (!confirm(`Czy na pewno chcesz usunąć ${brand} ${name}?`)) return;
-    
+    if (!confirm(t('superAdmin.carModels.deleteConfirm', { brand, name }))) return;
+
     try {
       const { error } = await supabase
         .from('car_models')
         .update({ active: false })
         .eq('id', id);
-      
+
       if (error) throw error;
-      
-      toast.success(`Usunięto ${brand} ${name}`);
+
+      toast.success(t('superAdmin.carModels.deleteSuccess', { brand, name }));
       await refetch();
       await fetchAllModels();
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error('Błąd podczas usuwania');
+      toast.error(t('superAdmin.carModels.deleteError'));
     }
   };
 
@@ -173,15 +182,15 @@ export const CarModelsManager: React.FC = () => {
         .from('car_models')
         .update({ status: 'active' })
         .eq('id', model.id);
-      
+
       if (error) throw error;
-      
-      toast.success(`Zaakceptowano ${model.brand} ${model.name}`);
+
+      toast.success(t('superAdmin.carModels.acceptSuccess', { brand: model.brand, name: model.name }));
       await refetch();
       await fetchAllModels();
     } catch (error) {
       console.error('Accept error:', error);
-      toast.error('Błąd podczas akceptacji');
+      toast.error(t('superAdmin.carModels.acceptError'));
     }
   };
 
@@ -191,14 +200,14 @@ export const CarModelsManager: React.FC = () => {
         .from('car_models')
         .update({ active: false })
         .eq('id', model.id);
-      
+
       if (error) throw error;
-      
-      toast.success(`Odrzucono ${model.brand} ${model.name}`);
+
+      toast.success(t('superAdmin.carModels.rejectSuccess', { brand: model.brand, name: model.name }));
       await fetchAllModels();
     } catch (error) {
       console.error('Reject error:', error);
-      toast.error('Błąd podczas odrzucania');
+      toast.error(t('superAdmin.carModels.rejectError'));
     }
   };
 
@@ -213,9 +222,9 @@ export const CarModelsManager: React.FC = () => {
 
   const getSizeLabel = (size: string) => {
     switch (size) {
-      case 'S': return 'Mały';
-      case 'M': return 'Średni';
-      case 'L': return 'Duży';
+      case 'S': return t('superAdmin.carModels.sizeSmall');
+      case 'M': return t('superAdmin.carModels.sizeMedium');
+      case 'L': return t('superAdmin.carModels.sizeLarge');
       default: return size;
     }
   };
@@ -233,9 +242,9 @@ export const CarModelsManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Car className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold">Baza samochodów</h2>
+          <h2 className="text-2xl font-bold">{t('superAdmin.carModels.title')}</h2>
           <Badge variant="outline" className="ml-2">
-            {allModels.filter(m => m.status === 'active').length} modeli
+            {t('superAdmin.carModels.modelsCount', { count: allModels.filter(m => m.status === 'active').length })}
           </Badge>
         </div>
         <div className="flex items-center gap-2">
@@ -250,15 +259,15 @@ export const CarModelsManager: React.FC = () => {
             ) : (
               <Upload className="h-4 w-4 mr-2" />
             )}
-            Importuj z JSON
+            {t('superAdmin.carModels.importJson')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportToCsv}>
             <Download className="h-4 w-4 mr-2" />
-            Eksportuj CSV
+            {t('superAdmin.carModels.exportCsv')}
           </Button>
           <Button size="sm" onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Dodaj model
+            {t('superAdmin.carModels.addModel')}
           </Button>
         </div>
       </div>
@@ -270,7 +279,7 @@ export const CarModelsManager: React.FC = () => {
           size="sm"
           onClick={() => { setStatusFilter('active'); setCurrentPage(1); }}
         >
-          Zatwierdzone
+          {t('superAdmin.carModels.approved')}
         </Button>
         <Button
           variant={statusFilter === 'proposal' ? 'default' : 'outline'}
@@ -279,7 +288,7 @@ export const CarModelsManager: React.FC = () => {
           className="relative"
         >
           <Clock className="h-4 w-4 mr-2" />
-          Do akceptacji
+          {t('superAdmin.carModels.pendingApproval')}
           {proposalCount > 0 && (
             <Badge variant="destructive" className="ml-2 h-5 min-w-[20px] px-1.5">
               {proposalCount}
@@ -291,7 +300,7 @@ export const CarModelsManager: React.FC = () => {
           size="sm"
           onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}
         >
-          Wszystkie
+          {t('superAdmin.carModels.all')}
         </Button>
       </div>
 
@@ -301,7 +310,7 @@ export const CarModelsManager: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Szukaj marki lub modelu..."
+                placeholder={t('superAdmin.carModels.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -312,10 +321,10 @@ export const CarModelsManager: React.FC = () => {
             </div>
             <Select value={brandFilter} onValueChange={(v) => { setBrandFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Marka" />
+                <SelectValue placeholder={t('superAdmin.carModels.brand')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Wszystkie marki</SelectItem>
+                <SelectItem value="all">{t('superAdmin.carModels.allBrands')}</SelectItem>
                 {brands.map(brand => (
                   <SelectItem key={brand} value={brand}>{brand}</SelectItem>
                 ))}
@@ -323,13 +332,13 @@ export const CarModelsManager: React.FC = () => {
             </Select>
             <Select value={sizeFilter} onValueChange={(v) => { setSizeFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Rozmiar" />
+                <SelectValue placeholder={t('superAdmin.carModels.size')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Wszystkie</SelectItem>
-                <SelectItem value="S">Mały (S)</SelectItem>
-                <SelectItem value="M">Średni (M)</SelectItem>
-                <SelectItem value="L">Duży (L)</SelectItem>
+                <SelectItem value="all">{t('superAdmin.carModels.allSizes')}</SelectItem>
+                <SelectItem value="S">{t('superAdmin.carModels.smallSize')}</SelectItem>
+                <SelectItem value="M">{t('superAdmin.carModels.mediumSize')}</SelectItem>
+                <SelectItem value="L">{t('superAdmin.carModels.largeSize')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -338,22 +347,22 @@ export const CarModelsManager: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Marka</TableHead>
-                <TableHead>Model</TableHead>
-                <TableHead>Rozmiar</TableHead>
-                {statusFilter !== 'active' && <TableHead>Status</TableHead>}
-                <TableHead className="w-[100px]">Akcje</TableHead>
+                <TableHead>{t('superAdmin.carModels.brand')}</TableHead>
+                <TableHead>{t('superAdmin.carModels.model')}</TableHead>
+                <TableHead>{t('superAdmin.carModels.size')}</TableHead>
+                {statusFilter !== 'active' && <TableHead>{t('superAdmin.carModels.status')}</TableHead>}
+                <TableHead className="w-[100px]">{t('superAdmin.carModels.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedModels.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={statusFilter !== 'active' ? 5 : 4} className="text-center text-muted-foreground py-8">
-                    {statusFilter === 'proposal' 
-                      ? 'Brak propozycji do akceptacji'
-                      : allModels.length === 0 
-                        ? 'Brak modeli w bazie. Kliknij "Importuj z JSON" aby załadować dane.'
-                        : 'Brak wyników dla podanych filtrów'}
+                    {statusFilter === 'proposal'
+                      ? t('superAdmin.carModels.noProposals')
+                      : allModels.length === 0
+                        ? t('superAdmin.carModels.noModels')
+                        : t('superAdmin.carModels.noFilterResults')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -369,7 +378,9 @@ export const CarModelsManager: React.FC = () => {
                     {statusFilter !== 'active' && (
                       <TableCell>
                         <Badge variant={model.status === 'proposal' ? 'outline' : 'secondary'}>
-                          {model.status === 'proposal' ? 'Propozycja' : 'Aktywny'}
+                          {model.status === 'proposal'
+                            ? t('superAdmin.carModels.proposal')
+                            : t('superAdmin.carModels.activeStatus')}
                         </Badge>
                       </TableCell>
                     )}
@@ -380,13 +391,13 @@ export const CarModelsManager: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setEditingModel({ 
-                                id: model.id, 
-                                brand: model.brand, 
-                                name: model.name, 
-                                size: model.size 
+                              onClick={() => setEditingModel({
+                                id: model.id,
+                                brand: model.brand,
+                                name: model.name,
+                                size: model.size
                               })}
-                              title="Edytuj przed akceptacją"
+                              title={t('superAdmin.carModels.editBeforeAccept')}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -395,7 +406,7 @@ export const CarModelsManager: React.FC = () => {
                               size="icon"
                               onClick={() => handleAcceptProposal(model)}
                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Akceptuj"
+                              title={t('superAdmin.carModels.accept')}
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -404,7 +415,7 @@ export const CarModelsManager: React.FC = () => {
                               size="icon"
                               onClick={() => handleRejectProposal(model)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              title="Odrzuć"
+                              title={t('superAdmin.carModels.reject')}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -414,11 +425,11 @@ export const CarModelsManager: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setEditingModel({ 
-                                id: model.id, 
-                                brand: model.brand, 
-                                name: model.name, 
-                                size: model.size 
+                              onClick={() => setEditingModel({
+                                id: model.id,
+                                brand: model.brand,
+                                name: model.name,
+                                size: model.size
                               })}
                             >
                               <Pencil className="h-4 w-4" />
@@ -444,8 +455,11 @@ export const CarModelsManager: React.FC = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Pokazuję {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-
-                {Math.min(currentPage * ITEMS_PER_PAGE, filteredModels.length)} z {filteredModels.length}
+                {t('superAdmin.carModels.showing', {
+                  from: ((currentPage - 1) * ITEMS_PER_PAGE) + 1,
+                  to: Math.min(currentPage * ITEMS_PER_PAGE, filteredModels.length),
+                  total: filteredModels.length,
+                })}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -454,10 +468,10 @@ export const CarModelsManager: React.FC = () => {
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
-                  Poprzednia
+                  {t('superAdmin.carModels.previous')}
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Strona {currentPage} z {totalPages}
+                  {t('superAdmin.carModels.page', { current: currentPage, total: totalPages })}
                 </span>
                 <Button
                   variant="outline"
@@ -465,7 +479,7 @@ export const CarModelsManager: React.FC = () => {
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
-                  Następna
+                  {t('superAdmin.carModels.next')}
                 </Button>
               </div>
             </div>

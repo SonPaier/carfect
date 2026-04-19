@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SignatureCanvas from 'react-signature-canvas';
 import { Dialog, DialogContent } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -19,6 +20,7 @@ export const SignatureDialog = ({
 }: SignatureDialogProps) => {
   const sigCanvas = useRef<SignatureCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useTranslation();
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 300 });
 
   // Resize canvas to fit container
@@ -122,7 +124,7 @@ export const SignatureDialog = ({
             size="sm"
             className="bg-white"
           >
-            Wyczyść
+            {t('common.clear')}
           </Button>
           <Button
             onClick={handleSave}

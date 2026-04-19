@@ -17,10 +17,6 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -95,7 +91,7 @@ describe('useEmployeeAssignment', () => {
       expect(supabase.from).toHaveBeenCalledWith('reservations');
       expect(updateMock).toHaveBeenCalledWith({ assigned_employee_ids: ['emp-1', 'emp-2'] });
       expect(eqMock).toHaveBeenCalledWith('id', 'res-1');
-      expect(toast.success).toHaveBeenCalledWith('common.saved');
+      expect(toast.success).toHaveBeenCalledWith('Zapisano');
       expect(result.current.localAssignedEmployeeIds).toEqual(['emp-1', 'emp-2']);
     });
 
@@ -128,7 +124,7 @@ describe('useEmployeeAssignment', () => {
         await result.current.handleEmployeeSelect(['emp-1']);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('common.error');
+      expect(toast.error).toHaveBeenCalledWith('Błąd');
       expect(result.current.savingEmployees).toBe(false);
     });
 

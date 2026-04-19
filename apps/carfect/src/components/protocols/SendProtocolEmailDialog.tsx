@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -62,6 +63,7 @@ export const SendProtocolEmailDialog = ({
   instanceId,
   onSent,
 }: SendProtocolEmailDialogProps) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -98,7 +100,7 @@ export const SendProtocolEmailDialog = ({
 
   const handleSend = async () => {
     if (!email || !isValidEmail(email)) {
-      toast.error('Podaj poprawny adres email');
+      toast.error(t('protocols.sendEmail.invalidEmail'));
       return;
     }
 
@@ -115,12 +117,12 @@ export const SendProtocolEmailDialog = ({
 
       if (error) throw error;
 
-      toast.success('Email został wysłany');
+      toast.success(t('protocols.sendEmail.sent'));
       onSent?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Error sending email:', error);
-      toast.error('Nie udało się wysłać emaila');
+      toast.error(t('protocols.sendEmail.sendError'));
     } finally {
       setSending(false);
     }
@@ -131,7 +133,7 @@ export const SendProtocolEmailDialog = ({
   const formContent = (
     <div className="flex-1 space-y-4 overflow-y-auto py-4 px-4 sm:px-0">
       <div className="space-y-2">
-        <Label htmlFor="email">Adres email odbiorcy</Label>
+        <Label htmlFor="email">{t('protocols.sendEmail.recipientEmail')}</Label>
         <Input
           id="email"
           type="email"
@@ -141,17 +143,17 @@ export const SendProtocolEmailDialog = ({
           className={!isValidEmail(email) && email ? 'border-destructive' : ''}
         />
         {!isValidEmail(email) && email && (
-          <p className="text-xs text-destructive">Nieprawidłowy format adresu email</p>
+          <p className="text-xs text-destructive">{t('protocols.sendEmail.invalidEmailFormat')}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="subject">Temat</Label>
+        <Label htmlFor="subject">{t('protocols.sendEmail.subject')}</Label>
         <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
       </div>
 
       <div className="space-y-2 flex-1 flex flex-col">
-        <Label htmlFor="message">Treść wiadomości</Label>
+        <Label htmlFor="message">{t('protocols.sendEmail.messageBody')}</Label>
         <Textarea
           id="message"
           value={message}
@@ -166,7 +168,7 @@ export const SendProtocolEmailDialog = ({
   const footerContent = (
     <div className="flex gap-2 justify-end">
       <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-white">
-        Anuluj
+        {t('protocols.sendEmail.cancel')}
       </Button>
       <Button onClick={handleSend} disabled={sending || !email}>
         {sending ? (
@@ -174,7 +176,7 @@ export const SendProtocolEmailDialog = ({
         ) : (
           <Send className="h-4 w-4 mr-2" />
         )}
-        Wyślij
+        {t('protocols.sendEmail.send')}
       </Button>
     </div>
   );
@@ -184,7 +186,7 @@ export const SendProtocolEmailDialog = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="h-[100dvh] flex flex-col">
           <DrawerHeader className="border-b">
-            <DrawerTitle>Wyślij protokół emailem</DrawerTitle>
+            <DrawerTitle>{t('protocols.sendEmail.title')}</DrawerTitle>
           </DrawerHeader>
           {formContent}
           <div className="border-t p-4 mt-auto">{footerContent}</div>
@@ -197,7 +199,7 @@ export const SendProtocolEmailDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Wyślij protokół emailem</DialogTitle>
+          <DialogTitle>{t('protocols.sendEmail.title')}</DialogTitle>
         </DialogHeader>
         {formContent}
         <div className="border-t pt-4">{footerContent}</div>

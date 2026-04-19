@@ -8,16 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@shared/ui';
 import { ChevronLeft, ChevronRight, Plus, Loader2, Clock, Pencil, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isSameDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import AddEditTimeEntryDialog from './AddEditTimeEntryDialog';
 import { ConfirmDialog } from '@shared/ui';
+import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface TimeEntriesViewProps {
   instanceId: string | null;
 }
 
 const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
+  const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -86,11 +88,11 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
     
     try {
       await deleteEntry.mutateAsync(entryToDelete.id);
-      toast.success('Wpis został usunięty');
+      toast.success(t('timeEntry.deleted'));
       setDeleteConfirmOpen(false);
       setEntryToDelete(null);
     } catch (error) {
-      toast.error('Błąd podczas usuwania wpisu');
+      toast.error(t('timeEntry.deleteError'));
     }
   };
 
@@ -113,9 +115,9 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
       <Card>
         <CardContent className="py-12 text-center">
           <Clock className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">Brak aktywnych pracowników</p>
+          <p className="text-muted-foreground">{t('employees.noActiveEmployees')}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Dodaj pracowników, aby móc rejestrować czas pracy
+            {t('employees.addEmployeesToTrackTime')}
           </p>
         </CardContent>
       </Card>
@@ -131,7 +133,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="font-medium min-w-[140px] text-center">
-            {format(currentDate, 'LLLL yyyy', { locale: pl })}
+            {format(currentDate, 'LLLL yyyy', { locale: getDateLocale() })}
           </span>
           <Button variant="outline" size="icon" onClick={handleNextMonth}>
             <ChevronRight className="w-4 h-4" />
@@ -175,7 +177,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
               <CardContent>
                 <div className="text-2xl font-bold">{totalHours}</div>
                 <div className="text-xs text-muted-foreground">
-                  {summary?.entries_count || 0} wpisów
+                  {t('employees.entriesCount', { count: summary?.entries_count || 0 })}
                   {earnings && ` • ${earnings} zł`}
                 </div>
               </CardContent>
@@ -210,7 +212,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
                         <TableRow key={entry.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span>{format(new Date(entry.entry_date), 'd MMM', { locale: pl })}</span>
+                              <span>{format(new Date(entry.entry_date), 'd MMM', { locale: getDateLocale() })}</span>
                               {isWeekend(new Date(entry.entry_date)) && (
                                 <Badge variant="secondary" className="text-xs">weekend</Badge>
                               )}
@@ -260,7 +262,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
                 {timeEntries.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Brak wpisów w tym miesiącu
+                      {t('employees.noEntriesThisMonth')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -281,9 +283,9 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title="Usuń wpis"
-        description="Czy na pewno chcesz usunąć ten wpis czasu pracy?"
-        confirmLabel="Usuń"
+        title={t('employees.deleteEntry')}
+        description={t('employees.deleteEntryConfirm')}
+        confirmLabel={t('common.delete')}
         onConfirm={handleDeleteEntry}
         variant="destructive"
       />

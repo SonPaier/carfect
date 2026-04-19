@@ -4,33 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IntegrationsView } from './IntegrationsView';
 
-// Mock i18n
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'integrations.sections.invoicing': 'Płatności i fakturowanie',
-        'integrations.sections.ppfDistributors': 'Dystrybutorzy i producenci folii PPF',
-        'integrations.fakturownia.title': 'Fakturownia',
-        'integrations.fakturownia.description': 'Automatyczne wystawianie faktur przez Fakturownia.pl',
-        'integrations.ifirma.title': 'iFirma',
-        'integrations.ifirma.description': 'Wystawiaj faktury przez iFirma.pl',
-        'integrations.ultrafit.title': 'Ultrafit Poland',
-        'integrations.ultrafit.description': 'Zamawiasz folie w Ultrafit Poland? Połącz konto.',
-        'integrations.ultrafit.descriptionConnected': 'Twoje zamówienia Ultrafit są dostępne w Carfect.',
-        'integrations.ultrafit.requestAccess': 'Poproś o dostęp',
-        'integrations.ultrafit.contactNumber': 'tel. 666 610 222',
-        'integrations.status.connected': 'Włączona',
-        'integrations.ultrafit.disconnect': 'Wyłącz integrację',
-        'integrations.ultrafit.disconnectTitle': 'Wyłączyć integrację Ultrafit?',
-        'integrations.ultrafit.disconnectDescription': 'Po wyłączeniu nie będziesz mieć dostępu.',
-        'common.cancel': 'Anuluj',
-      };
-      return translations[key] ?? key;
-    },
-  }),
-}));
-
 // Mock supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {

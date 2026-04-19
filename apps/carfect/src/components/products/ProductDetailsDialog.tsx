@@ -81,7 +81,7 @@ export function ProductDetailsDialog({
               <div>
                 <h3 className="text-lg font-semibold">{product.name}</h3>
                 {product.short_name && (
-                  <p className="text-sm text-muted-foreground">Skrót: {product.short_name}</p>
+                  <p className="text-sm text-muted-foreground">{t('products.abbreviation')}: {product.short_name}</p>
                 )}
                 {product.brand && (
                   <p className="text-muted-foreground">{product.brand}</p>

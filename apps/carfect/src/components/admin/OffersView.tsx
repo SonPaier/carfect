@@ -607,7 +607,7 @@ export default function OffersView({
             >
               <Settings className="w-4 h-4" />
             </Button>
-            <Button onClick={() => navigateTo('new')}>Dodaj ofertę</Button>
+            <Button onClick={() => navigateTo('new')}>{t('offers.addOffer')}</Button>
           </div>
         </div>
         <div id="hint-infobox-slot" className="flex flex-col gap-4" />
@@ -655,7 +655,7 @@ export default function OffersView({
                   ? t('offers.noOffers')
                   : t('offers.noOffersForStatus')
             }
-            description={!searchQuery ? 'Utwórz pierwszą ofertę dla klienta' : undefined}
+            description={!searchQuery ? t('offers.createFirstOffer') : undefined}
           />
         ) : (
           <>

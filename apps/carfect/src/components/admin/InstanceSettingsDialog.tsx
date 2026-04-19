@@ -242,7 +242,7 @@ const InstanceSettingsDialog = ({
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="np. Auto Spa Gdańsk"
+                placeholder={t('settings.namePlaceholder')}
               />
             </div>
 
@@ -293,7 +293,7 @@ const InstanceSettingsDialog = ({
                 id="address"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="ul. Przykładowa 123, 80-000 Gdańsk"
+                placeholder={t('settings.addressPlaceholder')}
               />
             </div>
           </TabsContent>

@@ -174,7 +174,7 @@ export const OfferPreviewPanel = ({
 
     return {
       id: offer.id || '',
-      offer_number: 'PODGLĄD',
+      offer_number: t('offers.preview'),
       instance_id: instanceId,
       offer_format: offer.offerFormat ?? null,
       customer_data: {
@@ -276,7 +276,7 @@ export const OfferPreviewPanel = ({
   if (!mappedOffer) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
-        <p className="text-muted-foreground">Ładowanie podglądu...</p>
+        <p className="text-muted-foreground">{t('offers.loadingPreview')}</p>
       </div>
     );
   }

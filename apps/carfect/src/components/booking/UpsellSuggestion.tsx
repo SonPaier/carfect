@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sparkles, Clock, Plus, X } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,7 @@ export default function UpsellSuggestion({
   onAddService,
   selectedAddons,
 }: UpsellSuggestionProps) {
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
 
   // Reset dismissed state when time changes
@@ -155,7 +157,7 @@ export default function UpsellSuggestion({
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Zamknij"
+        aria-label={t('common.close')}
       >
         <X className="w-4 h-4" />
       </button>
@@ -170,7 +172,7 @@ export default function UpsellSuggestion({
             A co powiesz o dodatkowych {extraMinutes} minutach?
           </h4>
           <p className="text-xs text-muted-foreground mb-3">
-            Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na{' '}
+            {t('booking.upsellSuggestion')}{' '}
             <span className="font-medium text-foreground">{service.name}</span>?
           </p>
 

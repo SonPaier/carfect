@@ -254,12 +254,12 @@ export const OfferGenerator = ({
     // Validate required fields before sending
     const errors: ValidationErrors = {};
     if (!offer.customerData.name?.trim()) {
-      errors.name = 'Imię i nazwisko jest wymagane';
+      errors.name = t('offers.validation.nameRequired');
     }
     if (!offer.customerData.email?.trim()) {
       errors.email = 'Email jest wymagany';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(offer.customerData.email.trim())) {
-      errors.email = 'Nieprawidłowy format email';
+      errors.email = t('offers.validation.invalidEmail');
     }
     if (!offer.vehicleData.brandModel?.trim()) {
       errors.brandModel = 'Marka i model jest wymagany';

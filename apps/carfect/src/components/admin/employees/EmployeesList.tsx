@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEmployees, Employee } from '@/hooks/useEmployees';
 import { useTimeEntries } from '@/hooks/useTimeEntries';
 import { useWorkersSettings } from '@/hooks/useWorkersSettings';
@@ -29,6 +30,7 @@ const EmployeesList = ({ instanceId, centered = false }: EmployeesListProps) => 
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: timeEntries = [] } = useTimeEntries(instanceId, undefined, today, today);
   
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [workerDialogEmployee, setWorkerDialogEmployee] = useState<Employee | null>(null);
@@ -87,7 +89,7 @@ const EmployeesList = ({ instanceId, centered = false }: EmployeesListProps) => 
     <div className={`space-y-4 ${centered ? 'h-full flex flex-col' : ''}`}>
       {!centered && (
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Lista pracowników</h2>
+          <h2 className="text-lg font-semibold">{t('employees.employeeList')}</h2>
           {canAddEmployee && (
             <Button onClick={() => setDialogOpen(true)} size="sm">
               <Plus className="w-4 h-4 mr-1" />
@@ -109,9 +111,9 @@ const EmployeesList = ({ instanceId, centered = false }: EmployeesListProps) => 
       {activeEmployees.length === 0 ? (
         <div className={`py-12 text-center ${centered ? 'flex-1 flex flex-col items-center justify-center' : ''}`}>
           <User className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">Brak pracowników</p>
+          <p className="text-muted-foreground">{t('employees.noEmployees')}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Dodaj pierwszego pracownika, aby rozpocząć rejestrację czasu pracy
+            {t('employees.addFirstEmployee')}
           </p>
           {canAddEmployee && (
             <Button onClick={() => setDialogOpen(true)} className="mt-4">

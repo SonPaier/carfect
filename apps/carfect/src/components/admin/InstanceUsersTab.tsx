@@ -13,11 +13,11 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import AddInstanceUserDialog from './AddInstanceUserDialog';
 import EditInstanceUserDialog from './EditInstanceUserDialog';
 import ResetPasswordDialog from './ResetPasswordDialog';
 import DeleteUserDialog from './DeleteUserDialog';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface InstanceUser {
   id: string;
@@ -147,10 +147,10 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
   };
 
   const getRoleLabel = (role: 'admin' | 'employee' | 'hall' | 'sales') => {
-    if (role === 'admin') return t('instanceUsers.admin');
-    if (role === 'sales') return 'Sprzedaż';
-    if (role === 'hall') return 'Kalendarz';
-    return t('instanceUsers.employee');
+    if (role === 'admin') return t('instanceUsers.roleAdmin');
+    if (role === 'sales') return t('instanceUsers.roleSales');
+    if (role === 'hall') return t('instanceUsers.roleCalendar');
+    return t('instanceUsers.roleEmployee');
   };
 
   if (loading) {
@@ -168,7 +168,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
         <div>
           <h3 className="text-lg font-semibold">{t('instanceUsers.title')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Zarządzaj kontami użytkowników z dostępem do panelu
+            {t('instanceUsers.description')}
           </p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} size="sm">
@@ -189,10 +189,10 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nazwa</TableHead>
-                <TableHead>Rola</TableHead>
-                <TableHead>Utworzono</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t('common.name')}</TableHead>
+                <TableHead>{t('instanceUsers.role')}</TableHead>
+                <TableHead>{t('instanceUsers.createdAt')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -202,7 +202,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
                   <TableCell className="font-medium">{user.username}</TableCell>
                   <TableCell>{getRoleLabel(user.role)}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {format(new Date(user.created_at), 'd MMM yyyy', { locale: pl })}
+                    {format(new Date(user.created_at), 'd MMM yyyy', { locale: getDateLocale() })}
                   </TableCell>
                   <TableCell>
                     {user.is_blocked ? (
@@ -273,33 +273,33 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Rola</TableHead>
-              <TableHead>Dostęp</TableHead>
+              <TableHead>{t('instanceUsers.role')}</TableHead>
+              <TableHead>{t('instanceUsers.access')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell className="font-medium">Admin</TableCell>
+              <TableCell className="font-medium">{t('instanceUsers.roleAdmin')}</TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                Pełny dostęp: kalendarz, rezerwacje, ustawienia, użytkownicy, statystyki
+                {t('instanceUsers.adminDesc')}
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-medium">Pracownik</TableCell>
+              <TableCell className="font-medium">{t('instanceUsers.roleEmployee')}</TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                Kalendarz, rezerwacje, powiadomienia (bez ustawień i użytkowników)
+                {t('instanceUsers.employeeDesc')}
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-medium">Kalendarz</TableCell>
+              <TableCell className="font-medium">{t('instanceUsers.roleCalendar')}</TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)
+                {t('instanceUsers.calendarDesc')}
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-medium">Sprzedaż</TableCell>
+              <TableCell className="font-medium">{t('instanceUsers.roleSales')}</TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                Panel CRM: zamówienia, klienci, produkty, oferty
+                {t('instanceUsers.salesDesc')}
               </TableCell>
             </TableRow>
           </TableBody>

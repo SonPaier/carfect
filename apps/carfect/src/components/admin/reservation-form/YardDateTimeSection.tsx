@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
 import {
@@ -18,6 +17,7 @@ import {
 } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface YardDateTimeSectionProps {
   arrivalDate: Date;
@@ -67,7 +67,7 @@ export const YardDateTimeSection = ({
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {arrivalDate
-                  ? format(arrivalDate, 'd MMM', { locale: pl })
+                  ? format(arrivalDate, 'd MMM', { locale: getDateLocale() })
                   : t('addReservation.selectDate')}
               </Button>
             </PopoverTrigger>
@@ -81,7 +81,7 @@ export const YardDateTimeSection = ({
                     setArrivalDateOpen(false);
                   }
                 }}
-                locale={pl}
+                locale={getDateLocale()}
                 className="pointer-events-auto"
               />
             </PopoverContent>
@@ -103,7 +103,7 @@ export const YardDateTimeSection = ({
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {pickupDate
-                  ? format(pickupDate, 'd MMM', { locale: pl })
+                  ? format(pickupDate, 'd MMM', { locale: getDateLocale() })
                   : t('addReservation.selectDate')}
               </Button>
             </PopoverTrigger>
@@ -115,7 +115,7 @@ export const YardDateTimeSection = ({
                   setPickupDate(date || null);
                   setPickupDateOpen(false);
                 }}
-                locale={pl}
+                locale={getDateLocale()}
                 className="pointer-events-auto"
               />
             </PopoverContent>

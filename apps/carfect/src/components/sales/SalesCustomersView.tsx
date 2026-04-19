@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Plus,
@@ -60,6 +61,7 @@ type SortDir = 'asc' | 'desc';
 const ITEMS_PER_PAGE = 10;
 
 const SalesCustomersView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
@@ -123,7 +125,7 @@ const SalesCustomersView = () => {
       .order('name');
     if (error) {
       console.error(error);
-      toast.error('Błąd ładowania klientów');
+      toast.error(t('sales.customers.errorLoading'));
     } else {
       setCustomers((data as SalesCustomer[]) || []);
     }
@@ -209,12 +211,12 @@ const SalesCustomersView = () => {
     const { error } = await supabase.from('sales_customers').delete().eq('id', id);
     if (error) {
       if (error.code === '23503') {
-        toast.error('Nie można usunąć klienta — ma powiązane zamówienia');
+        toast.error(t('sales.customers.errorDeleteHasOrders'));
       } else {
-        toast.error('Błąd usuwania klienta');
+        toast.error(t('sales.customers.errorDelete'));
       }
     } else {
-      toast.success('Klient usunięty');
+      toast.success(t('sales.customers.successDeleted'));
       fetchCustomers();
     }
   };
@@ -276,12 +278,12 @@ const SalesCustomersView = () => {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead field="name">Nazwa</SortableHead>
+              <SortableHead field="name">{t('sales.orders.productName')}</SortableHead>
               <SortableHead field="city">Miasto</SortableHead>
-              <SortableHead field="last_order">Ostatnie zamówienie</SortableHead>
+              <SortableHead field="last_order">{t('sales.customers.lastOrder')}</SortableHead>
               <TableHead>Telefon</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Płatnik</TableHead>
+              <TableHead>{t('sales.customers.payer')}</TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
@@ -289,7 +291,7 @@ const SalesCustomersView = () => {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Ładowanie...
+                  {t('common.loading')}
                 </TableCell>
               </TableRow>
             ) : paginated.length === 0 ? (
@@ -297,8 +299,8 @@ const SalesCustomersView = () => {
                 <TableCell colSpan={7}>
                   <EmptyState
                     icon={Users}
-                    title="Brak klientów"
-                    description="Dodaj pierwszego klienta, aby rozpocząć sprzedaż"
+                    title={t('sales.customers.emptyTitle')}
+                    description={t('sales.customers.emptyDescription')}
                   />
                 </TableCell>
               </TableRow>
@@ -372,7 +374,7 @@ const SalesCustomersView = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => openNewOrder(c)}>
                               <ShoppingCart className="w-4 h-4 mr-2" />
-                              Nowe zamówienie
+                              {t('sales.orders.newOrder')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openDrawer(c, true)}>
                               Edytuj
@@ -383,7 +385,7 @@ const SalesCustomersView = () => {
                                 setDeleteConfirm({ open: true, id: c.id, name: c.name })
                               }
                             >
-                              Usuń
+                              {t('common.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -433,7 +435,7 @@ const SalesCustomersView = () => {
                             </div>
                             <div>
                               <p className="text-muted-foreground text-xs font-medium mb-1">
-                                Adres wysyłki
+                                {t('sales.orders.shippingAddress')}
                               </p>
                               {c.shipping_street ? (
                                 <>
@@ -461,7 +463,7 @@ const SalesCustomersView = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
-            Strona {page} z {totalPages} ({filtered.length} klientów)
+            {t('sales.customers.pageOf', { page, totalPages, count: filtered.length })}
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -490,7 +492,7 @@ const SalesCustomersView = () => {
               disabled={page === totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Następna
+              {t('common.next')}
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
           </div>
@@ -520,9 +522,9 @@ const SalesCustomersView = () => {
       <ConfirmDialog
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
-        title="Usuń klienta"
-        description={`Czy na pewno chcesz usunąć klienta "${deleteConfirm.name}"?`}
-        confirmLabel="Usuń"
+        title={t('sales.customers.deleteCustomer')}
+        description={t('sales.customers.deleteCustomerConfirm', { name: deleteConfirm.name })}
+        confirmLabel={t('common.delete')}
         variant="destructive"
         onConfirm={() => handleDelete(deleteConfirm.id)}
       />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Input, Button, Label, Textarea, NumericInput } from '@shared/ui';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ const AddEditRollDrawer = ({
   roll,
   onSaved,
 }: AddEditRollDrawerProps) => {
+  const { t } = useTranslation();
   const isEdit = !!roll;
 
   const [brand, setBrand] = useState('ULTRAFIT');
@@ -83,15 +85,15 @@ const AddEditRollDrawer = ({
   const handleSave = async () => {
     if (!instanceId) return;
     if (!productName.trim()) {
-      toast.error('Nazwa produktu jest wymagana');
+      toast.error(t('sales.rolls.validationProductNameRequired'));
       return;
     }
     if (!widthMm || widthMm <= 0) {
-      toast.error('Szerokość musi być większa od 0');
+      toast.error(t('sales.rolls.validationWidthRequired'));
       return;
     }
     if (!lengthM || lengthM <= 0) {
-      toast.error('Długość musi być większa od 0');
+      toast.error(t('sales.rolls.validationLengthRequired'));
       return;
     }
 
@@ -116,7 +118,7 @@ const AddEditRollDrawer = ({
           deliveryDate: deliveryDate || undefined,
           photoUrl: finalPhotoUrl || undefined,
         });
-        toast.success('Rolka zaktualizowana');
+        toast.success(t('sales.rolls.toastUpdated'));
       } else {
         const {
           data: { user },
@@ -134,14 +136,14 @@ const AddEditRollDrawer = ({
           photoUrl: finalPhotoUrl || undefined,
           createdBy: user?.id ?? null,
         });
-        toast.success('Rolka dodana');
+        toast.success(t('sales.rolls.toastAdded'));
       }
 
       resetDirty();
       onOpenChange(false);
       onSaved?.();
     } catch (err: unknown) {
-      toast.error('Błąd: ' + (err as Error).message);
+      toast.error(t('sales.rolls.toastError', { message: (err as Error).message }));
     } finally {
       setSaving(false);
     }
@@ -177,7 +179,7 @@ const AddEditRollDrawer = ({
         }}
       >
         <SheetHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
-          <SheetTitle>{isEdit ? 'Edytuj rolkę' : 'Dodaj rolkę'}</SheetTitle>
+          <SheetTitle>{isEdit ? t('sales.rolls.drawerEditTitle') : t('sales.rolls.drawerAddTitle')}</SheetTitle>
           <button
             type="button"
             onClick={handleClose}
@@ -190,7 +192,7 @@ const AddEditRollDrawer = ({
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
           {/* Brand */}
           <div className="space-y-1.5">
-            <Label>Marka / Producent</Label>
+            <Label>{t('sales.rolls.labelBrand')}</Label>
             <Input
               value={brand}
               onChange={(e) => {
@@ -203,7 +205,7 @@ const AddEditRollDrawer = ({
 
           {/* Product Name */}
           <div className="space-y-1.5">
-            <Label>Nazwa produktu *</Label>
+            <Label>{t('sales.rolls.labelProductName')}</Label>
             <Input
               value={productName}
               onChange={(e) => {
@@ -213,13 +215,13 @@ const AddEditRollDrawer = ({
               placeholder="np. XP CRYSTAL"
             />
             <p className="text-xs text-muted-foreground">
-              Musi odpowiadać nazwie produktu w katalogu, aby działał autocomplete w zamówieniach
+              {t('sales.rolls.hintProductName')}
             </p>
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label>Opis</Label>
+            <Label>{t('sales.rolls.labelDescription')}</Label>
             <Textarea
               value={description}
               onChange={(e) => {
@@ -233,7 +235,7 @@ const AddEditRollDrawer = ({
 
           {/* Product Code */}
           <div className="space-y-1.5">
-            <Label>Kod produktu</Label>
+            <Label>{t('sales.rolls.labelProductCode')}</Label>
             <Input
               value={productCode}
               onChange={(e) => {
@@ -247,7 +249,7 @@ const AddEditRollDrawer = ({
 
           {/* Barcode */}
           <div className="space-y-1.5">
-            <Label>Kod kreskowy</Label>
+            <Label>{t('sales.rolls.labelBarcode')}</Label>
             <Input
               value={barcode}
               onChange={(e) => {
@@ -262,7 +264,7 @@ const AddEditRollDrawer = ({
           {/* Dimensions */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Szerokość (mm) *</Label>
+              <Label>{t('sales.rolls.labelWidthMm')}</Label>
               <NumericInput
                 value={widthMm ?? undefined}
                 onChange={(v) => {
@@ -274,7 +276,7 @@ const AddEditRollDrawer = ({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Długość (m) *</Label>
+              <Label>{t('sales.rolls.labelLengthM')}</Label>
               <NumericInput
                 value={lengthM ?? undefined}
                 onChange={(v) => {
@@ -290,7 +292,7 @@ const AddEditRollDrawer = ({
 
           {/* Delivery date */}
           <div className="space-y-1.5">
-            <Label>Data dostawy</Label>
+            <Label>{t('sales.rolls.labelDeliveryDate')}</Label>
             <Input
               type="date"
               value={deliveryDate}
@@ -303,7 +305,7 @@ const AddEditRollDrawer = ({
 
           {/* Photo */}
           <div className="space-y-1.5">
-            <Label>Zdjęcie etykiety</Label>
+            <Label>{t('sales.rolls.labelPhoto')}</Label>
             <input
               type="file"
               accept="image/*"
@@ -335,11 +337,11 @@ const AddEditRollDrawer = ({
 
         <SheetFooter className="border-t pt-4 gap-2">
           <Button variant="outline" onClick={handleClose} disabled={saving}>
-            Anuluj
+            {t('sales.rolls.btnCancel')}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isEdit ? 'Zapisz zmiany' : 'Dodaj rolkę'}
+            {isEdit ? t('sales.rolls.btnSaveChanges') : t('sales.rolls.btnAddRoll')}
           </Button>
         </SheetFooter>
       </SheetContent>

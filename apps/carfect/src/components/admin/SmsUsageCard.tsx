@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Progress } from '@shared/ui';
 import { MessageSquare } from 'lucide-react';
 
@@ -16,6 +17,7 @@ export function SmsUsageCard({
   showInstanceName = false,
   instanceName,
 }: SmsUsageCardProps) {
+  const { t } = useTranslation();
   const percentage = smsLimit > 0 ? (smsCount / smsLimit) * 100 : 0;
   const isNearLimit = percentage >= 80;
   const isAtLimit = percentage >= 100;
@@ -27,7 +29,7 @@ export function SmsUsageCard({
     <div>
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium">
-          {showInstanceName && instanceName ? instanceName : 'Zużycie SMS'}
+          {showInstanceName && instanceName ? instanceName : t('smsUsage.title')}
         </span>
         <MessageSquare
           className={`h-4 w-4 ${isOverLimit ? 'text-destructive' : isAtLimit ? 'text-destructive' : isNearLimit ? 'text-amber-500' : 'text-muted-foreground'}`}
@@ -44,16 +46,16 @@ export function SmsUsageCard({
         className={`text-xs mt-1 ${isOverLimit ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
       >
         {isOverLimit
-          ? `${overCount} SMS ponad limit = ${overCost} zł netto`
+          ? t('smsUsage.overLimitCost', { count: overCount, cost: overCost })
           : isAtLimit
-            ? 'Limit wyczerpany'
+            ? t('smsUsage.limitExhausted')
             : isNearLimit
-              ? `Pozostało ${smsLimit - smsCount} SMS`
-              : `${Math.round(percentage)}% wykorzystane`}
+              ? t('smsUsage.remaining', { count: smsLimit - smsCount })
+              : t('smsUsage.percentUsed', { percent: Math.round(percentage) })}
       </p>
       {isOverLimit && (
         <p className="text-xs text-muted-foreground mt-1">
-          1 SMS ponad limit = 0,12 zł netto. Zostanie doliczone do najbliższej faktury.
+          {t('smsUsage.overLimitInfo')}
         </p>
       )}
     </div>

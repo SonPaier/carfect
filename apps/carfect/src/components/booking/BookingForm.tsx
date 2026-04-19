@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -17,6 +18,7 @@ interface BookingFormProps {
 }
 
 const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormProps) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -30,7 +32,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
     e.preventDefault();
 
     if (!formData.name || !formData.phone || !formData.vehiclePlate) {
-      toast.error('Wypełnij wszystkie pola');
+      toast.error(t('booking.fillAllFields'));
       return;
     }
 
@@ -45,7 +47,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
     setShowConfirmation(true);
     setIsSubmitting(false);
 
-    toast.success('Rezerwacja wysłana! Sprawdź SMS z kodem.');
+    toast.success(t('booking.smsSentWithCode'));
   };
 
   if (showConfirmation) {
@@ -56,14 +58,14 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Rezerwacja wysłana!</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t('booking.sentSuccess')}</h2>
           <p className="text-muted-foreground">
-            Wysłaliśmy SMS z kodem potwierdzenia na numer {formData.phone}
+            {t('booking.smsSentToPhone', { phone: formData.phone })}
           </p>
         </div>
 
         <div className="bg-white border border-border p-6 max-w-sm mx-auto space-y-4">
-          <div className="text-sm text-muted-foreground">Twój kod potwierdzenia:</div>
+          <div className="text-sm text-muted-foreground">{t('booking.yourConfirmationCode')}</div>
           <div className="text-4xl font-bold tracking-[0.5em] text-primary pl-2">
             {confirmationCode}
           </div>
@@ -71,25 +73,25 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
 
         <div className="bg-white border border-border p-4 max-w-sm mx-auto text-left space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Usługa:</span>
+            <span className="text-muted-foreground">{t('booking.serviceLabel')}</span>
             <span className="font-medium">{service.name}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Data:</span>
+            <span className="text-muted-foreground">{t('booking.dateLabel')}</span>
             <span className="font-medium">{format(date, 'd MMMM yyyy', { locale: pl })}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Godzina:</span>
+            <span className="text-muted-foreground">{t('booking.timeLabel')}</span>
             <span className="font-medium">{slot.time}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Cena:</span>
+            <span className="text-muted-foreground">{t('booking.priceLabel')}</span>
             <span className="font-bold text-primary">{service.price} zł</span>
           </div>
         </div>
 
         <Button variant="default" size="lg" onClick={onComplete} className="mt-4">
-          Zamknij
+          {t('common.close')}
         </Button>
       </div>
     );
@@ -100,22 +102,22 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
       {/* Back Button */}
       <Button variant="ghost" onClick={onBack} className="gap-2 -ml-2">
         <ArrowLeft className="w-4 h-4" />
-        Wróć
+        {t('common.back')}
       </Button>
 
       {/* Summary */}
       <div className="bg-white border border-border p-4 space-y-3">
-        <h3 className="font-semibold text-foreground">Podsumowanie rezerwacji</h3>
+        <h3 className="font-semibold text-foreground">{t('booking.summary')}</h3>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <span className="text-muted-foreground">Usługa:</span>
+          <span className="text-muted-foreground">{t('booking.serviceLabel')}</span>
           <span className="font-medium text-right">{service.name}</span>
-          <span className="text-muted-foreground">Data:</span>
+          <span className="text-muted-foreground">{t('booking.dateLabel')}</span>
           <span className="font-medium text-right">
             {format(date, 'd MMMM yyyy', { locale: pl })}
           </span>
-          <span className="text-muted-foreground">Godzina:</span>
+          <span className="text-muted-foreground">{t('booking.timeLabel')}</span>
           <span className="font-medium text-right">{slot.time}</span>
-          <span className="text-muted-foreground">Cena:</span>
+          <span className="text-muted-foreground">{t('booking.priceLabel')}</span>
           <span className="font-bold text-primary text-right">{service.price} zł</span>
         </div>
       </div>
@@ -125,7 +127,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
         <div className="space-y-2">
           <Label htmlFor="name" className="flex items-center gap-2">
             <User className="w-4 h-4 text-muted-foreground" />
-            Imię i nazwisko
+            {t('booking.fullName')}
           </Label>
           <Input
             id="name"
@@ -139,7 +141,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
         <div className="space-y-2">
           <Label htmlFor="phone" className="flex items-center gap-2">
             <Phone className="w-4 h-4 text-muted-foreground" />
-            Numer telefonu
+            {t('booking.phoneNumber')}
           </Label>
           <Input
             id="phone"
@@ -154,7 +156,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
         <div className="space-y-2">
           <Label htmlFor="plate" className="flex items-center gap-2">
             <Car className="w-4 h-4 text-muted-foreground" />
-            Numer rejestracyjny
+            {t('booking.licensePlate')}
           </Label>
           <Input
             id="plate"
@@ -175,10 +177,10 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
             className="w-full"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Wysyłanie...' : `Zarezerwuj za ${service.price} zł`}
+            {isSubmitting ? t('booking.submitting') : t('booking.reserveFor', { price: service.price })}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-3">
-            Otrzymasz SMS z kodem potwierdzającym rezerwację
+            {t('booking.smsConfirmationNote')}
           </p>
         </div>
       </form>

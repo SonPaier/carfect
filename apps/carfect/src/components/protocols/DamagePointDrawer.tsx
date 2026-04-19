@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -43,6 +44,7 @@ export const DamagePointDrawer = ({
 }: DamagePointDrawerProps) => {
   const existingPoint = point && 'id' in point ? point : null;
 
+  const { t } = useTranslation();
   const [customNote, setCustomNote] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
@@ -87,7 +89,7 @@ export const DamagePointDrawer = ({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="h-[95vh] max-h-[95vh] mx-auto max-w-[768px]">
         <DrawerHeader className="flex items-center justify-between pb-2">
-          <DrawerTitle>{isEditing ? 'Edytuj uszkodzenie' : 'Dodaj uszkodzenie'}</DrawerTitle>
+          <DrawerTitle>{isEditing ? t('protocols.editDamage') : 'Dodaj uszkodzenie'}</DrawerTitle>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -96,7 +98,7 @@ export const DamagePointDrawer = ({
         <div className="px-4 space-y-4 pb-4 overflow-y-auto">
           {/* Photos */}
           <div className="space-y-2">
-            <Label>Zdjęcia</Label>
+            <Label>{t('protocols.photos')}</Label>
             <PhotoUploader
               photos={photoUrls}
               onPhotosChange={setPhotoUrls}
@@ -112,7 +114,7 @@ export const DamagePointDrawer = ({
           {/* Note with voice input */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Notatka</Label>
+              <Label>{t('protocols.note')}</Label>
               <VoiceNoteInput onTranscript={handleVoiceTranscript} />
             </div>
             <Textarea
@@ -135,10 +137,10 @@ export const DamagePointDrawer = ({
               onClick={onDelete}
               className="bg-white text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              Usuń
+              {t('common.delete')}
             </Button>
           )}
-          <Button onClick={handleSave}>{isEditing ? 'Zapisz' : 'Dodaj'}</Button>
+          <Button onClick={handleSave}>{isEditing ? t('common.save') : t('common.add')}</Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

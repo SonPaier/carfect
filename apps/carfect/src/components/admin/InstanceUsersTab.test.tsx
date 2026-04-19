@@ -31,36 +31,6 @@ const { mockToast } = vi.hoisted(() => ({
 }));
 vi.mock('sonner', () => ({ toast: mockToast }));
 
-// ---- i18n mock ----
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string) => {
-      const translations: Record<string, string> = {
-        'instanceUsers.title': 'Użytkownicy aplikacji',
-        'instanceUsers.addUser': 'Dodaj użytkownika',
-        'instanceUsers.noUsers': 'Brak użytkowników w tej instancji',
-        'instanceUsers.addFirstUser': 'Dodaj pierwszego użytkownika',
-        'instanceUsers.admin': 'Admin',
-        'instanceUsers.employee': 'Pracownik',
-        'instanceUsers.blocked': 'Zablokowany',
-        'instanceUsers.active': 'Aktywny',
-        'instanceUsers.edit': 'Edytuj',
-        'instanceUsers.resetPassword': 'Resetuj hasło',
-        'instanceUsers.block': 'Zablokuj',
-        'instanceUsers.unblock': 'Odblokuj',
-        'instanceUsers.delete': 'Usuń',
-        'instanceUsers.userBlocked': 'Użytkownik zablokowany',
-        'instanceUsers.userUnblocked': 'Użytkownik odblokowany',
-        'instanceUsers.fetchError': 'Nie udało się pobrać listy użytkowników',
-        'instanceUsers.sessionExpired': 'Sesja wygasła',
-        'common.noName': 'Brak nazwy',
-        'errors.generic': 'Wystąpił błąd',
-      };
-      return translations[key] ?? fallback ?? key;
-    },
-  }),
-}));
-
 // ---- Test data ----
 const INSTANCE_ID = 'inst-test-123';
 

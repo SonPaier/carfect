@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { parseMarkdownLists } from '@shared/utils';
 import { cn } from '@/lib/utils';
 
@@ -15,6 +16,7 @@ export const TruncatedDescription = ({
   className,
   textColor,
 }: TruncatedDescriptionProps) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -62,7 +64,7 @@ export const TruncatedDescription = ({
           className="text-sm font-medium hover:underline mt-1 transition-colors"
           style={{ color: textColor ? textColor : undefined }}
         >
-          {isExpanded ? 'Zobacz mniej' : 'Zobacz więcej'}
+          {isExpanded ? t('offers.showLess') : t('offers.showMore')}
         </button>
       )}
     </div>

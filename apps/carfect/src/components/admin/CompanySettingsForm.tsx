@@ -176,45 +176,45 @@ const CompanySettingsForm = ({
     const errors: Record<string, string> = {};
 
     if (!companyForm.name.trim()) {
-      errors.name = 'Nazwa myjni jest wymagana';
+      errors.name = t('companySettings.errorNameRequired');
     }
 
     if (companyForm.short_name && companyForm.short_name.length > 11) {
-      errors.short_name = 'Maksymalnie 11 znaków';
+      errors.short_name = t('companySettings.errorShortNameMax');
     }
 
     if (companyForm.nip) {
       const nipDigits = companyForm.nip.replace(/[\s-]/g, '');
       if (!/^\d{10}$/.test(nipDigits)) {
-        errors.nip = 'NIP musi mieć dokładnie 10 cyfr';
+        errors.nip = t('companySettings.errorNipDigits');
       }
     }
 
     if (companyForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyForm.email)) {
-      errors.email = 'Podaj poprawny adres email';
+      errors.email = t('companySettings.errorEmailInvalid');
     }
 
     if (companyForm.phone && companyForm.phone.replace(/\D/g, '').length < 9) {
-      errors.phone = 'Numer telefonu musi mieć co najmniej 9 cyfr';
+      errors.phone = t('companySettings.errorPhoneMin');
     }
 
     if (
       companyForm.reservation_phone &&
       companyForm.reservation_phone.replace(/\D/g, '').length < 9
     ) {
-      errors.reservation_phone = 'Numer telefonu musi mieć co najmniej 9 cyfr';
+      errors.reservation_phone = t('companySettings.errorPhoneMin');
     }
 
-    const urlFields: { field: keyof typeof companyForm; label: string }[] = [
-      { field: 'website', label: 'Strona WWW' },
-      { field: 'social_facebook', label: 'Facebook' },
-      { field: 'social_instagram', label: 'Instagram' },
-      { field: 'google_maps_url', label: 'Google Maps' },
+    const urlFields: (keyof typeof companyForm)[] = [
+      'website',
+      'social_facebook',
+      'social_instagram',
+      'google_maps_url',
     ];
-    for (const { field } of urlFields) {
+    for (const field of urlFields) {
       const value = companyForm[field];
       if (value && !/^https?:\/\//.test(value)) {
-        errors[field] = 'Adres musi zaczynać się od http:// lub https://';
+        errors[field] = t('companySettings.errorUrlInvalid');
       }
     }
 
@@ -270,7 +270,7 @@ const CompanySettingsForm = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Dane firmy</h3>
+      <h3 className="text-lg font-semibold">{t('companySettings.companyData')}</h3>
 
       {/* Logo + main name fields side by side on desktop */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -307,7 +307,7 @@ const CompanySettingsForm = ({
                     />
                   )}
                 </div>
-                <span className="text-white text-xs font-medium">Zmień</span>
+                <span className="text-white text-xs font-medium">{t('companySettings.changeLogo')}</span>
               </div>
             )}
           </div>
@@ -336,7 +336,7 @@ const CompanySettingsForm = ({
             />
             <FieldError field="short_name" />
             <p className="text-xs text-muted-foreground">
-              Używana w wiadomościach SMS, max 11 znaków
+              {t('companySettings.shortNameHint')}
             </p>
           </div>
         </div>
@@ -435,7 +435,7 @@ const CompanySettingsForm = ({
 
       {/* Bank Accounts */}
       <div className="space-y-2">
-        <Label>Nr konta bankowego</Label>
+        <Label>{t('companySettings.bankAccountLabel')}</Label>
         {bankAccounts.map((account, index) => (
           <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2">
             <Input
@@ -445,9 +445,9 @@ const CompanySettingsForm = ({
                 updated[index] = { ...updated[index], name: e.target.value };
                 setBankAccounts(updated);
               }}
-              placeholder="Nazwa konta"
+              placeholder={t('companySettings.bankAccountNamePlaceholder')}
               className="w-full sm:w-[40%] shrink-0"
-              aria-label={`Nazwa konta ${index + 1}`}
+              aria-label={t('companySettings.bankAccountNameAriaLabel', { index: index + 1 })}
             />
             <div className="flex items-center gap-2 w-full">
               <Input
@@ -457,9 +457,9 @@ const CompanySettingsForm = ({
                   updated[index] = { ...updated[index], number: e.target.value };
                   setBankAccounts(updated);
                 }}
-                placeholder="00 0000 0000 0000 0000 0000 0000"
+                placeholder={t('companySettings.bankAccountNumberPlaceholder')}
                 className="font-mono flex-1 min-w-0"
-                aria-label={`Numer konta ${index + 1}`}
+                aria-label={t('companySettings.bankAccountNumberAriaLabel', { index: index + 1 })}
               />
               {bankAccounts.length > 1 && (
                 <button
@@ -467,7 +467,7 @@ const CompanySettingsForm = ({
                   onClick={() => setBankAccounts(bankAccounts.filter((_, i) => i !== index))}
                   className="text-sm text-destructive hover:underline shrink-0"
                 >
-                  Usuń
+                  {t('companySettings.removeBankAccount')}
                 </button>
               )}
             </div>
@@ -478,7 +478,7 @@ const CompanySettingsForm = ({
           onClick={() => setBankAccounts([...bankAccounts, { name: '', number: '' }])}
           className="text-sm text-primary hover:underline"
         >
-          + Dodaj kolejne konto bankowe
+          {t('companySettings.addBankAccount')}
         </button>
       </div>
 

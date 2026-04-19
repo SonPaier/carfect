@@ -9,10 +9,6 @@ vi.mock('@/integrations/supabase/client', async () => {
   return { supabase: mockSupabase };
 });
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock('@/hooks/usePricingMode', () => ({
   usePricingMode: () => 'brutto',
 }));

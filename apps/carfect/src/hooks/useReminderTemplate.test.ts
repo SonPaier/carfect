@@ -6,10 +6,6 @@ import { useReminderTemplate } from './useReminderTemplate';
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const { mockToast } = vi.hoisted(() => ({
   mockToast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -163,7 +159,7 @@ describe('useReminderTemplate', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(mockToast.error).toHaveBeenCalledWith('reminderTemplates.fetchError');
+      expect(mockToast.error).toHaveBeenCalledWith('Błąd pobierania szablonów');
     });
   });
 
@@ -234,7 +230,7 @@ describe('useReminderTemplate', () => {
           ],
         }),
       );
-      expect(mockToast.success).toHaveBeenCalledWith('reminderTemplates.saved');
+      expect(mockToast.success).toHaveBeenCalledWith('Szablon zapisany');
     });
 
     it('shows toast.error when name is empty and does not call saveTemplate', async () => {
@@ -246,7 +242,7 @@ describe('useReminderTemplate', () => {
       });
 
       expect(mockSaveTemplate).not.toHaveBeenCalled();
-      expect(mockToast.error).toHaveBeenCalledWith('reminderTemplates.nameRequired');
+      expect(mockToast.error).toHaveBeenCalledWith('Nazwa szablonu jest wymagana');
     });
 
     it('calls onSaved callback with the returned id after saving', async () => {
@@ -279,7 +275,7 @@ describe('useReminderTemplate', () => {
         await result.current.save();
       });
 
-      expect(mockToast.error).toHaveBeenCalledWith('reminderTemplates.saveError');
+      expect(mockToast.error).toHaveBeenCalledWith('Błąd zapisywania szablonu');
     });
 
     it('shows error when emailSubject set but emailBody empty', async () => {
@@ -296,7 +292,7 @@ describe('useReminderTemplate', () => {
       });
 
       expect(mockSaveTemplate).not.toHaveBeenCalled();
-      expect(mockToast.error).toHaveBeenCalledWith('reminderTemplates.emailBothRequired');
+      expect(mockToast.error).toHaveBeenCalledWith('Podaj zarówno temat jak i treść emaila, lub zostaw oba pola puste');
     });
 
     it('shows error when emailBody set but emailSubject empty', async () => {
@@ -313,7 +309,7 @@ describe('useReminderTemplate', () => {
       });
 
       expect(mockSaveTemplate).not.toHaveBeenCalled();
-      expect(mockToast.error).toHaveBeenCalledWith('reminderTemplates.emailBothRequired');
+      expect(mockToast.error).toHaveBeenCalledWith('Podaj zarówno temat jak i treść emaila, lub zostaw oba pola puste');
     });
 
     it('allows save when both emailSubject and emailBody are empty', async () => {

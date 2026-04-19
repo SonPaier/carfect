@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -9,6 +10,7 @@ interface FallbackProps {
 }
 
 const ErrorFallback = ({ error, resetError }: FallbackProps) => {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="max-w-md w-full">
@@ -18,7 +20,7 @@ const ErrorFallback = ({ error, resetError }: FallbackProps) => {
           </div>
           <CardTitle>Coś poszło nie tak</CardTitle>
           <CardDescription>
-            Wystąpił nieoczekiwany błąd. Nasz zespół został powiadomiony.
+            {t('errors.unexpectedError')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -30,9 +32,9 @@ const ErrorFallback = ({ error, resetError }: FallbackProps) => {
           <div className="flex gap-2 justify-end">
             <Button onClick={resetError} variant="outline">
               <RefreshCw className="w-4 h-4 mr-2" />
-              Spróbuj ponownie
+              {t('errors.tryAgain')}
             </Button>
-            <Button onClick={() => (window.location.href = '/')}>Strona główna</Button>
+            <Button onClick={() => (window.location.href = '/')}>{t('errors.homepage')}</Button>
           </div>
         </CardContent>
       </Card>

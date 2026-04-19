@@ -112,16 +112,16 @@ export function AdminOfferApprovalDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'approve' ? 'Oferta zaakceptowana' : 'Zmień kwotę'}
+            {mode === 'approve' ? t('offers.offerApproved') : t('offers.changeAmount')}
           </DialogTitle>
           <DialogDescription>
-            Oferta dla "{customerName}" {mode === 'approve' ? 'zaakceptowana' : ''} na kwotę:
+            {t('offers.offerForCustomer', { name: customerName })} {mode === 'approve' ? t('offers.approved') : ''} {t('offers.forAmount')}:
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="net-amount">Kwota netto (zł)</Label>
+            <Label htmlFor="net-amount">{t('offers.netAmountLabel')}</Label>
             <Input
               id="net-amount"
               type="number"
@@ -134,7 +134,7 @@ export function AdminOfferApprovalDialog({
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="gross-amount">Kwota brutto (zł)</Label>
+            <Label htmlFor="gross-amount">{t('offers.grossAmountLabel')}</Label>
             <Input
               id="gross-amount"
               type="number"
@@ -147,7 +147,7 @@ export function AdminOfferApprovalDialog({
           </div>
           
           <p className="text-xs text-muted-foreground">
-            VAT 23% — kwoty przeliczają się automatycznie
+            {t('offers.vatAutoCalculation')}
           </p>
         </div>
 

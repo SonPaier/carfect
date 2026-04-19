@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
 import { RadioGroup, RadioGroupItem } from '@shared/ui';
@@ -34,30 +35,31 @@ export const PaymentSection = ({
   isNetPayer,
   setIsNetPayer,
 }: PaymentSectionProps) => {
+  const { t } = useTranslation();
   const selectedAccount = bankAccounts.find((a) => a.number === bankAccountNumber);
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Sposób płatności</Label>
+          <Label>{t('payment.method')}</Label>
           <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="cod">Za pobraniem</SelectItem>
-              <SelectItem value="transfer">Przelew</SelectItem>
-              <SelectItem value="cash">Gotówka</SelectItem>
-              <SelectItem value="card">Karta płatnicza</SelectItem>
-              <SelectItem value="free">Bezpłatne</SelectItem>
-              <SelectItem value="tab">Na zeszyt</SelectItem>
+              <SelectItem value="cod">{t('payment.cod')}</SelectItem>
+              <SelectItem value="transfer">{t('payment.transfer')}</SelectItem>
+              <SelectItem value="cash">{t('payment.cash')}</SelectItem>
+              <SelectItem value="card">{t('payment.card')}</SelectItem>
+              <SelectItem value="free">{t('payment.free')}</SelectItem>
+              <SelectItem value="tab">{t('payment.tab')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label>Płatnik</Label>
+          <Label>{t('payment.payer')}</Label>
           <RadioGroup
             value={isNetPayer ? 'netto' : 'brutto'}
             onValueChange={(v) => setIsNetPayer(v === 'netto')}
@@ -66,13 +68,13 @@ export const PaymentSection = ({
             <div className="flex items-center gap-1.5">
               <RadioGroupItem value="brutto" id="payer-brutto" />
               <Label htmlFor="payer-brutto" className="font-normal cursor-pointer">
-                Brutto
+                {t('payment.brutto')}
               </Label>
             </div>
             <div className="flex items-center gap-1.5">
               <RadioGroupItem value="netto" id="payer-netto" />
               <Label htmlFor="payer-netto" className="font-normal cursor-pointer">
-                Netto
+                {t('payment.netto')}
               </Label>
             </div>
           </RadioGroup>
@@ -81,10 +83,10 @@ export const PaymentSection = ({
 
       {bankAccounts.length > 0 && (
         <div className="space-y-2">
-          <Label>Numer konta</Label>
+          <Label>{t('payment.accountNumber')}</Label>
           <Select value={bankAccountNumber || undefined} onValueChange={setBankAccountNumber}>
             <SelectTrigger>
-              <SelectValue placeholder="Wybierz konto">
+              <SelectValue placeholder={t('payment.selectAccount')}>
                 {selectedAccount && (
                   <span className="truncate">
                     {selectedAccount.name

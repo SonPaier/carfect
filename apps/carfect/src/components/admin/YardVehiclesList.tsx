@@ -1,10 +1,11 @@
 import { useState, useEffect, DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, isToday, isTomorrow, parseISO, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Phone, Clock, Trash2, Plus, Pencil } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import AddReservationDialogV2, { YardVehicle } from './AddReservationDialogV2';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,10 +60,11 @@ const getDateLabel = (dateStr: string): string => {
   const date = parseISO(dateStr);
   if (isToday(date)) return 'Dzisiaj';
   if (isTomorrow(date)) return 'Jutro';
-  return format(date, 'd MMMM', { locale: pl });
+  return format(date, 'd MMMM', { locale: getDateLocale() });
 };
 
 export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = false }: YardVehiclesListProps) {
+  const { t } = useTranslation();
   const [vehicles, setVehicles] = useState<YardVehicle[]>([]);
   const [services, setServices] = useState<Record<string, Service>>({});
   const [loading, setLoading] = useState(true);
@@ -210,7 +212,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
           size="sm"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Dodaj pojazd
+          {t('yardVehicles.addVehicle')}
         </Button>
       </div>
 
@@ -218,11 +220,11 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
       <div className="flex-1 overflow-auto p-2 space-y-4">
         {loading ? (
           <div className="text-center text-muted-foreground py-8">
-            Ładowanie...
+            {t('common.loading')}
           </div>
         ) : filteredVehicles.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            Brak pojazdów na placu
+            {t('yardVehicles.noVehicles')}
           </div>
         ) : (
           groupedVehicles.map((group) => (
@@ -294,7 +296,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
                   {(vehicle.pickup_date || vehicle.deadline_time) && (
                     <div className="flex items-center gap-3 text-xs text-slate-600">
                       {vehicle.pickup_date && (
-                        <span>odbiór: {format(parseISO(vehicle.pickup_date), 'd MMM', { locale: pl })}</span>
+                        <span>odbiór: {format(parseISO(vehicle.pickup_date), 'd MMM', { locale: getDateLocale() })}</span>
                       )}
                       {vehicle.deadline_time && (
                         <span className="text-orange-600 flex items-center gap-1">
@@ -328,15 +330,15 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usuń pojazd z placu</AlertDialogTitle>
+            <AlertDialogTitle>{t('yardVehicles.deleteVehicle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz usunąć pojazd {vehicleToDelete?.vehicle_plate} ({vehicleToDelete?.customer_name}) z placu?
+              {t('yardVehicles.deleteConfirm', { plate: vehicleToDelete?.vehicle_plate, customer: vehicleToDelete?.customer_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-              Usuń
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -276,7 +276,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     const remainingSlots = maxPhotos - currentPhotos.length;
 
     if (remainingSlots <= 0) {
-      toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
+      toast.error(t('pages.hall.maxPhotos', { max: maxPhotos }));
       setPhotosTargetReservation(null);
       if (photosInputRef.current) photosInputRef.current.value = '';
       return;
@@ -324,10 +324,10 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         ),
       );
 
-      toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
+      toast.success(t('pages.hall.photosAdded', { count: uploadedUrls.length }));
     } catch (error) {
       console.error('Error uploading photos:', error);
-      toast.error('Błąd podczas przesyłania zdjęć');
+      toast.error(t('pages.hall.photoUploadError'));
     } finally {
       setUploadingPhotos(false);
       setPhotosTargetReservation(null);

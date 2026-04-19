@@ -253,7 +253,7 @@ export function AddTrainingDrawer({
     const title = selectedType ? `Szkolenie ${selectedType.name}` : 'Szkolenie';
 
     if (!dateRange?.from || !manualStartTime || !manualEndTime) {
-      toast.error('Uzupełnij wymagane pola');
+      toast.error(t('trainings.requiredFields'));
       return;
     }
 
@@ -295,7 +295,7 @@ export function AddTrainingDrawer({
       onClose();
     } catch (err) {
       console.error('Error saving training:', err);
-      toast.error('Błąd zapisu szkolenia');
+      toast.error(t('trainings.saveError'));
     } finally {
       setSaving(false);
     }
@@ -338,7 +338,7 @@ export function AddTrainingDrawer({
                 <Label>{t('trainings.type')}</Label>
                 <Select value={selectedTypeId} onValueChange={handleTypeChange}>
                   <SelectTrigger className="bg-white dark:bg-card">
-                    <SelectValue placeholder="Wybierz typ szkolenia" />
+                    <SelectValue placeholder={t('trainings.typePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent className="bg-white dark:bg-card z-50">
                     {trainingTypes.map((type) => (
@@ -411,7 +411,7 @@ export function AddTrainingDrawer({
 
               {/* Internal Notes */}
               <div className="space-y-2">
-                <Label>Notatki wewnętrzne</Label>
+                <Label>{t('trainings.internalNotes')}</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}

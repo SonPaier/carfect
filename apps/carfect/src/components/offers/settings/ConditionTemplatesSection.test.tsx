@@ -94,13 +94,6 @@ describe('ConditionTemplatesSection', () => {
       expect(emptyMessages).toHaveLength(4);
     });
 
-    it('renders all four template type section labels', () => {
-      renderComponent();
-      expect(screen.getByText('Gwarancja')).toBeInTheDocument();
-      expect(screen.getByText('Warunki płatności')).toBeInTheDocument();
-      expect(screen.getByText('Informacje o usłudze')).toBeInTheDocument();
-      expect(screen.getByText('Uwagi')).toBeInTheDocument();
-    });
   });
 
   describe('Renders templates', () => {

@@ -136,13 +136,13 @@ const AddInstanceUserDialog = ({
         ...(role === 'hall' && selectedHallId ? { hallId: selectedHallId } : {}),
       });
 
-      toast.success('Użytkownik został utworzony');
+      toast.success(t('addUser.success'));
       resetForm();
       onOpenChange(false);
       onSuccess();
     } catch (error: unknown) {
       console.error('Error creating user:', error);
-      toast.error((error as Error).message || 'Nie udało się utworzyć użytkownika');
+      toast.error((error as Error).message || t('addUser.error'));
     }
   };
 
@@ -157,13 +157,13 @@ const AddInstanceUserDialog = ({
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Dodaj użytkownika</DialogTitle>
-            <DialogDescription>Utwórz nowe konto użytkownika dla tej instancji.</DialogDescription>
+            <DialogTitle>{t('addUser.title')}</DialogTitle>
+            <DialogDescription>{t('addUser.dialogDescription')}</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Nazwa użytkownika</Label>
+              <Label htmlFor="username">{t('addUser.usernameLabel')}</Label>
               <Input
                 id="username"
                 value={username}
@@ -175,7 +175,7 @@ const AddInstanceUserDialog = ({
             </div>
 
             <PasswordInput
-              label="Hasło"
+              label={t('addUser.passwordLabel')}
               value={password}
               onChange={setPassword}
               validation={validation}
@@ -183,33 +183,33 @@ const AddInstanceUserDialog = ({
             />
 
             <PasswordConfirmInput
-              label="Potwierdź hasło"
+              label={t('addUser.confirmPasswordLabel')}
               value={confirmPassword}
               onChange={setConfirmPassword}
               match={confirmMatch}
             />
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rola</Label>
+              <Label htmlFor="role">{t('addUser.roleLabel')}</Label>
               <Select value={role} onValueChange={handleRoleChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="employee">Pracownik</SelectItem>
-                  <SelectItem value="hall">Kalendarz (tablet/kiosk)</SelectItem>
-                  <SelectItem value="sales">Sprzedaż (CRM)</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="employee">{t('addUser.roleEmployee')}</SelectItem>
+                  <SelectItem value="hall">{t('addUser.roleHall')}</SelectItem>
+                  <SelectItem value="sales">{t('addUser.roleSales')}</SelectItem>
+                  <SelectItem value="admin">{t('addUser.roleAdmin')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
                 {role === 'admin'
-                  ? 'Admin ma pełny dostęp do ustawień i zarządzania użytkownikami'
+                  ? t('addUser.roleAdminDesc')
                   : role === 'hall'
-                    ? 'Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)'
+                    ? t('addUser.roleHallDesc')
                     : role === 'sales'
-                      ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
-                      : 'Pracownik ma ograniczony dostęp do wybranych modułów'}
+                      ? t('addUser.roleSalesDesc')
+                      : t('addUser.roleEmployeeDesc')}
               </p>
             </div>
 
@@ -224,11 +224,11 @@ const AddInstanceUserDialog = ({
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
-                Anuluj
+                {t('addUser.cancel')}
               </Button>
               <Button type="submit" disabled={loading || !isPasswordValid}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Utwórz użytkownika
+                {t('addUser.createButton')}
               </Button>
             </DialogFooter>
           </form>
@@ -240,26 +240,26 @@ const AddInstanceUserDialog = ({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
-              Uprawnienia administratora
+              {t('addUser.adminPermissionsTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>Administrator instancji będzie miał dostęp do:</p>
+              <p>{t('addUser.adminPermissionsDesc')}</p>
               <ul className="list-disc list-inside text-left space-y-1 text-sm">
-                <li>Wszystkich ustawień instancji</li>
-                <li>Zarządzania użytkownikami</li>
-                <li>Wszystkich modułów aplikacji</li>
-                <li>Tworzenia i usuwania innych kont</li>
+                <li>{t('addUser.adminPermission1')}</li>
+                <li>{t('addUser.adminPermission2')}</li>
+                <li>{t('addUser.adminPermission3')}</li>
+                <li>{t('addUser.adminPermission4')}</li>
               </ul>
               <p className="text-amber-600 flex items-center gap-1 mt-2">
                 <AlertTriangle className="w-4 h-4" />
-                Przyznawaj te uprawnienia tylko zaufanym osobom.
+                {t('addUser.adminWarning')}
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelAdminRole}>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel onClick={cancelAdminRole}>{t('addUser.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAdminRole}>
-              Rozumiem, nadaj uprawnienia
+              {t('addUser.confirmAdmin')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

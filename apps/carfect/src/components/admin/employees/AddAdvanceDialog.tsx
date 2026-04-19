@@ -45,7 +45,7 @@ export function AddAdvanceDialog({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Dodaj zaliczkę — {employeeName}</DialogTitle>
+          <DialogTitle>{t('employees.addAdvance')} — {employeeName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -81,7 +81,7 @@ export function AddAdvanceDialog({
             Anuluj
           </Button>
           <Button onClick={handleSubmit} disabled={!amount || amount <= 0 || isSubmitting}>
-            Dodaj zaliczkę
+            {t('employees.addAdvance')}
           </Button>
         </DialogFooter>
       </DialogContent>

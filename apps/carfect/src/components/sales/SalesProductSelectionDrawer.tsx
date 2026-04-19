@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Check, Loader2, Search, X, ScanBarcode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
@@ -80,6 +81,7 @@ const SalesProductSelectionDrawer = ({
   customerName,
   onConfirm,
 }: SalesProductSelectionDrawerProps) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<SalesProductOption[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -351,7 +353,7 @@ const SalesProductSelectionDrawer = ({
         >
           <SheetTitle className="flex items-center gap-3 text-lg font-semibold">
             <ArrowLeft className="w-5 h-5" />
-            Wybierz produkty
+            {t('sales.productSelection.title')}
           </SheetTitle>
         </SheetHeader>
 
@@ -365,7 +367,7 @@ const SalesProductSelectionDrawer = ({
               inputMode="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Szukaj produktu lub wpisz 8 ost. znaków rolki..."
+              placeholder={t('sales.productSelection.searchPlaceholder')}
               className="pl-9 pr-9 h-11"
             />
             {searchQuery && (
@@ -396,7 +398,7 @@ const SalesProductSelectionDrawer = ({
             </div>
           ) : filteredProducts.length === 0 && !rollMatch ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
-              {searchQuery.trim() ? 'Brak pasujących produktów' : 'Brak produktów'}
+              {searchQuery.trim() ? t('sales.productSelection.noMatchingProducts') : t('sales.productSelection.noProducts')}
             </div>
           ) : (
             <div className="pb-4">
@@ -421,7 +423,7 @@ const SalesProductSelectionDrawer = ({
                       {rollMatch.variant.variantName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Rolka {rollMatch.rollCode} · {rollMatch.rollRemainingMb.toFixed(1)} mb dost.
+                      {t('sales.productSelection.rollAvailable', { code: rollMatch.rollCode, mb: rollMatch.rollRemainingMb.toFixed(1) })}
                     </p>
                   </div>
                   <div className="text-right mr-2 shrink-0">
@@ -429,7 +431,7 @@ const SalesProductSelectionDrawer = ({
                       {formatCurrency(rollMatch.product.priceNet)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      netto/{formatPriceUnit(rollMatch.product.priceUnit)}
+                      {t('sales.productSelection.nettoPerUnit')}{formatPriceUnit(rollMatch.product.priceUnit)}
                     </p>
                   </div>
                   <div
@@ -449,7 +451,7 @@ const SalesProductSelectionDrawer = ({
               {rollSearching && searchQuery.trim().replace(/-/g, '').length >= 8 && (
                 <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground bg-muted/30 border-b">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Szukam rolki...
+                  {t('sales.productSelection.searchingRoll')}
                 </div>
               )}
               {filteredProducts.map((product) => {
@@ -478,7 +480,7 @@ const SalesProductSelectionDrawer = ({
                             {formatCurrency(product.priceNet)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            netto/{formatPriceUnit(product.priceUnit)}
+                            {t('sales.productSelection.nettoPerUnit')}{formatPriceUnit(product.priceUnit)}
                           </p>
                         </div>
                       </div>
@@ -548,7 +550,7 @@ const SalesProductSelectionDrawer = ({
                         {formatCurrency(product.priceNet)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        netto/{formatPriceUnit(product.priceUnit)}
+                        {t('sales.productSelection.nettoPerUnit')}{formatPriceUnit(product.priceUnit)}
                       </p>
                     </div>
 
@@ -572,7 +574,7 @@ const SalesProductSelectionDrawer = ({
           <div className="mb-3 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-lg font-semibold text-foreground">
-                Wybrano: {selectedCount}
+                {t('sales.productSelection.selectedCount', { count: selectedCount })}
               </span>
             </div>
             {selectedCount > 0 && (
@@ -605,7 +607,7 @@ const SalesProductSelectionDrawer = ({
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground text-sm">
-                  + Wycinanie formatek
+                  {t('sales.productSelection.addFormatki')}
                 </span>
                 <span className="text-xs text-muted-foreground ml-2">
                   ({formatCurrency(formatkiProduct.priceNet)}/m²)
@@ -619,7 +621,7 @@ const SalesProductSelectionDrawer = ({
             className="w-full"
             size="lg"
           >
-            Zatwierdź
+            {t('sales.productSelection.confirm')}
           </Button>
         </div>
       </SheetContent>

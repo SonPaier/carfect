@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@shared/ui';
 import { Card, CardContent } from '@shared/ui';
@@ -19,8 +20,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Notification {
   id: string;
@@ -52,6 +53,7 @@ export default function NotificationsView({
   onReservationClick,
   onNotificationsChange,
 }: NotificationsViewProps) {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -115,7 +117,7 @@ export default function NotificationsView({
         if (serviceItems && Array.isArray(serviceItems) && serviceItems.length > 0) {
           // Use embedded names from service_items
           servicesData = serviceItems.map((item) => ({
-            name: item.name || 'Usługa',
+            name: item.name || t('common.services'),
             shortcut: item.short_name || null,
           }));
         } else if (serviceIds && Array.isArray(serviceIds) && serviceIds.length > 0) {
@@ -202,76 +204,29 @@ export default function NotificationsView({
   };
 
   const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'reservation_new':
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs bg-green-500/10 text-green-500 border-green-500/30"
-          >
-            Nowa rezerwacja
-          </Badge>
-        );
-      case 'reservation_cancelled':
-        return (
-          <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/30">
-            Anulowana
-          </Badge>
-        );
-      case 'reservation_cancelled_by_customer':
-        return (
-          <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/30">
-            Anulowana przez klienta
-          </Badge>
-        );
-      case 'reservation_edited':
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/30"
-          >
-            Edytowana
-          </Badge>
-        );
-      case 'reservation_edited_by_customer':
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs bg-purple-500/10 text-purple-500 border-purple-500/30"
-          >
-            Zmieniona przez klienta
-          </Badge>
-        );
-      case 'change_request':
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs bg-orange-500/10 text-orange-500 border-orange-500/30"
-          >
-            Prośba o zmianę
-          </Badge>
-        );
-      case 'offer_approved':
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-          >
-            Oferta zaakceptowana
-          </Badge>
-        );
-      case 'offer_modified':
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/30"
-          >
-            Oferta zmieniona
-          </Badge>
-        );
-      default:
-        return null;
-    }
+    const badgeKey = `notificationsView.badges.${type}`;
+    const label = t(badgeKey, { defaultValue: '' });
+    if (!label) return null;
+
+    const classMap: Record<string, string> = {
+      reservation_new: 'bg-green-500/10 text-green-500 border-green-500/30',
+      reservation_cancelled: 'bg-red-500/10 text-red-500 border-red-500/30',
+      reservation_cancelled_by_customer: 'bg-red-500/10 text-red-500 border-red-500/30',
+      reservation_edited: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
+      reservation_edited_by_customer: 'bg-purple-500/10 text-purple-500 border-purple-500/30',
+      change_request: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
+      offer_approved: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
+      offer_modified: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
+    };
+
+    return (
+      <Badge
+        variant="outline"
+        className={cn('text-xs', classMap[type] || '')}
+      >
+        {label}
+      </Badge>
+    );
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -285,18 +240,18 @@ export default function NotificationsView({
     <div className="max-w-3xl mx-auto">
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-medium">Powiadomienia</h1>
+          <h1 className="text-2xl font-medium">{t('notificationsView.title')}</h1>
           <div className="hidden sm:flex gap-2">
             {unreadCount > 0 && (
               <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
                 <Check className="w-4 h-4 mr-1" />
-                Oznacz wszystkie
+                {t('notificationsView.markAllRead')}
               </Button>
             )}
             {notifications.length > 0 && (
               <Button variant="outline" size="sm" onClick={handleDeleteAll}>
                 <Trash2 className="w-4 h-4 mr-1" />
-                Usuń wszystkie
+                {t('notificationsView.deleteAll')}
               </Button>
             )}
           </div>
@@ -306,13 +261,13 @@ export default function NotificationsView({
           {unreadCount > 0 && (
             <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
               <Check className="w-4 h-4 mr-1" />
-              Oznacz wszystkie
+              {t('notificationsView.markAllRead')}
             </Button>
           )}
           {notifications.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleDeleteAll}>
               <Trash2 className="w-4 h-4 mr-1" />
-              Usuń wszystkie
+              {t('notificationsView.deleteAll')}
             </Button>
           )}
         </div>
@@ -320,11 +275,11 @@ export default function NotificationsView({
       <div id="hint-infobox-slot" className="flex flex-col gap-4" />
 
       {loading ? (
-        <div className="text-center text-muted-foreground py-8">Ładowanie...</div>
+        <div className="text-center text-muted-foreground py-8">{t('notificationsView.loading')}</div>
       ) : notifications.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Brak powiadomień
+            {t('notificationsView.noNotifications')}
           </CardContent>
         </Card>
       ) : (
@@ -375,11 +330,11 @@ export default function NotificationsView({
                         {(() => {
                           const date = new Date(notification.created_at);
                           if (isToday(date)) {
-                            return formatDistanceToNow(date, { addSuffix: true, locale: pl });
+                            return formatDistanceToNow(date, { addSuffix: true, locale: getDateLocale() });
                           } else if (isYesterday(date)) {
                             return `Wczoraj, ${format(date, 'HH:mm')}`;
                           } else {
-                            return format(date, 'd MMMM yyyy HH:mm', { locale: pl });
+                            return format(date, 'd MMMM yyyy HH:mm', { locale: getDateLocale() });
                           }
                         })()}
                       </span>

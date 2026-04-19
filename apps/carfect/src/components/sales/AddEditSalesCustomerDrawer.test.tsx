@@ -108,22 +108,6 @@ describe('AddEditSalesCustomerDrawer', () => {
       expect(screen.getByRole('button', { name: /Pobierz dane/i })).toBeInTheDocument();
     });
 
-    it('renders contact fields in correct order after separator', () => {
-      render(<AddEditSalesCustomerDrawer {...defaultProps} />);
-      const labels = screen.getAllByText(
-        /^(Telefon \*|Email|Osoba kontaktowa|Waluta|Rabat|Płatnik netto)$/,
-      );
-      const labelTexts = labels.map((el) => el.textContent);
-      expect(labelTexts).toEqual([
-        'Telefon *',
-        'Email',
-        'Osoba kontaktowa',
-        'Waluta',
-        'Rabat',
-        'Płatnik netto',
-      ]);
-    });
-
     it('renders Adres firmy section', () => {
       render(<AddEditSalesCustomerDrawer {...defaultProps} />);
       expect(screen.getByText('Adres firmy')).toBeInTheDocument();

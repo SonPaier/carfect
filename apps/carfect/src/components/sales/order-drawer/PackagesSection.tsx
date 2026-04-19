@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import {
@@ -92,6 +93,7 @@ export const PackagesSection = ({
   isNetPayer,
   excludeOrderId,
 }: PackagesSectionProps) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <Label>Paczki</Label>
@@ -150,7 +152,7 @@ export const PackagesSection = ({
 
       <Button variant="outline" size="sm" className="gap-2" onClick={onAddPackage}>
         <Plus className="w-4 h-4" />
-        {packages.length > 0 ? 'Dodaj kolejną paczkę' : 'Dodaj paczkę'}
+        {packages.length > 0 ? t('sales.orders.addAnotherPackage') : t('sales.orders.addPackage')}
       </Button>
     </div>
   );

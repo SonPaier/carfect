@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { CheckCircle } from 'lucide-react';
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ import { sendPushNotification } from '@/lib/pushNotifications';
 import { POLISH_MONTH_NAMES_GENITIVE } from '@/lib/polishDateUtils';
 import { normalizePhone as normalizePhoneForStorage } from '@shared/utils';
 import type { Reservation } from '@/types/reservation';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 export interface UseReservationMutationsOptions {
   instanceId: string | null;
@@ -668,7 +668,7 @@ export function useReservationMutations({
 
       try {
         const dateFormatted = format(new Date(changeRequest.reservation_date), 'd MMMM', {
-          locale: pl,
+          locale: getDateLocale(),
         });
         const timeFormatted = changeRequest.start_time.slice(0, 5);
         const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalCode}`;
@@ -744,7 +744,7 @@ export function useReservationMutations({
       if (originalReservation) {
         try {
           const dateFormatted = format(new Date(originalReservation.reservation_date), 'd MMMM', {
-            locale: pl,
+            locale: getDateLocale(),
           });
           const timeFormatted = originalReservation.start_time.slice(0, 5);
           const manageUrl = `https://${instanceData?.slug || 'demo'}.carfect.pl/res?code=${originalReservation.confirmation_code}`;

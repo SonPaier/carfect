@@ -7,8 +7,8 @@ import { Input } from '@shared/ui';
 import { ArrowLeft, Plus, Phone, Calendar, Search, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addMonths } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { AddCustomerToServiceDialog } from './AddCustomerToServiceDialog';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface FollowUpService {
   id: string;
@@ -169,7 +169,7 @@ export function FollowUpServiceCustomers({
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           <span>
-                            {format(new Date(event.next_reminder_date), 'd MMM yyyy', { locale: pl })}
+                            {format(new Date(event.next_reminder_date), 'd MMM yyyy', { locale: getDateLocale() })}
                           </span>
                         </div>
                       </div>

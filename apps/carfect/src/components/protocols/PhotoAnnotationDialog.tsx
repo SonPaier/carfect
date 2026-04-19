@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pencil, Undo2, Redo2, Trash2, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -7,11 +8,11 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 
 type Stroke = { points: { x: number; y: number }[] };
 
-const COLORS = [
-  { value: '#FF0000', label: 'Czerwony' },
-  { value: '#FFD600', label: 'Żółty' },
-  { value: '#0066FF', label: 'Niebieski' },
-];
+const COLOR_VALUES = [
+  { value: '#FF0000', key: 'colorRed' },
+  { value: '#FFD600', key: 'colorYellow' },
+  { value: '#0066FF', key: 'colorBlue' },
+] as const;
 
 const STROKE_WIDTH = 4;
 const MAX_UNDO = 20;
@@ -32,6 +33,7 @@ export const PhotoAnnotationDialog = ({
   photoUrl,
   onSave,
 }: PhotoAnnotationDialogProps) => {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,7 @@ export const PhotoAnnotationDialog = ({
       setImageLoaded(true);
     };
     img.onerror = () => {
-      toast.error('Nie udało się załadować zdjęcia');
+      toast.error(t('protocols.photoAnnotation.loadError'));
       onOpenChange(false);
     };
     img.src = photoUrl;
@@ -253,11 +255,11 @@ export const PhotoAnnotationDialog = ({
       }
 
       onSave(urlData.publicUrl);
-      toast.success('Zdjęcie zapisane z adnotacjami');
+      toast.success(t('protocols.photoAnnotation.saved'));
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving annotated photo:', error);
-      toast.error('Błąd podczas zapisywania zdjęcia');
+      toast.error(t('protocols.photoAnnotation.saveError'));
     } finally {
       setSaving(false);
     }
@@ -280,7 +282,7 @@ export const PhotoAnnotationDialog = ({
           <div className="fixed top-4 left-4 right-4 z-[10003] flex items-center justify-between">
             {/* Left: colors (when drawing) */}
             <div className="flex items-center gap-2">
-              {isDrawingMode && COLORS.map(c => (
+              {isDrawingMode && COLOR_VALUES.map(c => (
                 <button
                   key={c.value}
                   type="button"
@@ -292,7 +294,7 @@ export const PhotoAnnotationDialog = ({
                     transform: activeColor === c.value ? 'scale(1.15)' : 'scale(1)',
                   }}
                   onClick={() => setActiveColor(c.value)}
-                  aria-label={c.label}
+                  aria-label={t(`protocols.photoAnnotation.${c.key}`)}
                 />
               ))}
             </div>
@@ -304,11 +306,11 @@ export const PhotoAnnotationDialog = ({
                 className={circleButtonClass}
                 style={isDrawingMode ? { backgroundColor: 'transparent', borderColor: 'white', color: 'white' } : undefined}
                 onClick={() => setIsDrawingMode(!isDrawingMode)}
-                aria-label="Rysik"
+                aria-label={t('protocols.photoAnnotation.pencilTool')}
               >
                 <Pencil className="h-6 w-6" />
               </button>
-              <button type="button" className={circleButtonClass} onClick={handleClose} aria-label="Zamknij">
+              <button type="button" className={circleButtonClass} onClick={handleClose} aria-label={t('protocols.photoAnnotation.close')}>
                 <X className="h-7 w-7" />
               </button>
             </div>
@@ -337,10 +339,10 @@ export const PhotoAnnotationDialog = ({
                 <button type="button" className={circleButtonClass} onClick={handleUndo} disabled={!canUndo} aria-label="Cofnij">
                   <Undo2 className="h-5 w-5" />
                 </button>
-                <button type="button" className={circleButtonClass} onClick={handleRedo} disabled={!canRedo} aria-label="Ponów">
+                <button type="button" className={circleButtonClass} onClick={handleRedo} disabled={!canRedo} aria-label={t('common.redo')}>
                   <Redo2 className="h-5 w-5" />
                 </button>
-                <button type="button" className={circleButtonClass} onClick={handleClear} disabled={!hasStrokes} aria-label="Wyczyść">
+                <button type="button" className={circleButtonClass} onClick={handleClear} disabled={!hasStrokes} aria-label={t('protocols.clear')}>
                   <Trash2 className="h-5 w-5" />
                 </button>
               </div>

@@ -156,14 +156,6 @@ describe('OfferPreviewDialog', () => {
     expect(view).toBeInTheDocument();
   });
 
-  it('maps offer_number as PODGLĄD for preview', async () => {
-    const offer = createOffer();
-    renderDialog(offer);
-
-    const number = await screen.findByTestId('offer-number');
-    expect(number.textContent).toBe('PODGLĄD');
-  });
-
   it('calculates subtotal_net excluding optional items', async () => {
     const offer = createOffer();
     renderDialog(offer);

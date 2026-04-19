@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Switch } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -31,6 +32,7 @@ export function WidgetBrandingSettings({
   initialData,
   onChange,
 }: WidgetBrandingSettingsProps) {
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [branding, setBranding] = useState<WidgetBranding>({
     widget_branding_enabled: false,
@@ -96,11 +98,11 @@ export function WidgetBrandingSettings({
         .eq('id', instanceId);
 
       if (error) throw error;
-      toast.success('Wygląd widgetu zapisany');
+      toast.success(t('offers.settings.branding.savedSuccess'));
       return true;
     } catch (error) {
       console.error('Error saving widget branding:', error);
-      toast.error('Nie udało się zapisać wyglądu widgetu');
+      toast.error(t('offers.settings.branding.savedError'));
       return false;
     } finally {
       setSaving(false);
@@ -115,12 +117,12 @@ export function WidgetBrandingSettings({
       <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
         <div className="space-y-0.5">
           <Label htmlFor="enable-widget-branding" className="font-medium text-sm">
-            Własne kolory widgetu
+            {t('offers.settings.branding.enableLabel')}
           </Label>
           <p className="text-xs text-muted-foreground">
             {branding.widget_branding_enabled
-              ? 'Widżet używa własnych kolorów'
-              : 'Widżet używa kolorów z ustawień oferty'}
+              ? t('offers.settings.branding.statusEnabled')
+              : t('offers.settings.branding.statusDisabled')}
           </p>
         </div>
         <Switch
@@ -135,23 +137,23 @@ export function WidgetBrandingSettings({
       {/* Color settings */}
       <div className="space-y-4">
         <ColorField
-          label="Kolor tła"
-          description="Tło strony formularza"
+          label={t('offers.settings.branding.bgColor')}
+          description={t('offers.settings.branding.bgColorDescription')}
           value={branding.widget_bg_color}
           onChange={(v) => updateBranding('widget_bg_color', v)}
           disabled={colorsDisabled}
         />
 
         <div className="space-y-3 p-3 rounded-lg border bg-muted/10">
-          <h4 className="font-medium text-xs">Sekcje formularza</h4>
+          <h4 className="font-medium text-xs">{t('offers.settings.branding.formSections')}</h4>
           <ColorField
-            label="Kolor sekcji"
+            label={t('offers.settings.branding.sectionColor')}
             value={branding.widget_section_bg_color}
             onChange={(v) => updateBranding('widget_section_bg_color', v)}
             disabled={colorsDisabled}
           />
           <ColorField
-            label="Kolor tekstu sekcji"
+            label={t('offers.settings.branding.sectionTextColor')}
             value={branding.widget_section_text_color}
             onChange={(v) => updateBranding('widget_section_text_color', v)}
             contrastWith={branding.widget_section_bg_color}
@@ -161,8 +163,8 @@ export function WidgetBrandingSettings({
         </div>
 
         <ColorField
-          label="Kolor akcentu"
-          description="Przyciski, zaznaczenia i linki"
+          label={t('offers.settings.branding.accentColor')}
+          description={t('offers.settings.branding.accentColorDescription')}
           value={branding.widget_primary_color}
           onChange={(v) => updateBranding('widget_primary_color', v)}
           disabled={colorsDisabled}
@@ -177,11 +179,11 @@ export function WidgetBrandingSettings({
             className="gap-1"
           >
             <RotateCcw className="w-3 h-3" />
-            Resetuj
+            {t('offers.settings.branding.reset')}
           </Button>
           <Button size="sm" onClick={saveAll} disabled={saving} className="gap-1">
             {saving && <Loader2 className="w-3 h-3 animate-spin" />}
-            Zapisz wygląd
+            {t('offers.settings.branding.saveAppearance')}
           </Button>
         </div>
       </div>

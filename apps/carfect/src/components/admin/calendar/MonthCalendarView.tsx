@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef, forwardRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   startOfMonth,
   endOfMonth,
@@ -13,7 +14,7 @@ import {
   max,
   min,
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@shared/ui';
@@ -46,8 +47,6 @@ function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
   const d = day.getTime();
   return d >= range.from.getTime() && d <= range.to.getTime();
 }
-
-const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
 
 const BAR_HEIGHT_NORMAL = 22;
 const BAR_HEIGHT_NOTES = 58;
@@ -432,7 +431,7 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
         {/* Month label — large bold, scrolls with content, separated from previous month */}
         <div className="px-4 pt-10 pb-4">
           <h2 className="text-[25px] font-bold text-foreground">
-            {format(monthDate, 'LLLL yyyy', { locale: pl })}
+            {format(monthDate, 'LLLL yyyy', { locale: getDateLocale() })}
           </h2>
         </div>
 
@@ -494,6 +493,16 @@ export const MonthCalendarView = ({
   monthRange = 1,
   onLoadMore,
 }: MonthCalendarViewProps) => {
+  const { t } = useTranslation();
+  const DAY_NAMES = [
+    t('calendar.dayNames.mon'),
+    t('calendar.dayNames.tue'),
+    t('calendar.dayNames.wed'),
+    t('calendar.dayNames.thu'),
+    t('calendar.dayNames.fri'),
+    t('calendar.dayNames.sat'),
+    t('calendar.dayNames.sun'),
+  ];
   const isMobile = useIsMobile();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const monthRefs = useRef<Map<string, HTMLDivElement>>(new Map());

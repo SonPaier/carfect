@@ -325,10 +325,10 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
       <Table wrapperClassName="overflow-visible">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[200px]">Nazwa</TableHead>
-            <TableHead className="w-[140px]">Telefon</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Pojazdy</TableHead>
+            <TableHead className="w-[200px]">{t('customersView.columnName')}</TableHead>
+            <TableHead className="w-[140px]">{t('customersView.columnPhone')}</TableHead>
+            <TableHead>{t('customersView.columnEmail')}</TableHead>
+            <TableHead>{t('customersView.columnVehicles')}</TableHead>
             <TableHead className="w-[100px] text-right" />
           </TableRow>
         </TableHeader>
@@ -405,7 +405,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
         <EmptyState
           icon={Users}
           title={searchQuery ? t('common.noResults') : t('customers.noCustomers')}
-          description={searchQuery ? undefined : 'Dodaj pierwszego klienta, aby rozpocząć'}
+          description={searchQuery ? undefined : t('customersView.addFirstCustomer')}
         />
       );
     }
@@ -421,7 +421,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
-            itemLabel="klientów"
+            itemLabel={t('customersView.itemLabel')}
           />
         </>
       );
@@ -438,7 +438,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
-            itemLabel="klientów"
+            itemLabel={t('customersView.itemLabel')}
           />
         </div>
       </>
@@ -450,7 +450,7 @@ const CustomersView = ({ instanceId, onOpenReservation }: CustomersViewProps) =>
       {/* Header with title and add button */}
       <div className="flex items-center justify-between shrink-0 pb-4">
         <h1 className="text-2xl font-medium text-foreground">{t('customers.title')}</h1>
-        <Button onClick={handleAddCustomer}>Dodaj klienta</Button>
+        <Button onClick={handleAddCustomer}>{t('customersView.addCustomer')}</Button>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 

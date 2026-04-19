@@ -3,7 +3,46 @@ import type { SubscriptionSummary } from './billing.types';
 import { SMS_OVERAGE_PRICE } from './billing.types';
 import { formatDate } from './formatDate';
 
-export function SubscriptionSummaryCard({ summary }: SubscriptionSummaryCardProps) {
+export interface SubscriptionSummaryLabels {
+  subscription: string;
+  price: string;
+  priceFormat: string;
+  vatNote: string;
+  stations: string;
+  status: string;
+  statusActive: string;
+  statusInactive: string;
+  currentPeriod: string;
+  nextBilling: string;
+  smsInPeriod: string;
+  smsOverLimit: string;
+}
+
+const DEFAULT_LABELS: SubscriptionSummaryLabels = {
+  subscription: 'Subskrypcja',
+  price: 'Cena',
+  priceFormat: '{price} zł netto / mies.',
+  vatNote: 'powiększone o 23% VAT',
+  stations: 'Stanowiska',
+  status: 'Status',
+  statusActive: 'Aktywna',
+  statusInactive: 'Nieaktywna',
+  currentPeriod: 'Obecny okres',
+  nextBilling: 'Kolejne rozliczenie',
+  smsInPeriod: 'SMS w bieżącym okresie',
+  smsOverLimit: '+{count} SMS ponad limit = {cost} zł netto',
+};
+
+interface SubscriptionSummaryCardProps {
+  summary: SubscriptionSummary;
+  labels?: Partial<SubscriptionSummaryLabels>;
+}
+
+export function SubscriptionSummaryCard({
+  summary,
+  labels: labelsProp,
+}: SubscriptionSummaryCardProps) {
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const {
     monthlyPrice,
     stationLimit,
@@ -15,7 +54,6 @@ export function SubscriptionSummaryCard({ summary }: SubscriptionSummaryCardProp
     smsLimit,
   } = summary;
 
-  // Display period end = day before next billing date (non-overlapping convention)
   const periodEndDisplay = currentPeriodEnd
     ? (() => {
         const d = new Date(currentPeriodEnd + 'T00:00:00Z');
@@ -30,47 +68,49 @@ export function SubscriptionSummaryCard({ summary }: SubscriptionSummaryCardProp
 
   return (
     <div>
-      <h4 className="text-base font-semibold mb-4">Subskrypcja</h4>
+      <h4 className="text-base font-semibold mb-4">{labels.subscription}</h4>
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <dt className="text-sm text-muted-foreground">Cena</dt>
+          <dt className="text-sm text-muted-foreground">{labels.price}</dt>
           <dd className="mt-1 font-medium">
-            {monthlyPrice} zł netto / mies.
-            <span className="block text-xs text-muted-foreground">powiększone o 23% VAT</span>
+            {labels.priceFormat.replace('{price}', String(monthlyPrice))}
+            <span className="block text-xs text-muted-foreground">{labels.vatNote}</span>
           </dd>
         </div>
 
         <div>
-          <dt className="text-sm text-muted-foreground">Stanowiska</dt>
+          <dt className="text-sm text-muted-foreground">{labels.stations}</dt>
           <dd className="mt-1 font-medium">{stationLimit}</dd>
         </div>
 
         <div>
-          <dt className="text-sm text-muted-foreground">Status</dt>
+          <dt className="text-sm text-muted-foreground">{labels.status}</dt>
           <dd className="mt-1">
             {status === 'active' ? (
-              <Badge className="bg-green-100 text-green-800 border-green-200">Aktywna</Badge>
+              <Badge className="bg-green-100 text-green-800 border-green-200">
+                {labels.statusActive}
+              </Badge>
             ) : (
-              <Badge variant="secondary">Nieaktywna</Badge>
+              <Badge variant="secondary">{labels.statusInactive}</Badge>
             )}
           </dd>
         </div>
 
         <div>
-          <dt className="text-sm text-muted-foreground">Obecny okres</dt>
+          <dt className="text-sm text-muted-foreground">{labels.currentPeriod}</dt>
           <dd className="mt-1 font-medium">
             {formatDate(currentPeriodStart)}–{formatDate(periodEndDisplay)}
           </dd>
         </div>
 
         <div>
-          <dt className="text-sm text-muted-foreground">Kolejne rozliczenie</dt>
+          <dt className="text-sm text-muted-foreground">{labels.nextBilling}</dt>
           <dd className="mt-1 font-medium">{formatDate(nextBillingDate)}</dd>
         </div>
 
         <div>
           <dt className="text-sm text-muted-foreground">
-            SMS w bieżącym okresie
+            {labels.smsInPeriod}
             {currentPeriodStart && periodEndDisplay && (
               <span className="block text-xs text-muted-foreground/70">
                 ({formatDate(currentPeriodStart)}–{formatDate(periodEndDisplay)})
@@ -81,7 +121,9 @@ export function SubscriptionSummaryCard({ summary }: SubscriptionSummaryCardProp
             {smsUsed} / {smsLimit}
             {isOverLimit && (
               <span className="block text-xs text-destructive font-medium">
-                +{overCount} SMS ponad limit = {overCost} zł netto
+                {labels.smsOverLimit
+                  .replace('{count}', String(overCount))
+                  .replace('{cost}', overCost)}
               </span>
             )}
           </dd>

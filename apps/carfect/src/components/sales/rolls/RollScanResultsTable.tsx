@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@shared/ui';
 import {
@@ -28,6 +29,7 @@ function InlineEditCell({
   onChange: (val: string) => void;
   suffix?: string;
 }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value ?? ''));
 
@@ -80,6 +82,7 @@ const RollScanResultsTable = ({
   onRetry,
   onUpdateField,
 }: RollScanResultsTableProps) => {
+  const { t } = useTranslation();
   const readyResults = results.filter(
     (r) => r.status === 'review' || r.status === 'confirmed' || r.status === 'error'
   );
@@ -101,10 +104,10 @@ const RollScanResultsTable = ({
               <TableHead>Kod produktu</TableHead>
               <TableHead>Kod kreskowy</TableHead>
               <TableHead>Szer. (mm)</TableHead>
-              <TableHead>Dł. (m)</TableHead>
+              <TableHead>{t('sales.rolls.lengthM')}</TableHead>
               <TableHead>Na stanie</TableHead>
-              <TableHead>Zużyto</TableHead>
-              <TableHead>Pozostało</TableHead>
+              <TableHead>{t('sales.rolls.used')}</TableHead>
+              <TableHead>{t('sales.rolls.remaining')}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -229,6 +232,7 @@ function ErrorRow({
   onRemove: (tempId: string) => void;
   onRetry?: (tempId: string, file: File) => void;
 }) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -239,7 +243,7 @@ function ErrorRow({
       <TableCell colSpan={7}>
         <div className="space-y-1">
           <p className="text-xs font-medium text-amber-800">
-            Nie udało się odczytać — {item.error}
+            {t('sales.rolls.readFailed')} — {item.error}
           </p>
           {onRetry && (
             <>

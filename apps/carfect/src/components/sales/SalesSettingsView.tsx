@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -14,6 +15,7 @@ import {
 } from './hooks/useSalesSettings';
 
 const SalesSettingsView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const queryClient = useQueryClient();
@@ -87,12 +89,12 @@ const SalesSettingsView = () => {
     if (!file || !instanceId) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Wybierz plik graficzny');
+      toast.error(t('sales.companySettings.errorLogoType'));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Maksymalny rozmiar pliku to 2MB');
+      toast.error(t('sales.companySettings.errorLogoSize'));
       return;
     }
 
@@ -130,10 +132,10 @@ const SalesSettingsView = () => {
         ) as unknown);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
-      toast.success('Logo zostało załadowane');
+      toast.success(t('sales.companySettings.successLogoUploaded'));
     } catch (error) {
       console.error('Error uploading logo:', error);
-      toast.error('Nie udało się załadować logo');
+      toast.error(t('sales.companySettings.errorLogoUpload'));
     } finally {
       setUploadingLogo(false);
     }
@@ -158,10 +160,10 @@ const SalesSettingsView = () => {
         ) as unknown);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
-      toast.success('Logo zostało usunięte');
+      toast.success(t('sales.companySettings.successLogoRemoved'));
     } catch (error) {
       console.error('Error removing logo:', error);
-      toast.error('Nie udało się usunąć logo');
+      toast.error(t('sales.companySettings.errorLogoRemove'));
     }
   };
 
@@ -206,7 +208,7 @@ const SalesSettingsView = () => {
               disabled={uploadingLogo}
             >
               <Upload className="w-4 h-4 mr-2" />
-              {companyForm.logo_url ? 'Zmień logo' : 'Załaduj logo'}
+              {companyForm.logo_url ? t('sales.settings.changeLogo') : t('sales.settings.uploadLogo')}
             </Button>
             {companyForm.logo_url && (
               <Button
@@ -217,7 +219,7 @@ const SalesSettingsView = () => {
                 className="text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Usuń logo
+                {t('sales.settings.removeLogo')}
               </Button>
             )}
           </div>
@@ -243,14 +245,14 @@ const SalesSettingsView = () => {
 
       {/* Short Name */}
       <div className="space-y-2">
-        <Label htmlFor="sales-short_name">Skrócona nazwa firmy (do SMS) *</Label>
+        <Label htmlFor="sales-short_name">{t('sales.settings.shortCompanyName')}</Label>
         <Input
           id="sales-short_name"
           value={companyForm.short_name}
           onChange={(e) => handleInputChange('short_name', e.target.value)}
           maxLength={20}
         />
-        <p className="text-xs text-muted-foreground">Używana w wiadomościach SMS, max 20 znaków</p>
+        <p className="text-xs text-muted-foreground">{t('sales.settings.shortNameDesc')}</p>
       </div>
 
       {/* Invoice Company Name */}
@@ -347,7 +349,7 @@ const SalesSettingsView = () => {
                 onClick={() => setBankAccounts(bankAccounts.filter((_, i) => i !== index))}
                 className="text-sm text-destructive hover:underline shrink-0"
               >
-                Usuń
+                {t('common.delete')}
               </button>
             )}
           </div>

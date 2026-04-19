@@ -295,9 +295,9 @@ const EditInstanceUserDialog = ({
                 {role === 'admin'
                   ? t('editUser.adminHint')
                   : role === 'hall'
-                    ? 'Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)'
+                    ? t('users.roleEmployeeDesc')
                     : role === 'sales'
-                      ? 'Dostęp do panelu sprzedaży CRM (zamówienia, klienci, produkty)'
+                      ? t('users.roleSalesDesc')
                       : t('editUser.employeeHint')}
               </p>
             </div>

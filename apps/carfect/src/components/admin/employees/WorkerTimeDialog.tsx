@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ const WorkerTimeDialog = ({
   showEditButton = false,
   onEditEmployee,
 }: WorkerTimeDialogProps) => {
+  const { t } = useTranslation();
   const today = format(new Date(), 'yyyy-MM-dd');
   const [showSchedule, setShowSchedule] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -80,11 +82,11 @@ const WorkerTimeDialog = ({
     if (!file || !instanceId) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Dozwolone są tylko pliki graficzne');
+      toast.error(t('admin.workerTime.onlyImages'));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Maksymalny rozmiar pliku to 10MB');
+      toast.error(t('admin.workerTime.maxFileSize'));
       return;
     }
 
@@ -115,10 +117,10 @@ const WorkerTimeDialog = ({
         name: employee.name,
       });
       
-      toast.success('Zdjęcie zostało zapisane');
+      toast.success(t('admin.workerTime.photoSaved'));
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Błąd podczas przesyłania zdjęcia');
+      toast.error(t('admin.workerTime.photoUploadError'));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -140,12 +142,12 @@ const WorkerTimeDialog = ({
         start_time: now.toISOString(),
         entry_type: 'manual',
       });
-      toast.success(`${employee.name} rozpoczął pracę`);
+      toast.success(t('admin.workerTime.started', { name: employee.name }));
       refetchTimeEntries();
       onOpenChange(false); // Close dialog after START
     } catch (error) {
       console.error('Start error:', error);
-      toast.error('Błąd podczas rozpoczynania pracy');
+      toast.error(t('admin.workerTime.startError'));
       // Rollback optimistic update on error
       setOptimisticWorking(null);
     } finally {
@@ -168,12 +170,12 @@ const WorkerTimeDialog = ({
         id: activeEntry.id,
         end_time: now.toISOString(),
       });
-      toast.success(`${employee.name} zakończył pracę`);
+      toast.success(t('admin.workerTime.stopped', { name: employee.name }));
       // Refetch both time entries and schedule data
       refetchTimeEntries();
     } catch (error) {
       console.error('Stop error:', error);
-      toast.error('Błąd podczas kończenia pracy');
+      toast.error(t('admin.workerTime.stopError'));
       // Rollback optimistic update on error
       setOptimisticWorking(null);
     } finally {
@@ -229,7 +231,7 @@ const WorkerTimeDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${showSchedule || !startStopEnabled ? "sm:max-w-2xl" : "sm:max-w-sm"} ${isMobile ? "h-[100dvh] max-h-[100dvh] rounded-none" : "max-h-[90vh]"} overflow-hidden flex flex-col`}>
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="sr-only">Czas pracy</DialogTitle>
+          <DialogTitle className="sr-only">{t('admin.workerTime.title')}</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="flex-1 -mx-6 px-6">
@@ -282,7 +284,7 @@ const WorkerTimeDialog = ({
             {totalMinutes > 0 && (
               <div className="text-center">
                 <p className="text-xl font-medium text-muted-foreground">
-                  Dzisiaj: {formatDuration(totalMinutes)}
+                  {t('admin.workerTime.today', { duration: formatDuration(totalMinutes) })}
                 </p>
                 {todayEmployeeEntries.length > 0 && (
                   <p className="text-2xl font-bold text-foreground mt-1">
@@ -345,7 +347,7 @@ const WorkerTimeDialog = ({
                   size="sm"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
-                  {showSchedule ? 'Ukryj grafik' : 'Zobacz grafik'}
+                  {showSchedule ? t('admin.workerTime.hideSchedule') : t('admin.workerTime.showSchedule')}
                 </Button>
               </div>
             )}

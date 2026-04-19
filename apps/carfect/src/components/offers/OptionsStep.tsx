@@ -255,7 +255,7 @@ export const OptionsStep = ({
                 >
                   <Command shouldFilter={false}>
                     <CommandInput
-                      placeholder="Szukaj w bibliotece..."
+                      placeholder={t('offers.options.searchLibrary')}
                       value={searchTerms[item.id] || ''}
                       onValueChange={(value) =>
                         setSearchTerms((prev) => ({ ...prev, [item.id]: value }))
@@ -263,7 +263,7 @@ export const OptionsStep = ({
                       className="text-left"
                     />
                     <CommandList>
-                      <CommandEmpty>Brak usług</CommandEmpty>
+                      <CommandEmpty>{t('offers.options.noServices')}</CommandEmpty>
                       <CommandGroup>
                         {products
                           .filter((p) => {
@@ -307,7 +307,7 @@ export const OptionsStep = ({
                 min={0}
                 step={1}
                 className="bg-white text-left"
-                placeholder="Cena netto"
+                placeholder={t('offers.options.priceNet')}
               />
             </div>
 
@@ -317,7 +317,7 @@ export const OptionsStep = ({
         )}
 
         {!item && (
-          <div className="text-center py-4 text-muted-foreground text-sm">Brak pozycji.</div>
+          <div className="text-center py-4 text-muted-foreground text-sm">{t('offers.options.noItems')}</div>
         )}
       </div>
     );
@@ -364,15 +364,15 @@ export const OptionsStep = ({
               {/* Table Header */}
               {showUnitPrices ? (
                 <div className="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground px-1">
-                  <div className="col-span-5 text-left">Nazwa</div>
-                  <div className="col-span-2 text-left">Cena netto</div>
+                  <div className="col-span-5 text-left">{t('sales.orders.productName')}</div>
+                  <div className="col-span-2 text-left">{t('sales.orders.netPrice')}</div>
                   <div className="col-span-4"></div>
                   <div className="col-span-1"></div>
                 </div>
               ) : (
                 <div className="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-muted-foreground px-1">
-                  <div className="col-span-9 text-left">Nazwa</div>
-                  <div className="col-span-2 text-left">Cena netto</div>
+                  <div className="col-span-9 text-left">{t('sales.orders.productName')}</div>
+                  <div className="col-span-2 text-left">{t('sales.orders.netPrice')}</div>
                   <div className="col-span-1"></div>
                 </div>
               )}
@@ -431,7 +431,7 @@ export const OptionsStep = ({
                           >
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Szukaj w bibliotece..."
+                                placeholder={t('offers.options.searchLibrary')}
                                 value={searchTerms[item.id] || ''}
                                 onValueChange={(value) =>
                                   setSearchTerms((prev) => ({
@@ -442,7 +442,7 @@ export const OptionsStep = ({
                                 className="text-left"
                               />
                               <CommandList>
-                                <CommandEmpty>Brak usług</CommandEmpty>
+                                <CommandEmpty>{t('offers.options.noServices')}</CommandEmpty>
                                 <CommandGroup>
                                   {products
                                     .filter((p) => {
@@ -488,7 +488,7 @@ export const OptionsStep = ({
                           min={0}
                           step={1}
                           className="bg-white text-left"
-                          placeholder="Cena"
+                          placeholder={t('offers.options.price')}
                         />
                       </div>
 
@@ -505,7 +505,7 @@ export const OptionsStep = ({
                           min={0}
                           step={0.01}
                           className="bg-white text-left"
-                          placeholder="Ilość"
+                          placeholder={t('offers.options.quantityPlaceholder')}
                         />
                         <Input
                           value={item.unit}
@@ -585,7 +585,7 @@ export const OptionsStep = ({
                           >
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Szukaj w bibliotece..."
+                                placeholder={t('offers.options.searchLibrary')}
                                 value={searchTerms[item.id] || ''}
                                 onValueChange={(value) =>
                                   setSearchTerms((prev) => ({
@@ -595,7 +595,7 @@ export const OptionsStep = ({
                                 }
                               />
                               <CommandList>
-                                <CommandEmpty>Brak usług</CommandEmpty>
+                                <CommandEmpty>{t('offers.options.noServices')}</CommandEmpty>
                                 <CommandGroup>
                                   {products
                                     .filter((p) => {
@@ -645,7 +645,7 @@ export const OptionsStep = ({
                           min={0}
                           step={1}
                           className="bg-white text-left"
-                          placeholder="Cena netto"
+                          placeholder={t('offers.options.priceNet')}
                         />
                       </div>
 
@@ -669,7 +669,7 @@ export const OptionsStep = ({
 
               {option.items.length === 0 && (
                 <div className="text-center py-4 text-muted-foreground text-sm">
-                  Brak pozycji. Dodaj pierwszą pozycję poniżej.
+                  {t('offers.noItemsAddBelow')}
                 </div>
               )}
 
@@ -681,7 +681,7 @@ export const OptionsStep = ({
                 className="gap-1 mt-2"
               >
                 <Plus className="w-3 h-3" />
-                Dodaj pozycję
+                {t('offers.addItem')}
               </Button>
             </div>
           </div>
@@ -693,14 +693,14 @@ export const OptionsStep = ({
     <>
       {/* Info about product descriptions */}
       <p className="text-sm text-muted-foreground mb-4">
-        Opisy usług są pobierane z zakładki{' '}
+        {t('offers.serviceDescFromTab')}{' '}
         <a
           href="/admin/products"
           target="_blank"
           rel="noopener noreferrer"
           className="text-primary hover:underline font-medium"
         >
-          Usługi
+          {t('common.services')}
         </a>
         .
       </p>
@@ -722,7 +722,7 @@ export const OptionsStep = ({
           {group.scope === null && groupedOptions.length > 1 && (
             <div className="flex items-center gap-3 mb-4">
               <Package className="w-5 h-5 text-muted-foreground" />
-              <h3 className="font-bold text-xl text-muted-foreground">Pozostałe opcje</h3>
+              <h3 className="font-bold text-xl text-muted-foreground">{t('offers.remainingOptions')}</h3>
             </div>
           )}
 
@@ -740,7 +740,7 @@ export const OptionsStep = ({
         <div className="text-center py-12 text-muted-foreground">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg mb-2">Brak opcji</p>
-          <p className="text-sm">Wybierz zakresy w poprzednim kroku lub dodaj opcję ręcznie</p>
+          <p className="text-sm">{t('offers.selectScopesOrAdd')}</p>
         </div>
       )}
 
@@ -748,10 +748,10 @@ export const OptionsStep = ({
       <ConfirmDialog
         open={!!optionToDelete}
         onOpenChange={(open) => !open && setOptionToDelete(null)}
-        title="Usuń opcję"
+        title={t('offers.deleteOption')}
         description={`Czy na pewno chcesz usunąć opcję "${optionToDelete?.name.replace(/^.*? - /, '')}"? Ta operacja jest nieodwracalna.`}
-        confirmLabel="Usuń"
-        cancelLabel="Anuluj"
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
         variant="destructive"
         onConfirm={() => {
           if (optionToDelete) {

@@ -3,11 +3,11 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { format, parseISO, differenceInHours } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Check, Loader2, Calendar, Clock, Car, AlertCircle, X, Phone, Pencil } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@shared/ui';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -69,7 +69,7 @@ const MojaRezerwacja = () => {
   useEffect(() => {
     const fetchReservation = async () => {
       if (!code) {
-        setError('Brak kodu rezerwacji');
+        setError(t('myReservation.noCode'));
         setLoading(false);
         return;
       }
@@ -182,7 +182,7 @@ const MojaRezerwacja = () => {
           body: {
             instanceId: reservation.instance_id,
             title: `❌ Anulowana: ${reservation.customer_name}`,
-            body: `${reservation.service.name} - ${format(parseISO(reservation.reservation_date), 'd MMM', { locale: pl })} ${reservation.start_time.slice(0, 5)}`,
+            body: `${reservation.service.name} - ${format(parseISO(reservation.reservation_date), 'd MMM', { locale: getDateLocale() })} ${reservation.start_time.slice(0, 5)}`,
             url: `/admin?reservationCode=${reservation.confirmation_code}`,
           },
         });
@@ -261,15 +261,15 @@ const MojaRezerwacja = () => {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return { label: 'Potwierdzona', color: 'text-green-600 bg-green-500/10', icon: Check };
+        return { label: t('myReservation.confirmed'), color: 'text-green-600 bg-green-500/10', icon: Check };
       case 'pending':
-        return { label: 'Oczekująca', color: 'text-yellow-600 bg-yellow-500/10', icon: Clock };
+        return { label: t('pages.reservation.statusPending'), color: 'text-yellow-600 bg-yellow-500/10', icon: Clock };
       case 'cancelled':
-        return { label: 'Anulowana', color: 'text-red-600 bg-red-500/10', icon: X };
+        return { label: t('myReservation.cancelled'), color: 'text-red-600 bg-red-500/10', icon: X };
       case 'completed':
-        return { label: 'Zakończona', color: 'text-blue-600 bg-blue-500/10', icon: Check };
+        return { label: t('pages.reservation.statusCompleted'), color: 'text-blue-600 bg-blue-500/10', icon: Check };
       case 'in_progress':
-        return { label: 'W trakcie', color: 'text-primary bg-primary/10', icon: Clock };
+        return { label: t('myReservation.inProgress'), color: 'text-primary bg-primary/10', icon: Clock };
       default:
         return { label: status, color: 'text-muted-foreground bg-muted', icon: Clock };
     }
@@ -293,11 +293,11 @@ const MojaRezerwacja = () => {
           <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
-          <h1 className="text-lg font-semibold mb-2">{error || 'Nie znaleziono rezerwacji'}</h1>
+          <h1 className="text-lg font-semibold mb-2">{error || t('myReservation.notFound')}</h1>
           <p className="text-sm text-muted-foreground mb-6 text-center">
-            Sprawdź kod w SMS-ie i spróbuj ponownie
+            {t('myReservation.checkSms')}
           </p>
-          <Button onClick={() => (window.location.href = '/')}>Zarezerwuj wizytę</Button>
+          <Button onClick={() => (window.location.href = '/')}>{t('pages.reservation.bookVisit')}</Button>
         </div>
       </>
     );
@@ -365,7 +365,7 @@ const MojaRezerwacja = () => {
                   <span>{t('myReservation.proposedNewDate')}</span>
                   <span className="font-medium">
                     {format(parseISO(pendingChangeRequest.reservation_date), 'd MMMM', {
-                      locale: pl,
+                      locale: getDateLocale(),
                     })}{' '}
                     o {pendingChangeRequest.start_time.slice(0, 5)}
                   </span>
@@ -383,18 +383,18 @@ const MojaRezerwacja = () => {
           {/* Reservation details */}
           <div className="space-y-4">
             <div className="bg-white border border-border p-4 space-y-3">
-              <h2 className="font-semibold text-foreground">Szczegóły rezerwacji</h2>
+              <h2 className="font-semibold text-foreground">{t('pages.reservation.details')}</h2>
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Usługa</span>
+                  <span className="text-muted-foreground">{t('pages.reservation.service')}</span>
                   <span className="font-medium text-foreground">{reservation.service.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Data</span>
                   <span className="font-medium text-foreground flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-primary" />
-                    {format(parseISO(reservation.reservation_date), 'd MMMM yyyy', { locale: pl })}
+                    {format(parseISO(reservation.reservation_date), 'd MMMM yyyy', { locale: getDateLocale() })}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -426,7 +426,7 @@ const MojaRezerwacja = () => {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Imię</span>
+                  <span className="text-muted-foreground">{t('pages.reservation.firstName')}</span>
                   <span className="font-medium text-foreground">{reservation.customer_name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -442,10 +442,10 @@ const MojaRezerwacja = () => {
                     <span className="text-muted-foreground">Rozmiar</span>
                     <span className="font-medium text-foreground">
                       {reservation.car_size === 'small'
-                        ? 'Mały'
+                        ? t('pages.reservation.carSizeSmall')
                         : reservation.car_size === 'medium'
-                          ? 'Średni'
-                          : 'Duży'}
+                          ? t('pages.reservation.carSizeMedium')
+                          : t('pages.reservation.carSizeLarge')}
                     </span>
                   </div>
                 )}
@@ -470,7 +470,7 @@ const MojaRezerwacja = () => {
                 <div>
                   <p className="text-sm font-medium">Masz pytania?</p>
                   <p className="text-xs text-muted-foreground">
-                    Zadzwoń: {reservation.instance.phone}
+                    {t('myReservation.callPhone', { phone: reservation.instance.phone })}
                   </p>
                 </div>
               </a>
@@ -498,7 +498,7 @@ const MojaRezerwacja = () => {
                       <AlertDialogDescription>
                         {t('myReservation.cancelDialog.description', {
                           date: format(parseISO(reservation.reservation_date), 'd MMMM', {
-                            locale: pl,
+                            locale: getDateLocale(),
                           }),
                           time: reservation.start_time.slice(0, 5),
                         })}
@@ -537,7 +537,7 @@ const MojaRezerwacja = () => {
                   className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={navigateToEdit}
                 >
-                  Zmień
+                  {t('common.change')}
                 </Button>
               )}
             </div>

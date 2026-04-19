@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Loader2, Info } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -77,6 +78,7 @@ const AddSalesOrderDrawer = ({
   editOrder,
   onOrderCreated,
 }: AddSalesOrderDrawerProps) => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: instanceData } = useInstanceData(instanceId);
@@ -370,15 +372,15 @@ const AddSalesOrderDrawer = ({
 
   const handleSubmit = async () => {
     if (!instanceId) {
-      toast.error('Brak instancji');
+      toast.error(t('sales.order.errorNoInstance'));
       return;
     }
     if (!customerSearch.selectedCustomer) {
-      toast.error('Wybierz klienta');
+      toast.error(t('sales.order.errorNoCustomer'));
       return;
     }
     if (products.length === 0) {
-      toast.error('Dodaj przynajmniej jeden produkt');
+      toast.error(t('sales.order.errorNoProducts'));
       return;
     }
 
@@ -415,14 +417,14 @@ const AddSalesOrderDrawer = ({
             const shortage = (usage.totalM2 - remainingM2).toFixed(2);
             const names = usage.productNames.join(', ');
             toast.error(
-              `Rolka przypisana do „${names}" ma za mało materiału. Potrzeba ${usage.totalM2.toFixed(2)} m², zostało ${remainingM2.toFixed(2)} m² (brakuje ${shortage} m²).`,
+              t('salesOrder.rollNotEnoughMaterial', { names, needed: usage.totalM2.toFixed(2), remaining: remainingM2.toFixed(2), shortage }),
             );
             setSaving(false);
             return;
           }
         }
       } catch (err: unknown) {
-        toast.error('Błąd walidacji rolek: ' + ((err as Error).message || ''));
+        toast.error(t('salesOrder.rollValidationError', { error: (err as Error).message || '' }));
         setSaving(false);
         return;
       }
@@ -520,7 +522,7 @@ const AddSalesOrderDrawer = ({
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
                     toast.error(
-                      `Błąd zapisu zużycia rolki: ${(e as Error)?.message || 'Nieznany błąd'}`,
+                      t('salesOrder.rollUsageSaveError', { error: (e as Error)?.message || '' }),
                     );
                   }
                 }
@@ -529,7 +531,7 @@ const AddSalesOrderDrawer = ({
           }
         }
 
-        toast.success('Zamówienie zaktualizowane');
+        toast.success(t('salesOrder.orderUpdated'));
       } else {
         // Regenerate order number at save time to avoid race conditions
         const freshOrderNumber = await getNextOrderNumber(instanceId!);
@@ -607,7 +609,7 @@ const AddSalesOrderDrawer = ({
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
                     toast.error(
-                      `Błąd zapisu zużycia rolki: ${(e as Error)?.message || 'Nieznany błąd'}`,
+                      t('salesOrder.rollUsageSaveError', { error: (e as Error)?.message || '' }),
                     );
                   }
                 }
@@ -616,7 +618,7 @@ const AddSalesOrderDrawer = ({
           }
         }
 
-        toast.success('Zamówienie zostało dodane');
+        toast.success(t('salesOrder.orderCreated'));
 
         if (sendEmail && order?.id) {
           try {
@@ -628,15 +630,15 @@ const AddSalesOrderDrawer = ({
             );
             if (emailRes?.error) {
               toast.error(
-                'Zamówienie zapisane, ale nie udało się wysłać emaila: ' + emailRes.error,
+                t('salesOrder.orderSavedEmailFailedWithError', { error: emailRes.error }),
               );
             } else if (emailErr) {
-              toast.error('Zamówienie zapisane, ale nie udało się wysłać emaila');
+              toast.error(t('salesOrder.orderSavedEmailFailed'));
             } else {
-              toast.success('Email z potwierdzeniem wysłany');
+              toast.success(t('salesOrder.confirmationEmailSent'));
             }
           } catch {
-            toast.error('Zamówienie zapisane, ale nie udało się wysłać emaila');
+            toast.error(t('salesOrder.orderSavedEmailFailed'));
           }
         }
       }
@@ -646,7 +648,7 @@ const AddSalesOrderDrawer = ({
       onOpenChange(false);
       onOrderCreated?.();
     } catch (err: any) {
-      toast.error('Błąd przy zapisie zamówienia: ' + (err.message || ''));
+      toast.error(t('salesOrder.orderSaveError', { error: err.message || '' }));
     } finally {
       setSaving(false);
     }
@@ -685,8 +687,8 @@ const AddSalesOrderDrawer = ({
             <div className="w-full flex items-center justify-between">
               <SheetTitle>
                 {isEdit
-                  ? `Edytuj zamówienie: ${editOrder?.orderNumber}`
-                  : `Dodaj zamówienie: ${nextOrderNumber}`}
+                  ? t('salesOrder.editTitle', { number: editOrder?.orderNumber })
+                  : t('salesOrder.addTitle', { number: nextOrderNumber })}
               </SheetTitle>
               <button
                 type="button"
@@ -717,7 +719,7 @@ const AddSalesOrderDrawer = ({
               {customerSearch.selectedCustomer && customerDiscount > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sky-50 border border-sky-200 text-sky-700">
                   <Info className="w-4 h-4 shrink-0" />
-                  <span className="text-sm">Zastosowano rabat: {customerDiscount}%</span>
+                  <span className="text-sm">{t('salesOrder.discountApplied', { percent: customerDiscount })}</span>
                 </div>
               )}
 
@@ -855,7 +857,7 @@ const AddSalesOrderDrawer = ({
               {/* Uwagi + Formatki — same row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="order-comment">Uwagi do zamówienia</Label>
+                  <Label htmlFor="order-comment">{t('salesOrder.orderComment')}</Label>
                   <Textarea
                     id="order-comment"
                     value={comment}
@@ -904,7 +906,7 @@ const AddSalesOrderDrawer = ({
                   }}
                 />
                 <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer">
-                  Wyślij email z potwierdzeniem zamówienia
+                  {t('salesOrder.sendConfirmationEmail')}
                 </Label>
               </div>
             </div>
@@ -914,18 +916,18 @@ const AddSalesOrderDrawer = ({
           <SheetFooter className="px-6 py-4 border-t shrink-0">
             <div className="flex gap-3 justify-end">
               <Button variant="outline" onClick={handleClose}>
-                Anuluj
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleSubmit} disabled={saving}>
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Zapisuję...
+                    {t('salesOrder.saving')}
                   </>
                 ) : isEdit ? (
-                  'Zapisz zmiany'
+                  t('salesOrder.saveChanges')
                 ) : (
-                  'Dodaj zamówienie'
+                  t('salesOrder.addOrder')
                 )}
               </Button>
             </div>

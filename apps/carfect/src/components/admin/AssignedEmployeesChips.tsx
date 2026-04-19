@@ -1,4 +1,5 @@
 import { X, Plus, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@shared/ui';
 import { Employee } from '@/hooks/useEmployees';
@@ -24,6 +25,7 @@ export function AssignedEmployeesChips({
   maxVisible,
   loading = false,
 }: AssignedEmployeesChipsProps) {
+  const { t } = useTranslation();
   // Build a map for quick lookups
   const employeeMap = new Map(employees.map(e => [e.id, e]));
   
@@ -32,7 +34,7 @@ export function AssignedEmployeesChips({
     const employee = employeeMap.get(id);
     return {
       id,
-      name: employee?.name || 'Usunięty',
+      name: employee?.name || t('employees.deleted'),
       shortName: employee ? getShortName(employee.name) : '?',
     };
   });
@@ -69,6 +71,7 @@ export function AssignedEmployeesChips({
             <button
               type="button"
               onClick={(e) => {
+                const { t } = useTranslation();
                 e.stopPropagation();
                 onRemove(id);
               }}
@@ -99,7 +102,7 @@ export function AssignedEmployeesChips({
           ) : (
             <Plus className="w-4 h-4" />
           )}
-          Dodaj
+          {t('common.add')}
         </Button>
       )}
     </div>

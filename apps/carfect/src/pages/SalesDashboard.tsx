@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useInstanceLanguage } from '@/hooks/useInstanceLanguage';
 import { Helmet } from 'react-helmet-async';
 import {
   ShoppingCart,
@@ -38,6 +40,7 @@ type SalesViewType = 'orders' | 'customers' | 'products' | 'rolls' | 'settings';
 const validViews: SalesViewType[] = ['orders', 'customers', 'products', 'rolls', 'settings'];
 
 const SalesDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { view } = useParams<{ view?: string }>();
@@ -81,6 +84,7 @@ const SalesDashboard = () => {
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: salesSettings } = useSalesSettings(instanceId);
   const [instanceData, setInstanceData] = useState<Record<string, unknown> | null>(null);
+  useInstanceLanguage(instanceData?.language as string);
 
   useEffect(() => {
     if (!instanceId) return;
@@ -99,7 +103,7 @@ const SalesDashboard = () => {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
-    { key: 'orders', label: 'Zamówienia', icon: ShoppingCart },
+    { key: 'orders', label: t('sales.orders.title'), icon: ShoppingCart },
     { key: 'customers', label: 'Klienci', icon: Users },
     { key: 'products', label: 'Produkty', icon: Package },
     { key: 'rolls', label: 'Ewidencja rolek', icon: Cylinder },
@@ -124,7 +128,7 @@ const SalesDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Panel Sprzedaży</title>
+        <title>{t('sales.salesPanel')}</title>
       </Helmet>
       <div className="flex h-screen bg-background overflow-hidden">
         {/* Mobile overlay */}
@@ -169,7 +173,7 @@ const SalesDashboard = () => {
               {!sidebarCollapsed && (
                 <div className="text-left min-w-0 flex-1 pr-2">
                   <h1 className="font-bold text-foreground leading-tight">
-                    {salesSettings?.name || 'Panel Sprzedaży'}
+                    {salesSettings?.name || t('sales.salesPanel')}
                   </h1>
                 </div>
               )}
@@ -239,14 +243,14 @@ const SalesDashboard = () => {
                 sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
               )}
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              title={sidebarCollapsed ? 'Rozwiń menu' : 'Zwiń menu'}
+              title={sidebarCollapsed ? 'Rozwiń menu' : t('navigation.collapseMenu')}
             >
               {sidebarCollapsed ? (
                 <PanelLeft className="w-4 h-4 shrink-0" />
               ) : (
                 <>
                   <PanelLeftClose className="w-4 h-4 shrink-0" />
-                  Zwiń menu
+                  {t('navigation.collapseMenu')}
                 </>
               )}
             </Button>
@@ -260,7 +264,7 @@ const SalesDashboard = () => {
                 variant="ghost"
                 className="w-full justify-center px-2 text-muted-foreground"
                 onClick={handleLogout}
-                title="Wyloguj się"
+                title={t('navigation.logout')}
               >
                 <LogOut className="w-4 h-4 shrink-0" />
               </Button>
@@ -279,7 +283,7 @@ const SalesDashboard = () => {
                   <DropdownMenuContent side="top" align="start" className="w-56">
                     <DropdownMenuItem onClick={handleLogout} className="gap-2">
                       <LogOut className="w-4 h-4" />
-                      Wyloguj się
+                      {t('navigation.logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -295,7 +299,7 @@ const SalesDashboard = () => {
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
               <Menu className="w-5 h-5" />
             </Button>
-            <span className="ml-3 font-semibold text-sm">Panel Sprzedaży</span>
+            <span className="ml-3 font-semibold text-sm">{t('sales.salesPanel')}</span>
           </header>
 
           {/* Content area */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -14,6 +15,7 @@ export interface ConditionTemplate {
 }
 
 export function useConditionTemplates(instanceId: string | null) {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState<ConditionTemplate[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -83,7 +85,7 @@ export function useConditionTemplates(instanceId: string | null) {
       .single();
 
     if (error) {
-      toast.error('Błąd dodawania szablonu');
+      toast.error(t('hooks.conditions.createError'));
       return false;
     }
 
@@ -98,7 +100,7 @@ export function useConditionTemplates(instanceId: string | null) {
         sort_order: data.sort_order,
       },
     ]);
-    toast.success('Szablon dodany');
+    toast.success(t('hooks.conditions.createSuccess'));
     return true;
   };
 

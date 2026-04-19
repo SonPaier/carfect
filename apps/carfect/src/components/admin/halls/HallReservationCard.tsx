@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { X, Loader2, FileText, Camera, Check, Settings2, Trash2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { formatPhoneDisplay } from '@shared/utils';
@@ -9,6 +8,7 @@ import { PhotoFullscreenDialog } from '@/components/protocols/PhotoFullscreenDia
 import { ConfirmDialog } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import type { Reservation } from '@/types/reservation';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Employee {
   id: string;
@@ -123,8 +123,8 @@ const HallReservationCard = ({
   const startDate = parseISO(reservation_date);
   const dateRange =
     end_date && end_date !== reservation_date
-      ? `${format(startDate, 'd MMM', { locale: pl })} - ${format(parseISO(end_date), 'd MMM yyyy', { locale: pl })}`
-      : format(startDate, 'd MMMM yyyy', { locale: pl });
+      ? `${format(startDate, 'd MMM', { locale: getDateLocale() })} - ${format(parseISO(end_date), 'd MMM yyyy', { locale: getDateLocale() })}`
+      : format(startDate, 'd MMMM yyyy', { locale: getDateLocale() });
 
   // Handle actions with loading states
   const handleStart = async () => {
@@ -347,7 +347,7 @@ const HallReservationCard = ({
                   <img
                     key={idx}
                     src={url}
-                    alt={`Zdjęcie ${idx + 1}`}
+                    alt={t('hallCard.photoAlt', { index: idx + 1, defaultValue: `Zdjęcie ${idx + 1}` })}
                     className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => setFullscreenPhoto(url)}
                   />
@@ -377,7 +377,7 @@ const HallReservationCard = ({
                     onClick={() => onAddService(reservation)}
                   >
                     <Settings2 className="w-5 h-5" />
-                    Usługi
+                    {t('hallCard.services')}
                   </Button>
                 )}
                 {onAddProtocol && (
@@ -419,9 +419,9 @@ const HallReservationCard = ({
       <ConfirmDialog
         open={!!confirmRemoveService}
         onOpenChange={(open) => !open && setConfirmRemoveService(null)}
-        title="Usunąć usługę?"
-        description={`Czy na pewno chcesz usunąć "${confirmRemoveService?.name}" z tej rezerwacji?`}
-        confirmLabel="Usuń"
+        title={t('hallCard.removeService')}
+        description={t('hallCard.removeServiceDescription', { name: confirmRemoveService?.name })}
+        confirmLabel={t('common.delete')}
         variant="destructive"
         loading={removingService}
         onConfirm={handleConfirmRemoveService}

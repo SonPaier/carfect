@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@shared/ui';
 import { Badge } from '@shared/ui';
@@ -20,6 +21,7 @@ interface ScopesStepProps {
 }
 
 export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: ScopesStepProps) {
+  const { t } = useTranslation();
   const [scopes, setScopes] = useState<OfferScope[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,14 +60,14 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Ładowanie szablonów...</div>;
+    return <div className="text-center py-8 text-muted-foreground">{t('offers.loadingTemplates')}</div>;
   }
 
   if (scopes.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground mb-4">
-          Brak zdefiniowanych szablonów. Dodaj szablony w sekcji "Twoje Szablony".
+          {t('offers.noTemplatesDefinedFull')}
         </p>
       </div>
     );
@@ -76,7 +78,7 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
       <div className="text-center mb-6">
         <h2 className="text-lg font-semibold">Wybierz szablony</h2>
         <p className="text-sm text-muted-foreground">
-          Zaznacz jeden lub więcej szablonów, które chcesz uwzględnić w ofercie
+          {t('offers.selectScopesForOffer')}
         </p>
       </div>
 
@@ -103,7 +105,7 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
                       {scope.has_coating_upsell && (
                         <Badge variant="secondary" className="gap-1 shrink-0">
                           <Sparkles className="h-3 w-3" />
-                          +Powłoka
+                          {t('offers.addCoating')}
                         </Badge>
                       )}
                     </div>

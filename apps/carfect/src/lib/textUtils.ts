@@ -15,7 +15,7 @@ export const normalizeSearchQuery = (query: string): string => {
 };
 
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 /**
  * Formats a viewed_at date with relative formatting (today, yesterday, or full date).
@@ -28,14 +28,14 @@ export const formatViewedDate = (dateString: string): string => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   
-  const time = format(date, 'HH:mm', { locale: pl });
+  const time = format(date, 'HH:mm', { locale: getDateLocale() });
   
   if (date >= today) {
     return `${time}, dziś`;
   } else if (date >= yesterday) {
     return `${time}, wczoraj`;
   } else {
-    return `${time}, ${format(date, 'd MMMM', { locale: pl })}`;
+    return `${time}, ${format(date, 'd MMMM', { locale: getDateLocale() })}`;
   }
 };
 

@@ -10,35 +10,6 @@ vi.mock('@shared/ui', async () => {
   return { ...actual, useIsMobile: () => false };
 });
 
-// Mock i18n
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'integrations.orders.title': 'Moje zamówienia Ultrafit',
-        'integrations.orders.search': 'Szukaj po produkcie lub samochodzie...',
-        'integrations.orders.empty': 'Brak zamówień',
-        'integrations.orders.emptyDescription': 'Nie masz jeszcze żadnych zamówień Ultrafit.',
-        'integrations.orders.orderNumber': 'Nr zamówienia',
-        'integrations.orders.orderDate': 'Data zamówienia',
-        'integrations.orders.shippedDate': 'Data wysyłki',
-        'integrations.orders.delivery': 'Dostawa',
-        'integrations.orders.trackingNumber': 'List przewozowy',
-        'integrations.orders.totalNet': 'Kwota netto',
-        'integrations.orders.status': 'Status',
-        'integrations.orders.statusNew': 'Nowy',
-        'integrations.orders.statusShipped': 'Wysłany',
-        'integrations.orders.statusCancelled': 'Anulowany',
-        'integrations.orders.showProducts': 'Pokaż produkty',
-        'integrations.orders.hideProducts': 'Ukryj produkty',
-        'common.loading': 'Ładowanie...',
-      };
-      return translations[key] ?? key;
-    },
-    i18n: { language: 'pl' },
-  }),
-}));
-
 // Mock hooks
 const mockUseUltrafitOrders = vi.fn();
 const mockUseUltrafitOrderRolls = vi.fn();

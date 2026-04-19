@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui";
 import { Progress } from "@shared/ui";
 import { MessageSquare } from "lucide-react";
@@ -12,6 +13,7 @@ interface InstanceSmsData {
 }
 
 export function AllInstancesSmsUsage() {
+  const { t } = useTranslation();
   const [instances, setInstances] = useState<InstanceSmsData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +44,7 @@ export function AllInstancesSmsUsage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Zużycie SMS - Wszystkie instancje
+            {t('superAdmin.smsUsageAll')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -62,10 +64,10 @@ export function AllInstancesSmsUsage() {
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Zużycie SMS - Wszystkie instancje
+            {t('superAdmin.smsUsageAll')}
           </span>
           <span className="text-sm font-normal text-muted-foreground">
-            Łącznie: {totalUsed} / {totalLimit}
+            {t('superAdmin.smsTotal', { used: totalUsed, limit: totalLimit })}
           </span>
         </CardTitle>
       </CardHeader>
