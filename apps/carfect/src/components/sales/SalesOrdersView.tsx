@@ -475,7 +475,7 @@ const SalesOrdersView = () => {
     );
     setTrackingDialog({ open: false, orderId: '', orderNumber: '' });
     setTrackingInput('');
-    toast.success('List przewozowy dodany');
+    toast.success(t('salesOrdersView.trackingAdded'));
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -484,9 +484,9 @@ const SalesOrdersView = () => {
       await supabase.from('sales_order_items').delete().eq('order_id', orderId);
       await supabase.from('sales_orders').delete().eq('id', orderId);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      toast.success('Zamówienie usunięte');
+      toast.success(t('salesOrdersView.orderDeleted'));
     } catch (err: unknown) {
-      toast.error('Błąd usuwania: ' + ((err as Error).message || ''));
+      toast.error(t('salesOrdersView.deleteError', { error: (err as Error).message || '' }));
     }
   };
 
@@ -497,11 +497,11 @@ const SalesOrdersView = () => {
     // Validate same customer
     const customerIds = [...new Set(selectedOrders.map((o) => o.customerId).filter(Boolean))];
     if (customerIds.length > 1) {
-      toast.error('Zaznaczone zamówienia muszą mieć tego samego klienta');
+      toast.error(t('salesOrdersView.bulkSameCustomer'));
       return;
     }
     if (customerIds.length === 0) {
-      toast.error('Zaznaczone zamówienia nie mają przypisanego klienta');
+      toast.error(t('salesOrdersView.bulkNoCustomer'));
       return;
     }
 
@@ -716,7 +716,7 @@ const SalesOrdersView = () => {
     if (shipmentInFlight) return;
     setShipmentInFlight(orderId);
     try {
-      toast.info('Tworzę przesyłkę w Apaczka...');
+      toast.info(t('salesOrdersView.creatingShipment'));
       const { data, error } = await supabase.functions.invoke('create-apaczka-shipment', {
         body: { orderId },
       });
@@ -728,20 +728,20 @@ const SalesOrdersView = () => {
         } catch {
           /* ignore */
         }
-        toast.error('Błąd tworzenia przesyłki' + (errDetail ? ': ' + errDetail : ''));
+        toast.error(t('salesOrdersView.shipmentCreateError') + (errDetail ? ': ' + errDetail : ''));
         return;
       }
       if (data?.error) {
         const valPrice = data.valuation?.price_gross
           ? ` | Wycena: ${data.valuation.price_gross} PLN`
           : '';
-        toast.error('Błąd: ' + data.error + valPrice, { duration: 10000 });
+        toast.error(t('common.error') + ': ' + data.error + valPrice, { duration: 10000 });
         return;
       }
-      toast.success(`Przesyłka utworzona. Nr listu: ${data.waybill_number}`);
+      toast.success(t('salesOrdersView.shipmentCreated', { waybill: data.waybill_number }));
       fetchOrders();
     } catch {
-      toast.error('Nie udało się utworzyć przesyłki');
+      toast.error(t('salesOrdersView.shipmentCreateFailed'));
     } finally {
       setShipmentInFlight(null);
     }
@@ -749,7 +749,7 @@ const SalesOrdersView = () => {
 
   const handleCancelShipment = async (orderId: string) => {
     try {
-      toast.info('Anuluję przesyłkę w Apaczka...');
+      toast.info(t('salesOrdersView.cancellingShipment'));
       const { data, error } = await supabase.functions.invoke('cancel-apaczka-shipment', {
         body: { orderId },
       });
@@ -767,15 +767,15 @@ const SalesOrdersView = () => {
             : o,
         ),
       );
-      toast.success('Przesyłka anulowana');
+      toast.success(t('salesOrdersView.shipmentCancelled'));
     } catch (err: any) {
-      toast.error('Nie udało się anulować przesyłki' + (err.message ? ': ' + err.message : ''));
+      toast.error(t('salesOrdersView.shipmentCancelFailed') + (err.message ? ': ' + err.message : ''));
     }
   };
 
   const handlePrintLabel = async (orderId: string) => {
     try {
-      toast.info('Pobieram etykietę...');
+      toast.info(t('salesOrdersView.fetchingLabel'));
       const { data, error } = await supabase.functions.invoke('get-apaczka-label', {
         body: { orderId },
       });
@@ -787,7 +787,7 @@ const SalesOrdersView = () => {
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err: any) {
-      toast.error('Nie udało się pobrać etykiety' + (err.message ? ': ' + err.message : ''));
+      toast.error(t('salesOrdersView.labelFetchFailed') + (err.message ? ': ' + err.message : ''));
     }
   };
 
@@ -833,7 +833,7 @@ const SalesOrdersView = () => {
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po firmie, mieście, osobie..."
+            placeholder={t('salesOrdersView.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -1024,7 +1024,7 @@ const SalesOrdersView = () => {
                                 e.stopPropagation();
                                 if (!order.trackingUrl) {
                                   e.preventDefault();
-                                  toast.info('Śledzenie przesyłki w przygotowaniu');
+                                  toast.info(t('salesOrdersView.trackingPending'));
                                 }
                               }}
                             >
@@ -1032,7 +1032,7 @@ const SalesOrdersView = () => {
                             </a>
                             {order.paymentMethod === 'cod' && (
                               <span className="text-muted-foreground whitespace-nowrap">
-                                (za pobr.)
+                                {t('salesOrdersView.codSuffix')}
                               </span>
                             )}
                           </div>
@@ -1099,7 +1099,7 @@ const SalesOrdersView = () => {
                         </DropdownMenu>
                         {order.paymentMethod && (
                           <span className="text-xs text-foreground block">
-                            {{ cod: 'Pobranie', transfer: 'Przelew', cash: 'Gotówka', card: 'Karta', free: 'Bezpłatne', tab: 'Na zeszyt' }[order.paymentMethod] ?? order.paymentMethod}
+                            {{ cod: t('salesOrdersView.paymentCod'), transfer: t('salesOrdersView.paymentTransfer'), cash: t('salesOrdersView.paymentCash'), card: t('salesOrdersView.paymentCard'), free: t('salesOrdersView.paymentFree'), tab: t('salesOrdersView.paymentTab') }[order.paymentMethod] ?? order.paymentMethod}
                           </span>
                         )}
                         </div>
@@ -1205,7 +1205,7 @@ const SalesOrdersView = () => {
                                       return;
                                     }
                                     try {
-                                      toast.info('Pobieram PDF...');
+                                      toast.info(t('salesOrdersView.fetchingPdf'));
                                       const session = await supabase.auth.getSession();
                                       const token = session.data.session?.access_token;
                                       const res = await fetch(
@@ -1235,11 +1235,11 @@ const SalesOrdersView = () => {
                                         if (json.pdf_url) {
                                           window.open(json.pdf_url, '_blank');
                                         } else {
-                                          toast.error('PDF faktury niedostępny');
+                                          toast.error(t('salesOrdersView.pdfUnavailable'));
                                         }
                                       }
                                     } catch {
-                                      toast.error('Nie udało się pobrać PDF');
+                                      toast.error(t('salesOrdersView.pdfFetchFailed'));
                                     }
                                   }}
                                 >
@@ -1453,7 +1453,7 @@ const SalesOrdersView = () => {
             setBulkInvoiceState({ open: false, orders: [] });
             bulk.clear();
             fetchOrders();
-            toast.success(`Zbiorcza faktura wystawiona dla ${ids.length} zamówień`);
+            toast.success(t('salesOrdersView.bulkInvoiceCreated', { count: ids.length }));
           }}
           supabaseClient={supabase}
           customerTable="sales_customers"
