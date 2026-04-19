@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ReservationTile } from './ReservationTile';
 import type { Reservation, Station, DragHandlers, GroupBy } from './types';
@@ -11,6 +12,7 @@ function groupReservations(
   groupBy: GroupBy,
   stations: Station[],
   employees: { id: string; name: string }[],
+  labels: { noStation: string; unassigned: string },
 ): Section[] {
   if (groupBy === 'none') return [{ label: '', reservations }];
 
@@ -19,7 +21,7 @@ function groupReservations(
     for (const station of stations) {
       buckets.set(station.id, { label: station.name, color: station.color, reservations: [] });
     }
-    const noStation: Section = { label: 'Bez stanowiska', reservations: [] };
+    const noStation: Section = { label: labels.noStation, reservations: [] };
     for (const r of reservations) {
       const bucket = r.station_id ? buckets.get(r.station_id) : null;
       if (bucket) bucket.reservations.push(r);
@@ -33,7 +35,7 @@ function groupReservations(
   // employee
   const empMap = new Map(employees.map(e => [e.id, e.name]));
   const buckets = new Map<string, Section>();
-  const unassigned: Section = { label: 'Nieprzypisane', reservations: [] };
+  const unassigned: Section = { label: labels.unassigned, reservations: [] };
   for (const r of reservations) {
     const ids = r.assigned_employee_ids ?? [];
     if (ids.length === 0) { unassigned.reservations.push(r); continue; }
@@ -78,6 +80,7 @@ export const CalendarDayCell = ({
   employees = [],
   showStationName,
 }: CalendarDayCellProps) => {
+  const { t } = useTranslation();
   const dateStr = format(date, 'yyyy-MM-dd');
   const isDragOver = dragHandlers.dragOverDate === dateStr;
 
@@ -108,7 +111,10 @@ export const CalendarDayCell = ({
       {/* Reservation tiles */}
       <div className="flex flex-col gap-0.5 min-h-0 flex-1">
         {(() => {
-          const sections = groupReservations(reservations, groupBy, stations, employees);
+          const sections = groupReservations(reservations, groupBy, stations, employees, {
+            noStation: t('calendar.noStation'),
+            unassigned: t('calendar.unassigned'),
+          });
           const showHeaders = groupBy === 'station' || groupBy === 'employee';
           return sections.map((section, sIdx) => (
             <div key={sIdx} className="flex flex-col gap-0.5">

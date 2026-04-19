@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@shared/utils';
 import type { SalesRoll, SalesRollUsage } from '../types/rolls';
@@ -305,9 +306,7 @@ export async function deleteRoll(id: string): Promise<void> {
 
   if (checkErr) throw new Error(checkErr.message);
   if (usages && usages.length > 0) {
-    throw new Error(
-      'Nie można usunąć rolki, która ma przypisane zużycie. Zarchiwizuj ją zamiast tego.',
-    );
+    throw new Error(i18next.t('sales.rolls.errors.deleteWithUsage'));
   }
 
   const { error } = await supabase.from('sales_rolls').delete().eq('id', id);
@@ -406,7 +405,7 @@ export async function updateManualRollUsage(
 
   if (error) throw new Error(error.message);
   if (!rows || rows.length === 0) {
-    throw new Error('Nie udało się zaktualizować zużycia — brak uprawnień lub rekord nie istnieje.');
+    throw new Error(i18next.t('sales.rolls.errors.updateUsageNotFound'));
   }
 }
 
@@ -420,7 +419,7 @@ export async function deleteRollUsage(id: string): Promise<void> {
 
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) {
-    throw new Error('Nie udało się usunąć zużycia — brak uprawnień lub rekord nie istnieje.');
+    throw new Error(i18next.t('sales.rolls.errors.deleteUsageNotFound'));
   }
 }
 

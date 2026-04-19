@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, AlertCircle, Package } from 'lucide-react';
 import { Input, Button, Label, NumericInput } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
@@ -20,6 +21,7 @@ const RollSelectAutocomplete = ({
   selectedRollId,
   onSelect,
 }: RollSelectAutocompleteProps) => {
+  const { t } = useTranslation();
   const [rolls, setRolls] = useState<SalesRoll[]>([]);
   const [loading, setLoading] = useState(!!(instanceId && productName));
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -105,27 +107,27 @@ const RollSelectAutocomplete = ({
 
   return (
     <div ref={containerRef} className="mt-2 space-y-2">
-      <Label className="text-xs text-muted-foreground">Rolka</Label>
+      <Label className="text-xs text-muted-foreground">{t('integrations.rolls.label')}</Label>
 
       {/* Selected roll display */}
       {selectedRollId && !selectedRoll && loading ? (
         <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground">Ładowanie rolki...</span>
+          <span className="text-xs text-muted-foreground">{t('integrations.rolls.loadingRoll')}</span>
         </div>
       ) : selectedRoll ? (
         <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border text-sm">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
           <div className="flex-1 min-w-0">
             <span className="font-mono text-xs">
-              {selectedRoll.barcode || selectedRoll.productCode || 'Brak kodu'}
+              {selectedRoll.barcode || selectedRoll.productCode || t('integrations.rolls.noCode')}
             </span>
             <span className="text-muted-foreground ml-2 text-xs">
-              Pozostało: {remainingM2.toFixed(2)} m²
+              {t('integrations.rolls.remaining', { value: remainingM2.toFixed(2) })}
             </span>
           </div>
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleClear}>
-            Zmień
+            {t('integrations.rolls.change')}
           </Button>
         </div>
       ) : (

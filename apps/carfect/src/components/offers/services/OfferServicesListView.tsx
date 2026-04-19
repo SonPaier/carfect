@@ -49,6 +49,7 @@ interface SortableScopeCardProps {
 }
 
 function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: scope.id,
   });
@@ -77,7 +78,7 @@ function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) 
                 {scope.has_coating_upsell && (
                   <Badge variant="secondary" className="gap-1 shrink-0">
                     <Sparkles className="h-3 w-3" />
-                    +Powłoka
+                    {t('offers.serviceTemplates.coatingBadge')}
                   </Badge>
                 )}
               </div>
@@ -91,7 +92,7 @@ function SortableScopeCard({ scope, onEdit, onDelete }: SortableScopeCardProps) 
               onClick={() => onEdit(scope.id)}
             >
               <Pencil className="w-4 h-4" />
-              Edytuj
+              {t('offers.serviceTemplates.editButton')}
             </Button>
             {/* Cannot delete extras scope */}
             {!scope.is_extras_scope && (
@@ -186,10 +187,10 @@ export function OfferServicesListView({
           .eq('id', update.id);
       }
 
-      toast.success('Kolejność szablonów została zapisana');
+      toast.success(t('offers.serviceTemplates.sortSaved'));
     } catch (error) {
       console.error('Error updating sort order:', error);
-      toast.error('Nie udało się zapisać kolejności');
+      toast.error(t('offers.serviceTemplates.sortError'));
       fetchScopes(); // Revert on error
     }
   };
@@ -210,11 +211,11 @@ export function OfferServicesListView({
 
       if (error) throw error;
 
-      toast.success('Szablon został usunięty');
+      toast.success(t('offers.serviceTemplates.deleted'));
       fetchScopes();
     } catch (error) {
       console.error('Error deleting scope:', error);
-      toast.error('Nie udało się usunąć szablonu');
+      toast.error(t('offers.serviceTemplates.deleteError'));
     } finally {
       setDeleteDialogOpen(false);
       setScopeToDelete(null);
@@ -224,40 +225,39 @@ export function OfferServicesListView({
   return (
     <>
       <Helmet>
-        <title>Twoje Szablony - {t('common.adminPanel')}</title>
+        <title>{t('offers.serviceTemplates.pageTitle')} - {t('common.adminPanel')}</title>
       </Helmet>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <Button variant="ghost" onClick={onBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Wróć
+            {t('offers.serviceTemplates.back')}
           </Button>
         </div>
 
         <div className="flex flex-col gap-2 mb-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-medium">Twoje Szablony</h1>
+            <h1 className="text-2xl font-medium">{t('offers.serviceTemplates.pageTitle')}</h1>
             <Button onClick={onCreate} className="gap-2">
               <Plus className="w-4 h-4" />
-              Dodaj szablon
+              {t('offers.serviceTemplates.addTemplate')}
             </Button>
           </div>
           <p className="text-muted-foreground text-sm">
-            Szablon może zawierać różne usługi oraz posiada indywidualne warunki gwarancji,
-            płatności, serwisu lub inne uwagi widoczne dla Klienta.
+            {t('offers.serviceTemplates.description')}
           </p>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Ładowanie szablonów...</div>
+          <div className="text-center py-8 text-muted-foreground">{t('offers.serviceTemplates.loading')}</div>
         ) : scopes.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">
-              Brak zdefiniowanych szablonów. Dodaj pierwszy szablon, aby rozpocząć.
+              {t('offers.serviceTemplates.noTemplates')}
             </p>
             <Button onClick={onCreate} className="gap-2">
               <Plus className="w-4 h-4" />
-              Dodaj pierwszy szablon
+              {t('offers.serviceTemplates.addFirstTemplate')}
             </Button>
           </div>
         ) : (
@@ -284,9 +284,9 @@ export function OfferServicesListView({
         <ConfirmDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          title="Usuń szablon"
-          description={`Czy na pewno chcesz usunąć szablon "${scopeToDelete?.name}"?`}
-          confirmLabel="Usuń"
+          title={t('offers.serviceTemplates.deleteTitle')}
+          description={t('offers.serviceTemplates.deleteDescription', { name: scopeToDelete?.name })}
+          confirmLabel={t('offers.serviceTemplates.deleteConfirm')}
           onConfirm={handleConfirmDelete}
           variant="destructive"
         />

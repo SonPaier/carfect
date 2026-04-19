@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, Minus, Loader2 } from 'lucide-react';
 import { Input } from '@shared/ui';
 import { NumericInput } from '@shared/ui';
@@ -170,6 +171,7 @@ const PackageCard = ({
   isNetPayer,
   excludeOrderId,
 }: PackageCardProps) => {
+  const { t } = useTranslation();
   const valuation = useApaczkaValuation(
     instanceId,
     pkg,
@@ -427,7 +429,7 @@ const PackageCard = ({
             onClick={onAddProduct}
           >
             <Plus className="w-4 h-4" />
-            {packageProducts.length > 0 ? 'Dodaj kolejny produkt' : 'Dodaj produkt'}
+            {packageProducts.length > 0 ? t('sales.packages.addAnotherProduct') : t('sales.packages.addProduct')}
           </Button>
         </div>
 

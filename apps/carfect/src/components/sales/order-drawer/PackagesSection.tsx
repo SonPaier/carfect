@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Label } from '@shared/ui';
 import {
@@ -92,6 +93,7 @@ export const PackagesSection = ({
   isNetPayer,
   excludeOrderId,
 }: PackagesSectionProps) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <Label>Paczki</Label>

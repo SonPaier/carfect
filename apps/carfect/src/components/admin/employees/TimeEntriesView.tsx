@@ -12,12 +12,14 @@ import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import AddEditTimeEntryDialog from './AddEditTimeEntryDialog';
 import { ConfirmDialog } from '@shared/ui';
+import { useTranslation } from 'react-i18next';
 
 interface TimeEntriesViewProps {
   instanceId: string | null;
 }
 
 const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
+  const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);

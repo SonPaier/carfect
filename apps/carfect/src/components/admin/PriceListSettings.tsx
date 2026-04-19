@@ -83,6 +83,7 @@ const InlineEditablePrice = ({
   service: Service;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
 }) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -125,7 +126,7 @@ const InlineEditablePrice = ({
     const numValue = editValue.trim() === '' ? null : parseFloat(editValue.replace(',', '.'));
 
     if (editValue.trim() !== '' && (isNaN(numValue!) || numValue! < 0)) {
-      toast.error('Nieprawidłowa cena');
+      toast.error(t('priceList.invalidPrice'));
       setIsEditing(false);
       return;
     }
@@ -183,7 +184,7 @@ const InlineEditablePrice = ({
         !hasSizePrices && 'cursor-pointer hover:bg-primary/10 px-2 py-1 rounded -mx-2 -my-1',
       )}
       title={
-        hasSizePrices ? 'Edytuj w dialogu (ceny zależne od rozmiaru)' : 'Kliknij aby edytować cenę'
+        hasSizePrices ? t('priceList.editInDialog') : t('priceList.clickToEditPrice')
       }
     >
       {formatDisplayPrice()}
@@ -203,6 +204,7 @@ const SortableServiceRow = ({
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
   disabled: boolean;
 }) => {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: service.id,
     disabled,
@@ -230,7 +232,7 @@ const SortableServiceRow = ({
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <span className={cn('truncate', !service.active && 'line-through')}>{service.name}</span>
         {!service.active && (
-          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">nieaktywna</span>
+          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">{t('priceList.inactive')}</span>
         )}
       </div>
 
@@ -251,6 +253,7 @@ const ServiceRow = ({
   onEdit: () => void;
   onPriceUpdate: (serviceId: string, newPrice: number | null) => Promise<void>;
 }) => {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -267,7 +270,7 @@ const ServiceRow = ({
           {service.name}
         </span>
         {!service.active && (
-          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">nieaktywna</span>
+          <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">{t('priceList.inactive')}</span>
         )}
       </div>
 
@@ -600,10 +603,10 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           .eq('id', serviceId);
 
         if (error) throw error;
-        toast.success('Cena zaktualizowana');
+        toast.success(t('priceList.priceUpdated'));
       } catch (error) {
         console.error('Error updating price:', error);
-        toast.error('Błąd aktualizacji ceny');
+        toast.error(t('priceList.priceUpdateError'));
         // Revert on error
         fetchServices();
         throw error;

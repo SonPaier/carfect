@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useEmployeeDaysOff, useDeleteEmployeeDayOff, EmployeeDayOff, DAY_OFF_TYPE_LABELS } from '@/hooks/useEmployeeDaysOff';
 import { Button } from '@shared/ui';
@@ -17,6 +18,7 @@ interface EmployeeDaysOffViewProps {
 }
 
 const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [dayOffToDelete, setDayOffToDelete] = useState<EmployeeDayOff | null>(null);
@@ -32,16 +34,16 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
     
     try {
       await deleteDayOff.mutateAsync(dayOffToDelete.id);
-      toast.success('Nieobecność została usunięta');
+      toast.success(t('admin.daysOff.deleted'));
       setDeleteConfirmOpen(false);
       setDayOffToDelete(null);
     } catch (error) {
-      toast.error('Błąd podczas usuwania nieobecności');
+      toast.error(t('admin.daysOff.deleteError'));
     }
   };
 
   const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Nieznany';
+    return employees.find(e => e.id === employeeId)?.name || t('admin.daysOff.unknownEmployee');
   };
 
   const getDaysCount = (from: string, to: string) => {
@@ -71,9 +73,9 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
     return (
       <div className="py-12 text-center">
         <CalendarOff className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-        <p className="text-muted-foreground">Brak aktywnych pracowników</p>
+        <p className="text-muted-foreground">{t('admin.daysOff.noActiveEmployees')}</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Dodaj pracowników, aby móc rejestrować nieobecności
+          {t('admin.daysOff.noActiveEmployeesHint')}
         </p>
       </div>
     );

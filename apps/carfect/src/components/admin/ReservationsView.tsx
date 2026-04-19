@@ -102,18 +102,18 @@ type SortDirection = 'asc' | 'desc';
 
 const DEBOUNCE_MS = 300;
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  pending: { label: 'Oczekuje', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+const statusConfig: Record<string, { labelKey: string; className: string }> = {
+  pending: { labelKey: 'reservationsView.statusPending', className: 'bg-amber-100 text-amber-800 border-amber-200' },
   confirmed: {
-    label: 'Potwierdzona',
+    labelKey: 'reservationsView.statusConfirmed',
     className: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   },
-  in_progress: { label: 'W trakcie', className: 'bg-orange-100 text-orange-800 border-orange-200' },
-  completed: { label: 'Zakończona', className: 'bg-slate-100 text-slate-800 border-slate-200' },
-  cancelled: { label: 'Anulowana', className: 'bg-red-100 text-red-800 border-red-200' },
-  change_requested: { label: 'Zmiana', className: 'bg-red-100 text-red-800 border-red-200' },
-  no_show: { label: 'Nieobecność', className: 'bg-slate-100 text-slate-800 border-slate-200' },
-  released: { label: 'Zwolniona', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+  in_progress: { labelKey: 'reservationsView.statusInProgress', className: 'bg-orange-100 text-orange-800 border-orange-200' },
+  completed: { labelKey: 'reservationsView.statusCompleted', className: 'bg-slate-100 text-slate-800 border-slate-200' },
+  cancelled: { labelKey: 'reservationsView.statusCancelled', className: 'bg-red-100 text-red-800 border-red-200' },
+  change_requested: { labelKey: 'reservationsView.statusChangeRequested', className: 'bg-red-100 text-red-800 border-red-200' },
+  no_show: { labelKey: 'reservationsView.statusNoShow', className: 'bg-slate-100 text-slate-800 border-slate-200' },
+  released: { labelKey: 'reservationsView.statusReleased', className: 'bg-slate-100 text-slate-600 border-slate-200' },
 };
 
 const ReservationsView = ({
@@ -503,7 +503,7 @@ const ReservationsView = ({
     if (!cfg) return <Badge variant="outline">{status}</Badge>;
     return (
       <Badge variant="outline" className={cn('text-xs border', cfg.className)}>
-        {cfg.label}
+        {t(cfg.labelKey)}
       </Badge>
     );
   };
@@ -685,10 +685,10 @@ const ReservationsView = ({
           {showStatus && (
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[160px] shrink-0">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t('reservationsView.columnStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Wszystkie</SelectItem>
+                <SelectItem value="all">{t('reservationsView.allStatuses')}</SelectItem>
                 {Object.entries(statusConfig)
                   .filter(
                     ([key]) =>
@@ -696,7 +696,7 @@ const ReservationsView = ({
                   )
                   .map(([key, cfg]) => (
                     <SelectItem key={key} value={key}>
-                      {cfg.label}
+                      {t(cfg.labelKey)}
                     </SelectItem>
                   ))}
               </SelectContent>

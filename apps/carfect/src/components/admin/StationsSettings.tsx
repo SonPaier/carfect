@@ -235,7 +235,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
     if (!trimmedName) {
       errors.name = t('stationsSettings.stationNameRequired');
     } else if (trimmedName.length > 50) {
-      errors.name = 'Nazwa może mieć maksymalnie 50 znaków';
+      errors.name = t('stationsSettings.stationNameMaxLength');
     } else {
       const isDuplicate = stations.some(
         (s) =>
@@ -243,7 +243,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
           s.id !== editingStation?.id,
       );
       if (isDuplicate) {
-        errors.name = 'Stanowisko o tej nazwie już istnieje';
+        errors.name = t('stationsSettings.stationNameDuplicate');
       }
     }
 
@@ -264,7 +264,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
             });
           } catch (employeeError) {
             console.error('Error updating station employees:', employeeError);
-            toast.error('Zapisano stanowisko, ale nie udało się przypisać pracowników');
+            toast.error(t('stationsSettings.savedButEmployeesError'));
           }
         }
 
@@ -299,7 +299,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       console.error('Error saving station:', error);
       // Handle station limit error from trigger
       if ((error as Error).message?.includes('Limit stanowisk')) {
-        toast.error('Osiągnięto limit stanowisk dla Twojego planu');
+        toast.error(t('stationsSettings.limitReached'));
       } else {
         toast.error(t('stationsSettings.saveError'));
       }
@@ -327,7 +327,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       queryClient.invalidateQueries({ queryKey: ['stations', instanceId] });
     } catch (error) {
       console.error('Error reordering stations:', error);
-      toast.error('Błąd zmiany kolejności');
+      toast.error(t('stationsSettings.reorderError'));
       fetchStations();
     } finally {
       setReordering(false);
@@ -360,7 +360,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
 
       const total = (resCount ?? 0) + (trainCount ?? 0);
       if (total > 0) {
-        toast.error(`Nie można usunąć stanowiska — ma ${total} przypisanych rezerwacji/szkoleń`);
+        toast.error(t('stationsSettings.hasReservations', { count: total }));
         setDeleteDialogOpen(false);
         return;
       }
@@ -397,8 +397,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
         <div>
           <h3 className="text-lg font-semibold">{t('stationsSettings.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Twój plan {currentPlanName && `(${currentPlanName})`} obejmuje maksymalnie {maxStations}{' '}
-            stanowisk
+            {t('stationsSettings.planLimit', { plan: currentPlanName ? `(${currentPlanName})` : '', max: maxStations })}
           </p>
         </div>
         <Button
@@ -406,7 +405,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
           size="sm"
           className="gap-2 w-full sm:w-auto"
           disabled={isAtLimit}
-          title={isAtLimit ? 'Osiągnięto limit stanowisk' : undefined}
+          title={isAtLimit ? t('stationsSettings.limitReached') : undefined}
         >
           {t('stationsSettings.addStation')}
         </Button>
@@ -465,7 +464,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
             </div>
             {/* Color picker */}
             <div className="space-y-2">
-              <Label>Kolor stanowiska</Label>
+              <Label>{t('stationsSettings.stationColor')}</Label>
               <ColorPalettePicker
                 value={formData.color}
                 onChange={(color) => setFormData((prev) => ({ ...prev, color }))}
@@ -475,7 +474,7 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
             {/* Employee assignment section - only when editing and feature enabled */}
             {editingStation && instanceSettings?.assign_employees_to_stations && (
               <div className="space-y-2">
-                <Label>Przypisani pracownicy</Label>
+                <Label>{t('stationsSettings.assignedEmployees')}</Label>
                 <AssignedEmployeesChips
                   employeeIds={selectedEmployeeIds}
                   employees={employees}
@@ -514,8 +513,8 @@ const StationsSettings = ({ instanceId }: StationsSettingsProps) => {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Usuń stanowisko"
-        description={`Czy na pewno chcesz usunąć stanowisko "${deletingStation?.name}"?`}
+        title={t('stationsSettings.deleteStationTitle')}
+        description={t('stationsSettings.deleteStationConfirm', { name: deletingStation?.name })}
         onConfirm={confirmDelete}
         loading={deleting}
         variant="destructive"

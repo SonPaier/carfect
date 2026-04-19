@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeSearchQuery } from '@shared/utils';
 import { Button, EmptyState } from '@shared/ui';
@@ -69,6 +70,7 @@ export const ProtocolsView = ({
   onBack,
   onEditModeChange,
 }: ProtocolsViewProps) => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,7 +171,7 @@ export const ProtocolsView = ({
     const baseUrl = window.location.origin;
     const url = `${baseUrl}/protocols/${protocol.public_token}`;
     navigator.clipboard.writeText(url);
-    toast.success('Link skopiowany do schowka');
+    toast.success(t('protocols.list.linkCopied'));
   };
 
   const handleDeleteProtocol = async () => {
@@ -188,10 +190,10 @@ export const ProtocolsView = ({
       if (error) throw error;
 
       setProtocols((prev) => prev.filter((p) => p.id !== protocolToDelete.id));
-      toast.success('Protokół został usunięty');
+      toast.success(t('protocols.list.deleteSuccess'));
     } catch (error) {
       console.error('Error deleting protocol:', error);
-      toast.error('Nie udało się usunąć protokołu');
+      toast.error(t('protocols.list.deleteError'));
     } finally {
       setDeleteDialogOpen(false);
       setProtocolToDelete(null);
@@ -294,17 +296,17 @@ export const ProtocolsView = ({
         {kioskMode && onBack && (
           <Button variant="ghost" onClick={onBack} className="gap-1">
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Wróć</span>
+            <span className="hidden sm:inline">{t('protocols.list.back')}</span>
           </Button>
         )}
-        <h1 className="text-2xl font-medium flex-1">Protokoły</h1>
+        <h1 className="text-2xl font-medium flex-1">{t('protocols.list.title')}</h1>
         <div className="flex items-center gap-2">
           {!kioskMode && (
             <Button variant="outline" size="icon" onClick={() => setShowConfigurator(true)}>
               <Settings className="h-4 w-4" />
             </Button>
           )}
-          <Button onClick={() => setShowCreateForm(true)}>Dodaj protokół</Button>
+          <Button onClick={() => setShowCreateForm(true)}>{t('protocols.list.addProtocol')}</Button>
         </div>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4" />
@@ -314,7 +316,7 @@ export const ProtocolsView = ({
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Szukaj po nazwisku, numerze oferty, pojeździe..."
+          placeholder={t('protocols.list.searchPlaceholder')}
           className="pl-10"
         />
       </div>

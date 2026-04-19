@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, X, ClipboardPaste } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@shared/utils';
@@ -24,15 +25,17 @@ export const ImagePasteZone = ({
   pathPrefix = '',
   maxImages = 10,
   disabled = false,
-  label = 'Formatki',
+  label,
 }: ImagePasteZoneProps) => {
+  const { t } = useTranslation();
+  const resolvedLabel = label ?? t('imagePasteZone.defaultLabel');
   const [uploading, setUploading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
 
   const uploadImage = async (file: File) => {
     if (images.length >= maxImages) {
-      toast.error(`Maksymalnie ${maxImages} obrazów`);
+      toast.error(t('imagePasteZone.maxImagesError', { count: maxImages }));
       return;
     }
 
@@ -55,10 +58,10 @@ export const ImagePasteZone = ({
         .getPublicUrl(fileName);
 
       onImagesChange([...images, urlData.publicUrl]);
-      toast.success('Obraz wklejony');
+      toast.success(t('imagePasteZone.uploadSuccess'));
     } catch (err) {
       console.error('Paste upload error:', err);
-      toast.error('Błąd podczas wklejania obrazu');
+      toast.error(t('imagePasteZone.uploadError'));
     } finally {
       setUploading(false);
     }
@@ -99,7 +102,7 @@ export const ImagePasteZone = ({
 
   return (
     <div className="space-y-1.5">
-      {label && <Label className="text-sm">{label}</Label>}
+      {resolvedLabel && <Label className="text-sm">{resolvedLabel}</Label>}
       <div
         tabIndex={0}
         onPaste={handlePaste}
@@ -113,7 +116,7 @@ export const ImagePasteZone = ({
             <div key={url} className="relative w-20 h-20 group">
               <img
                 src={url}
-                alt={`Formatka ${index + 1}`}
+                alt={t('imagePasteZone.imageAlt', { number: index + 1 })}
                 className="w-full h-full object-cover rounded-lg border border-border cursor-pointer"
                 onClick={() => { setPreviewIndex(index); setPreviewOpen(true); }}
               />

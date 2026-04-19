@@ -1,5 +1,6 @@
 import { Loader2, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { Progress } from '@shared/ui';
+import { useTranslation } from 'react-i18next';
 import type { RollScanResult } from '../types/rolls';
 
 interface RollScanProgressListProps {
@@ -9,20 +10,21 @@ interface RollScanProgressListProps {
   processing: boolean;
 }
 
-const statusConfig = {
-  uploading: { label: 'Wgrywanie...', icon: Loader2, color: 'text-blue-500' },
-  extracting: { label: 'Analizowanie...', icon: Loader2, color: 'text-amber-500' },
-  review: { label: 'Do weryfikacji', icon: Eye, color: 'text-blue-600' },
-  confirmed: { label: 'Potwierdzona', icon: CheckCircle2, color: 'text-green-600' },
-  error: { label: 'Błąd', icon: AlertCircle, color: 'text-destructive' },
-};
-
 const RollScanProgressList = ({
   results,
   currentIndex,
   totalCount,
   processing,
 }: RollScanProgressListProps) => {
+  const { t } = useTranslation();
+
+  const statusConfig = {
+    uploading: { label: t('sales.rolls.statusUploading'), icon: Loader2, color: 'text-blue-500' },
+    extracting: { label: t('sales.rolls.statusExtracting'), icon: Loader2, color: 'text-amber-500' },
+    review: { label: t('sales.rolls.statusReview'), icon: Eye, color: 'text-blue-600' },
+    confirmed: { label: t('sales.rolls.statusConfirmed'), icon: CheckCircle2, color: 'text-green-600' },
+    error: { label: t('sales.rolls.statusError'), icon: AlertCircle, color: 'text-destructive' },
+  };
   if (results.length === 0) return null;
 
   const completedCount = results.filter(
@@ -38,7 +40,7 @@ const RollScanProgressList = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              Przetwarzanie {currentIndex}/{totalCount}...
+              {t('sales.rolls.progressLabel', { current: currentIndex, total: totalCount })}
             </span>
             <span className="text-muted-foreground">
               {Math.round(progressPercent)}%

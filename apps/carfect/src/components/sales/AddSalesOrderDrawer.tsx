@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Loader2, Info } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -77,6 +78,7 @@ const AddSalesOrderDrawer = ({
   editOrder,
   onOrderCreated,
 }: AddSalesOrderDrawerProps) => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: instanceData } = useInstanceData(instanceId);
@@ -370,15 +372,15 @@ const AddSalesOrderDrawer = ({
 
   const handleSubmit = async () => {
     if (!instanceId) {
-      toast.error('Brak instancji');
+      toast.error(t('sales.order.errorNoInstance'));
       return;
     }
     if (!customerSearch.selectedCustomer) {
-      toast.error('Wybierz klienta');
+      toast.error(t('sales.order.errorNoCustomer'));
       return;
     }
     if (products.length === 0) {
-      toast.error('Dodaj przynajmniej jeden produkt');
+      toast.error(t('sales.order.errorNoProducts'));
       return;
     }
 

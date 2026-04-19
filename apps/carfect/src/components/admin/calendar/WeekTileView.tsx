@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { startOfWeek, addDays, isSameDay, differenceInDays, max, min, format } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,8 +32,6 @@ function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
   return d >= range.from.getTime() && d <= range.to.getTime();
 }
 
-const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Niedz'];
-
 const BAR_HEIGHT_NORMAL = 22;
 const BAR_HEIGHT_NOTES = 58;
 const BAR_GAP = 3; // px gap between bars
@@ -59,6 +58,16 @@ export const WeekTileView = ({
   workingHours,
   activeDateRange,
 }: WeekTileViewProps) => {
+  const { t } = useTranslation();
+  const DAY_NAMES = [
+    t('calendar.dayNames.mon'),
+    t('calendar.dayNames.tue'),
+    t('calendar.dayNames.wed'),
+    t('calendar.dayNames.thu'),
+    t('calendar.dayNames.fri'),
+    t('calendar.dayNames.sat'),
+    t('calendar.dayNames.sun'),
+  ];
   const isMobile = useIsMobile();
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
   const today = new Date();

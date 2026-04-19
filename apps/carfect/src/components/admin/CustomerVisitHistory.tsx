@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Clock } from 'lucide-react';
@@ -50,6 +51,7 @@ export const CustomerVisitHistory = ({
   showDuration = false,
   onOpenReservation,
 }: CustomerVisitHistoryProps) => {
+  const { t } = useTranslation();
   const [visits, setVisits] = useState<VisitHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const pricingMode = usePricingMode(instanceId);
@@ -162,11 +164,11 @@ export const CustomerVisitHistory = ({
   }, [customerPhone, instanceId]);
 
   if (loading) {
-    return <div className="text-center text-muted-foreground py-8">Ładowanie...</div>;
+    return <div className="text-center text-muted-foreground py-8">{t('visitHistory.loading')}</div>;
   }
 
   if (visits.length === 0) {
-    return <EmptyState icon={Clock} title="Brak historii wizyt" />;
+    return <EmptyState icon={Clock} title={t('visitHistory.noVisits')} />;
   }
 
   return (
@@ -192,7 +194,7 @@ export const CustomerVisitHistory = ({
                 </span>
                 {visit.status === 'no_show' && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">
-                    Nieobecny
+                    {t('visitHistory.noShow')}
                   </span>
                 )}
               </div>
@@ -210,7 +212,7 @@ export const CustomerVisitHistory = ({
             {visit.service_name && (
               <div className="text-sm text-foreground">{visit.service_name}</div>
             )}
-            {duration && <div className="text-sm text-foreground">Czas wykonania: {duration}</div>}
+            {duration && <div className="text-sm text-foreground">{t('visitHistory.executionTime', { duration })}</div>}
             {showNotes && visit.admin_notes && (
               <div className="mt-2 text-sm text-foreground">
                 <span className="whitespace-pre-wrap">{visit.admin_notes}</span>

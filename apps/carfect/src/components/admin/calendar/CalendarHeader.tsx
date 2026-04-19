@@ -458,7 +458,7 @@ export function CalendarHeader({
               size="icon"
               className="h-9 w-9"
               onClick={onToggleHallDataVisibility}
-              title={hallDataVisible ? 'Ukryj dane klienta' : 'Pokaż dane klienta'}
+              title={hallDataVisible ? t('calendar.hideClientData') : t('calendar.showClientData')}
             >
               {hallDataVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </Button>

@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@shared/ui';
 import { useWorkersSettings, useUpdateWorkersSettings } from '@/hooks/useWorkersSettings';
 import { X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface WorkersSettingsDrawerProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface WorkersSettingsDrawerProps {
 }
 
 const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettingsDrawerProps) => {
+  const { t } = useTranslation();
   const { data: settings, isLoading } = useWorkersSettings(instanceId);
   const updateSettings = useUpdateWorkersSettings(instanceId);
 
@@ -45,11 +47,11 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
         standard_hours_per_day: parseInt(standardHours) || 8,
         report_frequency: reportFrequency,
       });
-      toast.success('Ustawienia zostały zapisane');
+      toast.success(t('admin.workersSettings.saved'));
       handleClose();
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('admin.workersSettings.saveError'));
     }
   };
 
@@ -61,7 +63,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-background border-b p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Ustawienia czasu pracy</h2>
+            <h2 className="text-lg font-semibold">{t('admin.workersSettings.title')}</h2>
             <button onClick={handleClose} className="p-2 rounded-full hover:bg-hover">
               <X className="w-5 h-5" />
             </button>
@@ -79,7 +81,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
               {/* Switch: Ewidencja czasu pracy */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="time-tracking">Ewidencja czasu pracy</Label>
+                  <Label htmlFor="time-tracking">{t('admin.workersSettings.timeTracking')}</Label>
                   <Switch
                     size="sm"
                     id="time-tracking"
@@ -88,7 +90,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Rejestruj godziny pracy pracowników
+                  {t('admin.workersSettings.timeTrackingHint')}
                 </p>
               </div>
 
@@ -97,7 +99,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
                   {/* Switch: Nadgodziny */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="overtime">Naliczanie nadgodzin</Label>
+                      <Label htmlFor="overtime">{t('admin.workersSettings.overtime')}</Label>
                       <Switch
                         size="sm"
                         id="overtime"
@@ -106,13 +108,13 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Automatycznie oznacza godziny ponad normę
+                      {t('admin.workersSettings.overtimeHint')}
                     </p>
                   </div>
 
                   {overtimeEnabled && (
                     <div className="space-y-2">
-                      <Label htmlFor="standard-hours">Norma dzienna (godziny)</Label>
+                      <Label htmlFor="standard-hours">{t('admin.workersSettings.standardHours')}</Label>
                       <Input
                         id="standard-hours"
                         type="number"
@@ -127,7 +129,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
 
                   {/* RadioGroup: Okres rozliczeniowy */}
                   <div className="space-y-3">
-                    <Label>Okres rozliczeniowy</Label>
+                    <Label>{t('admin.workersSettings.reportFrequency')}</Label>
                     <RadioGroup
                       value={reportFrequency}
                       onValueChange={(v) => setReportFrequency(v as 'monthly' | 'weekly')}
@@ -136,21 +138,21 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="monthly" id="monthly" />
                           <Label htmlFor="monthly" className="font-normal cursor-pointer">
-                            Miesięcznie
+                            {t('admin.workersSettings.monthly')}
                           </Label>
                         </div>
                         <p className="text-xs text-muted-foreground ml-6">
-                          Podsumowanie raz w miesiącu
+                          {t('admin.workersSettings.monthlyHint')}
                         </p>
                       </div>
                       <div className="space-y-0.5">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="weekly" id="weekly" />
                           <Label htmlFor="weekly" className="font-normal cursor-pointer">
-                            Tygodniowo
+                            {t('admin.workersSettings.weekly')}
                           </Label>
                         </div>
-                        <p className="text-xs text-muted-foreground ml-6">Podsumowanie co tydzień</p>
+                        <p className="text-xs text-muted-foreground ml-6">{t('admin.workersSettings.weeklyHint')}</p>
                       </div>
                     </RadioGroup>
                   </div>
@@ -163,11 +165,11 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
         {/* Sticky white footer */}
         <div className="sticky bottom-0 bg-background border-t p-4 flex gap-3 justify-end">
           <Button variant="outline" onClick={handleClose} className="bg-white">
-            Anuluj
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={saving || isLoading}>
             {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            Zapisz
+            {t('common.save')}
           </Button>
         </div>
       </SheetContent>

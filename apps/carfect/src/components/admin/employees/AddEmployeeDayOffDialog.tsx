@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import { useTranslation } from 'react-i18next';
 
 interface AddEmployeeDayOffDialogProps {
   open: boolean;
@@ -46,13 +47,15 @@ const AddEmployeeDayOffDialog = ({
     }
   }, [employees, open]);
 
+  const { t } = useTranslation();
+
   const handleSubmit = async () => {
     if (!employeeId) {
-      toast.error('Wybierz pracownika');
+      toast.error(t('admin.daysOff.selectEmployeeError'));
       return;
     }
     if (!dateRange?.from) {
-      toast.error('Wybierz datę');
+      toast.error(t('admin.daysOff.selectDateError'));
       return;
     }
 
@@ -63,15 +66,15 @@ const AddEmployeeDayOffDialog = ({
         date_to: format(dateRange.to || dateRange.from, 'yyyy-MM-dd'),
         day_off_type: dayOffType,
       });
-      toast.success('Nieobecność została dodana');
+      toast.success(t('admin.daysOff.added'));
       onOpenChange(false);
     } catch (error) {
-      toast.error('Wystąpił błąd');
+      toast.error(t('admin.daysOff.addError'));
     }
   };
 
   const formatDateRange = () => {
-    if (!dateRange?.from) return 'Wybierz okres';
+    if (!dateRange?.from) return t('admin.daysOff.selectPeriod');
     if (!dateRange.to || dateRange.from.getTime() === dateRange.to.getTime()) {
       return format(dateRange.from, 'd MMMM yyyy', { locale: pl });
     }
@@ -82,13 +85,13 @@ const AddEmployeeDayOffDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Dodaj nieobecność</DialogTitle>
+          <DialogTitle>{t('admin.daysOff.addTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Date range picker - first */}
           <div className="space-y-2">
-            <Label>Okres *</Label>
+            <Label>{t('admin.daysOff.periodLabel')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -116,7 +119,7 @@ const AddEmployeeDayOffDialog = ({
 
           {/* Day off type - second */}
           <div className="space-y-2">
-            <Label>Typ nieobecności *</Label>
+            <Label>{t('admin.daysOff.typeLabel')}</Label>
             <Select value={dayOffType} onValueChange={(v) => setDayOffType(v as DayOffType)}>
               <SelectTrigger className="bg-white">
                 <SelectValue />
@@ -133,10 +136,10 @@ const AddEmployeeDayOffDialog = ({
 
           {/* Employee select - third */}
           <div className="space-y-2">
-            <Label>Pracownik *</Label>
+            <Label>{t('admin.daysOff.employeeLabel')}</Label>
             <Select value={employeeId} onValueChange={setEmployeeId}>
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Wybierz pracownika" />
+                <SelectValue placeholder={t('admin.daysOff.selectEmployee')} />
               </SelectTrigger>
               <SelectContent>
                 {employees.map((emp) => (
@@ -151,11 +154,11 @@ const AddEmployeeDayOffDialog = ({
 
         <DialogFooter className="flex flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-white">
-            Anuluj
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Dodaj
+            {t('common.add')}
           </Button>
         </DialogFooter>
       </DialogContent>

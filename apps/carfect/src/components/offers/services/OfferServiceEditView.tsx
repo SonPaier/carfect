@@ -119,6 +119,7 @@ function SortableProductItem({
   updateVariantName: (productId: string, variantName: string) => void;
   onEditProduct: (productId: string) => void;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: scopeProduct.product_id,
   });
@@ -148,14 +149,14 @@ function SortableProductItem({
                 type="button"
                 onClick={() => onEditProduct(scopeProduct.product_id)}
                 className="p-1 text-muted-foreground hover:text-primary transition-colors"
-                title="Edytuj usługę"
+                title={t('offers.serviceTemplates.editService')}
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
             </div>
             {scopeProduct.product?.short_name && (
               <p className="text-xs text-muted-foreground">
-                Skrót: {scopeProduct.product.short_name}
+                {t('offers.serviceTemplates.shortNameHint', { shortName: scopeProduct.product.short_name })}
               </p>
             )}
           </div>
@@ -172,7 +173,7 @@ function SortableProductItem({
                 ? 'text-yellow-500'
                 : 'text-muted-foreground hover:text-yellow-500'
             }`}
-            title={scopeProduct.is_default ? 'Domyślny' : 'Ustaw jako domyślny'}
+            title={scopeProduct.is_default ? t('offers.serviceTemplates.isDefault') : t('offers.serviceTemplates.setAsDefault')}
           >
             <Star className={`w-4 h-4 ${scopeProduct.is_default ? 'fill-current' : ''}`} />
           </button>
@@ -186,11 +187,11 @@ function SortableProductItem({
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Dodatkowa nazwa pozycji</Label>
+        <Label className="text-xs text-muted-foreground">{t('offers.serviceTemplates.variantNameLabel')}</Label>
         <Input
           value={scopeProduct.variant_name}
           onChange={(e) => updateVariantName(scopeProduct.product_id, e.target.value)}
-          placeholder="Np. Premium"
+          placeholder={t('offers.serviceTemplates.variantNamePlaceholder')}
           className="bg-slate-50"
         />
       </div>
@@ -446,7 +447,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Podaj nazwę szablonu');
+      toast.error(t('offers.serviceTemplates.nameRequired'));
       return;
     }
 
@@ -515,11 +516,11 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
         }
       }
 
-      toast.success(isEditMode ? 'Szablon zaktualizowany' : 'Szablon utworzony');
+      toast.success(isEditMode ? t('offers.serviceTemplates.saveSuccess') : t('offers.serviceTemplates.createSuccess'));
       onBack();
     } catch (error) {
       console.error('Error saving scope:', error);
-      toast.error('Błąd podczas zapisywania');
+      toast.error(t('offers.serviceTemplates.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -537,19 +538,19 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
     <>
       <Helmet>
         <title>
-          {isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'} - {t('common.adminPanel')}
+          {isEditMode ? t('offers.serviceTemplates.editTemplate', { name }) : t('offers.serviceTemplates.newTemplate')} - {t('common.adminPanel')}
         </title>
       </Helmet>
       <div className="pb-24">
         <div className="max-w-3xl mx-auto w-full space-y-6">
           <h1 className="text-2xl font-bold">
-            {isEditMode ? `Edytuj szablon ${name}` : 'Nowy szablon'}
+            {isEditMode ? t('offers.serviceTemplates.editTemplate', { name }) : t('offers.serviceTemplates.newTemplate')}
           </h1>
 
           <div className="space-y-6">
             {/* Nazwa skrócona */}
             <div className="space-y-2">
-              <Label htmlFor="shortName">Nazwa skrócona</Label>
+              <Label htmlFor="shortName">{t('offers.serviceTemplates.shortName')}</Label>
               <Input
                 id="shortName"
                 value={shortName}
@@ -561,7 +562,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
             {/* Nazwa szablonu widoczna w ofercie */}
             <div className="space-y-2">
-              <Label htmlFor="name">Nazwa szablonu widoczna w ofercie</Label>
+              <Label htmlFor="name">{t('offers.serviceTemplates.templateName')}</Label>
               <Input
                 id="name"
                 value={name}
@@ -575,12 +576,12 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
             {/* Opis */}
             <div className="space-y-2">
-              <Label htmlFor="description">Opis</Label>
+              <Label htmlFor="description">{t('offers.serviceTemplates.descriptionLabel')}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Opis usługi..."
+                placeholder={t('offers.serviceTemplates.descriptionPlaceholder')}
                 rows={12}
                 className="bg-white resize-none"
               />
@@ -588,7 +589,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
             {/* Zdjęcia szablonu */}
             <div className="space-y-2">
-              <Label>Zdjęcia szablonu</Label>
+              <Label>{t('offers.serviceTemplates.photos')}</Label>
               <ProtocolPhotosUploader
                 photos={photoUrls}
                 onPhotosChange={setPhotoUrls}
@@ -606,7 +607,7 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
                 className="gap-2"
               >
                 <Package className="w-4 h-4" />
-                Wybierz usługi do szablonu
+                {t('offers.serviceTemplates.selectServices')}
                 {scopeProducts.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
                     {scopeProducts.length}
@@ -619,10 +620,10 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
                 <div className="space-y-2 mt-3">
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                    oznacza, że usługa będzie zawsze dodana w kreatorze dla tego szablonu
+                    {t('offers.serviceTemplates.defaultServiceHint')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Przeciągnij aby zmienić kolejność usług
+                    {t('offers.serviceTemplates.dragToReorder')}
                   </p>
                   <DndContext
                     sensors={sensors}
@@ -654,51 +655,51 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
 
             {/* Domyślne wartości dla oferty */}
             <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-medium text-lg">Domyślne wartości dla oferty</h3>
+              <h3 className="font-medium text-lg">{t('offers.serviceTemplates.defaultSection')}</h3>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultWarranty">Gwarancja</Label>
+                <Label htmlFor="defaultWarranty">{t('offers.serviceTemplates.warranty')}</Label>
                 <Textarea
                   id="defaultWarranty"
                   value={defaultWarranty}
                   onChange={(e) => setDefaultWarranty(e.target.value)}
-                  placeholder="Np. 5 lat gwarancji na powłokę..."
+                  placeholder={t('offers.serviceTemplates.warrantyPlaceholder')}
                   rows={5}
                   className="bg-white resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultPaymentTerms">Warunki płatności</Label>
+                <Label htmlFor="defaultPaymentTerms">{t('offers.serviceTemplates.paymentTerms')}</Label>
                 <Textarea
                   id="defaultPaymentTerms"
                   value={defaultPaymentTerms}
                   onChange={(e) => setDefaultPaymentTerms(e.target.value)}
-                  placeholder="Np. 50% zaliczki, reszta przy odbiorze..."
+                  placeholder={t('offers.serviceTemplates.paymentTermsPlaceholder')}
                   rows={5}
                   className="bg-white resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultServiceInfo">Informacje o serwisie</Label>
+                <Label htmlFor="defaultServiceInfo">{t('offers.serviceTemplates.serviceInfo')}</Label>
                 <Textarea
                   id="defaultServiceInfo"
                   value={defaultServiceInfo}
                   onChange={(e) => setDefaultServiceInfo(e.target.value)}
-                  placeholder="Np. Czas realizacji 3-5 dni roboczych..."
+                  placeholder={t('offers.serviceTemplates.serviceInfoPlaceholder')}
                   rows={5}
                   className="bg-white resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="defaultNotes">Inne uwagi</Label>
+                <Label htmlFor="defaultNotes">{t('offers.serviceTemplates.otherNotes')}</Label>
                 <Textarea
                   id="defaultNotes"
                   value={defaultNotes}
                   onChange={(e) => setDefaultNotes(e.target.value)}
-                  placeholder="Dodatkowe informacje..."
+                  placeholder={t('offers.serviceTemplates.otherNotesPlaceholder')}
                   rows={5}
                   className="bg-white resize-none"
                 />
@@ -712,11 +713,11 @@ export function OfferServiceEditView({ instanceId, scopeId, onBack }: OfferServi
           <div className="flex items-center justify-between max-w-3xl mx-auto px-4">
             <Button variant="outline" onClick={onBack} className="gap-2 h-12 bg-white">
               <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Wróć</span>
+              <span className="hidden sm:inline">{t('offers.serviceTemplates.back')}</span>
             </Button>
             <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-12">
               <span className="hidden sm:inline">
-                {isSaving ? 'Zapisywanie...' : 'Zapisz szablon'}
+                {isSaving ? t('common.saving') : t('offers.serviceTemplates.saveTemplate')}
               </span>
             </Button>
           </div>

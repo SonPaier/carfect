@@ -172,7 +172,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="templates">
                   <ClipboardList className="h-4 w-4" />
-                  Szablony
+                  {t('offerSettingsDialog.templatesTab')}
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="branding">
                   <Palette className="h-4 w-4" />
@@ -180,11 +180,11 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="trustHeader">
                   <Award className="h-4 w-4" />
-                  Nagłówek
+                  {t('offerSettingsDialog.headerTab')}
                 </AdminTabsTrigger>
                 <AdminTabsTrigger value="widget">
                   <Code className="h-4 w-4" />
-                  Wtyczka
+                  {t('offerSettingsDialog.pluginTab')}
                 </AdminTabsTrigger>
               </AdminTabsList>
             </div>
@@ -200,13 +200,13 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                   <div className="space-y-6">
                     {/* Bank payment details */}
                     <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
-                      <h4 className="font-medium">Dane do płatności</h4>
+                      <h4 className="font-medium">{t('offerSettingsDialog.paymentDetails')}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Te dane będą widoczne w sekcji płatności na ofercie.
+                        {t('offerSettingsDialog.paymentDetailsDescription')}
                       </p>
 
                       <div className="space-y-2">
-                        <Label>Nazwa firmy na fakturę</Label>
+                        <Label>{t('offerSettingsDialog.companyNameForInvoice')}</Label>
                         <Input
                           value={bankCompanyName}
                           onChange={(e) => {
@@ -218,7 +218,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Nazwa banku</Label>
+                        <Label>{t('offerSettings.bankName')}</Label>
                         <Input
                           value={bankName}
                           onChange={(e) => {
@@ -230,7 +230,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Numer konta</Label>
+                        <Label>{t('offerSettings.bankAccountNumber')}</Label>
                         <Input
                           value={bankAccountNumber}
                           onChange={(e) => {

@@ -73,13 +73,14 @@ interface EditingItemPriceState {
   value: string;
 }
 
-const paintTypeLabels: Record<string, string> = {
-  matte: 'Mat',
-  dark: 'Ciemny',
-  other: 'Inny',
+const getPaintTypeLabel = (type: string, t: (key: string) => string): string => {
+  const labels: Record<string, string> = {
+    matte: t('summary.paintTypeMat'),
+    dark: t('summary.paintTypeDark'),
+    other: t('summary.paintTypeOther'),
+  };
+  return labels[type] || type;
 };
-
-const getPaintTypeLabel = (type: string) => paintTypeLabels[type] || type;
 
 export const SummaryStep = ({
   instanceId,
@@ -231,7 +232,7 @@ export const SummaryStep = ({
     // Options without scope
     const noScopeOptions = offer.options.filter(o => !o.scopeId && o.isSelected);
     if (noScopeOptions.length > 0) {
-      groups.push({ scopeId: null, scopeName: 'Inne', options: noScopeOptions });
+      groups.push({ scopeId: null, scopeName: t('summary.other'), options: noScopeOptions });
     }
     
     return groups;
@@ -369,7 +370,7 @@ export const SummaryStep = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2 font-semibold">
               <User className="w-4 h-4 text-primary" />
-              Klient
+              {t('summary.customer')}
             </div>
             <div className="text-sm space-y-1 pl-6">
               <p className="font-medium">{offer.customerData.name || '—'}</p>
@@ -385,12 +386,12 @@ export const SummaryStep = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 font-semibold">
                 <Building2 className="w-4 h-4 text-primary" />
-                Firma
+                {t('summary.company')}
               </div>
               <div className="text-sm space-y-1 pl-6">
                 <p className="font-medium">{offer.customerData.company}</p>
                 {offer.customerData.nip && (
-                  <p className="text-muted-foreground">NIP: {offer.customerData.nip}</p>
+                  <p className="text-muted-foreground">{t('summary.nip', { nip: offer.customerData.nip })}</p>
                 )}
               </div>
             </div>
@@ -401,7 +402,7 @@ export const SummaryStep = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 font-semibold">
                 <Car className="w-4 h-4 text-primary" />
-                Pojazd
+                {t('summary.vehicle')}
               </div>
               <div className="text-sm space-y-1 pl-6">
                 <p className="font-medium">{offer.vehicleData.brandModel}</p>
@@ -409,7 +410,7 @@ export const SummaryStep = ({
                   <p className="text-muted-foreground">
                     {offer.vehicleData.paintColor}
                     {offer.vehicleData.paintColor && offer.vehicleData.paintType && ' • '}
-                    {offer.vehicleData.paintType && getPaintTypeLabel(offer.vehicleData.paintType)}
+                    {offer.vehicleData.paintType && getPaintTypeLabel(offer.vehicleData.paintType, t)}
                   </p>
                 )}
               </div>
@@ -459,7 +460,7 @@ export const SummaryStep = ({
                               ? "text-amber-500 bg-amber-50" 
                               : "text-muted-foreground/40 hover:text-amber-400 hover:bg-amber-50/50"
                           )}
-                          title={isDefaultVariant ? "Domyślny wariant" : "Ustaw jako domyślny"}
+                          title={isDefaultVariant ? t('summary.defaultVariant') : t('summary.setAsDefault')}
                         >
                           <Star className={cn("h-4 w-4", isDefaultVariant && "fill-current")} />
                         </button>
@@ -467,7 +468,7 @@ export const SummaryStep = ({
                       <h4 className="font-semibold">{option.name}</h4>
                       {isDefaultVariant && (
                         <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                          domyślny
+                          {t('summary.defaultBadge')}
                         </span>
                       )}
                     </div>
@@ -497,7 +498,7 @@ export const SummaryStep = ({
                             type="button"
                             onClick={() => handleStartEditPrice(option.id, currentTotal)}
                             className="text-right hover:bg-hover-strong rounded px-2 py-1 transition-colors cursor-pointer"
-                            title="Kliknij aby edytować wartość"
+                            title={t('summary.clickToEditValue')}
                           >
                             {optionHasDiscount ? (
                               <div className="flex items-center gap-2">
@@ -511,7 +512,7 @@ export const SummaryStep = ({
                             ) : (
                               <p className="font-semibold">{formatPrice(currentTotal)}</p>
                             )}
-                            <p className="text-xs text-muted-foreground">netto</p>
+                            <p className="text-xs text-muted-foreground">{t('summary.net')}</p>
                           </button>
                         )}
                       </div>
@@ -522,11 +523,11 @@ export const SummaryStep = ({
                   {showUnitPrices ? (
                     <div className="text-sm">
                       <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-muted/50 rounded text-xs font-medium text-muted-foreground">
-                        <div className="col-span-5">Pozycja</div>
-                        <div className="col-span-2 text-right">Ilość</div>
-                        <div className="col-span-2 text-right">Cena</div>
-                        <div className="col-span-1 text-right">Rabat</div>
-                        <div className="col-span-2 text-right">Wartość</div>
+                        <div className="col-span-5">{t('summary.colPosition')}</div>
+                        <div className="col-span-2 text-right">{t('summary.colQuantity')}</div>
+                        <div className="col-span-2 text-right">{t('summary.colPrice')}</div>
+                        <div className="col-span-1 text-right">{t('summary.colDiscount')}</div>
+                        <div className="col-span-2 text-right">{t('summary.colValue')}</div>
                       </div>
                       {option.items.map((item) => {
                         const itemValue = item.quantity * item.unitPrice * (1 - item.discountPercent / 100);
@@ -546,7 +547,7 @@ export const SummaryStep = ({
                                   checked={isDefaultItem}
                                   onCheckedChange={() => handleToggleDefaultOptionalItem(item.id, option)}
                                   className="h-4 w-4"
-                                  title="Domyślnie zaznaczony dodatek"
+                                  title={t('summary.defaultCheckedExtra')}
                                 />
                               )}
                               {/* Default selection for multi-item options (radio) */}
@@ -560,7 +561,7 @@ export const SummaryStep = ({
                                       ? "border-amber-500 bg-amber-500" 
                                       : "border-gray-400 hover:border-amber-400"
                                   )}
-                                  title={isSelectedInMultiOption ? "Domyślna pozycja" : "Ustaw jako domyślną"}
+                                  title={isSelectedInMultiOption ? t('summary.defaultPosition') : t('summary.setAsDefaultPosition')}
                                 >
                                   {isSelectedInMultiOption && (
                                     <div className="h-2 w-2 rounded-full bg-white" />
@@ -640,7 +641,7 @@ export const SummaryStep = ({
                                   checked={isDefaultItem}
                                   onCheckedChange={() => handleToggleDefaultOptionalItem(item.id, option)}
                                   className="h-4 w-4"
-                                  title="Domyślnie zaznaczony dodatek"
+                                  title={t('summary.defaultCheckedExtra')}
                                 />
                               )}
                               {/* Default selection for multi-item options (radio) */}
@@ -654,7 +655,7 @@ export const SummaryStep = ({
                                       ? "border-amber-500 bg-amber-500" 
                                       : "border-gray-400 hover:border-amber-400"
                                   )}
-                                  title={isSelectedInMultiOption ? "Domyślna pozycja" : "Ustaw jako domyślną"}
+                                  title={isSelectedInMultiOption ? t('summary.defaultPosition') : t('summary.setAsDefaultPosition')}
                                 >
                                   {isSelectedInMultiOption && (
                                     <div className="h-2 w-2 rounded-full bg-white" />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { X, Pencil, Search, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent } from '@shared/ui';
@@ -136,6 +137,7 @@ const AddEditSalesCustomerDrawer = ({
   onSaved,
   initialEditMode = false,
 }: Props) => {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const isEdit = !!customer;
   const [editMode, setEditMode] = useState(false);
@@ -260,15 +262,15 @@ const AddEditSalesCustomerDrawer = ({
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      toast.error('Nazwa jest wymagana');
+      toast.error(t('sales.customers.nameRequired'));
       return;
     }
     if (!form.phone.trim()) {
-      toast.error('Telefon jest wymagany');
+      toast.error(t('sales.customers.phoneRequired'));
       return;
     }
     if (form.discountPercent < 0 || form.discountPercent > 100) {
-      toast.error('Rabat musi być między 0 a 100%');
+      toast.error(t('sales.customers.discountRange'));
       return;
     }
 
@@ -314,11 +316,11 @@ const AddEditSalesCustomerDrawer = ({
           .update(payload)
           .eq('id', customer.id);
         if (error) throw error;
-        toast.success('Klient zaktualizowany');
+        toast.success(t('sales.customers.updated'));
       } else {
         const { error } = await supabase.from('sales_customers').insert(payload);
         if (error) throw error;
-        toast.success('Klient dodany');
+        toast.success(t('sales.customers.added'));
       }
 
       onSaved();
@@ -326,7 +328,7 @@ const AddEditSalesCustomerDrawer = ({
       onOpenChange(false);
     } catch (err: unknown) {
       console.error(err);
-      toast.error('Błąd zapisu: ' + ((err as Error).message || 'Nieznany błąd'));
+      toast.error(t('sales.customers.saveError', { message: (err as Error).message || t('sales.unknownError') }));
     } finally {
       setSaving(false);
     }
@@ -342,28 +344,28 @@ const AddEditSalesCustomerDrawer = ({
   const renderViewMode = () => (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
       <TabsList className="w-full">
-        <TabsTrigger value="orders">Zamówienia</TabsTrigger>
-        <TabsTrigger value="data">Dane</TabsTrigger>
+        <TabsTrigger value="orders">{t('sales.customers.tabOrders')}</TabsTrigger>
+        <TabsTrigger value="data">{t('sales.customers.tabData')}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="data" className="flex-1 overflow-y-auto space-y-4 pr-1">
         <div className="space-y-3 text-sm">
-          <ViewField label="Nazwa" value={form.name} />
-          <ViewField label="NIP" value={form.nip} />
+          <ViewField label={t('sales.customers.fieldName')} value={form.name} />
+          <ViewField label={t('sales.customers.fieldNip')} value={form.nip} />
         </div>
 
         <Separator />
 
         <div className="space-y-3 text-sm">
-          <ViewField label="Telefon" value={form.phone} isPhone />
-          <ViewField label="Email" value={form.email} isEmail />
-          <ViewField label="Osoba kontaktowa" value={form.contactPerson} />
+          <ViewField label={t('sales.customers.fieldPhone')} value={form.phone} isPhone />
+          <ViewField label={t('sales.customers.fieldEmail')} value={form.email} isEmail />
+          <ViewField label={t('sales.customers.fieldContactPerson')} value={form.contactPerson} />
           <ViewField
-            label="Waluta"
+            label={t('sales.customers.fieldCurrency')}
             value={CURRENCIES.find((c) => c.value === form.currency)?.label || form.currency}
           />
-          {form.discountEnabled && <ViewField label="Rabat" value={`${form.discountPercent}%`} />}
-          <ViewField label="Płatnik" value={form.isNetPayer ? 'netto' : 'brutto'} />
+          {form.discountEnabled && <ViewField label={t('sales.customers.fieldDiscount')} value={`${form.discountPercent}%`} />}
+          <ViewField label={t('sales.customers.fieldPayer')} value={form.isNetPayer ? t('sales.customers.payerNet') : t('sales.customers.payerGross')} />
         </div>
 
         {(form.billingStreet || form.billingCity) && (
@@ -371,16 +373,16 @@ const AddEditSalesCustomerDrawer = ({
             <Separator />
             <div className="space-y-3 text-sm">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Adres firmy
+                {t('sales.customers.companyAddress')}
               </h4>
               <ViewField
-                label="Kraj"
+                label={t('sales.customers.fieldCountry')}
                 value={
                   COUNTRIES.find((c) => c.code === form.billingCountry)?.name || form.billingCountry
                 }
               />
               <ViewField
-                label="Adres"
+                label={t('sales.customers.fieldAddress')}
                 value={[
                   form.billingStreet,
                   form.billingStreetLine2,
@@ -396,24 +398,24 @@ const AddEditSalesCustomerDrawer = ({
         <Separator />
         <div className="space-y-3 text-sm">
           <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Adres dostawy
+            {t('sales.customers.shippingAddress')}
           </h4>
           {form.shippingSameAsBilling ? (
-            <p className="text-sm text-muted-foreground italic">Taki sam jak adres firmy</p>
+            <p className="text-sm text-muted-foreground italic">{t('sales.customers.sameAsCompany')}</p>
           ) : (
             <>
               {form.shippingAddressee && (
-                <ViewField label="Adresat" value={form.shippingAddressee} />
+                <ViewField label={t('sales.customers.fieldAddressee')} value={form.shippingAddressee} />
               )}
               <ViewField
-                label="Kraj"
+                label={t('sales.customers.fieldCountry')}
                 value={
                   COUNTRIES.find((c) => c.code === form.shippingCountry)?.name ||
                   form.shippingCountry
                 }
               />
               <ViewField
-                label="Adres"
+                label={t('sales.customers.fieldAddress')}
                 value={[
                   form.shippingStreet,
                   form.shippingStreetLine2,
@@ -430,7 +432,7 @@ const AddEditSalesCustomerDrawer = ({
           <>
             <Separator />
             <div className="space-y-3 text-sm">
-              <ViewField label="Notatki" value={form.notes} />
+              <ViewField label={t('sales.customers.fieldNotes')} value={form.notes} />
             </div>
           </>
         )}
@@ -438,9 +440,9 @@ const AddEditSalesCustomerDrawer = ({
 
       <TabsContent value="orders" className="flex-1 overflow-y-auto">
         {ordersLoading ? (
-          <p className="text-sm text-muted-foreground text-center py-8">Ładowanie...</p>
+          <p className="text-sm text-muted-foreground text-center py-8">{t('sales.loading')}</p>
         ) : orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">Brak zamówień</p>
+          <p className="text-sm text-muted-foreground text-center py-8">{t('sales.customers.noOrders')}</p>
         ) : (
           <div className="space-y-2">
             {orders.map((o) => (
@@ -463,33 +465,33 @@ const AddEditSalesCustomerDrawer = ({
                       }`}
                     >
                       {o.status === 'nowy'
-                        ? 'Nowy'
+                        ? t('sales.orders.statusNew')
                         : o.status === 'wysłany'
-                          ? 'Wysłany'
+                          ? t('sales.orders.statusShipped')
                           : o.status === 'anulowany'
-                            ? 'Anulowany'
+                            ? t('sales.orders.statusCancelled')
                             : o.status}
                     </span>
                     {o.delivery_type && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                         {o.delivery_type === 'shipping'
-                          ? 'Wysyłka'
+                          ? t('sales.orders.deliveryShipping')
                           : o.delivery_type === 'pickup'
-                            ? 'Odbiór'
+                            ? t('sales.orders.deliveryPickup')
                             : o.delivery_type === 'uber'
-                              ? 'Uber'
+                              ? t('sales.orders.deliveryUber')
                               : o.delivery_type}
                       </Badge>
                     )}
                     {o.payment_method && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                         {{
-                          cod: 'Pobranie',
-                          transfer: 'Przelew',
-                          cash: 'Gotówka',
-                          card: 'Karta',
-                          free: 'Bezpłatne',
-                          tab: 'Na zeszyt',
+                          cod: t('sales.orders.paymentCod'),
+                          transfer: t('sales.orders.paymentTransfer'),
+                          cash: t('sales.orders.paymentCash'),
+                          card: t('sales.orders.paymentCard'),
+                          free: t('sales.orders.paymentFree'),
+                          tab: t('sales.orders.paymentTab'),
                         }[o.payment_method] ?? o.payment_method}
                       </Badge>
                     )}
@@ -540,7 +542,7 @@ const AddEditSalesCustomerDrawer = ({
                 {/* Tracking + Invoice */}
                 {o.tracking_number && (
                   <div className="text-xs mt-1">
-                    <span>List przewozowy: </span>
+                    <span>{t('sales.orders.trackingLabel')}: </span>
                     <a
                       href={o.apaczka_tracking_url || '#'}
                       target={o.apaczka_tracking_url ? '_blank' : undefined}
@@ -550,7 +552,7 @@ const AddEditSalesCustomerDrawer = ({
                         if (!o.apaczka_tracking_url) {
                           e.preventDefault();
                           navigator.clipboard.writeText(o.tracking_number);
-                          toast.info('Numer listu skopiowany');
+                          toast.info(t('sales.orders.trackingCopied'));
                         }
                       }}
                     >
@@ -560,7 +562,7 @@ const AddEditSalesCustomerDrawer = ({
                 )}
                 {o.invoice && (
                   <div className="text-xs mt-1">
-                    <span>Faktura: </span>
+                    <span>{t('sales.orders.invoiceLabel')}: </span>
                     <a
                       href="#"
                       className="text-primary hover:underline"
@@ -593,14 +595,14 @@ const AddEditSalesCustomerDrawer = ({
                           } else {
                             const json = await res.json();
                             if (json.pdf_url) window.open(json.pdf_url, '_blank');
-                            else toast.error('PDF niedostępny');
+                            else toast.error(t('sales.orders.pdfUnavailable'));
                           }
                         } catch {
-                          toast.error('Nie udało się pobrać PDF');
+                          toast.error(t('sales.orders.pdfDownloadError'));
                         }
                       }}
                     >
-                      {o.invoice.invoice_number || 'Pobierz'}
+                      {o.invoice.invoice_number || t('sales.orders.download')}
                     </a>
                   </div>
                 )}
