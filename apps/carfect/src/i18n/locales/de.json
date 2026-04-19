@@ -1070,6 +1070,8 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "language": "App-Sprache",
+    "appDescription": "Passen Sie Carfect an die Bedürfnisse Ihres Studios an",
     "general": "Allgemein",
     "workingHours": "Arbeitszeiten",
     "stations": "Arbeitsplätze",

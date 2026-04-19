@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useInstanceLanguage } from '@/hooks/useInstanceLanguage';
 import { Helmet } from 'react-helmet-async';
 import {
   ShoppingCart,
@@ -81,6 +82,7 @@ const SalesDashboard = () => {
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const { data: salesSettings } = useSalesSettings(instanceId);
   const [instanceData, setInstanceData] = useState<Record<string, unknown> | null>(null);
+  useInstanceLanguage(instanceData?.language as string);
 
   useEffect(() => {
     if (!instanceId) return;

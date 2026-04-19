@@ -25,6 +25,7 @@ import TrainingTypesSettings from './TrainingTypesSettings';
 import CompanySettingsForm from './CompanySettingsForm';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
+import LanguageSelector from './LanguageSelector';
 import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 import { IntegrationsView } from './IntegrationsView';
 
@@ -124,11 +125,16 @@ const SettingsView = ({
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold">Ustawienia aplikacji</h3>
+              <h3 className="text-lg font-semibold">{t('settings.tabs.app')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Dostosuj aplikację Carfect pod potrzeby Twojego studia
+                {t('settings.appDescription')}
               </p>
             </div>
+            <LanguageSelector
+              instanceId={instanceId}
+              currentLanguage={(instanceData?.language as string) || 'pl'}
+              onLanguageChange={() => onInstanceUpdate(instanceData)}
+            />
             <ReservationConfirmSettings instanceId={instanceId} />
           </div>
         );

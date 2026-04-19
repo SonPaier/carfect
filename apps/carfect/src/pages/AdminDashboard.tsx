@@ -33,6 +33,7 @@ import { useWorkingHours } from '@/hooks/useWorkingHours';
 import { useUnifiedServices } from '@/hooks/useUnifiedServices';
 import { useServiceDictionary } from '@/hooks/useServiceDictionary';
 import { useInstanceData } from '@/hooks/useInstanceData';
+import { useInstanceLanguage } from '@/hooks/useInstanceLanguage';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { useStationEmployees } from '@/hooks/useStationEmployees';
@@ -326,6 +327,7 @@ const AdminDashboard = () => {
   const closedDays = cachedClosedDays as ClosedDay[];
   const workingHours = cachedWorkingHours;
   const instanceData = cachedInstanceData;
+  useInstanceLanguage((instanceData as Record<string, unknown>)?.language as string);
 
   // Reservations data via shared hook (replaces inline fetch/loadMore/mapReservationData)
   const {

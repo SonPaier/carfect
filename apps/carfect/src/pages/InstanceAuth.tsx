@@ -20,6 +20,7 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useInstanceLanguage } from '@/hooks/useInstanceLanguage';
 import * as Sentry from '@sentry/react';
 import { toast } from 'sonner';
 interface Instance {
@@ -29,6 +30,7 @@ interface Instance {
   logo_url: string | null;
   primary_color: string | null;
   active: boolean;
+  language?: string;
 }
 interface InstanceAuthProps {
   subdomainSlug?: string;
@@ -48,6 +50,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
   const { user, loading: authLoading, signIn, hasRole, hasInstanceRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [instance, setInstance] = useState<Instance | null>(null);
+  useInstanceLanguage(instance?.language);
   const [instanceLoading, setInstanceLoading] = useState(true);
   const [instanceError, setInstanceError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
@@ -67,7 +70,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       }
       const { data, error } = await supabase
         .from('instances')
-        .select('id, name, slug, logo_url, primary_color, active')
+        .select('id, name, slug, logo_url, primary_color, active, language')
         .eq('slug', slug)
         .maybeSingle();
       if (error) {

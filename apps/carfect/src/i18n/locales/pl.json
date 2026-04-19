@@ -1073,6 +1073,8 @@
   },
   "settings": {
     "title": "Ustawienia",
+    "language": "Język aplikacji",
+    "appDescription": "Dostosuj aplikację Carfect pod potrzeby Twojego studia",
     "general": "Ogólne",
     "workingHours": "Godziny pracy",
     "stations": "Stanowiska",

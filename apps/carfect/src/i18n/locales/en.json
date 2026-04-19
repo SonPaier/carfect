@@ -1070,6 +1070,8 @@
   },
   "settings": {
     "title": "SMS",
+    "language": "App language",
+    "appDescription": "Customise Carfect to suit your studio's needs",
     "general": "General",
     "workingHours": "Working hours",
     "stations": "Stations",
