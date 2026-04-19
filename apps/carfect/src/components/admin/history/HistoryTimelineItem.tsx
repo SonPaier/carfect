@@ -18,6 +18,7 @@ interface Props {
 }
 
 export function HistoryTimelineItem({ group, servicesMap, stationsMap, employeesMap = new Map() }: Props) {
+  const { t } = useTranslation();
   const renderChange = (change: ReservationChange) => {
     // Skip car_size changes - don't display them
     if (change.field_name === 'car_size') {

@@ -219,6 +219,7 @@ function TemplateForm({
   onCancel: () => void;
   saving: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="p-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 space-y-2">
       <Input

@@ -98,6 +98,7 @@ interface DeclarationDocumentProps {
 }
 
 const DeclarationDocument: React.FC<DeclarationDocumentProps> = ({ data }) => {
+  const { t } = useTranslation();
   const today = formatDate(new Date());
 
   return (

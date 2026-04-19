@@ -350,6 +350,7 @@ export const ReservationSlotsSection = ({
   isEditMode = false,
   onUserModifiedEndTime,
 }: ReservationSlotsSectionProps) => {
+  const { t } = useTranslation();
   const handleUpdateSlot = (index: number, updated: ReservationSlot) => {
     const newSlots = [...slots];
     newSlots[index] = updated;

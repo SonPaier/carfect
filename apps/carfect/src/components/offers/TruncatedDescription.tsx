@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { parseMarkdownLists } from '@shared/utils';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +11,7 @@ interface TruncatedDescriptionProps {
 }
 
 export const TruncatedDescription = ({
+  const { t } = useTranslation();
   text,
   maxLines = 3,
   className,

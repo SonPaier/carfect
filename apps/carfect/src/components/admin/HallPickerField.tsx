@@ -14,6 +14,7 @@ interface HallPickerFieldProps {
 }
 
 const HallPickerField = ({ value, onChange, halls }: HallPickerFieldProps) => {
+  const { t } = useTranslation();
   if (halls.length === 0) return null;
 
   return (

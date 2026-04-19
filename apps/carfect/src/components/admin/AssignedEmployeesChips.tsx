@@ -16,6 +16,7 @@ interface AssignedEmployeesChipsProps {
 }
 
 export function AssignedEmployeesChips({
+  const { t } = useTranslation();
   employeeIds,
   employees,
   onRemove,

@@ -77,6 +77,7 @@ function InlineEditCell({
 }
 
 const RollScanResultsTable = ({
+  const { t } = useTranslation();
   results,
   onRemove,
   onRetry,
@@ -221,6 +222,7 @@ const RollScanResultsTable = ({
 };
 
 function ErrorRow({
+  const { t } = useTranslation();
   item,
   index,
   onRemove,
