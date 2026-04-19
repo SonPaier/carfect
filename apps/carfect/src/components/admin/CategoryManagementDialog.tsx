@@ -356,7 +356,7 @@ export function CategoryManagementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Zarządzaj kategoriami</DialogTitle>
+          <DialogTitle>{t('categoryManagement.title')}</DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -395,7 +395,7 @@ export function CategoryManagementDialog({
 
             {categories.length === 0 && (
               <p className="text-center text-muted-foreground py-4">
-                Brak kategorii. Dodaj pierwszą kategorię.
+                {t('categoryManagement.noCategories')}
               </p>
             )}
 
@@ -405,7 +405,7 @@ export function CategoryManagementDialog({
                   <Input
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Nazwa kategorii..."
+                    placeholder={t('categoryManagement.namePlaceholder')}
                     className="h-8"
                     autoFocus
                     onKeyDown={(e) => {

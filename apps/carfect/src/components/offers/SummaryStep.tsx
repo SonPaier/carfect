@@ -605,7 +605,7 @@ export const SummaryStep = ({
                                   type="button"
                                   onClick={() => handleStartEditItemPrice(option.id, item.id, item.unitPrice)}
                                   className="hover:bg-hover rounded px-1 transition-colors cursor-pointer"
-                                  title="Kliknij aby edytować"
+                                  title={t('summaryStep.clickToEdit')}
                                 >
                                   {formatPrice(item.unitPrice)}
                                 </button>
@@ -698,7 +698,7 @@ export const SummaryStep = ({
                                 type="button"
                                 onClick={() => handleStartEditItemPrice(option.id, item.id, item.unitPrice)}
                                 className="font-medium hover:bg-hover rounded px-1 transition-colors cursor-pointer"
-                                title="Kliknij aby edytować"
+                                title={t('summaryStep.clickToEdit')}
                               >
                                 {formatPrice(itemValue)}
                               </button>
@@ -724,13 +724,13 @@ export const SummaryStep = ({
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="percent" id={`percent-${option.id}`} />
                             <Label htmlFor={`percent-${option.id}`} className="text-sm cursor-pointer">
-                              Rabat procentowy
+                              {t('summaryStep.percentDiscount')}
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="amount" id={`amount-${option.id}`} />
                             <Label htmlFor={`amount-${option.id}`} className="text-sm cursor-pointer">
-                              Rabat kwotowy
+                              {t('summaryStep.amountDiscount')}
                             </Label>
                           </div>
                         </RadioGroup>
@@ -754,14 +754,14 @@ export const SummaryStep = ({
                             size="sm"
                             onClick={() => handleApplyDiscount(option)}
                           >
-                            Zastosuj
+                            {t('summaryStep.apply')}
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setDiscountEditing(null)}
                           >
-                            Anuluj
+                            {t('common.cancel')}
                           </Button>
                         </div>
                       </div>
@@ -774,7 +774,7 @@ export const SummaryStep = ({
                           className="gap-1 text-muted-foreground"
                         >
                           <Tag className="w-3 h-3" />
-                          {optionHasDiscount ? 'Zmień rabat' : 'Dodaj rabat'}
+                          {optionHasDiscount ? t('summaryStep.changeDiscount') : t('summaryStep.addDiscount')}
                         </Button>
                         {optionHasDiscount && (
                           <Button
@@ -784,7 +784,7 @@ export const SummaryStep = ({
                             className="gap-1 text-destructive hover:text-destructive"
                           >
                             <X className="w-3 h-3" />
-                            Usuń rabat
+                            {t('summaryStep.removeDiscount')}
                           </Button>
                         )}
                       </div>
@@ -803,18 +803,18 @@ export const SummaryStep = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Calculator className="w-4 h-4 text-primary" />
-            Podsumowanie
+            {t('summaryStep.totalSummary')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Suma netto</span>
+              <span>{t('summaryStep.netTotal')}</span>
               <span className="font-medium">-</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <div className="flex items-center gap-2">
-                <span>VAT</span>
+                <span>{t('summaryStep.vat')}</span>
                 <Select
                   value={offer.vatRate.toString()}
                   onValueChange={(val) => onUpdateOffer({ vatRate: parseInt(val) })}
@@ -840,7 +840,7 @@ export const SummaryStep = ({
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="validUntil">Oferta ważna do</Label>
+            <Label htmlFor="validUntil">{t('summaryStep.validUntil')}</Label>
             <Input
               id="validUntil"
               type="date"
@@ -852,7 +852,7 @@ export const SummaryStep = ({
           <Collapsible open={conditionsOpen} onOpenChange={setConditionsOpen}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
-                <span className="text-sm font-medium">Dodatkowe warunki</span>
+                <span className="text-sm font-medium">{t('summaryStep.additionalConditions')}</span>
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
                   conditionsOpen && "rotate-180"
@@ -867,7 +867,7 @@ export const SummaryStep = ({
                     if (template) handleApplyTemplate(template);
                   }}>
                     <SelectTrigger className="w-auto h-8">
-                      <span className="text-sm">Wczytaj szablon</span>
+                      <span className="text-sm">{t('summaryStep.loadTemplate')}</span>
                     </SelectTrigger>
                     <SelectContent>
                       {templates.map(t => (
@@ -879,43 +879,43 @@ export const SummaryStep = ({
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="paymentTerms">Warunki płatności</Label>
+                <Label htmlFor="paymentTerms">{t('summaryStep.paymentTerms')}</Label>
                 <Textarea
                   id="paymentTerms"
                   value={offer.paymentTerms || ''}
                   onChange={(e) => onUpdateOffer({ paymentTerms: e.target.value })}
                   rows={4}
-                  placeholder="Np. zaliczka 30%, pozostała kwota przy odbiorze..."
+                  placeholder={t('summaryStep.paymentTermsPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="warranty">Warunki gwarancji</Label>
+                <Label htmlFor="warranty">{t('summaryStep.warrantyTerms')}</Label>
                 <Textarea
                   id="warranty"
                   value={offer.warranty || ''}
                   onChange={(e) => onUpdateOffer({ warranty: e.target.value })}
                   rows={4}
-                  placeholder="Np. 10 lat gwarancji producenta, 2 lata gwarancji na montaż..."
+                  placeholder={t('summaryStep.warrantyPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="serviceInfo">Oferta obejmuje</Label>
+                <Label htmlFor="serviceInfo">{t('summaryStep.offerIncludes')}</Label>
                 <Textarea
                   id="serviceInfo"
                   value={offer.serviceInfo || ''}
                   onChange={(e) => onUpdateOffer({ serviceInfo: e.target.value })}
                   rows={4}
-                  placeholder="Np. kompleksowe czyszczenie pojazdu, dekontaminacja lakieru..."
+                  placeholder={t('summaryStep.offerIncludesPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes">Inne informacje</Label>
+                <Label htmlFor="notes">{t('summaryStep.otherInfo')}</Label>
                 <Textarea
                   id="notes"
                   value={offer.notes || ''}
                   onChange={(e) => onUpdateOffer({ notes: e.target.value })}
                   rows={4}
-                  placeholder="Dodatkowe uwagi..."
+                  placeholder={t('summaryStep.otherInfoPlaceholder')}
                 />
               </div>
             </CollapsibleContent>

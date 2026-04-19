@@ -183,10 +183,10 @@ const AddBreakDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Anuluj
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Dodawanie...' : 'Dodaj przerwę'}
+            {isSubmitting ? t('breakDialog.adding') : t('breakDialog.addBreak')}
           </Button>
         </DialogFooter>
       </DialogContent>

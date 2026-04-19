@@ -171,7 +171,7 @@ const CustomerEditDrawer = ({
         .maybeSingle();
 
       if (data) {
-        setPhoneExistsWarning(`Klient "${data.name}" z tym numerem już istnieje`);
+        setPhoneExistsWarning(t('customerEdit.phoneExists', { name: data.name }));
       } else {
         setPhoneExistsWarning(null);
       }
@@ -284,7 +284,7 @@ const CustomerEditDrawer = ({
         onCustomerUpdated?.();
       } catch (err) {
         console.error('Error deleting vehicle:', err);
-        toast.error('Błąd usuwania pojazdu');
+        toast.error(t('customerEdit.vehicleDeleteError'));
       }
     }
   };
@@ -701,9 +701,7 @@ const CustomerEditDrawer = ({
                       htmlFor="sms-consent"
                       className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
                     >
-                      Klient wyraża zgodę na otrzymywanie drogą elektroniczną (SMS/E-mail)
-                      przypomnień o terminach obowiązkowych przeglądów i konserwacji powłok
-                      ochronnych oraz informacji o statusie zleconej usługi.
+                      {t('customerEdit.smsConsent')}
                     </label>
                   </div>
 

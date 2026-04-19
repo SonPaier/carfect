@@ -17,6 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import type { SalesRoll } from '../types/rolls';
 import { formatMbM2 } from '../types/rolls';
+import { useTranslation } from 'react-i18next';
 
 interface RollUsage {
   id: string;
@@ -35,6 +36,7 @@ interface RollUsageDrawerProps {
 }
 
 const RollUsageDrawer = ({ open, onOpenChange, roll }: RollUsageDrawerProps) => {
+  const { t } = useTranslation();
   const [usages, setUsages] = useState<RollUsage[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -107,33 +109,33 @@ const RollUsageDrawer = ({ open, onOpenChange, roll }: RollUsageDrawerProps) => 
       <SheetContent side="right" className="sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
-            Zużycie rolki: {roll?.productName || ''}
+            {t('rollUsage.title', { name: roll?.productName || '' })}
           </SheetTitle>
           {roll && (
             <p className="text-sm text-muted-foreground">
-              {roll.barcode || roll.productCode || 'Brak kodu'} &middot;{' '}
-              Stan początkowy: {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot;{' '}
-              Zużyto: {formatMbM2(totalUsedMb, roll.widthMm)} &middot;{' '}
-              Pozostało: {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
+              {roll.barcode || roll.productCode || t('rollUsage.noCode')} &middot;{' '}
+              {t('rollUsage.initialStock')} {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot;{' '}
+              {t('rollUsage.used')} {formatMbM2(totalUsedMb, roll.widthMm)} &middot;{' '}
+              {t('rollUsage.remaining')} {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
             </p>
           )}
         </SheetHeader>
 
         <div className="mt-6">
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Ładowanie...</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('common.loading')}</p>
           ) : usages.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Brak zarejestrowanego zużycia
+              {t('rollUsage.noUsage')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Zamówienie</TableHead>
-                  <TableHead>Klient</TableHead>
-                  <TableHead className="text-right">Zużycie</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>{t('rollUsage.colOrder')}</TableHead>
+                  <TableHead>{t('rollUsage.colClient')}</TableHead>
+                  <TableHead className="text-right">{t('rollUsage.colUsage')}</TableHead>
+                  <TableHead>{t('rollUsage.colDate')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
