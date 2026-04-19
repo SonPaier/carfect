@@ -1950,7 +1950,9 @@
     "sampleServiceName": "Usługa przykładowa",
     "sampleFieldValue": "Przykład",
     "deleteConfirmDesc": "Czy na pewno chcesz usunąć protokół dla {{name}}? Tej operacji nie można cofnąć.",
-    "receptionLabel": "przyjęcia"
+    "receptionLabel": "przyjęcia",
+    "notes": "Uwagi",
+    "noNotes": "--- brak uwag ---"
   },
   "adminDashboard": {
     "title": "Panel Admina",
@@ -5241,5 +5243,24 @@
     "byCompany": "przez firmę: Tomasz Nastały SINPAI",
     "purpose": "celem uzupełnienia pola nadawcy w wiadomościach SMS generowanych na nasze zlecenie.",
     "stampAndSignature": "Pieczątka i czytelny podpis właściciela nazwy"
+  },
+  "publicView": {
+    "protocolTitleWithModel": "Protokół {{type}} pojazdu {{model}}",
+    "protocolTitle": "Protokół {{type}} pojazdu",
+    "offer": "Oferta",
+    "customerName": "Imię i nazwisko Klienta",
+    "companyNip": "NIP firmy",
+    "vehicleModel": "Model samochodu",
+    "registrationNumber": "Numer rejestracyjny",
+    "fuelLevel": "Stan paliwa",
+    "odometer": "Stan licznika",
+    "vehiclePhotos": "Zdjęcia pojazdu",
+    "photoAlt": "Zdjęcie {{number}}",
+    "vehicleCondition": "Stan pojazdu",
+    "clickDamagePoint": "Kliknij na punkt, aby zapoznać się z uszkodzeniem",
+    "faultPhotos": "Zdjęcia usterek",
+    "damagePhotoAlt": "Zdjęcie uszkodzenia {{number}}",
+    "services": "Usługi",
+    "total": "Suma"
   }
 }

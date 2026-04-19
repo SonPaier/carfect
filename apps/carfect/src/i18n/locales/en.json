@@ -1952,7 +1952,9 @@
     "sampleServiceName": "Sample service",
     "sampleFieldValue": "Example",
     "deleteConfirmDesc": "Are you sure you want to delete the protocol for {{name}}? This cannot be undone.",
-    "receptionLabel": "reception"
+    "receptionLabel": "reception",
+    "notes": "Notes",
+    "noNotes": "--- no notes ---"
   },
   "adminDashboard": {
     "title": "Admin Panel",
@@ -5250,5 +5252,24 @@
     "byCompany": "by company: Tomasz Nastały SINPAI",
     "purpose": "for the purpose of completing the sender field in SMS messages generated on our behalf.",
     "stampAndSignature": "Stamp and legible signature of the name owner"
+  },
+  "publicView": {
+    "protocolTitleWithModel": "{{type}} protocol — {{model}}",
+    "protocolTitle": "{{type}} vehicle protocol",
+    "offer": "Quote",
+    "customerName": "Customer name",
+    "companyNip": "Company NIP",
+    "vehicleModel": "Vehicle model",
+    "registrationNumber": "Registration number",
+    "fuelLevel": "Fuel level",
+    "odometer": "Odometer reading",
+    "vehiclePhotos": "Vehicle photos",
+    "photoAlt": "Photo {{number}}",
+    "vehicleCondition": "Vehicle condition",
+    "clickDamagePoint": "Click on a point to view the damage",
+    "faultPhotos": "Fault photos",
+    "damagePhotoAlt": "Damage photo {{number}}",
+    "services": "Services",
+    "total": "Total"
   }
 }

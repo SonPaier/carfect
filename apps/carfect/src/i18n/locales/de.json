@@ -1950,7 +1950,9 @@
     "sampleServiceName": "Beispieldienst",
     "sampleFieldValue": "Beispiel",
     "deleteConfirmDesc": "Möchten Sie das Protokoll für {{name}} wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
-    "receptionLabel": "Annahme"
+    "receptionLabel": "Annahme",
+    "notes": "Anmerkungen",
+    "noNotes": "--- keine Anmerkungen ---"
   },
   "adminDashboard": {
     "title": "Admin-Panel",
@@ -5206,5 +5208,24 @@
     "byCompany": "durch Firma: Tomasz Nastały SINPAI",
     "purpose": "zum Zweck der Vervollständigung des Absenderfelds in SMS-Nachrichten, die in unserem Auftrag generiert werden.",
     "stampAndSignature": "Stempel und leserliche Unterschrift des Namensinhabers"
+  },
+  "publicView": {
+    "protocolTitleWithModel": "{{type}}-Protokoll — {{model}}",
+    "protocolTitle": "{{type}}-Fahrzeugprotokoll",
+    "offer": "Angebot",
+    "customerName": "Kundenname",
+    "companyNip": "Firmen-NIP",
+    "vehicleModel": "Fahrzeugmodell",
+    "registrationNumber": "Kennzeichen",
+    "fuelLevel": "Kraftstoffstand",
+    "odometer": "Kilometerstand",
+    "vehiclePhotos": "Fahrzeugfotos",
+    "photoAlt": "Foto {{number}}",
+    "vehicleCondition": "Fahrzeugzustand",
+    "clickDamagePoint": "Klicken Sie auf einen Punkt, um den Schaden anzuzeigen",
+    "faultPhotos": "Fehlerfotos",
+    "damagePhotoAlt": "Schadensfoto {{number}}",
+    "services": "Dienstleistungen",
+    "total": "Summe"
   }
 }
