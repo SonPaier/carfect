@@ -469,7 +469,10 @@
     "showSchedule": "Dienstplan anzeigen",
     "workToday": "Heute: {{duration}}",
     "startWork": "Start",
-    "stopWork": "Stopp"
+    "stopWork": "Stopp",
+    "trainingOpen": "Schulung (offen)",
+    "trainingClosed": "Schulung (geschlossen)",
+    "moveTo": "Verschieben auf"
   },
   "customers": {
     "title": "Kunden",
@@ -4516,5 +4519,23 @@
     "remaining": "{{count}} SMS verbleibend",
     "percentUsed": "{{percent}}% verwendet",
     "overLimitInfo": "1 SMS über Limit = 0,12 zł netto. Wird der nächsten Rechnung hinzugefügt."
+  },
+  "companySettings": {
+    "companyData": "Firmendaten",
+    "changeLogo": "Ändern",
+    "shortNameHint": "Wird in SMS-Nachrichten verwendet, max. 11 Zeichen",
+    "bankAccountLabel": "Bankkontonummer",
+    "bankAccountNamePlaceholder": "Kontobezeichnung",
+    "bankAccountNumberPlaceholder": "00 0000 0000 0000 0000 0000 0000",
+    "bankAccountNameAriaLabel": "Kontobezeichnung {{index}}",
+    "bankAccountNumberAriaLabel": "Kontonummer {{index}}",
+    "removeBankAccount": "Entfernen",
+    "addBankAccount": "+ Weiteres Bankkonto hinzufügen",
+    "errorNameRequired": "Name der Autowaschanlage ist erforderlich",
+    "errorShortNameMax": "Maximal 11 Zeichen",
+    "errorNipDigits": "NIP muss genau 10 Ziffern haben",
+    "errorEmailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "errorPhoneMin": "Telefonnummer muss mindestens 9 Ziffern haben",
+    "errorUrlInvalid": "Adresse muss mit http:// oder https:// beginnen"
   }
 }

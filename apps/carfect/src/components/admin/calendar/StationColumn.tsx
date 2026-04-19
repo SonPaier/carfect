@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import {
@@ -91,6 +92,7 @@ export function StationColumn({
     onDeleteBreak,
     onTrainingClick,
   } = useCalendarGrid();
+  const { t } = useTranslation();
 
   const totalVisibleHeight = (displayEndTime - displayStartTime) * HOUR_HEIGHT;
 
@@ -233,7 +235,7 @@ export function StationColumn({
           }}
         >
           <span className="text-sm font-bold text-foreground bg-background px-3 py-1.5 rounded-md shadow-lg border border-border">
-            Przenieś na {dragPreviewStyle.time}
+            {t('calendar.moveTo')} {dragPreviewStyle.time}
           </span>
         </div>
       )}

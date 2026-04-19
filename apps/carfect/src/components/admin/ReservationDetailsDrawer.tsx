@@ -577,7 +577,7 @@ const ReservationDetailsDrawer = ({
                 className="flex items-center gap-2 p-2.5 bg-primary/10 rounded-lg text-sm font-medium text-primary hover:bg-primary/20 transition-colors w-full"
               >
                 <FileText className="w-4 h-4 shrink-0" />
-                <span>Protokół przyjęcia pojazdu</span>
+                <span>{t('reservationDetails.protocolLink')}</span>
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </button>
             )}
@@ -646,12 +646,12 @@ const ReservationDetailsDrawer = ({
             {showEmployeeAssignment && !isHallMode && (
               <div className="flex-1">
                 <div>
-                  <div className="text-xs text-foreground">Przypisani pracownicy</div>
+                  <div className="text-xs text-foreground">{t('reservationDetails.assignedEmployees')}</div>
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     {/* Employee chips - same style as services */}
                     {localAssignedEmployeeIds.map((empId) => {
                       const emp = employees.find((e) => e.id === empId);
-                      const name = emp?.name || 'Usunięty';
+                      const name = emp?.name || t('trainingDetails.removed');
                       return (
                         <span
                           key={empId}
@@ -683,7 +683,7 @@ const ReservationDetailsDrawer = ({
                       ) : (
                         <Plus className="w-4 h-4" />
                       )}
-                      Dodaj
+                      {t('common.add')}
                     </Button>
                   </div>
                 </div>
@@ -737,7 +737,7 @@ const ReservationDetailsDrawer = ({
                 <div className="flex-1">
                   <div>
                     <div className="text-xs text-foreground">
-                      {pricingMode === 'netto' ? 'Kwota netto' : 'Kwota brutto'}
+                      {pricingMode === 'netto' ? t('reservationDetails.amountNet') : t('reservationDetails.amountGross')}
                     </div>
                     <div className="font-semibold text-lg">{displayTotal} zł</div>
                     <div className="text-xs text-muted-foreground">
@@ -783,7 +783,7 @@ const ReservationDetailsDrawer = ({
             {!isHallMode && reservation.offer_number && offerPublicToken && (
               <div className="flex-1">
                 <div>
-                  <div className="text-xs text-foreground">Oferta</div>
+                  <div className="text-xs text-foreground">{t('reservationDetails.offerLink')}</div>
                   <a
                     href={`/offers/${offerPublicToken}?admin=true`}
                     target="_blank"
@@ -823,7 +823,7 @@ const ReservationDetailsDrawer = ({
                       disabled={savingNotes}
                       rows={3}
                       className="w-full text-sm p-2 rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                      placeholder="Wpisz notatki wewnętrzne..."
+                      placeholder={t('reservationDetails.notesPlaceholder')}
                     />
                     {savingNotes && (
                       <div className="absolute right-2 top-2">
@@ -838,7 +838,7 @@ const ReservationDetailsDrawer = ({
                   >
                     {adminNotes || (
                       <span className="text-muted-foreground italic">
-                        Brak notatek wewnętrznych
+                        {t('reservationDetails.noNotes')}
                       </span>
                     )}
                   </div>
@@ -1072,7 +1072,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <Camera className="w-4 h-4 mr-2" />
-                          Dodaj zdjęcia
+                          {t('reservationDetails.addPhotos')}
                         </DropdownMenuItem>
 
                         <DropdownMenuItem

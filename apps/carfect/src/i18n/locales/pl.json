@@ -469,7 +469,10 @@
     "showSchedule": "Zobacz grafik",
     "workToday": "Dzisiaj: {{duration}}",
     "startWork": "Start",
-    "stopWork": "Stop"
+    "stopWork": "Stop",
+    "trainingOpen": "Szkolenie (otwarte)",
+    "trainingClosed": "Szkolenie (zamknięte)",
+    "moveTo": "Przenieś na"
   },
   "customers": {
     "title": "Klienci",

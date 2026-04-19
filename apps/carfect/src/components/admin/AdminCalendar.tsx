@@ -1063,21 +1063,21 @@ const AdminCalendar = ({
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-green-400/80 border border-green-500/70" />
-          <span className="text-xs text-muted-foreground">Potwierdzona</span>
+          <span className="text-xs text-muted-foreground">{t('reservations.statuses.confirmed')}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-slate-400/80 border border-slate-500/70" />
-          <span className="text-xs text-muted-foreground">Zakończona</span>
+          <span className="text-xs text-muted-foreground">{t('reservations.statuses.completed')}</span>
         </div>
         {trainingsEnabled && (
           <>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-pink-300/80 border border-pink-400/70" />
-              <span className="text-xs text-muted-foreground">Szkolenie (otwarte)</span>
+              <span className="text-xs text-muted-foreground">{t('calendar.trainingOpen')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-fuchsia-600 border border-fuchsia-700" />
-              <span className="text-xs text-muted-foreground">Szkolenie (zamknięte)</span>
+              <span className="text-xs text-muted-foreground">{t('calendar.trainingClosed')}</span>
             </div>
           </>
         )}

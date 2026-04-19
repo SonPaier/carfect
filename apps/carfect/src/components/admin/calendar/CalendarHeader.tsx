@@ -179,7 +179,7 @@ export function CalendarHeader({
             onClick={onToday}
             className={cn(hallMode && 'hidden sm:flex', viewMode === 'month' && 'hidden')}
           >
-            Dziś
+            {t('calendar.today')}
           </Button>
           {isLoadingMore && (
             <div className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
@@ -286,7 +286,7 @@ export function CalendarHeader({
                   onSaveDefaultView('day');
                 }}
                 className="rounded-none border-0 px-2.5"
-                title="Dzień"
+                title={t('calendar.viewDay')}
               >
                 <CalendarIcon className="w-4 h-4" />
               </Button>
@@ -300,7 +300,7 @@ export function CalendarHeader({
                   onSaveDefaultView('week');
                 }}
                 className="rounded-none border-0 px-2.5"
-                title="Tydzień"
+                title={t('calendar.viewWeek')}
               >
                 <CalendarDays className="w-4 h-4" />
               </Button>
@@ -314,7 +314,7 @@ export function CalendarHeader({
                   onSaveDefaultView('month');
                 }}
                 className="rounded-none border-0 px-2.5"
-                title="Miesiąc"
+                title={t('calendar.viewMonth')}
               >
                 <CalendarRange className="w-4 h-4" />
               </Button>
@@ -325,7 +325,7 @@ export function CalendarHeader({
           {showStationFilter && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9" title="Kolumny">
+                <Button variant="outline" size="icon" className="h-9 w-9" title={t('calendar.columnVisibility')}>
                   <Settings2 className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
@@ -333,13 +333,13 @@ export function CalendarHeader({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-sm">Widoczność kolumn</h4>
+                      <h4 className="font-medium text-sm">{t('calendar.columnVisibility')}</h4>
                       <p className="text-[10px] text-muted-foreground">
                         {viewMode === 'day'
-                          ? 'Widok dzienny'
+                          ? t('calendar.viewDay')
                           : viewMode === 'week'
-                            ? 'Widok tygodniowy'
-                            : 'Widok miesięczny'}
+                            ? t('calendar.viewWeek')
+                            : t('calendar.viewMonth')}
                       </p>
                     </div>
                     {hasHiddenStations && (
@@ -349,7 +349,7 @@ export function CalendarHeader({
                         onClick={onShowAllStations}
                         className="h-7 text-xs"
                       >
-                        Pokaż wszystkie
+                        {t('calendar.showAllColumns')}
                       </Button>
                     )}
                   </div>
@@ -374,7 +374,7 @@ export function CalendarHeader({
 
                 {/* Default view preference */}
                 <div className="border-t border-border pt-3 space-y-2">
-                  <h4 className="font-medium text-sm">Domyślny widok</h4>
+                  <h4 className="font-medium text-sm">{t('calendar.defaultView')}</h4>
                   <div className="space-y-1">
                     {(['day', 'week', 'month'] as const).map((v) => (
                       <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -389,7 +389,7 @@ export function CalendarHeader({
                           }}
                           className="accent-primary"
                         />
-                        {v === 'day' ? 'Dzień' : v === 'week' ? 'Tydzień' : 'Miesiąc'}
+                        {v === 'day' ? t('calendar.viewDay') : v === 'week' ? t('calendar.viewWeek') : t('calendar.viewMonth')}
                       </label>
                     ))}
                   </div>

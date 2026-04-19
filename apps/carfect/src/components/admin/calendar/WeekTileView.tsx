@@ -329,7 +329,7 @@ export const WeekTileView = ({
                       </span>
                     )}
                     {isClosed && (
-                      <span className="text-[10px] text-red-400 shrink-0">zamknięte</span>
+                      <span className="text-[10px] text-red-400 shrink-0">{t('calendar.closed')}</span>
                     )}
                   </>
                 )}

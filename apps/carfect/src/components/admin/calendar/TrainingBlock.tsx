@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { GraduationCap } from 'lucide-react';
 import { parseTime } from './useCalendarWorkingHours';
@@ -19,8 +20,9 @@ interface TrainingBlockProps {
 }
 
 export function TrainingBlock({ training, style, zIndex, employees, onClick }: TrainingBlockProps) {
+  const { t } = useTranslation();
   const isMultiDayTraining = training.end_date && training.end_date !== training.start_date;
-  const statusLabel = training.status === 'sold_out' ? 'Zamknięte' : 'Otwarte';
+  const statusLabel = training.status === 'sold_out' ? t('trainingDetails.closed') : t('trainingDetails.open');
 
   const getDayAbbr = (dateStr: string) => {
     const dayNames = ['ND', 'PN', 'WT', 'ŚR', 'CZ', 'PT', 'SB'];

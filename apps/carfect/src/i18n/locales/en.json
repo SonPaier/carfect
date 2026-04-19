@@ -469,7 +469,10 @@
     "showSchedule": "View schedule",
     "workToday": "Today: {{duration}}",
     "startWork": "Start",
-    "stopWork": "Stop"
+    "stopWork": "Stop",
+    "trainingOpen": "Training (open)",
+    "trainingClosed": "Training (closed)",
+    "moveTo": "Move to"
   },
   "customers": {
     "title": "Customers",
@@ -4516,5 +4519,23 @@
     "remaining": "{{count}} SMS remaining",
     "percentUsed": "{{percent}}% used",
     "overLimitInfo": "1 SMS over limit = 0.12 zł net. Will be added to the next invoice."
+  },
+  "companySettings": {
+    "companyData": "Company details",
+    "changeLogo": "Change",
+    "shortNameHint": "Used in SMS messages, max 11 characters",
+    "bankAccountLabel": "Bank account number",
+    "bankAccountNamePlaceholder": "Account name",
+    "bankAccountNumberPlaceholder": "00 0000 0000 0000 0000 0000 0000",
+    "bankAccountNameAriaLabel": "Account name {{index}}",
+    "bankAccountNumberAriaLabel": "Account number {{index}}",
+    "removeBankAccount": "Remove",
+    "addBankAccount": "+ Add another bank account",
+    "errorNameRequired": "Car wash name is required",
+    "errorShortNameMax": "Maximum 11 characters",
+    "errorNipDigits": "NIP must be exactly 10 digits",
+    "errorEmailInvalid": "Please enter a valid email address",
+    "errorPhoneMin": "Phone number must have at least 9 digits",
+    "errorUrlInvalid": "Address must start with http:// or https://"
   }
 }
