@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@shared/ui';
 import { ChevronLeft, ChevronRight, Palmtree, Trash2, Loader2 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { useTimeEntries, useCreateTimeEntry, useUpdateTimeEntry, TimeEntry } from '@/hooks/useTimeEntries';
 import { useEmployeeDaysOff, useCreateEmployeeDayOff, useDeleteEmployeeDayOff } from '@/hooks/useEmployeeDaysOff';
 
@@ -224,7 +223,7 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
 
   // Find which day is being edited to show its label in the editor panel
   const editingDayLabel = editingCell
-    ? format(new Date(editingCell.date), 'EEEE, d MMM', { locale: pl })
+    ? format(new Date(editingCell.date), 'EEEE, d MMM', { locale: getDateLocale() })
     : '';
   
   // Month name for display
@@ -240,7 +239,7 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <span className="font-semibold text-2xl">
-          {format(currentWeekStart, 'd MMM', { locale: pl })} - {format(weekEnd, 'd MMM yyyy', { locale: pl })}
+          {format(currentWeekStart, 'd MMM', { locale: getDateLocale() })} - {format(weekEnd, 'd MMM yyyy', { locale: getDateLocale() })}
         </span>
         <Button variant="ghost" size="icon" onClick={handleNextWeek}>
           <ChevronRight className="w-4 h-4" />
@@ -262,7 +261,7 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
               <div className={`text-center text-xs py-1 rounded-t ${
                 isToday ? 'bg-primary text-primary-foreground' : 'bg-white dark:bg-card'
               }`}>
-                <div className="font-medium">{format(day, 'EEE', { locale: pl })}</div>
+                <div className="font-medium">{format(day, 'EEE', { locale: getDateLocale() })}</div>
                 <div>{format(day, 'd')}</div>
               </div>
               

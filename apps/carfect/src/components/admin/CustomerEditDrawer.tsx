@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Phone, MessageSquare, Mail, Car, Clock, X } from 'lucide-react';
 import { usePricingMode } from '@/hooks/usePricingMode';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
@@ -842,7 +841,7 @@ const CustomerEditDrawer = ({
                             <div className="flex items-center justify-between mb-1">
                               <div className="font-medium text-sm">
                                 {format(new Date(visit.reservation_date), 'd MMMM yyyy', {
-                                  locale: pl,
+                                  locale: getDateLocale(),
                                 })}
                               </div>
                               <div className="text-xs text-muted-foreground flex items-center gap-1">

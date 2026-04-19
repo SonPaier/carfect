@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Pencil, Trash2, X, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -149,7 +148,7 @@ export function TrainingDetailsDrawer({
 
   const formatDate = (dateStr: string) => {
     try {
-      return format(parseISO(dateStr), 'EEEE, d MMM yyyy', { locale: pl });
+      return format(parseISO(dateStr), 'EEEE, d MMM yyyy', { locale: getDateLocale() });
     } catch {
       return dateStr;
     }

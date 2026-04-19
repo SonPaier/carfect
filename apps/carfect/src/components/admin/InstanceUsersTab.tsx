@@ -13,7 +13,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import AddInstanceUserDialog from './AddInstanceUserDialog';
 import EditInstanceUserDialog from './EditInstanceUserDialog';
 import ResetPasswordDialog from './ResetPasswordDialog';
@@ -202,7 +201,7 @@ const InstanceUsersTab = ({ instanceId }: InstanceUsersTabProps) => {
                   <TableCell className="font-medium">{user.username}</TableCell>
                   <TableCell>{getRoleLabel(user.role)}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {format(new Date(user.created_at), 'd MMM yyyy', { locale: pl })}
+                    {format(new Date(user.created_at), 'd MMM yyyy', { locale: getDateLocale() })}
                   </TableCell>
                   <TableCell>
                     {user.is_blocked ? (

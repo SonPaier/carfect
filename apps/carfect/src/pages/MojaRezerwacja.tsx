@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { format, parseISO, differenceInHours } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Check, Loader2, Calendar, Clock, Car, AlertCircle, X, Phone, Pencil } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
@@ -182,7 +181,7 @@ const MojaRezerwacja = () => {
           body: {
             instanceId: reservation.instance_id,
             title: `❌ Anulowana: ${reservation.customer_name}`,
-            body: `${reservation.service.name} - ${format(parseISO(reservation.reservation_date), 'd MMM', { locale: pl })} ${reservation.start_time.slice(0, 5)}`,
+            body: `${reservation.service.name} - ${format(parseISO(reservation.reservation_date), 'd MMM', { locale: getDateLocale() })} ${reservation.start_time.slice(0, 5)}`,
             url: `/admin?reservationCode=${reservation.confirmation_code}`,
           },
         });
@@ -365,7 +364,7 @@ const MojaRezerwacja = () => {
                   <span>{t('myReservation.proposedNewDate')}</span>
                   <span className="font-medium">
                     {format(parseISO(pendingChangeRequest.reservation_date), 'd MMMM', {
-                      locale: pl,
+                      locale: getDateLocale(),
                     })}{' '}
                     o {pendingChangeRequest.start_time.slice(0, 5)}
                   </span>
@@ -394,7 +393,7 @@ const MojaRezerwacja = () => {
                   <span className="text-muted-foreground">Data</span>
                   <span className="font-medium text-foreground flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-primary" />
-                    {format(parseISO(reservation.reservation_date), 'd MMMM yyyy', { locale: pl })}
+                    {format(parseISO(reservation.reservation_date), 'd MMMM yyyy', { locale: getDateLocale() })}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -498,7 +497,7 @@ const MojaRezerwacja = () => {
                       <AlertDialogDescription>
                         {t('myReservation.cancelDialog.description', {
                           date: format(parseISO(reservation.reservation_date), 'd MMMM', {
-                            locale: pl,
+                            locale: getDateLocale(),
                           }),
                           time: reservation.start_time.slice(0, 5),
                         })}

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Bell, Trash2, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@shared/ui';
 import {
@@ -146,7 +145,7 @@ export function OfferRemindersDialog({
                       <div className="font-medium">{reminder.service_name}</div>
                       <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         <Calendar className="w-3.5 h-3.5" />
-                        {format(new Date(reminder.scheduled_date), 'dd MMMM yyyy', { locale: pl })}
+                        {format(new Date(reminder.scheduled_date), 'dd MMMM yyyy', { locale: getDateLocale() })}
                         <span className="text-xs">({reminder.months_after} mies.)</span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">

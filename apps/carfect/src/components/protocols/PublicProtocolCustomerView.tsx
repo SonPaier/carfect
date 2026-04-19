@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Label } from '@shared/ui';
 import { ProtocolHeader } from './ProtocolHeader';
 import { VehicleDiagram, type BodyType, type DamagePoint, type VehicleView } from './VehicleDiagram';
@@ -368,7 +367,7 @@ export const PublicProtocolCustomerView = ({
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-sm">Data sporządzenia protokołu</Label>
                 <p className="text-base">
-                  {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
+                  {format(new Date(protocol.protocol_date), 'PPP', { locale: getDateLocale() })}
                   {protocol.protocol_time && `, ${protocol.protocol_time.slice(0, 5)}`}
                 </p>
               </div>

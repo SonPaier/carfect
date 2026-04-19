@@ -15,7 +15,6 @@ import {
   eachDayOfInterval,
   parseISO,
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Clock, X } from 'lucide-react';
 import type { Training } from './AddTrainingDrawer';
 import type { Reservation } from '@/types/reservation';
@@ -1130,10 +1129,10 @@ const AdminCalendar = ({
             <AlertDialogDescription>
               {currentDateClosed
                 ? t('calendar.openDayDescription', {
-                    date: format(currentDate, 'd MMMM yyyy', { locale: pl }),
+                    date: format(currentDate, 'd MMMM yyyy', { locale: getDateLocale() }),
                   })
                 : t('calendar.closeDayDescription', {
-                    date: format(currentDate, 'd MMMM yyyy', { locale: pl }),
+                    date: format(currentDate, 'd MMMM yyyy', { locale: getDateLocale() }),
                   })}
             </AlertDialogDescription>
           </AlertDialogHeader>

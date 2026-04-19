@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, Plus, X } from 'lucide-react';
 import { format, isSameDay, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
@@ -204,7 +203,7 @@ const SlotCard = ({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.from
-                ? format(slot.dateRange.from, 'd MMM yyyy', { locale: pl })
+                ? format(slot.dateRange.from, 'd MMM yyyy', { locale: getDateLocale() })
                 : t('common.selectDate')}
             </Button>
           </div>
@@ -228,7 +227,7 @@ const SlotCard = ({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.to
-                ? format(slot.dateRange.to, 'd MMM yyyy', { locale: pl })
+                ? format(slot.dateRange.to, 'd MMM yyyy', { locale: getDateLocale() })
                 : t('common.selectDate')}
             </Button>
           </div>
@@ -243,7 +242,7 @@ const SlotCard = ({
               onSelect={handleDateFromSelect}
               disabled={disabledDate}
               numberOfMonths={1}
-              locale={pl}
+              locale={getDateLocale()}
             />
           </div>
         )}
@@ -256,7 +255,7 @@ const SlotCard = ({
               onSelect={handleDateToSelect}
               disabled={disabledDateTo}
               numberOfMonths={1}
-              locale={pl}
+              locale={getDateLocale()}
             />
           </div>
         )}

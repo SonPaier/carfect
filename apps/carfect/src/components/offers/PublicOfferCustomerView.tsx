@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DEFAULT_BRANDING, OfferBranding, getContrastTextColor } from '@shared/utils';
 import { TrustTilesSection } from './public/TrustTilesSection';
@@ -850,7 +849,7 @@ export const PublicOfferCustomerView = ({
                   <span>
                     {t('publicOffer.offerValidUntil')}:{' '}
                     <strong>
-                      {format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: pl })}
+                      {format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: getDateLocale() })}
                     </strong>
                   </span>
                 </div>

@@ -24,7 +24,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { CreateProtocolForm } from './CreateProtocolForm';
 import {
   DropdownMenu,
@@ -358,7 +357,7 @@ export const ProtocolsView = ({
                         </div>
                       )}
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(protocol.protocol_date), 'PPP', { locale: pl })}
+                        {format(new Date(protocol.protocol_date), 'PPP', { locale: getDateLocale() })}
                       </div>
 
                       {/* Line 4: Offer number + Protocol type + Status (mobile) */}

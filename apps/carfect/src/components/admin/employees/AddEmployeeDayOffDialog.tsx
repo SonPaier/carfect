@@ -14,7 +14,6 @@ import { Employee } from '@/hooks/useEmployees';
 import { toast } from 'sonner';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { useTranslation } from 'react-i18next';
@@ -76,9 +75,9 @@ const AddEmployeeDayOffDialog = ({
   const formatDateRange = () => {
     if (!dateRange?.from) return t('admin.daysOff.selectPeriod');
     if (!dateRange.to || dateRange.from.getTime() === dateRange.to.getTime()) {
-      return format(dateRange.from, 'd MMMM yyyy', { locale: pl });
+      return format(dateRange.from, 'd MMMM yyyy', { locale: getDateLocale() });
     }
-    return `${format(dateRange.from, 'd MMM', { locale: pl })} - ${format(dateRange.to, 'd MMM yyyy', { locale: pl })}`;
+    return `${format(dateRange.from, 'd MMM', { locale: getDateLocale() })} - ${format(dateRange.to, 'd MMM yyyy', { locale: getDateLocale() })}`;
   };
 
   return (
@@ -110,7 +109,7 @@ const AddEmployeeDayOffDialog = ({
                   mode="range"
                   selected={dateRange}
                   onSelect={setDateRange}
-                  locale={pl}
+                  locale={getDateLocale()}
                   numberOfMonths={1}
                 />
               </PopoverContent>

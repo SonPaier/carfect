@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EmptyState } from '@shared/ui';
@@ -189,7 +188,7 @@ export const CustomerVisitHistory = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-foreground">
-                  {format(new Date(visit.reservation_date), 'd MMMM yyyy', { locale: pl })},{' '}
+                  {format(new Date(visit.reservation_date), 'd MMMM yyyy', { locale: getDateLocale() })},{' '}
                   {visit.start_time?.slice(0, 5)}
                 </span>
                 {visit.status === 'no_show' && (

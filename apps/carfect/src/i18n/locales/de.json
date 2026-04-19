@@ -1125,7 +1125,15 @@
       "subscription": "Abonnement & Rechnungen"
     },
     "appTitle": "App-Einstellungen",
-    "smsDescription": "Verwalten Sie den Inhalt der an Kunden gesendeten SMS-Nachrichten"
+    "smsDescription": "Verwalten Sie den Inhalt der an Kunden gesendeten SMS-Nachrichten",
+    "billing": {
+      "heading": "Abonnement & Rechnungen",
+      "subtitle": "Abonnement und Rechnungsdaten verwalten",
+      "payments": "Zahlungen",
+      "gusSuccess": "Daten vom Handelsregister abgerufen",
+      "saveSuccess": "Rechnungsdaten gespeichert",
+      "saveError": "Daten konnten nicht gespeichert werden"
+    }
   },
   "widget": {
     "title": "SMS",

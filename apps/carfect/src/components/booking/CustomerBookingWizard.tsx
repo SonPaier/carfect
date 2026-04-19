@@ -17,7 +17,6 @@ import {
   startOfDay,
   isToday,
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import {
   Check,
   ArrowLeft,
@@ -1518,7 +1517,7 @@ export default function CustomerBookingWizard({
             </button>
             <span className="text-base font-semibold capitalize">
               {format(currentMonth, 'LLLL yyyy', {
-                locale: pl,
+                locale: getDateLocale(),
               })}
             </span>
             <button
@@ -1676,7 +1675,7 @@ export default function CustomerBookingWizard({
               <span className="font-medium text-base">
                 {selectedDate &&
                   format(selectedDate, 'd MMMM', {
-                    locale: pl,
+                    locale: getDateLocale(),
                   })}
               </span>
             </div>
@@ -1983,7 +1982,7 @@ export default function CustomerBookingWizard({
                 <span className="text-muted-foreground text-base">{t('common.date')}</span>
                 <span className="font-medium text-base">
                   {format(parseISO(confirmationData.date), 'd MMM yyyy', {
-                    locale: pl,
+                    locale: getDateLocale(),
                   })}
                 </span>
               </div>

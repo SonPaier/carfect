@@ -6,7 +6,6 @@ import { Checkbox } from '@shared/ui';
 import { Phone, Calendar, MessageSquare, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addMonths } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { TaskNotesDialog } from './TaskNotesDialog';
 import { useTranslation } from 'react-i18next';
 
@@ -191,7 +190,7 @@ export function FollowUpTasks({ instanceId }: FollowUpTasksProps) {
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         <span className={isOverdue ? 'text-destructive' : isToday ? 'text-orange-500' : ''}>
-                          {format(new Date(task.due_date), 'd MMM yyyy', { locale: pl })}
+                          {format(new Date(task.due_date), 'd MMM yyyy', { locale: getDateLocale() })}
                           {isOverdue && ` (${daysOverdue} ${t('followupTasks.daysAgo')})`}
                           {isToday && ` (${t('followupTasks.today')})`}
                         </span>

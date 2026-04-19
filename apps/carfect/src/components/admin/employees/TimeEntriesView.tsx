@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@shared/ui';
 import { ChevronLeft, ChevronRight, Plus, Loader2, Clock, Pencil, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isSameDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import AddEditTimeEntryDialog from './AddEditTimeEntryDialog';
 import { ConfirmDialog } from '@shared/ui';
@@ -133,7 +132,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="font-medium min-w-[140px] text-center">
-            {format(currentDate, 'LLLL yyyy', { locale: pl })}
+            {format(currentDate, 'LLLL yyyy', { locale: getDateLocale() })}
           </span>
           <Button variant="outline" size="icon" onClick={handleNextMonth}>
             <ChevronRight className="w-4 h-4" />
@@ -212,7 +211,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
                         <TableRow key={entry.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span>{format(new Date(entry.entry_date), 'd MMM', { locale: pl })}</span>
+                              <span>{format(new Date(entry.entry_date), 'd MMM', { locale: getDateLocale() })}</span>
                               {isWeekend(new Date(entry.entry_date)) && (
                                 <Badge variant="secondary" className="text-xs">weekend</Badge>
                               )}

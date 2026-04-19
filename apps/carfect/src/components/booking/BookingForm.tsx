@@ -5,7 +5,6 @@ import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { Service, TimeSlot } from '@/types';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { User, Phone, Car, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -78,7 +77,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Data:</span>
-            <span className="font-medium">{format(date, 'd MMMM yyyy', { locale: pl })}</span>
+            <span className="font-medium">{format(date, 'd MMMM yyyy', { locale: getDateLocale() })}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Godzina:</span>
@@ -113,7 +112,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
           <span className="font-medium text-right">{service.name}</span>
           <span className="text-muted-foreground">Data:</span>
           <span className="font-medium text-right">
-            {format(date, 'd MMMM yyyy', { locale: pl })}
+            {format(date, 'd MMMM yyyy', { locale: getDateLocale() })}
           </span>
           <span className="text-muted-foreground">Godzina:</span>
           <span className="font-medium text-right">{slot.time}</span>

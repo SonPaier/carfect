@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { X, Loader2, FileText, Camera, Check, Settings2, Trash2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { formatPhoneDisplay } from '@shared/utils';
@@ -123,8 +122,8 @@ const HallReservationCard = ({
   const startDate = parseISO(reservation_date);
   const dateRange =
     end_date && end_date !== reservation_date
-      ? `${format(startDate, 'd MMM', { locale: pl })} - ${format(parseISO(end_date), 'd MMM yyyy', { locale: pl })}`
-      : format(startDate, 'd MMMM yyyy', { locale: pl });
+      ? `${format(startDate, 'd MMM', { locale: getDateLocale() })} - ${format(parseISO(end_date), 'd MMM yyyy', { locale: getDateLocale() })}`
+      : format(startDate, 'd MMMM yyyy', { locale: getDateLocale() });
 
   // Handle actions with loading states
   const handleStart = async () => {

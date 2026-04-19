@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
@@ -98,7 +97,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
     };
   }, [open, instanceId, currentMonth, refreshKey]);
 
-  const monthLabel = format(currentMonth, 'LLLL yyyy', { locale: pl });
+  const monthLabel = format(currentMonth, 'LLLL yyyy', { locale: getDateLocale() });
 
   // Group case-insensitively — normalize to title case for display
   const grouped = usages.reduce<Record<string, WorkerRollUsageWithRoll[]>>((acc, usage) => {

@@ -17,7 +17,6 @@ import {
   startOfDay,
   isSameMonth 
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
 
 interface DatePickerProps {
   selectedDate: Date | null;
@@ -109,7 +108,7 @@ const DatePicker = ({ selectedDate, onSelectDate, daysWithAvailability = [] }: D
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <span className="text-base font-semibold capitalize">
-          {format(currentMonth, 'LLLL yyyy', { locale: pl })}
+          {format(currentMonth, 'LLLL yyyy', { locale: getDateLocale() })}
         </span>
         <Button
           variant="ghost"

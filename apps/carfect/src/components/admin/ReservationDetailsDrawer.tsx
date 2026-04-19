@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import {
   User,
   Phone,
@@ -480,9 +479,9 @@ const ReservationDetailsDrawer = ({
                   <span className="text-muted-foreground font-normal hidden sm:inline">•</span>
                   <span className="font-normal text-muted-foreground sm:text-foreground">
                     {reservation.end_date && reservation.end_date !== reservation.reservation_date
-                      ? `${format(new Date(reservation.reservation_date), 'd MMM', { locale: pl })} - ${format(new Date(reservation.end_date), 'd MMM yyyy', { locale: pl })}`
+                      ? `${format(new Date(reservation.reservation_date), 'd MMM', { locale: getDateLocale() })} - ${format(new Date(reservation.end_date), 'd MMM yyyy', { locale: getDateLocale() })}`
                       : format(new Date(reservation.reservation_date), 'd MMMM yyyy', {
-                          locale: pl,
+                          locale: getDateLocale(),
                         })}
                   </span>
                 </SheetTitle>
@@ -861,7 +860,7 @@ const ReservationDetailsDrawer = ({
                         {format(
                           new Date(reservation.original_reservation.reservation_date),
                           'd MMMM yyyy',
-                          { locale: pl },
+                          { locale: getDateLocale() },
                         )}
                       </span>
                     </div>
@@ -946,7 +945,7 @@ const ReservationDetailsDrawer = ({
                       datetime: format(
                         new Date(reservation.confirmation_sms_sent_at),
                         'dd.MM.yyyy HH:mm',
-                        { locale: pl },
+                        { locale: getDateLocale() },
                       ),
                     })}
                   </div>
@@ -987,7 +986,7 @@ const ReservationDetailsDrawer = ({
                       datetime: format(
                         new Date(reservation.pickup_sms_sent_at),
                         'dd.MM.yyyy HH:mm',
-                        { locale: pl },
+                        { locale: getDateLocale() },
                       ),
                     })}
                   </div>

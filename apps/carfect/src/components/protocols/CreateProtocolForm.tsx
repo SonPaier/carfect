@@ -23,7 +23,6 @@ import {
   Car,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { normalizePhone } from '@shared/utils';
@@ -1236,7 +1235,7 @@ export const CreateProtocolForm = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {protocolDate ? format(protocolDate, 'PPP', { locale: pl }) : 'Wybierz datę'}
+                    {protocolDate ? format(protocolDate, 'PPP', { locale: getDateLocale() }) : 'Wybierz datę'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-white" align="start">
@@ -1249,7 +1248,7 @@ export const CreateProtocolForm = ({
                         setDatePickerOpen(false);
                       }
                     }}
-                    locale={pl}
+                    locale={getDateLocale()}
                     className="pointer-events-auto"
                   />
                 </PopoverContent>

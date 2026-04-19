@@ -18,7 +18,6 @@ import { Employee } from '@/hooks/useEmployees';
 import { toast } from 'sonner';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
@@ -141,7 +140,7 @@ const AddEditTimeEntryDialog = ({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'd MMMM yyyy', { locale: pl }) : t('common.selectDate')}
+                  {date ? format(date, 'd MMMM yyyy', { locale: getDateLocale() }) : t('common.selectDate')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -149,7 +148,7 @@ const AddEditTimeEntryDialog = ({
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  locale={pl}
+                  locale={getDateLocale()}
                   disabled={isEditing}
                 />
               </PopoverContent>

@@ -14,7 +14,7 @@ import {
   max,
   min,
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@shared/ui';
@@ -431,7 +431,7 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
         {/* Month label — large bold, scrolls with content, separated from previous month */}
         <div className="px-4 pt-10 pb-4">
           <h2 className="text-[25px] font-bold text-foreground">
-            {format(monthDate, 'LLLL yyyy', { locale: pl })}
+            {format(monthDate, 'LLLL yyyy', { locale: getDateLocale() })}
           </h2>
         </div>
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, DragEvent } from 'react';
 import { format, isToday, isTomorrow, parseISO, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { Phone, Clock, Trash2, Plus, Pencil } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,7 +58,7 @@ const getDateLabel = (dateStr: string): string => {
   const date = parseISO(dateStr);
   if (isToday(date)) return 'Dzisiaj';
   if (isTomorrow(date)) return 'Jutro';
-  return format(date, 'd MMMM', { locale: pl });
+  return format(date, 'd MMMM', { locale: getDateLocale() });
 };
 
 export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = false }: YardVehiclesListProps) {
@@ -294,7 +293,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
                   {(vehicle.pickup_date || vehicle.deadline_time) && (
                     <div className="flex items-center gap-3 text-xs text-slate-600">
                       {vehicle.pickup_date && (
-                        <span>odbiór: {format(parseISO(vehicle.pickup_date), 'd MMM', { locale: pl })}</span>
+                        <span>odbiór: {format(parseISO(vehicle.pickup_date), 'd MMM', { locale: getDateLocale() })}</span>
                       )}
                       {vehicle.deadline_time && (
                         <span className="text-orange-600 flex items-center gap-1">

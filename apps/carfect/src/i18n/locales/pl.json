@@ -1125,7 +1125,15 @@
       "subscription": "Subskrypcja i faktury"
     },
     "appTitle": "Ustawienia aplikacji",
-    "smsDescription": "Zarządzaj treścią wiadomości SMS wysyłanych do klientów"
+    "smsDescription": "Zarządzaj treścią wiadomości SMS wysyłanych do klientów",
+    "billing": {
+      "heading": "Subskrypcja i faktury",
+      "subtitle": "Zarządzaj subskrypcją i danymi do faktur",
+      "payments": "Płatności",
+      "gusSuccess": "Dane pobrane z GUS",
+      "saveSuccess": "Dane do faktury zapisane",
+      "saveError": "Nie udało się zapisać danych"
+    }
   },
   "widget": {
     "title": "Widget na stronę",

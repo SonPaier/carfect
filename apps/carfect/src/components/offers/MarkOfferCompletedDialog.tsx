@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Calendar } from '@shared/ui';
@@ -85,7 +84,7 @@ export function MarkOfferCompletedDialog({
                   className="w-full justify-start text-left font-normal bg-white"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(completionDate, 'dd MMMM yyyy', { locale: pl })}
+                  {format(completionDate, 'dd MMMM yyyy', { locale: getDateLocale() })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -93,7 +92,7 @@ export function MarkOfferCompletedDialog({
                   mode="single"
                   selected={completionDate}
                   onSelect={(date) => date && setCompletionDate(date)}
-                  locale={pl}
+                  locale={getDateLocale()}
                 />
               </PopoverContent>
             </Popover>

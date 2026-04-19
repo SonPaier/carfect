@@ -1,5 +1,4 @@
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import {
   GroupedChange,
   ReservationChange,
@@ -68,10 +67,10 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
 
       case 'dates': {
         const oldDate = change.old_value?.reservation_date
-          ? format(new Date(change.old_value.reservation_date), 'd MMM', { locale: pl })
+          ? format(new Date(change.old_value.reservation_date), 'd MMM', { locale: getDateLocale() })
           : '-';
         const newDate = change.new_value?.reservation_date
-          ? format(new Date(change.new_value.reservation_date), 'd MMM', { locale: pl })
+          ? format(new Date(change.new_value.reservation_date), 'd MMM', { locale: getDateLocale() })
           : '-';
         content = <div>• Termin: {oldDate} → {newDate}</div>;
         break;
@@ -142,7 +141,7 @@ export function HistoryTimelineItem({ group, servicesMap, stationsMap, employees
           {group.changed_by_username}
           {group.changed_by_type === 'customer' && ' (klient)'}
           {' • '}
-          {format(new Date(group.created_at), 'd MMM, HH:mm', { locale: pl })}
+          {format(new Date(group.created_at), 'd MMM, HH:mm', { locale: getDateLocale() })}
         </div>
       </div>
 

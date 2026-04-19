@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon } from 'lucide-react';
 import { format, isSameDay, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { Label } from '@shared/ui';
 import { Button } from '@shared/ui';
@@ -173,11 +172,11 @@ export const ReservationDateTimeSection = ({
               {dateRange?.from ? (
                 dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? (
                   <>
-                    {format(dateRange.from, 'd MMM', { locale: pl })} -{' '}
-                    {format(dateRange.to, 'd MMM yyyy', { locale: pl })}
+                    {format(dateRange.from, 'd MMM', { locale: getDateLocale() })} -{' '}
+                    {format(dateRange.to, 'd MMM yyyy', { locale: getDateLocale() })}
                   </>
                 ) : (
-                  format(dateRange.from, 'EEEE, d MMM yyyy', { locale: pl })
+                  format(dateRange.from, 'EEEE, d MMM yyyy', { locale: getDateLocale() })
                 )
               ) : (
                 <span>{t('addReservation.selectDateRange')}</span>
@@ -208,7 +207,7 @@ export const ReservationDateTimeSection = ({
                   return false;
                 }}
                 numberOfMonths={1}
-                locale={pl}
+                locale={getDateLocale()}
                 className="pointer-events-auto"
               />
             ) : (
@@ -251,7 +250,7 @@ export const ReservationDateTimeSection = ({
                   return false;
                 }}
                 numberOfMonths={getNumberOfMonths()}
-                locale={pl}
+                locale={getDateLocale()}
                 className="pointer-events-auto"
               />
             )}

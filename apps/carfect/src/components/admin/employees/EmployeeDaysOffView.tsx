@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@shared/ui';
 import { Plus, Loader2, CalendarOff, Trash2 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import AddEmployeeDayOffDialog from './AddEmployeeDayOffDialog';
 import { ConfirmDialog } from '@shared/ui';
@@ -110,12 +109,12 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
                 <TableRow key={dayOff.id}>
                   <TableCell>{getEmployeeName(dayOff.employee_id)}</TableCell>
                   <TableCell>
-                    {format(parseISO(dayOff.date_from), 'd MMM', { locale: pl })}
+                    {format(parseISO(dayOff.date_from), 'd MMM', { locale: getDateLocale() })}
                     {dayOff.date_from !== dayOff.date_to && (
-                      <> - {format(parseISO(dayOff.date_to), 'd MMM yyyy', { locale: pl })}</>
+                      <> - {format(parseISO(dayOff.date_to), 'd MMM yyyy', { locale: getDateLocale() })}</>
                     )}
                     {dayOff.date_from === dayOff.date_to && (
-                      <> {format(parseISO(dayOff.date_from), 'yyyy', { locale: pl })}</>
+                      <> {format(parseISO(dayOff.date_from), 'yyyy', { locale: getDateLocale() })}</>
                     )}
                   </TableCell>
                   <TableCell>

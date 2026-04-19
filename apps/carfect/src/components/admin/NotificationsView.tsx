@@ -19,7 +19,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface Notification {
@@ -375,11 +374,11 @@ export default function NotificationsView({
                         {(() => {
                           const date = new Date(notification.created_at);
                           if (isToday(date)) {
-                            return formatDistanceToNow(date, { addSuffix: true, locale: pl });
+                            return formatDistanceToNow(date, { addSuffix: true, locale: getDateLocale() });
                           } else if (isYesterday(date)) {
                             return `Wczoraj, ${format(date, 'HH:mm')}`;
                           } else {
-                            return format(date, 'd MMMM yyyy HH:mm', { locale: pl });
+                            return format(date, 'd MMMM yyyy HH:mm', { locale: getDateLocale() });
                           }
                         })()}
                       </span>

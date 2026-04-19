@@ -1125,7 +1125,15 @@
       "subscription": "Subscription & invoices"
     },
     "appTitle": "App settings",
-    "smsDescription": "Manage the content of SMS messages sent to customers"
+    "smsDescription": "Manage the content of SMS messages sent to customers",
+    "billing": {
+      "heading": "Subscription & invoices",
+      "subtitle": "Manage your subscription and billing details",
+      "payments": "Payments",
+      "gusSuccess": "Data retrieved from Companies House",
+      "saveSuccess": "Billing data saved",
+      "saveError": "Failed to save data"
+    }
   },
   "widget": {
     "title": "SMS",

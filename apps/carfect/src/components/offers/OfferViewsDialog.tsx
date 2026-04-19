@@ -4,7 +4,6 @@ import { Eye, Clock, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 
 interface OfferView {
   id: string;
@@ -78,7 +77,7 @@ export const OfferViewsDialog = ({ offerId, viewedAt, open, onOpenChange }: Offe
               {views.map((view) => (
                 <div key={view.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
                   <span className="text-foreground">
-                    {format(new Date(view.started_at), 'd MMM, HH:mm', { locale: pl })}
+                    {format(new Date(view.started_at), 'd MMM, HH:mm', { locale: getDateLocale() })}
                   </span>
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -90,7 +89,7 @@ export const OfferViewsDialog = ({ offerId, viewedAt, open, onOpenChange }: Offe
           </div>
         ) : viewedAt ? (
           <p className="text-sm text-muted-foreground py-4">
-            {t('offers.noViewData', 'Obejrzana')} {format(new Date(viewedAt), 'd MMMM yyyy, HH:mm', { locale: pl })}
+            {t('offers.noViewData', 'Obejrzana')} {format(new Date(viewedAt), 'd MMMM yyyy, HH:mm', { locale: getDateLocale() })}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground py-4">

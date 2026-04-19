@@ -49,7 +49,6 @@ import {
   isSameWeek,
   getDay,
 } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import AddEditEmployeeDialog from './AddEditEmployeeDialog';
@@ -267,7 +266,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
     const formatDateWithDay = (date: Date) => {
       const dayNum = format(date, 'd');
-      const monthName = format(date, 'LLLL', { locale: pl });
+      const monthName = format(date, 'LLLL', { locale: getDateLocale() });
       const weekday = WEEKDAY_SHORT[getDay(date)];
       return `${dayNum} ${monthName} (${weekday})`;
     };
@@ -412,7 +411,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
             <ChevronRight className="w-4 h-4" />
           </Button>
           <span className="font-medium text-lg">
-            {isWeeklyMode ? formatWeekDisplay() : format(currentDate, 'LLLL yyyy', { locale: pl })}
+            {isWeeklyMode ? formatWeekDisplay() : format(currentDate, 'LLLL yyyy', { locale: getDateLocale() })}
           </span>
         </div>
       )}

@@ -20,7 +20,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 
 interface Station {
   id: string;
@@ -116,7 +115,7 @@ const AddBreakDialog = ({
 
   const selectedStation = stations.find(s => s.id === initialData.stationId);
   const formattedDate = initialData.date 
-    ? format(new Date(initialData.date), 'EEEE, d MMMM yyyy', { locale: pl })
+    ? format(new Date(initialData.date), 'EEEE, d MMMM yyyy', { locale: getDateLocale() })
     : '';
 
   return (
