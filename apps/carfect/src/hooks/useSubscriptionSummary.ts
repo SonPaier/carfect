@@ -27,7 +27,8 @@ export function useSubscriptionSummary(instanceId: string | undefined) {
       let query = supabase
         .from('sms_logs')
         .select('*', { count: 'exact', head: true })
-        .eq('instance_id', instanceId);
+        .eq('instance_id', instanceId)
+        .not('message_type', 'like', '%_email%');
 
       if (currentPeriodStart) {
         query = query.gte('created_at', currentPeriodStart);

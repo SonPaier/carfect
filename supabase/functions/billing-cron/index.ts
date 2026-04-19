@@ -58,6 +58,7 @@ async function processInstance(
     .from('sms_logs')
     .select('*', { count: 'exact', head: true })
     .eq('instance_id', sub.instance_id)
+    .not('message_type', 'like', '%_email%')
     .gte('created_at', prevPeriodStart.toISOString())
     .lt('created_at', prevPeriodEnd.toISOString());
 
