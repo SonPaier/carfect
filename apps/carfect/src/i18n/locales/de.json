@@ -1993,7 +1993,17 @@
     "userBlocked": "Benutzer gesperrt",
     "userUnblocked": "Benutzer entsperrt",
     "fetchError": "Fehler beim Laden der Angebote",
-    "sessionExpired": "Sitzung abgelaufen"
+    "sessionExpired": "Sitzung abgelaufen",
+    "description": "Benutzerkonten mit Zugriff auf das Admin-Panel verwalten",
+    "access": "Zugriff",
+    "roleAdmin": "Admin",
+    "roleEmployee": "Mitarbeiter",
+    "roleCalendar": "Kalender",
+    "roleSales": "Verkauf",
+    "adminDesc": "Vollzugriff: Kalender, Reservierungen, Einstellungen, Benutzer, Statistiken",
+    "employeeDesc": "Kalender, Reservierungen, Benachrichtigungen (ohne Einstellungen und Benutzer)",
+    "calendarDesc": "Vereinfachte Ansicht: Kalender, Zeiterfassung, Protokolle (z. B. Tablet in der Werkstatt)",
+    "salesDesc": "CRM-Panel: Bestellungen, Kunden, Produkte, Angebote"
   },
   "priceListSettings": {
     "title": "Angebotseinstellungen",
