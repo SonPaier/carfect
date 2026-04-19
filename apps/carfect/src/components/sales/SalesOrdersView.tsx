@@ -1063,7 +1063,7 @@ const SalesOrdersView = () => {
                                     variant={isOutline ? 'outline' : 'default'}
                                     className={`${cfg.className} cursor-pointer`}
                                   >
-                                    {cfg.label}
+                                    {t(cfg.labelKey)}
                                   </Badge>
                                 );
                               })()}
@@ -1073,7 +1073,7 @@ const SalesOrdersView = () => {
                             {(
                               Object.entries(PAYMENT_STATUS_CONFIG) as [
                                 PaymentStatus,
-                                { label: string; className: string },
+                                { labelKey: string; className: string },
                               ][]
                             ).map(([status, cfg]) => (
                               <DropdownMenuItem
@@ -1091,7 +1091,7 @@ const SalesOrdersView = () => {
                                   }
                                   className={cfg.className}
                                 >
-                                  {cfg.label}
+                                  {t(cfg.labelKey)}
                                 </Badge>
                               </DropdownMenuItem>
                             ))}
