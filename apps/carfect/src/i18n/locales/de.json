@@ -1895,7 +1895,15 @@
     "prepareOffer": "Angebot vorbereiten",
     "markNoShow": "Als nicht erschienen markieren",
     "noShowConfirmTitle": "Als nicht erschienen markieren",
-    "noShowConfirmDescription": "Möchten Sie den Kunden {{name}} ({{phone}}) wirklich als nicht erschienen markieren?"
+    "noShowConfirmDescription": "Möchten Sie den Kunden {{name}} ({{phone}}) wirklich als nicht erschienen markieren?",
+    "protocolLink": "Fahrzeug-Übergabeprotokoll",
+    "assignedEmployees": "Zugewiesene Mitarbeiter",
+    "amountNet": "Nettobetrag",
+    "amountGross": "Bruttobetrag",
+    "offerLink": "Angebot",
+    "notesPlaceholder": "Interne Notizen eingeben...",
+    "noNotes": "Keine internen Notizen",
+    "addPhotos": "Fotos hinzufügen"
   },
   "instanceSettings": {
     "title": "Instanzeinstellungen",

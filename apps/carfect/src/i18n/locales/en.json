@@ -1895,7 +1895,15 @@
     "prepareOffer": "Prepare offer",
     "markNoShow": "Mark as no show",
     "noShowConfirmTitle": "Mark as no show",
-    "noShowConfirmDescription": "Are you sure you want to mark customer {{name}} ({{phone}}) as no show?"
+    "noShowConfirmDescription": "Are you sure you want to mark customer {{name}} ({{phone}}) as no show?",
+    "protocolLink": "Vehicle inspection report",
+    "assignedEmployees": "Assigned employees",
+    "amountNet": "Net amount",
+    "amountGross": "Gross amount",
+    "offerLink": "Quote",
+    "notesPlaceholder": "Enter internal notes...",
+    "noNotes": "No internal notes",
+    "addPhotos": "Add photos"
   },
   "instanceSettings": {
     "title": "Services",
