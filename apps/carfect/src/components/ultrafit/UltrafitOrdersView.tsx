@@ -103,6 +103,7 @@ function OrderItemRow({
 }: {
   item: UltrafitOrderItem;
 }) {
+  const { t } = useTranslation();
   const unit = formatUnit(item.unit);
   const lineTotal = item.quantity * item.priceNet;
   const discountAmount = lineTotal * (item.discountPercent || 0) / 100;
