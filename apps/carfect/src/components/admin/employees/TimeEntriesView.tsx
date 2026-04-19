@@ -88,11 +88,11 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
     
     try {
       await deleteEntry.mutateAsync(entryToDelete.id);
-      toast.success('Wpis został usunięty');
+      toast.success(t('timeEntry.deleted'));
       setDeleteConfirmOpen(false);
       setEntryToDelete(null);
     } catch (error) {
-      toast.error('Błąd podczas usuwania wpisu');
+      toast.error(t('timeEntry.deleteError'));
     }
   };
 

@@ -1555,7 +1555,10 @@
     "noSequence": "Keine Tastaturfolgen",
     "noRepeating": "Keine sich wiederholenden Zeichen",
     "notCommon": "Kein häufig verwendetes Passwort",
-    "submit": "Passwort zurücksetzen"
+    "submit": "Passwort zurücksetzen",
+    "requirementsNotMet": "Passwort erfüllt die Anforderungen nicht",
+    "passwordReset": "Passwort wurde zurückgesetzt",
+    "resetFailed": "Passwort konnte nicht zurückgesetzt werden"
   },
   "employeeDayOff": {
     "title": "Neues Übergabeprotokoll",
@@ -2157,7 +2160,9 @@
     "dayOffSaved": "Freier Tag gespeichert",
     "dayOffError": "Fehler beim Speichern des freien Tages",
     "dayOffRemoved": "Freier Tag entfernt",
-    "dayOffRemoveError": "Fehler beim Entfernen"
+    "dayOffRemoveError": "Fehler beim Entfernen",
+    "deleted": "Zeiteintrag gelöscht",
+    "deleteError": "Fehler beim Löschen des Zeiteintrags"
   },
   "editUser": {
     "title": "Angebotseinstellungen",
@@ -3533,7 +3538,9 @@
     "assignedEmployees": "Zugewiesene Mitarbeiter",
     "removed": "Entfernt",
     "internalNotes": "Interne Notizen",
-    "noInternalNotes": "Keine internen Notizen"
+    "noInternalNotes": "Keine internen Notizen",
+    "employeesUpdated": "Mitarbeiter aktualisiert",
+    "employeesUpdateError": "Fehler beim Aktualisieren der Mitarbeiter"
   },
   "reservationSettings": {
     "pricingModeLabel": "Standard-Preismodus",
@@ -4473,6 +4480,7 @@
     "deleteTitle": "Foto löschen",
     "deleteDescription": "Möchten Sie dieses Foto wirklich löschen?",
     "photoDeleted": "Foto gelöscht",
-    "deleteError": "Fehler beim Löschen"
+    "deleteError": "Fehler beim Löschen",
+    "updateError": "Fehler beim Aktualisieren der Fotos"
   }
 }

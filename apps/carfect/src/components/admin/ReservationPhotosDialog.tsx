@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PhotoUploader } from '@/components/ui/photo-uploader';
@@ -27,6 +28,7 @@ const ReservationPhotosDialog = ({
   onPhotosUpdated,
   maxPhotos = 8,
 }: ReservationPhotosDialogProps) => {
+  const { t } = useTranslation();
   const [photos, setPhotos] = useState<string[]>(currentPhotos);
 
   const handlePhotosChange = async (newPhotos: string[]) => {
@@ -42,7 +44,7 @@ const ReservationPhotosDialog = ({
       onPhotosUpdated(newPhotos);
     } catch (error) {
       console.error('Error updating reservation photos:', error);
-      toast.error('Błąd podczas aktualizacji zdjęć');
+      toast.error(t('reservationPhotos.updateError'));
     }
   };
 

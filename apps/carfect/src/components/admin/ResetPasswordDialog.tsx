@@ -56,7 +56,7 @@ const ResetPasswordDialog = ({
     if (!user) return;
 
     if (!isFormValid) {
-      toast.error('Hasło nie spełnia wymagań');
+      toast.error(t('resetPassword.requirementsNotMet'));
       return;
     }
 
@@ -67,7 +67,7 @@ const ResetPasswordDialog = ({
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Sesja wygasła');
+        toast.error(t('auth.sessionExpired'));
         return;
       }
 
@@ -88,12 +88,12 @@ const ResetPasswordDialog = ({
         throw new Error(response.data.error);
       }
 
-      toast.success('Hasło zostało zresetowane');
+      toast.success(t('resetPassword.passwordReset'));
       handleReset();
       onOpenChange(false);
     } catch (error: unknown) {
       console.error('Error resetting password:', error);
-      toast.error((error as Error).message || 'Nie udało się zresetować hasła');
+      toast.error((error as Error).message || t('resetPassword.resetFailed'));
     } finally {
       setLoading(false);
     }

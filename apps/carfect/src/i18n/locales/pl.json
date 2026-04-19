@@ -1555,7 +1555,10 @@
     "noSequence": "Brak sekwencji klawiszowych",
     "noRepeating": "Brak powtarzających się znaków",
     "notCommon": "Nie jest popularnym hasłem",
-    "submit": "Resetuj hasło"
+    "submit": "Resetuj hasło",
+    "requirementsNotMet": "Hasło nie spełnia wymagań",
+    "passwordReset": "Hasło zostało zresetowane",
+    "resetFailed": "Nie udało się zresetować hasła"
   },
   "employeeDayOff": {
     "title": "Dodaj nieobecność",
@@ -2157,7 +2160,9 @@
     "dayOffSaved": "Dzień wolny zapisany",
     "dayOffError": "Błąd zapisywania dnia wolnego",
     "dayOffRemoved": "Dzień wolny usunięty",
-    "dayOffRemoveError": "Błąd usuwania dnia wolnego"
+    "dayOffRemoveError": "Błąd usuwania dnia wolnego",
+    "deleted": "Wpis został usunięty",
+    "deleteError": "Błąd podczas usuwania wpisu"
   },
   "editUser": {
     "title": "Edytuj użytkownika",
@@ -3533,7 +3538,9 @@
     "assignedEmployees": "Przypisani pracownicy",
     "removed": "Usunięty",
     "internalNotes": "Notatki wewnętrzne",
-    "noInternalNotes": "Brak notatek wewnętrznych"
+    "noInternalNotes": "Brak notatek wewnętrznych",
+    "employeesUpdated": "Pracownicy zaktualizowani",
+    "employeesUpdateError": "Błąd aktualizacji pracowników"
   },
   "reservationSettings": {
     "pricingModeLabel": "Domyślny tryb cen",
@@ -4473,6 +4480,7 @@
     "deleteTitle": "Usuń zdjęcie",
     "deleteDescription": "Czy na pewno chcesz usunąć to zdjęcie?",
     "photoDeleted": "Zdjęcie usunięte",
-    "deleteError": "Błąd usuwania zdjęcia"
+    "deleteError": "Błąd usuwania zdjęcia",
+    "updateError": "Błąd podczas aktualizacji zdjęć"
   }
 }

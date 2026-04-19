@@ -91,36 +91,36 @@ const MobileBottomNav = ({
             ? [{ id: 'halls' as ViewType, icon: Building2, label: t('navigation.halls') }]
             : []),
           ...(protocolsEnabled
-            ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: 'Protokoły' }]
+            ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: t('navigation.protocols') }]
             : []),
         ]
       : [
           // Full menu for admin/employee - nowa kolejność
           // 1. Kalendarz
-          { id: 'calendar' as ViewType, icon: Calendar, label: 'Kalendarz' },
+          { id: 'calendar' as ViewType, icon: Calendar, label: t('navigation.calendar') },
           // 2. Rezerwacje
-          { id: 'reservations' as ViewType, icon: List, label: 'Realizacje' },
+          { id: 'reservations' as ViewType, icon: List, label: t('navigation.reservations') },
           // 3. Oferty (when enabled)
           ...(offersEnabled
             ? [{ id: 'offers' as ViewType, icon: FileText, label: t('navigation.offers') }]
             : []),
           // 4. Protokoły (when enabled)
           ...(protocolsEnabled
-            ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: 'Protokoły' }]
+            ? [{ id: 'protocols' as ViewType, icon: ClipboardCheck, label: t('navigation.protocols') }]
             : []),
           // 5. Klienci
           { id: 'customers' as ViewType, icon: Users, label: t('navigation.customers') },
           // 6. Pracownicy (admin only)
           ...(userRole !== 'employee'
-            ? [{ id: 'employees' as ViewType, icon: UsersRound, label: 'Pracownicy' }]
+            ? [{ id: 'employees' as ViewType, icon: UsersRound, label: t('navigation.employees') }]
             : []),
           // 7. Usługi (admin only)
           ...(userRole !== 'employee'
-            ? [{ id: 'pricelist' as ViewType, icon: FileText, label: 'Usługi' }]
+            ? [{ id: 'pricelist' as ViewType, icon: FileText, label: t('navigation.products') }]
             : []),
           // 8. Ultrafit (when linked, admin only)
           ...(ultrafitEnabled && userRole !== 'employee'
-            ? [{ id: 'ultrafit' as ViewType, icon: Package, label: 'Ultrafit' }]
+            ? [{ id: 'ultrafit' as ViewType, icon: Package, label: t('integrations.ultrafit.title') }]
             : []),
           // 9. Powiadomienia - ukryte
           // 10. Ustawienia (admin only, always last)
@@ -232,7 +232,7 @@ const MobileBottomNav = ({
 
               {/* Version display */}
               <div className="px-6 py-3 text-xs text-muted-foreground">
-                Panel Admina {currentVersion && `v${currentVersion}`}
+                {t('common.adminPanel')} {currentVersion && `v${currentVersion}`}
               </div>
             </div>
 
@@ -247,7 +247,7 @@ const MobileBottomNav = ({
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-border hover:bg-hover rounded-lg transition-colors"
                 >
                   <ArrowLeftRight className="w-5 h-5" />
-                  <span className="text-base font-medium">Panel Sprzedaży</span>
+                  <span className="text-base font-medium">{t('navigation.goToSales')}</span>
                 </button>
               )}
               <button

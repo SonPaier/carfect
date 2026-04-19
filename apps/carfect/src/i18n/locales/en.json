@@ -1555,7 +1555,10 @@
     "noSequence": "No keyboard sequences",
     "noRepeating": "No repeating characters",
     "notCommon": "Not a common password",
-    "submit": "Reset password"
+    "submit": "Reset password",
+    "requirementsNotMet": "Password does not meet requirements",
+    "passwordReset": "Password has been reset",
+    "resetFailed": "Failed to reset password"
   },
   "employeeDayOff": {
     "title": "New inspection report",
@@ -2157,7 +2160,9 @@
     "dayOffSaved": "Day off saved",
     "dayOffError": "Error saving day off",
     "dayOffRemoved": "Day off removed",
-    "dayOffRemoveError": "Error removing day off"
+    "dayOffRemoveError": "Error removing day off",
+    "deleted": "Time entry deleted",
+    "deleteError": "Error deleting time entry"
   },
   "editUser": {
     "title": "Edit user",
@@ -3533,7 +3538,9 @@
     "assignedEmployees": "Assigned employees",
     "removed": "Removed",
     "internalNotes": "Internal notes",
-    "noInternalNotes": "No internal notes"
+    "noInternalNotes": "No internal notes",
+    "employeesUpdated": "Employees updated",
+    "employeesUpdateError": "Error updating employees"
   },
   "reservationSettings": {
     "pricingModeLabel": "Default pricing mode",
@@ -4473,6 +4480,7 @@
     "deleteTitle": "Delete photo",
     "deleteDescription": "Are you sure you want to delete this photo?",
     "photoDeleted": "Photo deleted",
-    "deleteError": "Error deleting photo"
+    "deleteError": "Error deleting photo",
+    "updateError": "Error updating photos"
   }
 }

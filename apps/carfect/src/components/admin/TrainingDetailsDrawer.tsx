@@ -140,10 +140,10 @@ export function TrainingDetailsDrawer({
         .update({ assigned_employee_ids: employeeIds } as { assigned_employee_ids: string[] })
         .eq('id', training.id);
       if (error) throw error;
-      toast.success('Pracownicy zaktualizowani');
+      toast.success(t('trainingDetails.employeesUpdated'));
     } catch (err) {
       console.error('Error updating employees:', err);
-      toast.error('Błąd aktualizacji pracowników');
+      toast.error(t('trainingDetails.employeesUpdateError'));
     }
   };
 
