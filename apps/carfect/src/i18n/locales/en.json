@@ -55,7 +55,8 @@
     "hide": "Hide",
     "total": "Total",
     "saved": "Saved",
-    "unknownService": "Unknown service"
+    "unknownService": "Unknown service",
+    "loadError": "Error loading data"
   },
   "carSearch": {
     "useCustom": "Use"
@@ -85,7 +86,13 @@
     "hall": "Calendar",
     "halls": "Calendars",
     "freeSlots": "Available slots",
-    "more": "More"
+    "more": "More",
+    "protocols": "Protocols",
+    "employees": "Employees",
+    "reminders": "Reminders",
+    "goToSales": "Go to Sales Panel",
+    "toggleMenu": "Toggle menu",
+    "logout": "Log out"
   },
   "halls": {
     "title": "Bookings",
@@ -278,7 +285,9 @@
     "cancelled": "Cancelled",
     "inProgress": "In progress",
     "notFound": "Booking not found",
-    "checkSms": "Check the code in your SMS and try again"
+    "checkSms": "Check the code in your SMS and try again",
+    "cannotEdit": "This booking cannot be edited",
+    "editCutoffPassed": "The deadline for changing this booking has passed"
   },
   "booking": {
     "title": "Customers",
@@ -1109,8 +1118,10 @@
       "users": "Users",
       "widget": "Widget",
       "integrations": "Integrations",
-      "trainings": "Trainings"
-    }
+      "trainings": "Trainings",
+      "subscription": "Subscription & invoices"
+    },
+    "appTitle": "App settings"
   },
   "widget": {
     "title": "SMS",
@@ -1701,6 +1712,16 @@
       "prevPhoto": "Previous photo",
       "nextPhoto": "Next photo",
       "damagePhotoAlt": "Damage photo"
+    },
+    "voice": {
+      "browserNotSupported": "Your browser does not support speech recognition",
+      "listening": "Listening...",
+      "noSpeech": "No speech detected",
+      "microphoneBlocked": "Microphone blocked. Allow access in your browser settings.",
+      "recognitionError": "Speech recognition error",
+      "startRecording": "Start recording",
+      "stopRecording": "Stop recording",
+      "textRecognized": "Text recognised"
     }
   },
   "adminDashboard": {
@@ -2076,7 +2097,15 @@
     "adminPermission3": "All application modules",
     "adminPermission4": "Creating and deleting other accounts",
     "adminWarning": "Only grant these permissions to trusted individuals.",
-    "confirmAdmin": "I understand, grant permissions"
+    "confirmAdmin": "I understand, grant permissions",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "createUser": "Create user",
+    "role": "Role",
+    "usernameHint": "Username for login",
+    "usernameMinLength": "Min. 3 characters",
+    "usernamePlaceholder": "Username",
+    "usernameRequired": "Username is required"
   },
   "employeeDialog": {
     "addTitle": "Add employee",
@@ -2119,7 +2148,15 @@
     "employeePlaceholder": "Select employee",
     "dateLabel": "Date *",
     "from": "From *",
-    "to": "To *"
+    "to": "To *",
+    "saved": "Time entry saved",
+    "saveError": "Error saving time entry",
+    "startEndRequired": "Enter start and end time",
+    "endMustBeAfterStart": "End time must be after start time",
+    "dayOffSaved": "Day off saved",
+    "dayOffError": "Error saving day off",
+    "dayOffRemoved": "Day off removed",
+    "dayOffRemoveError": "Error removing day off"
   },
   "editUser": {
     "title": "Edit user",
@@ -2152,7 +2189,8 @@
       "access4": "Creating and deleting other accounts",
       "warning": "Only grant these permissions to trusted people.",
       "confirm": "I understand, grant permissions"
-    }
+    },
+    "roleSales": "Sales CRM"
   },
   "adminPermissions": {
     "title": "Administrator permissions",
@@ -2429,7 +2467,10 @@
     "aiExtraction": {
       "title": "Automatic AI extraction",
       "description": "After uploading the price list, AI will automatically extract products with their prices and parameters."
-    }
+    },
+    "upload": "Upload",
+    "uploadError": "Error uploading price list",
+    "uploadSuccess": "Price list uploaded successfully"
   },
   "productDetails": {
     "title": "Service details",
@@ -2710,7 +2751,12 @@
       "orderError": "Error saving order",
       "categorySaveError": "Error saving category",
       "categoryDeleteError": "Error deleting category"
-    }
+    },
+    "clickToEditPrice": "Click to edit price",
+    "editInDialog": "Edit in dialog",
+    "invalidPrice": "Invalid price",
+    "priceUpdated": "Price updated",
+    "priceUpdateError": "Error updating price"
   },
   "serviceSelector": {
     "loadingServices": "Loading services...",
@@ -2786,7 +2832,8 @@
     },
     "noTemplate": "None",
     "templateAssigned": "Reminder template assigned",
-    "assignError": "Error assigning template"
+    "assignError": "Error assigning template",
+    "saved": "Template saved"
   },
   "reminders": {
     "title": "Reminders",
@@ -2926,7 +2973,9 @@
     "endTimeMustBeLater": "End time must be later than start time",
     "errorAdding": "Error adding break",
     "added": "Break has been added",
-    "genericError": "An error occurred"
+    "genericError": "An error occurred",
+    "addError": "Error adding break",
+    "endTimeError": "End time must be after start time"
   },
   "password": {
     "placeholder": "Minimum 8 characters",
@@ -3432,7 +3481,9 @@
     "defaultNotes": "Notes",
     "discountsSection": "Discounts",
     "discountsLabel": "Ability to add discounts to services in offers",
-    "discountsHint": "When enabled, a discount % field will appear next to each item in the offer builder."
+    "discountsHint": "When enabled, a discount % field will appear next to each item in the offer builder.",
+    "paymentDetailsDescription": "Payment details visible in the quote",
+    "pluginTab": "Widget"
   },
   "smsSettings": {
     "senderName": "SMS sender name",
@@ -3533,7 +3584,8 @@
     "columnName": "Name",
     "columnPhone": "Phone",
     "columnEmail": "Email",
-    "columnVehicles": "Vehicles"
+    "columnVehicles": "Vehicles",
+    "itemLabel": "customers"
   },
   "reservationsView": {
     "title": "Jobs",
@@ -3678,7 +3730,20 @@
       "employeeToastAdded": "Usage added",
       "employeeToastAddError": "Failed to add usage",
       "employeeToastDeleted": "Usage deleted",
-      "employeeToastDeleteError": "Failed to delete"
+      "employeeToastDeleteError": "Failed to delete",
+      "confirmSelection": "Confirm selection",
+      "noAvailable": "No rolls available",
+      "noResults": "No results",
+      "noRollsToSave": "No rolls to save",
+      "scanEmptyTitle": "Scan roll labels",
+      "scanEmptyDescription": "Take a photo or upload a file with a roll label",
+      "scanTitle": "Scan rolls",
+      "selectTitle": "Select roll",
+      "statusConfirmed": "Confirmed",
+      "statusError": "Error",
+      "statusExtracting": "Extracting...",
+      "statusReview": "Review",
+      "statusUploading": "Uploading..."
     },
     "packages": {
       "addProduct": "Add product",
@@ -3699,7 +3764,32 @@
       "errorDelete": "Error deleting customer",
       "successDeleted": "Customer deleted",
       "emptyTitle": "No customers",
-      "emptyDescription": "Add your first customer to start selling"
+      "emptyDescription": "Add your first customer to start selling",
+      "added": "Customer added",
+      "updated": "Customer updated",
+      "nameRequired": "Customer name is required",
+      "phoneRequired": "Phone number is required",
+      "companyAddress": "Company address",
+      "shippingAddress": "Shipping address",
+      "sameAsCompany": "Same as company address",
+      "discountRange": "Discount (0-100%)",
+      "tabData": "Details",
+      "tabOrders": "Orders",
+      "noOrders": "No orders",
+      "payerGross": "Gross",
+      "payerNet": "Net",
+      "fieldName": "Name",
+      "fieldNip": "VAT No.",
+      "fieldPhone": "Phone",
+      "fieldEmail": "Email",
+      "fieldContactPerson": "Contact person",
+      "fieldCurrency": "Currency",
+      "fieldDiscount": "Discount",
+      "fieldPayer": "Payer",
+      "fieldNotes": "Notes",
+      "fieldAddress": "Address",
+      "fieldAddressee": "Addressee",
+      "fieldCountry": "Country"
     },
     "products": {
       "errorDelete": "Error deleting",
@@ -3870,7 +3960,14 @@
       "errorPdfUnavailable": "Invoice PDF unavailable",
       "errorPdfFetchFailed": "Failed to fetch PDF",
       "infoPdfFetching": "Fetching PDF...",
-      "successBulkInvoice": "Collective invoice issued for {{count}} orders"
+      "successBulkInvoice": "Collective invoice issued for {{count}} orders",
+      "download": "Download",
+      "invoiceLabel": "Invoice",
+      "pdfDownloadError": "Error downloading PDF",
+      "pdfUnavailable": "PDF unavailable",
+      "statusShipped": "Shipped",
+      "trackingCopied": "Tracking number copied",
+      "trackingLabel": "Tracking number"
     },
     "companySettings": {
       "title": "Company details",
@@ -3976,7 +4073,9 @@
       "successDeleted": "Roll deleted",
       "successArchived": "Roll marked as used",
       "successRestored": "Roll restored to stock"
-    }
+    },
+    "loading": "Loading...",
+    "unknownError": "Unknown error"
   },
   "hooks": {
     "conditions": {
@@ -3991,7 +4090,8 @@
       "saveSuccess": "Offer has been saved",
       "saveError": "Error saving offer",
       "loadError": "Error loading offer",
-      "unknownCustomer": "Unknown"
+      "unknownCustomer": "Unknown",
+      "noPreference": "No preference"
     }
   },
   "rollUsage": {
@@ -4253,7 +4353,34 @@
     "selectPaintType": "Select paint type",
     "paintColor": "Paint colour",
     "paintColorPlaceholder": "e.g. Black metallic, Pearl white",
-    "paintType": "Paint type"
+    "paintType": "Paint type",
+    "additionalInfo": "Additional information",
+    "budget": "Budget",
+    "canChooseMultiple": "You can select multiple options",
+    "carModel": "Vehicle make and model",
+    "chooseDate": "Choose preferred date",
+    "choosePackage": "Choose package",
+    "chooseTemplatesInConfig": "Configure templates in settings",
+    "coatingPackage": "Coating package",
+    "contactDetails": "Contact details",
+    "dontKnowSuggest": "Not sure, advise me",
+    "email": "Email",
+    "extras": "Extras",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "John Smith",
+    "gdprConsent": "I consent to the processing of my personal data",
+    "mileage": "Mileage (km)",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional information...",
+    "optionalServices": "Optional services",
+    "paintTypeGloss": "Gloss",
+    "paintTypeMatte": "Matte",
+    "phone": "Phone",
+    "plannedDate": "Planned date",
+    "plannedDateHint": "Enter approximate date",
+    "readMore": "Read more",
+    "submitRequest": "Submit enquiry",
+    "vehicle": "Vehicle"
   },
   "pages": {
     "auth": {
@@ -4277,6 +4404,74 @@
       "carSizeSmall": "Small",
       "carSizeMedium": "Medium",
       "carSizeLarge": "Large"
+    },
+    "admin": {
+      "createReservationError": "Error creating booking",
+      "newCustomerReservation": "New customer booking",
+      "noServicesError": "No services available",
+      "reservationFromYard": "Booking from yard"
+    },
+    "hall": {
+      "photoUploadError": "Error uploading photo"
+    },
+    "protocol": {
+      "loadError": "Error loading inspection report",
+      "notFound": "Inspection report not found",
+      "noToken": "Missing report token"
+    },
+    "resetPassword": {
+      "setNewPassword": "Set new password",
+      "repeatPassword": "Repeat password",
+      "saveNewPassword": "Save new password",
+      "passwordChanged": "Password has been changed",
+      "linkExpired": "Password reset link has expired",
+      "genericError": "An error occurred. Please try again."
     }
+  },
+  "trainingTypes": {
+    "title": "Training types",
+    "description": "Manage training types offered by your studio",
+    "addType": "Add training type",
+    "addTitle": "Add training type",
+    "editTitle": "Edit training type",
+    "nameLabel": "Training name",
+    "namePlaceholder": "e.g. Individual training",
+    "durationLabel": "Duration",
+    "duration1day": "1 day",
+    "duration1halfDay": "1.5 days",
+    "duration2days": "2 days",
+    "duration2halfDays": "2.5 days",
+    "duration3days": "3 days",
+    "duration3halfDays": "3.5 days",
+    "duration4days": "4 days",
+    "duration4halfDays": "4.5 days",
+    "duration5days": "5 days",
+    "days": "days",
+    "added": "Training type added",
+    "updated": "Training type updated",
+    "deleted": "Training type deleted",
+    "deleteTitle": "Delete training type",
+    "deleteError": "Error deleting training type",
+    "saveError": "Error saving training type",
+    "empty": "No training types",
+    "emptyHint": "Add the first training type"
+  },
+  "categories": {
+    "added": "Category added",
+    "addError": "Error adding category",
+    "updated": "Category updated",
+    "updateError": "Error updating category",
+    "deleted": "Category deleted",
+    "deleteError": "Error deleting category",
+    "deleteConfirm": "Are you sure you want to delete this category?",
+    "fetchError": "Error fetching categories",
+    "orderSaved": "Category order saved",
+    "orderSaveError": "Error saving category order"
+  },
+  "reservationPhotos": {
+    "deleteTitle": "Delete photo",
+    "deleteDescription": "Are you sure you want to delete this photo?",
+    "photoDeleted": "Photo deleted",
+    "deleteError": "Error deleting photo"
   }
 }

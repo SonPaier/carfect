@@ -55,7 +55,8 @@
     "hide": "Ausblenden",
     "total": "Gesamt",
     "saved": "Gespeichert",
-    "unknownService": "Unbekannte Dienstleistung"
+    "unknownService": "Unbekannte Dienstleistung",
+    "loadError": "Fehler beim Laden der Daten"
   },
   "carSearch": {
     "useCustom": "Verwenden"
@@ -85,7 +86,13 @@
     "hall": "Kalender",
     "halls": "Kalender",
     "freeSlots": "Freie Termine",
-    "more": "Mehr"
+    "more": "Mehr",
+    "protocols": "Protokolle",
+    "employees": "Mitarbeiter",
+    "reminders": "Erinnerungen",
+    "goToSales": "Zum Verkaufspanel",
+    "toggleMenu": "Menü ein-/ausblenden",
+    "logout": "Abmelden"
   },
   "halls": {
     "title": "Buchungen",
@@ -278,7 +285,9 @@
     "cancelled": "Storniert",
     "inProgress": "In Bearbeitung",
     "notFound": "Buchung nicht gefunden",
-    "checkSms": "Überprüfen Sie den Code in der SMS und versuchen Sie es erneut"
+    "checkSms": "Überprüfen Sie den Code in der SMS und versuchen Sie es erneut",
+    "cannotEdit": "Diese Buchung kann nicht bearbeitet werden",
+    "editCutoffPassed": "Die Frist für Änderungen ist abgelaufen"
   },
   "booking": {
     "title": "Kunden",
@@ -1109,8 +1118,10 @@
       "users": "Benutzer",
       "widget": "Widget",
       "integrations": "Integrationen",
-      "trainings": "Schulungen"
-    }
+      "trainings": "Schulungen",
+      "subscription": "Abonnement & Rechnungen"
+    },
+    "appTitle": "App-Einstellungen"
   },
   "widget": {
     "title": "SMS",
@@ -1701,6 +1712,16 @@
       "prevPhoto": "Vorheriges Foto",
       "nextPhoto": "Nächstes Foto",
       "damagePhotoAlt": "Schadensfoto"
+    },
+    "voice": {
+      "browserNotSupported": "Ihr Browser unterstützt keine Spracherkennung",
+      "listening": "Höre zu...",
+      "noSpeech": "Keine Sprache erkannt",
+      "microphoneBlocked": "Mikrofon blockiert. Erlauben Sie den Zugriff in den Browsereinstellungen.",
+      "recognitionError": "Spracherkennungsfehler",
+      "startRecording": "Aufnahme starten",
+      "stopRecording": "Aufnahme stoppen",
+      "textRecognized": "Text erkannt"
     }
   },
   "adminDashboard": {
@@ -2076,7 +2097,15 @@
     "adminPermission3": "Alle Anwendungsmodule",
     "adminPermission4": "Erstellen und Löschen anderer Konten",
     "adminWarning": "Erteilen Sie diese Berechtigungen nur vertrauenswürdigen Personen.",
-    "confirmAdmin": "Verstanden, Berechtigungen erteilen"
+    "confirmAdmin": "Verstanden, Berechtigungen erteilen",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "createUser": "Benutzer erstellen",
+    "role": "Rolle",
+    "usernameHint": "Benutzername zum Anmelden",
+    "usernameMinLength": "Min. 3 Zeichen",
+    "usernamePlaceholder": "Benutzername",
+    "usernameRequired": "Benutzername ist erforderlich"
   },
   "employeeDialog": {
     "addTitle": "Mitarbeiter hinzufügen",
@@ -2119,7 +2148,15 @@
     "employeePlaceholder": "Mitarbeiter auswählen",
     "dateLabel": "Datum *",
     "from": "Von *",
-    "to": "Bis *"
+    "to": "Bis *",
+    "saved": "Zeiteintrag gespeichert",
+    "saveError": "Fehler beim Speichern",
+    "startEndRequired": "Start- und Endzeit eingeben",
+    "endMustBeAfterStart": "Endzeit muss nach Startzeit liegen",
+    "dayOffSaved": "Freier Tag gespeichert",
+    "dayOffError": "Fehler beim Speichern des freien Tages",
+    "dayOffRemoved": "Freier Tag entfernt",
+    "dayOffRemoveError": "Fehler beim Entfernen"
   },
   "editUser": {
     "title": "Angebotseinstellungen",
@@ -2152,7 +2189,8 @@
       "access4": "Erstellen und Löschen anderer Konten",
       "warning": "Erteilen Sie diese Berechtigungen nur vertrauenswürdigen Personen.",
       "confirm": "Verstanden, Berechtigungen erteilen"
-    }
+    },
+    "roleSales": "Sales CRM"
   },
   "adminPermissions": {
     "title": "Angebotseinstellungen",
@@ -2429,7 +2467,10 @@
     "aiExtraction": {
       "title": "Angebotseinstellungen",
       "description": "Der Instanzadministrator wird Zugriff haben auf:"
-    }
+    },
+    "upload": "Hochladen",
+    "uploadError": "Fehler beim Hochladen",
+    "uploadSuccess": "Preisliste erfolgreich hochgeladen"
   },
   "productDetails": {
     "title": "Angebotseinstellungen",
@@ -2710,7 +2751,12 @@
       "orderError": "Fehler beim Speichern der Reihenfolge",
       "categorySaveError": "Fehler beim Speichern der Kategorie",
       "categoryDeleteError": "Fehler beim Löschen der Kategorie"
-    }
+    },
+    "clickToEditPrice": "Klicken zum Bearbeiten",
+    "editInDialog": "Im Dialog bearbeiten",
+    "invalidPrice": "Ungültiger Preis",
+    "priceUpdated": "Preis aktualisiert",
+    "priceUpdateError": "Fehler beim Aktualisieren"
   },
   "serviceSelector": {
     "loadingServices": "Dienstleistungen werden geladen...",
@@ -2786,7 +2832,8 @@
     },
     "noTemplate": "Keine",
     "templateAssigned": "Erinnerungsvorlage zugewiesen",
-    "assignError": "Fehler beim Zuweisen der Vorlage"
+    "assignError": "Fehler beim Zuweisen der Vorlage",
+    "saved": "Vorlage gespeichert"
   },
   "reminders": {
     "title": "Erinnerungen",
@@ -2926,7 +2973,9 @@
     "endTimeMustBeLater": "Die Endzeit muss nach der Startzeit liegen",
     "errorAdding": "Fehler beim Hinzufügen der Pause",
     "added": "Pause wurde hinzugefügt",
-    "genericError": "Ein Fehler ist aufgetreten"
+    "genericError": "Ein Fehler ist aufgetreten",
+    "addError": "Fehler beim Hinzufügen der Pause",
+    "endTimeError": "Endzeit muss nach der Startzeit liegen"
   },
   "password": {
     "placeholder": "Ihr aktuelles Passwort",
@@ -3432,7 +3481,9 @@
     "defaultNotes": "Anmerkungen",
     "discountsSection": "Rabatte",
     "discountsLabel": "Möglichkeit, Rabatte zu Dienstleistungen in Angeboten hinzuzufügen",
-    "discountsHint": "Wenn aktiviert, erscheint bei jeder Position im Angebotsassistenten ein Feld zur Eingabe des Rabatts in %."
+    "discountsHint": "Wenn aktiviert, erscheint bei jeder Position im Angebotsassistenten ein Feld zur Eingabe des Rabatts in %.",
+    "paymentDetailsDescription": "Zahlungsdetails im Angebot sichtbar",
+    "pluginTab": "Widget"
   },
   "smsSettings": {
     "senderName": "SMS-Absendername",
@@ -3533,7 +3584,8 @@
     "columnName": "Name",
     "columnPhone": "Telefon",
     "columnEmail": "E-Mail",
-    "columnVehicles": "Fahrzeuge"
+    "columnVehicles": "Fahrzeuge",
+    "itemLabel": "Kunden"
   },
   "reservationsView": {
     "title": "Einstellungen",
@@ -3678,7 +3730,20 @@
       "employeeToastAdded": "Verbrauch hinzugefügt",
       "employeeToastAddError": "Verbrauch konnte nicht hinzugefügt werden",
       "employeeToastDeleted": "Verbrauch gelöscht",
-      "employeeToastDeleteError": "Konnte nicht gelöscht werden"
+      "employeeToastDeleteError": "Konnte nicht gelöscht werden",
+      "confirmSelection": "Auswahl bestätigen",
+      "noAvailable": "Keine Rollen verfügbar",
+      "noResults": "Keine Ergebnisse",
+      "noRollsToSave": "Keine Rollen zum Speichern",
+      "scanEmptyTitle": "Rollenetiketten scannen",
+      "scanEmptyDescription": "Foto machen oder Datei mit Rollenetikett hochladen",
+      "scanTitle": "Rollen scannen",
+      "selectTitle": "Rolle auswählen",
+      "statusConfirmed": "Bestätigt",
+      "statusError": "Fehler",
+      "statusExtracting": "Erkennung...",
+      "statusReview": "Überprüfen",
+      "statusUploading": "Hochladen..."
     },
     "packages": {
       "addProduct": "Produkt hinzufügen",
@@ -3699,7 +3764,32 @@
       "errorDelete": "Fehler beim Löschen: {{message}}",
       "successDeleted": "Bestellung gelöscht",
       "emptyTitle": "Keine Bestellungen",
-      "emptyDescription": "Erstellen Sie die erste Bestellung für einen Kunden"
+      "emptyDescription": "Erstellen Sie die erste Bestellung für einen Kunden",
+      "added": "Kunde hinzugefügt",
+      "updated": "Kunde aktualisiert",
+      "nameRequired": "Kundenname erforderlich",
+      "phoneRequired": "Telefonnummer erforderlich",
+      "companyAddress": "Firmenadresse",
+      "shippingAddress": "Lieferadresse",
+      "sameAsCompany": "Wie Firmenadresse",
+      "discountRange": "Rabatt (0-100%)",
+      "tabData": "Daten",
+      "tabOrders": "Bestellungen",
+      "noOrders": "Keine Bestellungen",
+      "payerGross": "Brutto",
+      "payerNet": "Netto",
+      "fieldName": "Name",
+      "fieldNip": "USt-IdNr.",
+      "fieldPhone": "Telefon",
+      "fieldEmail": "E-Mail",
+      "fieldContactPerson": "Ansprechpartner",
+      "fieldCurrency": "Währung",
+      "fieldDiscount": "Rabatt",
+      "fieldPayer": "Zahlungstyp",
+      "fieldNotes": "Notizen",
+      "fieldAddress": "Adresse",
+      "fieldAddressee": "Empfänger",
+      "fieldCountry": "Land"
     },
     "products": {
       "errorDelete": "Fehler beim Löschen: {{message}}",
@@ -3870,7 +3960,14 @@
       "errorPdfUnavailable": "Rechnungs-PDF nicht verfügbar",
       "errorPdfFetchFailed": "PDF konnte nicht heruntergeladen werden",
       "infoPdfFetching": "PDF wird heruntergeladen...",
-      "successBulkInvoice": "Sammelrechnung für {{count}} Bestellungen ausgestellt"
+      "successBulkInvoice": "Sammelrechnung für {{count}} Bestellungen ausgestellt",
+      "download": "Herunterladen",
+      "invoiceLabel": "Rechnung",
+      "pdfDownloadError": "Fehler beim PDF-Download",
+      "pdfUnavailable": "PDF nicht verfügbar",
+      "statusShipped": "Versendet",
+      "trackingCopied": "Sendungsnummer kopiert",
+      "trackingLabel": "Sendungsnummer"
     },
     "companySettings": {
       "title": "Einstellungen",
@@ -3976,7 +4073,9 @@
       "successDeleted": "Rolle gelöscht",
       "successArchived": "Rolle als verbraucht markiert",
       "successRestored": "Rolle wieder auf Lager gesetzt"
-    }
+    },
+    "loading": "Laden...",
+    "unknownError": "Unbekannter Fehler"
   },
   "hooks": {
     "conditions": {
@@ -3991,7 +4090,8 @@
       "saveSuccess": "Angebot wurde gespeichert",
       "saveError": "Fehler beim Speichern des Übergabeprotokolls",
       "loadError": "Fehler beim Laden des Angebots",
-      "unknownCustomer": "Unbekannt"
+      "unknownCustomer": "Unbekannt",
+      "noPreference": "Keine Präferenz"
     }
   },
   "rollUsage": {
@@ -4253,7 +4353,34 @@
     "selectPaintType": "Lackart auswählen",
     "paintColor": "Lackfarbe",
     "paintColorPlaceholder": "z. B. Schwarz Metallic, Weiß Perlmutt",
-    "paintType": "Lackart"
+    "paintType": "Lackart",
+    "additionalInfo": "Zusätzliche Informationen",
+    "budget": "Budget",
+    "canChooseMultiple": "Sie können mehrere Optionen wählen",
+    "carModel": "Fahrzeugmarke und Modell",
+    "chooseDate": "Wunschtermin wählen",
+    "choosePackage": "Paket wählen",
+    "chooseTemplatesInConfig": "Vorlagen in den Einstellungen konfigurieren",
+    "coatingPackage": "Beschichtungspaket",
+    "contactDetails": "Kontaktdaten",
+    "dontKnowSuggest": "Unsicher, beraten Sie mich",
+    "email": "E-Mail",
+    "extras": "Extras",
+    "fullName": "Vollständiger Name",
+    "fullNamePlaceholder": "Max Mustermann",
+    "gdprConsent": "Ich stimme der Verarbeitung meiner personenbezogenen Daten zu",
+    "mileage": "Kilometerstand (km)",
+    "notes": "Anmerkungen",
+    "notesPlaceholder": "Zusätzliche Informationen...",
+    "optionalServices": "Zusätzliche Dienstleistungen",
+    "paintTypeGloss": "Glanz",
+    "paintTypeMatte": "Matt",
+    "phone": "Telefon",
+    "plannedDate": "Geplantes Datum",
+    "plannedDateHint": "Ungefähren Termin angeben",
+    "readMore": "Mehr lesen",
+    "submitRequest": "Anfrage senden",
+    "vehicle": "Fahrzeug"
   },
   "pages": {
     "auth": {
@@ -4277,6 +4404,74 @@
       "carSizeSmall": "Klein",
       "carSizeMedium": "Mittel",
       "carSizeLarge": "Groß"
+    },
+    "admin": {
+      "createReservationError": "Fehler beim Erstellen der Buchung",
+      "newCustomerReservation": "Neue Kundenbuchung",
+      "noServicesError": "Keine Dienstleistungen verfügbar",
+      "reservationFromYard": "Buchung vom Hof"
+    },
+    "hall": {
+      "photoUploadError": "Fehler beim Hochladen des Fotos"
+    },
+    "protocol": {
+      "loadError": "Fehler beim Laden des Protokolls",
+      "notFound": "Protokoll nicht gefunden",
+      "noToken": "Kein Protokoll-Token"
+    },
+    "resetPassword": {
+      "setNewPassword": "Neues Passwort festlegen",
+      "repeatPassword": "Passwort wiederholen",
+      "saveNewPassword": "Neues Passwort speichern",
+      "passwordChanged": "Passwort wurde geändert",
+      "linkExpired": "Link zum Zurücksetzen ist abgelaufen",
+      "genericError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
     }
+  },
+  "trainingTypes": {
+    "title": "Schulungstypen",
+    "description": "Verwalten Sie die angebotenen Schulungstypen",
+    "addType": "Schulungstyp hinzufügen",
+    "addTitle": "Schulungstyp hinzufügen",
+    "editTitle": "Schulungstyp bearbeiten",
+    "nameLabel": "Schulungsname",
+    "namePlaceholder": "z.B. Einzelschulung",
+    "durationLabel": "Dauer",
+    "duration1day": "1 Tag",
+    "duration1halfDay": "1,5 Tage",
+    "duration2days": "2 Tage",
+    "duration2halfDays": "2,5 Tage",
+    "duration3days": "3 Tage",
+    "duration3halfDays": "3,5 Tage",
+    "duration4days": "4 Tage",
+    "duration4halfDays": "4,5 Tage",
+    "duration5days": "5 Tage",
+    "days": "Tage",
+    "added": "Schulungstyp hinzugefügt",
+    "updated": "Schulungstyp aktualisiert",
+    "deleted": "Schulungstyp gelöscht",
+    "deleteTitle": "Schulungstyp löschen",
+    "deleteError": "Fehler beim Löschen",
+    "saveError": "Fehler beim Speichern",
+    "empty": "Keine Schulungstypen",
+    "emptyHint": "Fügen Sie den ersten Schulungstyp hinzu"
+  },
+  "categories": {
+    "added": "Kategorie hinzugefügt",
+    "addError": "Fehler beim Hinzufügen",
+    "updated": "Kategorie aktualisiert",
+    "updateError": "Fehler beim Aktualisieren",
+    "deleted": "Kategorie gelöscht",
+    "deleteError": "Fehler beim Löschen",
+    "deleteConfirm": "Möchten Sie diese Kategorie wirklich löschen?",
+    "fetchError": "Fehler beim Laden der Kategorien",
+    "orderSaved": "Kategoriereihenfolge gespeichert",
+    "orderSaveError": "Fehler beim Speichern der Reihenfolge"
+  },
+  "reservationPhotos": {
+    "deleteTitle": "Foto löschen",
+    "deleteDescription": "Möchten Sie dieses Foto wirklich löschen?",
+    "photoDeleted": "Foto gelöscht",
+    "deleteError": "Fehler beim Löschen"
   }
 }

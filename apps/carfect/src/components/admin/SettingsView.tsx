@@ -83,7 +83,7 @@ const SettingsView = ({
     { key: 'app', label: t('settings.tabs.app'), icon: <Settings2 className="w-4 h-4" /> },
     { key: 'sms', label: t('settings.tabs.sms'), icon: <MessageSquare className="w-4 h-4" /> },
     { key: 'users', label: t('settings.tabs.users'), icon: <Users className="w-4 h-4" /> },
-    { key: 'subscription', label: 'Subskrypcja i faktury', icon: <CreditCard className="w-4 h-4" /> },
+    { key: 'subscription', label: t('settings.tabs.subscription'), icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const tabs = allTabs.filter((tab) => tab.visible !== false);
