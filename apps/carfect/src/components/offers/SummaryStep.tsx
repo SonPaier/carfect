@@ -191,11 +191,11 @@ export const SummaryStep = ({
         .order('sort_order');
       
       if (templatesData) {
-        setTemplates(templatesData.map(t => ({
-          id: t.id,
-          name: t.name,
-          payment_terms: t.content.split('|||')[0] || null,
-          notes: t.content.split('|||')[1] || null,
+        setTemplates(templatesData.map(tmpl => ({
+          id: tmpl.id,
+          name: tmpl.name,
+          payment_terms: tmpl.content.split('|||')[0] || null,
+          notes: tmpl.content.split('|||')[1] || null,
         })));
       }
 
@@ -863,7 +863,7 @@ export const SummaryStep = ({
               {templates.length > 0 && (
                 <div className="flex items-center justify-end">
                   <Select onValueChange={(id) => {
-                    const template = templates.find(t => t.id === id);
+                    const template = templates.find(tmpl => tmpl.id === id);
                     if (template) handleApplyTemplate(template);
                   }}>
                     <SelectTrigger className="w-auto h-8">
