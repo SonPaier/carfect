@@ -213,7 +213,7 @@ export function CalendarHeader({
                   }}
                   initialFocus
                   className="pointer-events-auto"
-                  locale={pl}
+                  locale={getDateLocale()}
                 />
               </PopoverContent>
             </Popover>
@@ -544,7 +544,7 @@ export function CalendarHeader({
                       }
                     }}
                     className="pointer-events-auto"
-                    locale={pl}
+                    locale={getDateLocale()}
                   />
 
                   <Button
@@ -599,7 +599,7 @@ export function CalendarHeader({
                       }
                     }}
                     className="pointer-events-auto"
-                    locale={pl}
+                    locale={getDateLocale()}
                   />
                 </div>
               </SheetContent>
