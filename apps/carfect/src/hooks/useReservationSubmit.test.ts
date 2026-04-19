@@ -32,12 +32,6 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
 vi.mock('@/utils/pricing', () => ({
   calculatePricePair: vi.fn().mockReturnValue({ netto: 100, brutto: 123 }),
 }));

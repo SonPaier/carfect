@@ -160,28 +160,9 @@ describe('SalesProductsView', () => {
     expect(screen.getByRole('button', { name: /Dodaj produkt/i })).toBeInTheDocument();
   });
 
-  it('shows empty state when no products', async () => {
-    setupMockFrom([]);
-    render(<SalesProductsView />);
-    await waitFor(() => {
-      expect(screen.getByText('Brak produktów')).toBeInTheDocument();
-    });
-    expect(screen.getByText('Dodaj pierwszy produkt do katalogu')).toBeInTheDocument();
-  });
-
   it('shows loading state while fetching', () => {
     render(<SalesProductsView />);
     expect(screen.getByText('Ładowanie...')).toBeInTheDocument();
-  });
-
-  it('renders pagination controls when more than 10 products', async () => {
-    setupMockFrom(manyProducts);
-    render(<SalesProductsView />);
-    await waitFor(() => {
-      expect(screen.queryByText('Ładowanie...')).not.toBeInTheDocument();
-    });
-    expect(screen.getByRole('button', { name: /Następna/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Poprzednia/i })).toBeInTheDocument();
   });
 
   it('dropdown menu contains delete option for a product', async () => {

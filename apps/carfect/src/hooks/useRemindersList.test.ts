@@ -2,13 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRemindersList } from './useRemindersList';
 
-const { stableT } = vi.hoisted(() => ({
-  stableT: (key: string) => key,
-}));
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: stableT }),
-}));
-
 const { mockToast } = vi.hoisted(() => ({
   mockToast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -123,7 +116,7 @@ describe('useRemindersList', () => {
     });
 
     await waitFor(() => {
-      expect(mockToast.success).toHaveBeenCalledWith('reminders.reminderDeleted');
+      expect(mockToast.success).toHaveBeenCalledWith('Przypomnienie usunięte');
     });
   });
 

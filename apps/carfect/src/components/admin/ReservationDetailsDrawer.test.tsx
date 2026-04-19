@@ -140,7 +140,7 @@ describe('ReservationDetailsDrawer', () => {
       renderDrawer();
       
       // Translation is "Potwierdzone" (neuter form)
-      expect(screen.getByText('Potwierdzone')).toBeInTheDocument();
+      expect(screen.getByText('Potwierdzona')).toBeInTheDocument();
     });
 
     it('RDD-U-003: wyświetla imię i nazwisko klienta', () => {
@@ -212,7 +212,7 @@ describe('ReservationDetailsDrawer', () => {
       });
       
       // Translation: "Oczekujące" (neuter form)
-      expect(screen.getByText('Oczekujące')).toBeInTheDocument();
+      expect(screen.getByText('Oczekuje')).toBeInTheDocument();
     });
 
     it('RDD-U-021: wyświetla badge in_progress', () => {
@@ -239,7 +239,7 @@ describe('ReservationDetailsDrawer', () => {
       });
       
       // Translation: "Anulowane" (neuter form)
-      expect(screen.getByText('Anulowane')).toBeInTheDocument();
+      expect(screen.getByText('Anulowana')).toBeInTheDocument();
     });
 
     it('RDD-U-025: wyświetla badge no_show', () => {

@@ -18,10 +18,6 @@ vi.mock('sonner', () => ({
   }),
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock('@/lib/pushNotifications', () => ({
   sendPushNotification: vi.fn(),
 }));
@@ -190,7 +186,7 @@ describe('handleDeleteReservation', () => {
       });
     });
 
-    expect(toast.error).toHaveBeenCalledWith('errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('Wystąpił błąd. Spróbuj ponownie.');
     expect(mockUpdateCache).not.toHaveBeenCalled();
   });
 
@@ -255,9 +251,9 @@ describe('handleRejectReservation', () => {
     });
 
     expect(toast).toHaveBeenCalledWith(
-      'reservations.reservationRejected',
+      'Rezerwacja odrzucona',
       expect.objectContaining({
-        action: expect.objectContaining({ label: 'common.undo' }),
+        action: expect.objectContaining({ label: 'Cofnij' }),
         duration: 5000,
       }),
     );
@@ -376,7 +372,7 @@ describe('handleRejectReservation', () => {
       mockUpdateCache.mock.calls[mockUpdateCache.mock.calls.length - 1][0];
     const restored = restoreUpdater([]);
     expect(restored).toContainEqual(expect.objectContaining({ id: 'res-1' }));
-    expect(toast.error).toHaveBeenCalledWith('errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('Wystąpił błąd. Spróbuj ponownie.');
   });
 });
 
@@ -426,7 +422,7 @@ describe('handleConfirmReservation', () => {
       await result.current.handleConfirmReservation('res-1');
     });
 
-    expect(toast.error).toHaveBeenCalledWith('errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('Wystąpił błąd. Spróbuj ponownie.');
 
     // Rollback updater restores previous status
     const rollbackUpdater: (prev: Reservation[]) => Reservation[] =
@@ -461,7 +457,7 @@ describe('handleConfirmReservation', () => {
       await result.current.handleConfirmReservation('res-1');
     });
 
-    expect(toast.success).toHaveBeenCalledWith('reservations.reservationConfirmed');
+    expect(toast.success).toHaveBeenCalledWith('Rezerwacja potwierdzona');
   });
 });
 
@@ -513,7 +509,7 @@ describe('handleStartWork', () => {
     });
 
     expect(toast.success).toHaveBeenCalledWith(
-      'reservations.workStarted',
+      'Praca rozpoczęta',
       expect.anything(),
     );
   });
@@ -533,7 +529,7 @@ describe('handleStartWork', () => {
       await result.current.handleStartWork('res-1');
     });
 
-    expect(toast.error).toHaveBeenCalledWith('errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('Wystąpił błąd. Spróbuj ponownie.');
     // optimisticMutation: first call = optimistic update, second call = rollback
     expect(mockUpdateCache).toHaveBeenCalledTimes(2);
   });
@@ -602,7 +598,7 @@ describe('handleReservationSave', () => {
       result.current.handleReservationSave('res-1', { status: 'confirmed' });
     });
 
-    expect(toast.success).toHaveBeenCalledWith('reservations.reservationUpdated');
+    expect(toast.success).toHaveBeenCalledWith('Rezerwacja zaktualizowana');
   });
 
   it('calls setSelectedReservation(null) after save', () => {
@@ -700,7 +696,7 @@ describe('handleReservationMove', () => {
       await result.current.handleReservationMove('res-1', 'sta-2', '2026-04-20');
     });
 
-    expect(toast.error).toHaveBeenCalledWith('errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('Wystąpił błąd. Spróbuj ponownie.');
     expect(mockUpdateCache).not.toHaveBeenCalled();
   });
 
@@ -729,9 +725,9 @@ describe('handleReservationMove', () => {
     });
 
     expect(toast.success).toHaveBeenCalledWith(
-      'reservations.reservationMoved',
+      'Rezerwacja została przeniesiona',
       expect.objectContaining({
-        action: expect.objectContaining({ label: 'common.undo' }),
+        action: expect.objectContaining({ label: 'Cofnij' }),
         duration: 5000,
       }),
     );

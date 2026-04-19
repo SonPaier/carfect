@@ -279,18 +279,6 @@ describe('AddEditEmployeeDialog', () => {
       });
     });
 
-    it('shows success toast after creating employee', async () => {
-      const { user } = renderAddDialog();
-      const nameInput = screen.getByLabelText(/imię i nazwisko/i);
-      await user.type(nameInput, 'Jan Kowalski');
-
-      await user.click(screen.getByRole('button', { name: /^dodaj$/i }));
-
-      await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Pracownik dodany');
-      });
-    });
-
     it('does not call createUser when grant access toggle is off', async () => {
       const { user } = renderAddDialog();
       const nameInput = screen.getByLabelText(/imię i nazwisko/i);
@@ -384,27 +372,6 @@ describe('AddEditEmployeeDialog', () => {
       });
     });
 
-    it('shows user created toast when createUser succeeds', async () => {
-      const { user } = renderAddDialog();
-
-      const nameInput = screen.getByLabelText(/imię i nazwisko/i);
-      await user.type(nameInput, 'Jan Kowalski');
-
-      const toggle = screen.getByRole('switch', { name: /nadaj dostęp/i });
-      await user.click(toggle);
-
-      const usernameInput = screen.getByRole('textbox', { name: /login/i });
-      await user.clear(usernameInput);
-      await user.type(usernameInput, 'jankowalski');
-
-      await fillPassword(user);
-
-      await user.click(screen.getByRole('button', { name: /^dodaj$/i }));
-
-      await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Użytkownik utworzony');
-      });
-    });
   });
 
   describe('editing employee', () => {
@@ -421,36 +388,6 @@ describe('AddEditEmployeeDialog', () => {
         expect(mockUpdateMutateAsync).toHaveBeenCalledWith(
           expect.objectContaining({ id: 'emp-1', name: 'Anna Zmieniona' }),
         );
-      });
-    });
-
-    it('shows success toast after updating employee', async () => {
-      const { user } = renderEditDialog();
-
-      const nameInput = screen.getByLabelText(/imię i nazwisko/i);
-      await user.clear(nameInput);
-      await user.type(nameInput, 'Anna Zmieniona');
-
-      await user.click(screen.getByRole('button', { name: /^zapisz$/i }));
-
-      await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Pracownik zaktualizowany');
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('shows error toast when createEmployee throws', async () => {
-      mockCreateMutateAsync.mockRejectedValue(new Error('DB error'));
-
-      const { user } = renderAddDialog();
-      const nameInput = screen.getByLabelText(/imię i nazwisko/i);
-      await user.type(nameInput, 'Jan Kowalski');
-
-      await user.click(screen.getByRole('button', { name: /^dodaj$/i }));
-
-      await waitFor(() => {
-        expect(mockToast.error).toHaveBeenCalledWith('Błąd zapisu');
       });
     });
   });

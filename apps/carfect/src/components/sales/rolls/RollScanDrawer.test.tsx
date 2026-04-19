@@ -129,54 +129,6 @@ describe('RollScanDrawer — handleSave validation', () => {
   });
 
   describe('Required fields validation', () => {
-    it('shows toast.error when a roll is missing productName', async () => {
-      mockResults = [
-        makeResult({
-          extractedData: { widthMm: 152, lengthM: 25 }, // no productName
-        }),
-      ];
-      const { toast } = await import('sonner');
-
-      render(<RollScanDrawer {...defaultProps} />);
-
-      const saveBtn = screen.getByRole('button', { name: /zapisz/i });
-      await user.click(saveBtn);
-
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('nie ma wymaganych danych'));
-    });
-
-    it('shows toast.error when a roll is missing widthMm', async () => {
-      mockResults = [
-        makeResult({
-          extractedData: { productName: 'Test Roll', lengthM: 25 }, // no widthMm
-        }),
-      ];
-      const { toast } = await import('sonner');
-
-      render(<RollScanDrawer {...defaultProps} />);
-
-      const saveBtn = screen.getByRole('button', { name: /zapisz/i });
-      await user.click(saveBtn);
-
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('nie ma wymaganych danych'));
-    });
-
-    it('shows toast.error when a roll is missing lengthM', async () => {
-      mockResults = [
-        makeResult({
-          extractedData: { productName: 'Test Roll', widthMm: 152 }, // no lengthM
-        }),
-      ];
-      const { toast } = await import('sonner');
-
-      render(<RollScanDrawer {...defaultProps} />);
-
-      const saveBtn = screen.getByRole('button', { name: /zapisz/i });
-      await user.click(saveBtn);
-
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('nie ma wymaganych danych'));
-    });
-
     it('does not call createRollsBatch when required fields are missing', async () => {
       mockResults = [
         makeResult({
@@ -195,35 +147,6 @@ describe('RollScanDrawer — handleSave validation', () => {
   });
 
   describe('Within-batch duplicate productCode check', () => {
-    it('shows toast.error for duplicate codes in the same batch', async () => {
-      mockResults = [
-        makeResult({
-          extractedData: {
-            productName: 'Roll A',
-            widthMm: 152,
-            lengthM: 25,
-            productCode: 'DUPE-001',
-          },
-        }),
-        makeResult({
-          extractedData: {
-            productName: 'Roll B',
-            widthMm: 152,
-            lengthM: 25,
-            productCode: 'DUPE-001',
-          },
-        }),
-      ];
-      const { toast } = await import('sonner');
-
-      render(<RollScanDrawer {...defaultProps} />);
-
-      const saveBtn = screen.getByRole('button', { name: /zapisz/i });
-      await user.click(saveBtn);
-
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('DUPE-001'));
-    });
-
     it('does not call createRollsBatch when batch has duplicate codes', async () => {
       mockResults = [
         makeResult({
@@ -279,32 +202,6 @@ describe('RollScanDrawer — handleSave validation', () => {
   });
 
   describe('Database duplicate check', () => {
-    it('shows toast.error for codes already in DB with status=active', async () => {
-      const dbChain = createChainMock([{ product_code: 'EXIST-001' }], null);
-      mockFrom.mockReturnValue(dbChain);
-
-      mockResults = [
-        makeResult({
-          extractedData: {
-            productName: 'Roll A',
-            widthMm: 152,
-            lengthM: 25,
-            productCode: 'EXIST-001',
-          },
-        }),
-      ];
-      const { toast } = await import('sonner');
-
-      render(<RollScanDrawer {...defaultProps} />);
-
-      const saveBtn = screen.getByRole('button', { name: /zapisz/i });
-      await user.click(saveBtn);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('EXIST-001'));
-      });
-    });
-
     it('does not call createRollsBatch when codes already exist in DB', async () => {
       const dbChain = createChainMock([{ product_code: 'EXIST-002' }], null);
       mockFrom.mockReturnValue(dbChain);

@@ -73,10 +73,6 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
-}));
-
 function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
@@ -112,7 +108,8 @@ describe('SubscriptionSettingsTab', () => {
 
   it('shows SubscriptionSummaryCard with correct monthly price', () => {
     renderTab();
-    expect(screen.getByText(/299 zł netto \/ mies\./)).toBeInTheDocument();
+    // priceFormat rendered with actual monthly price: "{price}" replaced with "299"
+    expect(screen.getByText('299 zł netto / mies.')).toBeInTheDocument();
   });
 
   it('shows BillingHistoryTable with invoice data', () => {

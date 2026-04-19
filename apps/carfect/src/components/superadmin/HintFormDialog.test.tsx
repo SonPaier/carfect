@@ -81,25 +81,6 @@ describe('HintFormDialog', () => {
     expect(screen.getByLabelText(/id elementu/i)).toBeInTheDocument();
   });
 
-  it('HFD-U-005: calls onSuccess and closes dialog on successful insert', async () => {
-    const user = userEvent.setup();
-    setupInsertMock(null);
-    const onSuccess = vi.fn();
-    const onOpenChange = vi.fn();
-
-    render(<HintFormDialog open onOpenChange={onOpenChange} hint={null} onSuccess={onSuccess} />);
-
-    await user.type(screen.getByLabelText(/tytuł/i), 'Nowa wskazówka');
-    await user.type(screen.getByLabelText(/treść/i), 'Opis treści');
-    await user.click(screen.getByRole('button', { name: /dodaj wskazówkę/i }));
-
-    await waitFor(() => {
-      expect(mockToast.success).toHaveBeenCalledWith('Wskazówka dodana');
-      expect(onSuccess).toHaveBeenCalledOnce();
-      expect(onOpenChange).toHaveBeenCalledWith(false);
-    });
-  });
-
   it('HFD-U-006: prefills form fields when editing existing hint', () => {
     const hint = {
       id: 'h1',

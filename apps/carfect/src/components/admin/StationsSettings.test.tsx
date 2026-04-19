@@ -59,33 +59,6 @@ vi.mock('@tanstack/react-query', async () => {
   return { ...actual, useQueryClient: () => ({ invalidateQueries: vi.fn() }) };
 });
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'stationsSettings.title': 'Stanowiska',
-        'stationsSettings.addStation': 'Dodaj stanowisko',
-        'stationsSettings.editStation': 'Edytuj stanowisko',
-        'stationsSettings.addNewStation': 'Dodaj nowe stanowisko',
-        'stationsSettings.stationName': 'Nazwa stanowiska',
-        'stationsSettings.stationNamePlaceholder': 'Np. Stanowisko 1',
-        'stationsSettings.stationNameRequired': 'Nazwa stanowiska jest wymagana',
-        'stationsSettings.stationUpdated': 'Stanowisko zaktualizowane',
-        'stationsSettings.stationAdded': 'Stanowisko dodane',
-        'stationsSettings.stationDeleted': 'Stanowisko usunięte',
-        'stationsSettings.fetchError': 'Błąd pobierania stanowisk',
-        'stationsSettings.saveError': 'Błąd zapisu stanowiska',
-        'stationsSettings.deleteError': 'Błąd usuwania stanowiska',
-        'stationsSettings.deleteConfirm': 'Czy na pewno chcesz usunąć to stanowisko?',
-        'stationsSettings.noStations': 'Brak stanowisk',
-        'common.cancel': 'Anuluj',
-        'common.save': 'Zapisz',
-      };
-      return translations[key] ?? key;
-    },
-  }),
-}));
-
 // DnD kit mock — render children without actual DnD
 vi.mock('@dnd-kit/core', async () => {
   const actual = await vi.importActual('@dnd-kit/core');
@@ -191,7 +164,7 @@ describe('StationsSettings', () => {
       renderStationsSettings();
 
       await waitFor(() => {
-        expect(screen.getByText('Brak stanowisk')).toBeInTheDocument();
+        expect(screen.getByText('Brak stanowisk. Dodaj pierwsze stanowisko, aby rozpocząć.')).toBeInTheDocument();
       });
     });
   });
@@ -253,7 +226,7 @@ describe('StationsSettings', () => {
       expect(screen.getByText('Nazwa stanowiska jest wymagana')).toBeInTheDocument();
 
       // Type in the input — error should clear
-      const nameInput = screen.getByPlaceholderText('Np. Stanowisko 1');
+      const nameInput = screen.getByPlaceholderText('np. Stanowisko 1');
       await user.type(nameInput, 'N');
 
       expect(screen.queryByText('Nazwa stanowiska jest wymagana')).not.toBeInTheDocument();
@@ -281,11 +254,11 @@ describe('StationsSettings', () => {
       await user.click(screen.getByRole('button', { name: 'Dodaj stanowisko' }));
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('Np. Stanowisko 1');
+      const nameInput = screen.getByPlaceholderText('np. Stanowisko 1');
       await user.type(nameInput, 'Stanowisko Alpha');
       await user.click(screen.getByRole('button', { name: 'Zapisz' }));
 
-      expect(screen.getByText('Stanowisko o tej nazwie już istnieje')).toBeInTheDocument();
+      expect(screen.getByText('Stanowisko o takiej nazwie już istnieje')).toBeInTheDocument();
     });
 
     it('duplicate check is case-insensitive', async () => {
@@ -307,11 +280,11 @@ describe('StationsSettings', () => {
       await user.click(screen.getByRole('button', { name: 'Dodaj stanowisko' }));
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('Np. Stanowisko 1');
+      const nameInput = screen.getByPlaceholderText('np. Stanowisko 1');
       await user.type(nameInput, 'STANOWISKO ALPHA');
       await user.click(screen.getByRole('button', { name: 'Zapisz' }));
 
-      expect(screen.getByText('Stanowisko o tej nazwie już istnieje')).toBeInTheDocument();
+      expect(screen.getByText('Stanowisko o takiej nazwie już istnieje')).toBeInTheDocument();
     });
   });
 
@@ -326,7 +299,7 @@ describe('StationsSettings', () => {
       await user.click(screen.getByRole('button', { name: 'Dodaj stanowisko' }));
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('Np. Stanowisko 1');
+      const nameInput = screen.getByPlaceholderText('np. Stanowisko 1');
       // maxLength=50 on the DOM input prevents userEvent from typing >50 chars,
       // so we fire a change event directly to bypass the HTML constraint.
       await user.click(nameInput);
@@ -339,7 +312,7 @@ describe('StationsSettings', () => {
 
       await user.click(screen.getByRole('button', { name: 'Zapisz' }));
 
-      expect(screen.getByText('Nazwa może mieć maksymalnie 50 znaków')).toBeInTheDocument();
+      expect(screen.getByText('Nazwa stanowiska może mieć max 50 znaków')).toBeInTheDocument();
     });
 
     it('input has maxLength attribute set to 50', async () => {
@@ -352,7 +325,7 @@ describe('StationsSettings', () => {
       await user.click(screen.getByRole('button', { name: 'Dodaj stanowisko' }));
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('Np. Stanowisko 1');
+      const nameInput = screen.getByPlaceholderText('np. Stanowisko 1');
       expect(nameInput).toHaveAttribute('maxLength', '50');
     });
   });
@@ -391,7 +364,7 @@ describe('StationsSettings', () => {
       await waitFor(() => screen.getByRole('dialog'));
 
       // Clear name and type new name
-      const nameInput = screen.getByPlaceholderText('Np. Stanowisko 1');
+      const nameInput = screen.getByPlaceholderText('np. Stanowisko 1');
       await user.triple_click?.(nameInput);
       await user.clear(nameInput);
       await user.type(nameInput, 'New Name');
@@ -399,7 +372,7 @@ describe('StationsSettings', () => {
       await user.click(screen.getByRole('button', { name: 'Zapisz' }));
 
       await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Stanowisko zaktualizowane');
+        expect(mockToast.success).toHaveBeenCalledWith('Stanowisko zostało zaktualizowane');
       });
     });
   });
@@ -509,7 +482,7 @@ describe('StationsSettings', () => {
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(
-          expect.stringContaining('Nie można usunąć stanowiska'),
+          expect.stringContaining('Nie można usunąć'),
         );
       });
 
@@ -555,7 +528,7 @@ describe('StationsSettings', () => {
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(
-          expect.stringContaining('Nie można usunąć stanowiska'),
+          expect.stringContaining('Nie można usunąć'),
         );
       });
     });

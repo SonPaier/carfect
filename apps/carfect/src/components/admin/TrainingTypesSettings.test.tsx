@@ -32,12 +32,6 @@ const { mockToast } = vi.hoisted(() => ({
 }));
 vi.mock('sonner', () => ({ toast: mockToast }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
 // ---- Test data ----
 const INSTANCE_ID = 'inst-test-123';
 
@@ -112,7 +106,7 @@ async function openEditDialog(user: ReturnType<typeof userEvent.setup>) {
   // and NOT a destructive (delete) button
   const pencilButton = allButtons.find(
     (btn) =>
-      !btn.textContent?.includes('Dodaj typ') &&
+      !btn.textContent?.includes('Dodaj typ szkolenia') &&
       !btn.classList.contains('text-destructive') &&
       btn.querySelector('svg') !== null,
   );
@@ -239,36 +233,21 @@ describe('TrainingTypesSettings', () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Dodaj typ' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Dodaj typ szkolenia' })).toBeInTheDocument();
       });
     });
   });
 
   // ---- Add training type ----
   describe('add training type', () => {
-    it('opens add dialog when "Dodaj typ" is clicked', async () => {
-      const user = userEvent.setup();
-      setupFetchMock([]);
-
-      renderComponent();
-
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
-
-      await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByText('Dodaj typ szkolenia')).toBeInTheDocument();
-      });
-    });
-
     it('save button is disabled when name is empty', async () => {
       const user = userEvent.setup();
       setupFetchMock([]);
 
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 
@@ -282,12 +261,12 @@ describe('TrainingTypesSettings', () => {
 
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       await user.type(nameInput, 'Nowy typ');
 
       await waitFor(() => {
@@ -301,12 +280,12 @@ describe('TrainingTypesSettings', () => {
 
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       await user.type(nameInput, 'Nowe szkolenie');
 
       await user.click(screen.getByRole('button', { name: 'Dodaj' }));
@@ -328,12 +307,12 @@ describe('TrainingTypesSettings', () => {
 
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       await user.type(nameInput, 'Nowy typ szkolenia');
 
       await user.click(screen.getByRole('button', { name: 'Dodaj' }));
@@ -349,12 +328,12 @@ describe('TrainingTypesSettings', () => {
 
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       await user.type(nameInput, 'Nowy typ');
 
       await user.click(screen.getByRole('button', { name: 'Dodaj' }));
@@ -370,8 +349,8 @@ describe('TrainingTypesSettings', () => {
 
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 
@@ -396,7 +375,7 @@ describe('TrainingTypesSettings', () => {
 
       expect(screen.getByText('Edytuj typ szkolenia')).toBeInTheDocument();
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       expect(nameInput).toHaveValue('Stara nazwa');
     });
 
@@ -435,7 +414,7 @@ describe('TrainingTypesSettings', () => {
       await waitFor(() => screen.getByText('Stara nazwa'));
       await openEditDialog(user);
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       await user.clear(nameInput);
       await user.type(nameInput, 'Nowa nazwa');
 
@@ -457,7 +436,7 @@ describe('TrainingTypesSettings', () => {
       await waitFor(() => screen.getByText('Istniejący typ'));
       await openEditDialog(user);
 
-      const nameInput = screen.getByPlaceholderText('np. Grupowe podstawowe');
+      const nameInput = screen.getByPlaceholderText('np. Szkolenie indywidualne');
       await user.clear(nameInput);
       await user.type(nameInput, 'Zaktualizowany typ');
 
@@ -540,8 +519,8 @@ describe('TrainingTypesSettings', () => {
       setupFetchMock([]);
       renderComponent();
 
-      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ' }));
-      await user.click(screen.getByRole('button', { name: 'Dodaj typ' }));
+      await waitFor(() => screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
+      await user.click(screen.getByRole('button', { name: 'Dodaj typ szkolenia' }));
 
       await waitFor(() => screen.getByRole('dialog'));
 

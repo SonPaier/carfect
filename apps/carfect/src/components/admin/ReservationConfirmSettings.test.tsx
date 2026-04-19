@@ -33,19 +33,6 @@ const { mockToast } = vi.hoisted(() => ({
 }));
 vi.mock('sonner', () => ({ toast: mockToast }));
 
-// ---- i18n mock ----
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'pushNotifications.enabled': 'Powiadomienia push włączone',
-        'pushNotifications.disabled': 'Powiadomienia push wyłączone',
-      };
-      return translations[key] ?? key;
-    },
-  }),
-}));
-
 // ---- TanStack Query mock ----
 const mockInvalidateQueries = vi.fn();
 vi.mock('@tanstack/react-query', async () => {
@@ -430,7 +417,7 @@ describe('ReservationConfirmSettings', () => {
       await user.click(screen.getByRole('switch', { name: /automatyczne potwierdzanie/i }));
 
       await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Auto-potwierdzanie wyłączone');
+        expect(mockToast.success).toHaveBeenCalledWith('Przy wyłączonym automatycznym potwierdzaniu, każda rezerwacja wymaga ręcznego potwierdzenia');
       });
     });
 
@@ -462,7 +449,7 @@ describe('ReservationConfirmSettings', () => {
       await user.click(screen.getByRole('switch', { name: /automatyczne potwierdzanie/i }));
 
       await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Auto-potwierdzanie włączone');
+        expect(mockToast.success).toHaveBeenCalledWith('Rezerwacje klientów są automatycznie potwierdzane');
       });
     });
 
@@ -922,7 +909,7 @@ describe('ReservationConfirmSettings', () => {
       await user.click(pushSwitch);
 
       await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('Powiadomienia push włączone');
+        expect(mockToast.success).toHaveBeenCalledWith('Powiadomienia włączone');
       });
     });
 

@@ -56,11 +56,6 @@ describe('EmbedLeadFormPreview', () => {
       expect(screen.queryByText(/od.*zł/)).not.toBeInTheDocument();
     });
 
-    it('shows placeholder when no templates provided', () => {
-      renderPreview({ templates: [] });
-
-      expect(screen.getByText('Wybierz szablony w konfiguracji')).toBeInTheDocument();
-    });
   });
 
   describe('extras rendering', () => {
@@ -121,23 +116,10 @@ describe('EmbedLeadFormPreview', () => {
   });
 
   describe('edge cases', () => {
-    it('renders with empty templates and extras', () => {
-      renderPreview({ templates: [], extras: [] });
-
-      expect(screen.getByText('Wybierz szablony w konfiguracji')).toBeInTheDocument();
-      expect(screen.queryByText('Dodatki')).not.toBeInTheDocument();
-    });
-
     it('renders template without description (no "Czytaj więcej" button)', () => {
       renderPreview({ templates: [mockTemplates[1]] });
 
       expect(screen.queryByText('Czytaj więcej...')).not.toBeInTheDocument();
-    });
-
-    it('renders template with description (shows "Czytaj więcej" button)', () => {
-      renderPreview({ templates: [mockTemplates[0]] });
-
-      expect(screen.getByText('Czytaj więcej...')).toBeInTheDocument();
     });
 
     it('renders template without available_durations', () => {

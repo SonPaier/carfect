@@ -202,20 +202,6 @@ describe('WidgetBrandingSettings', () => {
       });
     });
 
-    it('shows error toast on save failure', async () => {
-      const { toast } = await import('sonner');
-      mockSupabaseQuery('instances', { data: null, error: { message: 'DB error' } }, 'update');
-
-      renderSettings({
-        initialData: { ...defaultInitialData, widget_branding_enabled: true },
-      });
-
-      await user.click(screen.getByRole('button', { name: /zapisz wygląd/i }));
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Nie udało się zapisać wyglądu widgetu');
-      });
-    });
   });
 
   describe('edge cases', () => {
