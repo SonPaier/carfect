@@ -3642,7 +3642,8 @@
     "statusCancelled": "Anulowana",
     "statusChangeRequested": "Zmiana",
     "statusNoShow": "Nieobecność",
-    "statusReleased": "Zwolniona"
+    "statusReleased": "Zwolniona",
+    "priceGrossNet": "Cena brutto / netto"
   },
   "employeeDrawer": {
     "title": "Wybierz pracowników",

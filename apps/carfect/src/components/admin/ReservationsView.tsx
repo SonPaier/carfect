@@ -659,7 +659,7 @@ const ReservationsView = ({
     <div className={isMobile ? 'space-y-4 pb-28' : 'flex flex-col h-[calc(100vh-80px)]'}>
       {/* Title */}
       <div className="shrink-0 pb-4">
-        <h1 className="text-2xl font-medium text-foreground">Realizacje</h1>
+        <h1 className="text-2xl font-medium text-foreground">{t('navigation.reservations')}</h1>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
@@ -721,14 +721,14 @@ const ReservationsView = ({
             <Table wrapperClassName="overflow-visible">
               <TableHeader>
                 <TableRow>
-                  <SortableHeader field="customer_name">Klient</SortableHeader>
-                  <SortableHeader field="vehicle_plate">Pojazd</SortableHeader>
-                  <TableHead>Usługi</TableHead>
-                  <SortableHeader field="reservation_date">Data realizacji</SortableHeader>
+                  <SortableHeader field="customer_name">{t('reservations.customer')}</SortableHeader>
+                  <SortableHeader field="vehicle_plate">{t('reservations.vehicle')}</SortableHeader>
+                  <TableHead>{t('reservations.services')}</TableHead>
+                  <SortableHeader field="reservation_date">{t('reservations.date')}</SortableHeader>
                   <SortableHeader field="price" className="text-right">
-                    Cena brutto / netto
+                    {t('reservationsView.priceGrossNet')}
                   </SortableHeader>
-                  {showStatus && <SortableHeader field="status">Status</SortableHeader>}
+                  {showStatus && <SortableHeader field="status">{t('common.status')}</SortableHeader>}
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>

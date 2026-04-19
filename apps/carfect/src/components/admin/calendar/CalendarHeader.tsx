@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format, addDays } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 import {
   ChevronLeft,
   ChevronRight,
@@ -233,7 +233,7 @@ export function CalendarHeader({
                     hallMode && 'flex-1 text-center',
                   )}
                 >
-                  {format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                  {format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="bg-popover">
@@ -265,10 +265,10 @@ export function CalendarHeader({
               )}
             >
               {viewMode === 'month'
-                ? format(currentDate, 'LLLL yyyy', { locale: pl })
+                ? format(currentDate, 'LLLL yyyy', { locale: getDateLocale() })
                 : viewMode === 'week'
-                  ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                  : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                  ? `${format(weekStart, 'd MMM', { locale: getDateLocale() })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: getDateLocale() })}`
+                  : format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
             </h2>
           ))}
 
@@ -408,7 +408,7 @@ export function CalendarHeader({
                         onChange={() => onGroupingModeChange('none')}
                         className="accent-primary"
                       />
-                      Brak (wg godziny)
+                      {t('calendar.groupNone')}
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -419,7 +419,7 @@ export function CalendarHeader({
                         onChange={() => onGroupingModeChange('station')}
                         className="accent-primary"
                       />
-                      Wg stanowiska
+                      {t('calendar.groupByStation')}
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -430,7 +430,7 @@ export function CalendarHeader({
                         onChange={() => onGroupingModeChange('employee')}
                         className="accent-primary"
                       />
-                      Wg pracownika
+                      {t('calendar.groupByEmployee')}
                     </label>
                   </div>
                 </div>
@@ -443,7 +443,7 @@ export function CalendarHeader({
                         checked={showNotesInBars ?? false}
                         onCheckedChange={() => onToggleShowNotesInBars()}
                       />
-                      Pokaż notatki na paskach
+                      {t('calendar.showNotes')}
                     </label>
                   </div>
                 )}
@@ -471,7 +471,7 @@ export function CalendarHeader({
               size="sm"
               onClick={onToggleCompact}
               className="gap-1 h-9"
-              title={isCompact ? 'Rozwiń kolumny' : 'Zwiń kolumny'}
+              title={isCompact ? t('calendar.expandColumns') : t('calendar.collapseColumns')}
             >
               <ChevronsLeftRight className="w-4 h-4" />
             </Button>
@@ -485,7 +485,7 @@ export function CalendarHeader({
             className="gap-1 h-9 relative"
           >
             <ParkingSquare className="w-4 h-4" />
-            <span className="hidden md:inline">Plac</span>
+            <span className="hidden md:inline">{t('calendar.yard')}</span>
             {yardVehicleCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {yardVehicleCount > 99 ? '99+' : yardVehicleCount}
@@ -528,7 +528,7 @@ export function CalendarHeader({
                 currentDateClosed && 'text-red-500',
               )}
             >
-              {format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+              {format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
             </button>
             <Sheet open={datePickerOpen} onOpenChange={onDatePickerOpenChange}>
               <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>
@@ -582,8 +582,8 @@ export function CalendarHeader({
               )}
             >
               {viewMode === 'week'
-                ? `${format(weekStart, 'd MMM', { locale: pl })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: pl })}`
-                : format(currentDate, 'EEEE, d MMMM', { locale: pl })}
+                ? `${format(weekStart, 'd MMM', { locale: getDateLocale() })} - ${format(addDays(weekStart, 6), 'd MMM', { locale: getDateLocale() })}`
+                : format(currentDate, 'EEEE, d MMMM', { locale: getDateLocale() })}
             </button>
             <Sheet open={datePickerOpen} onOpenChange={onDatePickerOpenChange}>
               <SheetContent side="bottom" className="px-4 pb-8" hideCloseButton>

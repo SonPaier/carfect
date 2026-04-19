@@ -1059,7 +1059,7 @@ const AdminCalendar = ({
       <div className="flex flex-wrap items-center justify-center gap-3 pt-4 pb-2 border-t border-border/50 mt-4">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-orange-400/80 border border-orange-500/70" />
-          <span className="text-xs text-muted-foreground">W trakcie</span>
+          <span className="text-xs text-muted-foreground">{t('reservations.statuses.inProgress')}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-green-400/80 border border-green-500/70" />

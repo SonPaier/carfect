@@ -1576,11 +1576,11 @@
     "errorGeneric": "Ein Fehler ist aufgetreten"
   },
   "protocols": {
-    "title": "Neues Übergabeprotokoll",
+    "title": "Protokolle",
     "addProtocol": "Übergabeprotokoll hinzufügen",
     "searchPlaceholder": "Nach Kunde, Fahrzeug suchen...",
     "list": {
-      "title": "Neues Übergabeprotokoll",
+      "title": "Protokolle",
       "addProtocol": "Übergabeprotokoll hinzufügen",
       "back": "Zurück",
       "searchPlaceholder": "Nach Kunde, Fahrzeug suchen...",
@@ -1611,7 +1611,7 @@
     "deleteError": "Übergabeprotokoll konnte nicht gelöscht werden",
     "back": "Zurück",
     "form": {
-      "title": "Neues Übergabeprotokoll",
+      "title": "Neues Protokoll",
       "editTitle": "Übergabeprotokoll bearbeiten",
       "protocolType": "Protokolltyp",
       "typeReception": "Annahmeprotokoll",
@@ -1677,7 +1677,7 @@
       "textRecognized": "Text erkannt"
     },
     "sendEmail": {
-      "title": "Instanzeinstellungen",
+      "title": "Protokoll per E-Mail senden",
       "recipientEmail": "E-Mail-Adresse des Empfängers",
       "subject": "Betreff",
       "messageBody": "Nachrichtentext",
@@ -1732,7 +1732,7 @@
     }
   },
   "adminDashboard": {
-    "title": "Instanzeinstellungen",
+    "title": "Admin-Panel",
     "newReservationNotification": "Neue Reservierung von einem Kunden!",
     "noServices": "Keine Leistungen",
     "reservationCreatedFromYard": "Reservierung vom Hof erstellt",
@@ -1766,7 +1766,7 @@
     "thisActionCannot": "Diese Aktion ist unwiderruflich."
   },
   "pageNotFound": {
-    "title": "Instanzeinstellungen",
+    "title": "Seite nicht gefunden",
     "description": "Erscheinungsbild und Firmendaten für {{name}} personalisieren",
     "backToHome": "Zurück zur Startseite"
   },
@@ -3642,7 +3642,8 @@
     "statusCancelled": "Storniert",
     "statusChangeRequested": "Änderung",
     "statusNoShow": "Nicht erschienen",
-    "statusReleased": "Freigegeben"
+    "statusReleased": "Freigegeben",
+    "priceGrossNet": "Preis brutto / netto"
   },
   "employeeDrawer": {
     "title": "Einstellungen",

@@ -1576,11 +1576,11 @@
     "errorGeneric": "An error occurred"
   },
   "protocols": {
-    "title": "New reservation",
+    "title": "Protocols",
     "addProtocol": "Add inspection report",
     "searchPlaceholder": "Type abbreviation e.g. MZ, KPL...",
     "list": {
-      "title": "New reservation",
+      "title": "Protocols",
       "addProtocol": "Add inspection report",
       "back": "Back",
       "searchPlaceholder": "Type abbreviation e.g. MZ, KPL...",
@@ -1611,7 +1611,7 @@
     "deleteError": "Failed to delete inspection report",
     "back": "Back",
     "form": {
-      "title": "New reservation",
+      "title": "New protocol",
       "editTitle": "Edit damage",
       "protocolType": "Report type",
       "typeReception": "Reception report",
@@ -1677,7 +1677,7 @@
       "textRecognized": "Text recognised"
     },
     "sendEmail": {
-      "title": "New reservation",
+      "title": "Send protocol by email",
       "recipientEmail": "Recipient email address",
       "subject": "Subject",
       "messageBody": "Message body",
@@ -1732,7 +1732,7 @@
     }
   },
   "adminDashboard": {
-    "title": "New reservation",
+    "title": "Admin Panel",
     "newReservationNotification": "New reservation from a customer!",
     "noServices": "No services",
     "reservationCreatedFromYard": "Reservation created from the yard",
@@ -1766,7 +1766,7 @@
     "thisActionCannot": "This action cannot be undone."
   },
   "pageNotFound": {
-    "title": "New reservation",
+    "title": "Page not found",
     "description": "Sorry, we couldn't find this page.",
     "backToHome": "Back to home page"
   },
@@ -3642,7 +3642,8 @@
     "statusCancelled": "Cancelled",
     "statusChangeRequested": "Change",
     "statusNoShow": "No show",
-    "statusReleased": "Released"
+    "statusReleased": "Released",
+    "priceGrossNet": "Price gross / net"
   },
   "employeeDrawer": {
     "title": "Select employees",
