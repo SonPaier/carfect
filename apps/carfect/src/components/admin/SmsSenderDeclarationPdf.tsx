@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Document, Page, Text, View, Font, pdf, StyleSheet } from '@react-pdf/renderer';
 
 Font.register({
@@ -109,7 +110,7 @@ const DeclarationDocument: React.FC<DeclarationDocumentProps> = ({ data }) => {
         </View>
 
         <View style={styles.block}>
-          <Text style={styles.sectionTitle}>Dane właściciela nazwy:</Text>
+          <Text style={styles.sectionTitle}>{t('smsDeclaration.ownerData')}</Text>
           <Text style={styles.line}>{data.billingName}</Text>
           <Text style={styles.line}>{data.billingStreet}</Text>
           <Text style={styles.line}>
@@ -119,30 +120,30 @@ const DeclarationDocument: React.FC<DeclarationDocumentProps> = ({ data }) => {
         </View>
 
         <View style={styles.block}>
-          <Text style={styles.declarationTitle}>Oświadczenie</Text>
+          <Text style={styles.declarationTitle}>{t('smsDeclaration.declaration')}</Text>
           <Text style={styles.declarationSubtitle}>
-            o wyrażeniu zgody na posługiwanie się nazwą
+            {t('smsDeclaration.consentText')}
           </Text>
 
           <Text style={styles.line}>
-            Działając w imieniu firmy: {data.billingName}
+            {t('smsDeclaration.actingOnBehalf', { company: data.billingName })}
           </Text>
           <Text style={styles.line}>
-            oświadczam, że wyrażam zgodę na korzystanie pola nadawcy o brzmieniu:
+            {t('smsDeclaration.consentStatement')}
           </Text>
 
           <Text style={styles.senderName}>{data.senderName}</Text>
 
-          <Text style={styles.line}>przez firmę: Tomasz Nastały SINPAI</Text>
+          <Text style={styles.line}>{t('smsDeclaration.byCompany')}</Text>
           <Text style={styles.line}>
-            celem uzupełnienia pola nadawcy w wiadomościach SMS generowanych na nasze zlecenie.
+            {t('smsDeclaration.purpose')}
           </Text>
         </View>
 
         <View style={styles.signatureBlock}>
           <View style={styles.signatureLine} />
           <Text style={styles.signatureLabel}>
-            Pieczątka i czytelny podpis właściciela nazwy
+            {t('smsDeclaration.stampAndSignature')}
           </Text>
         </View>
       </Page>

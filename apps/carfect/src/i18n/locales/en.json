@@ -99,7 +99,8 @@
     "requestNewResetLink": "Request a new password reset link.",
     "redirectToLogin": "You will be redirected to the login page shortly.",
     "enterNewPassword": "Enter a new password for your account.",
-    "manageStudio": "Manage jobs, quotes and customers of your detailing studio — in"
+    "manageStudio": "Manage jobs, quotes and customers of your detailing studio — in",
+    "manageStudioDesc": "Manage jobs, quotes, and customers of your detailing studio — in"
   },
   "navigation": {
     "reservations": "Bookings",
@@ -320,7 +321,8 @@
     "checkSms": "Check the code in your SMS and try again",
     "cannotEdit": "This booking cannot be edited",
     "editCutoffPassed": "The deadline for changing this booking has passed",
-    "callLabel": "Call: {{phone}}"
+    "callLabel": "Call: {{phone}}",
+    "callPhone": "Call: {{phone}}"
   },
   "booking": {
     "title": "Customers",
@@ -446,7 +448,8 @@
     "dayFri": "FRI",
     "daySat": "SAT",
     "daySun": "SUN",
-    "upsellSuggestion": "You still have some time before your next booking. How about"
+    "upsellSuggestion": "You still have some time before your next booking. How about",
+    "metaDesc": "Book an appointment online. Car wash, detailing, PPF - choose a service and time."
   },
   "calendar": {
     "title": "Customers",
@@ -924,7 +927,9 @@
     "createFirstOffer": "Create the first quote for a customer",
     "noItemsAddBelow": "No items. Add the first item below.",
     "noTemplatesDefined": "No templates defined. Add templates in the \"Your Templates\" section.",
-    "selectScopesForOffer": "Select one or more templates to include in the quote"
+    "selectScopesForOffer": "Select one or more templates to include in the quote",
+    "noTemplatesDefinedFull": "No templates defined. Add templates in the \"Your Templates\" section.",
+    "defaultEmailTemplate": "Dear Customer,\n\nWe have prepared an individual car detailing services quote according to your enquiry.\n\nShould you have any questions, we will be happy to advise and tailor the quote to your expectations."
   },
   "summary": {
     "customer": "Customer",
@@ -1552,7 +1557,8 @@
     "servicesSection": "Services",
     "generating": "Generating...",
     "paymentTermsLabel": "Payment terms",
-    "generatingPdf": "Generowanie..."
+    "generatingPdf": "Generowanie...",
+    "metaContent": "Quote {{number}} from {{name}}: services, items, and cost summary."
   },
   "superAdmin": {
     "panelTitle": "Management Panel",
@@ -1601,7 +1607,11 @@
     "instanceDeleteError": "Error deleting instance",
     "paidFeaturesFor": "Paid features - {{name}}",
     "usersFor": "Users - {{name}}",
-    "manageDescription": "Manage all instances, users and Carfect system settings."
+    "manageDescription": "Manage all instances, users and Carfect system settings.",
+    "manageAllDesc": "Manage all instances, users, and Carfect system settings.",
+    "deleteConfirm": "Are you sure you want to delete instance \"{{name}}\"? The instance will be hidden but data will remain.",
+    "paidFeaturesTitle": "Paid features - {{name}}",
+    "usersTitle": "Users - {{name}}"
   },
   "instanceFeatures": {
     "cardTitle": "Additional Features",
@@ -1938,7 +1948,11 @@
     "reception": "reception",
     "emailBody": "Dear {{name}},\n\nPlease find attached the vehicle {{type}} protocol{{vehicle}}.\n\nPlease review the document.\n\n[Protocol link will be automatically attached]",
     "emailSubject": "{{type}} vehicle protocol{{vehicle}}",
-    "protocolNumber": "Protocol #{{number}}"
+    "protocolNumber": "Protocol #{{number}}",
+    "sampleServiceName": "Sample service",
+    "sampleFieldValue": "Example",
+    "deleteConfirmDesc": "Are you sure you want to delete the protocol for {{name}}? This cannot be undone.",
+    "receptionLabel": "reception"
   },
   "adminDashboard": {
     "title": "Admin Panel",
@@ -4111,7 +4125,8 @@
       "notePlaceholder": "e.g. offcuts from job",
       "initialState": "Initial state",
       "usedLabel": "Used",
-      "remainingLabel": "Remaining"
+      "remainingLabel": "Remaining",
+      "initialInfo": "Initial: {{initial}} · Used: {{used}} · Remaining: {{remaining}}"
     },
     "packages": {
       "addProduct": "Add product",
@@ -4615,7 +4630,8 @@
     "salesPanel": "Sales Panel",
     "crm": {
       "fetchServicesFailed": "Failed to fetch services",
-      "noServicesConfigured": "No services configured. Click \"Fetch from Apaczka\" to load available services."
+      "noServicesConfigured": "No services configured. Click \"Fetch from Apaczka\" to load available services.",
+      "noServicesConfiguredFull": "No services configured. Click \"Fetch from Apaczka\" to load available services."
     },
     "unsavedChanges": "You have unsaved changes. What would you like to do?",
     "continueEditing": "Continue editing",
@@ -5145,7 +5161,8 @@
     "deleteTitle": "Remove vehicle from yard",
     "deleteDescription": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?",
     "deleteVehicle": "Remove vehicle from yard",
-    "deleteVehicleConfirm": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
+    "deleteVehicleConfirm": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?",
+    "deleteConfirm": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
   },
   "aiAnalyst": {
     "suggestions": {
@@ -5210,7 +5227,8 @@
     "employeesRemoved": "Employees removed"
   },
   "reservationForm": {
-    "noShowWarning": "Customer <0>{{name}}</0> was absent from visit {{date}}, service: {{service}}"
+    "noShowWarning": "Customer <0>{{name}}</0> was absent from visit {{date}}, service: {{service}}",
+    "noShowText": "Customer {{name}} was absent from the visit on {{date}}, service: {{service}}"
   },
   "ai": {
     "revenueThisMonth": "Revenue this month",
@@ -5220,6 +5238,17 @@
     "topCustomersPrompt": "Which customers had the most bookings in the last 3 months? Show top 10 with visit count and total amount."
   },
   "publicProtocol": {
-    "checkLink": "Check the link or contact the service."
+    "checkLink": "Check the link or contact the service.",
+    "checkLinkOrContact": "Check the link or contact the service."
+  },
+  "smsDeclaration": {
+    "ownerData": "Name owner data:",
+    "declaration": "Declaration",
+    "consentText": "on consent to use the name",
+    "actingOnBehalf": "Acting on behalf of company: {{company}}",
+    "consentStatement": "I declare that I consent to the use of the sender field with the wording:",
+    "byCompany": "by company: Tomasz Nastały SINPAI",
+    "purpose": "for the purpose of completing the sender field in SMS messages generated on our behalf.",
+    "stampAndSignature": "Stamp and legible signature of the name owner"
   }
 }

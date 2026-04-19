@@ -293,8 +293,7 @@ const SalesCrmSettingsView = ({ instanceId, instanceData }: SalesCrmSettingsView
 
                   {availableServices.length === 0 && apaczkaServices.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Brak skonfigurowanych serwisów. Kliknij "Pobierz z Apaczka" aby załadować
-                      dostępne serwisy.
+                      {t('sales.crm.noServicesConfiguredFull')}
                     </p>
                   )}
 

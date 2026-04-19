@@ -133,7 +133,7 @@ const PublicOfferView = () => {
         </title>
         <meta
           name="description"
-          content={`Oferta ${offer.offer_number} od ${instance?.name || 'firmy'}: usługi, pozycje i podsumowanie kosztów.`}
+          content={t('publicOffer.metaContent', { number: offer.offer_number, name: instance?.name || t('common.company') })}
         />
         {typeof window !== 'undefined' && <link rel="canonical" href={window.location.href} />}
       </Helmet>

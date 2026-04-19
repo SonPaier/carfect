@@ -99,7 +99,8 @@
     "requestNewResetLink": "Poproś ponownie o link do resetowania hasła.",
     "redirectToLogin": "Za chwilę zostaniesz przekierowany do strony logowania.",
     "enterNewPassword": "Wprowadź nowe hasło dla swojego konta.",
-    "manageStudio": "Zarządzaj realizacjami, ofertami i klientami swojego studia detailingowego — w"
+    "manageStudio": "Zarządzaj realizacjami, ofertami i klientami swojego studia detailingowego — w",
+    "manageStudioDesc": "Zarządzaj realizacjami, ofertami i klientami swojego studia detailingowego — w"
   },
   "navigation": {
     "reservations": "Rezerwacje",
@@ -320,7 +321,8 @@
     "checkSms": "Sprawdź kod w SMS-ie i spróbuj ponownie",
     "cannotEdit": "Nie można edytować tej rezerwacji",
     "editCutoffPassed": "Minął termin na zmianę rezerwacji",
-    "callLabel": "Zadzwoń: {{phone}}"
+    "callLabel": "Zadzwoń: {{phone}}",
+    "callPhone": "Zadzwoń: {{phone}}"
   },
   "booking": {
     "title": "Umów się na wizytę",
@@ -446,7 +448,8 @@
     "dayFri": "PT",
     "daySat": "SOB",
     "daySun": "NIEDZ",
-    "upsellSuggestion": "Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na"
+    "upsellSuggestion": "Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na",
+    "metaDesc": "Zarezerwuj wizytę online. Mycie samochodowe, detailing, PPF - wybierz usługę i termin."
   },
   "calendar": {
     "title": "Kalendarz",
@@ -924,7 +927,9 @@
     "createFirstOffer": "Utwórz pierwszą ofertę dla klienta",
     "noItemsAddBelow": "Brak pozycji. Dodaj pierwszą pozycję poniżej.",
     "noTemplatesDefined": "Brak zdefiniowanych szablonów. Dodaj szablony w sekcji \"Twoje Szablony\".",
-    "selectScopesForOffer": "Zaznacz jeden lub więcej szablonów, które chcesz uwzględnić w ofercie"
+    "selectScopesForOffer": "Zaznacz jeden lub więcej szablonów, które chcesz uwzględnić w ofercie",
+    "noTemplatesDefinedFull": "Brak zdefiniowanych szablonów. Dodaj szablony w sekcji \"Twoje Szablony\".",
+    "defaultEmailTemplate": "Dzień dobry,\n\nprzygotowaliśmy indywidualną ofertę usług car detailing, zgodnie z Państwa zapytaniem.\n\nW razie pytań chętnie doradzimy i dopasujemy ofertę do Państwa oczekiwań."
   },
   "summary": {
     "customer": "Klient",
@@ -1550,7 +1555,8 @@
     "otherInfo": "Inne informacje",
     "suggestedExtras": "Sugerowane dodatki",
     "discount": "+rabat {{percent}}%",
-    "servicesSection": "Usługi"
+    "servicesSection": "Usługi",
+    "metaContent": "Oferta {{number}} od {{name}}: usługi, pozycje i podsumowanie kosztów."
   },
   "superAdmin": {
     "panelTitle": "Panel zarządzania",
@@ -1599,7 +1605,11 @@
     "instanceDeleteError": "Błąd podczas usuwania instancji",
     "paidFeaturesFor": "Funkcje płatne - {{name}}",
     "usersFor": "Użytkownicy - {{name}}",
-    "manageDescription": "Zarządzaj wszystkimi instancjami, użytkownikami i ustawieniami systemu Carfect."
+    "manageDescription": "Zarządzaj wszystkimi instancjami, użytkownikami i ustawieniami systemu Carfect.",
+    "manageAllDesc": "Zarządzaj wszystkimi instancjami, użytkownikami i ustawieniami systemu Carfect.",
+    "deleteConfirm": "Czy na pewno chcesz usunąć instancję \"{{name}}\"? Instancja zostanie ukryta, ale dane pozostaną w bazie.",
+    "paidFeaturesTitle": "Funkcje płatne - {{name}}",
+    "usersTitle": "Użytkownicy - {{name}}"
   },
   "instanceFeatures": {
     "cardTitle": "Funkcje dodatkowe",
@@ -1936,7 +1946,11 @@
     "reception": "przyjęcia",
     "emailBody": "Dzień dobry {{name}},\n\nPrzesyłamy protokół {{type}} pojazdu{{vehicle}}.\n\nProsimy o zapoznanie się z dokumentem.\n\n[Link do protokołu zostanie automatycznie dołączony]",
     "emailSubject": "Protokół {{type}} pojazdu{{vehicle}}",
-    "protocolNumber": "Protokół #{{number}}"
+    "protocolNumber": "Protokół #{{number}}",
+    "sampleServiceName": "Usługa przykładowa",
+    "sampleFieldValue": "Przykład",
+    "deleteConfirmDesc": "Czy na pewno chcesz usunąć protokół dla {{name}}? Tej operacji nie można cofnąć.",
+    "receptionLabel": "przyjęcia"
   },
   "adminDashboard": {
     "title": "Panel Admina",
@@ -4102,7 +4116,8 @@
       "notePlaceholder": "np. ścinki z realizacji",
       "initialState": "Stan początkowy",
       "usedLabel": "Zużyto",
-      "remainingLabel": "Pozostało"
+      "remainingLabel": "Pozostało",
+      "initialInfo": "Stan początkowy: {{initial}} · Zużyto: {{used}} · Pozostało: {{remaining}}"
     },
     "packages": {
       "addProduct": "Dodaj produkt",
@@ -4606,7 +4621,8 @@
     "salesPanel": "Panel Sprzedaży",
     "crm": {
       "fetchServicesFailed": "Nie udało się pobrać serwisów",
-      "noServicesConfigured": "Brak skonfigurowanych serwisów. Kliknij \"Pobierz z Apaczka\" aby załadować dostępne serwisy."
+      "noServicesConfigured": "Brak skonfigurowanych serwisów. Kliknij \"Pobierz z Apaczka\" aby załadować dostępne serwisy.",
+      "noServicesConfiguredFull": "Brak skonfigurowanych serwisów. Kliknij \"Pobierz z Apaczka\" aby załadować dostępne serwisy."
     },
     "unsavedChanges": "Masz niezapisane zmiany. Co chcesz zrobić?",
     "continueEditing": "Kontynuuj edycję",
@@ -5171,7 +5187,8 @@
     "deleteTitle": "Usuń pojazd z placu",
     "deleteDescription": "Czy na pewno chcesz usunąć pojazd {{plate}} ({{customer}}) z placu?",
     "deleteVehicle": "Usuń pojazd z placu",
-    "deleteVehicleConfirm": "Czy na pewno chcesz usunąć pojazd {{plate}} ({{customer}}) z placu?"
+    "deleteVehicleConfirm": "Czy na pewno chcesz usunąć pojazd {{plate}} ({{customer}}) z placu?",
+    "deleteConfirm": "Czy na pewno chcesz usunąć pojazd {{plate}} ({{customer}}) z placu?"
   },
   "aiAnalyst": {
     "suggestions": {
@@ -5201,7 +5218,8 @@
     "employeesRemoved": "Usunięto pracowników"
   },
   "reservationForm": {
-    "noShowWarning": "Klient <0>{{name}}</0> był nieobecny na wizycie {{date}}, usługa: {{service}}"
+    "noShowWarning": "Klient <0>{{name}}</0> był nieobecny na wizycie {{date}}, usługa: {{service}}",
+    "noShowText": "Klient {{name}} był nieobecny na wizycie {{date}}, usługa: {{service}}"
   },
   "ai": {
     "revenueThisMonth": "Przychód w tym miesiącu",
@@ -5211,6 +5229,17 @@
     "topCustomersPrompt": "Którzy klienci mieli najwięcej rezerwacji w ostatnich 3 miesiącach? Pokaż top 10 z liczbą wizyt i łączną kwotą."
   },
   "publicProtocol": {
-    "checkLink": "Sprawdź poprawność linku lub skontaktuj się z serwisem."
+    "checkLink": "Sprawdź poprawność linku lub skontaktuj się z serwisem.",
+    "checkLinkOrContact": "Sprawdź poprawność linku lub skontaktuj się z serwisem."
+  },
+  "smsDeclaration": {
+    "ownerData": "Dane właściciela nazwy:",
+    "declaration": "Oświadczenie",
+    "consentText": "o wyrażeniu zgody na posługiwanie się nazwą",
+    "actingOnBehalf": "Działając w imieniu firmy: {{company}}",
+    "consentStatement": "oświadczam, że wyrażam zgodę na korzystanie pola nadawcy o brzmieniu:",
+    "byCompany": "przez firmę: Tomasz Nastały SINPAI",
+    "purpose": "celem uzupełnienia pola nadawcy w wiadomościach SMS generowanych na nasze zlecenie.",
+    "stampAndSignature": "Pieczątka i czytelny podpis właściciela nazwy"
   }
 }

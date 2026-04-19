@@ -40,7 +40,7 @@ export const ProtocolHeader = ({ instance, protocolNumber, onClose }: ProtocolHe
               <h1 className="font-bold text-base sm:text-lg">{instance?.name || t('protocols.protocol')}</h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {protocolNumber 
-                  ? `Protokół #${protocolNumber}` 
+                  ? t('protocols.protocolNumber', { number: protocolNumber }) 
                   : t('protocols.vehicleReceptionProtocol')}
               </p>
             </div>

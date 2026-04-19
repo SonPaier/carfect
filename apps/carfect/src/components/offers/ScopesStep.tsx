@@ -67,7 +67,7 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground mb-4">
-          Brak zdefiniowanych szablonów. Dodaj szablony w sekcji "Twoje Szablony".
+          {t('offers.noTemplatesDefinedFull')}
         </p>
       </div>
     );

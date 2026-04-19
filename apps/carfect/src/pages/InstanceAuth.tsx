@@ -451,7 +451,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
             <div className="max-w-md text-center space-y-6 flex flex-col items-center">
               <img src="/carfect-logo.svg" alt="Carfect" className="h-12" />
               <p className="text-white/60 text-lg">
-                Zarządzaj realizacjami, ofertami i klientami swojego studia detailingowego — w
+                {t('auth.manageStudioDesc')}
                 jednym miejscu.
               </p>
             </div>

@@ -212,8 +212,7 @@ const RollDetailsDrawer = ({
 
           <TabsContent value="zamowienia">
             <p className="text-sm text-muted-foreground mb-4">
-              Stan początkowy: {formatMbM2(roll.initialLengthM, roll.widthMm)} &middot; Zużyto:{' '}
-              {formatMbM2(totalUsedMb, roll.widthMm)} &middot; Pozostało:{' '}
+              {t('sales.rolls.initialInfo', { initial: formatMbM2(roll.initialLengthM, roll.widthMm), used: formatMbM2(totalUsedMb, roll.widthMm), remaining: '' })}
               {formatMbM2(roll.remainingMb || 0, roll.widthMm)}
             </p>
 

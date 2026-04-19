@@ -5,16 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 const SUGGESTIONS: AiAnalystSuggestion[] = [
   {
     label: t('ai.revenueThisMonth'),
-    prompt: 'Jaki był mój łączny przychód w bieżącym miesiącu? Podaj sumę i liczbę rezerwacji.',
+    prompt: t('ai.revenuePrompt'),
   },
   {
     label: t('ai.popularServices'),
-    prompt: 'Jakie usługi były najczęściej rezerwowane w ostatnich 30 dniach? Pokaż ranking.',
+    prompt: t('ai.popularServicesPrompt'),
   },
   {
     label: 'Top klienci',
     prompt:
-      'Którzy klienci mieli najwięcej rezerwacji w ostatnich 3 miesiącach? Pokaż top 10 z liczbą wizyt i łączną kwotą.',
+      t('ai.topCustomersPrompt'),
   },
 ];
 

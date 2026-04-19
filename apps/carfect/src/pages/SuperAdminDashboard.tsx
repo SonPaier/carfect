@@ -153,7 +153,7 @@ const SuperAdminDashboard = () => {
   const handleDeleteInstance = async (instance: Instance) => {
     if (
       !confirm(
-        `Czy na pewno chcesz usunąć instancję "${instance.name}"? Instancja zostanie ukryta, ale dane pozostaną w bazie.`,
+        t('superAdmin.deleteConfirm', { name: instance.name }),
       )
     )
       return;
@@ -513,7 +513,7 @@ const SuperAdminDashboard = () => {
         <Dialog open={featuresOpen} onOpenChange={setFeaturesOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Funkcje płatne - {selectedInstance.name}</DialogTitle>
+              <DialogTitle>{t('superAdmin.paidFeaturesTitle', { name: selectedInstance.name })}</DialogTitle>
             </DialogHeader>
             <InstanceFeaturesSettings instanceId={selectedInstance.id} />
           </DialogContent>
@@ -527,7 +527,7 @@ const SuperAdminDashboard = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Użytkownicy - {selectedInstance.name}
+                {t('superAdmin.usersTitle', { name: selectedInstance.name })}
               </DialogTitle>
             </DialogHeader>
             <InstanceUsersTab instanceId={selectedInstance.id} />

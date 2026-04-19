@@ -616,7 +616,7 @@ const ServiceFormContent = ({
                     <Label className="text-sm leading-5">
                       {t('priceList.form.sizeSmall', 'Mały (S)')}
                     </Label>
-                    <FieldInfo tooltip="Cena bazowa usługi" />
+                    <FieldInfo tooltip={t('services.tooltipBasePrice')} />
                   </div>
                   <Input
                     type="number"

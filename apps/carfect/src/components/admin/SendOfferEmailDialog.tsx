@@ -39,11 +39,7 @@ interface SendOfferEmailDialogProps {
   onSent: () => void;
 }
 
-const defaultEmailTemplate = `Dzień dobry,
-
-przygotowaliśmy indywidualną ofertę usług car detailing, zgodnie z Państwa zapytaniem.
-
-W razie pytań chętnie doradzimy i dopasujemy ofertę do Państwa oczekiwań.
+const defaultEmailTemplate = t('offers.defaultEmailTemplate') + '
 
 Pozdrawiamy serdecznie,
 {{instanceName}}

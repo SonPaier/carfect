@@ -256,13 +256,13 @@ export const ProtocolsView = ({
             customer_signature: null,
             protocol_type: protocolType,
             service_items: config.builtInFields.serviceItems.enabled
-              ? [{ name: 'Usługa przykładowa', quantity: 1, unit_price: 500 }]
+              ? [{ name: t('protocols.sampleServiceName'), quantity: 1, unit_price: 500 }]
               : null,
             custom_field_values: definitions.reduce(
               (acc, def) => {
                 if (def.field_type === 'checkbox') acc[def.id] = true;
                 else if (def.field_type === 'number') acc[def.id] = 42;
-                else acc[def.id] = 'Przykład';
+                else acc[def.id] = t('protocols.sampleFieldValue');
                 return acc;
               },
               {
@@ -529,7 +529,7 @@ export const ProtocolsView = ({
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
             title={t('protocols.deleteProtocol')}
-            description={`Czy na pewno chcesz usunąć protokół dla ${protocolToDelete?.customer_name}? Tej operacji nie można cofnąć.`}
+            description={t('protocols.deleteConfirmDesc', { name: protocolToDelete?.customer_name })}
             confirmLabel={t('common.delete')}
             onConfirm={handleDeleteProtocol}
             variant="destructive"

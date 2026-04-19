@@ -99,7 +99,8 @@
     "requestNewResetLink": "Fordern Sie einen neuen Link zum Zurücksetzen des Passworts an.",
     "redirectToLogin": "Sie werden in Kürze zur Anmeldeseite weitergeleitet.",
     "enterNewPassword": "Geben Sie ein neues Passwort für Ihr Konto ein.",
-    "manageStudio": "Verwalten Sie Aufträge, Angebote und Kunden Ihres Detailing-Studios — in"
+    "manageStudio": "Verwalten Sie Aufträge, Angebote und Kunden Ihres Detailing-Studios — in",
+    "manageStudioDesc": "Verwalten Sie Aufträge, Angebote und Kunden Ihres Detailing-Studios — in"
   },
   "navigation": {
     "reservations": "Buchungen",
@@ -320,7 +321,8 @@
     "checkSms": "Überprüfen Sie den Code in der SMS und versuchen Sie es erneut",
     "cannotEdit": "Diese Buchung kann nicht bearbeitet werden",
     "editCutoffPassed": "Die Frist für Änderungen ist abgelaufen",
-    "callLabel": "Anrufen: {{phone}}"
+    "callLabel": "Anrufen: {{phone}}",
+    "callPhone": "Anrufen: {{phone}}"
   },
   "booking": {
     "title": "Kunden",
@@ -446,7 +448,8 @@
     "dayFri": "FR",
     "daySat": "SA",
     "daySun": "SO",
-    "upsellSuggestion": "Sie haben noch etwas Zeit vor Ihrer nächsten Buchung. Wie wäre es mit"
+    "upsellSuggestion": "Sie haben noch etwas Zeit vor Ihrer nächsten Buchung. Wie wäre es mit",
+    "metaDesc": "Termin online buchen. Autowäsche, Detailing, PPF - Dienst und Zeit wählen."
   },
   "calendar": {
     "title": "Kunden",
@@ -924,7 +927,9 @@
     "createFirstOffer": "Erstellen Sie das erste Angebot für einen Kunden",
     "noItemsAddBelow": "Keine Positionen. Fügen Sie die erste Position unten hinzu.",
     "noTemplatesDefined": "Keine Vorlagen definiert. Fügen Sie Vorlagen im Abschnitt \"Ihre Vorlagen\" hinzu.",
-    "selectScopesForOffer": "Wählen Sie eine oder mehrere Vorlagen für das Angebot aus"
+    "selectScopesForOffer": "Wählen Sie eine oder mehrere Vorlagen für das Angebot aus",
+    "noTemplatesDefinedFull": "Keine Vorlagen definiert. Fügen Sie Vorlagen im Abschnitt \"Ihre Vorlagen\" hinzu.",
+    "defaultEmailTemplate": "Sehr geehrter Kunde,\n\nwir haben ein individuelles Car-Detailing-Angebot gemäß Ihrer Anfrage erstellt.\n\nBei Fragen beraten wir Sie gerne und passen das Angebot an Ihre Erwartungen an."
   },
   "summary": {
     "customer": "Kunde",
@@ -1550,7 +1555,8 @@
     "suggestedExtras": "Suggested add-ons",
     "discount": "+discount {{percent}}%",
     "servicesSection": "Services",
-    "generatingPdf": "Generowanie..."
+    "generatingPdf": "Generowanie...",
+    "metaContent": "Angebot {{number}} von {{name}}: Dienstleistungen, Positionen und Kostenübersicht."
   },
   "superAdmin": {
     "panelTitle": "Verwaltungspanel",
@@ -1599,7 +1605,11 @@
     "instanceDeleteError": "Fehler beim Löschen der Instanz",
     "paidFeaturesFor": "Kostenpflichtige Funktionen - {{name}}",
     "usersFor": "Benutzer - {{name}}",
-    "manageDescription": "Verwalten Sie alle Instanzen, Benutzer und Carfect-Systemeinstellungen."
+    "manageDescription": "Verwalten Sie alle Instanzen, Benutzer und Carfect-Systemeinstellungen.",
+    "manageAllDesc": "Verwalten Sie alle Instanzen, Benutzer und Carfect-Systemeinstellungen.",
+    "deleteConfirm": "Möchten Sie die Instanz \"{{name}}\" wirklich löschen? Die Instanz wird ausgeblendet, aber die Daten bleiben erhalten.",
+    "paidFeaturesTitle": "Kostenpflichtige Funktionen - {{name}}",
+    "usersTitle": "Benutzer - {{name}}"
   },
   "instanceFeatures": {
     "cardTitle": "Zusätzliche Funktionen",
@@ -1936,7 +1946,11 @@
     "reception": "Annahme",
     "emailBody": "Sehr geehrte/r {{name}},\n\nanbei das Fahrzeug-{{type}}-Protokoll{{vehicle}}.\n\nBitte prüfen Sie das Dokument.\n\n[Protokoll-Link wird automatisch angehängt]",
     "emailSubject": "{{type}}-Fahrzeugprotokoll{{vehicle}}",
-    "protocolNumber": "Protokoll #{{number}}"
+    "protocolNumber": "Protokoll #{{number}}",
+    "sampleServiceName": "Beispieldienst",
+    "sampleFieldValue": "Beispiel",
+    "deleteConfirmDesc": "Möchten Sie das Protokoll für {{name}} wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
+    "receptionLabel": "Annahme"
   },
   "adminDashboard": {
     "title": "Admin-Panel",
@@ -4109,7 +4123,8 @@
       "notePlaceholder": "z.B. Verschnitt aus Auftrag",
       "initialState": "Ausgangszustand",
       "usedLabel": "Verbraucht",
-      "remainingLabel": "Übrig"
+      "remainingLabel": "Übrig",
+      "initialInfo": "Anfang: {{initial}} · Verbraucht: {{used}} · Übrig: {{remaining}}"
     },
     "packages": {
       "addProduct": "Produkt hinzufügen",
@@ -4613,7 +4628,8 @@
     "salesPanel": "Verkaufspanel",
     "crm": {
       "fetchServicesFailed": "Dienste konnten nicht abgerufen werden",
-      "noServicesConfigured": "Keine Dienste konfiguriert. Klicken Sie auf \"Von Apaczka abrufen\", um verfügbare Dienste zu laden."
+      "noServicesConfigured": "Keine Dienste konfiguriert. Klicken Sie auf \"Von Apaczka abrufen\", um verfügbare Dienste zu laden.",
+      "noServicesConfiguredFull": "Keine Dienste konfiguriert. Klicken Sie auf \"Von Apaczka abrufen\", um die verfügbaren Dienste zu laden."
     },
     "unsavedChanges": "Sie haben ungespeicherte Änderungen. Was möchten Sie tun?",
     "continueEditing": "Bearbeitung fortsetzen",
@@ -5136,7 +5152,8 @@
     "deleteTitle": "Remove vehicle from yard",
     "deleteDescription": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?",
     "deleteVehicle": "Fahrzeug vom Hof entfernen",
-    "deleteVehicleConfirm": "Möchten Sie das Fahrzeug {{plate}} ({{customer}}) wirklich vom Hof entfernen?"
+    "deleteVehicleConfirm": "Möchten Sie das Fahrzeug {{plate}} ({{customer}}) wirklich vom Hof entfernen?",
+    "deleteConfirm": "Möchten Sie das Fahrzeug {{plate}} ({{customer}}) wirklich vom Hof entfernen?"
   },
   "aiAnalyst": {
     "suggestions": {
@@ -5166,7 +5183,8 @@
     "employeesRemoved": "Mitarbeiter entfernt"
   },
   "reservationForm": {
-    "noShowWarning": "Kunde <0>{{name}}</0> war am {{date}} nicht anwesend, Dienstleistung: {{service}}"
+    "noShowWarning": "Kunde <0>{{name}}</0> war am {{date}} nicht anwesend, Dienstleistung: {{service}}",
+    "noShowText": "Kunde {{name}} war beim Termin am {{date}} abwesend, Dienstleistung: {{service}}"
   },
   "ai": {
     "revenueThisMonth": "Umsatz in diesem Monat",
@@ -5176,6 +5194,17 @@
     "topCustomersPrompt": "Welche Kunden hatten die meisten Buchungen in den letzten 3 Monaten? Zeigen Sie die Top 10 mit Besuchszahl und Gesamtbetrag."
   },
   "publicProtocol": {
-    "checkLink": "Überprüfen Sie den Link oder kontaktieren Sie den Service."
+    "checkLink": "Überprüfen Sie den Link oder kontaktieren Sie den Service.",
+    "checkLinkOrContact": "Überprüfen Sie den Link oder kontaktieren Sie den Service."
+  },
+  "smsDeclaration": {
+    "ownerData": "Daten des Namensinhabers:",
+    "declaration": "Erklärung",
+    "consentText": "über die Zustimmung zur Verwendung des Namens",
+    "actingOnBehalf": "Im Namen der Firma: {{company}}",
+    "consentStatement": "Ich erkläre, dass ich der Verwendung des Absenderfelds mit folgendem Wortlaut zustimme:",
+    "byCompany": "durch Firma: Tomasz Nastały SINPAI",
+    "purpose": "zum Zweck der Vervollständigung des Absenderfelds in SMS-Nachrichten, die in unserem Auftrag generiert werden.",
+    "stampAndSignature": "Stempel und leserliche Unterschrift des Namensinhabers"
   }
 }

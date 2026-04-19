@@ -332,7 +332,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
           <AlertDialogHeader>
             <AlertDialogTitle>{t('yardVehicles.deleteVehicle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz usunąć pojazd {vehicleToDelete?.vehicle_plate} ({vehicleToDelete?.customer_name}) z placu?
+              {t('yardVehicles.deleteConfirm', { plate: vehicleToDelete?.vehicle_plate, customer: vehicleToDelete?.customer_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

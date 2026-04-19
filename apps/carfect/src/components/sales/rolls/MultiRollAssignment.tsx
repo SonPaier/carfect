@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, X, AlertCircle } from 'lucide-react';
 import { Button, Label, NumericInput } from '@shared/ui';
 import type { SalesRoll } from '../types/rolls';
@@ -38,6 +39,7 @@ const MultiRollAssignment = ({
   filterWidthMm,
   excludeOrderId,
 }: MultiRollAssignmentProps) => {
+  const { t } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rollInfoMap, setRollInfoMap] = useState<Record<string, RollInfo>>({});
   const prevRequiredMbRef = useRef(requiredMb);

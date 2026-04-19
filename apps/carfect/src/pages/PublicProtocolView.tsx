@@ -147,7 +147,7 @@ export default function PublicProtocolView() {
               {error || t('pages.protocol.notFound')}
             </h1>
             <p className="text-muted-foreground">
-              Sprawdź poprawność linku lub skontaktuj się z serwisem.
+              {t('publicProtocol.checkLinkOrContact')}
             </p>
           </CardContent>
         </Card>
@@ -158,10 +158,10 @@ export default function PublicProtocolView() {
   return (
     <>
       <Helmet>
-        <title>Protokół przyjęcia pojazdu | {instance.name}</title>
+        <title>{t('protocols.vehicleReceptionProtocol')} | {instance.name}</title>
         <meta
           name="description"
-          content={`Protokół przyjęcia pojazdu ${protocol.vehicle_model || ''} ${protocol.registration_number || ''}`}
+          content={t('protocols.vehicleReceptionProtocol') + ' ' + (protocol.vehicle_model || '') + ' ' + (protocol.registration_number || '')}
         />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>

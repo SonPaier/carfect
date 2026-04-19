@@ -470,7 +470,7 @@ const MojaRezerwacja = () => {
                 <div>
                   <p className="text-sm font-medium">Masz pytania?</p>
                   <p className="text-xs text-muted-foreground">
-                    Zadzwoń: {reservation.instance.phone}
+                    {t('myReservation.callPhone', { phone: reservation.instance.phone })}
                   </p>
                 </div>
               </a>

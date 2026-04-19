@@ -268,7 +268,7 @@ const SuperAdminAuth = () => {
               </div>
               <h2 className="text-3xl font-bold">Super Admin</h2>
               <p className="text-white/70 text-lg">
-                Zarządzaj wszystkimi instancjami, użytkownikami i ustawieniami systemu Carfect.
+                {t('superAdmin.manageAllDesc')}
               </p>
             </div>
           </div>
