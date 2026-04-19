@@ -4,8 +4,8 @@ import { Phone, Clock, Trash2, Plus, Pencil } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import AddReservationDialogV2, { YardVehicle } from './AddReservationDialogV2';
-import {
 import { getDateLocale } from '@/i18n/dateFnsLocale';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

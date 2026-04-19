@@ -57,8 +57,8 @@ import {
   AlertDialogTitle,
 } from '@shared/ui';
 import { useProtocolConfig, ConsentClauseRenderer } from '@shared/protocol-config';
-import {
 import { getDateLocale } from '@/i18n/dateFnsLocale';
+import {
   useCustomFields,
   CustomFieldsRenderer,
   validateCustomFieldValues,
