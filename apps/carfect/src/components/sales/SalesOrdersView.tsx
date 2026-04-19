@@ -823,7 +823,7 @@ const SalesOrdersView = () => {
         <h2 className="text-xl font-semibold text-foreground">{t('sales.orders.title')}</h2>
         <Button size="sm" onClick={() => setDrawerOpen(true)}>
           <Plus className="w-4 h-4" />
-          Dodaj zamówienie
+          {t('sales.orders.addOrder')}
         </Button>
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
@@ -896,7 +896,7 @@ const SalesOrdersView = () => {
             Anuluj
           </Button>
           <Button size="sm" onClick={handleBulkInvoice}>
-            Wystaw zbiorczą fakturę
+            {t('sales.orders.issueCollectiveInvoice')}
           </Button>
         </div>
       )}
@@ -927,7 +927,7 @@ const SalesOrdersView = () => {
                 Utworzono
               </SortableHead>
               <SortableHead column="shippedAt" className="w-[110px]">
-                Wysłano
+                {t('sales.orders.sent')}
               </SortableHead>
               <TableHead className="w-[160px]">Dostawa</TableHead>
               <TableHead className="w-[200px]">List przewozowy</TableHead>
@@ -948,7 +948,7 @@ const SalesOrdersView = () => {
                   <EmptyState
                     icon={ShoppingCart}
                     title={t('sales.orders.noOrders')}
-                    description="Utwórz pierwsze zamówienie dla klienta"
+                    description={t('sales.orders.createFirstOrder')}
                   />
                 </TableCell>
               </TableRow>
@@ -1261,7 +1261,7 @@ const SalesOrdersView = () => {
                                 handleCreateShipment(order.id);
                               }}
                             >
-                              Utwórz przesyłkę
+                              {t('sales.orders.createShipment')}
                             </DropdownMenuItem>
                             {order.apaczkaOrderId && order.status !== 'anulowany' && (
                               <DropdownMenuItem
@@ -1270,7 +1270,7 @@ const SalesOrdersView = () => {
                                   handlePrintLabel(order.id);
                                 }}
                               >
-                                Drukuj etykietę
+                                {t('sales.orders.printLabel')}
                               </DropdownMenuItem>
                             )}
                             {order.trackingNumber && (
@@ -1285,7 +1285,7 @@ const SalesOrdersView = () => {
                                   });
                                 }}
                               >
-                                Anuluj przesyłkę
+                                {t('sales.orders.cancelShipment')}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -1300,7 +1300,7 @@ const SalesOrdersView = () => {
                                 });
                               }}
                             >
-                              Usuń
+                              {t('common.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1371,8 +1371,8 @@ const SalesOrdersView = () => {
       <ConfirmDialog
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
-        title="Usuń zamówienie"
-        description={`Czy na pewno chcesz usunąć zamówienie ${deleteConfirm.orderNumber}? Tej operacji nie można cofnąć.`}
+        title={t('sales.orders.deleteOrder')}
+        description={t('sales.orders.deleteOrderConfirm', { orderNumber: deleteConfirm.orderNumber })}
         confirmLabel={t('common.delete')}
         variant="destructive"
         onConfirm={() => handleDeleteOrder(deleteConfirm.orderId)}
@@ -1381,7 +1381,7 @@ const SalesOrdersView = () => {
         open={cancelShipmentConfirm.open}
         onOpenChange={(open) => setCancelShipmentConfirm((prev) => ({ ...prev, open }))}
         title={t('sales.orders.cancelShipment')}
-        description={`Czy na pewno chcesz anulować przesyłkę dla zamówienia ${cancelShipmentConfirm.orderNumber}? Dane śledzenia zostaną usunięte.`}
+        description={t('sales.orders.cancelShipmentConfirm', { orderNumber: cancelShipmentConfirm.orderNumber })}
         confirmLabel={t('sales.orders.cancelShipment')}
         variant="destructive"
         onConfirm={() => handleCancelShipment(cancelShipmentConfirm.orderId)}
@@ -1434,8 +1434,8 @@ const SalesOrdersView = () => {
               .map((pkg, i, arr) => ({
                 name:
                   arr.length === 1
-                    ? `Wysyłka (${order.orderNumber})`
-                    : `Wysyłka #${i + 1} (${order.orderNumber})`,
+                    ? t('sales.orders.shippingLabel', { orderNumber: order.orderNumber })
+                    : t('sales.orders.shippingLabelMulti', { index: i + 1, orderNumber: order.orderNumber }),
                 quantity: 1,
                 unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
                 vat_rate: 23,
@@ -1453,7 +1453,7 @@ const SalesOrdersView = () => {
             setBulkInvoiceState({ open: false, orders: [] });
             bulk.clear();
             fetchOrders();
-            toast.success(`Zbiorcza faktura wystawiona dla ${ids.length} zamówień`);
+            toast.success(t('sales.orders.collectiveInvoiceSuccess', { count: ids.length }));
           }}
           supabaseClient={supabase}
           customerTable="sales_customers"

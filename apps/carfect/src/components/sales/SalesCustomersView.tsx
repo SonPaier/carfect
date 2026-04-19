@@ -291,7 +291,7 @@ const SalesCustomersView = () => {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Ładowanie...
+                  {t('common.loading')}
                 </TableCell>
               </TableRow>
             ) : paginated.length === 0 ? (
@@ -374,7 +374,7 @@ const SalesCustomersView = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => openNewOrder(c)}>
                               <ShoppingCart className="w-4 h-4 mr-2" />
-                              Nowe zamówienie
+                              {t('sales.orders.newOrder')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openDrawer(c, true)}>
                               Edytuj
@@ -385,7 +385,7 @@ const SalesCustomersView = () => {
                                 setDeleteConfirm({ open: true, id: c.id, name: c.name })
                               }
                             >
-                              Usuń
+                              {t('common.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -435,7 +435,7 @@ const SalesCustomersView = () => {
                             </div>
                             <div>
                               <p className="text-muted-foreground text-xs font-medium mb-1">
-                                Adres wysyłki
+                                {t('sales.orders.shippingAddress')}
                               </p>
                               {c.shipping_street ? (
                                 <>
@@ -492,7 +492,7 @@ const SalesCustomersView = () => {
               disabled={page === totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
-              Następna
+              {t('common.next')}
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
           </div>
@@ -522,8 +522,8 @@ const SalesCustomersView = () => {
       <ConfirmDialog
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
-        title="Usuń klienta"
-        description={`Czy na pewno chcesz usunąć klienta "${deleteConfirm.name}"?`}
+        title={t('sales.customers.deleteCustomer')}
+        description={t('sales.customers.deleteCustomerConfirm', { name: deleteConfirm.name })}
         confirmLabel={t('common.delete')}
         variant="destructive"
         onConfirm={() => handleDelete(deleteConfirm.id)}

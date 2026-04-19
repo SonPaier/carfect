@@ -64,7 +64,7 @@ export function AllInstancesSmsUsage() {
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Zużycie SMS - Wszystkie instancje
+            {t('superAdmin.smsUsageAll')}
           </span>
           <span className="text-sm font-normal text-muted-foreground">
             {t('superAdmin.smsTotal', { used: totalUsed, limit: totalLimit })}

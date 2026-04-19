@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input } from '@shared/ui';
@@ -60,6 +59,7 @@ export const ProductsSummaryStepV2 = ({
       .select('id, name')
       .eq('instance_id', instanceId)
       .then(({ data }) => {
+  const { t } = useTranslation();
         if (data) setCategories(data);
       });
   }, [instanceId]);
@@ -191,7 +191,7 @@ export const ProductsSummaryStepV2 = ({
       {/* Add Product Button */}
       <Button type="button" onClick={() => setPickerOpen(true)} className="w-full h-12">
         <Plus className="w-4 h-4 mr-2" />
-        Dodaj usługę
+        {t('offers.addService')}
       </Button>
 
       {/* Conditions */}

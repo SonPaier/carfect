@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Clock, Plus, X } from 'lucide-react';
@@ -58,6 +57,7 @@ export default function UpsellSuggestion({
   onAddService,
   selectedAddons,
 }: UpsellSuggestionProps) {
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
 
   // Reset dismissed state when time changes

@@ -282,7 +282,7 @@ const SalesProductsView = () => {
                           className="text-destructive focus:text-destructive"
                           onClick={() => handleDelete(product.id)}
                         >
-                          Usuń
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -326,7 +326,7 @@ const SalesProductsView = () => {
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
             >
-              Następna
+              {t('common.next')}
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
           </div>

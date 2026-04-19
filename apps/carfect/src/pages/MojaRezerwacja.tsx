@@ -537,7 +537,7 @@ const MojaRezerwacja = () => {
                   className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={navigateToEdit}
                 >
-                  Zmień
+                  {t('common.change')}
                 </Button>
               )}
             </div>

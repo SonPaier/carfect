@@ -137,7 +137,7 @@ export const DamagePointDrawer = ({
               onClick={onDelete}
               className="bg-white text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              Usuń
+              {t('common.delete')}
             </Button>
           )}
           <Button onClick={handleSave}>{isEditing ? t('common.save') : t('common.add')}</Button>

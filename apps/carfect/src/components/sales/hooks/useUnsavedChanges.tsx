@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -23,7 +22,9 @@ export const UnsavedChangesDialog = ({
   onContinue,
   onDiscard,
   onSave,
-}: UnsavedChangesDialogProps) => (
+}: UnsavedChangesDialogProps) => {
+  const { t } = useTranslation();
+  return (
   <AlertDialog open={open}>
     <AlertDialogContent>
       <AlertDialogHeader>
@@ -41,7 +42,8 @@ export const UnsavedChangesDialog = ({
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-);
+  );
+};
 
 export function useUnsavedChanges() {
   const [isDirty, setIsDirty] = useState(false);

@@ -262,7 +262,7 @@ const TimeEntriesView = ({ instanceId }: TimeEntriesViewProps) => {
                 {timeEntries.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Brak wpisów w tym miesiącu
+                      {t('employees.noEntriesThisMonth')}
                     </TableCell>
                   </TableRow>
                 )}

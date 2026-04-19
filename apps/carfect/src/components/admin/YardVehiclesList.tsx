@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState, useEffect, DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format, isToday, isTomorrow, parseISO, isBefore, startOfDay } from 'date-fns';
@@ -65,6 +64,7 @@ const getDateLabel = (dateStr: string): string => {
 };
 
 export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = false }: YardVehiclesListProps) {
+  const { t } = useTranslation();
   const [vehicles, setVehicles] = useState<YardVehicle[]>([]);
   const [services, setServices] = useState<Record<string, Service>>({});
   const [loading, setLoading] = useState(true);
@@ -220,11 +220,11 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
       <div className="flex-1 overflow-auto p-2 space-y-4">
         {loading ? (
           <div className="text-center text-muted-foreground py-8">
-            Ładowanie...
+            {t('common.loading')}
           </div>
         ) : filteredVehicles.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            Brak pojazdów na placu
+            {t('yardVehicles.noVehicles')}
           </div>
         ) : (
           groupedVehicles.map((group) => (
@@ -330,7 +330,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usuń pojazd z placu</AlertDialogTitle>
+            <AlertDialogTitle>{t('yardVehicles.deleteVehicle')}</AlertDialogTitle>
             <AlertDialogDescription>
               Czy na pewno chcesz usunąć pojazd {vehicleToDelete?.vehicle_plate} ({vehicleToDelete?.customer_name}) z placu?
             </AlertDialogDescription>
@@ -338,7 +338,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-              Usuń
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

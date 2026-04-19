@@ -88,7 +88,7 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
         <h2 className="text-lg font-semibold">{t('employees.daysOff')}</h2>
         <Button onClick={() => setDialogOpen(true)} size="sm">
           <Plus className="w-4 h-4 mr-1" />
-          Dodaj nieobecność
+          {t('employees.addDayOff')}
         </Button>
       </div>
 
@@ -144,7 +144,7 @@ const EmployeeDaysOffView = ({ instanceId }: EmployeeDaysOffViewProps) => {
               {daysOff.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Brak nieobecności
+                    {t('employees.noDaysOff')}
                   </TableCell>
                 </TableRow>
               )}

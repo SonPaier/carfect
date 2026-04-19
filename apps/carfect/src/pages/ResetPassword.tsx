@@ -125,7 +125,7 @@ const ResetPassword = () => {
               {t('auth.requestNewResetLink')}
             </p>
             <Button onClick={() => navigate('/login', { replace: true })} variant="outline">
-              Wróć do logowania
+              {t('auth.backToLogin')}
             </Button>
           </div>
         </div>

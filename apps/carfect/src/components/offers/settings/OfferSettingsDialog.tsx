@@ -247,7 +247,7 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                     <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
                       <h4 className="font-medium">{t('offerSettings.defaultValues')}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Te ustawienia będą dziedziczone przez każdą nowo utworzoną usługę.
+                        {t('offerSettings.settingsInherited')}
                       </p>
 
                       <DefaultTextarea
@@ -294,10 +294,10 @@ export function OfferSettingsDialog({ open, onOpenChange, instanceId }: OfferSet
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1">
                           <Label htmlFor="offer-discounts-enabled">
-                            Możliwość dodawania rabatów do usług w ofertach
+                            {t('offerSettings.discountsAbility')}
                           </Label>
                           <p className="text-sm text-muted-foreground">
-                            Gdy włączone, przy każdej pozycji w kreatorze oferty pojawi się pole do
+                            {t('offerSettings.discountsFieldDesc')}
                             wpisania rabatu %.
                           </p>
                         </div>

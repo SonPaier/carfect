@@ -122,7 +122,7 @@ export const SignatureDialog = ({
             size="sm"
             className="bg-white"
           >
-            Wyczyść
+            {t('common.clear')}
           </Button>
           <Button
             onClick={handleSave}

@@ -144,9 +144,9 @@ const SuperAdminDashboard = () => {
       setInstances((prev) =>
         prev.map((i) => (i.id === instanceId ? { ...i, active: !currentState } : i)),
       );
-      toast.success(`Instancja ${currentState ? 'wyłączona' : 'włączona'}`);
+      toast.success(currentState ? t('superAdmin.instanceDisabled') : t('superAdmin.instanceEnabled'));
     } catch (error) {
-      toast.error('Błąd podczas zmiany statusu instancji');
+      toast.error(t('superAdmin.statusChangeError'));
     }
   };
 
@@ -166,9 +166,9 @@ const SuperAdminDashboard = () => {
       if (error) throw error;
 
       setInstances((prev) => prev.filter((i) => i.id !== instance.id));
-      toast.success('Instancja została usunięta');
+      toast.success(t('superAdmin.instanceDeleted'));
     } catch (error) {
-      toast.error('Błąd podczas usuwania instancji');
+      toast.error(t('superAdmin.instanceDeleteError'));
     }
   };
 
@@ -306,7 +306,7 @@ const SuperAdminDashboard = () => {
                 onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4" />
-                Wyloguj się
+                {t('auth.logout')}
               </Button>
             </div>
           </div>
@@ -343,7 +343,7 @@ const SuperAdminDashboard = () => {
                   <div>
                     <h1 className="text-2xl font-bold text-foreground">Instancje</h1>
                     <p className="text-muted-foreground">
-                      Zarządzaj wszystkimi instancjami aplikacji
+                      {t('superAdmin.manageAllInstances')}
                     </p>
                   </div>
                   <Button
@@ -452,7 +452,7 @@ const SuperAdminDashboard = () => {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                   <ExternalLink className="w-4 h-4 mr-2" />
-                                  Otwórz panel admina
+                                  {t('superAdmin.openAdminPanel')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleOpenSettings(instance)}>
                                   <Settings className="w-4 h-4 mr-2" />
@@ -464,25 +464,25 @@ const SuperAdminDashboard = () => {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleOpenFeatures(instance)}>
                                   <FileText className="w-4 h-4 mr-2" />
-                                  Funkcje płatne
+                                  {t('superAdmin.paidFeatures')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleOpenUsers(instance)}>
                                   <Users className="w-4 h-4 mr-2" />
-                                  Zarządzaj użytkownikami
+                                  {t('superAdmin.manageUsers')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleInstance(instance.id, instance.active)}
                                   className={instance.active ? 'text-destructive' : 'text-success'}
                                 >
                                   <Power className="w-4 h-4 mr-2" />
-                                  {instance.active ? 'Wyłącz instancję' : 'Włącz instancję'}
+                                  {instance.active ? t('superAdmin.disableInstance') : t('superAdmin.enableInstance')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDeleteInstance(instance)}
                                   className="text-destructive"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
-                                  Usuń instancję
+                                  {t('superAdmin.deleteInstance')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

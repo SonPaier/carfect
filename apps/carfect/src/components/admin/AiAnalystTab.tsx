@@ -1,13 +1,14 @@
 import { AiAnalystView, type AiAnalystSuggestion } from '@shared/ai';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 
 const SUGGESTIONS: AiAnalystSuggestion[] = [
   {
-    label: 'Przychód w tym miesiącu',
+    label: t('ai.revenueThisMonth'),
     prompt: 'Jaki był mój łączny przychód w bieżącym miesiącu? Podaj sumę i liczbę rezerwacji.',
   },
   {
-    label: 'Najpopularniejsze usługi',
+    label: t('ai.popularServices'),
     prompt: 'Jakie usługi były najczęściej rezerwowane w ostatnich 30 dniach? Pokaż ranking.',
   },
   {

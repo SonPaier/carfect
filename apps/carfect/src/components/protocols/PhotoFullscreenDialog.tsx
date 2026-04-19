@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -33,6 +32,7 @@ export const PhotoFullscreenDialog = ({
   allPhotos,
   initialIndex = 0,
 }: PhotoFullscreenDialogProps) => {
+  const { t } = useTranslation();
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 

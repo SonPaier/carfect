@@ -98,7 +98,8 @@
     "invalidLink": "Ungültiger Link",
     "requestNewResetLink": "Fordern Sie einen neuen Link zum Zurücksetzen des Passworts an.",
     "redirectToLogin": "Sie werden in Kürze zur Anmeldeseite weitergeleitet.",
-    "enterNewPassword": "Geben Sie ein neues Passwort für Ihr Konto ein."
+    "enterNewPassword": "Geben Sie ein neues Passwort für Ihr Konto ein.",
+    "manageStudio": "Verwalten Sie Aufträge, Angebote und Kunden Ihres Detailing-Studios — in"
   },
   "navigation": {
     "reservations": "Buchungen",
@@ -318,7 +319,8 @@
     "notFound": "Buchung nicht gefunden",
     "checkSms": "Überprüfen Sie den Code in der SMS und versuchen Sie es erneut",
     "cannotEdit": "Diese Buchung kann nicht bearbeitet werden",
-    "editCutoffPassed": "Die Frist für Änderungen ist abgelaufen"
+    "editCutoffPassed": "Die Frist für Änderungen ist abgelaufen",
+    "callLabel": "Anrufen: {{phone}}"
   },
   "booking": {
     "title": "Kunden",
@@ -630,7 +632,8 @@
     "tooltipCategory": "Gruppierung der Dienste in der Preisliste",
     "tooltipDescription": "Beschreibung, die Kunden bei der Buchung angezeigt wird",
     "tooltipDuration": "Dienstdauer in Minuten",
-    "tooltipReminders": "Automatische SMS-Erinnerungen nach Dienstabschluss"
+    "tooltipReminders": "Automatische SMS-Erinnerungen nach Dienstabschluss",
+    "tooltipBasePrice": "Basispreis der Dienstleistung"
   },
   "stations": {
     "title": "Stationen",
@@ -918,7 +921,10 @@
     "selectScopesOrAdd": "Wählen Sie Bereiche im vorherigen Schritt oder fügen Sie eine Option manuell hinzu",
     "serviceDescFromTab": "Dienstbeschreibungen werden vom Tab geladen",
     "photoAlt": "Foto {{index}}",
-    "createFirstOffer": "Erstellen Sie das erste Angebot für einen Kunden"
+    "createFirstOffer": "Erstellen Sie das erste Angebot für einen Kunden",
+    "noItemsAddBelow": "Keine Positionen. Fügen Sie die erste Position unten hinzu.",
+    "noTemplatesDefined": "Keine Vorlagen definiert. Fügen Sie Vorlagen im Abschnitt \"Ihre Vorlagen\" hinzu.",
+    "selectScopesForOffer": "Wählen Sie eine oder mehrere Vorlagen für das Angebot aus"
   },
   "summary": {
     "customer": "Kunde",
@@ -1584,7 +1590,16 @@
     "toastDeleteError": "Fehler beim Löschen der Instanz",
     "confirmDelete": "Möchten Sie die Instanz '{{name}}' wirklich löschen? Die Instanz wird ausgeblendet, aber die Daten verbleiben in der Datenbank.",
     "smsUsageAll": "SMS-Verbrauch - Alle Instanzen",
-    "smsTotal": "Gesamt: {{used}} / {{limit}}"
+    "smsTotal": "Gesamt: {{used}} / {{limit}}",
+    "instanceDisabled": "Instanz deaktiviert",
+    "instanceEnabled": "Instanz aktiviert",
+    "statusChangeError": "Fehler beim Ändern des Instanzstatus",
+    "deleteInstanceConfirm": "Möchten Sie die Instanz \"{{name}}\" wirklich löschen? Die Instanz wird ausgeblendet, aber die Daten bleiben in der Datenbank.",
+    "instanceDeleted": "Instanz wurde gelöscht",
+    "instanceDeleteError": "Fehler beim Löschen der Instanz",
+    "paidFeaturesFor": "Kostenpflichtige Funktionen - {{name}}",
+    "usersFor": "Benutzer - {{name}}",
+    "manageDescription": "Verwalten Sie alle Instanzen, Benutzer und Carfect-Systemeinstellungen."
   },
   "instanceFeatures": {
     "cardTitle": "Zusätzliche Funktionen",
@@ -1913,7 +1928,15 @@
     "damagePhotoAlt": "Schadensfoto {{index}}",
     "prevPhoto": "Vorheriges Foto",
     "nextPhoto": "Nächstes Foto",
-    "damagePhoto": "Schadensfoto"
+    "damagePhoto": "Schadensfoto",
+    "deleteProtocol": "Protokoll löschen",
+    "deleteProtocolConfirm": "Möchten Sie das Protokoll für {{name}} wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
+    "sampleService": "Beispieldienstleistung",
+    "sampleValue": "Beispiel",
+    "reception": "Annahme",
+    "emailBody": "Sehr geehrte/r {{name}},\n\nanbei das Fahrzeug-{{type}}-Protokoll{{vehicle}}.\n\nBitte prüfen Sie das Dokument.\n\n[Protokoll-Link wird automatisch angehängt]",
+    "emailSubject": "{{type}}-Fahrzeugprotokoll{{vehicle}}",
+    "protocolNumber": "Protokoll #{{number}}"
   },
   "adminDashboard": {
     "title": "Admin-Panel",
@@ -2932,7 +2955,8 @@
     "settingsInherited": "Diese Einstellungen werden von jedem neu erstellten Dienst übernommen.",
     "discountsAbility": "Möglichkeit, Rabatte zu Diensten in Angeboten hinzuzufügen",
     "conditionTemplatesDesc": "Erstellen Sie Bedingungsvorlagen, die Sie beim Erstellen eines Angebots schnell einfügen können.",
-    "templateContentPlaceholder": "Vorlageninhalt..."
+    "templateContentPlaceholder": "Vorlageninhalt...",
+    "discountsFieldDesc": "Wenn aktiviert, erscheint bei jeder Position im Angebots-Builder ein Feld für"
   },
   "priceList": {
     "title": "Erinnerungen",
@@ -4082,7 +4106,10 @@
       "dragPhotos": "Rollenfotos hierher ziehen oder klicken",
       "supportedFormats": "Unterstützte Formate: JPG, PNG, HEIC. Sie können mehrere Fotos gleichzeitig hochladen.",
       "readFailed": "Lesen fehlgeschlagen",
-      "notePlaceholder": "z.B. Verschnitt aus Auftrag"
+      "notePlaceholder": "z.B. Verschnitt aus Auftrag",
+      "initialState": "Ausgangszustand",
+      "usedLabel": "Verbraucht",
+      "remainingLabel": "Übrig"
     },
     "packages": {
       "addProduct": "Produkt hinzufügen",
@@ -4198,7 +4225,9 @@
     "customers": {
       "lastOrder": "Letzte Bestellung",
       "payer": "Zahler",
-      "pageOf": "Seite {{page}} von {{totalPages}} ({{count}} Kunden)"
+      "pageOf": "Seite {{page}} von {{totalPages}} ({{count}} Kunden)",
+      "deleteCustomer": "Kunden löschen",
+      "deleteCustomerConfirm": "Möchten Sie den Kunden \"{{name}}\" wirklich löschen?"
     },
     "products": {
       "fullName": "Vollständiger Name",
@@ -4366,7 +4395,13 @@
       "shippingPrice": "Versandkosten",
       "shippingAddressNote": "Änderungen gelten nur für diese Bestellung und überschreiben nicht die Kundenadresse.",
       "addAnotherPackage": "Weiteres Paket hinzufügen",
-      "addPackage": "Paket hinzufügen"
+      "addPackage": "Paket hinzufügen",
+      "createFirstOrder": "Erstellen Sie die erste Bestellung für den Kunden",
+      "deleteOrder": "Bestellung löschen",
+      "deleteOrderConfirm": "Möchten Sie die Bestellung {{orderNumber}} wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
+      "shippingLabel": "Versand ({{orderNumber}})",
+      "shippingLabelMulti": "Versand #{{index}} ({{orderNumber}})",
+      "collectiveInvoiceSuccess": "Sammelrechnung für {{count}} Bestellungen ausgestellt"
     },
     "companySettings": {
       "title": "Einstellungen",
@@ -4577,7 +4612,8 @@
     "sameAsBilling": "Same as company address",
     "salesPanel": "Verkaufspanel",
     "crm": {
-      "fetchServicesFailed": "Dienste konnten nicht abgerufen werden"
+      "fetchServicesFailed": "Dienste konnten nicht abgerufen werden",
+      "noServicesConfigured": "Keine Dienste konfiguriert. Klicken Sie auf \"Von Apaczka abrufen\", um verfügbare Dienste zu laden."
     },
     "unsavedChanges": "Sie haben ungespeicherte Änderungen. Was möchten Sie tun?",
     "continueEditing": "Bearbeitung fortsetzen",
@@ -5098,7 +5134,9 @@
     "tomorrow": "Tomorrow",
     "pickup": "pickup",
     "deleteTitle": "Remove vehicle from yard",
-    "deleteDescription": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
+    "deleteDescription": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?",
+    "deleteVehicle": "Fahrzeug vom Hof entfernen",
+    "deleteVehicleConfirm": "Möchten Sie das Fahrzeug {{plate}} ({{customer}}) wirklich vom Hof entfernen?"
   },
   "aiAnalyst": {
     "suggestions": {
@@ -5126,5 +5164,18 @@
     "noteChanged": "Notiz geändert",
     "employeesAdded": "Mitarbeiter hinzugefügt",
     "employeesRemoved": "Mitarbeiter entfernt"
+  },
+  "reservationForm": {
+    "noShowWarning": "Kunde <0>{{name}}</0> war am {{date}} nicht anwesend, Dienstleistung: {{service}}"
+  },
+  "ai": {
+    "revenueThisMonth": "Umsatz in diesem Monat",
+    "revenuePrompt": "Was war mein Gesamtumsatz in diesem Monat? Zeigen Sie die Summe und Anzahl der Buchungen.",
+    "popularServices": "Beliebteste Dienstleistungen",
+    "popularServicesPrompt": "Welche Dienstleistungen wurden in den letzten 30 Tagen am häufigsten gebucht? Zeigen Sie das Ranking.",
+    "topCustomersPrompt": "Welche Kunden hatten die meisten Buchungen in den letzten 3 Monaten? Zeigen Sie die Top 10 mit Besuchszahl und Gesamtbetrag."
+  },
+  "publicProtocol": {
+    "checkLink": "Überprüfen Sie den Link oder kontaktieren Sie den Service."
   }
 }

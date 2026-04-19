@@ -250,7 +250,7 @@ const SalesDashboard = () => {
               ) : (
                 <>
                   <PanelLeftClose className="w-4 h-4 shrink-0" />
-                  Zwiń menu
+                  {t('navigation.collapseMenu')}
                 </>
               )}
             </Button>

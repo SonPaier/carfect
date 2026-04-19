@@ -221,7 +221,7 @@ const RollDetailsDrawer = ({
               <p className="text-sm text-muted-foreground text-center py-8">{t('common.loading')}</p>
             ) : usages.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
-                Brak zamówień dla tej rolki
+                {t('sales.rolls.noOrdersForRoll')}
               </p>
             ) : (
               <Table>

@@ -1243,7 +1243,7 @@ const ReservationDetailsDrawer = ({
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setHistoryDrawerOpen(true)}>
                         <History className="w-4 h-4 mr-2" />
-                        Zobacz historię
+                        {t('reservationDetails.viewHistory')}
                       </DropdownMenuItem>
                       {onCreateOffer && reservation && (
                         <DropdownMenuItem
@@ -1256,7 +1256,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <FileText className="w-4 h-4 mr-2" />
-                          Przygotuj ofertę
+                          {t('reservationDetails.prepareOffer')}
                         </DropdownMenuItem>
                       )}
                       {onNoShow && (
@@ -1277,7 +1277,7 @@ const ReservationDetailsDrawer = ({
                           onClick={() => setDeleteDialogOpen(true)}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Usuń
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>

@@ -79,7 +79,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
     return (
       <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Ładowanie...
+        {t('common.loading')}
       </div>
     );
   }
@@ -87,7 +87,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Twórz szablony warunków, które możesz szybko wstawiać przy tworzeniu oferty.
+        {t('offerSettings.conditionTemplatesDesc')}
       </p>
 
       {TEMPLATE_TYPES.map((type) => {

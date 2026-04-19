@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +21,7 @@ interface ScopesStepProps {
 }
 
 export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: ScopesStepProps) {
+  const { t } = useTranslation();
   const [scopes, setScopes] = useState<OfferScope[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,7 +78,7 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
       <div className="text-center mb-6">
         <h2 className="text-lg font-semibold">Wybierz szablony</h2>
         <p className="text-sm text-muted-foreground">
-          Zaznacz jeden lub więcej szablonów, które chcesz uwzględnić w ofercie
+          {t('offers.selectScopesForOffer')}
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export function ScopesStep({ instanceId, selectedScopeIds, onScopesChange }: Sco
                       {scope.has_coating_upsell && (
                         <Badge variant="secondary" className="gap-1 shrink-0">
                           <Sparkles className="h-3 w-3" />
-                          +Powłoka
+                          {t('offers.addCoating')}
                         </Badge>
                       )}
                     </div>

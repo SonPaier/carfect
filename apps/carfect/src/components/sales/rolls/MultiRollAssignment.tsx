@@ -219,7 +219,7 @@ const MultiRollAssignment = ({
         onClick={() => setDrawerOpen(true)}
       >
         <Plus className="w-3 h-3" />
-        Dodaj rolkę
+        {t('sales.rolls.addRoll')}
       </Button>
 
       <RollSelectDrawer

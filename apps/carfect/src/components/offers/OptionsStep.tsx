@@ -669,7 +669,7 @@ export const OptionsStep = ({
 
               {option.items.length === 0 && (
                 <div className="text-center py-4 text-muted-foreground text-sm">
-                  Brak pozycji. Dodaj pierwszą pozycję poniżej.
+                  {t('offers.noItemsAddBelow')}
                 </div>
               )}
 
@@ -681,7 +681,7 @@ export const OptionsStep = ({
                 className="gap-1 mt-2"
               >
                 <Plus className="w-3 h-3" />
-                Dodaj pozycję
+                {t('offers.addItem')}
               </Button>
             </div>
           </div>
@@ -700,7 +700,7 @@ export const OptionsStep = ({
           rel="noopener noreferrer"
           className="text-primary hover:underline font-medium"
         >
-          Usługi
+          {t('common.services')}
         </a>
         .
       </p>

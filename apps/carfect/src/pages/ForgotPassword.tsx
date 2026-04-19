@@ -136,7 +136,7 @@ const ForgotPassword = ({ subdomainSlug }: ForgotPasswordProps) => {
           <div className="text-center">
             <Link to={loginPath} className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
               <ArrowLeft className="w-4 h-4" />
-              Wróć do logowania
+              {t('auth.backToLogin')}
             </Link>
           </div>
         </div>

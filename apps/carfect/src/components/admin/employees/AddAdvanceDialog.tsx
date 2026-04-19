@@ -81,7 +81,7 @@ export function AddAdvanceDialog({
             Anuluj
           </Button>
           <Button onClick={handleSubmit} disabled={!amount || amount <= 0 || isSubmitting}>
-            Dodaj zaliczkę
+            {t('employees.addAdvance')}
           </Button>
         </DialogFooter>
       </DialogContent>

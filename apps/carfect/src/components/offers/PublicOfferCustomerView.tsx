@@ -860,7 +860,7 @@ export const PublicOfferCustomerView = ({
                 <div style={{ color: branding.offer_section_text_color }}>
                   <div className="flex items-center gap-2 font-medium mb-1">
                     <CreditCard className="w-4 h-4 opacity-70" />
-                    Warunki płatności
+                    {t('offers.paymentTerms')}
                   </div>
                   <div
                     className="pl-6 opacity-80 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-[15px] md:text-sm"

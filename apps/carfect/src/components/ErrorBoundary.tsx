@@ -32,7 +32,7 @@ const ErrorFallback = ({ error, resetError }: FallbackProps) => {
           <div className="flex gap-2 justify-end">
             <Button onClick={resetError} variant="outline">
               <RefreshCw className="w-4 h-4 mr-2" />
-              Spróbuj ponownie
+              {t('errors.tryAgain')}
             </Button>
             <Button onClick={() => (window.location.href = '/')}>{t('errors.homepage')}</Button>
           </div>

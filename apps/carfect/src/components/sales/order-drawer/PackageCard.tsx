@@ -451,10 +451,10 @@ const PackageCard = ({
               className="justify-start flex-wrap"
             >
               <ToggleGroupItem value="shipping" className="text-xs px-3 border-border">
-                Wysyłka
+                {t('sales.orders.shipping')}
               </ToggleGroupItem>
               <ToggleGroupItem value="pickup" className="text-xs px-3 border-border">
-                Odbiór osobisty
+                {t('sales.orders.pickup')}
               </ToggleGroupItem>
               <ToggleGroupItem value="uber" className="text-xs px-3 border-border">
                 Uber
@@ -675,7 +675,7 @@ const PackageCard = ({
                   disabled={valuation.loading}
                 >
                   {valuation.loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
-                  Sprawdź wycenę
+                  {t('sales.orders.checkPricing')}
                 </Button>
                 {pkg.shippingCost != null && (
                   <span className="text-sm font-medium text-foreground">

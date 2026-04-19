@@ -1,4 +1,3 @@
-  const { t } = useTranslation();
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEmployees, Employee } from '@/hooks/useEmployees';
@@ -31,6 +30,7 @@ const EmployeesList = ({ instanceId, centered = false }: EmployeesListProps) => 
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: timeEntries = [] } = useTimeEntries(instanceId, undefined, today, today);
   
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [workerDialogEmployee, setWorkerDialogEmployee] = useState<Employee | null>(null);

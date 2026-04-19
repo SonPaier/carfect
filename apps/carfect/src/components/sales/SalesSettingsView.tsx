@@ -349,7 +349,7 @@ const SalesSettingsView = () => {
                 onClick={() => setBankAccounts(bankAccounts.filter((_, i) => i !== index))}
                 className="text-sm text-destructive hover:underline shrink-0"
               >
-                Usuń
+                {t('common.delete')}
               </button>
             )}
           </div>

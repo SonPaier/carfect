@@ -578,7 +578,7 @@ const ServiceFormContent = ({
           {!showSizePrices && (
             <div className="flex items-center gap-1.5">
               <Label className="text-sm leading-5">{t('priceList.form.priceType', 'Cena')}</Label>
-              <FieldInfo tooltip="Cena bazowa usługi" />
+              <FieldInfo tooltip={t('services.tooltipBasePrice')} />
             </div>
           )}
 

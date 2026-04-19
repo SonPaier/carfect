@@ -614,7 +614,7 @@ export function WidgetSettingsTab({ instanceId, onChange }: WidgetSettingsTabPro
           <div>
             <h3 className="font-medium">{t('offerSettings.widgetAppearance')}</h3>
             <p className="text-sm text-muted-foreground">
-              Osobne kolory dla widgetu. Gdy wyłączone, używane są kolory z ustawień oferty.
+              {t('offerSettings.widgetColorsDesc')}
             </p>
           </div>
           <WidgetBrandingSettings

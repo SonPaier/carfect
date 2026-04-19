@@ -98,7 +98,8 @@
     "invalidLink": "Invalid link",
     "requestNewResetLink": "Request a new password reset link.",
     "redirectToLogin": "You will be redirected to the login page shortly.",
-    "enterNewPassword": "Enter a new password for your account."
+    "enterNewPassword": "Enter a new password for your account.",
+    "manageStudio": "Manage jobs, quotes and customers of your detailing studio — in"
   },
   "navigation": {
     "reservations": "Bookings",
@@ -318,7 +319,8 @@
     "notFound": "Booking not found",
     "checkSms": "Check the code in your SMS and try again",
     "cannotEdit": "This booking cannot be edited",
-    "editCutoffPassed": "The deadline for changing this booking has passed"
+    "editCutoffPassed": "The deadline for changing this booking has passed",
+    "callLabel": "Call: {{phone}}"
   },
   "booking": {
     "title": "Customers",
@@ -630,7 +632,8 @@
     "tooltipCategory": "Grouping services in price list",
     "tooltipDescription": "Description displayed to customers during booking",
     "tooltipDuration": "Service duration in minutes",
-    "tooltipReminders": "Automatic SMS reminders after service completion"
+    "tooltipReminders": "Automatic SMS reminders after service completion",
+    "tooltipBasePrice": "Base price of the service"
   },
   "stations": {
     "title": "Services",
@@ -918,7 +921,10 @@
     "selectScopesOrAdd": "Select scopes in the previous step or add an option manually",
     "serviceDescFromTab": "Service descriptions are loaded from the tab",
     "photoAlt": "Photo {{index}}",
-    "createFirstOffer": "Create the first quote for a customer"
+    "createFirstOffer": "Create the first quote for a customer",
+    "noItemsAddBelow": "No items. Add the first item below.",
+    "noTemplatesDefined": "No templates defined. Add templates in the \"Your Templates\" section.",
+    "selectScopesForOffer": "Select one or more templates to include in the quote"
   },
   "summary": {
     "customer": "Customer",
@@ -1586,7 +1592,16 @@
     "toastDeleteError": "Error deleting instance",
     "confirmDelete": "Are you sure you want to delete the instance \"{{name}}\"? The instance will be hidden but data will remain in the database.",
     "smsUsageAll": "SMS usage - All instances",
-    "smsTotal": "Total: {{used}} / {{limit}}"
+    "smsTotal": "Total: {{used}} / {{limit}}",
+    "instanceDisabled": "Instance disabled",
+    "instanceEnabled": "Instance enabled",
+    "statusChangeError": "Error changing instance status",
+    "deleteInstanceConfirm": "Are you sure you want to delete instance \"{{name}}\"? The instance will be hidden but data will remain in the database.",
+    "instanceDeleted": "Instance has been deleted",
+    "instanceDeleteError": "Error deleting instance",
+    "paidFeaturesFor": "Paid features - {{name}}",
+    "usersFor": "Users - {{name}}",
+    "manageDescription": "Manage all instances, users and Carfect system settings."
   },
   "instanceFeatures": {
     "cardTitle": "Additional Features",
@@ -1915,7 +1930,15 @@
     "damagePhotoAlt": "Damage photo {{index}}",
     "prevPhoto": "Previous photo",
     "nextPhoto": "Next photo",
-    "damagePhoto": "Damage photo"
+    "damagePhoto": "Damage photo",
+    "deleteProtocol": "Delete protocol",
+    "deleteProtocolConfirm": "Are you sure you want to delete the protocol for {{name}}? This cannot be undone.",
+    "sampleService": "Sample service",
+    "sampleValue": "Example",
+    "reception": "reception",
+    "emailBody": "Dear {{name}},\n\nPlease find attached the vehicle {{type}} protocol{{vehicle}}.\n\nPlease review the document.\n\n[Protocol link will be automatically attached]",
+    "emailSubject": "{{type}} vehicle protocol{{vehicle}}",
+    "protocolNumber": "Protocol #{{number}}"
   },
   "adminDashboard": {
     "title": "Admin Panel",
@@ -2934,7 +2957,8 @@
     "settingsInherited": "These settings will be inherited by every newly created service.",
     "discountsAbility": "Ability to add discounts to services in quotes",
     "conditionTemplatesDesc": "Create condition templates that you can quickly insert when creating a quote.",
-    "templateContentPlaceholder": "Template content..."
+    "templateContentPlaceholder": "Template content...",
+    "discountsFieldDesc": "When enabled, a field will appear for each item in the quote builder for"
   },
   "priceList": {
     "title": "Service price list",
@@ -4084,7 +4108,10 @@
       "dragPhotos": "Drag roll label photos or click",
       "supportedFormats": "Supported formats: JPG, PNG, HEIC. You can upload multiple photos at once.",
       "readFailed": "Failed to read",
-      "notePlaceholder": "e.g. offcuts from job"
+      "notePlaceholder": "e.g. offcuts from job",
+      "initialState": "Initial state",
+      "usedLabel": "Used",
+      "remainingLabel": "Remaining"
     },
     "packages": {
       "addProduct": "Add product",
@@ -4200,7 +4227,9 @@
     "customers": {
       "lastOrder": "Last order",
       "payer": "Payer",
-      "pageOf": "Page {{page}} of {{totalPages}} ({{count}} customers)"
+      "pageOf": "Page {{page}} of {{totalPages}} ({{count}} customers)",
+      "deleteCustomer": "Delete customer",
+      "deleteCustomerConfirm": "Are you sure you want to delete customer \"{{name}}\"?"
     },
     "products": {
       "fullName": "Full name",
@@ -4368,7 +4397,13 @@
       "shippingPrice": "Shipping price",
       "shippingAddressNote": "Changes apply only to this order and do not overwrite the customer address.",
       "addAnotherPackage": "Add another package",
-      "addPackage": "Add package"
+      "addPackage": "Add package",
+      "createFirstOrder": "Create the first order for the customer",
+      "deleteOrder": "Delete order",
+      "deleteOrderConfirm": "Are you sure you want to delete order {{orderNumber}}? This cannot be undone.",
+      "shippingLabel": "Shipping ({{orderNumber}})",
+      "shippingLabelMulti": "Shipping #{{index}} ({{orderNumber}})",
+      "collectiveInvoiceSuccess": "Collective invoice issued for {{count}} orders"
     },
     "companySettings": {
       "title": "Company details",
@@ -4579,7 +4614,8 @@
     "sameAsBilling": "Same as company address",
     "salesPanel": "Sales Panel",
     "crm": {
-      "fetchServicesFailed": "Failed to fetch services"
+      "fetchServicesFailed": "Failed to fetch services",
+      "noServicesConfigured": "No services configured. Click \"Fetch from Apaczka\" to load available services."
     },
     "unsavedChanges": "You have unsaved changes. What would you like to do?",
     "continueEditing": "Continue editing",
@@ -5107,7 +5143,9 @@
     "tomorrow": "Tomorrow",
     "pickup": "pickup",
     "deleteTitle": "Remove vehicle from yard",
-    "deleteDescription": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
+    "deleteDescription": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?",
+    "deleteVehicle": "Remove vehicle from yard",
+    "deleteVehicleConfirm": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
   },
   "aiAnalyst": {
     "suggestions": {
@@ -5170,5 +5208,18 @@
     "noteChanged": "Note changed",
     "employeesAdded": "Employees added",
     "employeesRemoved": "Employees removed"
+  },
+  "reservationForm": {
+    "noShowWarning": "Customer <0>{{name}}</0> was absent from visit {{date}}, service: {{service}}"
+  },
+  "ai": {
+    "revenueThisMonth": "Revenue this month",
+    "revenuePrompt": "What was my total revenue this month? Show the total and number of bookings.",
+    "popularServices": "Most popular services",
+    "popularServicesPrompt": "Which services were most frequently booked in the last 30 days? Show ranking.",
+    "topCustomersPrompt": "Which customers had the most bookings in the last 3 months? Show top 10 with visit count and total amount."
+  },
+  "publicProtocol": {
+    "checkLink": "Check the link or contact the service."
   }
 }

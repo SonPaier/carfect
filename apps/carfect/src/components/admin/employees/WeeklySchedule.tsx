@@ -341,7 +341,7 @@ const WeeklySchedule = ({ employee, instanceId }: WeeklyScheduleProps) => {
                 className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Usuń Wolne
+                {t('employees.deleteTimeOff')}
               </Button>
             ) : (
               <Button

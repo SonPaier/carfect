@@ -470,7 +470,7 @@ export const ProtocolsView = ({
                             className="cursor-pointer"
                           >
                             <Mail className="h-4 w-4 mr-2" />
-                            Wyślij emailem
+                            {t('protocols.sendByEmail')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -480,7 +480,7 @@ export const ProtocolsView = ({
                             className="cursor-pointer text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Usuń
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -528,7 +528,7 @@ export const ProtocolsView = ({
           <ConfirmDialog
             open={deleteDialogOpen}
             onOpenChange={setDeleteDialogOpen}
-            title="Usuń protokół"
+            title={t('protocols.deleteProtocol')}
             description={`Czy na pewno chcesz usunąć protokół dla ${protocolToDelete?.customer_name}? Tej operacji nie można cofnąć.`}
             confirmLabel={t('common.delete')}
             onConfirm={handleDeleteProtocol}
