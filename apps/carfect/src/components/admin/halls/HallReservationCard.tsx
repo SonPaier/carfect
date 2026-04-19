@@ -347,7 +347,7 @@ const HallReservationCard = ({
                   <img
                     key={idx}
                     src={url}
-                    alt={`Zdjęcie ${idx + 1}`}
+                    alt={t('hallCard.photoAlt', { index: idx + 1, defaultValue: `Zdjęcie ${idx + 1}` })}
                     className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => setFullscreenPhoto(url)}
                   />
@@ -377,7 +377,7 @@ const HallReservationCard = ({
                     onClick={() => onAddService(reservation)}
                   >
                     <Settings2 className="w-5 h-5" />
-                    Usługi
+                    {t('hallCard.services')}
                   </Button>
                 )}
                 {onAddProtocol && (
@@ -419,9 +419,9 @@ const HallReservationCard = ({
       <ConfirmDialog
         open={!!confirmRemoveService}
         onOpenChange={(open) => !open && setConfirmRemoveService(null)}
-        title="Usunąć usługę?"
-        description={`Czy na pewno chcesz usunąć "${confirmRemoveService?.name}" z tej rezerwacji?`}
-        confirmLabel="Usuń"
+        title={t('hallCard.removeService')}
+        description={t('hallCard.removeServiceDescription', { name: confirmRemoveService?.name })}
+        confirmLabel={t('common.delete')}
         variant="destructive"
         loading={removingService}
         onConfirm={handleConfirmRemoveService}

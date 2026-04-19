@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, KeyRound } from 'lucide-react';
 import { Button } from '@shared/ui';
 import {

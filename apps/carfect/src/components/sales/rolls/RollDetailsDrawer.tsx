@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui';
@@ -37,6 +38,7 @@ const RollDetailsDrawer = ({
   onViewOrder,
   onUsageChange,
 }: RollDetailsDrawerProps) => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState('dane');
   const [usages, setUsages] = useState<RollUsage[]>([]);
   const [loadingUsages, setLoadingUsages] = useState(false);
@@ -116,15 +118,15 @@ const RollDetailsDrawer = ({
         <SheetHeader>
           <SheetTitle>{roll.productName}</SheetTitle>
           <p className="text-sm text-muted-foreground">
-            {roll.brand} &middot; {roll.productCode || roll.barcode || 'Brak kodu'}
+            {roll.brand} &middot; {roll.productCode || roll.barcode || t('integrations.rolls.noCode')}
           </p>
         </SheetHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
           <TabsList className="w-full">
-            <TabsTrigger value="dane">Dane</TabsTrigger>
-            <TabsTrigger value="zamowienia">Zamówienia</TabsTrigger>
-            <TabsTrigger value="zuzycie">Zużycie</TabsTrigger>
+            <TabsTrigger value="dane">{t('integrations.rolls.tabData')}</TabsTrigger>
+            <TabsTrigger value="zamowienia">{t('integrations.rolls.tabOrders')}</TabsTrigger>
+            <TabsTrigger value="zuzycie">{t('integrations.rolls.tabUsage')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dane" className="space-y-4">
@@ -140,43 +142,43 @@ const RollDetailsDrawer = ({
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-muted-foreground">Marka</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldBrand')}</span>
                 <p className="font-medium">{roll.brand}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Nazwa produktu</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldProductName')}</span>
                 <p className="font-medium">{roll.productName}</p>
               </div>
               {roll.description && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground">Opis</span>
+                  <span className="text-muted-foreground">{t('integrations.rolls.fieldDescription')}</span>
                   <p className="font-medium">{roll.description}</p>
                 </div>
               )}
               <div>
-                <span className="text-muted-foreground">Kod produktu</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldProductCode')}</span>
                 <p className="font-medium font-mono">{roll.productCode || '—'}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Kod kreskowy</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldBarcode')}</span>
                 <p className="font-medium font-mono">{roll.barcode || '—'}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Rozmiar</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldSize')}</span>
                 <p className="font-medium">{formatRollSize(roll.widthMm, roll.initialLengthM)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Pełna rolka</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldFullRoll')}</span>
                 <p className="font-medium">{formatMbM2(roll.initialLengthM, roll.widthMm)}</p>
               </div>
               {roll.initialRemainingMb < roll.initialLengthM && (
                 <div>
-                  <span className="text-muted-foreground">Stan przy dodaniu</span>
+                  <span className="text-muted-foreground">{t('integrations.rolls.fieldInitialState')}</span>
                   <p className="font-medium">{formatMbM2(roll.initialRemainingMb, roll.widthMm)}</p>
                 </div>
               )}
               <div>
-                <span className="text-muted-foreground">Pozostało</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldRemaining')}</span>
                 <p
                   className={`font-medium ${
                     (roll.remainingMb || 0) <= 0
@@ -191,19 +193,19 @@ const RollDetailsDrawer = ({
               </div>
               {roll.deliveryDate && (
                 <div>
-                  <span className="text-muted-foreground">Data dostawy</span>
+                  <span className="text-muted-foreground">{t('integrations.rolls.fieldDeliveryDate')}</span>
                   <p className="font-medium">{format(parseISO(roll.deliveryDate), 'dd.MM.yyyy')}</p>
                 </div>
               )}
               <div>
-                <span className="text-muted-foreground">Dodano</span>
+                <span className="text-muted-foreground">{t('integrations.rolls.fieldCreatedAt')}</span>
                 <p className="font-medium">{format(parseISO(roll.createdAt), 'dd.MM.yyyy')}</p>
               </div>
             </div>
 
             {onEdit && (
               <button className="text-sm text-primary hover:underline" onClick={() => onEdit(roll)}>
-                Edytuj dane rolki
+                {t('integrations.rolls.editRoll')}
               </button>
             )}
           </TabsContent>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -147,6 +148,7 @@ export function ProductCategoriesDialog({
   productCounts,
   onCategoriesChanged,
 }: ProductCategoriesDialogProps) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -177,7 +179,7 @@ export function ProductCategoriesDialog({
 
       if (error) {
         console.error('Error fetching categories:', error);
-        toast.error('Błąd ładowania kategorii');
+        toast.error(t('products.categories.loadError'));
       } else {
         setCategories(data || []);
       }
@@ -214,10 +216,10 @@ export function ProductCategoriesDialog({
           .eq('id', update.id);
       }
 
-      toast.success('Kolejność zapisana');
+      toast.success(t('products.categories.orderSaved'));
     } catch (error) {
       console.error('Error updating order:', error);
-      toast.error('Błąd zapisywania kolejności');
+      toast.error(t('products.categories.orderSaveError'));
     } finally {
       setSaving(false);
     }
@@ -258,11 +260,11 @@ export function ProductCategoriesDialog({
       ));
       setEditingId(null);
       setEditName('');
-      toast.success('Kategoria zaktualizowana');
+      toast.success(t('products.categories.categoryUpdated'));
       onCategoriesChanged();
     } catch (error) {
       console.error('Error updating category:', error);
-      toast.error('Błąd aktualizacji kategorii');
+      toast.error(t('products.categories.categoryUpdateError'));
     } finally {
       setSaving(false);
     }
@@ -276,7 +278,7 @@ export function ProductCategoriesDialog({
   const handleDelete = async (cat: Category) => {
     const count = productCounts[cat.name] || 0;
     if (count > 0) {
-      toast.error(`Nie można usunąć kategorii z ${count} usługami`);
+      toast.error(t('products.categories.cannotDeleteWithServices', { count }));
       return;
     }
 
@@ -290,10 +292,10 @@ export function ProductCategoriesDialog({
       if (error) throw error;
 
       setCategories(prev => prev.filter(c => c.id !== cat.id));
-      toast.success('Kategoria usunięta');
+      toast.success(t('products.categories.categoryDeleted'));
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('Błąd usuwania kategorii');
+      toast.error(t('products.categories.categoryDeleteError'));
     } finally {
       setSaving(false);
     }
@@ -323,11 +325,11 @@ export function ProductCategoriesDialog({
       setCategories(prev => [...prev, data]);
       setNewCategoryName('');
       setAddingNew(false);
-      toast.success('Kategoria dodana');
+      toast.success(t('products.categories.categoryAdded'));
       onCategoriesChanged();
     } catch (error) {
       console.error('Error adding category:', error);
-      toast.error('Błąd dodawania kategorii');
+      toast.error(t('products.categories.categoryAddError'));
     } finally {
       setSaving(false);
     }
@@ -337,7 +339,7 @@ export function ProductCategoriesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Kategorie usług</DialogTitle>
+          <DialogTitle>{t('products.categories.dialogTitle')}</DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -374,7 +376,7 @@ export function ProductCategoriesDialog({
 
             {categories.length === 0 && (
               <p className="text-center text-muted-foreground py-4">
-                Brak kategorii. Dodaj pierwszą kategorie.
+                {t('products.categories.noCategories')}
               </p>
             )}
 
@@ -384,7 +386,7 @@ export function ProductCategoriesDialog({
                 <Input
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Nazwa kategorii..."
+                  placeholder={t('products.categories.namePlaceholder')}
                   className="h-8"
                   autoFocus
                   onKeyDown={(e) => {
@@ -423,7 +425,7 @@ export function ProductCategoriesDialog({
                 onClick={() => setAddingNew(true)}
               >
                 <Plus className="w-4 h-4" />
-                Dodaj kategorię
+                {t('products.categories.addCategory')}
               </Button>
             )}
           </div>

@@ -25,23 +25,23 @@ export interface OfferTrustHeaderSettingsRef {
   saveAll: () => Promise<boolean>;
 }
 
-const AVAILABLE_ICONS: { value: string; label: string; icon: LucideIcon }[] = [
-  { value: 'star', label: 'Gwiazdka', icon: Star },
-  { value: 'shield', label: 'Tarcza', icon: Shield },
-  { value: 'sparkles', label: 'Iskry', icon: Sparkles },
-  { value: 'award', label: 'Nagroda', icon: Award },
-  { value: 'heart', label: 'Serce', icon: Heart },
-  { value: 'car', label: 'Samochód', icon: Car },
-  { value: 'clock', label: 'Zegar', icon: Clock },
-  { value: 'check', label: 'Ptaszek', icon: CheckCircle },
-  { value: 'zap', label: 'Błyskawica', icon: Zap },
-  { value: 'trophy', label: 'Trofeum', icon: Trophy },
-  { value: 'thumbsup', label: 'Kciuk w górę', icon: ThumbsUp },
-  { value: 'eye', label: 'Oko', icon: Eye },
+const AVAILABLE_ICON_DEFS: { value: string; icon: LucideIcon }[] = [
+  { value: 'star', icon: Star },
+  { value: 'shield', icon: Shield },
+  { value: 'sparkles', icon: Sparkles },
+  { value: 'award', icon: Award },
+  { value: 'heart', icon: Heart },
+  { value: 'car', icon: Car },
+  { value: 'clock', icon: Clock },
+  { value: 'check', icon: CheckCircle },
+  { value: 'zap', icon: Zap },
+  { value: 'trophy', icon: Trophy },
+  { value: 'thumbsup', icon: ThumbsUp },
+  { value: 'eye', icon: Eye },
 ];
 
 const getIconComponent = (iconValue: string): LucideIcon => {
-  const found = AVAILABLE_ICONS.find(i => i.value === iconValue);
+  const found = AVAILABLE_ICON_DEFS.find(i => i.value === iconValue);
   return found?.icon || Star;
 };
 
@@ -95,7 +95,7 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
           return true;
         } catch (error) {
           console.error('Error saving trust header settings:', error);
-          toast.error('Błąd zapisu ustawień nagłówka');
+          toast.error(t('offers.settings.trustHeader.saveError'));
           return false;
         }
       },
@@ -135,28 +135,28 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
       <div className="space-y-6">
         {/* Header Title */}
         <div className="space-y-2">
-          <Label>Tytuł sekcji</Label>
+          <Label>{t('offers.settings.trustHeader.sectionTitleLabel')}</Label>
           <Input
             value={headerTitle}
             onChange={(e) => { setHeaderTitle(e.target.value); handleChange(); }}
-            placeholder="np. Dlaczego warto nam zaufać?"
+            placeholder={t('offers.settings.trustHeader.sectionTitlePlaceholder')}
           />
           <p className="text-xs text-muted-foreground">
-            Główny nagłówek wyświetlany nad kartami korzyści
+            {t('offers.settings.trustHeader.sectionTitleDescription')}
           </p>
         </div>
 
         {/* Description */}
         <div className="space-y-2">
-          <Label>Opis pod nagłówkiem</Label>
+          <Label>{t('offers.settings.trustHeader.descriptionLabel')}</Label>
           <Textarea
             value={description}
             onChange={(e) => { setDescription(e.target.value); handleChange(); }}
-            placeholder="np. Sprawdzone studio z ponad 800 opiniami w Google..."
+            placeholder={t('offers.settings.trustHeader.descriptionPlaceholder')}
             rows={4}
           />
           <p className="text-xs text-muted-foreground">
-            Krótki opis budujący zaufanie klienta
+            {t('offers.settings.trustHeader.descriptionHint')}
           </p>
         </div>
 
@@ -166,21 +166,21 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-base">Karty korzyści</Label>
+              <Label className="text-base">{t('offers.settings.trustHeader.tilesTitle')}</Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Dodaj dowolną liczbę kart prezentujących Twoje atuty
+                {t('offers.settings.trustHeader.tilesDescription')}
               </p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addTile} className="gap-1">
               <Plus className="w-4 h-4" />
-              Dodaj kartę
+              {t('offers.settings.trustHeader.addTile')}
             </Button>
           </div>
 
           {tiles.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
-              <p>Brak kart korzyści</p>
-              <p className="text-sm mt-1">Kliknij "Dodaj kartę" aby dodać pierwszą</p>
+              <p>{t('offers.settings.trustHeader.noTiles')}</p>
+              <p className="text-sm mt-1">{t('offers.settings.trustHeader.noTilesHint')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -203,17 +203,19 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
                               <div className="flex items-center gap-2">
                                 <IconComponent className="w-4 h-4" />
                                 <span className="text-xs truncate">
-                                  {AVAILABLE_ICONS.find(i => i.value === tile.icon)?.label || 'Ikona'}
+                                  {AVAILABLE_ICON_DEFS.find(i => i.value === tile.icon)
+                                    ? t(`offers.settings.trustHeader.icons.${tile.icon}`)
+                                    : t('offers.settings.trustHeader.iconFallback')}
                                 </span>
                               </div>
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent className="bg-white">
-                            {AVAILABLE_ICONS.map((iconOption) => (
+                            {AVAILABLE_ICON_DEFS.map((iconOption) => (
                               <SelectItem key={iconOption.value} value={iconOption.value}>
                                 <div className="flex items-center gap-2">
                                   <iconOption.icon className="w-4 h-4" />
-                                  <span>{iconOption.label}</span>
+                                  <span>{t(`offers.settings.trustHeader.icons.${iconOption.value}`)}</span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -226,7 +228,7 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
                         <Input
                           value={tile.title}
                           onChange={(e) => updateTile(index, 'title', e.target.value)}
-                          placeholder="Tytuł karty"
+                          placeholder={t('offers.settings.trustHeader.tileTitlePlaceholder')}
                           className="bg-white"
                         />
                       </div>
@@ -247,7 +249,7 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
                     <Textarea
                       value={tile.description}
                       onChange={(e) => updateTile(index, 'description', e.target.value)}
-                      placeholder="Opis korzyści dla klienta..."
+                      placeholder={t('offers.settings.trustHeader.tileDescriptionPlaceholder')}
                       rows={2}
                       className="bg-white"
                     />
@@ -261,9 +263,9 @@ export const OfferTrustHeaderSettings = forwardRef<OfferTrustHeaderSettingsRef, 
         {/* Info box */}
         {tiles.length === 0 && !headerTitle && !description && (
           <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-            <p className="font-medium">Sekcja ukryta</p>
+            <p className="font-medium">{t('offers.settings.trustHeader.hiddenSectionTitle')}</p>
             <p className="mt-1">
-              Jeśli nie wypełnisz żadnych pól, sekcja "Dlaczego warto nam zaufać?" nie będzie wyświetlana w ofercie publicznej.
+              {t('offers.settings.trustHeader.hiddenSectionDescription')}
             </p>
           </div>
         )}

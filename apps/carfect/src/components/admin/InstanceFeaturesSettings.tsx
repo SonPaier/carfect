@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -122,6 +123,7 @@ const AVAILABLE_FEATURES: FeatureDefinition[] = [
 ];
 
 export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSettingsProps) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [features, setFeatures] = useState<InstanceFeature[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,10 +202,10 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
       // Invalidate features cache
       queryClient.invalidateQueries({ queryKey: ['instance_features', instanceId] });
 
-      toast.success(`Funkcja ${!currentEnabled ? 'włączona' : 'wyłączona'}`);
+      toast.success(!currentEnabled ? t('instanceFeatures.featureEnabled') : t('instanceFeatures.featureDisabled'));
     } catch (error) {
       console.error('Error toggling feature:', error);
-      toast.error('Błąd podczas zmiany ustawienia');
+      toast.error(t('instanceFeatures.toggleError'));
     } finally {
       setSaving(null);
     }
@@ -246,10 +248,10 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
       // Invalidate features cache
       queryClient.invalidateQueries({ queryKey: ['instance_features', instanceId] });
 
-      toast.success('Parametry zapisane');
+      toast.success(t('instanceFeatures.parametersSaved'));
     } catch (error) {
       console.error('Error saving parameters:', error);
-      toast.error('Błąd podczas zapisu parametrów');
+      toast.error(t('instanceFeatures.parametersError'));
     } finally {
       setSaving(null);
     }
@@ -278,8 +280,8 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Funkcje dodatkowe</CardTitle>
-        <CardDescription>Zarządzaj funkcjami dla tej instancji</CardDescription>
+        <CardTitle>{t('instanceFeatures.cardTitle')}</CardTitle>
+        <CardDescription>{t('instanceFeatures.cardDescription')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {AVAILABLE_FEATURES.map((feature) => {
@@ -297,21 +299,25 @@ export const InstanceFeaturesSettings = ({ instanceId }: InstanceFeaturesSetting
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Label className="font-medium">{feature.name}</Label>
+                      <Label className="font-medium">
+                        {t(`instanceFeatures.features.${feature.key}.name`, { defaultValue: feature.name })}
+                      </Label>
                       {isFromPlan ? (
                         <Badge
                           variant="outline"
                           className="text-xs bg-green-50 text-green-700 border-green-200"
                         >
-                          W planie
+                          {t('instanceFeatures.inPlan')}
                         </Badge>
                       ) : feature.isPaid ? (
                         <Badge variant="secondary" className="text-xs">
-                          Dodatkowe
+                          {t('instanceFeatures.additional')}
                         </Badge>
                       ) : null}
                     </div>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t(`instanceFeatures.features.${feature.key}.description`, { defaultValue: feature.description })}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

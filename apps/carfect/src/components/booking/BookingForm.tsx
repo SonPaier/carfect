@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -17,6 +18,7 @@ interface BookingFormProps {
 }
 
 const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormProps) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -30,7 +32,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
     e.preventDefault();
 
     if (!formData.name || !formData.phone || !formData.vehiclePlate) {
-      toast.error('Wypełnij wszystkie pola');
+      toast.error(t('booking.fillAllFields'));
       return;
     }
 
@@ -45,7 +47,7 @@ const BookingForm = ({ service, date, slot, onBack, onComplete }: BookingFormPro
     setShowConfirmation(true);
     setIsSubmitting(false);
 
-    toast.success('Rezerwacja wysłana! Sprawdź SMS z kodem.');
+    toast.success(t('booking.bookingSent'));
   };
 
   if (showConfirmation) {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -9,13 +10,6 @@ import {
   type TemplateType,
   type ConditionTemplate,
 } from '@/hooks/useConditionTemplates';
-
-const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
-  warranty: 'Gwarancja',
-  payment_terms: 'Warunki płatności',
-  service_info: 'Informacje o usłudze',
-  notes: 'Uwagi',
-};
 
 const TEMPLATE_TYPES: TemplateType[] = ['warranty', 'payment_terms', 'service_info', 'notes'];
 
@@ -31,6 +25,7 @@ interface EditState {
 }
 
 export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSectionProps) {
+  const { t } = useTranslation();
   const { templates, loading, byType, createTemplate, updateTemplate, deleteTemplate } =
     useConditionTemplates(instanceId);
 
@@ -76,7 +71,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć ten szablon?')) return;
+    if (!confirm(t('offers.settings.conditionTemplates.confirmDelete'))) return;
     await deleteTemplate(id);
   };
 

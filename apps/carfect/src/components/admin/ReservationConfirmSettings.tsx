@@ -112,9 +112,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     setSavingEmployeeSettings(true);
     try {
       await updateSetting(key, checked);
-      toast.success('Ustawienia zapisane');
+      toast.success(t('reservationSettings.saved'));
     } catch (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
     } finally {
       setSavingEmployeeSettings(false);
     }
@@ -132,10 +132,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       .eq('id', instanceId);
 
     if (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
       setAutoConfirm(!checked);
     } else {
-      toast.success(checked ? 'Auto-potwierdzanie włączone' : 'Auto-potwierdzanie wyłączone');
+      toast.success(checked ? t('reservationSettings.autoConfirmOn') : t('reservationSettings.autoConfirmOff'));
     }
 
     setSaving(false);
@@ -152,9 +152,9 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       .eq('id', instanceId);
 
     if (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
     } else {
-      toast.success('Ustawienia zapisane');
+      toast.success(t('reservationSettings.saved'));
     }
 
     setSaving(false);
@@ -171,10 +171,10 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
       .eq('id', instanceId);
 
     if (error) {
-      toast.error('Błąd podczas zapisywania ustawień');
+      toast.error(t('reservationSettings.saveError'));
       setPricingMode(prev);
     } else {
-      toast.success(mode === 'netto' ? 'Tryb cen netto' : 'Tryb cen brutto');
+      toast.success(mode === 'netto' ? t('reservationSettings.pricingNetto') : t('reservationSettings.pricingBrutto'));
       queryClient.invalidateQueries({ queryKey: ['instance_data'] });
     }
   };
@@ -192,7 +192,7 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Ładowanie...
+        {t('common.loading')}
       </div>
     );
   }

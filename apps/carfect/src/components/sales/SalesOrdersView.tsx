@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { mapProductToInvoicePosition } from './utils/invoicePositionMapper';
 import { type AddressData } from './order-drawer/AddressFields';
 import { toast } from 'sonner';
@@ -57,20 +58,20 @@ import { VAT_RATE } from './constants';
 
 type PaymentStatus = SalesOrder['paymentStatus'];
 
-const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; className: string }> = {
-  unpaid: { label: 'Do opłacenia', className: 'border-amber-500 text-amber-600' },
-  paid: { label: 'Opłacone', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-  collective: { label: 'Zbiorcza', className: 'bg-blue-600 hover:bg-blue-700 text-white' },
+const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { labelKey: string; className: string }> = {
+  unpaid: { labelKey: 'sales.orders.paymentStatusUnpaid', className: 'border-amber-500 text-amber-600' },
+  paid: { labelKey: 'sales.orders.paymentStatusPaid', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+  collective: { labelKey: 'sales.orders.paymentStatusCollective', className: 'bg-blue-600 hover:bg-blue-700 text-white' },
   collective_paid: {
-    label: 'Zbiorcza opłacona',
+    labelKey: 'sales.orders.paymentStatusCollectivePaid',
     className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
   },
   invoice_unpaid: {
-    label: 'Do opłacenia (FV)',
+    labelKey: 'sales.orders.paymentStatusInvoiceUnpaid',
     className: 'border-orange-500 text-orange-600',
   },
   invoice_paid: {
-    label: 'Opłacone (FV)',
+    labelKey: 'sales.orders.paymentStatusInvoicePaid',
     className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
   },
 };
@@ -116,6 +117,7 @@ type SortDirection = 'asc' | 'desc';
 const DEFAULT_PAGE_SIZE = 25;
 
 const SalesOrdersView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
@@ -389,7 +391,7 @@ const SalesOrdersView = () => {
           .update({ status: invoiceStatus, updated_at: new Date().toISOString() })
           .eq('id', order.invoiceId);
         if (invError) {
-          toast.error('Błąd zmiany statusu faktury');
+          toast.error(t('sales.orders.errorInvoiceStatus'));
           return;
         }
       }
@@ -405,7 +407,7 @@ const SalesOrdersView = () => {
         .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) {
-        toast.error('Błąd zmiany statusu płatności');
+        toast.error(t('sales.orders.errorPaymentStatus'));
         return;
       }
     }
@@ -431,7 +433,7 @@ const SalesOrdersView = () => {
     }
     const { error } = await supabase.from('sales_orders').update(updates).eq('id', id);
     if (error) {
-      toast.error('Błąd zmiany statusu');
+      toast.error(t('sales.orders.errorStatus'));
       return;
     }
     setOrders((prev) =>
@@ -463,7 +465,7 @@ const SalesOrdersView = () => {
       })
       .eq('id', trackingDialog.orderId);
     if (error) {
-      toast.error('Błąd zapisu listu przewozowego');
+      toast.error(t('sales.orders.errorTracking'));
       return;
     }
     setOrders((prev) =>

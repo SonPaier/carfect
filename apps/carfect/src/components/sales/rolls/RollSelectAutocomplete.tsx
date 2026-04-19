@@ -133,7 +133,7 @@ const RollSelectAutocomplete = ({
       ) : (
         <div className="relative">
           <Input
-            placeholder={loading ? 'Ładowanie rolek...' : 'Wybierz rolkę (barcode/kod)...'}
+            placeholder={loading ? t('integrations.rolls.loadingRolls') : t('integrations.rolls.selectRoll')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -182,7 +182,7 @@ const RollSelectAutocomplete = ({
 
           {dropdownOpen && filteredRolls.length === 0 && !loading && (
             <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-3 text-xs text-muted-foreground text-center">
-              Brak dostępnych rolek dla „{productName}"
+              {t('integrations.rolls.noRollsFor', { name: productName })}
             </div>
           )}
         </div>
@@ -200,7 +200,7 @@ const RollSelectAutocomplete = ({
               className="h-8 text-xs w-24"
               placeholder="m²"
             />
-            <span className="text-xs text-muted-foreground">m² z tej rolki</span>
+            <span className="text-xs text-muted-foreground">{t('integrations.rolls.usageFromRoll')}</span>
           </div>
 
           {/* Shortage error */}
@@ -208,7 +208,7 @@ const RollSelectAutocomplete = ({
             <div className="flex items-center gap-1.5 text-xs text-destructive">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>
-                Zostało {remainingM2.toFixed(2)} m², brakuje {shortage.toFixed(2)} m²
+                {t('integrations.rolls.shortage', { remaining: remainingM2.toFixed(2), shortage: shortage.toFixed(2) })}
               </span>
             </div>
           )}
