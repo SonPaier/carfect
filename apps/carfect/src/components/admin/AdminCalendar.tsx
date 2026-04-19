@@ -1092,7 +1092,7 @@ const AdminCalendar = ({
           onInteractOutside={(e) => e.preventDefault()}
         >
           <SheetHeader className="flex flex-row items-center justify-between border-b border-border px-4 py-3 space-y-0">
-            <SheetTitle className="text-lg font-semibold text-slate-900">Plac</SheetTitle>
+            <SheetTitle className="text-lg font-semibold text-slate-900">{t('calendar.yard')}</SheetTitle>
             <Button
               variant="ghost"
               size="icon"

@@ -102,7 +102,7 @@ export function AssignedEmployeesChips({
           ) : (
             <Plus className="w-4 h-4" />
           )}
-          Dodaj
+          {t('common.add')}
         </Button>
       )}
     </div>

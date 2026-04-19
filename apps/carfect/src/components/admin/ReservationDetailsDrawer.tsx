@@ -486,14 +486,16 @@ const ReservationDetailsDrawer = ({
                         })}
                   </span>
                 </SheetTitle>
-                <SheetDescription className="flex items-center gap-2 mt-2 flex-wrap">
-                  {showStatus && getStatusBadge(reservation.status, t)}
-                  {getSourceLabel(reservation.source, reservation.created_by_username, t)}
-                  {!isHallMode && reservation.confirmation_code && (
-                    <Badge variant="outline" className="text-xs font-normal font-mono">
-                      #{reservation.confirmation_code}
-                    </Badge>
-                  )}
+                <SheetDescription asChild>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap text-sm text-muted-foreground">
+                    {showStatus && getStatusBadge(reservation.status, t)}
+                    {getSourceLabel(reservation.source, reservation.created_by_username, t)}
+                    {!isHallMode && reservation.confirmation_code && (
+                      <Badge variant="outline" className="text-xs font-normal font-mono">
+                        #{reservation.confirmation_code}
+                      </Badge>
+                    )}
+                  </div>
                 </SheetDescription>
               </div>
               <button

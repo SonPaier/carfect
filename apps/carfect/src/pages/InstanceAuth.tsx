@@ -452,7 +452,6 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
               <img src="/carfect-logo.svg" alt="Carfect" className="h-12" />
               <p className="text-white/60 text-lg">
                 {t('auth.manageStudioDesc')}
-                jednym miejscu.
               </p>
             </div>
           </div>

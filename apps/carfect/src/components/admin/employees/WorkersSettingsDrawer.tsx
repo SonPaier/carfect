@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent } from '@shared/ui';
+import { Sheet, SheetContent, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
@@ -63,7 +63,7 @@ const WorkersSettingsDrawer = ({ open, onOpenChange, instanceId }: WorkersSettin
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-background border-b p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t('admin.workersSettings.title')}</h2>
+            <SheetTitle className="text-lg font-semibold">{t('admin.workersSettings.title')}</SheetTitle>
             <button onClick={handleClose} className="p-2 rounded-full hover:bg-hover">
               <X className="w-5 h-5" />
             </button>

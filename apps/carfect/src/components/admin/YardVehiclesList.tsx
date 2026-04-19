@@ -212,7 +212,7 @@ export function YardVehiclesList({ instanceId, onVehicleDragStart, hallMode = fa
           size="sm"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Dodaj pojazd
+          {t('yardVehicles.addVehicle')}
         </Button>
       </div>
 
