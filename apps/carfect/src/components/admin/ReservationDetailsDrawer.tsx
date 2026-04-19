@@ -1086,7 +1086,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <FileText className="w-4 h-4 mr-2" />
-                          {existingProtocolId ? 'Edytuj protokół' : 'Dodaj protokół'}
+                          {existingProtocolId ? t('reservationDetails.editProtocol') : t('reservationDetails.addProtocol')}
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -1096,7 +1096,7 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <History className="w-4 h-4 mr-2" />
-                          Zobacz historię
+                          {t('reservationDetails.viewHistory')}
                         </DropdownMenuItem>
 
                         {onCreateOffer && reservation && (
@@ -1111,7 +1111,7 @@ const ReservationDetailsDrawer = ({
                             }}
                           >
                             <FileText className="w-4 h-4 mr-2" />
-                            Przygotuj ofertę
+                            {t('reservationDetails.prepareOffer')}
                           </DropdownMenuItem>
                         )}
 
@@ -1126,7 +1126,7 @@ const ReservationDetailsDrawer = ({
                               }}
                             >
                               <UserX className="w-4 h-4 mr-2" />
-                              Oznacz jako nieobecny
+                              {t('reservationDetails.markNoShow')}
                             </DropdownMenuItem>
                           </>
                         )}
@@ -1139,7 +1139,7 @@ const ReservationDetailsDrawer = ({
                             }}
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Usuń
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -1178,10 +1178,9 @@ const ReservationDetailsDrawer = ({
             <AlertDialog open={noShowDialogOpen} onOpenChange={setNoShowDialogOpen}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Oznacz jako nieobecny</AlertDialogTitle>
+                  <AlertDialogTitle>{t('reservationDetails.noShowConfirmTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Czy na pewno chcesz oznaczyć klienta {customerName} ({customerPhone}) jako
-                    nieobecnego?
+                    {t('reservationDetails.noShowConfirmDescription', { name: customerName, phone: customerPhone })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

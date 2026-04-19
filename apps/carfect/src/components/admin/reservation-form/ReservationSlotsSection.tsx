@@ -187,7 +187,7 @@ const SlotCard = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5" />
-              Dzień od <span className="text-destructive">*</span>
+              {t('reservationSlots.dayFrom')} <span className="text-destructive">*</span>
             </Label>
             <Button
               type="button"
@@ -205,13 +205,13 @@ const SlotCard = ({
               <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.from
                 ? format(slot.dateRange.from, 'd MMM yyyy', { locale: pl })
-                : 'Wybierz datę'}
+                : t('common.selectDate')}
             </Button>
           </div>
           <div className="space-y-2" ref={dateToRef}>
             <Label className="flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5" />
-              Dzień do <span className="text-destructive">*</span>
+              {t('reservationSlots.dayTo')} <span className="text-destructive">*</span>
             </Label>
             <Button
               type="button"
@@ -229,7 +229,7 @@ const SlotCard = ({
               <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.to
                 ? format(slot.dateRange.to, 'd MMM yyyy', { locale: pl })
-                : 'Wybierz datę'}
+                : t('common.selectDate')}
             </Button>
           </div>
         </div>
@@ -405,7 +405,7 @@ export const ReservationSlotsSection = ({
           className="w-full border-dashed text-muted-foreground"
         >
           <Plus className="w-4 h-4 mr-1.5" />
-          Dodaj slot na innym stanowisku
+          {t('reservationSlots.addSlot')}
         </Button>
       )}
 

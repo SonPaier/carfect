@@ -163,7 +163,7 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
                 }}
               />
               <Button className="mt-2" onClick={() => fileInputRef.current?.click()}>
-                Wgraj rolki
+                {t('rollScan.uploadRolls')}
               </Button>
             </EmptyState>
           ) : (
@@ -187,12 +187,12 @@ const RollScanDrawer = ({ open, onOpenChange, instanceId, onSaved }: RollScanDra
 
         <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-2">
           <Button variant="outline" onClick={handleClose} disabled={saving}>
-            {scan.results.length > 0 ? 'Anuluj' : 'Zamknij'}
+            {scan.results.length > 0 ? t('common.cancel') : t('common.close')}
           </Button>
           {savableResults.length > 0 && (
             <Button onClick={handleSave} disabled={saving || scan.processing}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Zapisz {savableResults.length} {savableResults.length === 1 ? 'rolkę' : 'rolek'}
+              {t('rollScan.saveRolls', { count: savableResults.length, label: savableResults.length === 1 ? 'rolkę' : 'rolek' })}
             </Button>
           )}
         </div>

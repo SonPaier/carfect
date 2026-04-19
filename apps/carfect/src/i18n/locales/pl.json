@@ -4321,6 +4321,24 @@
     "accountNumber": "Numer konta",
     "selectAccount": "Wybierz konto"
   },
+  "reservationDetails": {
+    "editProtocol": "Edytuj protokół",
+    "addProtocol": "Dodaj protokół",
+    "viewHistory": "Zobacz historię",
+    "prepareOffer": "Przygotuj ofertę",
+    "markNoShow": "Oznacz jako nieobecny",
+    "noShowConfirmTitle": "Oznacz jako nieobecny",
+    "noShowConfirmDescription": "Czy na pewno chcesz oznaczyć klienta {{name}} ({{phone}}) jako nieobecnego?"
+  },
+  "reservationSlots": {
+    "dayFrom": "Dzień od",
+    "dayTo": "Dzień do",
+    "addSlot": "Dodaj slot na innym stanowisku"
+  },
+  "rollScan": {
+    "uploadRolls": "Wgraj rolki",
+    "saveRolls": "Zapisz {{count}} {{label}}"
+  },
   "protocol": {
     "bodyTypes": {
       "cabrio": "Kabriolet",
