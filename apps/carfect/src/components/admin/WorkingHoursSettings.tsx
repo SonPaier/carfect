@@ -105,7 +105,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
       const dayHours = workingHours[key];
       if (dayHours != null) {
         if (dayHours.open >= dayHours.close) {
-          toast.error(`${t(labelKey)}: godzina otwarcia musi być wcześniejsza niż zamknięcia`);
+          toast.error(`${t(labelKey)}: ${t('workingHours.openBeforeClose')}`);
           return;
         }
       }
@@ -147,9 +147,9 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
   if (fetchError) {
     return (
       <div className="text-center py-8 space-y-4">
-        <p className="text-destructive">Nie udało się pobrać godzin pracy.</p>
+        <p className="text-destructive">{t('workingHours.fetchError')}</p>
         <Button variant="outline" size="sm" onClick={fetchWorkingHours}>
-          Spróbuj ponownie
+          {t('workingHours.retryButton')}
         </Button>
       </div>
     );
@@ -160,7 +160,7 @@ const WorkingHoursSettings = ({ instanceId, onSave }: WorkingHoursSettingsProps)
       <div>
         <h3 className="text-lg font-semibold">{t('workingHours.title')}</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Ustaw godziny otwarcia dla każdego dnia tygodnia. W takim zakresie godzin będzie dostępny kalendarz rezerwacji.
+          {t('workingHours.description')}
         </p>
       </div>
 

@@ -2048,7 +2048,11 @@
     "closed": "Geschlossen",
     "noInstance": "Keine zugewiesene Instanz",
     "saved": "Gespeichert",
-    "saveError": "Fehler beim Speichern"
+    "saveError": "Fehler beim Speichern",
+    "openBeforeClose": "Öffnungszeit muss vor der Schließzeit liegen",
+    "fetchError": "Arbeitszeiten konnten nicht geladen werden.",
+    "retryButton": "Erneut versuchen",
+    "description": "Legen Sie die Öffnungszeiten für jeden Wochentag fest. Der Buchungskalender ist in diesem Zeitbereich verfügbar."
   },
   "followupTasks": {
     "title": "Super Admin - Verwaltungspanel",

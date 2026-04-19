@@ -1993,7 +1993,17 @@
     "userBlocked": "Użytkownik zablokowany",
     "userUnblocked": "Użytkownik odblokowany",
     "fetchError": "Nie udało się pobrać listy użytkowników",
-    "sessionExpired": "Sesja wygasła"
+    "sessionExpired": "Sesja wygasła",
+    "description": "Zarządzaj kontami użytkowników z dostępem do panelu",
+    "access": "Dostęp",
+    "roleAdmin": "Admin",
+    "roleEmployee": "Pracownik",
+    "roleCalendar": "Kalendarz",
+    "roleSales": "Sprzedaż",
+    "adminDesc": "Pełny dostęp: kalendarz, rezerwacje, ustawienia, użytkownicy, statystyki",
+    "employeeDesc": "Kalendarz, rezerwacje, powiadomienia (bez ustawień i użytkowników)",
+    "calendarDesc": "Uproszczony widok: kalendarz, raportowanie czasu, protokoły (np. tablet w warsztacie)",
+    "salesDesc": "Panel CRM: zamówienia, klienci, produkty, oferty"
   },
   "priceListSettings": {
     "title": "Usługi",
@@ -2048,7 +2058,11 @@
     "closed": "Zamknięte",
     "noInstance": "Brak przypisanej instancji",
     "saved": "Godziny pracy zostały zapisane",
-    "saveError": "Błąd podczas zapisywania godzin pracy"
+    "saveError": "Błąd podczas zapisywania godzin pracy",
+    "openBeforeClose": "godzina otwarcia musi być wcześniejsza niż zamknięcia",
+    "fetchError": "Nie udało się pobrać godzin pracy.",
+    "retryButton": "Spróbuj ponownie",
+    "description": "Ustaw godziny otwarcia dla każdego dnia tygodnia. W takim zakresie godzin będzie dostępny kalendarz rezerwacji."
   },
   "followupTasks": {
     "title": "Zadania do wykonania",

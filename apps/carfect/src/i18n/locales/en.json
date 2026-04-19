@@ -1993,7 +1993,17 @@
     "userBlocked": "User blocked",
     "userUnblocked": "User unblocked",
     "fetchError": "Failed to load user list",
-    "sessionExpired": "Session expired"
+    "sessionExpired": "Session expired",
+    "description": "Manage user accounts with access to the admin panel",
+    "access": "Access",
+    "roleAdmin": "Admin",
+    "roleEmployee": "Employee",
+    "roleCalendar": "Calendar",
+    "roleSales": "Sales",
+    "adminDesc": "Full access: calendar, reservations, settings, users, statistics",
+    "employeeDesc": "Calendar, reservations, notifications (without settings and users)",
+    "calendarDesc": "Simplified view: calendar, time reporting, protocols (e.g. workshop tablet)",
+    "salesDesc": "CRM panel: orders, clients, products, offers"
   },
   "priceListSettings": {
     "title": "Services",
@@ -2048,7 +2058,11 @@
     "closed": "Closed",
     "noInstance": "No assigned instance",
     "saved": "Working hours have been saved",
-    "saveError": "Error saving working hours"
+    "saveError": "Error saving working hours",
+    "openBeforeClose": "Opening time must be before closing time",
+    "fetchError": "Failed to load working hours.",
+    "retryButton": "Try again",
+    "description": "Set opening hours for each day of the week. The booking calendar will be available within this time range."
   },
   "followupTasks": {
     "title": "Tasks to do",
