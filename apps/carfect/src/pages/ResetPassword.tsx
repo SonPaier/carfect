@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Loader2, CheckCircle2 } from 'lucide-react';
@@ -9,6 +10,7 @@ import { usePasswordValidation } from '@/components/password/usePasswordValidati
 import { supabase } from '@/integrations/supabase/client';
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -98,7 +100,7 @@ const ResetPassword = () => {
         }, 3000);
       }
     } catch {
-      setError('Wystąpił błąd. Spróbuj ponownie.');
+      setError(t('pages.resetPassword.genericError'));
     } finally {
       setLoading(false);
     }
@@ -118,7 +120,7 @@ const ResetPassword = () => {
         <Helmet><title>Nieprawidłowy link</title></Helmet>
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="w-full max-w-md text-center space-y-4">
-            <h1 className="text-xl font-bold text-foreground">Link wygasł lub jest nieprawidłowy</h1>
+            <h1 className="text-xl font-bold text-foreground">{t('pages.resetPassword.linkExpired')}</h1>
             <p className="text-muted-foreground">
               Poproś ponownie o link do resetowania hasła.
             </p>
@@ -140,7 +142,7 @@ const ResetPassword = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto">
               <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Hasło zostało zmienione</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('pages.resetPassword.passwordChanged')}</h1>
             <p className="text-muted-foreground">
               Za chwilę zostaniesz przekierowany do strony logowania.
             </p>
@@ -161,7 +163,7 @@ const ResetPassword = () => {
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto mb-4">
               <Lock className="w-6 h-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Ustaw nowe hasło</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('pages.resetPassword.setNewPassword')}</h1>
             <p className="text-muted-foreground">
               Wprowadź nowe hasło dla swojego konta.
             </p>
@@ -187,7 +189,7 @@ const ResetPassword = () => {
               value={confirmPassword}
               onChange={setConfirmPassword}
               match={confirmMatch}
-              label="Powtórz hasło"
+              label={t('pages.resetPassword.repeatPassword')}
             />
 
             <Button
@@ -198,7 +200,7 @@ const ResetPassword = () => {
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                'Zapisz nowe hasło'
+                t('pages.resetPassword.saveNewPassword')
               )}
             </Button>
           </form>

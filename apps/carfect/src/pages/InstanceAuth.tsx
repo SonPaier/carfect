@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -38,6 +39,7 @@ interface FormErrors {
   general?: string;
 }
 const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
+  const { t } = useTranslation();
   const { slug: paramSlug } = useParams<{
     slug: string;
   }>();
@@ -69,7 +71,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
         .eq('slug', slug)
         .maybeSingle();
       if (error) {
-        setInstanceError('Wystąpił błąd podczas wczytywania instancji');
+        setInstanceError(t('pages.auth.instanceLoadError'));
         setInstanceLoading(false);
         return;
       }
@@ -107,7 +109,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
         .then(({ data }) => {
           if (data?.is_blocked) {
             setErrors({
-              general: 'Twoje konto zostało zablokowane',
+              general: t('pages.auth.accountBlocked'),
             });
             return;
           }
@@ -123,7 +125,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       newErrors.username = 'Login jest wymagany';
     }
     if (!password) {
-      newErrors.password = 'Hasło jest wymagane';
+      newErrors.password = t('pages.auth.passwordRequired');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -148,7 +150,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
     }
     if (!instance) {
       setErrors({
-        general: 'Nie można zalogować - brak instancji',
+        general: t('pages.auth.noInstance'),
       });
       return;
     }
@@ -189,14 +191,14 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
 
       if (lookupError || !profile?.email) {
         setErrors({
-          general: 'Nieprawidłowy login lub hasło',
+          general: t('pages.auth.invalidCredentials'),
         });
         setLoading(false);
         return;
       }
       if (profile.is_blocked) {
         setErrors({
-          general: 'Twoje konto zostało zablokowane. Skontaktuj się z administratorem.',
+          general: t('pages.auth.accountBlockedContact'),
         });
         setLoading(false);
         return;
@@ -208,12 +210,11 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
 
         if (trackResult?.blocked) {
           setErrors({
-            general:
-              'Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.',
+            general: t('pages.auth.accountBlockedTooManyAttempts'),
           });
         } else {
           setErrors({
-            general: 'Nieprawidłowy login lub hasło',
+            general: t('pages.auth.invalidCredentials'),
           });
           // Show remaining attempts from 3rd failure
           if (trackResult?.show_warning && trackResult?.remaining_attempts != null) {
@@ -228,7 +229,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
       }
     } catch (err) {
       setErrors({
-        general: 'Wystąpił błąd. Spróbuj ponownie.',
+        general: t('pages.auth.genericError'),
       });
     } finally {
       setLoading(false);
@@ -274,7 +275,7 @@ const InstanceAuth = ({ subdomainSlug }: InstanceAuthProps) => {
             <Building2 className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground">{instanceError}</h1>
-          <p className="text-muted-foreground">Sprawdź czy adres URL jest poprawny</p>
+          <p className="text-muted-foreground">{t('pages.auth.checkUrl')}</p>
         </div>
       </div>
     );

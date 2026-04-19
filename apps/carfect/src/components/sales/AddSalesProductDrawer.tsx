@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Loader2, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -50,6 +51,7 @@ const AddSalesProductDrawer = ({
   onSaved,
   product,
 }: AddSalesProductDrawerProps) => {
+  const { t } = useTranslation();
   const isEdit = !!product;
   const [fullName, setFullName] = useState('');
   const [shortName, setShortName] = useState('');
@@ -153,15 +155,15 @@ const AddSalesProductDrawer = ({
 
   const handleSubmit = async () => {
     if (!fullName.trim() || !shortName.trim()) {
-      toast.error('Uzupełnij wymagane pola');
+      toast.error(t('sales.products.errorRequiredFields'));
       return;
     }
     if (hasVariants && variants.length === 0) {
-      toast.error('Dodaj przynajmniej jeden wariant');
+      toast.error(t('sales.products.errorAddVariant'));
       return;
     }
     if (hasVariants && variants.some((v) => !v.name.trim())) {
-      toast.error('Uzupełnij nazwy wariantów');
+      toast.error(t('sales.products.errorVariantNames'));
       return;
     }
     setSaving(true);
@@ -215,13 +217,13 @@ const AddSalesProductDrawer = ({
         if (vError) throw vError;
       }
 
-      toast.success(isEdit ? 'Produkt zaktualizowany' : 'Produkt został dodany');
+      toast.success(isEdit ? t('sales.products.successUpdated') : t('sales.products.successAdded'));
       resetDirty();
       resetForm();
       onOpenChange(false);
       onSaved?.();
     } catch (err: unknown) {
-      toast.error('Błąd: ' + (err instanceof Error ? err.message : ''));
+      toast.error(t('sales.products.errorSave', { message: err instanceof Error ? err.message : '' }));
     } finally {
       setSaving(false);
     }

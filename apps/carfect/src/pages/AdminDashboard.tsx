@@ -719,7 +719,7 @@ const AdminDashboard = () => {
     await Promise.all([refetchReservations(), fetchTrainings()]);
   }, [refetchReservations, fetchTrainings]);
   const handleNewCustomerReservation = useCallback((reservation: Reservation) => {
-    toast.success('🔔 Nowa rezerwacja od klienta!', {
+    toast.success(t('pages.admin.newCustomerReservation'), {
       description: `${reservation.customer_name} - ${reservation.start_time}`,
     });
   }, []);
@@ -1114,7 +1114,7 @@ const AdminDashboard = () => {
     }
 
     if (!primaryServiceId) {
-      toast.error('Brak usług - dodaj usługę do pojazdu lub utwórz usługę w systemie');
+      toast.error(t('pages.admin.noServicesError'));
       return;
     }
 
@@ -1150,10 +1150,10 @@ const AdminDashboard = () => {
       if (deleteError) console.error('Error deleting yard vehicle:', deleteError);
 
       invalidateReservations();
-      toast.success('Rezerwacja utworzona z placu');
+      toast.success(t('pages.admin.reservationFromYard'));
     } catch (error) {
       console.error('Error creating reservation from yard:', error);
-      toast.error('Błąd podczas tworzenia rezerwacji');
+      toast.error(t('pages.admin.createReservationError'));
     }
   };
 

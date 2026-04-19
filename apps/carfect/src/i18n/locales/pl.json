@@ -379,7 +379,8 @@
     "upsellTitle": "A co powiesz o dodatkowych {{minutes}} minutach?",
     "upsellDescription": "Masz jeszcze chwilę przed kolejną rezerwacją. Co powiesz na",
     "upsellAdd": "Dodaj",
-    "upsellClose": "Zamknij"
+    "upsellClose": "Zamknij",
+    "upsellPrice": "{{price}} zł"
   },
   "calendar": {
     "title": "Kalendarz",
@@ -739,7 +740,9 @@
       "searchPlaceholder": "Szukaj usługi...",
       "noServicesFound": "Nie znaleziono usług",
       "noServices": "Brak dostępnych usług",
-      "addSelected": "Dodaj wybrane ({{count}})"
+      "addSelected": "Dodaj wybrane ({{count}})",
+      "priceOnRequest": "wycena",
+      "priceNetFormat": "{{price}} zł netto"
     },
     "serviceTemplates": {
       "pageTitle": "Twoje Szablony",
@@ -3108,6 +3111,8 @@
     "rolls": {
       "label": "Rolka",
       "loadingRoll": "Ładowanie rolki...",
+      "drawerTitle": "Zużycie rolki: {{productName}}",
+      "drawerSummary": "Stan początkowy: {{initial}} · Zużyto: {{used}} · Pozostało: {{remaining}}",
       "noCode": "Brak kodu",
       "remaining": "Pozostało: {{value}} m²",
       "change": "Zmień",
@@ -4144,6 +4149,30 @@
       "saveError": "Błąd podczas zapisywania oferty",
       "loadError": "Błąd podczas wczytywania oferty",
       "unknownCustomer": "Nieznany"
+    }
+  },
+  "pages": {
+    "auth": {
+      "instanceLoadError": "Wystąpił błąd podczas wczytywania instancji",
+      "accountBlocked": "Twoje konto zostało zablokowane",
+      "accountBlockedContact": "Twoje konto zostało zablokowane. Skontaktuj się z administratorem.",
+      "accountBlockedTooManyAttempts": "Twoje konto zostało zablokowane po zbyt wielu nieudanych próbach logowania. Skontaktuj się z administratorem.",
+      "passwordRequired": "Hasło jest wymagane",
+      "noInstance": "Nie można zalogować - brak instancji",
+      "invalidCredentials": "Nieprawidłowy login lub hasło",
+      "genericError": "Wystąpił błąd. Spróbuj ponownie.",
+      "checkUrl": "Sprawdź czy adres URL jest poprawny"
+    },
+    "reservation": {
+      "statusPending": "Oczekująca",
+      "statusCompleted": "Zakończona",
+      "bookVisit": "Zarezerwuj wizytę",
+      "details": "Szczegóły rezerwacji",
+      "service": "Usługa",
+      "firstName": "Imię",
+      "carSizeSmall": "Mały",
+      "carSizeMedium": "Średni",
+      "carSizeLarge": "Duży"
     }
   }
 }

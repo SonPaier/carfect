@@ -79,7 +79,7 @@ function buildServicesData(
       const globalName = servicesMap.get(id);
       return {
         id,
-        name: item?.name ?? globalName ?? 'Usługa',
+        name: item?.name ?? globalName ?? t('common.unknownService'),
       };
     });
   }
@@ -95,7 +95,7 @@ function buildServicesData(
       })
       .map((item) => ({
         id: item.id || item.service_id,
-        name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
+        name: item.name || servicesMap.get(item.id || item.service_id) || t('common.unknownService'),
       }));
   }
 
@@ -276,7 +276,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
     const remainingSlots = maxPhotos - currentPhotos.length;
 
     if (remainingSlots <= 0) {
-      toast.error(`Maksymalna liczba zdjęć: ${maxPhotos}`);
+      toast.error(t('pages.hall.maxPhotos', { max: maxPhotos }));
       setPhotosTargetReservation(null);
       if (photosInputRef.current) photosInputRef.current.value = '';
       return;
@@ -324,10 +324,10 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         ),
       );
 
-      toast.success(`Dodano ${uploadedUrls.length} zdjęć`);
+      toast.success(t('pages.hall.photosAdded', { count: uploadedUrls.length }));
     } catch (error) {
       console.error('Error uploading photos:', error);
-      toast.error('Błąd podczas przesyłania zdjęć');
+      toast.error(t('pages.hall.photoUploadError'));
     } finally {
       setUploadingPhotos(false);
       setPhotosTargetReservation(null);
@@ -353,7 +353,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         const svc = servicesData.find((s) => s.id === id);
         return {
           service_id: id,
-          name: svc?.name || 'Usługa',
+          name: svc?.name || t('common.unknownService'),
           short_name: svc?.short_name || null,
           custom_price: null,
           price_small: svc?.price_small ?? null,
@@ -385,7 +385,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           .filter((id) => !currentIds.includes(id))
           .map((id) => {
             const svc = servicesData.find((s) => s.id === id);
-            return { id, name: svc?.name || 'Usługa', shortcut: svc?.short_name || null };
+            return { id, name: svc?.name || t('common.unknownService'), shortcut: svc?.short_name || null };
           });
 
         return {
@@ -405,7 +405,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           .filter((id) => !currentIds.includes(id))
           .map((id) => {
             const svc = servicesData.find((s) => s.id === id);
-            return { id, name: svc?.name || 'Usługa', shortcut: svc?.short_name || null };
+            return { id, name: svc?.name || t('common.unknownService'), shortcut: svc?.short_name || null };
           });
         return {
           ...prev,
@@ -907,7 +907,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           const globalName = servicesMap.get(id);
           return {
             id,
-            name: item?.name ?? globalName ?? 'Usługa',
+            name: item?.name ?? globalName ?? t('common.unknownService'),
           };
         });
       } else if (serviceItems && serviceItems.length > 0) {
@@ -922,7 +922,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
           })
           .map((item) => ({
             id: item.id || item.service_id,
-            name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
+            name: item.name || servicesMap.get(item.id || item.service_id) || t('common.unknownService'),
           }));
       }
 
@@ -952,7 +952,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         const globalName = servicesMap.get(id);
         return {
           id,
-          name: item?.name ?? globalName ?? 'Usługa',
+          name: item?.name ?? globalName ?? t('common.unknownService'),
         };
       });
     } else if (serviceItems && serviceItems.length > 0) {
@@ -967,7 +967,7 @@ const HallView = ({ isKioskMode = false }: HallViewProps) => {
         })
         .map((item) => ({
           id: item.id || item.service_id,
-          name: item.name || servicesMap.get(item.id || item.service_id) || 'Usługa',
+          name: item.name || servicesMap.get(item.id || item.service_id) || t('common.unknownService'),
         }));
     }
 

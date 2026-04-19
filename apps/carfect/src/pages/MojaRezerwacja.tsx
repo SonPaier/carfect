@@ -263,11 +263,11 @@ const MojaRezerwacja = () => {
       case 'confirmed':
         return { label: 'Potwierdzona', color: 'text-green-600 bg-green-500/10', icon: Check };
       case 'pending':
-        return { label: 'Oczekująca', color: 'text-yellow-600 bg-yellow-500/10', icon: Clock };
+        return { label: t('pages.reservation.statusPending'), color: 'text-yellow-600 bg-yellow-500/10', icon: Clock };
       case 'cancelled':
         return { label: 'Anulowana', color: 'text-red-600 bg-red-500/10', icon: X };
       case 'completed':
-        return { label: 'Zakończona', color: 'text-blue-600 bg-blue-500/10', icon: Check };
+        return { label: t('pages.reservation.statusCompleted'), color: 'text-blue-600 bg-blue-500/10', icon: Check };
       case 'in_progress':
         return { label: 'W trakcie', color: 'text-primary bg-primary/10', icon: Clock };
       default:
@@ -297,7 +297,7 @@ const MojaRezerwacja = () => {
           <p className="text-sm text-muted-foreground mb-6 text-center">
             Sprawdź kod w SMS-ie i spróbuj ponownie
           </p>
-          <Button onClick={() => (window.location.href = '/')}>Zarezerwuj wizytę</Button>
+          <Button onClick={() => (window.location.href = '/')}>{t('pages.reservation.bookVisit')}</Button>
         </div>
       </>
     );
@@ -383,11 +383,11 @@ const MojaRezerwacja = () => {
           {/* Reservation details */}
           <div className="space-y-4">
             <div className="bg-white border border-border p-4 space-y-3">
-              <h2 className="font-semibold text-foreground">Szczegóły rezerwacji</h2>
+              <h2 className="font-semibold text-foreground">{t('pages.reservation.details')}</h2>
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Usługa</span>
+                  <span className="text-muted-foreground">{t('pages.reservation.service')}</span>
                   <span className="font-medium text-foreground">{reservation.service.name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -426,7 +426,7 @@ const MojaRezerwacja = () => {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Imię</span>
+                  <span className="text-muted-foreground">{t('pages.reservation.firstName')}</span>
                   <span className="font-medium text-foreground">{reservation.customer_name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -442,10 +442,10 @@ const MojaRezerwacja = () => {
                     <span className="text-muted-foreground">Rozmiar</span>
                     <span className="font-medium text-foreground">
                       {reservation.car_size === 'small'
-                        ? 'Mały'
+                        ? t('pages.reservation.carSizeSmall')
                         : reservation.car_size === 'medium'
-                          ? 'Średni'
-                          : 'Duży'}
+                          ? t('pages.reservation.carSizeMedium')
+                          : t('pages.reservation.carSizeLarge')}
                     </span>
                   </div>
                 )}

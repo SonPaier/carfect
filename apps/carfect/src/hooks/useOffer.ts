@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { addMonths, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ import type {
 export type { CustomerData, VehicleData, OfferItem, OfferOption, DefaultSelectedState, OfferState };
 
 export const useOffer = (instanceId: string) => {
+  const { t } = useTranslation();
   // Default valid until: 1 month from now
   const defaultValidUntil = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
 
@@ -871,12 +873,12 @@ export const useOffer = (instanceId: string) => {
         }
 
         if (!silent) {
-          toast.success('Oferta została zapisana');
+          toast.success(t('hooks.offer.saveSuccess'));
         }
         return offerId;
       } catch (error) {
         console.error('Error saving offer:', error);
-        toast.error('Błąd podczas zapisywania oferty');
+        toast.error(t('hooks.offer.saveError'));
         throw error;
       } finally {
         setSaving(false);
@@ -1102,9 +1104,7 @@ export const useOffer = (instanceId: string) => {
           // Helper to format duration in Polish
           const formatDuration = (months: number): string => {
             if (months < 12) {
-              if (months === 1) return '1 miesiąc';
-              if (months >= 2 && months <= 4) return `${months} miesiące`;
-              return `${months} miesięcy`;
+              return t('hooks.offer.months', { count: months });
             }
             if (months % 12 !== 0) {
               const y = Math.floor(months / 12);
@@ -1132,7 +1132,7 @@ export const useOffer = (instanceId: string) => {
               parts.push(`• ${scopeName} (${formatDuration(months)})`);
             } else if (scopeId in widgetDurationSelections && months === null) {
               // Customer explicitly chose "Nie wiem, proszę o propozycję"
-              parts.push(`• ${scopeName} – Nie wiem, proszę o propozycję`);
+              parts.push(`• ${scopeName} – ${t('hooks.offer.noPreference')}`);
             } else {
               parts.push(`• ${scopeName}`);
             }
@@ -1151,7 +1151,7 @@ export const useOffer = (instanceId: string) => {
           const budgetSuggestion = offerData.budget_suggestion;
           if (budgetSuggestion) {
             parts.push('');
-            parts.push(`Budżet: ${budgetSuggestion.toLocaleString('pl-PL')} zł`);
+            parts.push(t('hooks.offer.budget', { amount: budgetSuggestion.toLocaleString('pl-PL') }));
           }
 
           // Add customer notes if provided
@@ -1251,7 +1251,7 @@ export const useOffer = (instanceId: string) => {
         });
       } catch (error) {
         console.error('Error loading offer:', error);
-        toast.error('Błąd podczas wczytywania oferty');
+        toast.error(t('hooks.offer.loadError'));
         throw error;
       } finally {
         setLoading(false);
