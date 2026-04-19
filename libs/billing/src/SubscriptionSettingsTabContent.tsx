@@ -1,7 +1,10 @@
 import { SubscriptionSummaryCard } from './SubscriptionSummaryCard';
+import type { SubscriptionSummaryLabels } from './SubscriptionSummaryCard';
 import { TrialBanner } from './TrialBanner';
 import { BillingHistoryTable } from './BillingHistoryTable';
+import type { BillingHistoryLabels } from './BillingHistoryTable';
 import { InvoiceDataForm } from './InvoiceDataForm';
+import type { InvoiceDataFormLabels } from './InvoiceDataForm';
 import type { SubscriptionSummary, SubscriptionInvoice, BillingData } from './billing.types';
 
 const EMPTY_BILLING: BillingData = {
@@ -34,9 +37,14 @@ interface SubscriptionSettingsTabContentProps {
   onPageSizeChange: (size: number) => void;
   onSaveBillingData: (data: BillingData) => Promise<void>;
   gusLookup: {
-    lookupNip: (nip: string) => Promise<{ name: string; street: string; postalCode: string; city: string } | null>;
+    lookupNip: (
+      nip: string,
+    ) => Promise<{ name: string; street: string; postalCode: string; city: string } | null>;
     loading: boolean;
   };
+  summaryLabels?: Partial<SubscriptionSummaryLabels>;
+  historyLabels?: Partial<BillingHistoryLabels>;
+  invoiceFormLabels?: Partial<InvoiceDataFormLabels>;
 }
 
 export function SubscriptionSettingsTabContent({
@@ -54,6 +62,9 @@ export function SubscriptionSettingsTabContent({
   onPageSizeChange,
   onSaveBillingData,
   gusLookup,
+  summaryLabels,
+  historyLabels,
+  invoiceFormLabels,
 }: SubscriptionSettingsTabContentProps) {
   const isLoading = summaryLoading || billingLoading;
   const isTrial = summary?.isTrial && summary.trialExpiresAt;
@@ -71,7 +82,7 @@ export function SubscriptionSettingsTabContent({
         <TrialBanner trialExpiresAt={summary!.trialExpiresAt!} contactPhone={contactPhone} />
       ) : (
         <>
-          {summary && <SubscriptionSummaryCard summary={summary} />}
+          {summary && <SubscriptionSummaryCard summary={summary} labels={summaryLabels} />}
 
           <h4 className="text-base font-semibold">{labels.paymentsHeading}</h4>
           <BillingHistoryTable
@@ -81,12 +92,14 @@ export function SubscriptionSettingsTabContent({
             pageSize={pageSize}
             onPageChange={onPageChange}
             onPageSizeChange={onPageSizeChange}
+            labels={historyLabels}
           />
 
           <InvoiceDataForm
             initialData={billingData ?? EMPTY_BILLING}
             onSave={onSaveBillingData}
             gusLookup={gusLookup}
+            labels={invoiceFormLabels}
           />
         </>
       )}

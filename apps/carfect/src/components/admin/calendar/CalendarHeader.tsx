@@ -158,7 +158,10 @@ export function CalendarHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 gap-2 mx-0" style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}>
+    <div
+      className="flex flex-col py-2 lg:py-3 bg-background sticky top-0 gap-2 mx-0"
+      style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}
+    >
       {/* First line on mobile: navigation + actions, on desktop: full layout */}
       <div className="flex items-center justify-between gap-2">
         {/* Navigation */}
@@ -325,7 +328,12 @@ export function CalendarHeader({
           {showStationFilter && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9" title={t('calendar.columnVisibility')}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  title={t('calendar.columnVisibility')}
+                >
                   <Settings2 className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
@@ -389,7 +397,11 @@ export function CalendarHeader({
                           }}
                           className="accent-primary"
                         />
-                        {v === 'day' ? t('calendar.viewDay') : v === 'week' ? t('calendar.viewWeek') : t('calendar.viewMonth')}
+                        {v === 'day'
+                          ? t('calendar.viewDay')
+                          : v === 'week'
+                            ? t('calendar.viewWeek')
+                            : t('calendar.viewMonth')}
                       </label>
                     ))}
                   </div>
@@ -397,7 +409,7 @@ export function CalendarHeader({
 
                 {/* Grouping mode for week/month views */}
                 <div className="border-t border-border pt-3 space-y-2">
-                  <h4 className="font-medium text-sm">Grupowanie (tydzień/miesiąc)</h4>
+                  <h4 className="font-medium text-sm">{t('calendar.grouping')}</h4>
                   <div className="space-y-1">
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input

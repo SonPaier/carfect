@@ -79,7 +79,13 @@ export const ProtocolsView = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [protocolToDelete, setProtocolToDelete] = useState<Protocol | null>(null);
   const [instanceSlug, setInstanceSlug] = useState<string>('');
-  const [instanceInfo, setInstanceInfo] = useState<{ name: string; logo_url: string | null; phone: string | null; email: string | null; address: string | null } | null>(null);
+  const [instanceInfo, setInstanceInfo] = useState<{
+    name: string;
+    logo_url: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+  } | null>(null);
   const [editingProtocolId, setEditingProtocolId] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [protocolToEmail, setProtocolToEmail] = useState<Protocol | null>(null);
@@ -113,10 +119,20 @@ export const ProtocolsView = ({
   }, [showCreateForm, editingProtocolId, onEditModeChange]);
 
   const fetchInstanceSlug = async () => {
-    const { data } = await supabase.from('instances').select('slug, name, logo_url, phone, email, address, protocol_email_template').eq('id', instanceId).single();
+    const { data } = await supabase
+      .from('instances')
+      .select('slug, name, logo_url, phone, email, address, protocol_email_template')
+      .eq('id', instanceId)
+      .single();
     if (data) {
       setInstanceSlug(data.slug);
-      setInstanceInfo({ name: data.name, logo_url: data.logo_url, phone: data.phone, email: data.email, address: data.address });
+      setInstanceInfo({
+        name: data.name,
+        logo_url: data.logo_url,
+        phone: data.phone,
+        email: data.email,
+        address: data.address,
+      });
       setEmailTemplate(data.protocol_email_template || '');
     }
   };
@@ -208,10 +224,17 @@ export const ProtocolsView = ({
         onBack={() => setShowConfigurator(false)}
         emailTemplate={emailTemplate}
         onEmailTemplateChange={async (template) => {
-          await supabase.from('instances').update({ protocol_email_template: template }).eq('id', instanceId);
+          await supabase
+            .from('instances')
+            .update({ protocol_email_template: template })
+            .eq('id', instanceId);
           setEmailTemplate(template);
         }}
-        renderPreview={(config: ProtocolConfig, definitions: CustomFieldDefinition[], protocolType) => {
+        renderPreview={(
+          config: ProtocolConfig,
+          definitions: CustomFieldDefinition[],
+          protocolType,
+        ) => {
           const sampleProtocol = {
             id: 'preview',
             public_token: 'preview',
@@ -235,16 +258,19 @@ export const ProtocolsView = ({
             service_items: config.builtInFields.serviceItems.enabled
               ? [{ name: 'Usługa przykładowa', quantity: 1, unit_price: 500 }]
               : null,
-            custom_field_values: definitions.reduce((acc, def) => {
-              if (def.field_type === 'checkbox') acc[def.id] = true;
-              else if (def.field_type === 'number') acc[def.id] = 42;
-              else acc[def.id] = 'Przykład';
-              return acc;
-            }, {
-              ...(config.builtInFields.valuableItemsClause.enabled
-                ? { _valuable_items: 'Laptop, dokumenty, telefon' }
-                : {}),
-            } as Record<string, unknown>),
+            custom_field_values: definitions.reduce(
+              (acc, def) => {
+                if (def.field_type === 'checkbox') acc[def.id] = true;
+                else if (def.field_type === 'number') acc[def.id] = 42;
+                else acc[def.id] = 'Przykład';
+                return acc;
+              },
+              {
+                ...(config.builtInFields.valuableItemsClause.enabled
+                  ? { _valuable_items: 'Laptop, dokumenty, telefon' }
+                  : {}),
+              } as Record<string, unknown>,
+            ),
           };
           const sampleInstance = {
             id: instanceId,
@@ -330,9 +356,7 @@ export const ProtocolsView = ({
           icon={ClipboardCheck}
           title={searchQuery ? t('protocols.list.noResults') : t('protocols.list.noProtocols')}
           description={
-            searchQuery
-              ? t('protocols.list.noResultsHint')
-              : t('protocols.list.noProtocolsHint')
+            searchQuery ? t('protocols.list.noResultsHint') : t('protocols.list.noProtocolsHint')
           }
         />
       ) : (
@@ -358,7 +382,9 @@ export const ProtocolsView = ({
                         </div>
                       )}
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(protocol.protocol_date), 'PPP', { locale: getDateLocale() })}
+                        {format(new Date(protocol.protocol_date), 'PPP', {
+                          locale: getDateLocale(),
+                        })}
                       </div>
 
                       {/* Line 4: Offer number + Protocol type + Status (mobile) */}
@@ -368,7 +394,9 @@ export const ProtocolsView = ({
                           <span className="truncate">#{protocol.offer_number}</span>
                         )}
                         <Badge variant="outline" className="text-xs">
-                          {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
+                          {protocol.protocol_type === 'pickup'
+                            ? t('protocols.typePickup')
+                            : t('protocols.typeReception')}
                         </Badge>
                         <Badge
                           variant={protocol.status === 'sent' ? 'default' : 'outline'}
@@ -379,7 +407,9 @@ export const ProtocolsView = ({
                               : 'text-muted-foreground',
                           )}
                         >
-                          {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
+                          {protocol.status === 'sent'
+                            ? t('protocols.statusSent')
+                            : t('protocols.statusDraft')}
                         </Badge>
                       </div>
 
@@ -391,7 +421,9 @@ export const ProtocolsView = ({
                           </Badge>
                         )}
                         <Badge variant="outline" className="text-xs">
-                          {protocol.protocol_type === 'pickup' ? 'Wydanie' : 'Przyjęcie'}
+                          {protocol.protocol_type === 'pickup'
+                            ? t('protocols.typePickup')
+                            : t('protocols.typeReception')}
                         </Badge>
                         <Badge
                           variant={protocol.status === 'sent' ? 'default' : 'outline'}
@@ -402,7 +434,9 @@ export const ProtocolsView = ({
                               : 'text-muted-foreground',
                           )}
                         >
-                          {protocol.status === 'sent' ? 'Wysłany' : 'Szkic'}
+                          {protocol.status === 'sent'
+                            ? t('protocols.statusSent')
+                            : t('protocols.statusDraft')}
                         </Badge>
                       </div>
                     </div>
@@ -514,7 +548,6 @@ export const ProtocolsView = ({
             instanceId={instanceId}
             onSent={fetchProtocols}
           />
-
         </>
       )}
     </div>
