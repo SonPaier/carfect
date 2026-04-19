@@ -1121,7 +1121,8 @@
       "trainings": "Trainings",
       "subscription": "Subscription & invoices"
     },
-    "appTitle": "App settings"
+    "appTitle": "App settings",
+    "smsDescription": "Manage the content of SMS messages sent to customers"
   },
   "widget": {
     "title": "SMS",

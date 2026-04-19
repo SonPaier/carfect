@@ -1121,7 +1121,8 @@
       "trainings": "Schulungen",
       "subscription": "Abonnement & Rechnungen"
     },
-    "appTitle": "App-Einstellungen"
+    "appTitle": "App-Einstellungen",
+    "smsDescription": "Verwalten Sie den Inhalt der an Kunden gesendeten SMS-Nachrichten"
   },
   "widget": {
     "title": "SMS",

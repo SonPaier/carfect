@@ -1121,7 +1121,8 @@
       "trainings": "Szkolenia",
       "subscription": "Subskrypcja i faktury"
     },
-    "appTitle": "Ustawienia aplikacji"
+    "appTitle": "Ustawienia aplikacji",
+    "smsDescription": "Zarządzaj treścią wiadomości SMS wysyłanych do klientów"
   },
   "widget": {
     "title": "Widget na stronę",

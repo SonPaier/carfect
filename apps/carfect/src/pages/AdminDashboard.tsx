@@ -1274,7 +1274,7 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('protocols');
                       }}
-                      title="Protokoły"
+                      title={t('navigation.protocols')}
                     >
                       <ClipboardCheck className="w-4 h-4 shrink-0" />
                     </Button>
@@ -1296,10 +1296,10 @@ const AdminDashboard = () => {
                       setSidebarOpen(false);
                       setCurrentView('calendar');
                     }}
-                    title="Kalendarz"
+                    title={t('navigation.calendar')}
                   >
                     <Calendar className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && 'Kalendarz'}
+                    {!sidebarCollapsed && t('navigation.calendar')}
                   </Button>
                   {/* 2. Rezerwacje */}
                   <Button
@@ -1314,7 +1314,7 @@ const AdminDashboard = () => {
                       setSidebarOpen(false);
                       setCurrentView('reservations');
                     }}
-                    title="Realizacje"
+                    title={t('navigation.reservations')}
                   >
                     <div className="relative">
                       <ListChecks className="w-4 h-4 shrink-0" />
@@ -1326,7 +1326,7 @@ const AdminDashboard = () => {
                     </div>
                     {!sidebarCollapsed && (
                       <>
-                        <span className="flex-1 text-left">Realizacje</span>
+                        <span className="flex-1 text-left">{t('navigation.reservations')}</span>
                         {pendingCount > 0 && (
                           <span className="min-w-[20px] h-5 px-1.5 text-xs font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
                             {pendingCount}
@@ -1349,10 +1349,10 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('offers');
                       }}
-                      title="Oferty"
+                      title={t('navigation.offers')}
                     >
                       <FileText className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Oferty'}
+                      {!sidebarCollapsed && t('navigation.offers')}
                     </Button>
                   )}
                   {/* 4. Protokoły */}
@@ -1369,10 +1369,10 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('protocols');
                       }}
-                      title="Protokoły"
+                      title={t('navigation.protocols')}
                     >
                       <ClipboardCheck className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Protokoły'}
+                      {!sidebarCollapsed && t('navigation.protocols')}
                     </Button>
                   )}
                   {/* 5. Klienci */}
@@ -1388,10 +1388,10 @@ const AdminDashboard = () => {
                       setSidebarOpen(false);
                       setCurrentView('customers');
                     }}
-                    title="Klienci"
+                    title={t('navigation.customers')}
                   >
                     <UserCircle className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && 'Klienci'}
+                    {!sidebarCollapsed && t('navigation.customers')}
                   </Button>
                   {/* 6. Pracownicy - admin only */}
                   {userRole !== 'employee' && (
@@ -1407,10 +1407,10 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('employees');
                       }}
-                      title="Pracownicy"
+                      title={t('navigation.employees')}
                     >
                       <UsersRound className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Pracownicy'}
+                      {!sidebarCollapsed && t('navigation.employees')}
                     </Button>
                   )}
                   {/* 7. Usługi - admin only */}
@@ -1426,10 +1426,10 @@ const AdminDashboard = () => {
                       setSidebarOpen(false);
                       setCurrentView('pricelist');
                     }}
-                    title="Usługi"
+                    title={t('navigation.products')}
                   >
                     <BadgeDollarSign className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && 'Usługi'}
+                    {!sidebarCollapsed && t('navigation.products')}
                   </Button>
                   {/* 8. Powiadomienia - ukryte */}
                   {/* AI Analyst - hidden until env vars deployed */}
@@ -1466,10 +1466,10 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('reminders');
                       }}
-                      title="Przypomnienia"
+                      title={t('navigation.reminders')}
                     >
                       <Bell className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Przypomnienia'}
+                      {!sidebarCollapsed && t('navigation.reminders')}
                     </Button>
                   )}
                   {/* 10. Ultrafit - only when linked and not employee */}
@@ -1489,7 +1489,7 @@ const AdminDashboard = () => {
                       title="Ultrafit"
                     >
                       <Package className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Ultrafit'}
+                      {!sidebarCollapsed && t('integrations.ultrafit.title')}
                     </Button>
                   )}
                   {/* 11. Ustawienia - admin only, always last */}
@@ -1506,10 +1506,10 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('settings');
                       }}
-                      title="Ustawienia"
+                      title={t('navigation.settings')}
                     >
                       <Settings className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Ustawienia'}
+                      {!sidebarCollapsed && t('navigation.settings')}
                     </Button>
                   )}
                 </>
@@ -1529,10 +1529,10 @@ const AdminDashboard = () => {
                       sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
                     )}
                     onClick={() => navigate(adminBasePath + '/sales-crm')}
-                    title="Przejdź do Panelu Sprzedaży"
+                    title={t('navigation.goToSales')}
                   >
                     <ArrowLeftRight className="w-4 h-4 shrink-0" />
-                    {!sidebarCollapsed && 'Panel Sprzedaży'}
+                    {!sidebarCollapsed && t('navigation.goToSales')}
                   </Button>
                 </div>
               )}
@@ -1552,14 +1552,14 @@ const AdminDashboard = () => {
                     sidebarCollapsed ? 'justify-center px-2' : 'justify-start',
                   )}
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  title={sidebarCollapsed ? 'Rozwiń menu' : 'Zwiń menu'}
+                  title={t('navigation.toggleMenu')}
                 >
                   {sidebarCollapsed ? (
                     <PanelLeft className="w-4 h-4 shrink-0" />
                   ) : (
                     <>
                       <PanelLeftClose className="w-4 h-4 shrink-0" />
-                      Zwiń menu
+                      {t('navigation.toggleMenu')}
                     </>
                   )}
                 </Button>
@@ -1576,7 +1576,7 @@ const AdminDashboard = () => {
                   variant="ghost"
                   className="w-full justify-center px-2 text-muted-foreground"
                   onClick={handleLogout}
-                  title="Wyloguj się"
+                  title={t('navigation.logout')}
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
                 </Button>

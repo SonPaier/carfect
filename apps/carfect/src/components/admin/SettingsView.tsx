@@ -143,9 +143,9 @@ const SettingsView = ({
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold">Wiadomości SMS</h3>
+              <h3 className="text-lg font-semibold">{t('settings.tabs.sms')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Zarządzaj treścią wiadomości SMS wysyłanych do klientów
+                {t('settings.smsDescription')}
               </p>
             </div>
             <SmsMessageSettings
