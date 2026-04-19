@@ -255,7 +255,7 @@ const AddSalesProductDrawer = ({
       >
         <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <div className="flex items-center justify-between">
-            <SheetTitle>{isEdit ? 'Edytuj produkt' : 'Dodaj produkt'}</SheetTitle>
+            <SheetTitle>{isEdit ? t('salesProduct.editTitle') : t('salesProduct.addTitle')}</SheetTitle>
             <button
               type="button"
               onClick={handleClose}
@@ -269,7 +269,7 @@ const AddSalesProductDrawer = ({
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Typ produktu</Label>
+              <Label>{t('salesProduct.productType')}</Label>
               <RadioGroup
                 value={productType}
                 onValueChange={(v) => {
@@ -283,20 +283,20 @@ const AddSalesProductDrawer = ({
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="roll" id="type-roll" />
                   <Label htmlFor="type-roll" className="font-normal cursor-pointer">
-                    Rolka (folia)
+                    {t('salesProduct.rollFilm')}
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="other" id="type-other" />
                   <Label htmlFor="type-other" className="font-normal cursor-pointer">
-                    Inny produkt
+                    {t('salesProduct.otherProduct')}
                   </Label>
                 </div>
               </RadioGroup>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-full-name">Pełna nazwa produktu</Label>
+              <Label htmlFor="product-full-name">{t('salesProduct.fullName')}</Label>
               <Input
                 id="product-full-name"
                 value={fullName}
@@ -308,7 +308,7 @@ const AddSalesProductDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-short-name">Skrócona nazwa produktu</Label>
+              <Label htmlFor="product-short-name">{t('salesProduct.shortName')}</Label>
               <Input
                 id="product-short-name"
                 value={shortName}
@@ -320,7 +320,7 @@ const AddSalesProductDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Kategoria</Label>
+              <Label>{t('salesProduct.category')}</Label>
               <Select
                 value={categoryId}
                 onValueChange={(v) => {
@@ -329,7 +329,7 @@ const AddSalesProductDrawer = ({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Wybierz kategorię" />
+                  <SelectValue placeholder={t('salesProduct.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -342,7 +342,7 @@ const AddSalesProductDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-description">Opis</Label>
+              <Label htmlFor="product-description">{t('salesProduct.description')}</Label>
               <Textarea
                 id="product-description"
                 value={description}
@@ -355,7 +355,7 @@ const AddSalesProductDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-price">Cena netto</Label>
+              <Label htmlFor="product-price">{t('salesProduct.priceNet')}</Label>
               <NumericInput
                 id="product-price"
                 min={0}
@@ -370,7 +370,7 @@ const AddSalesProductDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Cena za</Label>
+              <Label>{t('salesProduct.priceFor')}</Label>
               <RadioGroup
                 value={priceUnit}
                 onValueChange={(v) => {
@@ -382,7 +382,7 @@ const AddSalesProductDrawer = ({
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="piece" id="unit-piece" />
                   <Label htmlFor="unit-piece" className="font-normal cursor-pointer">
-                    Sztukę
+                    {t('salesProduct.piece')}
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -404,7 +404,7 @@ const AddSalesProductDrawer = ({
                 }}
               />
               <Label htmlFor="exclude-from-discount" className="text-sm font-normal cursor-pointer">
-                Wykluczaj ten produkt z rabatów
+                {t('salesProduct.excludeFromDiscount')}
               </Label>
             </div>
 
@@ -418,13 +418,13 @@ const AddSalesProductDrawer = ({
                 }}
               />
               <Label htmlFor="has-variants" className="text-sm font-normal cursor-pointer">
-                Produkt posiada warianty
+                {t('salesProduct.hasVariants')}
               </Label>
             </div>
 
             {hasVariants && (
               <div className="space-y-3">
-                <Label>Warianty</Label>
+                <Label>{t('salesProduct.variants')}</Label>
                 {variants.map((variant, index) => (
                   <div
                     key={index}
@@ -456,7 +456,7 @@ const AddSalesProductDrawer = ({
                   onClick={addVariant}
                 >
                   <Plus className="w-4 h-4" />
-                  Dodaj wariant
+                  {t('salesProduct.addVariant')}
                 </Button>
               </div>
             )}
@@ -466,18 +466,18 @@ const AddSalesProductDrawer = ({
         <SheetFooter className="px-6 py-4 border-t shrink-0">
           <div className="flex gap-3 justify-end">
             <Button variant="outline" onClick={handleClose}>
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Zapisuję...
+                  {t('common.saving')}
                 </>
               ) : isEdit ? (
-                'Zapisz zmiany'
+                t('salesOrder.saveChanges')
               ) : (
-                'Dodaj produkt'
+                t('salesProduct.addTitle')
               )}
             </Button>
           </div>

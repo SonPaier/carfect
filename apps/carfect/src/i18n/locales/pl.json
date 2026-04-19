@@ -273,7 +273,13 @@
       "changeRequestPush": "Prośba o zmianę: {{name}}",
       "changeApprovedSms": "{{instanceName}}: Twoja prośba o zmianę terminu została zatwierdzona. Nowy termin: {{date}} o {{time}}. Zarządzaj: {{url}}",
       "changeRejectedSms": "{{instanceName}}: Niestety nie możemy zmienić terminu. Twoja rezerwacja pozostaje: {{date}} o {{time}}. Zarządzaj: {{url}}"
-    }
+    },
+    "noCode": "Brak kodu rezerwacji",
+    "confirmed": "Potwierdzona",
+    "cancelled": "Anulowana",
+    "inProgress": "W trakcie",
+    "notFound": "Nie znaleziono rezerwacji",
+    "checkSms": "Sprawdź kod w SMS-ie i spróbuj ponownie"
   },
   "booking": {
     "title": "Umów się na wizytę",
@@ -4315,6 +4321,40 @@
     "accountNumber": "Numer konta",
     "selectAccount": "Wybierz konto"
   },
+  "salesProduct": {
+    "editTitle": "Edytuj produkt",
+    "addTitle": "Dodaj produkt",
+    "productType": "Typ produktu",
+    "rollFilm": "Rolka (folia)",
+    "otherProduct": "Inny produkt",
+    "fullName": "Pełna nazwa produktu",
+    "shortName": "Skrócona nazwa produktu",
+    "category": "Kategoria",
+    "selectCategory": "Wybierz kategorię",
+    "description": "Opis",
+    "priceNet": "Cena netto",
+    "priceFor": "Cena za",
+    "piece": "Sztukę",
+    "excludeFromDiscount": "Wykluczaj ten produkt z rabatów",
+    "hasVariants": "Produkt posiada warianty",
+    "variants": "Warianty",
+    "addVariant": "Dodaj wariant"
+  },
+  "salesCustomer": {
+    "fetchData": "Pobierz dane",
+    "nameRequired": "Nazwa *",
+    "companyAddress": "Adres firmy",
+    "shippingAddress": "Adres dostawy",
+    "sameAsBilling": "Taki sam jak adres firmy",
+    "addressee": "Adresat",
+    "phoneRequired": "Telefon *",
+    "contactPerson": "Osoba kontaktowa",
+    "currency": "Waluta",
+    "discount": "Rabat",
+    "netPayer": "Płatnik netto",
+    "customer": "Klient",
+    "newCustomer": "Nowy klient"
+  },
   "embedLeadForm": {
     "phoneMinDigits": "Numer telefonu musi mieć minimum 9 cyfr",
     "paintColorRequired": "Kolor lakieru jest wymagany",
@@ -4322,14 +4362,6 @@
     "paintColor": "Kolor lakieru",
     "paintColorPlaceholder": "np. Czarny metalik, Biały perłowy",
     "paintType": "Rodzaj lakieru"
-  },
-  "myReservation": {
-    "noCode": "Brak kodu rezerwacji",
-    "confirmed": "Potwierdzona",
-    "cancelled": "Anulowana",
-    "inProgress": "W trakcie",
-    "notFound": "Nie znaleziono rezerwacji",
-    "checkSms": "Sprawdź kod w SMS-ie i spróbuj ponownie"
   },
   "pages": {
     "auth": {

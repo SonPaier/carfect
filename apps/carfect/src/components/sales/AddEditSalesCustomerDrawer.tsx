@@ -643,12 +643,12 @@ const AddEditSalesCustomerDrawer = ({
               ) : (
                 <Search className="w-4 h-4 mr-1" />
               )}
-              Pobierz dane
+              {t('salesCustomer.fetchData')}
             </Button>
           </div>
         </div>
         <div>
-          <Label htmlFor="name">Nazwa *</Label>
+          <Label htmlFor="name">{t('salesCustomer.nameRequired')}</Label>
           <Input
             id="name"
             value={form.name}
@@ -665,7 +665,7 @@ const AddEditSalesCustomerDrawer = ({
       {/* Section 2: Adres firmy */}
       <div className="space-y-3">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Adres firmy
+          {t('salesCustomer.companyAddress')}
         </h4>
         <AddressFields
           prefix="billing"
@@ -706,7 +706,7 @@ const AddEditSalesCustomerDrawer = ({
       {/* Section 4: Adres dostawy */}
       <div className="space-y-3">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Adres dostawy
+          {t('salesCustomer.shippingAddress')}
         </h4>
         <div className="flex items-center gap-2">
           <Checkbox
@@ -718,13 +718,13 @@ const AddEditSalesCustomerDrawer = ({
             }}
           />
           <Label htmlFor="same-as-billing" className="text-sm font-normal cursor-pointer">
-            Taki sam jak adres firmy
+            {t('salesCustomer.sameAsBilling')}
           </Label>
         </div>
         <Collapsible open={!form.shippingSameAsBilling}>
           <CollapsibleContent className="space-y-3">
             <div>
-              <Label htmlFor="ship-addressee">Adresat</Label>
+              <Label htmlFor="ship-addressee">{t('salesCustomer.addressee')}</Label>
               <Input
                 id="ship-addressee"
                 value={form.shippingAddressee}
@@ -775,7 +775,7 @@ const AddEditSalesCustomerDrawer = ({
       {/* Section 4: Kontakt */}
       <div className="space-y-3">
         <div>
-          <Label htmlFor="phone">Telefon *</Label>
+          <Label htmlFor="phone">{t('salesCustomer.phoneRequired')}</Label>
           <Input
             id="phone"
             value={form.phone}
@@ -786,7 +786,7 @@ const AddEditSalesCustomerDrawer = ({
           />
         </div>
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t('common.email')}</Label>
           <Input
             id="email"
             type="email"
@@ -798,7 +798,7 @@ const AddEditSalesCustomerDrawer = ({
           />
         </div>
         <div>
-          <Label htmlFor="contact-person">Osoba kontaktowa</Label>
+          <Label htmlFor="contact-person">{t('salesCustomer.contactPerson')}</Label>
           <Input
             id="contact-person"
             value={form.contactPerson}
@@ -815,7 +815,7 @@ const AddEditSalesCustomerDrawer = ({
       {/* Section 5: Warunki */}
       <div className="space-y-3">
         <div>
-          <Label htmlFor="currency">Waluta</Label>
+          <Label htmlFor="currency">{t('salesCustomer.currency')}</Label>
           <Select
             value={form.currency}
             onValueChange={(value) => {
@@ -837,7 +837,7 @@ const AddEditSalesCustomerDrawer = ({
         </div>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="discount-toggle">Rabat</Label>
+          <Label htmlFor="discount-toggle">{t('salesCustomer.discount')}</Label>
           <Switch
             size="sm"
             id="discount-toggle"
@@ -865,7 +865,7 @@ const AddEditSalesCustomerDrawer = ({
         )}
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="net-payer-toggle">Płatnik netto</Label>
+          <Label htmlFor="net-payer-toggle">{t('salesCustomer.netPayer')}</Label>
           <Switch
             size="sm"
             id="net-payer-toggle"
@@ -880,7 +880,7 @@ const AddEditSalesCustomerDrawer = ({
 
       {/* Notatki — bottom */}
       <div>
-        <Label htmlFor="notes">Notatki</Label>
+        <Label htmlFor="notes">{t('common.notes')}</Label>
         <Textarea
           id="notes"
           rows={3}
@@ -933,7 +933,7 @@ const AddEditSalesCustomerDrawer = ({
         {/* Sticky header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
           <h2 className="font-semibold text-lg">
-            {isEdit ? form.name || 'Klient' : 'Nowy klient'}
+            {isEdit ? form.name || t('salesCustomer.customer') : t('salesCustomer.newCustomer')}
           </h2>
           <div className="flex items-center gap-1">
             {isEdit && !editMode && (
@@ -997,10 +997,10 @@ const AddEditSalesCustomerDrawer = ({
                 }
               }}
             >
-              Anuluj
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Zapisywanie...' : 'Zapisz'}
+              {saving ? t('common.saving') : t('common.save')}
             </Button>
           </div>
         )}
