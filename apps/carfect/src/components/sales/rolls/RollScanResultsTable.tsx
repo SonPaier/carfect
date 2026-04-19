@@ -77,12 +77,12 @@ function InlineEditCell({
 }
 
 const RollScanResultsTable = ({
-  const { t } = useTranslation();
   results,
   onRemove,
   onRetry,
   onUpdateField,
 }: RollScanResultsTableProps) => {
+  const { t } = useTranslation();
   const readyResults = results.filter(
     (r) => r.status === 'review' || r.status === 'confirmed' || r.status === 'error'
   );
@@ -222,7 +222,6 @@ const RollScanResultsTable = ({
 };
 
 function ErrorRow({
-  const { t } = useTranslation();
   item,
   index,
   onRemove,
@@ -233,6 +232,7 @@ function ErrorRow({
   onRemove: (tempId: string) => void;
   onRetry?: (tempId: string, file: File) => void;
 }) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (

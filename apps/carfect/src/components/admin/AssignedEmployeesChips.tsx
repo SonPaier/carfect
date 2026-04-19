@@ -16,7 +16,6 @@ interface AssignedEmployeesChipsProps {
 }
 
 export function AssignedEmployeesChips({
-  const { t } = useTranslation();
   employeeIds,
   employees,
   onRemove,
@@ -71,6 +70,7 @@ export function AssignedEmployeesChips({
             <button
               type="button"
               onClick={(e) => {
+                const { t } = useTranslation();
                 e.stopPropagation();
                 onRemove(id);
               }}
