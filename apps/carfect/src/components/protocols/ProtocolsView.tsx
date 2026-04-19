@@ -328,11 +328,11 @@ export const ProtocolsView = ({
       ) : filteredProtocols.length === 0 ? (
         <EmptyState
           icon={ClipboardCheck}
-          title={searchQuery ? 'Brak wyników' : 'Brak protokołów'}
+          title={searchQuery ? t('protocols.list.noResults') : t('protocols.list.noProtocols')}
           description={
             searchQuery
-              ? 'Spróbuj zmienić kryteria wyszukiwania'
-              : 'Utwórz pierwszy protokół przyjęcia pojazdu'
+              ? t('protocols.list.noResultsHint')
+              : t('protocols.list.noProtocolsHint')
           }
         />
       ) : (
