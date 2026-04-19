@@ -11,12 +11,12 @@ interface TruncatedDescriptionProps {
 }
 
 export const TruncatedDescription = ({
-  const { t } = useTranslation();
   text,
   maxLines = 3,
   className,
   textColor,
 }: TruncatedDescriptionProps) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
