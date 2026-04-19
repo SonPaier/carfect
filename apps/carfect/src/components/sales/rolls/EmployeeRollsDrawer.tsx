@@ -48,7 +48,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
     }
     setSaving(true);
     try {
-      await createScrapUsage({ workerName: addWorker, widthM: w, lengthM: l, vehicleName: addVehicle || null, note: addNote || null });
+      await createScrapUsage({ instanceId, workerName: addWorker, widthM: w, lengthM: l, vehicleName: addVehicle || null, note: addNote || null });
       toast.success(t('sales.rolls.employeeToastAdded'));
       setShowAddForm(false);
       setAddWorker(''); setAddWidthM(''); setAddLengthM(''); setAddVehicle(''); setAddNote('');
