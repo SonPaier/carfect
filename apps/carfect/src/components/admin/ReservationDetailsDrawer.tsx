@@ -1239,7 +1239,7 @@ const ReservationDetailsDrawer = ({
                         }}
                       >
                         <Camera className="w-4 h-4 mr-2" />
-                        Dodaj zdjęcia
+                        {t('reservationDetails.addPhotos')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setHistoryDrawerOpen(true)}>
                         <History className="w-4 h-4 mr-2" />
