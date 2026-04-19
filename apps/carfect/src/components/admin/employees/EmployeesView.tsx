@@ -77,7 +77,7 @@ const WEEKDAY_SHORT: Record<number, string> = {
   0: 'ND',
   1: 'PN',
   2: 'WT',
-  3: t('calendar.dayWed'),
+  3: 'ŚR',
   4: 'CZ',
   5: 'PT',
   6: 'SB',
