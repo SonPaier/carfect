@@ -255,7 +255,7 @@ export const OptionsStep = ({
                 >
                   <Command shouldFilter={false}>
                     <CommandInput
-                      placeholder="Szukaj w bibliotece..."
+                      placeholder={t('offers.options.searchLibrary')}
                       value={searchTerms[item.id] || ''}
                       onValueChange={(value) =>
                         setSearchTerms((prev) => ({ ...prev, [item.id]: value }))
@@ -263,7 +263,7 @@ export const OptionsStep = ({
                       className="text-left"
                     />
                     <CommandList>
-                      <CommandEmpty>Brak usług</CommandEmpty>
+                      <CommandEmpty>{t('offers.options.noServices')}</CommandEmpty>
                       <CommandGroup>
                         {products
                           .filter((p) => {
@@ -307,7 +307,7 @@ export const OptionsStep = ({
                 min={0}
                 step={1}
                 className="bg-white text-left"
-                placeholder="Cena netto"
+                placeholder={t('offers.options.priceNet')}
               />
             </div>
 
@@ -317,7 +317,7 @@ export const OptionsStep = ({
         )}
 
         {!item && (
-          <div className="text-center py-4 text-muted-foreground text-sm">Brak pozycji.</div>
+          <div className="text-center py-4 text-muted-foreground text-sm">{t('offers.options.noItems')}</div>
         )}
       </div>
     );
@@ -431,7 +431,7 @@ export const OptionsStep = ({
                           >
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Szukaj w bibliotece..."
+                                placeholder={t('offers.options.searchLibrary')}
                                 value={searchTerms[item.id] || ''}
                                 onValueChange={(value) =>
                                   setSearchTerms((prev) => ({
@@ -442,7 +442,7 @@ export const OptionsStep = ({
                                 className="text-left"
                               />
                               <CommandList>
-                                <CommandEmpty>Brak usług</CommandEmpty>
+                                <CommandEmpty>{t('offers.options.noServices')}</CommandEmpty>
                                 <CommandGroup>
                                   {products
                                     .filter((p) => {
@@ -488,7 +488,7 @@ export const OptionsStep = ({
                           min={0}
                           step={1}
                           className="bg-white text-left"
-                          placeholder="Cena"
+                          placeholder={t('offers.options.price')}
                         />
                       </div>
 
@@ -505,7 +505,7 @@ export const OptionsStep = ({
                           min={0}
                           step={0.01}
                           className="bg-white text-left"
-                          placeholder="Ilość"
+                          placeholder={t('offers.options.quantityPlaceholder')}
                         />
                         <Input
                           value={item.unit}
@@ -585,7 +585,7 @@ export const OptionsStep = ({
                           >
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Szukaj w bibliotece..."
+                                placeholder={t('offers.options.searchLibrary')}
                                 value={searchTerms[item.id] || ''}
                                 onValueChange={(value) =>
                                   setSearchTerms((prev) => ({
@@ -595,7 +595,7 @@ export const OptionsStep = ({
                                 }
                               />
                               <CommandList>
-                                <CommandEmpty>Brak usług</CommandEmpty>
+                                <CommandEmpty>{t('offers.options.noServices')}</CommandEmpty>
                                 <CommandGroup>
                                   {products
                                     .filter((p) => {
@@ -645,7 +645,7 @@ export const OptionsStep = ({
                           min={0}
                           step={1}
                           className="bg-white text-left"
-                          placeholder="Cena netto"
+                          placeholder={t('offers.options.priceNet')}
                         />
                       </div>
 

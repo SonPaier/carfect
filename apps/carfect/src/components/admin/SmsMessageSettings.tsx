@@ -196,10 +196,10 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
         .eq('id', instanceId);
 
       if (error) throw error;
-      toast.success('Nadpis SMS zapisany');
+      toast.success(t('smsSettings.senderSaved'));
     } catch (error) {
       console.error('Error saving SMS sender name:', error);
-      toast.error('Błąd zapisywania nadpisu SMS');
+      toast.error(t('smsSettings.senderSaveError'));
     } finally {
       setSavingSender(false);
     }
@@ -218,7 +218,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       if (error) throw error;
 
       if (!data?.billing_name || !data?.billing_city) {
-        toast.error('Uzupełnij dane do faktury w ustawieniach subskrypcji');
+        toast.error(t('smsSettings.fillBillingData'));
         return;
       }
 
@@ -232,7 +232,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       });
     } catch (error) {
       console.error('Error downloading declaration:', error);
-      toast.error('Błąd generowania oświadczenia');
+      toast.error(t('smsSettings.declarationError'));
     }
   };
 
@@ -287,7 +287,7 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       setSmsLogs(data || []);
     } catch (error) {
       console.error('Error fetching SMS logs:', error);
-      toast.error('Błąd pobierania historii SMS');
+      toast.error(t('smsSettings.smsLogsError'));
     } finally {
       setLoadingLogs(false);
     }
@@ -357,9 +357,9 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       <div className="border rounded-lg p-4 space-y-3 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-sm">Nadpis SMS</h3>
+            <h3 className="font-semibold text-sm">{t('smsSettings.senderName')}</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Nadawca SMS może mieć nazwę Twojej firmy, co zwiększa profesjonalizm i wiarygodność.
+              {t('smsSettings.senderNameDesc')}
             </p>
           </div>
         </div>
@@ -369,14 +369,14 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
             <Input
               value={senderName}
               onChange={(e) => setSenderName(e.target.value.slice(0, 11))}
-              placeholder="np. MójSerwis"
+              placeholder={t('smsSettings.senderNamePlaceholder')}
               maxLength={11}
               disabled={isTrial}
             />
-            <p className="text-xs text-muted-foreground mt-1">{senderName.length}/11 znaków</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('smsSettings.charCount', { count: senderName.length })}</p>
           </div>
           <Button size="sm" onClick={handleSaveSender} disabled={isTrial || savingSender}>
-            Zapisz
+            {t('smsSettings.save')}
           </Button>
           <Button
             size="sm"
@@ -384,19 +384,19 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
             onClick={handleDownloadDeclaration}
             disabled={isTrial || !senderName.trim()}
           >
-            Pobierz oświadczenie
+            {t('smsSettings.downloadDeclaration')}
           </Button>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Pobierz oświadczenie, podpisz (pieczątka jeśli posiadasz) i odeślij na WhatsApp{' '}
+          {t('smsSettings.declarationHint')}{' '}
           <a href="https://wa.me/48666610222" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">666 610 222</a>
           {' '}(Tomasz) lub e-mail{' '}
           <a href="mailto:hello@carfect.pl" className="text-primary hover:underline">hello@carfect.pl</a>
         </p>
 
         {isTrial && (
-          <p className="text-xs text-amber-600 font-medium">Dostępne w planie płatnym</p>
+          <p className="text-xs text-amber-600 font-medium">{t('smsSettings.trialOnly')}</p>
         )}
       </div>
 
@@ -419,23 +419,23 @@ const SmsMessageSettings = ({ instanceId, instanceName }: SmsMessageSettingsProp
       {/* SMS History Table */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Historia SMS ({smsLogs.length})</span>
+          <span className="text-sm font-medium">{t('smsSettings.history', { count: smsLogs.length })}</span>
           {loadingLogs && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
         </div>
         {smsLogs.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {loadingLogs ? 'Ładowanie...' : 'Brak wiadomości SMS w tym miesiącu'}
+            {loadingLogs ? t('common.loading') : t('smsSettings.noSmsThisMonth')}
           </p>
         ) : (
           <div className="max-h-[400px] overflow-auto border rounded-lg text-xs">
             <Table>
               <TableHeader className="bg-slate-50 sticky top-0 z-10">
                 <TableRow>
-                  <TableHead className="h-8 px-2 text-xs">Data</TableHead>
-                  <TableHead className="h-8 px-2 text-xs">Telefon</TableHead>
-                  <TableHead className="h-8 px-2 text-xs">Typ</TableHead>
-                  <TableHead className="h-8 px-2 text-xs">Status</TableHead>
-                  <TableHead className="h-8 px-2 text-xs">Treść</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">{t('smsSettings.colDate')}</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">{t('smsSettings.colPhone')}</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">{t('smsSettings.colType')}</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">{t('smsSettings.colStatus')}</TableHead>
+                  <TableHead className="h-8 px-2 text-xs">{t('smsSettings.colContent')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

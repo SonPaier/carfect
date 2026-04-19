@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Plus, MoreHorizontal, Settings2, ArrowUp, ArrowDown, Package } from 'lucide-react';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Input, EmptyState } from '@shared/ui';
@@ -39,6 +40,7 @@ type SortColumn = 'shortName' | 'fullName' | 'categoryName' | 'priceNet';
 type SortDirection = 'asc' | 'desc';
 
 const SalesProductsView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
@@ -144,10 +146,10 @@ const SalesProductsView = () => {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from('sales_products').delete().eq('id', id);
     if (error) {
-      toast.error('Błąd usuwania');
+      toast.error(t('sales.products.errorDelete'));
       return;
     }
-    toast.success('Produkt usunięty');
+    toast.success(t('sales.products.successDeleted'));
     fetchProducts();
   };
 
@@ -235,8 +237,8 @@ const SalesProductsView = () => {
                   ) : (
                     <EmptyState
                       icon={Package}
-                      title="Brak produktów"
-                      description="Dodaj pierwszy produkt do katalogu"
+                      title={t('sales.products.emptyTitle')}
+                      description={t('sales.products.emptyDescription')}
                     />
                   )}
                 </TableCell>

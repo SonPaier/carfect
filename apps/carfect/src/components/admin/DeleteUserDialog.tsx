@@ -13,6 +13,7 @@ import {
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface InstanceUser {
   id: string;
@@ -27,13 +28,14 @@ interface DeleteUserDialogProps {
   onSuccess: () => void;
 }
 
-const DeleteUserDialog = ({ 
-  open, 
-  onOpenChange, 
-  instanceId, 
+const DeleteUserDialog = ({
+  open,
+  onOpenChange,
+  instanceId,
   user,
-  onSuccess 
+  onSuccess
 }: DeleteUserDialogProps) => {
+  const { t } = useTranslation();
   const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -45,7 +47,7 @@ const DeleteUserDialog = ({
     if (!user) return;
 
     if (confirmText !== user.username) {
-      toast.error('Nazwa użytkownika nie zgadza się');
+      toast.error(t('deleteUser.usernameMismatch'));
       return;
     }
 
@@ -54,7 +56,7 @@ const DeleteUserDialog = ({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Sesja wygasła');
+        toast.error(t('deleteUser.sessionExpired'));
         return;
       }
 
@@ -74,13 +76,13 @@ const DeleteUserDialog = ({
         throw new Error(response.data.error);
       }
 
-      toast.success('Użytkownik został usunięty');
+      toast.success(t('deleteUser.success'));
       resetForm();
       onOpenChange(false);
       onSuccess();
     } catch (error: unknown) {
       console.error('Error deleting user:', error);
-      toast.error((error as Error).message || 'Nie udało się usunąć użytkownika');
+      toast.error((error as Error).message || t('deleteUser.error'));
     } finally {
       setLoading(false);
     }
@@ -97,21 +99,21 @@ const DeleteUserDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-destructive">
             <Trash2 className="w-5 h-5" />
-            Usuń użytkownika
+            {t('deleteUser.title')}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-4">
               <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg text-destructive">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium">Ta operacja jest nieodwracalna!</p>
-                  <p>Użytkownik straci dostęp do systemu i zostanie trwale usunięty.</p>
+                  <p className="font-medium">{t('deleteUser.warningIrreversible')}</p>
+                  <p>{t('deleteUser.warningDescription')}</p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirmUsername">
-                  Wpisz <strong>{user.username}</strong> aby potwierdzić:
+                  {t('deleteUser.confirmLabel', { username: user.username })}
                 </Label>
                 <Input
                   id="confirmUsername"
@@ -125,20 +127,20 @@ const DeleteUserDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
-            Anuluj
+            {t('deleteUser.cancel')}
           </Button>
-          <Button 
+          <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={loading || confirmText !== user.username}
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Usuń użytkownika
+            {t('deleteUser.deleteButton')}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

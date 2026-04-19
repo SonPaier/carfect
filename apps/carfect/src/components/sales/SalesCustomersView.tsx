@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Plus,
@@ -60,6 +61,7 @@ type SortDir = 'asc' | 'desc';
 const ITEMS_PER_PAGE = 10;
 
 const SalesCustomersView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
@@ -123,7 +125,7 @@ const SalesCustomersView = () => {
       .order('name');
     if (error) {
       console.error(error);
-      toast.error('Błąd ładowania klientów');
+      toast.error(t('sales.customers.errorLoading'));
     } else {
       setCustomers((data as SalesCustomer[]) || []);
     }
@@ -209,12 +211,12 @@ const SalesCustomersView = () => {
     const { error } = await supabase.from('sales_customers').delete().eq('id', id);
     if (error) {
       if (error.code === '23503') {
-        toast.error('Nie można usunąć klienta — ma powiązane zamówienia');
+        toast.error(t('sales.customers.errorDeleteHasOrders'));
       } else {
-        toast.error('Błąd usuwania klienta');
+        toast.error(t('sales.customers.errorDelete'));
       }
     } else {
-      toast.success('Klient usunięty');
+      toast.success(t('sales.customers.successDeleted'));
       fetchCustomers();
     }
   };
@@ -297,8 +299,8 @@ const SalesCustomersView = () => {
                 <TableCell colSpan={7}>
                   <EmptyState
                     icon={Users}
-                    title="Brak klientów"
-                    description="Dodaj pierwszego klienta, aby rozpocząć sprzedaż"
+                    title={t('sales.customers.emptyTitle')}
+                    description={t('sales.customers.emptyDescription')}
                   />
                 </TableCell>
               </TableRow>

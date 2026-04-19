@@ -88,7 +88,7 @@ export function TrainingDetailsDrawer({
     } catch (err) {
       console.error('Error toggling status:', err);
       setLocalStatus(prevStatus);
-      toast.error('Błąd zmiany statusu');
+      toast.error(t('trainings.statusChangeError'));
     } finally {
       setTogglingStatus(false);
     }
@@ -104,7 +104,7 @@ export function TrainingDetailsDrawer({
       onClose();
     } catch (err) {
       console.error('Error deleting training:', err);
-      toast.error('Błąd usuwania szkolenia');
+      toast.error(t('trainings.deleteError'));
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -123,10 +123,10 @@ export function TrainingDetailsDrawer({
         .update({ description: localDescription || null } as { description: string | null })
         .eq('id', training.id);
       if (error) throw error;
-      toast.success('Notatki zapisane');
+      toast.success(t('trainings.notesSaved'));
     } catch (err) {
       console.error('Error saving notes:', err);
-      toast.error('Błąd zapisu notatek');
+      toast.error(t('trainings.notesSaveError'));
     } finally {
       setSavingNotes(false);
       setEditingNotes(false);

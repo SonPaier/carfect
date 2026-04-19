@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { Input } from '@shared/ui';
@@ -14,6 +15,7 @@ import {
 } from './hooks/useSalesSettings';
 
 const SalesSettingsView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
   const queryClient = useQueryClient();
@@ -87,12 +89,12 @@ const SalesSettingsView = () => {
     if (!file || !instanceId) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Wybierz plik graficzny');
+      toast.error(t('sales.companySettings.errorLogoType'));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Maksymalny rozmiar pliku to 2MB');
+      toast.error(t('sales.companySettings.errorLogoSize'));
       return;
     }
 
@@ -130,10 +132,10 @@ const SalesSettingsView = () => {
         ) as unknown);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
-      toast.success('Logo zostało załadowane');
+      toast.success(t('sales.companySettings.successLogoUploaded'));
     } catch (error) {
       console.error('Error uploading logo:', error);
-      toast.error('Nie udało się załadować logo');
+      toast.error(t('sales.companySettings.errorLogoUpload'));
     } finally {
       setUploadingLogo(false);
     }
@@ -158,10 +160,10 @@ const SalesSettingsView = () => {
         ) as unknown);
 
       queryClient.invalidateQueries({ queryKey: ['sales_instance_settings', instanceId] });
-      toast.success('Logo zostało usunięte');
+      toast.success(t('sales.companySettings.successLogoRemoved'));
     } catch (error) {
       console.error('Error removing logo:', error);
-      toast.error('Nie udało się usunąć logo');
+      toast.error(t('sales.companySettings.errorLogoRemove'));
     }
   };
 

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Plus,
@@ -74,6 +75,7 @@ const MbM2Display = ({
 };
 
 const SalesRollsView = () => {
+  const { t } = useTranslation();
   const { roles } = useAuth();
   const instanceId = roles.find((r) => r.instance_id)?.instance_id || null;
 
@@ -109,11 +111,11 @@ const SalesRollsView = () => {
       const data = await fetchRolls(instanceId, activeTab);
       setRolls(data);
     } catch (err: unknown) {
-      toast.error('Błąd ładowania rolek: ' + (err as Error).message);
+      toast.error(t('sales.rolls.toastLoadError', { message: (err as Error).message }));
     } finally {
       setLoading(false);
     }
-  }, [instanceId, activeTab]);
+  }, [instanceId, activeTab, t]);
 
   useEffect(() => {
     loadRolls();
@@ -250,7 +252,7 @@ const SalesRollsView = () => {
   const handleDelete = async () => {
     try {
       await deleteRoll(deleteConfirm.rollId);
-      toast.success('Rolka usunięta');
+      toast.success(t('sales.rolls.toastDeleted'));
       loadRolls();
     } catch (err: unknown) {
       toast.error((err as Error).message);
@@ -267,7 +269,7 @@ const SalesRollsView = () => {
   const handleArchive = async (roll: SalesRoll) => {
     try {
       await archiveRoll(roll.id);
-      toast.success('Rolka oznaczona jako wykorzystana');
+      toast.success(t('sales.rolls.toastArchived'));
       loadRolls();
     } catch (err: unknown) {
       toast.error((err as Error).message);
@@ -277,7 +279,7 @@ const SalesRollsView = () => {
   const handleRestore = async (roll: SalesRoll) => {
     try {
       await restoreRoll(roll.id);
-      toast.success('Rolka przywrócona na stan');
+      toast.success(t('sales.rolls.toastRestored'));
       loadRolls();
     } catch (err: unknown) {
       toast.error((err as Error).message);
@@ -293,23 +295,23 @@ const SalesRollsView = () => {
     <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap shrink-0 pb-4">
-        <h2 className="text-xl font-semibold text-foreground">Ewidencja rolek</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('sales.rolls.title')}</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)}>
             <BarChart3 className="w-4 h-4" />
-            Zobacz stany
+            {t('sales.rolls.viewStates')}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setEmployeeDrawerOpen(true)}>
             <Users className="w-4 h-4 mr-1" />
-            Pracownicy i rolki
+            {t('sales.rolls.employeesAndRolls')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleAddManual}>
             <Plus className="w-4 h-4" />
-            Dodaj ręcznie
+            {t('sales.rolls.addManual')}
           </Button>
           <Button size="sm" onClick={() => setScanDrawerOpen(true)}>
             <ScanLine className="w-4 h-4" />
-            Skanuj rolki
+            {t('sales.rolls.scanRolls')}
           </Button>
         </div>
       </div>
@@ -320,7 +322,7 @@ const SalesRollsView = () => {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Szukaj po nazwie, kodzie, barcode, kliencie..."
+            placeholder={t('sales.rolls.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -332,10 +334,10 @@ const SalesRollsView = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="active">
-              Na stanie
+              {t('sales.rolls.statusActive')}
               {rolls.length > 0 && activeTab === 'active' ? ` (${filteredRolls.length})` : ''}
             </SelectItem>
-            <SelectItem value="sold">Wykorzystane</SelectItem>
+            <SelectItem value="sold">{t('sales.rolls.statusSold')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -349,26 +351,26 @@ const SalesRollsView = () => {
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('productName')}
               >
-                Produkt <SortIcon col="productName" />
+                {t('sales.rolls.colProduct')} <SortIcon col="productName" />
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('productCode')}
               >
-                Kod <SortIcon col="productCode" />
+                {t('sales.rolls.colCode')} <SortIcon col="productCode" />
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('widthMm')}
               >
-                Rozmiar <SortIcon col="widthMm" />
+                {t('sales.rolls.colSize')} <SortIcon col="widthMm" />
               </TableHead>
-              <TableHead>Na stanie</TableHead>
+              <TableHead>{t('sales.rolls.colInStock')}</TableHead>
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('createdAt')}
               >
-                Dodano <SortIcon col="createdAt" />
+                {t('sales.rolls.colAdded')} <SortIcon col="createdAt" />
               </TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -377,7 +379,7 @@ const SalesRollsView = () => {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  Ładowanie...
+                  {t('sales.rolls.loading')}
                 </TableCell>
               </TableRow>
             ) : paginatedRolls.length === 0 ? (
@@ -387,15 +389,15 @@ const SalesRollsView = () => {
                     icon={Disc}
                     title={
                       searchQuery
-                        ? 'Brak wyników wyszukiwania'
+                        ? t('sales.rolls.emptySearchTitle')
                         : activeTab === 'active'
-                          ? 'Brak rolek na stanie'
-                          : 'Brak wykorzystanych rolek'
+                          ? t('sales.rolls.emptyActiveTitle')
+                          : t('sales.rolls.emptySoldTitle')
                     }
                     description={
                       searchQuery
-                        ? 'Spróbuj zmienić kryteria wyszukiwania'
-                        : 'Dodaj pierwszą rolkę do ewidencji'
+                        ? t('sales.rolls.emptySearchDesc')
+                        : t('sales.rolls.emptyFirstRollDesc')
                     }
                   />
                 </TableCell>
@@ -445,7 +447,7 @@ const SalesRollsView = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleEditClick(roll)}>
-                          Edytuj
+                          {t('sales.rolls.actionEdit')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
@@ -453,16 +455,16 @@ const SalesRollsView = () => {
                             setDetailsDrawerOpen(true);
                           }}
                         >
-                          Szczegóły
+                          {t('sales.rolls.actionDetails')}
                         </DropdownMenuItem>
                         {activeTab === 'active' && (
                           <DropdownMenuItem onClick={() => handleArchive(roll)}>
-                            Oznacz jako Wykorzystana
+                            {t('sales.rolls.actionMarkUsed')}
                           </DropdownMenuItem>
                         )}
                         {activeTab === 'sold' && (
                           <DropdownMenuItem onClick={() => handleRestore(roll)}>
-                            Przywróć
+                            {t('sales.rolls.actionRestore')}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
@@ -475,7 +477,7 @@ const SalesRollsView = () => {
                             })
                           }
                         >
-                          Usuń
+                          {t('sales.rolls.actionDelete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -491,7 +493,10 @@ const SalesRollsView = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
-            {filteredRolls.length} {filteredRolls.length === 1 ? 'rolka' : 'rolek'}
+            {filteredRolls.length}{' '}
+            {filteredRolls.length === 1
+              ? t('sales.rolls.paginationRollSingular')
+              : t('sales.rolls.paginationRollPlural')}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -554,10 +559,10 @@ const SalesRollsView = () => {
       <ConfirmDialog
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
-        title="Usuń rolkę"
-        description={`Czy na pewno chcesz usunąć rolkę "${deleteConfirm.rollName}"? Tej operacji nie można cofnąć.`}
+        title={t('sales.rolls.deleteTitle')}
+        description={t('sales.rolls.deleteDescription', { name: deleteConfirm.rollName })}
         onConfirm={handleDelete}
-        confirmLabel="Usuń"
+        confirmLabel={t('sales.rolls.deleteConfirmLabel')}
         variant="destructive"
       />
 
@@ -575,7 +580,7 @@ const SalesRollsView = () => {
           hideCloseButton
         >
           <SheetHeader className="flex-row items-center justify-between space-y-0 px-6 py-4 border-b shrink-0">
-            <SheetTitle>Podsumowanie stanów</SheetTitle>
+            <SheetTitle>{t('sales.rolls.summaryTitle')}</SheetTitle>
             <button
               type="button"
               onClick={() => setSummaryOpen(false)}
@@ -587,19 +592,19 @@ const SalesRollsView = () => {
 
           <div className="flex gap-3 text-sm px-6 py-4 shrink-0 flex-wrap">
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
-              <div className="text-muted-foreground">Rolek</div>
+              <div className="text-muted-foreground">{t('sales.rolls.summaryRolls')}</div>
               <div className="text-lg font-semibold">{summary.totalCount}</div>
             </div>
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
-              <div className="text-muted-foreground">Nieotwarte</div>
+              <div className="text-muted-foreground">{t('sales.rolls.summaryUnopened')}</div>
               <div className="text-lg font-semibold">{summary.totalUnopened}</div>
             </div>
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
-              <div className="text-muted-foreground">Pozostało mb</div>
+              <div className="text-muted-foreground">{t('sales.rolls.summaryRemainingMb')}</div>
               <div className="text-lg font-semibold">{summary.totalMb.toFixed(1)}</div>
             </div>
             <div className="bg-gray-50 border rounded-lg px-4 py-2">
-              <div className="text-muted-foreground">Pozostało m²</div>
+              <div className="text-muted-foreground">{t('sales.rolls.summaryRemainingM2')}</div>
               <div className="text-lg font-semibold">{summary.totalM2.toFixed(2)}</div>
             </div>
           </div>
@@ -609,13 +614,13 @@ const SalesRollsView = () => {
               <Table>
                 <TableHeader className="sticky top-0 bg-white z-10">
                   <TableRow>
-                    <TableHead>Produkt</TableHead>
-                    <TableHead className="text-right">Szer.</TableHead>
-                    <TableHead className="text-right">Rolek</TableHead>
-                    <TableHead className="text-right">Nieotwarte</TableHead>
-                    <TableHead className="text-right">Otwarte</TableHead>
-                    <TableHead className="text-right">Pozostało mb</TableHead>
-                    <TableHead className="text-right">Pozostało m²</TableHead>
+                    <TableHead>{t('sales.rolls.summaryColProduct')}</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.summaryColWidth')}</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.summaryColRolls')}</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.summaryColUnopened')}</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.summaryColOpened')}</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.summaryColRemainingMb')}</TableHead>
+                    <TableHead className="text-right">{t('sales.rolls.summaryColRemainingM2')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -354,7 +354,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
   const formatWeekDisplay = () => {
     const startFormatted = format(weekStart, 'd.MM');
     const endFormatted = format(weekEnd, 'd.MM');
-    return `Tydzień ${weekNumber} (${startFormatted} - ${endFormatted})`;
+    return t('admin.employees.weekDisplay', { week: weekNumber, start: startFormatted, end: endFormatted });
   };
 
   const isLoading = loadingEmployees || loadingEntries || loadingDaysOff || loadingSettings;
@@ -371,7 +371,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
     <div className="max-w-3xl mx-auto space-y-4 pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-medium">Pracownicy</h1>
+        <h1 className="text-2xl font-medium">{t('admin.employees.title')}</h1>
         {isAdmin && (
           <div className="flex gap-2">
             <Button
@@ -379,7 +379,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               variant="outline"
               size="icon"
               className="bg-white"
-              title="Ustawienia czasu pracy"
+              title={t('admin.employees.settingsTitleBtn')}
             >
               <Settings2 className="w-5 h-5" />
             </Button>
