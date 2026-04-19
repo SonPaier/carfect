@@ -56,6 +56,7 @@ import GrantAccessDialog from './GrantAccessDialog';
 import WorkerTimeDialog from './WorkerTimeDialog';
 import AddEmployeeDayOffDialog from './AddEmployeeDayOffDialog';
 import WorkersSettingsDrawer from './WorkersSettingsDrawer';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 // Weekday index to working_hours key map (0=Sunday, 1=Monday, etc)
 const WEEKDAY_TO_KEY: Record<number, string> = {

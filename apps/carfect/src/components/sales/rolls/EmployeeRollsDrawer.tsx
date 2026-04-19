@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmDialog } from '@shared/ui';
 import { toast } from 'sonner';
 import { fetchWorkerRollUsagesForMonth, fetchWorkerProfiles, createScrapUsage, deleteRollUsage, type WorkerRollUsageWithRoll } from '../services/rollService';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface EmployeeRollsDrawerProps {
   open: boolean;

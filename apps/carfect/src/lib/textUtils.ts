@@ -15,6 +15,7 @@ export const normalizeSearchQuery = (query: string): string => {
 };
 
 import { format } from 'date-fns';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 /**
  * Formats a viewed_at date with relative formatting (today, yesterday, or full date).

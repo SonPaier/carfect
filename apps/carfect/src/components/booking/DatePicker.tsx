@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { 
+import { getDateLocale } from '@/i18n/dateFnsLocale';
   format, 
   addMonths, 
   subMonths,

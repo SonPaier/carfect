@@ -17,6 +17,7 @@ import {
 } from '@shared/ui';
 import { Calendar } from '@shared/ui';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface YardDateTimeSectionProps {
   arrivalDate: Date;

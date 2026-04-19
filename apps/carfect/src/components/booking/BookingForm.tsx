@@ -7,6 +7,7 @@ import { Service, TimeSlot } from '@/types';
 import { format } from 'date-fns';
 import { User, Phone, Car, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface BookingFormProps {
   service: Service;

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { Station, WorkingHours, ReservationSlot } from './types';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface ReservationSlotsSectionProps {
   slots: ReservationSlot[];

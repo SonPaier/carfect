@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@shared/ui';
 import { AddCustomerReminderDialog } from './AddCustomerReminderDialog';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Reminder {
   id: string;

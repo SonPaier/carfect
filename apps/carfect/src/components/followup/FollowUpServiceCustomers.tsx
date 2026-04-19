@@ -8,6 +8,7 @@ import { ArrowLeft, Plus, Phone, Calendar, Search, Trash2, User } from 'lucide-r
 import { toast } from 'sonner';
 import { format, addMonths } from 'date-fns';
 import { AddCustomerToServiceDialog } from './AddCustomerToServiceDialog';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface FollowUpService {
   id: string;

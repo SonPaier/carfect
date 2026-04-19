@@ -73,6 +73,7 @@ import {
 import type { Reservation, CarSize } from '@/types/reservation';
 import { formatTime, getStatusBadge, getSourceLabel } from '@/lib/reservationDisplay';
 import { triggerReservationPhotoUpload } from '@/lib/reservationPhotoUpload';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 export interface HallVisibleFields {
   customer_name: boolean;

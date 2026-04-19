@@ -52,6 +52,7 @@ import { useCalendarOverlap } from './calendar/useCalendarOverlap';
 import { useCalendarDragDrop } from './calendar/useCalendarDragDrop';
 import { useCalendarConfig } from '@/hooks/useCalendarConfig';
 import { DayViewGrid } from './calendar/DayViewGrid';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 type ViewMode = 'day' | 'week' | 'month';
 interface Station {
   id: string;

@@ -58,6 +58,7 @@ import {
 } from '@shared/ui';
 import { useProtocolConfig, ConsentClauseRenderer } from '@shared/protocol-config';
 import {
+import { getDateLocale } from '@/i18n/dateFnsLocale';
   useCustomFields,
   CustomFieldsRenderer,
   validateCustomFieldValues,

@@ -46,6 +46,7 @@ import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
 import UpsellSuggestion from './UpsellSuggestion';
 import IOSInstallPrompt from '@/components/pwa/IOSInstallPrompt';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 interface Service {
   id: string;
   name: string;

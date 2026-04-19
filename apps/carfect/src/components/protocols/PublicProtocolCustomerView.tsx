@@ -9,6 +9,7 @@ import type { ProtocolConfig } from '@shared/protocol-config';
 import { DEFAULT_SECTION_ORDER } from '@shared/protocol-config';
 import type { SectionId } from '@shared/protocol-config';
 import type { CustomFieldDefinition, CustomFieldValues } from '@shared/custom-fields';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 export type ProtocolType = 'reception' | 'pickup';
 

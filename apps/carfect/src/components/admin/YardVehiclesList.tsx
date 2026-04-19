@@ -5,6 +5,7 @@ import { Button } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import AddReservationDialogV2, { YardVehicle } from './AddReservationDialogV2';
 import {
+import { getDateLocale } from '@/i18n/dateFnsLocale';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

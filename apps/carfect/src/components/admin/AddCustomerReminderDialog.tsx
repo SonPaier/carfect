@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone } from '@shared/utils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface ReminderTemplateItem {
   months: number;

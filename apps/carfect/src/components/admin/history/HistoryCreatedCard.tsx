@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { Sparkles } from 'lucide-react';
 import { GroupedChange, formatTimeShort } from '@/services/reservationHistoryService';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Props {
   group: GroupedChange;

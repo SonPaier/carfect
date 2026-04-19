@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { OfferSearchAutocomplete } from '@/components/protocols/OfferSearchAutocomplete';
 import { Station, WorkingHours, ReservationType } from './types';
 import { RefObject } from 'react';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface ReservationDateTimeSectionProps {
   instanceId: string;

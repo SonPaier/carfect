@@ -9,6 +9,7 @@ import { sendPushNotification } from '@/lib/pushNotifications';
 import { POLISH_MONTH_NAMES_GENITIVE } from '@/lib/polishDateUtils';
 import { normalizePhone as normalizePhoneForStorage } from '@shared/utils';
 import type { Reservation } from '@/types/reservation';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 export interface UseReservationMutationsOptions {
   instanceId: string | null;

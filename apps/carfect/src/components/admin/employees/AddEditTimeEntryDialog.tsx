@@ -20,6 +20,7 @@ import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface AddEditTimeEntryDialogProps {
   open: boolean;

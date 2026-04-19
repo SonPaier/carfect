@@ -4,6 +4,7 @@ import { Eye, Clock, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface OfferView {
   id: string;

@@ -15,6 +15,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { ConfirmDialog } from '@shared/ui';
 import { EmployeeSelectionDrawer } from '@/components/admin/EmployeeSelectionDrawer';
 import type { Training } from './AddTrainingDrawer';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface TrainingDetailsDrawerProps {
   open: boolean;

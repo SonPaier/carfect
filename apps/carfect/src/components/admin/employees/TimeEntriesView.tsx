@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import AddEditTimeEntryDialog from './AddEditTimeEntryDialog';
 import { ConfirmDialog } from '@shared/ui';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface TimeEntriesViewProps {
   instanceId: string | null;

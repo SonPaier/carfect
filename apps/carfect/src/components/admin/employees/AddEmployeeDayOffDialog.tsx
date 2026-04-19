@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface AddEmployeeDayOffDialogProps {
   open: boolean;

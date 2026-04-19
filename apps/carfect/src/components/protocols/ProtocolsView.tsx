@@ -39,6 +39,7 @@ import type { ProtocolConfig } from '@shared/protocol-config';
 import type { CustomFieldDefinition } from '@shared/custom-fields';
 import { ScrollArea } from '@shared/ui';
 import { PublicProtocolCustomerView } from './PublicProtocolCustomerView';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Protocol {
   id: string;

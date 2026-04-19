@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Notification {
   id: string;

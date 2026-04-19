@@ -19,6 +19,7 @@ import {
 } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface MarkOfferCompletedDialogProps {
   open: boolean;

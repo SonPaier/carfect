@@ -17,6 +17,7 @@ import AddInstanceUserDialog from './AddInstanceUserDialog';
 import EditInstanceUserDialog from './EditInstanceUserDialog';
 import ResetPasswordDialog from './ResetPasswordDialog';
 import DeleteUserDialog from './DeleteUserDialog';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface InstanceUser {
   id: string;

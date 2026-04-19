@@ -8,6 +8,7 @@ import { PhotoFullscreenDialog } from '@/components/protocols/PhotoFullscreenDia
 import { ConfirmDialog } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import type { Reservation } from '@/types/reservation';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Employee {
   id: string;

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { format, addMonths } from 'date-fns';
 import { TaskNotesDialog } from './TaskNotesDialog';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface FollowUpTask {
   id: string;

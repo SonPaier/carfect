@@ -5,6 +5,7 @@ import { Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { EmptyState } from '@shared/ui';
 import { usePricingMode } from '@/hooks/usePricingMode';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface VisitHistoryItem {
   id: string;

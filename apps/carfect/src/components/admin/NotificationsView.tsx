@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Notification {
   id: string;

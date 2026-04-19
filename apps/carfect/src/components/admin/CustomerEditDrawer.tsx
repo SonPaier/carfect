@@ -18,6 +18,7 @@ import SendSmsDialog from './SendSmsDialog';
 import { CustomerRemindersTab } from './CustomerRemindersTab';
 import { CustomerVehiclesEditor, VehicleChip } from './CustomerVehiclesEditor';
 import { useInstanceFeatures } from '@/hooks/useInstanceFeatures';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface Customer {
   id: string;

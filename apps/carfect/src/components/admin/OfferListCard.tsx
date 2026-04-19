@@ -10,6 +10,7 @@ import { OfferWithOptions, statusColors, formatPrice } from './offerTypes';
 import { OfferActionsMenu } from './OfferActionsMenu';
 import { OfferFollowUpStatus } from './OfferFollowUpStatus';
 import type { FollowUpPhoneStatus } from './offerTypes';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface OfferListCardProps {
   offer: OfferWithOptions;

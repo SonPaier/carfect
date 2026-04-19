@@ -28,6 +28,7 @@ import { TrustTilesSection } from './public/TrustTilesSection';
 import { ExpertContactCard } from './public/ExpertContactCard';
 import { BankTransferCard } from './public/BankTransferCard';
 import { SocialMediaCard } from './public/SocialMediaCard';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface OfferScopeRef {
   id: string;

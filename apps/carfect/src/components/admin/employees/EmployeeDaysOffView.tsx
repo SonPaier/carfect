@@ -11,6 +11,7 @@ import { format, differenceInDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import AddEmployeeDayOffDialog from './AddEmployeeDayOffDialog';
 import { ConfirmDialog } from '@shared/ui';
+import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface EmployeeDaysOffViewProps {
   instanceId: string | null;
