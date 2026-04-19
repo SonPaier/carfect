@@ -774,8 +774,9 @@ const AdminCalendar = ({
       <div
         className={cn(
           'w-12 md:w-16 shrink-0 p-1 md:p-2 flex items-center justify-center text-muted-foreground border-r border-border/50 bg-card',
-          'sticky left-0 z-50',
+          'sticky left-0',
         )}
+        style={{ zIndex: 'var(--z-calendar-sticky)' as unknown as number }}
       >
         <Clock className="w-5 h-5" />
       </div>

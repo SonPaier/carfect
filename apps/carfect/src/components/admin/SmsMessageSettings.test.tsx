@@ -23,7 +23,9 @@ const createChainMock = (resolveData: unknown = null, resolveError: unknown = nu
     'match',
     'ilike',
     'gte',
+    'lte',
     'lt',
+    'not',
     'upsert',
   ];
   methods.forEach((method) => {
