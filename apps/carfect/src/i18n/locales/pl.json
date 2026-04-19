@@ -2345,5 +2345,69 @@
     "dateRequired": "Wybierz datę dla każdego slotu",
     "timeRequired": "Wybierz godzinę rozpoczęcia i zakończenia dla każdego slotu",
     "stationRequired": "Wybierz stanowisko dla każdego slotu"
+  },
+  "integrations": {
+    "title": "Integracje",
+    "back": "Wróć",
+    "sections": {
+      "invoicing": "Płatności i fakturowanie",
+      "ppfDistributors": "Dystrybutorzy i producenci folii PPF"
+    },
+    "status": {
+      "connected": "Włączona",
+      "configure": "Skonfiguruj",
+      "comingSoon": "Wkrótce"
+    },
+    "fakturownia": {
+      "title": "Fakturownia",
+      "description": "Automatyczne wystawianie faktur dla klientów studia"
+    },
+    "ifirma": {
+      "title": "iFirma",
+      "description": "Automatyczne wystawianie faktur dla klientów studia"
+    },
+    "infakt": {
+      "title": "inFakt",
+      "description": "Automatyczne wystawianie faktur dla klientów studia"
+    },
+    "ultrafit": {
+      "title": "Ultrafit Poland",
+      "description": "Zamawiasz folie w Ultrafit Poland? Połącz konto i śledź swoje zamówienia oraz rolki bezpośrednio w Carfect.",
+      "descriptionConnected": "Twoje zamówienia Ultrafit są dostępne w Carfect.",
+      "requestAccess": "Poproś o dostęp",
+      "contactNumber": "tel. 666 610 222",
+      "connected": "Połączono",
+      "goToOrders": "Przejdź do zamówień",
+      "disconnect": "Wyłącz integrację",
+      "disconnectTitle": "Wyłączyć integrację Ultrafit?",
+      "disconnectDescription": "Po wyłączeniu nie będziesz mieć dostępu do zamówień Ultrafit. Możesz ponownie poprosić o dostęp kontaktując się telefonicznie.",
+      "disconnected": "Integracja Ultrafit została wyłączona"
+    },
+    "orders": {
+      "title": "Moje zamówienia Ultrafit",
+      "search": "Szukaj po produkcie lub samochodzie...",
+      "empty": "Brak zamówień",
+      "emptyDescription": "Nie masz jeszcze żadnych zamówień Ultrafit.",
+      "orderNumber": "Nr zamówienia",
+      "orderDate": "Data zamówienia",
+      "shippedDate": "Data wysyłki",
+      "delivery": "Dostawa",
+      "trackingNumber": "List przewozowy",
+      "totalNet": "Kwota netto",
+      "status": "Status",
+      "showProducts": "Pokaż produkty",
+      "hideProducts": "Ukryj produkty",
+      "product": "Produkt",
+      "quantity": "Ilość",
+      "price": "Cena netto",
+      "vehicle": "Pojazd",
+      "rolls": "Rolki",
+      "statusNew": "Nowy",
+      "statusShipped": "Wysłany",
+      "statusCancelled": "Anulowany",
+      "discount": "Rabat",
+      "deliveryShipping": "Wysyłka",
+      "deliveryPickup": "Odbiór"
+    }
   }
 }

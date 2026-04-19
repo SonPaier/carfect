@@ -437,7 +437,7 @@ const CompanySettingsForm = ({
       <div className="space-y-2">
         <Label>Nr konta bankowego</Label>
         {bankAccounts.map((account, index) => (
-          <div key={index} className="flex items-center gap-2">
+          <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2">
             <Input
               value={account.name}
               onChange={(e) => {
@@ -449,26 +449,28 @@ const CompanySettingsForm = ({
               className="w-full sm:w-[40%] shrink-0"
               aria-label={`Nazwa konta ${index + 1}`}
             />
-            <Input
-              value={account.number}
-              onChange={(e) => {
-                const updated = [...bankAccounts];
-                updated[index] = { ...updated[index], number: e.target.value };
-                setBankAccounts(updated);
-              }}
-              placeholder="00 0000 0000 0000 0000 0000 0000"
-              className="font-mono flex-1"
-              aria-label={`Numer konta ${index + 1}`}
-            />
-            {bankAccounts.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setBankAccounts(bankAccounts.filter((_, i) => i !== index))}
-                className="text-sm text-destructive hover:underline shrink-0"
-              >
-                Usuń
-              </button>
-            )}
+            <div className="flex items-center gap-2 w-full">
+              <Input
+                value={account.number}
+                onChange={(e) => {
+                  const updated = [...bankAccounts];
+                  updated[index] = { ...updated[index], number: e.target.value };
+                  setBankAccounts(updated);
+                }}
+                placeholder="00 0000 0000 0000 0000 0000 0000"
+                className="font-mono flex-1 min-w-0"
+                aria-label={`Numer konta ${index + 1}`}
+              />
+              {bankAccounts.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setBankAccounts(bankAccounts.filter((_, i) => i !== index))}
+                  className="text-sm text-destructive hover:underline shrink-0"
+                >
+                  Usuń
+                </button>
+              )}
+            </div>
           </div>
         ))}
         <button

@@ -1,0 +1,54 @@
+{
+  "integrations": {
+    "title": "Integrations",
+    "back": "Back",
+    "sections": {
+      "invoicing": "Payments & invoicing",
+      "ppfDistributors": "PPF distributors & manufacturers"
+    },
+    "status": {
+      "connected": "Connected",
+      "configure": "Configure"
+    },
+    "fakturownia": {
+      "title": "Fakturownia",
+      "description": "Automatic invoice generation via Fakturownia.pl"
+    },
+    "ifirma": {
+      "title": "iFirma",
+      "description": "Issue invoices via iFirma.pl"
+    },
+    "ultrafit": {
+      "title": "Ultrafit Poland",
+      "description": "Do you order PPF films from Ultrafit Poland? Connect your account and track your orders and rolls directly in Carfect.",
+      "descriptionConnected": "Your Ultrafit orders are available in Carfect.",
+      "requestAccess": "Request access",
+      "contactNumber": "tel. 666 610 222",
+      "connected": "Connected",
+      "goToOrders": "Go to orders"
+    },
+    "orders": {
+      "title": "My Ultrafit orders",
+      "search": "Search by product or vehicle...",
+      "empty": "No orders",
+      "emptyDescription": "You don't have any Ultrafit orders yet.",
+      "orderNumber": "Order number",
+      "orderDate": "Order date",
+      "shippedDate": "Shipped date",
+      "delivery": "Delivery",
+      "trackingNumber": "Tracking number",
+      "totalNet": "Total net",
+      "status": "Status",
+      "showProducts": "Show products",
+      "hideProducts": "Hide products",
+      "product": "Product",
+      "quantity": "Quantity",
+      "price": "Net price",
+      "vehicle": "Vehicle",
+      "rolls": "Rolls",
+      "statusNew": "New",
+      "statusShipped": "Shipped",
+      "statusCancelled": "Cancelled"
+    }
+  }
+}

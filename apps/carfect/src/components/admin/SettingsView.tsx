@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, useIsMobile } from '@shared/ui';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import StationsSettings from './StationsSettings';
 import WorkingHoursSettings from './WorkingHoursSettings';
 import SmsMessageSettings from './SmsMessageSettings';
@@ -26,14 +25,15 @@ import TrainingTypesSettings from './TrainingTypesSettings';
 import CompanySettingsForm from './CompanySettingsForm';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
-import { IntegrationsSettingsView } from '@shared/invoicing';
 import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
+import { IntegrationsView } from './IntegrationsView';
 
 interface SettingsViewProps {
   instanceId: string | null;
   instanceData: Record<string, unknown>;
   onInstanceUpdate: (data: Record<string, unknown>) => void;
   onWorkingHoursUpdate?: () => void;
+  onNavigateToUltrafit?: () => void;
 }
 
 type SettingsTab =
@@ -53,6 +53,7 @@ const SettingsView = ({
   instanceData,
   onInstanceUpdate,
   onWorkingHoursUpdate,
+  onNavigateToUltrafit,
 }: SettingsViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -113,15 +114,10 @@ const SettingsView = ({
 
       case 'integrations':
         return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold">Integracje</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Połącz z systemami do fakturowania
-              </p>
-            </div>
-            <IntegrationsSettingsView instanceId={instanceId} supabaseClient={supabase} />
-          </div>
+          <IntegrationsView
+            instanceId={instanceId}
+            onNavigateToUltrafit={onNavigateToUltrafit ?? (() => {})}
+          />
         );
 
       case 'app':
@@ -233,9 +229,15 @@ const SettingsView = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="bg-white border border-border/50 rounded-lg p-6 pb-24 md:pb-6 bg-secondary-foreground">
-          {renderTabContent()}
-        </div>
+        {activeTab === 'integrations' ? (
+          <div className="pb-24 md:pb-6">
+            {renderTabContent()}
+          </div>
+        ) : (
+          <div className="bg-white border border-border/50 rounded-lg p-6 pb-24 md:pb-6 bg-secondary-foreground">
+            {renderTabContent()}
+          </div>
+        )}
       </div>
     </div>
   );
