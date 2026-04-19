@@ -389,13 +389,13 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                 variant="outline"
                 size="icon"
                 className="bg-white"
-                title="Dodaj nieobecność"
+                title={t('admin.employees.addDayOff')}
               >
                 <CalendarOff className="w-5 h-5" />
               </Button>
             )}
-            <Button onClick={handleAddEmployee} title="Dodaj pracownika">
-              Dodaj pracownika
+            <Button onClick={handleAddEmployee} title={t('admin.employees.addEmployee')}>
+              {t('admin.employees.addEmployee')}
             </Button>
           </div>
         )}
@@ -421,8 +421,8 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       {activeEmployees.length === 0 ? (
         <EmptyState
           icon={User}
-          title="Brak pracowników"
-          description="Dodaj pierwszego pracownika, aby rozpocząć"
+          title={t('admin.employees.noEmployees')}
+          description={t('admin.employees.noEmployeesHint')}
         />
       ) : (
         <>
@@ -431,9 +431,9 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
             <Table className="bg-white w-full table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Pracownik</TableHead>
+                  <TableHead>{t('admin.employees.employee')}</TableHead>
                   {timeTrackingEnabled && (
-                    <TableHead className="text-center w-[30%]">Przepracowano</TableHead>
+                    <TableHead className="text-center w-[30%]">{t('admin.employees.hoursWorked')}</TableHead>
                   )}
                   {isAdmin && <TableHead className="w-[50px]" />}
                 </TableRow>
@@ -490,7 +490,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                                 }}
                               >
                                 <Pencil className="w-4 h-4 mr-2" />
-                                Edytuj
+                                {t('common.edit')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(e) => {
@@ -499,7 +499,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                                 }}
                               >
                                 <KeyRound className="w-4 h-4 mr-2" />
-                                Daj dostęp
+                                {t('admin.employees.grantAccess')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(e) => {
@@ -508,7 +508,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                                 }}
                               >
                                 <Banknote className="w-4 h-4 mr-2" />
-                                Dodaj zaliczkę
+                                {t('admin.employees.addAdvance')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(e) => {
@@ -518,7 +518,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                                 className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
-                                Usuń
+                                {t('common.delete')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -546,7 +546,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
 
               return (
                 <div className="mt-6 space-y-3">
-                  <h3 className="font-medium text-muted-foreground">Nieobecności</h3>
+                  <h3 className="font-medium text-muted-foreground">{t('admin.employees.daysOff')}</h3>
                   <div className="space-y-2">
                     {employeesWithDaysOff.map(({ employee, daysOffLines }) => (
                       <div
@@ -566,9 +566,9 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                               <div key={idx}>
                                 {line.to ? (
                                   <>
-                                    <span className="text-muted-foreground">od </span>
+                                    <span className="text-muted-foreground">{t('common.from')} </span>
                                     <span className="font-medium text-foreground">{line.from}</span>
-                                    <span className="text-muted-foreground"> do </span>
+                                    <span className="text-muted-foreground"> {t('common.to')} </span>
                                     <span className="font-medium text-foreground">{line.to}</span>
                                   </>
                                 ) : (
@@ -645,7 +645,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
       {/* Advances summary section */}
       {advances.length > 0 && (
         <div className="mt-6 border-t pt-4">
-          <h3 className="text-sm font-semibold mb-3">Zaliczki w tym okresie</h3>
+          <h3 className="text-sm font-semibold mb-3">{t('admin.employees.advancesInPeriod')}</h3>
           <div className="space-y-2">
             {advances.map((adv) => {
               const emp = employees.find((e) => e.id === adv.employee_id);
@@ -669,7 +669,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
                         type="button"
                         onClick={() => deleteAdvance(adv.id)}
                         className="text-destructive hover:text-destructive/80 p-1"
-                        title="Usuń zaliczkę"
+                        title={t('admin.employees.deleteAdvance')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -679,7 +679,7 @@ const EmployeesView = ({ instanceId }: EmployeesViewProps) => {
               );
             })}
             <div className="flex justify-end text-sm font-semibold pt-1">
-              Suma zaliczek: {advances.reduce((sum, a) => sum + Number(a.amount), 0).toFixed(2)} zł
+              {t('admin.employees.advancesTotal')}: {advances.reduce((sum, a) => sum + Number(a.amount), 0).toFixed(2)} zł
             </div>
           </div>
         </div>

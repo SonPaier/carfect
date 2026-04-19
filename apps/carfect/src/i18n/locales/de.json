@@ -91,7 +91,7 @@
     "employees": "Mitarbeiter",
     "reminders": "Erinnerungen",
     "goToSales": "Zum Verkaufspanel",
-    "toggleMenu": "Menü ein-/ausblenden",
+    "toggleMenu": "Menü",
     "logout": "Abmelden"
   },
   "halls": {
@@ -562,7 +562,8 @@
     "active": "Aktiv",
     "inactive": "Inaktiv",
     "popular": "Beliebt",
-    "shortcut": "Kürzel"
+    "shortcut": "Kürzel",
+    "description": "Dienstleistungen stehen in Buchungen und beim Erstellen von Angebotsvorlagen zur Auswahl. Kategorien sind optional."
   },
   "stations": {
     "title": "Super Admin - Verwaltungspanel",
@@ -3250,8 +3251,14 @@
       "daysOffFrom": "von",
       "daysOffTo": "bis",
       "advances": "Vorschüsse in diesem Zeitraum",
-      "advancesTotal": "Summe Vorschüsse: {{amount}} zł",
-      "deleteAdvance": "Vorschuss löschen"
+      "advancesTotal": "Vorschüsse gesamt",
+      "deleteAdvance": "Vorschuss löschen",
+      "noEmployeesHint": "Fügen Sie den ersten Mitarbeiter hinzu",
+      "employee": "Mitarbeiter",
+      "hoursWorked": "Gearbeitet",
+      "grantAccess": "Zugang gewähren",
+      "addAdvance": "Vorschuss hinzufügen",
+      "advancesInPeriod": "Vorschüsse in diesem Zeitraum"
     },
     "daysOff": {
       "title": "Abwesenheiten",

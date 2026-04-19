@@ -562,7 +562,8 @@
     "active": "Active",
     "inactive": "Inactive",
     "popular": "Popular",
-    "shortcut": "Shortcut"
+    "shortcut": "Shortcut",
+    "description": "Services will be available for selection in bookings and when creating quote templates. Categories are optional."
   },
   "stations": {
     "title": "Services",
@@ -3236,7 +3237,7 @@
       "addEmployee": "Add employee",
       "settingsTitle": "Working time settings",
       "settingsTitleBtn": "Working time settings",
-      "addDayOff": "Add absence",
+      "addDayOff": "Add day off",
       "weekDisplay": "Week {{week}} ({{start}} - {{end}})",
       "noEmployees": "No employees",
       "noEmployeesDescription": "Add your first employee to get started",
@@ -3246,12 +3247,18 @@
       "menuGrantAccess": "Grant access",
       "menuAddAdvance": "Add advance",
       "menuDelete": "Delete",
-      "daysOff": "Absences",
+      "daysOff": "Days off",
       "daysOffFrom": "from",
       "daysOffTo": "to",
       "advances": "Advances in this period",
-      "advancesTotal": "Total advances: {{amount}} PLN",
-      "deleteAdvance": "Delete advance"
+      "advancesTotal": "Total advances",
+      "deleteAdvance": "Delete advance",
+      "noEmployeesHint": "Add the first employee to get started",
+      "employee": "Employee",
+      "hoursWorked": "Hours worked",
+      "grantAccess": "Grant access",
+      "addAdvance": "Add advance",
+      "advancesInPeriod": "Advances this period"
     },
     "daysOff": {
       "title": "Absences",

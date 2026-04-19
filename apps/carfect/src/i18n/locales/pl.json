@@ -562,7 +562,8 @@
     "active": "Aktywna",
     "inactive": "Nieaktywna",
     "popular": "Popularna",
-    "shortcut": "Skrót"
+    "shortcut": "Skrót",
+    "description": "Usługi będą widoczne do wyboru w rezerwacjach i przy tworzeniu szablonów ofert. Kategorie są opcjonalne."
   },
   "stations": {
     "title": "Stanowiska",
@@ -3250,8 +3251,14 @@
       "daysOffFrom": "od",
       "daysOffTo": "do",
       "advances": "Zaliczki w tym okresie",
-      "advancesTotal": "Suma zaliczek: {{amount}} zł",
-      "deleteAdvance": "Usuń zaliczkę"
+      "advancesTotal": "Suma zaliczek",
+      "deleteAdvance": "Usuń zaliczkę",
+      "noEmployeesHint": "Dodaj pierwszego pracownika, aby rozpocząć",
+      "employee": "Pracownik",
+      "hoursWorked": "Przepracowano",
+      "grantAccess": "Daj dostęp",
+      "addAdvance": "Dodaj zaliczkę",
+      "advancesInPeriod": "Zaliczki w tym okresie"
     },
     "daysOff": {
       "title": "Nieobecności",
