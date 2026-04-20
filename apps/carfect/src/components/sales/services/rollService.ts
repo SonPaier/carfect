@@ -333,7 +333,7 @@ export async function createRollUsage(data: {
   orderItemId: string;
   usedM2: number;
   usedMb: number;
-  instanceId?: string;
+  instanceId: string;
 }): Promise<string> {
   const { data: row, error } = await supabase
     .from('sales_roll_usages')

@@ -518,6 +518,7 @@ const AddSalesOrderDrawer = ({
                       orderItemId: insertedItems[i].id,
                       usedM2: a.usageM2,
                       usedMb: m2ToMb(a.usageM2, a.widthMm),
+                      instanceId: instanceId!,
                     });
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
@@ -605,6 +606,7 @@ const AddSalesOrderDrawer = ({
                       orderItemId: insertedItems[i].id,
                       usedM2: a.usageM2,
                       usedMb: m2ToMb(a.usageM2, a.widthMm),
+                      instanceId: instanceId!,
                     });
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
