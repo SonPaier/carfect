@@ -417,7 +417,12 @@ const AddSalesOrderDrawer = ({
             const shortage = (usage.totalM2 - remainingM2).toFixed(2);
             const names = usage.productNames.join(', ');
             toast.error(
-              t('salesOrder.rollNotEnoughMaterial', { names, needed: usage.totalM2.toFixed(2), remaining: remainingM2.toFixed(2), shortage }),
+              t('salesOrder.rollNotEnoughMaterial', {
+                names,
+                needed: usage.totalM2.toFixed(2),
+                remaining: remainingM2.toFixed(2),
+                shortage,
+              }),
             );
             setSaving(false);
             return;
@@ -518,6 +523,7 @@ const AddSalesOrderDrawer = ({
                       orderItemId: insertedItems[i].id,
                       usedM2: a.usageM2,
                       usedMb: m2ToMb(a.usageM2, a.widthMm),
+                      instanceId: instanceId!,
                     });
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
@@ -605,6 +611,7 @@ const AddSalesOrderDrawer = ({
                       orderItemId: insertedItems[i].id,
                       usedM2: a.usageM2,
                       usedMb: m2ToMb(a.usageM2, a.widthMm),
+                      instanceId: instanceId!,
                     });
                   } catch (e) {
                     console.error('Roll usage creation failed:', e);
@@ -719,7 +726,9 @@ const AddSalesOrderDrawer = ({
               {customerSearch.selectedCustomer && customerDiscount > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-sky-50 border border-sky-200 text-sky-700">
                   <Info className="w-4 h-4 shrink-0" />
-                  <span className="text-sm">{t('salesOrder.discountApplied', { percent: customerDiscount })}</span>
+                  <span className="text-sm">
+                    {t('salesOrder.discountApplied', { percent: customerDiscount })}
+                  </span>
                 </div>
               )}
 

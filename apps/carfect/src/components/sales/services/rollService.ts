@@ -155,7 +155,7 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
   // Compute remaining + customer names
   const enriched = rolls.map((roll) => {
     const usageMb = usageMap.get(roll.id) || 0;
-    const usedMb = (roll.lengthM - roll.initialRemainingMb) + usageMb;
+    const usedMb = roll.lengthM - roll.initialRemainingMb + usageMb;
     const remainingMb = Math.max(0, roll.initialRemainingMb - usageMb);
     const widthM = roll.widthMm / 1000;
     const orderIds = rollOrderIds.get(roll.id);
@@ -172,7 +172,7 @@ export async function fetchRolls(instanceId: string, tab: 'active' | 'sold'): Pr
       remainingMb,
       remainingM2: remainingMb * widthM,
       customerNames,
-      createdByName: roll.createdBy ? creatorMap.get(roll.createdBy) ?? null : null,
+      createdByName: roll.createdBy ? (creatorMap.get(roll.createdBy) ?? null) : null,
     };
   });
 
@@ -245,10 +245,7 @@ export async function createRollsBatch(
     created_by: data.createdBy ?? null,
   }));
 
-  const { data: inserted, error } = await supabase
-    .from('sales_rolls')
-    .insert(rows)
-    .select('id');
+  const { data: inserted, error } = await supabase.from('sales_rolls').insert(rows).select('id');
 
   if (error) throw new Error(error.message);
   return (inserted || []).map((r: { id: string }) => r.id);
@@ -319,7 +316,9 @@ export async function deleteRoll(id: string): Promise<void> {
 export async function fetchRollUsages(rollId: string): Promise<SalesRollUsage[]> {
   const { data, error } = await supabase
     .from('sales_roll_usages')
-    .select('id, roll_id, order_id, order_item_id, used_m2, used_mb, source, worker_name, note, created_at')
+    .select(
+      'id, roll_id, order_id, order_item_id, used_m2, used_mb, source, worker_name, note, created_at',
+    )
     .eq('roll_id', rollId)
     .order('created_at', { ascending: false });
 
@@ -333,7 +332,7 @@ export async function createRollUsage(data: {
   orderItemId: string;
   usedM2: number;
   usedMb: number;
-  instanceId?: string;
+  instanceId: string;
 }): Promise<string> {
   const { data: row, error } = await supabase
     .from('sales_roll_usages')
@@ -437,10 +436,7 @@ export async function deleteRollUsagesByOrderItem(orderItemId: string): Promise<
 }
 
 export async function deleteRollUsagesByOrder(orderId: string): Promise<void> {
-  const { error } = await supabase
-    .from('sales_roll_usages')
-    .delete()
-    .eq('order_id', orderId);
+  const { error } = await supabase.from('sales_roll_usages').delete().eq('order_id', orderId);
 
   if (error) throw new Error(error.message);
 }
@@ -468,7 +464,10 @@ export async function fetchRollRemainingMb(
   const { data: usages, error: usageErr } = await query;
   if (usageErr) throw new Error(usageErr.message);
 
-  const usageMb = (usages || []).reduce((sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb), 0);
+  const usageMb = (usages || []).reduce(
+    (sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb),
+    0,
+  );
   const lengthM = Number(roll.length_m);
   const widthMm = Number(roll.width_mm);
   const initialRemainingMb = Number(roll.initial_remaining_mb ?? lengthM);
@@ -476,14 +475,17 @@ export async function fetchRollRemainingMb(
   return {
     lengthM,
     widthMm,
-    usedMb: (lengthM - initialRemainingMb) + usageMb,
+    usedMb: lengthM - initialRemainingMb + usageMb,
     remainingMb: Math.max(0, initialRemainingMb - usageMb),
   };
 }
 
 // ─── Fetch single roll by ID (with usage) ───────────────────
 
-export async function fetchRollById(rollId: string, excludeOrderId?: string): Promise<SalesRoll | null> {
+export async function fetchRollById(
+  rollId: string,
+  excludeOrderId?: string,
+): Promise<SalesRoll | null> {
   const { data: row, error } = await supabase
     .from('sales_rolls')
     .select('*')
@@ -494,10 +496,7 @@ export async function fetchRollById(rollId: string, excludeOrderId?: string): Pr
 
   const roll = mapDbRow(row as RollDbRow);
 
-  let usageQuery = supabase
-    .from('sales_roll_usages')
-    .select('used_mb')
-    .eq('roll_id', rollId);
+  let usageQuery = supabase.from('sales_roll_usages').select('used_mb').eq('roll_id', rollId);
 
   if (excludeOrderId) {
     usageQuery = usageQuery.neq('order_id', excludeOrderId);
@@ -505,8 +504,11 @@ export async function fetchRollById(rollId: string, excludeOrderId?: string): Pr
 
   const { data: usageRows } = await usageQuery;
 
-  const usageMb = (usageRows || []).reduce((sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb), 0);
-  const usedMb = (roll.lengthM - roll.initialRemainingMb) + usageMb;
+  const usageMb = (usageRows || []).reduce(
+    (sum: number, u: { used_mb: number | string }) => sum + Number(u.used_mb),
+    0,
+  );
+  const usedMb = roll.lengthM - roll.initialRemainingMb + usageMb;
   const remainingMb = Math.max(0, roll.initialRemainingMb - usageMb);
   const widthM = roll.widthMm / 1000;
 
@@ -583,31 +585,31 @@ export async function createScrapUsage(params: {
   note?: string | null;
 }): Promise<void> {
   const usedM2 = params.widthM * params.lengthM;
-  const { error } = await supabase
-    .from('sales_roll_usages')
-    .insert({
-      instance_id: params.instanceId,
-      roll_id: null,
-      used_mb: params.lengthM,
-      used_m2: usedM2,
-      source: 'worker',
-      worker_name: params.workerName,
-      vehicle_name: params.vehicleName || null,
-      note: params.note || null,
-    });
+  const { error } = await supabase.from('sales_roll_usages').insert({
+    instance_id: params.instanceId,
+    roll_id: null,
+    used_mb: params.lengthM,
+    used_m2: usedM2,
+    source: 'worker',
+    worker_name: params.workerName,
+    vehicle_name: params.vehicleName || null,
+    note: params.note || null,
+  });
   if (error) throw error;
 }
 
 // ─── Worker Profiles ─────────────────────────────────────────
 
-export async function fetchWorkerProfiles(instanceId: string): Promise<{ id: string; name: string }[]> {
+export async function fetchWorkerProfiles(
+  instanceId: string,
+): Promise<{ id: string; name: string }[]> {
   const { data } = await supabase
     .from('employees')
     .select('id, name')
     .eq('instance_id', instanceId)
     .eq('active', true)
     .order('sort_order', { ascending: true });
-  return (data || []).map(e => ({ id: e.id, name: e.name }));
+  return (data || []).map((e) => ({ id: e.id, name: e.name }));
 }
 
 // ─── Worker Roll Usages For Month ────────────────────────────
@@ -619,12 +621,13 @@ export interface WorkerRollUsageWithRoll extends SalesRollUsage {
 }
 
 export async function fetchWorkerRollUsagesForMonth(
-  instanceId: string, year: number, month: number
+  instanceId: string,
+  year: number,
+  month: number,
 ): Promise<WorkerRollUsageWithRoll[]> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = month === 12
-    ? `${year + 1}-01-01`
-    : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const endDate =
+    month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
   // Filter by instance_id directly on the table
   const { data, error } = await supabase
@@ -639,7 +642,11 @@ export async function fetchWorkerRollUsagesForMonth(
   if (error) throw error;
   return (data || []).map((row) => {
     const base = mapUsageRow(row);
-    const roll = row.sales_rolls as { product_name?: string; product_code?: string; width_mm?: number } | null;
+    const roll = row.sales_rolls as {
+      product_name?: string;
+      product_code?: string;
+      width_mm?: number;
+    } | null;
     return {
       ...base,
       rollProductName: roll?.product_name ?? null,

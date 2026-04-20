@@ -272,7 +272,7 @@ describe('deleteRoll', () => {
 // ─── createRollUsage ──────────────────────────────────────────
 
 describe('createRollUsage', () => {
-  it('inserts a usage record and returns the new id', async () => {
+  it('inserts a usage record with instance_id and returns the new id', async () => {
     const insertChain = createChainMock({ id: 'usage-new' }, null);
     setupFromSequence(insertChain);
 
@@ -282,16 +282,37 @@ describe('createRollUsage', () => {
       orderItemId: 'item-1',
       usedM2: 5.5,
       usedMb: 3.6,
+      instanceId: 'inst-1',
     });
 
     expect(id).toBe('usage-new');
     expect((insertChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0]).toMatchObject({
+      instance_id: 'inst-1',
       roll_id: 'roll-1',
       order_id: 'order-1',
       order_item_id: 'item-1',
       used_m2: 5.5,
       used_mb: 3.6,
+      source: 'order',
     });
+  });
+
+  it('always includes instance_id in the insert payload (regression: RLS 403)', async () => {
+    const insertChain = createChainMock({ id: 'usage-new' }, null);
+    setupFromSequence(insertChain);
+
+    await createRollUsage({
+      rollId: 'roll-1',
+      orderId: 'order-1',
+      orderItemId: 'item-1',
+      usedM2: 1,
+      usedMb: 1,
+      instanceId: 'inst-42',
+    });
+
+    const payload = (insertChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(payload.instance_id).toBe('inst-42');
+    expect(payload.instance_id).not.toBeUndefined();
   });
 });
 
