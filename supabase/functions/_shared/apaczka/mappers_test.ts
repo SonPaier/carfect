@@ -184,6 +184,18 @@ Deno.test('APM-007: receiver is residential when no company', () => {
   assertEquals(result.address.receiver.is_residential, 1);
 });
 
+Deno.test('APM-008: pickup type is COURIER not SELF (regression: samodzielne nadanie)', () => {
+  const result = mapOrderToApaczkaRequest({
+    order: mockOrder,
+    customer: mockCustomer,
+    senderAddress: mockSender,
+    pkg: kartonPackage,
+    serviceId: 1,
+  });
+
+  assertEquals(result.pickup.type, 'COURIER');
+});
+
 // --- validateShippingData ---
 
 Deno.test('APV-001: validates successfully with complete data', () => {

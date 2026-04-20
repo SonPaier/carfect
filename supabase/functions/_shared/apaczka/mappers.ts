@@ -248,7 +248,7 @@ function buildDefaultPickup(): ApaczkaPickup {
 
   const dateStr = tomorrow.toISOString().split('T')[0];
   return {
-    type: 'SELF',
+    type: 'COURIER',
     date: dateStr,
     hours_from: '',
     hours_to: '',
