@@ -354,13 +354,13 @@ export async function createRollUsage(data: {
 
 export async function createManualRollUsage(data: {
   rollId: string;
+  instanceId: string;
   usedMb: number;
   usedM2: number;
   source: 'manual' | 'worker';
   workerName?: string;
   vehicleName?: string | null;
   note?: string;
-  instanceId?: string;
 }): Promise<string> {
   const { data: row, error } = await supabase
     .from('sales_roll_usages')

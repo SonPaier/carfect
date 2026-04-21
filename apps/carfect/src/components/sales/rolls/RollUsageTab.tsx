@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { Button, Input, Label, NumericInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui';
+import {
+  Button,
+  Input,
+  Label,
+  NumericInput,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SalesRoll, SalesRollUsage, RollUsageSource } from '../types/rolls';
@@ -65,9 +75,7 @@ function UsageCard({ usage, onEdit, onDelete, sourceLabel }: UsageCardProps) {
           {usage.usedMb.toFixed(2)} mb · {usage.usedM2.toFixed(2)} m²
         </span>
       </div>
-      {usage.note && (
-        <p className="text-muted-foreground text-xs">{usage.note}</p>
-      )}
+      {usage.note && <p className="text-muted-foreground text-xs">{usage.note}</p>}
     </div>
   );
 }
@@ -180,7 +188,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
       if (editingId) {
         await updateManualRollUsage(editingId, payload);
       } else {
-        await createManualRollUsage({ rollId: roll.id, ...payload });
+        await createManualRollUsage({ rollId: roll.id, instanceId, ...payload });
       }
 
       await refreshUsages();
@@ -221,10 +229,14 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
           <div>
             <Label className="text-xs">{t('sales.rolls.usageLabelWorker')}</Label>
             <Select value={formWorkerName} onValueChange={setFormWorkerName}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder={t('sales.rolls.usagePlaceholderWorker')} /></SelectTrigger>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder={t('sales.rolls.usagePlaceholderWorker')} />
+              </SelectTrigger>
               <SelectContent>
                 {workerProfiles.map((p) => (
-                  <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                  <SelectItem key={p.id} value={p.name}>
+                    {p.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -258,19 +270,11 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
 
       <div>
         <Label className="text-xs">{t('sales.rolls.usageLabelNote')}</Label>
-        <Input
-          value={formNote}
-          onChange={(e) => setFormNote(e.target.value)}
-          className="mt-1"
-        />
+        <Input value={formNote} onChange={(e) => setFormNote(e.target.value)} className="mt-1" />
       </div>
 
       <div className="flex gap-2">
-        <Button
-          size="sm"
-          onClick={handleSubmit}
-          disabled={saving || !isValidMb}
-        >
+        <Button size="sm" onClick={handleSubmit} disabled={saving || !isValidMb}>
           {saving
             ? t('sales.rolls.usageBtnSaving')
             : editingId
@@ -291,7 +295,10 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => { resetForm(); setShowForm(true); }}
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           {t('sales.rolls.usageBtnAddUsage')}
