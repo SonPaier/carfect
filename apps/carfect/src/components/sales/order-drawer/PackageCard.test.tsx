@@ -46,6 +46,7 @@ const defaultProps = {
   onDeclaredValueChange: vi.fn(),
   onOversizedChange: vi.fn(),
   onShippingCostChange: vi.fn(),
+  onUberCostChange: vi.fn(),
   onAddProduct: vi.fn(),
   onRemoveProduct: vi.fn(),
   onUpdateQuantity: vi.fn(),
@@ -489,6 +490,75 @@ describe('PackageCard', () => {
 
       expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
       expect(screen.queryByLabelText('Karton')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('uber cost input', () => {
+    it('does NOT render the Uber cost input when shippingMethod is "shipping"', () => {
+      render(<PackageCard {...defaultProps} />);
+      expect(screen.queryByText(/Koszt Uber/)).not.toBeInTheDocument();
+    });
+
+    it('does NOT render the Uber cost input when shippingMethod is "pickup"', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={{ ...basePackage, shippingMethod: 'pickup', packagingType: undefined }}
+        />,
+      );
+      expect(screen.queryByText(/Koszt Uber/)).not.toBeInTheDocument();
+    });
+
+    it('renders the Uber cost input when shippingMethod is "uber"', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={{ ...basePackage, shippingMethod: 'uber', packagingType: undefined }}
+        />,
+      );
+      expect(screen.getByText(/Koszt Uber/)).toBeInTheDocument();
+    });
+
+    it('calls onUberCostChange when user types a value', async () => {
+      const user = userEvent.setup();
+      const onUberCostChange = vi.fn();
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={{ ...basePackage, shippingMethod: 'uber', packagingType: undefined }}
+          onUberCostChange={onUberCostChange}
+        />,
+      );
+
+      const input = document.querySelector(
+        'input[inputmode="decimal"][placeholder="0.00"]',
+      ) as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+      await user.type(input, '42.5');
+      expect(onUberCostChange).toHaveBeenCalled();
+      // Last call carries the final parsed number
+      const lastCall = onUberCostChange.mock.calls.at(-1);
+      expect(lastCall?.[0]).toBe(42.5);
+    });
+
+    it('shows existing uberCost value in the input', () => {
+      render(
+        <PackageCard
+          {...defaultProps}
+          pkg={{
+            ...basePackage,
+            shippingMethod: 'uber',
+            packagingType: undefined,
+            uberCost: 75,
+          }}
+        />,
+      );
+
+      const input = document.querySelector(
+        'input[inputmode="decimal"][placeholder="0.00"]',
+      ) as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+      expect(input.value).toBe('75');
     });
   });
 });

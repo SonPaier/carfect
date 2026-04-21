@@ -30,6 +30,9 @@ export interface OrderPackage {
   declaredValueManual?: boolean;
   oversized?: boolean;
   shippingCost?: number;
+  /** Cost of Uber delivery (brutto) — user-entered, not sent to Apaczka,
+   *  but included as an invoice position (netto is computed from this). */
+  uberCost?: number;
   productKeys: string[];
 }
 
@@ -209,16 +212,12 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
 
   const removeProductFromPackage = (packageId: string, productKey: string) => {
     // Find all linked formatki that should also be removed
-    const linkedKeys = products
-      .filter((p) => p.linkedToKey === productKey)
-      .map(getItemKey);
+    const linkedKeys = products.filter((p) => p.linkedToKey === productKey).map(getItemKey);
     const keysToRemove = [productKey, ...linkedKeys];
 
     // Check if any Folia products remain in this package after removal
     const pkg = packages.find((p) => p.id === packageId);
-    const remainingKeys = pkg
-      ? pkg.productKeys.filter((k) => !keysToRemove.includes(k))
-      : [];
+    const remainingKeys = pkg ? pkg.productKeys.filter((k) => !keysToRemove.includes(k)) : [];
     const remainingProducts = products.filter((p) => remainingKeys.includes(getItemKey(p)));
     const stillHasFolia = remainingProducts.some((p) =>
       p.categoryName?.toLowerCase().includes('folie'),
@@ -445,6 +444,10 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     );
   };
 
+  const updatePackageUberCost = (packageId: string, uberCost: number | undefined) => {
+    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, uberCost } : pkg)));
+  };
+
   return {
     packages,
     setPackages,
@@ -470,6 +473,7 @@ export function useOrderPackages({ products, setProducts }: UseOrderPackagesArgs
     updatePackageDeclaredValue,
     updatePackageOversized,
     updatePackageShippingCost,
+    updatePackageUberCost,
     updateRequiredMb,
     updateProductDiscount,
   };

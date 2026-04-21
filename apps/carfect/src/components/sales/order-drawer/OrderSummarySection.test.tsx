@@ -368,4 +368,77 @@ describe('OrderSummarySection', () => {
     // Should show 4 m² (2.5 + 1.5) not 1
     expect(screen.getByText(/4 m²/)).toBeInTheDocument();
   });
+
+  describe('uber costs', () => {
+    it('renders "Uber (brutto)" line when a single uber cost is present', () => {
+      const uberBrutto = 36.9; // netto 30.00 + 23% VAT
+      render(
+        <OrderSummarySection
+          products={[makeProduct({ priceNet: 100, quantity: 1 })]}
+          subtotalNet={100}
+          discountAmount={0}
+          customerDiscount={0}
+          uberCosts={[uberBrutto]}
+          totalNet={130}
+          totalGross={159.9}
+        />,
+      );
+
+      expect(screen.getByText(/^Uber/)).toBeInTheDocument();
+      // Brutto value shown as-is
+      expect(screen.getByText(/36,90/)).toBeInTheDocument();
+    });
+
+    it('renders "Uber (×N)" with aggregated brutto when multiple uber costs are present', () => {
+      render(
+        <OrderSummarySection
+          products={[makeProduct()]}
+          subtotalNet={200}
+          discountAmount={0}
+          customerDiscount={0}
+          uberCosts={[20, 30]}
+          totalNet={240.65}
+          totalGross={296}
+        />,
+      );
+
+      expect(screen.getByText(/Uber \(×2\)/)).toBeInTheDocument();
+      // Aggregated: 50.00
+      expect(screen.getByText(/50,00/)).toBeInTheDocument();
+    });
+
+    it('does not render the Uber line when uberCosts is empty', () => {
+      render(
+        <OrderSummarySection
+          products={[makeProduct()]}
+          subtotalNet={200}
+          discountAmount={0}
+          customerDiscount={0}
+          shippingCosts={[24.6]}
+          totalNet={220}
+          totalGross={270.6}
+        />,
+      );
+
+      expect(screen.queryByText(/^Uber/)).not.toBeInTheDocument();
+    });
+
+    it('shows both Shipping and Uber lines together', () => {
+      render(
+        <OrderSummarySection
+          products={[makeProduct()]}
+          subtotalNet={200}
+          discountAmount={0}
+          customerDiscount={0}
+          shippingCosts={[24.6]}
+          uberCosts={[36.9]}
+          totalNet={250}
+          totalGross={307.5}
+        />,
+      );
+
+      expect(screen.getByText(/^Wysyłka/)).toBeInTheDocument();
+      expect(screen.getByText(/^Uber/)).toBeInTheDocument();
+    });
+  });
 });

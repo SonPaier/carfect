@@ -326,13 +326,23 @@ const AddSalesOrderDrawer = ({
         .map((pkg) => pkg.shippingCost!),
     [orderPackages.packages],
   );
+  // Uber costs — user-entered, always brutto. Not sent to Apaczka, but included on invoice.
+  const uberCosts = useMemo(
+    () =>
+      orderPackages.packages
+        .filter((pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null)
+        .map((pkg) => pkg.uberCost!),
+    [orderPackages.packages],
+  );
   const shippingBruttoTotal = shippingCosts.reduce((sum, cost) => sum + cost, 0);
-  const shippingNetTotal = shippingBruttoTotal / (1 + VAT_RATE);
+  const uberBruttoTotal = uberCosts.reduce((sum, cost) => sum + cost, 0);
+  const deliveryBruttoTotal = shippingBruttoTotal + uberBruttoTotal;
+  const deliveryNetTotal = deliveryBruttoTotal / (1 + VAT_RATE);
 
   const productsNet = Math.max(0, subtotalNet - discountAmount);
-  const totalNet = productsNet + shippingNetTotal;
-  // Shipping is always added as brutto regardless of payer type
-  const totalGross = isNetPayer ? productsNet + shippingBruttoTotal : totalNet * (1 + VAT_RATE);
+  const totalNet = productsNet + deliveryNetTotal;
+  // Delivery (shipping + uber) is always added as brutto regardless of payer type
+  const totalGross = isNetPayer ? productsNet + deliveryBruttoTotal : totalNet * (1 + VAT_RATE);
 
   /* ── Handlers ── */
 
@@ -795,6 +805,10 @@ const AddSalesOrderDrawer = ({
                   markDirty();
                   orderPackages.updatePackageShippingCost(...args);
                 }}
+                onUberCostChange={(...args) => {
+                  markDirty();
+                  orderPackages.updatePackageUberCost(...args);
+                }}
                 onAddProduct={(packageId) => {
                   markDirty();
                   orderPackages.setActivePackageId(packageId);
@@ -897,6 +911,7 @@ const AddSalesOrderDrawer = ({
                   discountAmount={discountAmount}
                   customerDiscount={customerDiscount}
                   shippingCosts={shippingCosts}
+                  uberCosts={uberCosts}
                   totalNet={totalNet}
                   totalGross={totalGross}
                   isNetPayer={isNetPayer}

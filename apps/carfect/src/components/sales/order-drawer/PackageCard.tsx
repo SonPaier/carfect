@@ -106,6 +106,7 @@ interface PackageCardProps {
   onDeclaredValueChange: (value: number | undefined, isManual: boolean) => void;
   onOversizedChange: (oversized: boolean) => void;
   onShippingCostChange: (cost: number | undefined) => void;
+  onUberCostChange: (cost: number | undefined) => void;
   onAddProduct: () => void;
   onRemoveProduct: (productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
@@ -150,6 +151,7 @@ const PackageCard = ({
   onDeclaredValueChange,
   onOversizedChange,
   onShippingCostChange,
+  onUberCostChange,
   onAddProduct,
   onRemoveProduct,
   onUpdateQuantity,
@@ -203,7 +205,9 @@ const PackageCard = ({
     <div className="bg-background border border-border rounded-md p-3 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">{t('sales.packageCard.packageTitle', { number: index + 1 })}</span>
+        <span className="text-sm font-semibold">
+          {t('sales.packageCard.packageTitle', { number: index + 1 })}
+        </span>
         <button
           type="button"
           onClick={onRemove}
@@ -260,7 +264,9 @@ const PackageCard = ({
                                 onToggleDiscount?.(itemKey);
                               }}
                             >
-                              {p.excludeFromDiscount ? t('sales.orders.enableDiscount') : t('sales.orders.disableDiscount')}
+                              {p.excludeFromDiscount
+                                ? t('sales.orders.enableDiscount')
+                                : t('sales.orders.disableDiscount')}
                             </button>
                           )}
                         </div>
@@ -286,20 +292,22 @@ const PackageCard = ({
                           />
                           <span className="text-xs text-muted-foreground">m²</span>
                           {/* Formula for linked formatki */}
-                          {p.linkedToKey && (() => {
-                            const parentRoll = packageProducts.find(
-                              (r) => r.instanceKey === p.linkedToKey,
-                            );
-                            if (!parentRoll?.requiredMb) return null;
-                            const wMatch = parentRoll.name.match(/(\d{3,4})\s*mm/);
-                            const widthM = wMatch ? parseInt(wMatch[1]) / 1000 : 0;
-                            if (!widthM) return null;
-                            return (
-                              <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
-                                {widthM.toFixed(2)} m × {parentRoll.requiredMb} mb = {(widthM * parentRoll.requiredMb).toFixed(2)} m²
-                              </span>
-                            );
-                          })()}
+                          {p.linkedToKey &&
+                            (() => {
+                              const parentRoll = packageProducts.find(
+                                (r) => r.instanceKey === p.linkedToKey,
+                              );
+                              if (!parentRoll?.requiredMb) return null;
+                              const wMatch = parentRoll.name.match(/(\d{3,4})\s*mm/);
+                              const widthM = wMatch ? parseInt(wMatch[1]) / 1000 : 0;
+                              if (!widthM) return null;
+                              return (
+                                <span className="text-xs text-muted-foreground ml-1 whitespace-nowrap">
+                                  {widthM.toFixed(2)} m × {parentRoll.requiredMb} mb ={' '}
+                                  {(widthM * parentRoll.requiredMb).toFixed(2)} m²
+                                </span>
+                              );
+                            })()}
                         </div>
                       ) : !p.priceUnit || p.priceUnit === 'szt.' || p.priceUnit === 'piece' ? (
                         <div className="flex items-center gap-1 shrink-0">
@@ -429,7 +437,9 @@ const PackageCard = ({
             onClick={onAddProduct}
           >
             <Plus className="w-4 h-4" />
-            {packageProducts.length > 0 ? t('sales.packages.addAnotherProduct') : t('sales.packages.addProduct')}
+            {packageProducts.length > 0
+              ? t('sales.packages.addAnotherProduct')
+              : t('sales.packages.addProduct')}
           </Button>
         </div>
 
@@ -461,6 +471,21 @@ const PackageCard = ({
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
+
+          {/* Uber cost input — visible only when "uber" is selected */}
+          {pkg.shippingMethod === 'uber' && (
+            <div className="space-y-1">
+              <Label className="text-xs">{t('sales.orders.uberCostLabel')}</Label>
+              <NumericInput
+                min={0}
+                step={0.01}
+                value={pkg.uberCost}
+                onChange={(v) => onUberCostChange(v)}
+                placeholder="0.00"
+                className="h-8 text-sm"
+              />
+            </div>
+          )}
 
           {/* Conditional: packaging fields (only for "shipping") */}
           {pkg.shippingMethod === 'shipping' && (
