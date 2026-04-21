@@ -28,6 +28,12 @@ export interface SalesRoll {
 
 export type RollUsageSource = 'order' | 'manual' | 'worker';
 
+export interface RollUsageAttachment {
+  url: string;
+  name: string;
+  uploadedAt: string;
+}
+
 export interface SalesRollUsage {
   id: string;
   rollId: string;
@@ -39,6 +45,7 @@ export interface SalesRollUsage {
   workerName: string | null;
   vehicleName: string | null;
   note: string | null;
+  attachments: RollUsageAttachment[];
   createdAt: string;
 }
 
