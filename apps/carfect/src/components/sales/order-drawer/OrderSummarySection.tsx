@@ -13,6 +13,8 @@ interface OrderSummarySectionProps {
   customerDiscount: number;
   /** Shipping costs in brutto (from Apaczka) */
   shippingCosts?: number[];
+  /** Uber delivery costs in brutto (user-entered) */
+  uberCosts?: number[];
   totalNet: number;
   totalGross: number;
   isNetPayer?: boolean;
@@ -23,6 +25,7 @@ export const OrderSummarySection = ({
   products,
   customerDiscount,
   shippingCosts = [],
+  uberCosts = [],
   totalNet,
   totalGross,
   isNetPayer = false,
@@ -30,8 +33,9 @@ export const OrderSummarySection = ({
 }: OrderSummarySectionProps) => {
   const { t } = useTranslation();
   const shippingBruttoTotal = shippingCosts.reduce((s, c) => s + c, 0);
-  const shippingNetTotal = shippingBruttoTotal / (1 + VAT_RATE);
-  const productsNet = totalNet - shippingNetTotal;
+  const uberBruttoTotal = uberCosts.reduce((s, c) => s + c, 0);
+  const deliveryNetTotal = (shippingBruttoTotal + uberBruttoTotal) / (1 + VAT_RATE);
+  const productsNet = totalNet - deliveryNetTotal;
   const vatAmount = productsNet * VAT_RATE;
 
   const getProductWidthMm = (p: OrderProduct): number => {
@@ -79,7 +83,9 @@ export const OrderSummarySection = ({
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between gap-2 text-destructive">
-                    <span className="text-xs pl-2">{t('sales.orderSummary.discountLabel', { discount })}</span>
+                    <span className="text-xs pl-2">
+                      {t('sales.orderSummary.discountLabel', { discount })}
+                    </span>
                     <span className="tabular-nums text-xs shrink-0">
                       -{formatCurrency(lineNet - lineNetAfterDiscount)}
                     </span>
@@ -107,13 +113,26 @@ export const OrderSummarySection = ({
               <span className="tabular-nums">{formatCurrency(shippingBruttoTotal)}</span>
             </div>
           )}
+          {uberCosts.length > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {uberCosts.length === 1
+                  ? t('sales.orderSummary.uber')
+                  : t('sales.orderSummary.uberMultiple', { count: uberCosts.length })}{' '}
+                {t('sales.orderSummary.gross')}
+              </span>
+              <span className="tabular-nums">{formatCurrency(uberBruttoTotal)}</span>
+            </div>
+          )}
           {isNetPayer ? (
             <>
               <Separator className="my-1" />
               <div className="flex justify-between font-semibold text-lg">
                 <span>{t('sales.orderSummary.toPay')}</span>
                 <span className="tabular-nums">
-                  {paymentMethod === 'free' ? t('sales.orderSummary.free') : formatCurrency(totalGross)}
+                  {paymentMethod === 'free'
+                    ? t('sales.orderSummary.free')
+                    : formatCurrency(totalGross)}
                 </span>
               </div>
             </>
@@ -127,7 +146,9 @@ export const OrderSummarySection = ({
               <div className="flex justify-between font-semibold text-lg">
                 <span>{t('sales.orderSummary.totalGross')}</span>
                 <span className="tabular-nums">
-                  {paymentMethod === 'free' ? t('sales.orderSummary.free') : formatCurrency(totalGross)}
+                  {paymentMethod === 'free'
+                    ? t('sales.orderSummary.free')
+                    : formatCurrency(totalGross)}
                 </span>
               </div>
             </>

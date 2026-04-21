@@ -12,6 +12,7 @@ export interface SalesOrderProduct {
 export interface SalesOrderPackage {
   shippingMethod: string;
   shippingCost?: number;
+  uberCost?: number;
 }
 
 export interface SalesOrder {

@@ -28,6 +28,7 @@ interface PackagesSectionProps {
   onDeclaredValueChange: (packageId: string, value: number | undefined, isManual: boolean) => void;
   onOversizedChange: (packageId: string, oversized: boolean) => void;
   onShippingCostChange: (packageId: string, cost: number | undefined) => void;
+  onUberCostChange: (packageId: string, cost: number | undefined) => void;
   onAddProduct: (packageId: string) => void;
   onRemoveProduct: (packageId: string, productKey: string) => void;
   onUpdateQuantity: (productKey: string, qty: number) => void;
@@ -70,6 +71,7 @@ export const PackagesSection = ({
   onDeclaredValueChange,
   onOversizedChange,
   onShippingCostChange,
+  onUberCostChange,
   onAddProduct,
   onRemoveProduct,
   onUpdateQuantity,
@@ -118,6 +120,7 @@ export const PackagesSection = ({
               }
               onOversizedChange={(oversized) => onOversizedChange(pkg.id, oversized)}
               onShippingCostChange={(cost) => onShippingCostChange(pkg.id, cost)}
+              onUberCostChange={(cost) => onUberCostChange(pkg.id, cost)}
               onAddProduct={() => onAddProduct(pkg.id)}
               onRemoveProduct={(productKey) => onRemoveProduct(pkg.id, productKey)}
               onUpdateQuantity={(productKey, qty) => onUpdateQuantity(productKey, qty)}

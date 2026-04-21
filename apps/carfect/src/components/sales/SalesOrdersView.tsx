@@ -59,9 +59,18 @@ import { VAT_RATE } from './constants';
 type PaymentStatus = SalesOrder['paymentStatus'];
 
 const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { labelKey: string; className: string }> = {
-  unpaid: { labelKey: 'sales.orders.paymentStatusUnpaid', className: 'border-amber-500 text-amber-600' },
-  paid: { labelKey: 'sales.orders.paymentStatusPaid', className: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-  collective: { labelKey: 'sales.orders.paymentStatusCollective', className: 'bg-blue-600 hover:bg-blue-700 text-white' },
+  unpaid: {
+    labelKey: 'sales.orders.paymentStatusUnpaid',
+    className: 'border-amber-500 text-amber-600',
+  },
+  paid: {
+    labelKey: 'sales.orders.paymentStatusPaid',
+    className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+  },
+  collective: {
+    labelKey: 'sales.orders.paymentStatusCollective',
+    className: 'bg-blue-600 hover:bg-blue-700 text-white',
+  },
   collective_paid: {
     labelKey: 'sales.orders.paymentStatusCollectivePaid',
     className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
@@ -274,7 +283,9 @@ const SalesOrdersView = () => {
     }
 
     // Resolve creator names
-    const creatorIds = [...new Set((data || []).map((o) => o.created_by).filter(Boolean))] as string[];
+    const creatorIds = [
+      ...new Set((data || []).map((o) => o.created_by).filter(Boolean)),
+    ] as string[];
     const creatorMap = new Map<string, string>();
     if (creatorIds.length > 0) {
       const { data: profiles } = await supabase
@@ -323,12 +334,17 @@ const SalesOrdersView = () => {
           requiredMb: item.required_mb ?? undefined,
           productType: (item.product_type as 'roll' | 'other') || undefined,
         })),
-        packages: ((o.packages || []) as { shippingMethod?: string; shippingCost?: number }[]).map(
-          (pkg) => ({
-            shippingMethod: pkg.shippingMethod || 'shipping',
-            shippingCost: pkg.shippingCost ?? undefined,
-          }),
-        ),
+        packages: (
+          (o.packages || []) as {
+            shippingMethod?: string;
+            shippingCost?: number;
+            uberCost?: number;
+          }[]
+        ).map((pkg) => ({
+          shippingMethod: pkg.shippingMethod || 'shipping',
+          shippingCost: pkg.shippingCost ?? undefined,
+          uberCost: pkg.uberCost ?? undefined,
+        })),
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
         paymentStatus: inv
@@ -351,7 +367,18 @@ const SalesOrdersView = () => {
     });
 
     setOrders(mapped);
-  }, [instanceId, currentPage, pageSize, sortColumn, sortDirection, debouncedSearch, filterCreatedBy, filterPaymentStatus, filterDeliveryType, filterStatus]);
+  }, [
+    instanceId,
+    currentPage,
+    pageSize,
+    sortColumn,
+    sortDirection,
+    debouncedSearch,
+    filterCreatedBy,
+    filterPaymentStatus,
+    filterDeliveryType,
+    filterStatus,
+  ]);
 
   useEffect(() => {
     fetchOrders();
@@ -486,7 +513,9 @@ const SalesOrdersView = () => {
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
       toast.success(t('sales.orders.toastOrderDeleted'));
     } catch (err: unknown) {
-      toast.error(t('sales.orders.toastOrderDeleteError', { message: (err as Error).message || '' }));
+      toast.error(
+        t('sales.orders.toastOrderDeleteError', { message: (err as Error).message || '' }),
+      );
     }
   };
 
@@ -769,7 +798,9 @@ const SalesOrdersView = () => {
       );
       toast.success(t('sales.orders.toastShipmentCancelled'));
     } catch (err: any) {
-      toast.error(t('sales.orders.toastShipmentCancelFailed') + (err.message ? ': ' + err.message : ''));
+      toast.error(
+        t('sales.orders.toastShipmentCancelFailed') + (err.message ? ': ' + err.message : ''),
+      );
     }
   };
 
@@ -787,7 +818,9 @@ const SalesOrdersView = () => {
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err: any) {
-      toast.error(t('sales.orders.toastLabelFetchFailed') + (err.message ? ': ' + err.message : ''));
+      toast.error(
+        t('sales.orders.toastLabelFetchFailed') + (err.message ? ': ' + err.message : ''),
+      );
     }
   };
 
@@ -840,19 +873,33 @@ const SalesOrdersView = () => {
           />
         </div>
         {instanceUsers.length > 0 && (
-          <Select value={filterCreatedBy} onValueChange={(v) => { setFilterCreatedBy(v); setCurrentPage(1); }}>
+          <Select
+            value={filterCreatedBy}
+            onValueChange={(v) => {
+              setFilterCreatedBy(v);
+              setCurrentPage(1);
+            }}
+          >
             <SelectTrigger className="w-[150px] h-9 text-xs">
               <SelectValue placeholder="Opiekun" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Wszyscy opiekunowie</SelectItem>
               {instanceUsers.map((u) => (
-                <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
-        <Select value={filterPaymentStatus} onValueChange={(v) => { setFilterPaymentStatus(v); setCurrentPage(1); }}>
+        <Select
+          value={filterPaymentStatus}
+          onValueChange={(v) => {
+            setFilterPaymentStatus(v);
+            setCurrentPage(1);
+          }}
+        >
           <SelectTrigger className="w-[160px] h-9 text-xs">
             <SelectValue placeholder={t('sales.orders.payment')} />
           </SelectTrigger>
@@ -864,7 +911,13 @@ const SalesOrdersView = () => {
             <SelectItem value="collective_paid">{t('sales.orders.collectivePaid')}</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filterDeliveryType} onValueChange={(v) => { setFilterDeliveryType(v); setCurrentPage(1); }}>
+        <Select
+          value={filterDeliveryType}
+          onValueChange={(v) => {
+            setFilterDeliveryType(v);
+            setCurrentPage(1);
+          }}
+        >
           <SelectTrigger className="w-[140px] h-9 text-xs">
             <SelectValue placeholder="Dostawa" />
           </SelectTrigger>
@@ -875,7 +928,13 @@ const SalesOrdersView = () => {
             <SelectItem value="uber">Uber</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+        <Select
+          value={filterStatus}
+          onValueChange={(v) => {
+            setFilterStatus(v);
+            setCurrentPage(1);
+          }}
+        >
           <SelectTrigger className="w-[130px] h-9 text-xs">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -1047,61 +1106,68 @@ const SalesOrdersView = () => {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="focus:outline-none"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {(() => {
-                                const cfg = PAYMENT_STATUS_CONFIG[order.paymentStatus];
-                                const isOutline =
-                                  order.paymentStatus === 'unpaid' ||
-                                  order.paymentStatus === 'invoice_unpaid';
-                                return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className="focus:outline-none"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {(() => {
+                                  const cfg = PAYMENT_STATUS_CONFIG[order.paymentStatus];
+                                  const isOutline =
+                                    order.paymentStatus === 'unpaid' ||
+                                    order.paymentStatus === 'invoice_unpaid';
+                                  return (
+                                    <Badge
+                                      variant={isOutline ? 'outline' : 'default'}
+                                      className={`${cfg.className} cursor-pointer`}
+                                    >
+                                      {t(cfg.labelKey)}
+                                    </Badge>
+                                  );
+                                })()}
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-0">
+                              {(
+                                Object.entries(PAYMENT_STATUS_CONFIG) as [
+                                  PaymentStatus,
+                                  { labelKey: string; className: string },
+                                ][]
+                              ).map(([status, cfg]) => (
+                                <DropdownMenuItem
+                                  key={status}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    changePaymentStatus(order.id, status);
+                                  }}
+                                >
                                   <Badge
-                                    variant={isOutline ? 'outline' : 'default'}
-                                    className={`${cfg.className} cursor-pointer`}
+                                    variant={
+                                      status === 'unpaid' || status === 'invoice_unpaid'
+                                        ? 'outline'
+                                        : 'default'
+                                    }
+                                    className={cfg.className}
                                   >
                                     {t(cfg.labelKey)}
                                   </Badge>
-                                );
-                              })()}
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="min-w-0">
-                            {(
-                              Object.entries(PAYMENT_STATUS_CONFIG) as [
-                                PaymentStatus,
-                                { labelKey: string; className: string },
-                              ][]
-                            ).map(([status, cfg]) => (
-                              <DropdownMenuItem
-                                key={status}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  changePaymentStatus(order.id, status);
-                                }}
-                              >
-                                <Badge
-                                  variant={
-                                    status === 'unpaid' || status === 'invoice_unpaid'
-                                      ? 'outline'
-                                      : 'default'
-                                  }
-                                  className={cfg.className}
-                                >
-                                  {t(cfg.labelKey)}
-                                </Badge>
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        {order.paymentMethod && (
-                          <span className="text-xs text-foreground block">
-                            {{ cod: t('sales.orders.paymentCod'), transfer: t('sales.orders.paymentTransfer'), cash: t('sales.orders.paymentCash'), card: t('sales.orders.paymentCard'), free: t('sales.orders.free'), tab: t('sales.orders.paymentTab') }[order.paymentMethod] ?? order.paymentMethod}
-                          </span>
-                        )}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          {order.paymentMethod && (
+                            <span className="text-xs text-foreground block">
+                              {{
+                                cod: t('sales.orders.paymentCod'),
+                                transfer: t('sales.orders.paymentTransfer'),
+                                cash: t('sales.orders.paymentCash'),
+                                card: t('sales.orders.paymentCard'),
+                                free: t('sales.orders.free'),
+                                tab: t('sales.orders.paymentTab'),
+                              }[order.paymentMethod] ?? order.paymentMethod}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1148,7 +1214,9 @@ const SalesOrdersView = () => {
                                 changeStatus(order.id, 'wysłany');
                               }}
                             >
-                              <Badge className="bg-emerald-600 text-white">{t('sales.orders.shipped')}</Badge>
+                              <Badge className="bg-emerald-600 text-white">
+                                {t('sales.orders.shipped')}
+                              </Badge>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={(e) => {
@@ -1372,7 +1440,9 @@ const SalesOrdersView = () => {
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
         title={t('sales.orders.deleteOrder')}
-        description={t('sales.orders.deleteOrderConfirm', { orderNumber: deleteConfirm.orderNumber })}
+        description={t('sales.orders.deleteOrderConfirm', {
+          orderNumber: deleteConfirm.orderNumber,
+        })}
         confirmLabel={t('common.delete')}
         variant="destructive"
         onConfirm={() => handleDeleteOrder(deleteConfirm.orderId)}
@@ -1381,7 +1451,9 @@ const SalesOrdersView = () => {
         open={cancelShipmentConfirm.open}
         onOpenChange={(open) => setCancelShipmentConfirm((prev) => ({ ...prev, open }))}
         title={t('sales.orders.cancelShipment')}
-        description={t('sales.orders.cancelShipmentConfirm', { orderNumber: cancelShipmentConfirm.orderNumber })}
+        description={t('sales.orders.cancelShipmentConfirm', {
+          orderNumber: cancelShipmentConfirm.orderNumber,
+        })}
         confirmLabel={t('sales.orders.cancelShipment')}
         variant="destructive"
         onConfirm={() => handleCancelShipment(cancelShipmentConfirm.orderId)}
@@ -1412,6 +1484,20 @@ const SalesOrdersView = () => {
                 discount: 0,
               }));
             })(),
+            ...(() => {
+              const uberPkgs = (invoiceDrawerState.order!.packages || []).filter(
+                (pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null,
+              );
+              return uberPkgs.map((pkg, i) => ({
+                name: uberPkgs.length === 1 ? 'Uber' : `Uber #${i + 1}`,
+                quantity: 1,
+                // uberCost is brutto (user-entered) — convert to netto like shipping does
+                unit_price_gross: Math.round((pkg.uberCost! / (1 + VAT_RATE)) * 100) / 100,
+                vat_rate: 23,
+                unit: 'szt.',
+                discount: 0,
+              }));
+            })(),
           ]}
           onSuccess={fetchOrders}
           supabaseClient={supabase}
@@ -1435,9 +1521,25 @@ const SalesOrdersView = () => {
                 name:
                   arr.length === 1
                     ? t('sales.orders.shippingLabel', { orderNumber: order.orderNumber })
-                    : t('sales.orders.shippingLabelMulti', { index: i + 1, orderNumber: order.orderNumber }),
+                    : t('sales.orders.shippingLabelMulti', {
+                        index: i + 1,
+                        orderNumber: order.orderNumber,
+                      }),
                 quantity: 1,
                 unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
+                vat_rate: 23,
+                unit: 'szt.',
+                discount: 0,
+              })),
+            ...(order.packages || [])
+              .filter((pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null)
+              .map((pkg, i, arr) => ({
+                name:
+                  arr.length === 1
+                    ? `Uber (${order.orderNumber})`
+                    : `Uber #${i + 1} (${order.orderNumber})`,
+                quantity: 1,
+                unit_price_gross: Math.round((pkg.uberCost! / (1 + VAT_RATE)) * 100) / 100,
                 vat_rate: 23,
                 unit: 'szt.',
                 discount: 0,
