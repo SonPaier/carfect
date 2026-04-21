@@ -4,6 +4,8 @@ DECLARE
   v_instance_id uuid := '29f15eeb-5ada-446c-9351-0194dbc886fd';
   v_product_id uuid;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_instance_id) THEN RETURN; END IF;
+
   -- 1. Delete test order items and orders
   DELETE FROM sales_order_items WHERE order_id IN (
     SELECT id FROM sales_orders WHERE instance_id = v_instance_id
