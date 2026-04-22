@@ -40,7 +40,7 @@ export function getServiceDuration(
   if (carSize === 'small' && service.duration_small) return service.duration_small;
   if (carSize === 'large' && service.duration_large) return service.duration_large;
   if (carSize === 'medium' && service.duration_medium) return service.duration_medium;
-  return service.duration_minutes || 60;
+  return service.duration_minutes || 0;
 }
 
 /** Get display price for a service, resolving category net/brutto flag */

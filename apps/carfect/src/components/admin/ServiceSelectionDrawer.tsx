@@ -337,7 +337,7 @@ const ServiceSelectionDrawer = ({
     if (carSize === 'small' && service.duration_small) return service.duration_small;
     if (carSize === 'medium' && service.duration_medium) return service.duration_medium;
     if (carSize === 'large' && service.duration_large) return service.duration_large;
-    return service.duration_minutes || 60;
+    return service.duration_minutes || 0;
   };
 
   // Format duration - always show hours and minutes
@@ -383,12 +383,17 @@ const ServiceSelectionDrawer = ({
     setSelectedIds((prev) => prev.filter((id) => id !== serviceId));
   };
 
-  // Calculate total duration
-  const totalDuration = useMemo(() => {
-    return selectedIds.reduce((total, id) => {
+  // Calculate total duration — hide if any selected service has no duration configured
+  const { totalDuration, allHaveDuration } = useMemo(() => {
+    let total = 0;
+    let allSet = true;
+    for (const id of selectedIds) {
       const service = services.find((s) => s.id === id);
-      return total + (service ? getDuration(service) : 0);
-    }, 0);
+      const d = service ? getDuration(service) : 0;
+      if (d === 0) allSet = false;
+      total += d;
+    }
+    return { totalDuration: total, allHaveDuration: selectedIds.length > 0 && allSet };
   }, [selectedIds, services, carSize]);
 
   // Calculate total price
@@ -634,9 +639,11 @@ const ServiceSelectionDrawer = ({
                           {!hidePricing && (
                           <div className="text-right mr-4">
                             <p className="font-semibold text-foreground">{formatPrice(price)}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDuration(duration)}
-                            </p>
+                            {duration > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                {formatDuration(duration)}
+                              </p>
+                            )}
                           </div>
                           )}
 
@@ -669,7 +676,7 @@ const ServiceSelectionDrawer = ({
               <span className="text-lg font-semibold text-foreground">
                 {t('serviceDrawer.selectedCount', { count: selectedIds.length })}
               </span>
-              {totalDuration > 0 && (
+              {allHaveDuration && (
                 <span className="text-lg font-bold text-foreground">
                   {formatDuration(totalDuration)}
                 </span>

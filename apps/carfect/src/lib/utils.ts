@@ -2,6 +2,19 @@
 export { cn } from "@shared/ui";
 
 /**
+ * Filter end-time options so they are always after the selected start time.
+ * For multi-day reservations, all options are valid (returns unfiltered).
+ */
+export function filterEndTimeOptions(
+  allOptions: string[],
+  startTime: string | undefined,
+  isSingleDay: boolean,
+): string[] {
+  if (!isSingleDay || !startTime) return allOptions;
+  return allOptions.filter((t) => t > startTime);
+}
+
+/**
  * Generate an array of "HH:MM" time strings from `min` to `max` (inclusive)
  * with the given step in minutes.
  */

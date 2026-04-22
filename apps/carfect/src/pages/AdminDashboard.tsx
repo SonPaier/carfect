@@ -1764,6 +1764,7 @@ const AdminDashboard = () => {
                 employees={cachedEmployees}
                 onOpenReservation={handleOpenReservationById}
                 onRequestAllHistory={() => expandDateRange(new Date('2020-01-01'))}
+                onAddReservation={handleQuickAddReservation}
               />
             )}
 

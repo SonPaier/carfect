@@ -13,6 +13,7 @@ import {
   ArrowUp,
   ArrowDown,
   MoreHorizontal,
+  Plus,
 } from 'lucide-react';
 import { normalizeSearchQuery, formatPhoneDisplay } from '@shared/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui';
@@ -94,6 +95,7 @@ interface ReservationsViewProps {
   employees?: Employee[];
   onOpenReservation?: (reservationId: string) => void;
   onRequestAllHistory?: () => void;
+  onAddReservation?: () => void;
 }
 
 type TabValue = 'all' | 'reservations' | 'trainings';
@@ -129,6 +131,7 @@ const ReservationsView = ({
   employees = [],
   onOpenReservation,
   onRequestAllHistory,
+  onAddReservation,
 }: ReservationsViewProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -657,9 +660,15 @@ const ReservationsView = ({
 
   return (
     <div className={isMobile ? 'space-y-4 pb-28' : 'flex flex-col h-[calc(100vh-80px)]'}>
-      {/* Title */}
-      <div className="shrink-0 pb-4">
+      {/* Title + Add button */}
+      <div className="shrink-0 pb-4 flex items-center justify-between">
         <h1 className="text-2xl font-medium text-foreground">{t('navigation.reservations')}</h1>
+        {onAddReservation && (
+          <Button onClick={onAddReservation} size="sm">
+            <Plus className="w-4 h-4" />
+            {t('common.add')}
+          </Button>
+        )}
       </div>
       <div id="hint-infobox-slot" className="flex flex-col gap-4 shrink-0" />
 
