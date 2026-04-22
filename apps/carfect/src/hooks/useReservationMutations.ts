@@ -815,6 +815,7 @@ export function useReservationMutations({
       newStationId: string,
       newDate: string,
       newTime?: string,
+      newEndDate?: string,
     ) => {
       const reservation = reservations.find((r) => r.id === reservationId);
       if (!reservation) return;
@@ -822,13 +823,17 @@ export function useReservationMutations({
       const originalState = {
         station_id: reservation.station_id,
         reservation_date: reservation.reservation_date,
+        end_date: reservation.end_date,
         start_time: reservation.start_time,
         end_time: reservation.end_time,
       };
-      const updates: Record<string, string> = {
+      const updates: Record<string, string | null> = {
         station_id: newStationId,
         reservation_date: newDate,
       };
+      if (newEndDate !== undefined) {
+        updates.end_date = newEndDate;
+      }
       if (newTime) {
         const [startHours, startMinutes] = newTime.split(':').map(Number);
         const [endHours, endMinutes] = reservation.end_time.split(':').map(Number);
@@ -868,7 +873,9 @@ export function useReservationMutations({
         description: React.createElement(
           'div',
           { className: 'flex flex-col' },
-          React.createElement('span', null, `${updates.start_time} - ${updates.end_time}`),
+          React.createElement('span', null, updates.end_date
+            ? `${updates.reservation_date} → ${updates.end_date}`
+            : `${updates.start_time || reservation.start_time} - ${updates.end_time || reservation.end_time}`),
           React.createElement('span', null, vehicleModel),
         ),
         icon: React.createElement(CheckCircle, { className: 'h-5 w-5 text-green-500' }),

@@ -21,6 +21,7 @@ import { useIsMobile } from '@shared/ui';
 import type { Reservation, Station, ClosedDay, GroupBy, Training } from './types';
 import { getStatusColor } from './types';
 import { type WeekEvent, toDateOnly, assignLanes, formatDateStr } from './swimLaneUtils';
+import { useDragReservation } from './useDragReservation';
 import { buildHolidayMap } from '@/lib/polishHolidays';
 
 const TRAINING_ID_PREFIX = 'training::';
@@ -34,7 +35,7 @@ interface MonthCalendarViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onDateRangeSelect?: (from: Date, to: Date) => void;
-  onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  onReservationMove?: (reservationId: string, newStationId: string, newDate: string, newTime?: string, newEndDate?: string) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
@@ -82,6 +83,7 @@ interface WeekRowProps {
   onDayTouchEnd?: () => void;
   trainingMap?: Map<string, Training>;
   onTrainingClick?: (training: Training) => void;
+  drag?: ReturnType<typeof useDragReservation>;
 }
 
 const WeekRow = ({
@@ -108,6 +110,7 @@ const WeekRow = ({
   onDayTouchEnd,
   trainingMap,
   onTrainingClick,
+  drag,
 }: WeekRowProps) => {
   const { t } = useTranslation();
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
@@ -147,6 +150,7 @@ const WeekRow = ({
               'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
               isClosed && 'bg-red-50',
               !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
+              drag?.dragOverDate === dateStr && 'ring-2 ring-primary/50 bg-primary/5',
             )}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -154,6 +158,9 @@ const WeekRow = ({
             }}
             onMouseEnter={() => onDayMouseEnter(day)}
             onMouseUp={() => onDayMouseUp(day)}
+            onDragOver={drag ? (e) => drag.onDragOver(e, dateStr) : undefined}
+            onDragLeave={drag ? drag.onDragLeave : undefined}
+            onDrop={drag ? (e) => drag.onDrop(e, dateStr) : undefined}
             onTouchStart={(e) => {
               e.preventDefault();
               onDayTouchStart?.(day);
@@ -277,6 +284,9 @@ const WeekRow = ({
                 height: barHeight,
                 borderLeftColor: isTraining ? undefined : stationColor || undefined,
               }}
+              draggable={!isTraining && !!drag}
+              onDragStart={!isTraining && drag ? (e) => drag.onDragStart(e, reservation) : undefined}
+              onDragEnd={drag?.onDragEnd}
               onClick={(e) => {
                 e.stopPropagation();
                 if (isTraining && training && onTrainingClick) {
@@ -354,6 +364,7 @@ interface MonthSectionProps {
   onDayTouchEnd?: () => void;
   trainingMap?: Map<string, Training>;
   onTrainingClick?: (training: Training) => void;
+  drag?: ReturnType<typeof useDragReservation>;
 }
 
 const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
@@ -379,6 +390,7 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
       onDayTouchEnd,
       trainingMap,
       onTrainingClick,
+      drag,
     },
     ref,
   ) => {
@@ -487,6 +499,7 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
               onDayTouchEnd={onDayTouchEnd}
               trainingMap={trainingMap}
               onTrainingClick={onTrainingClick}
+              drag={drag}
             />
           ))}
       </div>
@@ -505,9 +518,7 @@ export const MonthCalendarView = ({
   onReservationClick,
   onAddClick,
   onDateRangeSelect,
-  // onReservationMove is accepted for backward compat but drag-drop is not implemented in bar view
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onReservationMove: _onReservationMove,
+  onReservationMove,
   // groupBy and employees are accepted for backward compat
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   groupBy: _groupBy,
@@ -523,6 +534,7 @@ export const MonthCalendarView = ({
   onTrainingClick,
 }: MonthCalendarViewProps) => {
   const { t } = useTranslation();
+  const drag = useDragReservation(reservations, onReservationMove);
   const DAY_NAMES = [
     t('calendar.dayNames.mon'),
     t('calendar.dayNames.tue'),
@@ -829,6 +841,7 @@ export const MonthCalendarView = ({
               onDayTouchEnd={handleDayTouchEnd}
               trainingMap={trainingMap}
               onTrainingClick={onTrainingClick}
+              drag={drag}
             />
           );
         })}
