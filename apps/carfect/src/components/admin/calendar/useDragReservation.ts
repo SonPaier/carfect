@@ -43,17 +43,14 @@ export function useDragReservation(
     const item = reservations.find(r => r.id === itemId);
     if (!item || item.reservation_date === dateStr) return;
 
-    // Calculate date offset for multi-day reservations
+    // Calculate shifted end_date — always update to keep dates consistent
     const oldStart = toDateOnly(item.reservation_date);
     const newStart = toDateOnly(dateStr);
     const dayOffset = differenceInDays(newStart, oldStart);
 
-    let newEndDate: string | undefined;
-    if (item.end_date && item.end_date !== item.reservation_date) {
-      const oldEnd = toDateOnly(item.end_date);
-      const shiftedEnd = addDays(oldEnd, dayOffset);
-      newEndDate = format(shiftedEnd, 'yyyy-MM-dd');
-    }
+    const oldEnd = item.end_date ? toDateOnly(item.end_date) : oldStart;
+    const shiftedEnd = addDays(oldEnd, dayOffset);
+    const newEndDate = format(shiftedEnd, 'yyyy-MM-dd');
 
     onReservationMove(itemId, item.station_id || '', dateStr, undefined, newEndDate);
   }, [reservations, onReservationMove]);
