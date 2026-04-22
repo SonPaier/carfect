@@ -1062,6 +1062,7 @@ export const ServiceFormDialog = ({
             forceAdvancedOpen={forceAdvancedOpen}
             pricingMode={pricingMode}
             initialName={initialName}
+            showCarSize={showCarSize}
           />
         </div>
       </DialogContent>
