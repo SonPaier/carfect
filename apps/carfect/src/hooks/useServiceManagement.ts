@@ -57,12 +57,13 @@ export function useServiceManagement({
   // Sync from reservation prop
   const servicesDataKey = JSON.stringify(currentServicesData?.map((s) => s.id));
   const serviceIdsKey = currentServiceIds.join(',');
+  const serviceItemsKey = JSON.stringify(currentServiceItems?.map((si) => `${si.service_id}:${si.custom_price}`));
   useEffect(() => {
     setLocalServicesData(currentServicesData || []);
     setLocalServiceIds(currentServiceIds);
     setLocalServiceItems(currentServiceItems);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilized via servicesDataKey + serviceIdsKey
-  }, [servicesDataKey, serviceIdsKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilized via keys
+  }, [servicesDataKey, serviceIdsKey, serviceItemsKey]);
 
   const handleAddServices = useCallback(
     async (newServiceIds: string[], servicesData: ServiceWithPricing[]) => {
