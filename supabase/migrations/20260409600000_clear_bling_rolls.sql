@@ -4,6 +4,8 @@ DECLARE
   v_bling uuid := '29f15eeb-5ada-446c-9351-0194dbc886fd';
   v_count int;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_bling) THEN RETURN; END IF;
+
   -- Remove roll usages first (FK)
   DELETE FROM sales_roll_usages WHERE roll_id IN (SELECT id FROM sales_rolls WHERE instance_id = v_bling);
 

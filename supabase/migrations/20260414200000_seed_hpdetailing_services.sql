@@ -13,6 +13,7 @@ DECLARE
   v_cat_oklejanie uuid;
   v_cat_ppf_elementy uuid;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_instance_id) THEN RETURN; END IF;
 
   -- ============================================================
   -- KATEGORIE

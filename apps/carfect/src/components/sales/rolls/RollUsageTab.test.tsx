@@ -4,6 +4,22 @@ import userEvent from '@testing-library/user-event';
 import RollUsageTab from './RollUsageTab';
 import type { SalesRoll, SalesRollUsage } from '../types/rolls';
 
+// ─── Component mocks ─────────────────────────────────────────
+
+vi.mock('@/components/ui/image-paste-zone', () => ({
+  ImagePasteZone: ({ images, onImagesChange, disabled }: {
+    images: string[];
+    onImagesChange: (v: string[]) => void;
+    disabled?: boolean;
+  }) => (
+    <div data-testid="image-paste-zone" data-disabled={disabled}>
+      {images.map((url) => (
+        <img key={url} src={url} alt="paste-zone-img" />
+      ))}
+    </div>
+  ),
+}));
+
 // ─── Service mock ─────────────────────────────────────────────
 
 vi.mock('../services/rollService', () => ({
@@ -55,7 +71,9 @@ const makeUsage = (overrides: Partial<SalesRollUsage> = {}): SalesRollUsage => (
   usedMb: 2.0,
   source: 'manual',
   workerName: null,
+  vehicleName: null,
   note: null,
+  attachments: [],
   createdAt: '2026-03-15T10:00:00Z',
   ...overrides,
 });
@@ -265,6 +283,154 @@ describe('RollUsageTab — usage cards rendering', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Extra note for this usage')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('RollUsageTab — attachment thumbnails', () => {
+  it('renders attachment thumbnails on usage cards', async () => {
+    const usage = makeUsage({
+      attachments: [
+        { url: 'https://example.com/img1.jpg', name: 'formatka-1', uploadedAt: '2026-03-15T10:00:00Z' },
+        { url: 'https://example.com/img2.jpg', name: 'formatka-2', uploadedAt: '2026-03-15T10:01:00Z' },
+      ],
+    });
+    mockFetchRollUsages.mockResolvedValue([usage]);
+
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
+
+    await waitFor(() => {
+      expect(screen.getByAltText('formatka-1')).toBeInTheDocument();
+    });
+
+    expect(screen.getByAltText('formatka-2')).toBeInTheDocument();
+
+    const img1 = screen.getByAltText('formatka-1') as HTMLImageElement;
+    expect(img1.src).toBe('https://example.com/img1.jpg');
+  });
+
+  it('does not render attachment section when usage has no attachments', async () => {
+    const usage = makeUsage({ attachments: [] });
+    mockFetchRollUsages.mockResolvedValue([usage]);
+
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ręczne')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByAltText(/formatka/)).not.toBeInTheDocument();
+  });
+});
+
+describe('RollUsageTab — ImagePasteZone in form', () => {
+  it('shows ImagePasteZone when form is open', async () => {
+    const user = userEvent.setup();
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
+
+    expect(screen.getByTestId('image-paste-zone')).toBeInTheDocument();
+  });
+
+  it('edit loads existing attachments into ImagePasteZone', async () => {
+    const user = userEvent.setup();
+    const usage = makeUsage({
+      source: 'manual',
+      usedMb: 2.0,
+      attachments: [
+        { url: 'https://example.com/existing.jpg', name: 'formatka-1', uploadedAt: '2026-03-01T00:00:00Z' },
+      ],
+    });
+    mockFetchRollUsages.mockResolvedValue([usage]);
+
+    render(<RollUsageTab roll={makeRoll()} instanceId="test-instance" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ręczne')).toBeInTheDocument();
+    });
+
+    // Click edit (pencil) button
+    const allButtons = screen.getAllByRole('button');
+    await user.click(allButtons[1]);
+
+    // ImagePasteZone mock renders img elements for passed images
+    const pasteZone = screen.getByTestId('image-paste-zone');
+    const imgs = pasteZone.querySelectorAll('img');
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0].src).toBe('https://example.com/existing.jpg');
+  });
+});
+
+describe('RollUsageTab — submit with attachments', () => {
+  it('passes attachments to createManualRollUsage on new usage', async () => {
+    const user = userEvent.setup();
+    render(<RollUsageTab roll={makeRoll({ widthMm: 1000 })} instanceId="test-instance" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Dodaj zużycie/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Dodaj zużycie/i }));
+
+    // Enter mb value
+    const mbInput = document.querySelector('input[inputmode="decimal"]') as HTMLInputElement;
+    await user.type(mbInput, '3');
+
+    // Simulate adding an image via the mock's onImagesChange isn't straightforward,
+    // so we verify createManualRollUsage is called with attachments array (empty for this case)
+    await user.click(screen.getByRole('button', { name: 'Dodaj' }));
+
+    await waitFor(() => {
+      expect(mockCreateManualRollUsage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [],
+          rollId: 'roll-1',
+          instanceId: 'test-instance',
+        }),
+      );
+    });
+  });
+
+  it('preserves existing attachment metadata on edit', async () => {
+    const user = userEvent.setup();
+    const existingAttachment = {
+      url: 'https://example.com/existing.jpg',
+      name: 'formatka-1',
+      uploadedAt: '2026-03-01T00:00:00Z',
+    };
+    const usage = makeUsage({
+      id: 'usage-edit',
+      source: 'manual',
+      usedMb: 2.0,
+      attachments: [existingAttachment],
+    });
+    mockFetchRollUsages.mockResolvedValue([usage]);
+
+    render(<RollUsageTab roll={makeRoll({ widthMm: 1000 })} instanceId="test-instance" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ręczne')).toBeInTheDocument();
+    });
+
+    // Click edit
+    const allButtons = screen.getAllByRole('button');
+    await user.click(allButtons[1]);
+
+    // Submit without changing anything
+    await user.click(screen.getByRole('button', { name: 'Zapisz' }));
+
+    await waitFor(() => {
+      expect(mockUpdateManualRollUsage).toHaveBeenCalledWith(
+        'usage-edit',
+        expect.objectContaining({
+          attachments: [existingAttachment],
+        }),
+      );
     });
   });
 });

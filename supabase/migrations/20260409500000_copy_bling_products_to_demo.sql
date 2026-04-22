@@ -6,6 +6,8 @@ DECLARE
   v_old_id uuid;
   v_new_id uuid;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_bling) THEN RETURN; END IF;
+
   -- Clean existing demo sales data (cascade through FKs)
   DELETE FROM sales_roll_usages WHERE order_id IN (SELECT id FROM sales_orders WHERE instance_id = v_demo);
   DELETE FROM sales_roll_usages WHERE roll_id IN (SELECT id FROM sales_rolls WHERE instance_id = v_demo);

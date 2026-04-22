@@ -121,8 +121,14 @@ SET search_path = public, extensions;
 -- Instance: 50230fb6-fca0-4a09-b19c-f80215b2b715
 -- ===========================================
 
-BEGIN;
-
+DO $$
+DECLARE
+  v_instance_id uuid := '50230fb6-fca0-4a09-b19c-f80215b2b715';
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_instance_id) THEN
+    RAISE NOTICE 'Instance 50230fb6-fca0-4a09-b19c-f80215b2b715 not found, skipping caldis import';
+    RETURN;
+  END IF;
 
 -- STEP 1: Add missing services
 INSERT INTO unified_services (instance_id, category_id, name, price_from, station_type, service_type, visibility, sort_order, active, requires_size, is_popular, unit)
@@ -2645,7 +2651,7 @@ INSERT INTO reservations (
   (SELECT id FROM stations WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' ORDER BY sort_order LIMIT 1 OFFSET 0), (SELECT id FROM unified_services WHERE instance_id = '50230fb6-fca0-4a09-b19c-f80215b2b715' AND name = 'Full Front - Folia PPF połysk UltraFit' LIMIT 1), '4C690299', '2026-03-18 09:16:06', '2026-03-18 09:16:06'
 ) ON CONFLICT DO NOTHING;
 
-COMMIT;
+END $$;
 
 -- Done! 134 reservations, 88 customers, 97 vehicles
 

@@ -10,6 +10,7 @@ DECLARE
   v_instance_id uuid := '29f15eeb-5ada-446c-9351-0194dbc886fd';
   v_cat_id      uuid;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_instance_id) THEN RETURN; END IF;
 
   -- ============================================================
   -- STEP 1: Deactivate unified_services used in existing offers

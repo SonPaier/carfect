@@ -14,8 +14,9 @@ import {
 } from '@shared/ui';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { SalesRoll, SalesRollUsage, RollUsageSource } from '../types/rolls';
+import type { SalesRoll, SalesRollUsage, RollUsageSource, RollUsageAttachment } from '../types/rolls';
 import { mbToM2 } from '../types/rolls';
+import { ImagePasteZone } from '@/components/ui/image-paste-zone';
 import {
   createManualRollUsage,
   updateManualRollUsage,
@@ -76,6 +77,22 @@ function UsageCard({ usage, onEdit, onDelete, sourceLabel }: UsageCardProps) {
         </span>
       </div>
       {usage.note && <p className="text-muted-foreground text-xs">{usage.note}</p>}
+      {usage.attachments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {usage.attachments.map((att, i) => (
+            <a key={`${att.url}-${i}`} href={att.url} target="_blank" rel="noopener noreferrer">
+              <img
+                src={att.url}
+                alt={att.name}
+                loading="lazy"
+                width={48}
+                height={48}
+                className="w-12 h-12 object-cover rounded border border-border"
+              />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -97,6 +114,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
   const [formWorkerName, setFormWorkerName] = useState('');
   const [formVehicleName, setFormVehicleName] = useState('');
   const [formNote, setFormNote] = useState('');
+  const [formAttachments, setFormAttachments] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [workerProfiles, setWorkerProfiles] = useState<{ id: string; name: string }[]>([]);
 
@@ -141,6 +159,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
     setFormWorkerName('');
     setFormVehicleName('');
     setFormNote('');
+    setFormAttachments([]);
     setFormSource('manual');
     setEditingId(null);
     setShowForm(false);
@@ -159,6 +178,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
     setFormWorkerName(usage.workerName || '');
     setFormVehicleName(usage.vehicleName || '');
     setFormNote(usage.note || '');
+    setFormAttachments(usage.attachments.map((a) => a.url));
     setShowForm(true);
   };
 
@@ -176,6 +196,12 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
 
     setSaving(true);
     try {
+      const editingUsage = editingId ? usages.find((u) => u.id === editingId) : null;
+      const attachmentsPayload: RollUsageAttachment[] = formAttachments.map((url, i) => {
+        const existing = editingUsage?.attachments.find((a) => a.url === url);
+        return existing ?? { url, name: `formatka-${i + 1}`, uploadedAt: new Date().toISOString() };
+      });
+
       const payload = {
         usedMb: parsedMb,
         usedM2: mbToM2(parsedMb, roll.widthMm),
@@ -183,6 +209,7 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
         workerName: formSource === 'worker' ? formWorkerName : undefined,
         vehicleName: formSource === 'worker' ? formVehicleName || undefined : undefined,
         note: formNote || undefined,
+        attachments: attachmentsPayload,
       };
 
       if (editingId) {
@@ -272,6 +299,14 @@ const RollUsageTab = ({ roll, instanceId, onUsageChange }: RollUsageTabProps) =>
         <Label className="text-xs">{t('sales.rolls.usageLabelNote')}</Label>
         <Input value={formNote} onChange={(e) => setFormNote(e.target.value)} className="mt-1" />
       </div>
+
+      <ImagePasteZone
+        images={formAttachments}
+        onImagesChange={setFormAttachments}
+        pathPrefix={instanceId || 'unknown'}
+        maxImages={10}
+        disabled={saving}
+      />
 
       <div className="flex gap-2">
         <Button size="sm" onClick={handleSubmit} disabled={saving || !isValidMb}>

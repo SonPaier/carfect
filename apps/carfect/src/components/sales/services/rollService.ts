@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@shared/utils';
-import type { SalesRoll, SalesRollUsage } from '../types/rolls';
+import type { SalesRoll, SalesRollUsage, RollUsageAttachment } from '../types/rolls';
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -37,6 +37,7 @@ interface UsageDbRow {
   worker_name: string | null;
   vehicle_name: string | null;
   note: string | null;
+  attachments: RollUsageAttachment[] | null;
   created_at: string;
 }
 
@@ -75,6 +76,7 @@ function mapUsageRow(row: UsageDbRow): SalesRollUsage {
     workerName: row.worker_name ?? null,
     vehicleName: row.vehicle_name ?? null,
     note: row.note ?? null,
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
     createdAt: row.created_at,
   };
 }
@@ -317,7 +319,7 @@ export async function fetchRollUsages(rollId: string): Promise<SalesRollUsage[]>
   const { data, error } = await supabase
     .from('sales_roll_usages')
     .select(
-      'id, roll_id, order_id, order_item_id, used_m2, used_mb, source, worker_name, note, created_at',
+      'id, roll_id, order_id, order_item_id, used_m2, used_mb, source, worker_name, vehicle_name, note, attachments, created_at',
     )
     .eq('roll_id', rollId)
     .order('created_at', { ascending: false });
@@ -361,6 +363,7 @@ export async function createManualRollUsage(data: {
   workerName?: string;
   vehicleName?: string | null;
   note?: string;
+  attachments?: RollUsageAttachment[];
 }): Promise<string> {
   const { data: row, error } = await supabase
     .from('sales_roll_usages')
@@ -373,6 +376,7 @@ export async function createManualRollUsage(data: {
       worker_name: data.workerName || null,
       vehicle_name: data.vehicleName ?? null,
       note: data.note || null,
+      attachments: data.attachments ?? [],
     })
     .select('id')
     .single();
@@ -390,6 +394,7 @@ export async function updateManualRollUsage(
     workerName?: string;
     vehicleName?: string | null;
     note?: string;
+    attachments?: RollUsageAttachment[];
   },
 ): Promise<void> {
   const { data: rows, error } = await supabase
@@ -401,6 +406,7 @@ export async function updateManualRollUsage(
       worker_name: data.workerName || null,
       vehicle_name: data.vehicleName ?? null,
       note: data.note || null,
+      attachments: data.attachments ?? [],
     })
     .eq('id', id)
     .neq('source', 'order')

@@ -3,6 +3,8 @@ DECLARE
   v_instance_id uuid := '29f15eeb-5ada-446c-9351-0194dbc886fd';
   v_product_id uuid;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM instances WHERE id = v_instance_id) THEN RETURN; END IF;
+
   -- XP Moonlight (VLT 42%)
   IF NOT EXISTS (SELECT 1 FROM sales_products WHERE instance_id = v_instance_id AND short_name = 'XP Moonlight') THEN
     INSERT INTO sales_products (instance_id, full_name, short_name, has_variants, price_net, price_unit)
