@@ -88,6 +88,7 @@ interface ServiceFormDialogProps {
   contentClassName?: string;
   overlayClassName?: string;
   initialName?: string;
+  showCarSize?: boolean;
 }
 
 // Info icon with tooltip component - only shows on click, not on focus
@@ -190,8 +191,8 @@ const ServiceFormContent = ({
     service?.duration_medium ||
     service?.duration_large
   );
-  const [showSizePrices, setShowSizePrices] = useState(hasSizePrices);
-  const [showSizeDurations, setShowSizeDurations] = useState(hasSizeDurations);
+  const [showSizePrices, setShowSizePrices] = useState(showCarSize && hasSizePrices);
+  const [showSizeDurations, setShowSizeDurations] = useState(showCarSize && hasSizeDurations);
 
   const [formData, setFormData] = useState({
     name: service?.name || initialName || '',
@@ -600,13 +601,15 @@ const ServiceFormContent = ({
                     : `${bruttoToNetto(formData.price_from).toFixed(2)} zł netto`}
                 </p>
               )}
-              <button
-                type="button"
-                onClick={() => setShowSizePrices(true)}
-                className="text-sm text-primary font-semibold hover:underline"
-              >
-                {t('priceList.form.priceBySizeLink')}
-              </button>
+              {showCarSize && (
+                <button
+                  type="button"
+                  onClick={() => setShowSizePrices(true)}
+                  className="text-sm text-primary font-semibold hover:underline"
+                >
+                  {t('priceList.form.priceBySizeLink')}
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -734,13 +737,15 @@ const ServiceFormContent = ({
                       {t('common.minutes', 'min')}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSizeDurations(true)}
-                    className="text-sm text-primary font-semibold hover:underline"
-                  >
-                    {t('priceList.form.durationBySizeLink', 'Czas zależny od wielkości samochodu')}
-                  </button>
+                  {showCarSize && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeDurations(true)}
+                      className="text-sm text-primary font-semibold hover:underline"
+                    >
+                      {t('priceList.form.durationBySizeLink', 'Czas zależny od wielkości samochodu')}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -987,6 +992,7 @@ export const ServiceFormDialog = ({
   contentClassName,
   overlayClassName,
   initialName,
+  showCarSize = true,
 }: ServiceFormDialogProps) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();

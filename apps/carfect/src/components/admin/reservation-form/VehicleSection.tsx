@@ -18,6 +18,7 @@ interface VehicleSectionProps {
   onVehicleSelect: (vehicle: CustomerVehicle) => void;
   suppressAutoOpen?: boolean;
   carModelRef: RefObject<HTMLDivElement>;
+  showCarSize?: boolean;
 }
 
 export const VehicleSection = ({
@@ -31,6 +32,7 @@ export const VehicleSection = ({
   onVehicleSelect,
   suppressAutoOpen,
   carModelRef,
+  showCarSize = true,
 }: VehicleSectionProps) => {
   const { t } = useTranslation();
 
@@ -49,28 +51,30 @@ export const VehicleSection = ({
           />
         </div>
 
-        <TooltipProvider>
-          <div className="flex gap-1 shrink-0">
-            {(['small', 'medium', 'large'] as CarSize[]).map((size) => (
-              <Tooltip key={size}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={carSize === size ? 'secondary' : 'outline'}
-                    className="w-9 h-9 font-bold p-0"
-                    onClick={() => onCarSizeChange(size)}
-                  >
-                    {size === 'small' ? 'S' : size === 'medium' ? 'M' : 'L'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{t(`reservations.carSizes.${size}`)}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-        </TooltipProvider>
+        {showCarSize && (
+          <TooltipProvider>
+            <div className="flex gap-1 shrink-0">
+              {(['small', 'medium', 'large'] as CarSize[]).map((size) => (
+                <Tooltip key={size}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={carSize === size ? 'secondary' : 'outline'}
+                      className="w-9 h-9 font-bold p-0"
+                      onClick={() => onCarSizeChange(size)}
+                    >
+                      {size === 'small' ? 'S' : size === 'medium' ? 'M' : 'L'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{t(`reservations.carSizes.${size}`)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </TooltipProvider>
+        )}
       </div>
       {carModelError && <p className="text-sm text-destructive">{carModelError}</p>}
 

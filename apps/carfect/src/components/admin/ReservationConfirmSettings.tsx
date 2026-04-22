@@ -355,6 +355,26 @@ export const ReservationConfirmSettings = ({ instanceId }: ReservationConfirmSet
         </div>
       </div>
 
+      <div className="p-4 rounded-lg border border-border/50 bg-white">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label className="font-medium">{t('reservationSettings.showCarSize')}</Label>
+            <p className="text-sm text-muted-foreground">
+              {t('reservationSettings.showCarSizeDescription')}
+            </p>
+          </div>
+          <Switch
+            size="sm"
+            id="show-car-size"
+            checked={instanceSettings?.show_car_size ?? true}
+            onCheckedChange={(checked) =>
+              handleToggleSetting('show_car_size', checked)
+            }
+            disabled={savingSettings || isSettingsLoading}
+          />
+        </div>
+      </div>
+
       {!isPushSupported ? (
         <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
           <p className="text-sm text-muted-foreground font-medium">

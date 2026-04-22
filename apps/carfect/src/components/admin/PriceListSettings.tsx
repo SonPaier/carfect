@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CategoryManagementDialog } from './CategoryManagementDialog';
 import { ServiceFormDialog } from './ServiceFormDialog';
+import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 import { ConfirmDialog } from '@shared/ui';
 import {
   DndContext,
@@ -283,6 +284,7 @@ const ServiceRow = ({
 
 const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
   const { t } = useTranslation();
+  const { data: instanceSettings } = useInstanceSettings(instanceId);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -842,6 +844,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
           short_name: (s.short_name ?? s.shortcut) || null,
         }))}
         forceAdvancedOpen={forceAdvancedOpen}
+        showCarSize={instanceSettings?.show_car_size ?? true}
       />
 
       {/* Category Management Dialog */}
