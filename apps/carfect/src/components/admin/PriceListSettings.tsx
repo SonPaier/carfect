@@ -60,6 +60,7 @@ interface Service {
   service_type: string | null;
   visibility: string | null;
   metadata: ServiceMetadata | null;
+  photo_urls: string[] | null;
 }
 
 interface ServiceCategory {
@@ -830,6 +831,7 @@ const PriceListSettings = ({ instanceId }: PriceListSettingsProps) => {
                   | 'only_offers',
                 is_popular: editingService.is_popular ?? false,
                 metadata: editingService.metadata ?? null,
+                photo_urls: editingService.photo_urls ?? null,
               }
             : null
         }
