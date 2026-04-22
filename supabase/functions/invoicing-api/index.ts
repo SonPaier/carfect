@@ -38,7 +38,7 @@ async function fakturowniaCreateInvoice(
       positions: invoiceData.positions.map((p: any) => ({
         name: p.name,
         tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),
-        total_price_gross: Math.round(Number(p.unit_price_gross) * Number(p.quantity) * (1 - (Number(p.discount) || 0) / 100) * 100) / 100,
+        total_price_gross: Math.round(Number(p.unit_price_gross) * Number(p.quantity) * 100) / 100,
         quantity: Number(p.quantity),
         ...(p.discount ? { discount_percent: Number(p.discount) } : {}),
       })),
@@ -63,7 +63,7 @@ async function fakturowniaCreateInvoice(
     external_invoice_id: String(data.id),
     external_client_id: data.client_id ? String(data.client_id) : null,
     invoice_number: data.number || null,
-    pdf_url: null, // PDF served via get_pdf_url action to avoid storing API token
+    pdf_url: data.view_url || null,
   };
 }
 
