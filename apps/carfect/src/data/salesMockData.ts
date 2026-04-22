@@ -46,6 +46,8 @@ export interface SalesOrder {
   invoiceNumber?: string;
   invoiceStatus?: string; // 'draft' | 'issued' | 'sent' | 'paid'
   invoicePdfUrl?: string;
+  invoiceExternalId?: string;
+  invoiceTotalGross?: number;
   customerDiscount?: number;
   paymentMethod?: string;
   deliveryType?: 'shipping' | 'pickup' | 'uber';

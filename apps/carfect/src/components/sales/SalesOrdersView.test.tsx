@@ -154,7 +154,8 @@ describe('SalesOrdersView', () => {
 
     expect(screen.getByText('Klient')).toBeInTheDocument();
     expect(screen.getByText('Utworzono')).toBeInTheDocument();
-    expect(screen.getByText('Wysłano')).toBeInTheDocument();
+    expect(screen.getByText('Faktura')).toBeInTheDocument();
+    expect(screen.getByText('Dostawa')).toBeInTheDocument();
     expect(screen.getByText('List przewozowy')).toBeInTheDocument();
     expect(screen.getByText('Kwota netto')).toBeInTheDocument();
     expect(screen.getByText('Płatność')).toBeInTheDocument();

@@ -118,7 +118,6 @@ type SortColumn =
   | 'orderNumber'
   | 'customerName'
   | 'createdAt'
-  | 'shippedAt'
   | 'status'
   | 'totalNet';
 type SortDirection = 'asc' | 'desc';
@@ -223,7 +222,6 @@ const SalesOrdersView = () => {
       orderNumber: 'created_at', // order_number isn't easily sortable in DB, use created_at
       customerName: 'customer_name',
       createdAt: 'created_at',
-      shippedAt: 'shipped_at',
       status: 'status',
       totalNet: 'total_net',
     };
@@ -268,12 +266,12 @@ const SalesOrdersView = () => {
     const orderIds = (data || []).map((o) => o.id);
     const invoiceMap: Record<
       string,
-      { id: string; invoice_number: string; status: string; pdf_url: string }
+      { id: string; invoice_number: string; status: string; pdf_url: string; external_invoice_id: string | null; total_gross: number | null }
     > = {};
     if (orderIds.length > 0) {
       const { data: invoices, error: invError } = await supabase
         .from('invoices')
-        .select('id, sales_order_id, invoice_number, status, pdf_url')
+        .select('id, sales_order_id, invoice_number, status, pdf_url, external_invoice_id, total_gross')
         .in('sales_order_id', orderIds);
       if (!invError && invoices) {
         for (const inv of invoices) {
@@ -361,6 +359,8 @@ const SalesOrdersView = () => {
         invoiceNumber: inv?.invoice_number || undefined,
         invoiceStatus: inv?.status || undefined,
         invoicePdfUrl: inv?.pdf_url || undefined,
+        invoiceExternalId: inv?.external_invoice_id || undefined,
+        invoiceTotalGross: inv?.total_gross ?? undefined,
         paymentMethod: o.payment_method || undefined,
         deliveryType: (o.delivery_type as SalesOrder['deliveryType']) || undefined,
       };
@@ -985,9 +985,7 @@ const SalesOrdersView = () => {
               <SortableHead column="createdAt" className="w-[110px]">
                 Utworzono
               </SortableHead>
-              <SortableHead column="shippedAt" className="w-[110px]">
-                {t('sales.orders.sent')}
-              </SortableHead>
+              <TableHead className="w-[120px]">Faktura</TableHead>
               <TableHead className="w-[160px]">Dostawa</TableHead>
               <TableHead className="w-[200px]">List przewozowy</TableHead>
               <SortableHead column="totalNet" className="text-right w-[170px]">
@@ -1014,11 +1012,13 @@ const SalesOrdersView = () => {
             ) : (
               orders.map((order) => {
                 const isExpanded = expandedRows.has(order.id);
+                const invoiceNetMismatch = order.invoiceTotalGross != null &&
+                  Math.abs(Math.round(order.invoiceTotalGross / 1.23 * 100) / 100 - order.totalNet) > 1;
 
                 return (
                   <Fragment key={order.id}>
                     <TableRow
-                      className="group hover:bg-hover-strong cursor-pointer"
+                      className={`group hover:bg-hover-strong cursor-pointer ${invoiceNetMismatch ? 'bg-red-50' : ''}`}
                       onClick={() => handleEditOrder(order)}
                     >
                       <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
@@ -1058,8 +1058,31 @@ const SalesOrdersView = () => {
                         {format(parseISO(order.createdAt), 'dd.MM.yyyy')}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {order.shippedAt ? (
-                          format(parseISO(order.shippedAt), 'dd.MM.yyyy')
+                        {order.invoiceNumber ? (
+                          <div>
+                            {order.invoicePdfUrl ? (
+                              <a
+                                href={order.invoicePdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {order.invoiceNumber}
+                              </a>
+                            ) : (
+                              <span>{order.invoiceNumber}</span>
+                            )}
+                            {order.invoiceTotalGross != null && (
+                              <div className={`text-xs tabular-nums ${
+                                invoiceNetMismatch
+                                  ? 'text-red-600 font-medium'
+                                  : 'text-muted-foreground'
+                              }`}>
+                                {formatCurrency(Math.round(order.invoiceTotalGross / 1.23 * 100) / 100, order.currency)}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
