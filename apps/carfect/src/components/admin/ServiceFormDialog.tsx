@@ -134,6 +134,7 @@ const ServiceFormContent = ({
   forceAdvancedOpen = false,
   pricingMode = 'brutto',
   initialName,
+  showCarSize = true,
 }: {
   service?: ServiceData | null;
   categories: ServiceCategory[];
@@ -148,6 +149,7 @@ const ServiceFormContent = ({
   forceAdvancedOpen?: boolean;
   pricingMode?: 'netto' | 'brutto';
   initialName?: string;
+  showCarSize?: boolean;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1025,6 +1027,7 @@ export const ServiceFormDialog = ({
               forceAdvancedOpen={forceAdvancedOpen}
               pricingMode={pricingMode}
               initialName={initialName}
+              showCarSize={showCarSize}
             />
           </div>
         </DrawerContent>
