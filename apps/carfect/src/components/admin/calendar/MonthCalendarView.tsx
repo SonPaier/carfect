@@ -352,7 +352,6 @@ interface MonthSectionProps {
   onDayMouseUp: (day: Date) => void;
   onDayTouchStart?: (day: Date) => void;
   onDayTouchEnd?: () => void;
-  dayNamesCount: number;
   trainingMap?: Map<string, Training>;
   onTrainingClick?: (training: Training) => void;
 }
@@ -828,7 +827,6 @@ export const MonthCalendarView = ({
               onDayMouseUp={handleDayMouseUp}
               onDayTouchStart={handleDayTouchStart}
               onDayTouchEnd={handleDayTouchEnd}
-              dayNamesCount={visibleDayNames.length}
               trainingMap={trainingMap}
               onTrainingClick={onTrainingClick}
             />

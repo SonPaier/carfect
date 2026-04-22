@@ -128,7 +128,6 @@ const SelectedServicesList = ({
   return (
     <div className="space-y-2">
       {/* Service items list */}
-      {/* Service items list */}
       <div className="flex flex-col gap-1 rounded-lg overflow-hidden">
         {selectedServices.map((service) => {
           const displayedPrice = getDisplayedPrice(service.id, service);
