@@ -1051,6 +1051,9 @@ const AdminCalendar = ({
                 ? (id, stationId, date) => onReservationMove(id, stationId, date)
                 : undefined
             }
+            trainings={trainings}
+            trainingsEnabled={trainingsEnabled}
+            onTrainingClick={onTrainingClick}
           />
         </div>
       )}

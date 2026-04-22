@@ -21,6 +21,10 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock('./useReservationCacheUpdate', () => ({
+  useReservationCacheUpdate: () => ({ invalidateReservations: vi.fn() }),
+}));
+
 describe('useEmployeeAssignment', () => {
   beforeEach(() => {
     vi.clearAllMocks();

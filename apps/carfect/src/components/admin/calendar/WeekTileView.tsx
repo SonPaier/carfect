@@ -344,11 +344,11 @@ export const WeekTileView = ({
                     e.stopPropagation();
                     onAddClick(day);
                   }}
-                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
+                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 shadow-sm hover:bg-primary/90"
                   tabIndex={-1}
                 >
-                  <Plus className="w-3 h-3" />
-                  Dodaj
+                  <Plus className="w-3.5 h-3.5" />
+                  {t('common.add')}
                 </button>
               )}
             </div>
