@@ -800,6 +800,11 @@ const Dashboard = () => {
     if (newStatus === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
     if (newStatus === 'completed') updatePayload.work_ended_at = new Date().toISOString();
     if (newStatus === 'unfinished') updatePayload.work_ended_at = new Date().toISOString();
+    if (newStatus === 'follow_up') {
+      updatePayload.item_date = null;
+      updatePayload.start_time = null;
+      updatePayload.end_time = null;
+    }
     const { error } = await supabase
       .from('calendar_items')
       .update(updatePayload as any)
