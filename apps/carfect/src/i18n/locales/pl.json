@@ -5260,7 +5260,8 @@
     "excludeFromDiscount": "Wykluczaj ten produkt z rabatów",
     "hasVariants": "Produkt posiada warianty",
     "variants": "Warianty",
-    "addVariant": "Dodaj wariant"
+    "addVariant": "Dodaj wariant",
+    "variantPricePlaceholder": "Cena (opcj.)"
   },
   "salesCustomer": {
     "fetchData": "Pobierz dane",

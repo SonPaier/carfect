@@ -18,6 +18,7 @@ interface SalesProductVariant {
   id?: string;
   name: string;
   sortOrder: number;
+  priceNet?: number | null;
 }
 
 export type ProductType = 'roll' | 'other';
@@ -111,15 +112,20 @@ const AddSalesProductDrawer = ({
       if (product.hasVariants && product.id) {
         supabase
           .from('sales_product_variants')
-          .select('id, name, sort_order')
+          .select('id, name, sort_order, price_net')
           .eq('product_id', product.id)
           .order('sort_order')
-          .then(({ data }) => {
+          .then(({ data, error }) => {
+            if (error) {
+              console.error('Failed to load variants:', error);
+              return;
+            }
             setVariants(
               (data || []).map((v) => ({
                 id: v.id,
                 name: v.name,
                 sortOrder: v.sort_order,
+                priceNet: v.price_net ? Number(v.price_net) : null,
               })),
             );
           });
@@ -151,6 +157,12 @@ const AddSalesProductDrawer = ({
 
   const updateVariantName = (index: number, value: string) => {
     setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, name: value } : v)));
+  };
+
+  const updateVariantPrice = (index: number, value: number | undefined) => {
+    setVariants((prev) =>
+      prev.map((v, i) => (i === index ? { ...v, priceNet: value ?? null } : v)),
+    );
   };
 
   const handleSubmit = async () => {
@@ -202,19 +214,41 @@ const AddSalesProductDrawer = ({
         productId = insertedProduct.id;
       }
 
-      // Handle variants
-      await supabase.from('sales_product_variants').delete().eq('product_id', productId);
-
+      // Handle variants — upsert existing, insert new, remove deleted
       if (hasVariants && variants.length > 0) {
-        const variantPayload = variants.map((v, idx) => ({
-          product_id: productId,
-          name: v.name.trim(),
-          sort_order: idx,
-        }));
-        const { error: vError } = await supabase
-          .from('sales_product_variants')
-          .insert(variantPayload);
-        if (vError) throw vError;
+        const keepIds: string[] = [];
+
+        for (let idx = 0; idx < variants.length; idx++) {
+          const v = variants[idx];
+          if (v.id) {
+            // Update existing variant
+            await supabase
+              .from('sales_product_variants')
+              .update({ name: v.name.trim(), sort_order: idx, price_net: v.priceNet && v.priceNet > 0 ? v.priceNet : 0 })
+              .eq('id', v.id);
+            keepIds.push(v.id);
+          } else {
+            // Insert new variant
+            const { data: inserted, error: iError } = await supabase
+              .from('sales_product_variants')
+              .insert({ product_id: productId, name: v.name.trim(), sort_order: idx, price_net: v.priceNet && v.priceNet > 0 ? v.priceNet : 0 })
+              .select('id')
+              .single();
+            if (iError) throw iError;
+            keepIds.push(inserted.id);
+          }
+        }
+
+        // Remove only variants that user explicitly deleted from the list
+        if (keepIds.length > 0) {
+          await supabase
+            .from('sales_product_variants')
+            .delete()
+            .eq('product_id', productId)
+            .not('id', 'in', `(${keepIds.join(',')})`);
+        }
+      } else if (!hasVariants) {
+        await supabase.from('sales_product_variants').delete().eq('product_id', productId);
       }
 
       toast.success(isEdit ? t('sales.products.successUpdated') : t('sales.products.successAdded'));
@@ -438,6 +472,17 @@ const AddSalesProductDrawer = ({
                         markDirty();
                       }}
                       className="h-8 text-sm flex-1"
+                    />
+                    <NumericInput
+                      placeholder={t('salesProduct.variantPricePlaceholder')}
+                      min={0.01}
+                      step="0.01"
+                      value={variant.priceNet ?? undefined}
+                      onChange={(v) => {
+                        updateVariantPrice(index, v);
+                        markDirty();
+                      }}
+                      className="h-8 text-sm w-28"
                     />
                     <button
                       type="button"

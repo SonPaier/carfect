@@ -5256,7 +5256,8 @@
     "excludeFromDiscount": "Exclude this product from discounts",
     "hasVariants": "Product has variants",
     "variants": "Variants",
-    "addVariant": "Add variant"
+    "addVariant": "Add variant",
+    "variantPricePlaceholder": "Price (opt.)"
   },
   "salesCustomer": {
     "fetchData": "Fetch data",

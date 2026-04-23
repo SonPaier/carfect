@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmDialog } from '@shared/ui';
 import { toast } from 'sonner';
 import { fetchWorkerRollUsagesForMonth, fetchWorkerProfiles, createScrapUsage, deleteRollUsage, type WorkerRollUsageWithRoll } from '../services/rollService';
+import type { RollUsageAttachment } from '../types/rolls';
+import { ImagePasteZone } from '@/components/ui/image-paste-zone';
 import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface EmployeeRollsDrawerProps {
@@ -30,6 +32,7 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
   const [addLengthM, setAddLengthM] = useState('');
   const [addVehicle, setAddVehicle] = useState('');
   const [addNote, setAddNote] = useState('');
+  const [addAttachments, setAddAttachments] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -48,10 +51,15 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
     }
     setSaving(true);
     try {
-      await createScrapUsage({ instanceId, workerName: addWorker, widthM: w, lengthM: l, vehicleName: addVehicle || null, note: addNote || null });
+      const attachmentsPayload: RollUsageAttachment[] = addAttachments.map((url, i) => ({
+        url,
+        name: `formatka-${i + 1}`,
+        uploadedAt: new Date().toISOString(),
+      }));
+      await createScrapUsage({ instanceId, workerName: addWorker, widthM: w, lengthM: l, vehicleName: addVehicle || null, note: addNote || null, attachments: attachmentsPayload });
       toast.success(t('sales.rolls.employeeToastAdded'));
       setShowAddForm(false);
-      setAddWorker(''); setAddWidthM(''); setAddLengthM(''); setAddVehicle(''); setAddNote('');
+      setAddWorker(''); setAddWidthM(''); setAddLengthM(''); setAddVehicle(''); setAddNote(''); setAddAttachments([]);
       setRefreshKey((k) => k + 1);
     } catch {
       toast.error(t('sales.rolls.employeeToastAddError'));
@@ -202,6 +210,13 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
               <Label className="text-xs">{t('sales.rolls.employeeLabelNote')}</Label>
               <Input className="h-8 text-sm" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder={t('sales.rolls.notePlaceholder')} />
             </div>
+            <ImagePasteZone
+              images={addAttachments}
+              onImagesChange={setAddAttachments}
+              pathPrefix={instanceId}
+              maxImages={10}
+              disabled={saving}
+            />
             <div className="flex gap-2">
               <Button size="sm" onClick={handleAddScrap} disabled={saving}>
                 {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
@@ -259,6 +274,19 @@ const EmployeeRollsDrawer = ({ open, onClose, instanceId }: EmployeeRollsDrawerP
                                 </div>
                                 {usage.note && (
                                   <p className="text-sm text-foreground mt-0.5">{usage.note}</p>
+                                )}
+                                {usage.attachments.length > 0 && (
+                                  <div className="flex gap-1 mt-1">
+                                    {usage.attachments.map((att, i) => (
+                                      <a key={i} href={att.url} target="_blank" rel="noopener noreferrer">
+                                        <img
+                                          src={att.url}
+                                          alt={att.name}
+                                          className="w-8 h-8 object-cover rounded border border-border"
+                                        />
+                                      </a>
+                                    ))}
+                                  </div>
                                 )}
                               </td>
                               <td className="px-3 py-2 text-foreground">
