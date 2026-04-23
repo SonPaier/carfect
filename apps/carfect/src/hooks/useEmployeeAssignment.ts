@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useReservationCacheUpdate } from './useReservationCacheUpdate';
 
 interface UseEmployeeAssignmentOptions {
   reservationId: string | null;
@@ -13,9 +14,14 @@ export function useEmployeeAssignment({
   initialEmployeeIds,
 }: UseEmployeeAssignmentOptions) {
   const { t } = useTranslation();
+  const { invalidateReservations } = useReservationCacheUpdate();
   const [localAssignedEmployeeIds, setLocalAssignedEmployeeIds] = useState<string[]>([]);
   const [savingEmployees, setSavingEmployees] = useState(false);
   const [employeeDrawerOpen, setEmployeeDrawerOpen] = useState(false);
+
+  // Ref to avoid stale closures in rapid mutations
+  const employeeIdsRef = useRef(localAssignedEmployeeIds);
+  employeeIdsRef.current = localAssignedEmployeeIds;
 
   // Sync from reservation prop — compare by value to avoid infinite loop
   const initialIdsKey = initialEmployeeIds.join(',');
@@ -28,6 +34,13 @@ export function useEmployeeAssignment({
     async (employeeIds: string[]) => {
       if (!reservationId) return;
       setSavingEmployees(true);
+
+      // Snapshot for rollback
+      const prevIds = employeeIdsRef.current;
+
+      // Optimistic update (local state only — drawer updates instantly)
+      setLocalAssignedEmployeeIds(employeeIds);
+
       try {
         const { error } = await supabase
           .from('reservations')
@@ -35,24 +48,26 @@ export function useEmployeeAssignment({
           .eq('id', reservationId);
 
         if (error) throw error;
-        setLocalAssignedEmployeeIds(employeeIds);
         toast.success(t('common.saved'));
+        invalidateReservations();
       } catch (error: unknown) {
         console.error('Error saving employees:', error);
         toast.error(t('common.error'));
+        // Rollback
+        setLocalAssignedEmployeeIds(prevIds);
       } finally {
         setSavingEmployees(false);
       }
     },
-    [reservationId, t],
+    [reservationId, invalidateReservations, t],
   );
 
   const handleRemoveEmployee = useCallback(
     async (employeeId: string) => {
-      const updatedIds = localAssignedEmployeeIds.filter((id) => id !== employeeId);
+      const updatedIds = employeeIdsRef.current.filter((id) => id !== employeeId);
       await handleEmployeeSelect(updatedIds);
     },
-    [localAssignedEmployeeIds, handleEmployeeSelect],
+    [handleEmployeeSelect],
   );
 
   return {

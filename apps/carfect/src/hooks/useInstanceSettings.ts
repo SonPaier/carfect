@@ -5,6 +5,7 @@ export interface InstanceSettings {
   assign_employees_to_stations: boolean;
   assign_employees_to_reservations: boolean;
   show_reservation_status: boolean;
+  show_car_size: boolean;
 }
 
 export const useInstanceSettings = (instanceId: string | null) => {
@@ -15,7 +16,7 @@ export const useInstanceSettings = (instanceId: string | null) => {
       
       const { data, error } = await supabase
         .from('instances')
-        .select('assign_employees_to_stations, assign_employees_to_reservations, show_reservation_status')
+        .select('assign_employees_to_stations, assign_employees_to_reservations, show_reservation_status, show_car_size')
         .eq('id', instanceId)
         .single();
       
@@ -24,6 +25,7 @@ export const useInstanceSettings = (instanceId: string | null) => {
         assign_employees_to_stations: data?.assign_employees_to_stations ?? false,
         assign_employees_to_reservations: data?.assign_employees_to_reservations ?? false,
         show_reservation_status: data?.show_reservation_status ?? true,
+        show_car_size: data?.show_car_size ?? true,
       };
     },
     enabled: !!instanceId,

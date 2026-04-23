@@ -7,6 +7,7 @@ import { useIsMobile } from '@shared/ui';
 import type { Reservation, Station, ClosedDay, GroupBy } from './types';
 import { getStatusColor } from './types';
 import { type WeekEvent, toDateOnly, assignLanes, formatDateStr } from './swimLaneUtils';
+import { useDragReservation } from './useDragReservation';
 import { buildHolidayMap } from '@/lib/polishHolidays';
 
 interface WeekTileViewProps {
@@ -17,7 +18,7 @@ interface WeekTileViewProps {
   onDayClick: (date: Date) => void;
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
-  onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  onReservationMove?: (reservationId: string, newStationId: string, newDate: string, newTime?: string, newEndDate?: string) => void;
   onDateRangeSelect?: (from: Date, to: Date) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
@@ -46,9 +47,7 @@ export const WeekTileView = ({
   onReservationClick,
   onAddClick,
   onDateRangeSelect,
-  // onReservationMove is accepted for backward compat but drag-drop is not implemented in bar view
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onReservationMove: _onReservationMove,
+  onReservationMove,
   // groupBy and employees are accepted for backward compat
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   groupBy: _groupBy,
@@ -59,6 +58,7 @@ export const WeekTileView = ({
   activeDateRange,
 }: WeekTileViewProps) => {
   const { t } = useTranslation();
+  const drag = useDragReservation(reservations, onReservationMove);
   const DAY_NAMES = [
     t('calendar.dayNames.mon'),
     t('calendar.dayNames.tue'),
@@ -264,7 +264,11 @@ export const WeekTileView = ({
                 'rounded-lg cursor-pointer group relative bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
                 isClosed && 'bg-red-50',
                 !isClosed && isInRange(day, displayRange) && 'bg-primary/5 !border-primary/40',
+                drag.dragOverDate === dateStr && 'ring-2 ring-primary/50 bg-primary/5',
               )}
+              onDragOver={(e) => drag.onDragOver(e, dateStr)}
+              onDragLeave={drag.onDragLeave}
+              onDrop={(e) => drag.onDrop(e, dateStr)}
               onMouseDown={(e) => {
                 e.preventDefault();
                 setDragStart(day);
@@ -344,11 +348,11 @@ export const WeekTileView = ({
                     e.stopPropagation();
                     onAddClick(day);
                   }}
-                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
+                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 shadow-sm hover:bg-primary/90"
                   tabIndex={-1}
                 >
-                  <Plus className="w-3 h-3" />
-                  Dodaj
+                  <Plus className="w-3.5 h-3.5" />
+                  {t('common.add')}
                 </button>
               )}
             </div>
@@ -408,6 +412,9 @@ export const WeekTileView = ({
                   height: barHeight,
                   borderLeftColor: stationColor || undefined,
                 }}
+                draggable
+                onDragStart={(e) => drag.onDragStart(e, reservation)}
+                onDragEnd={drag.onDragEnd}
                 onClick={(e) => {
                   e.stopPropagation();
                   onReservationClick(reservation);

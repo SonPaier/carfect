@@ -18,10 +18,13 @@ import { getDateLocale } from '@/i18n/dateFnsLocale';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@shared/ui';
-import type { Reservation, Station, ClosedDay, GroupBy } from './types';
+import type { Reservation, Station, ClosedDay, GroupBy, Training } from './types';
 import { getStatusColor } from './types';
 import { type WeekEvent, toDateOnly, assignLanes, formatDateStr } from './swimLaneUtils';
+import { useDragReservation } from './useDragReservation';
 import { buildHolidayMap } from '@/lib/polishHolidays';
+
+const TRAINING_ID_PREFIX = 'training::';
 
 interface MonthCalendarViewProps {
   reservations: Reservation[];
@@ -32,7 +35,7 @@ interface MonthCalendarViewProps {
   onReservationClick: (reservation: Reservation) => void;
   onAddClick?: (date: Date) => void;
   onDateRangeSelect?: (from: Date, to: Date) => void;
-  onReservationMove?: (reservationId: string, newStationId: string, newDate: string) => void;
+  onReservationMove?: (reservationId: string, newStationId: string, newDate: string, newTime?: string, newEndDate?: string) => void;
   groupBy?: GroupBy;
   employees?: { id: string; name: string }[];
   showNotes?: boolean;
@@ -40,6 +43,9 @@ interface MonthCalendarViewProps {
   activeDateRange?: { from: string; to: string } | null;
   monthRange?: number;
   onLoadMore?: (direction: 'past' | 'future') => void;
+  trainings?: Training[];
+  trainingsEnabled?: boolean;
+  onTrainingClick?: (training: Training) => void;
 }
 
 function isInRange(day: Date, range: { from: Date; to: Date } | null): boolean {
@@ -75,6 +81,9 @@ interface WeekRowProps {
   onDayMouseUp: (day: Date) => void;
   onDayTouchStart?: (day: Date) => void;
   onDayTouchEnd?: () => void;
+  trainingMap?: Map<string, Training>;
+  onTrainingClick?: (training: Training) => void;
+  drag?: ReturnType<typeof useDragReservation>;
 }
 
 const WeekRow = ({
@@ -99,7 +108,11 @@ const WeekRow = ({
   onDayMouseUp,
   onDayTouchStart,
   onDayTouchEnd,
+  trainingMap,
+  onTrainingClick,
+  drag,
 }: WeekRowProps) => {
+  const { t } = useTranslation();
   const barHeight = showNotes ? BAR_HEIGHT_NOTES : BAR_HEIGHT_NORMAL;
   const minRowHeight = DATE_HEADER_HEIGHT + maxLanes * (barHeight + BAR_GAP) + 8;
   const rowHeight = Math.max(minRowHeight, 80);
@@ -137,6 +150,7 @@ const WeekRow = ({
               'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
               isClosed && 'bg-red-50',
               !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
+              drag?.dragOverDate === dateStr && 'ring-2 ring-primary/50 bg-primary/5',
             )}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -144,6 +158,9 @@ const WeekRow = ({
             }}
             onMouseEnter={() => onDayMouseEnter(day)}
             onMouseUp={() => onDayMouseUp(day)}
+            onDragOver={drag ? (e) => drag.onDragOver(e, dateStr) : undefined}
+            onDragLeave={drag ? drag.onDragLeave : undefined}
+            onDrop={drag ? (e) => drag.onDrop(e, dateStr) : undefined}
             onTouchStart={(e) => {
               e.preventDefault();
               onDayTouchStart?.(day);
@@ -176,11 +193,11 @@ const WeekRow = ({
                   e.stopPropagation();
                   onAddClick(day);
                 }}
-                className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-semibold flex items-center gap-0.5 shadow-sm"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 shadow-sm hover:bg-primary/90"
                 tabIndex={-1}
               >
-                <Plus className="w-3 h-3" />
-                Dodaj
+                <Plus className="w-3.5 h-3.5" />
+                {t('common.add')}
               </button>
             )}
           </div>
@@ -225,16 +242,23 @@ const WeekRow = ({
           const topPx = evt.lane * (barHeight + BAR_GAP);
 
           const reservation = evt.reservation;
+          const isTraining = trainingMap?.has(reservation.id);
+          const training = isTraining ? trainingMap.get(reservation.id) : undefined;
           const station = stations.find((s) => s.id === reservation.station_id);
           const stationColor = station?.color;
-          const serviceName =
-            reservation.service?.shortcut ||
-            reservation.service?.name ||
-            reservation.services_data?.[0]?.shortcut ||
-            reservation.services_data?.[0]?.name ||
-            '';
+          const serviceName = isTraining
+            ? ''
+            : reservation.service?.shortcut ||
+              reservation.service?.name ||
+              reservation.services_data?.[0]?.shortcut ||
+              reservation.services_data?.[0]?.name ||
+              '';
 
-          const colorClasses = getStatusColor(reservation.status, station?.type);
+          const colorClasses = isTraining
+            ? reservation.status === 'training_sold_out'
+              ? 'bg-fuchsia-600 border-fuchsia-700 text-white'
+              : 'bg-pink-200 border-pink-300 text-pink-900'
+            : getStatusColor(reservation.status, station?.type);
 
           return (
             <button
@@ -258,11 +282,18 @@ const WeekRow = ({
                 width: `calc(${widthPct}% - 4px)`,
                 top: topPx,
                 height: barHeight,
-                borderLeftColor: stationColor || undefined,
+                borderLeftColor: isTraining ? undefined : stationColor || undefined,
               }}
+              draggable={!isTraining && !!drag}
+              onDragStart={!isTraining && drag ? (e) => drag.onDragStart(e, reservation) : undefined}
+              onDragEnd={drag?.onDragEnd}
               onClick={(e) => {
                 e.stopPropagation();
-                onReservationClick(reservation);
+                if (isTraining && training && onTrainingClick) {
+                  onTrainingClick(training);
+                } else if (!isTraining) {
+                  onReservationClick(reservation);
+                }
               }}
             >
               {isMobile ? (
@@ -331,7 +362,9 @@ interface MonthSectionProps {
   onDayMouseUp: (day: Date) => void;
   onDayTouchStart?: (day: Date) => void;
   onDayTouchEnd?: () => void;
-  dayNamesCount: number;
+  trainingMap?: Map<string, Training>;
+  onTrainingClick?: (training: Training) => void;
+  drag?: ReturnType<typeof useDragReservation>;
 }
 
 const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
@@ -355,6 +388,9 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
       onDayMouseUp,
       onDayTouchStart,
       onDayTouchEnd,
+      trainingMap,
+      onTrainingClick,
+      drag,
     },
     ref,
   ) => {
@@ -461,6 +497,9 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
               onDayMouseUp={onDayMouseUp}
               onDayTouchStart={onDayTouchStart}
               onDayTouchEnd={onDayTouchEnd}
+              trainingMap={trainingMap}
+              onTrainingClick={onTrainingClick}
+              drag={drag}
             />
           ))}
       </div>
@@ -479,9 +518,7 @@ export const MonthCalendarView = ({
   onReservationClick,
   onAddClick,
   onDateRangeSelect,
-  // onReservationMove is accepted for backward compat but drag-drop is not implemented in bar view
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onReservationMove: _onReservationMove,
+  onReservationMove,
   // groupBy and employees are accepted for backward compat
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   groupBy: _groupBy,
@@ -492,8 +529,12 @@ export const MonthCalendarView = ({
   activeDateRange,
   monthRange = 1,
   onLoadMore,
+  trainings = [],
+  trainingsEnabled = false,
+  onTrainingClick,
 }: MonthCalendarViewProps) => {
   const { t } = useTranslation();
+  const drag = useDragReservation(reservations, onReservationMove);
   const DAY_NAMES = [
     t('calendar.dayNames.mon'),
     t('calendar.dayNames.tue'),
@@ -644,15 +685,46 @@ export const MonthCalendarView = ({
 
   // Filter out cancelled/no_show and reservations from hidden stations
   const visibleStationIds = useMemo(() => new Set(stations.map((s) => s.id)), [stations]);
+
+  // Convert trainings to pseudo-Reservation objects so they render in the same swim lanes
+  const trainingMap = useMemo(() => {
+    const map = new Map<string, Training>();
+    if (trainingsEnabled) {
+      trainings.forEach((tr) => map.set(TRAINING_ID_PREFIX + tr.id, tr));
+    }
+    return map;
+  }, [trainings, trainingsEnabled]);
+
+  const trainingsAsReservations = useMemo((): Reservation[] => {
+    if (!trainingsEnabled) return [];
+    return trainings
+      .filter((tr) => tr.status !== 'cancelled')
+      .map((tr) => ({
+        id: TRAINING_ID_PREFIX + tr.id,
+        customer_name: tr.title,
+        vehicle_plate: '',
+        reservation_date: tr.start_date,
+        end_date: tr.end_date,
+        start_time: tr.start_time,
+        end_time: tr.end_time,
+        station_id: tr.station_id,
+        status: tr.status === 'sold_out' ? 'training_sold_out' : 'training_open',
+      }));
+  }, [trainings, trainingsEnabled]);
+
   const visibleReservations = useMemo(
-    () =>
-      reservations.filter(
+    () => [
+      ...reservations.filter(
         (r) =>
           r.status !== 'cancelled' &&
           r.status !== 'no_show' &&
           (!r.station_id || visibleStationIds.has(r.station_id)),
       ),
-    [reservations, visibleStationIds],
+      ...trainingsAsReservations.filter(
+        (r) => !r.station_id || visibleStationIds.has(r.station_id),
+      ),
+    ],
+    [reservations, visibleStationIds, trainingsAsReservations],
   );
 
   // Build list of months to render: current ± range, plus 2 more into the future
@@ -767,7 +839,9 @@ export const MonthCalendarView = ({
               onDayMouseUp={handleDayMouseUp}
               onDayTouchStart={handleDayTouchStart}
               onDayTouchEnd={handleDayTouchEnd}
-              dayNamesCount={visibleDayNames.length}
+              trainingMap={trainingMap}
+              onTrainingClick={onTrainingClick}
+              drag={drag}
             />
           );
         })}

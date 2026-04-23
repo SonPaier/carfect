@@ -120,6 +120,7 @@ interface AdminCalendarProps {
     newStationId: string,
     newDate: string,
     newTime?: string,
+    newEndDate?: string,
   ) => void;
   onConfirmReservation?: (reservationId: string) => void;
   onYardVehicleDrop?: (vehicle: YardVehicle, stationId: string, date: string, time: string) => void;
@@ -995,7 +996,7 @@ const AdminCalendar = ({
             }
             onReservationMove={
               onReservationMove
-                ? (id, stationId, date) => onReservationMove(id, stationId, date)
+                ? (id, stationId, date, time, endDate) => onReservationMove(id, stationId, date, time, endDate)
                 : undefined
             }
           />
@@ -1048,9 +1049,12 @@ const AdminCalendar = ({
             }
             onReservationMove={
               onReservationMove
-                ? (id, stationId, date) => onReservationMove(id, stationId, date)
+                ? (id, stationId, date, time, endDate) => onReservationMove(id, stationId, date, time, endDate)
                 : undefined
             }
+            trainings={trainings}
+            trainingsEnabled={trainingsEnabled}
+            onTrainingClick={onTrainingClick}
           />
         </div>
       )}

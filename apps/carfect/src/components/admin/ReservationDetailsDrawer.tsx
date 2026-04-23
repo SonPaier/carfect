@@ -203,10 +203,13 @@ const ReservationDetailsDrawer = ({
     setServiceDrawerOpen,
     handleRemoveService,
     handleConfirmServices,
+    localServicesData,
+    localServiceItems,
   } = useServiceManagement({
     reservationId: reservation?.id || null,
     currentServiceIds: reservation?.service_ids || [],
     currentServiceItems: reservation?.service_items || null,
+    currentServicesData: reservation?.services_data || [],
   });
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<{
@@ -599,8 +602,8 @@ const ReservationDetailsDrawer = ({
                   <div className="text-xs text-foreground">{t('reservations.services')}</div>
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     {/* Existing services with X button */}
-                    {reservation.services_data && reservation.services_data.length > 0 ? (
-                      reservation.services_data.map((svc, idx) => (
+                    {localServicesData && localServicesData.length > 0 ? (
+                      localServicesData.map((svc, idx) => (
                         <span
                           key={svc.id || idx}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-foreground/80 text-background rounded-full text-sm font-medium"
@@ -696,8 +699,8 @@ const ReservationDetailsDrawer = ({
             {(() => {
               // Get custom price from service_items if available
               const getCustomPrice = (serviceId: string | undefined): number | null => {
-                if (!serviceId || !reservation.service_items) return null;
-                const item = reservation.service_items.find((si) => si.service_id === serviceId);
+                if (!serviceId || !localServiceItems) return null;
+                const item = localServiceItems.find((si) => si.service_id === serviceId);
                 return item?.custom_price ?? null;
               };
 
@@ -709,11 +712,8 @@ const ReservationDetailsDrawer = ({
                 price_large?: number | null;
                 price_from?: number | null;
               }) => {
-                // First check if there's a custom price
                 const customPrice = getCustomPrice(svc.id);
                 if (customPrice !== null) return customPrice;
-
-                // Otherwise use base price by car size
                 if (carSize === 'small' && svc.price_small) return svc.price_small;
                 if (carSize === 'medium' && svc.price_medium) return svc.price_medium;
                 if (carSize === 'large' && svc.price_large) return svc.price_large;
@@ -721,7 +721,7 @@ const ReservationDetailsDrawer = ({
               };
 
               const servicesWithPrices =
-                reservation.services_data?.map((svc) => ({
+                localServicesData?.map((svc) => ({
                   name: svc.name,
                   price: getServicePrice(svc),
                 })) || [];

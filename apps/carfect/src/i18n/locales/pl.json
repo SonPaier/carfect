@@ -4245,7 +4245,9 @@
     "pushChromeIosNote": "Chrome na iOS nie wspiera push (ograniczenie Apple)",
     "vinField": "Numer VIN pojazdu",
     "vinFieldDesc": "Dodaj pole VIN przy pojazdach klienta i w protokole",
-    "protocolServices": "Usługi i kwoty na protokole"
+    "protocolServices": "Usługi i kwoty na protokole",
+    "showCarSize": "Rozmiar pojazdu (S/M/L)",
+    "showCarSizeDescription": "Różne ceny i czasy usług w zależności od rozmiaru auta (mały, średni, duży)"
   },
   "visitHistory": {
     "loading": "Ładowanie...",

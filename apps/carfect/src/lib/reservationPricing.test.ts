@@ -49,14 +49,14 @@ describe('getServiceDuration', () => {
     expect(getServiceDuration(service, 'small')).toBe(60);
   });
 
-  it('falls back to 60 when all durations are null', () => {
+  it('returns 0 when all durations are null', () => {
     const service = {
       duration_minutes: null,
       duration_small: null,
       duration_medium: null,
       duration_large: null,
     };
-    expect(getServiceDuration(service, 'medium')).toBe(60);
+    expect(getServiceDuration(service, 'medium')).toBe(0);
   });
 });
 

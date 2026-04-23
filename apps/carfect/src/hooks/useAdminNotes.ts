@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useReservationCacheUpdate } from './useReservationCacheUpdate';
 
 interface UseAdminNotesOptions {
   reservationId: string | null;
@@ -15,6 +16,7 @@ export function useAdminNotes({
   initialCustomerNotes,
 }: UseAdminNotesOptions) {
   const { t } = useTranslation();
+  const { invalidateReservations } = useReservationCacheUpdate();
   const [adminNotes, setAdminNotes] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
   const [editingNotes, setEditingNotes] = useState(false);
@@ -41,21 +43,23 @@ export function useAdminNotes({
     setSavingNotes(true);
 
     try {
+      const notesValue = adminNotesRef.current || null;
       const { error } = await supabase
         .from('reservations')
-        .update({ admin_notes: adminNotesRef.current || null })
+        .update({ admin_notes: notesValue })
         .eq('id', reservationId);
 
       if (error) throw error;
       setEditingNotes(false);
       toast.success(t('common.saved'));
+      invalidateReservations();
     } catch (error: unknown) {
       console.error('Error saving notes:', error);
       toast.error(t('common.error'));
     } finally {
       setSavingNotes(false);
     }
-  }, [reservationId, t]);
+  }, [reservationId, invalidateReservations, t]);
 
   const handleNotesBlur = useCallback(() => {
     setTimeout(() => {

@@ -12,12 +12,13 @@ import {
   ChevronDown,
   GraduationCap,
 } from 'lucide-react';
-import { format, addDays, isBefore, startOfDay } from 'date-fns';
+import { format, addDays, isBefore, startOfDay, isSameDay } from 'date-fns';
 import { Sheet, SheetContent, SheetTitle } from '@shared/ui';
 import { Button } from '@shared/ui';
+import { Input } from '@shared/ui';
 import { Label } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
-import { cn, generateTimeSlots, getWorkingHoursRange } from '@/lib/utils';
+import { cn, generateTimeSlots, getWorkingHoursRange, filterEndTimeOptions } from '@/lib/utils';
 import { Separator } from '@shared/ui';
 import ServiceSelectionDrawer, { ServiceWithCategory } from './ServiceSelectionDrawer';
 import {
@@ -184,6 +185,7 @@ const AddReservationDialogV2 = ({
 
   // Services dropdown
   const [serviceDrawerOpen, setServiceDrawerOpen] = useState(false);
+  const [priceFocused, setPriceFocused] = useState(false);
 
   // Protection against Realtime overwriting form during active editing
   const isUserEditingRef = useRef(false);
@@ -699,7 +701,9 @@ const AddReservationDialogV2 = ({
   // Dynamic time range based on working hours for selected day
   const { min: timeMin, max: timeMax } = getWorkingHoursRange(workingHours, dateRange?.from);
   const startTimeOptions = generateTimeSlots(timeMin, timeMax, 15);
-  const endTimeOptions = generateTimeSlots(timeMin, timeMax, 15);
+  const allEndTimeOptions = generateTimeSlots(timeMin, timeMax, 15);
+  const isSingleDayReservation = !dateRange?.from || !dateRange?.to || isSameDay(dateRange.from, dateRange.to);
+  const endTimeOptions = filterEndTimeOptions(allEndTimeOptions, manualStartTime, isSingleDayReservation);
 
   // Alias for yard deadline (keep 15 min intervals)
   const yardTimeOptions = startTimeOptions;
@@ -923,6 +927,7 @@ const AddReservationDialogV2 = ({
             }}
             suppressAutoOpen={isEditMode}
             carModelRef={carModelRef}
+            showCarSize={instanceSettings?.show_car_size ?? true}
           />
 
           {/* Services Section */}
@@ -1024,6 +1029,34 @@ const AddReservationDialogV2 = ({
               onAddMore={() => setServiceDrawerOpen(true)}
               pricingMode={pricingMode}
             />
+
+            {/* Price input — inline under services */}
+            {isReservationMode && (
+              <div className="flex items-center gap-2 mt-3">
+                <Input
+                  type="number"
+                  value={priceFocused ? finalPrice : (finalPrice !== '' ? finalPrice : (discountedPrice || ''))}
+                  onFocus={(e) => { setPriceFocused(true); e.target.select(); }}
+                  onBlur={() => setPriceFocused(false)}
+                  onChange={(e) => {
+                    markUserEditing();
+                    setUserModifiedFinalPrice(true);
+                    setFinalPrice(e.target.value);
+                  }}
+                  className="w-28"
+                  placeholder={discountedPrice > 0 ? String(discountedPrice) : '0'}
+                />
+                <span className="text-muted-foreground">
+                  zł {pricingMode === 'netto' ? 'netto' : 'brutto'}
+                </span>
+                {customerDiscountPercent && customerDiscountPercent > 0 && totalPrice > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="line-through text-muted-foreground">{totalPrice} zł</span>
+                    <span className="text-green-600 font-medium">-{customerDiscountPercent}%</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Service Selection Drawer */}
@@ -1132,8 +1165,7 @@ const AddReservationDialogV2 = ({
           {/* Assigned Employees Section - visible when feature enabled */}
           {showEmployeeAssignment && (
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
+              <Label>
                 {t('addReservation.assignedEmployees')}
               </Label>
               <AssignedEmployeesChips

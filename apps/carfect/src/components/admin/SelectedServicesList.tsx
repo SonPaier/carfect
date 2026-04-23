@@ -75,7 +75,7 @@ const SelectedServicesList = ({
     if (carSize === 'small' && service.duration_small) return service.duration_small;
     if (carSize === 'medium' && service.duration_medium) return service.duration_medium;
     if (carSize === 'large' && service.duration_large) return service.duration_large;
-    return service.duration_minutes || 60;
+    return service.duration_minutes || 0;
   };
 
   // Format duration
@@ -104,10 +104,7 @@ const SelectedServicesList = ({
     .map((id) => services.find((s) => s.id === id))
     .filter((s): s is ServiceWithCategory => s !== undefined);
 
-  // Calculate totals
-  const totalDuration = selectedServices.reduce((total, service) => {
-    return total + getDuration(service);
-  }, 0);
+  // Calculate totals — hide duration if any service has no duration configured
 
   const totalPrice = selectedServices.reduce((total, service) => {
     return total + getDisplayedPrice(service.id, service);
@@ -131,7 +128,6 @@ const SelectedServicesList = ({
   return (
     <div className="space-y-2">
       {/* Service items list */}
-      {/* Service items list */}
       <div className="flex flex-col gap-1 rounded-lg overflow-hidden">
         {selectedServices.map((service) => {
           const displayedPrice = getDisplayedPrice(service.id, service);
@@ -152,7 +148,9 @@ const SelectedServicesList = ({
                     )}
                     {service.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>
+                  {duration > 0 && (
+                    <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>
+                  )}
                 </div>
 
                 {/* Price - click to edit */}
@@ -237,24 +235,12 @@ const SelectedServicesList = ({
         })}
       </div>
 
-      {/* Footer with totals and add button */}
-      <div className="flex items-center justify-between gap-2">
+      {/* Footer with add button */}
+      <div className="flex items-center">
         <Button type="button" variant="secondary" size="sm" onClick={onAddMore}>
           <Plus className="w-4 h-4 mr-1" />
           {t('common.add')}
         </Button>
-
-        <div className="text-right">
-          <p className="text-sm text-muted-foreground">
-            {t('addReservation.totalDuration')}:{' '}
-            <span className="font-bold text-base text-foreground">
-              {formatDuration(totalDuration)}
-            </span>
-          </p>
-          <p className="text-lg font-bold">
-            {totalPrice} zł {pricingMode === 'netto' ? 'netto' : 'brutto'}
-          </p>
-        </div>
       </div>
     </div>
   );

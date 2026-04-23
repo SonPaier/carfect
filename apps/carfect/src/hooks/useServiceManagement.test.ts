@@ -18,6 +18,10 @@ const { mockToast } = vi.hoisted(() => ({
 }));
 vi.mock('sonner', () => ({ toast: mockToast }));
 
+vi.mock('./useReservationCacheUpdate', () => ({
+  useReservationCacheUpdate: () => ({ invalidateReservations: vi.fn() }),
+}));
+
 const defaultProps = {
   reservationId: 'res-1',
   currentServiceIds: ['svc-1'],

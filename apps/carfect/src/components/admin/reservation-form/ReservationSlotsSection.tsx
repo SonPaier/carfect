@@ -185,8 +185,7 @@ const SlotCard = ({
       <div ref={dateFromRef}>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="flex items-center gap-1.5">
-              <CalendarIcon className="w-3.5 h-3.5" />
+            <Label>
               {t('reservationSlots.dayFrom')} <span className="text-destructive">*</span>
             </Label>
             <Button
@@ -202,15 +201,13 @@ const SlotCard = ({
                 error && !slot.dateRange?.from && 'border-destructive',
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.from
                 ? format(slot.dateRange.from, 'd MMM yyyy', { locale: getDateLocale() })
                 : t('common.selectDate')}
             </Button>
           </div>
           <div className="space-y-2" ref={dateToRef}>
-            <Label className="flex items-center gap-1.5">
-              <CalendarIcon className="w-3.5 h-3.5" />
+            <Label>
               {t('reservationSlots.dayTo')} <span className="text-destructive">*</span>
             </Label>
             <Button
@@ -226,7 +223,6 @@ const SlotCard = ({
                 error && !slot.dateRange?.to && 'border-destructive',
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
               {slot.dateRange?.to
                 ? format(slot.dateRange.to, 'd MMM yyyy', { locale: getDateLocale() })
                 : t('common.selectDate')}
