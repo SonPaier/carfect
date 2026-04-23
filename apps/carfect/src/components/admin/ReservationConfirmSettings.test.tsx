@@ -883,9 +883,9 @@ describe('ReservationConfirmSettings', () => {
 
       await waitFor(() => screen.getByText('Powiadomienia push na tym urządzeniu'));
 
-      // Push switch is the 5th switch (index 4): auto-confirm(0), stations(1), reservations(2), status(3), push(4)
+      // Push switch is the 6th switch (index 5): auto-confirm(0), stations(1), reservations(2), status(3), car-size(4), push(5)
       const allSwitches = screen.getAllByRole('switch');
-      const pushSwitch = allSwitches[4];
+      const pushSwitch = allSwitches[5];
 
       await user.click(pushSwitch);
 
@@ -905,7 +905,7 @@ describe('ReservationConfirmSettings', () => {
       await waitFor(() => screen.getByText('Powiadomienia push na tym urządzeniu'));
 
       const allSwitches = screen.getAllByRole('switch');
-      const pushSwitch = allSwitches[4];
+      const pushSwitch = allSwitches[5];
       await user.click(pushSwitch);
 
       await waitFor(() => {
@@ -924,7 +924,7 @@ describe('ReservationConfirmSettings', () => {
       await waitFor(() => screen.getByText('Powiadomienia push na tym urządzeniu'));
 
       const allSwitches = screen.getAllByRole('switch');
-      const pushSwitch = allSwitches[4];
+      const pushSwitch = allSwitches[5];
       await user.click(pushSwitch);
 
       await waitFor(() => {
