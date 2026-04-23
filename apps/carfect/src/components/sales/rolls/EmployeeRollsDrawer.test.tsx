@@ -32,6 +32,12 @@ vi.mock('../services/rollService', () => ({
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+vi.mock('@/components/ui/image-paste-zone', () => ({
+  ImagePasteZone: ({ images }: { images: string[] }) => (
+    <div data-testid="image-paste-zone">{images.length} images</div>
+  ),
+}));
+
 import { fetchWorkerRollUsagesForMonth } from '../services/rollService';
 
 const mockFetch = vi.mocked(fetchWorkerRollUsagesForMonth);
@@ -49,6 +55,7 @@ const makeUsage = (overrides: Partial<SalesRollUsage> = {}): SalesRollUsage => (
   workerName: 'Jan Kowalski',
   vehicleName: 'BMW E46',
   note: null,
+  attachments: [],
   createdAt: '2026-04-10T10:00:00Z',
   ...overrides,
 });
@@ -141,6 +148,37 @@ describe('EmployeeRollsDrawer', () => {
 
     const expectedMonth = format(addMonths(new Date(), 1), 'LLLL yyyy', { locale: pl });
     expect(screen.getByText(new RegExp(expectedMonth, 'i'))).toBeInTheDocument();
+  });
+
+  it('shows attachment thumbnails when usage has photos', async () => {
+    mockFetch.mockResolvedValue([
+      makeUsage({
+        id: 'u1',
+        workerName: 'Jan Kowalski',
+        attachments: [
+          { url: 'https://example.com/img1.jpg', name: 'formatka-1', uploadedAt: '2026-04-10T10:00:00Z' },
+        ],
+      }),
+    ]);
+    render(<EmployeeRollsDrawer {...defaultProps} />);
+
+    await waitFor(() => {
+      const img = screen.getByAltText('formatka-1') as HTMLImageElement;
+      expect(img).toBeInTheDocument();
+      expect(img.src).toBe('https://example.com/img1.jpg');
+    });
+  });
+
+  it('shows no thumbnails when usage has no attachments', async () => {
+    mockFetch.mockResolvedValue([
+      makeUsage({ id: 'u1', workerName: 'Jan Kowalski', attachments: [] }),
+    ]);
+    render(<EmployeeRollsDrawer {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Jan Kowalski')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('shows vehicle name in table', async () => {

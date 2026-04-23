@@ -589,6 +589,7 @@ export async function createScrapUsage(params: {
   lengthM: number;
   vehicleName?: string | null;
   note?: string | null;
+  attachments?: RollUsageAttachment[];
 }): Promise<void> {
   const usedM2 = params.widthM * params.lengthM;
   const { error } = await supabase.from('sales_roll_usages').insert({
@@ -600,6 +601,7 @@ export async function createScrapUsage(params: {
     worker_name: params.workerName,
     vehicle_name: params.vehicleName || null,
     note: params.note || null,
+    attachments: params.attachments ?? [],
   });
   if (error) throw error;
 }

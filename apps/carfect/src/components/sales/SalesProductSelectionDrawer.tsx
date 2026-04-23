@@ -7,6 +7,7 @@ import { Input } from '@shared/ui';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@shared/ui';
 import { useRollQuickSearch, type RollMatch } from './hooks/useRollQuickSearch';
+import { resolveVariantPrice } from './utils/variantPricing';
 
 export interface SalesProductOption {
   id: string;
@@ -28,6 +29,7 @@ export interface SalesProductVariantOption {
   fullName: string;
   shortName: string;
   priceUnit: string;
+  priceNet?: number | null;
 }
 
 export interface SelectedProductItem {
@@ -140,7 +142,7 @@ const SalesProductSelectionDrawer = ({
     if (variantProductIds.length > 0) {
       const { data: variants } = await supabase
         .from('sales_product_variants')
-        .select('id, product_id, name, sort_order')
+        .select('id, product_id, name, sort_order, price_net')
         .in('product_id', variantProductIds)
         .order('sort_order');
 
@@ -156,6 +158,7 @@ const SalesProductSelectionDrawer = ({
           fullName: parent.fullName,
           shortName: parent.shortName,
           priceUnit: parent.priceUnit,
+          priceNet: v.price_net ? Number(v.price_net) : null,
         });
         variantsByProduct.set(v.product_id, list);
       });
@@ -234,19 +237,11 @@ const SalesProductSelectionDrawer = ({
   }, [selectedKeys, products]);
 
   // Find the correct "Wycinanie formatek" product based on customer name.
-  // If customer name contains "struzik", use the Struzik-specific formatki product.
+  // Exact name match to avoid picking "Wycinanie formatek rower" etc.
   const formatkiProduct = useMemo(() => {
-    const all = products.filter((p) => p.fullName.toLowerCase().includes('wycinanie formatek'));
-    if (all.length === 0) return undefined;
-    if (all.length === 1) return all[0];
     const isStruzik = customerName?.toLowerCase().includes('struzik');
-    return (
-      all.find((p) =>
-        isStruzik
-          ? p.fullName.toLowerCase().includes('struzik')
-          : !p.fullName.toLowerCase().includes('struzik'),
-      ) || all[0]
-    );
+    const targetName = isStruzik ? 'wycinanie formatek struzik' : 'wycinanie formatek';
+    return products.find((p) => p.fullName.trim().toLowerCase() === targetName);
   }, [products, customerName]);
 
   const totalNet = useMemo(() => {
@@ -257,7 +252,7 @@ const SalesProductSelectionDrawer = ({
         for (const product of products) {
           const variant = product.variants?.find((v) => v.id === variantId);
           if (variant) {
-            total += product.priceNet;
+            total += resolveVariantPrice(variant.priceNet, product.priceNet);
             break;
           }
         }
@@ -285,7 +280,7 @@ const SalesProductSelectionDrawer = ({
               fullName: product.fullName,
               shortName: product.shortName,
               variantName: variant.variantName,
-              priceNet: product.priceNet,
+              priceNet: resolveVariantPrice(variant.priceNet, product.priceNet),
               priceUnit: product.priceUnit,
               productType: product.productType,
               excludeFromDiscount: product.excludeFromDiscount,
@@ -428,7 +423,7 @@ const SalesProductSelectionDrawer = ({
                   </div>
                   <div className="text-right mr-2 shrink-0">
                     <p className="font-semibold text-foreground text-sm">
-                      {formatCurrency(rollMatch.product.priceNet)}
+                      {formatCurrency(resolveVariantPrice(rollMatch.variant.priceNet, rollMatch.product.priceNet))}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {t('sales.productSelection.nettoPerUnit')}{formatPriceUnit(rollMatch.product.priceUnit)}
@@ -503,6 +498,13 @@ const SalesProductSelectionDrawer = ({
                                 {variant.variantName}
                               </p>
                             </div>
+                            {variant.priceNet != null && variant.priceNet > 0 && (
+                              <div className="text-right mr-4 shrink-0">
+                                <p className="font-semibold text-foreground text-sm">
+                                  {formatCurrency(variant.priceNet)}
+                                </p>
+                              </div>
+                            )}
                             <div
                               className={cn(
                                 'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
