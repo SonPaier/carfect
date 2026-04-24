@@ -204,7 +204,7 @@ const Dashboard = () => {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditingCalendarItem | null>(null);
   const [addBreakOpen, setAddBreakOpen] = useState(false);
-  const [newItemData, setNewItemData] = useState({ columnId: '', date: '', time: '' });
+  const [newItemData, setNewItemData] = useState({ columnId: '', date: '', time: '', endDate: '' });
   const [initialProjectId, setInitialProjectId] = useState<string | undefined>(undefined);
   const [newBreakData, setNewBreakData] = useState({ columnId: '', date: '', time: '' });
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
@@ -600,7 +600,15 @@ const Dashboard = () => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
-    setNewItemData({ columnId, date, time });
+    setNewItemData({ columnId, date, time, endDate: '' });
+    setAddItemOpen(true);
+  };
+
+  const handleMonthDateRangeSelect = (fromDate: string, toDate: string) => {
+    setEditingItem(null);
+    setMapOrderPrefill({});
+    setInitialProjectId(undefined);
+    setNewItemData({ columnId: '', date: fromDate, time: '', endDate: toDate });
     setAddItemOpen(true);
   };
 
@@ -612,7 +620,7 @@ const Dashboard = () => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(projectId);
-    setNewItemData({ columnId: '', date: '', time: '' });
+    setNewItemData({ columnId: '', date: '', time: '', endDate: '' });
     setAddItemOpen(true);
   };
 
@@ -635,7 +643,7 @@ const Dashboard = () => {
       customerEmail: customer?.email || '',
       customerAddressId: address.id,
     });
-    setNewItemData({ columnId: '', date: '', time: '' });
+    setNewItemData({ columnId: '', date: '', time: '', endDate: '' });
     setAddItemOpen(true);
   };
 
@@ -1004,7 +1012,7 @@ const Dashboard = () => {
 
     if (currentView === 'klienci' && instanceId) {
       return (
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col min-h-0">
           <CustomersView instanceId={instanceId} />
         </div>
       );
@@ -1028,7 +1036,7 @@ const Dashboard = () => {
 
     if (currentView === 'rozliczenia' && instanceId) {
       return (
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col min-h-0">
           <SettlementsView
             instanceId={instanceId}
             onItemDeleted={(itemId) => {
@@ -1161,6 +1169,7 @@ const Dashboard = () => {
             onAddBreak={employeeViewMode ? undefined : handleAddBreak}
             onDeleteBreak={employeeViewMode ? undefined : handleDeleteBreak}
             onItemMove={employeeViewMode ? undefined : handleItemMove}
+            onDateRangeSelect={employeeViewMode ? undefined : handleMonthDateRangeSelect}
             onDateChange={handleDateChange}
             onViewModeChange={(mode) => setCalendarViewMode(mode)}
             selectedItemId={selectedItem?.id}
@@ -1329,6 +1338,7 @@ const Dashboard = () => {
           }}
           editingItem={editingItem}
           initialDate={newItemData.date}
+          initialEndDate={newItemData.endDate || undefined}
           initialTime={newItemData.time}
           initialColumnId={newItemData.columnId}
           initialCustomerId={mapOrderPrefill.customerId}
@@ -1352,7 +1362,7 @@ const Dashboard = () => {
             setFollowUpsDrawerOpen(false);
             setEditingItem(null);
             setFollowUpSourceItem(null);
-            setNewItemData({ columnId: '', date: '', time: '' });
+            setNewItemData({ columnId: '', date: '', time: '', endDate: '' });
             setAddItemOpen(true);
           }}
         />

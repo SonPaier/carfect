@@ -71,6 +71,7 @@ interface AddCalendarItemDialogProps {
   onSuccess: () => void;
   editingItem?: EditingCalendarItem | null;
   initialDate?: string;
+  initialEndDate?: string;
   initialTime?: string;
   initialColumnId?: string;
   initialCustomerId?: string;
@@ -123,6 +124,7 @@ const AddCalendarItemDialog = ({
   onSuccess,
   editingItem = null,
   initialDate,
+  initialEndDate,
   initialTime,
   initialColumnId,
   initialCustomerId,
@@ -370,7 +372,8 @@ const AddCalendarItemDialog = ({
       setColumnId(initialColumnId || columns[0]?.id || '');
       if (initialDate) {
         const initDate = parseISO(initialDate);
-        setDateRange({ from: initDate, to: initDate });
+        const endDate = initialEndDate ? parseISO(initialEndDate) : initDate;
+        setDateRange({ from: initDate, to: endDate });
       } else {
         setDateRange(undefined);
       }
@@ -478,6 +481,7 @@ const AddCalendarItemDialog = ({
     isEditMode,
     editingItem,
     initialDate,
+    initialEndDate,
     initialTime,
     initialColumnId,
     columns,

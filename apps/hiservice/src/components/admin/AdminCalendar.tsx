@@ -54,7 +54,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import MonthCalendarView from './MonthCalendarView';
+import MonthCalendarView from './calendar/MonthCalendarView';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -122,6 +122,7 @@ interface AdminCalendarProps {
   onAddBreak?: (columnId: string, date: string, time: string) => void;
   onDeleteBreak?: (breakId: string) => void;
   onItemMove?: (itemId: string, newColumnId: string, newDate: string, newTime?: string) => void;
+  onDateRangeSelect?: (fromDate: string, toDate: string) => void;
   onDateChange?: (date: Date) => void;
   onViewModeChange?: (mode: string) => void;
   selectedItemId?: string | null;
@@ -163,7 +164,7 @@ const computeHourRange = (
   return { startHour: Math.min(...starts), endHour: Math.max(...ends) };
 };
 
-const getStatusColor = (status: string) => {
+export const getStatusColor = (status: string) => {
   switch (status) {
     case 'confirmed':
       return 'bg-emerald-200 border-emerald-400 text-emerald-900';
@@ -212,6 +213,7 @@ const AdminCalendar = ({
   onAddBreak,
   onDeleteBreak,
   onItemMove,
+  onDateRangeSelect,
   onDateChange,
   onViewModeChange,
   selectedItemId,
@@ -1604,9 +1606,9 @@ const AdminCalendar = ({
       {viewMode === 'month' && (
         <MonthCalendarView
           items={items}
-          columns={employeeViewActive ? [] : columns}
+          columns={employeeViewActive ? [] : visibleColumns}
           currentDate={currentDate}
-          onMonthChange={(date) => setCurrentDate(date)}
+          workingHours={workingHours}
           onDayClick={(date) => {
             setCurrentDate(date);
             setViewMode('day');
@@ -1614,6 +1616,12 @@ const AdminCalendar = ({
           onItemClick={(item) => onItemClick?.(item)}
           onItemMove={
             onItemMove ? (itemId, colId, newDate) => onItemMove(itemId, colId, newDate) : undefined
+          }
+          onDateRangeSelect={
+            onDateRangeSelect
+              ? (from, to) =>
+                  onDateRangeSelect(format(from, 'yyyy-MM-dd'), format(to, 'yyyy-MM-dd'))
+              : undefined
           }
         />
       )}

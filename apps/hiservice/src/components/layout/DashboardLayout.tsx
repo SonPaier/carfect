@@ -285,6 +285,16 @@ const DashboardLayout = ({
       </aside>
 
       {/* Main content */}
+      {/*
+       * NOTE on scroll behaviour:
+       * <main> uses `overflow-auto` so most pages (simple `space-y-4` layouts)
+       * scroll naturally. Views that want the fixed-header + scrollable-body +
+       * fixed-pagination pattern (see CustomersView, SettlementsView) wrap their
+       * root in `h-full flex flex-col min-h-0` — they exactly fill the visible
+       * main area and manage their own internal scroll region, so `<main>` does
+       * not double-scroll. Do not change `<main>` globally without auditing every
+       * view under components/admin/.
+       */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-[100]">
         <main className={cn('flex-1 overflow-auto p-4 lg:p-6', isMobile && 'pb-20')}>
           {children}

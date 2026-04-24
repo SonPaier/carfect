@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CustomerCategory {
@@ -44,18 +44,24 @@ export function useCustomerCategories(instanceId: string | null) {
   }, [fetchAll]);
 
   // Map: categoryId -> count of customers
-  const customerCounts: Record<string, number> = {};
-  for (const a of assignments) {
-    customerCounts[a.category_id] = (customerCounts[a.category_id] || 0) + 1;
-  }
+  const customerCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of assignments) {
+      counts[a.category_id] = (counts[a.category_id] || 0) + 1;
+    }
+    return counts;
+  }, [assignments]);
 
   // Map: customerId -> categoryId[]
-  const customerCategoryMap = new Map<string, string[]>();
-  for (const a of assignments) {
-    const list = customerCategoryMap.get(a.customer_id) || [];
-    list.push(a.category_id);
-    customerCategoryMap.set(a.customer_id, list);
-  }
+  const customerCategoryMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const a of assignments) {
+      const list = map.get(a.customer_id) || [];
+      list.push(a.category_id);
+      map.set(a.customer_id, list);
+    }
+    return map;
+  }, [assignments]);
 
   return {
     categories,

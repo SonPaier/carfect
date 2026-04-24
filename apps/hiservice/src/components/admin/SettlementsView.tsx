@@ -2,8 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   Search,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   MoreHorizontal,
   FileText,
   Trash2,
@@ -14,6 +12,7 @@ import {
   ArrowDown,
   ArrowUpDown,
 } from 'lucide-react';
+import { PaginationFooter } from '@shared/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -139,7 +138,7 @@ const STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
   },
 };
 
-const ITEMS_PER_PAGE = 10;
+const DEFAULT_PAGE_SIZE = 25;
 
 interface SettlementsViewProps {
   instanceId: string;
@@ -151,6 +150,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
   const [invoiceTarget, setInvoiceTarget] = useState<CalendarItemRow | null>(null);
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
@@ -395,11 +395,11 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
     return result;
   }, [items, searchQuery, statusFilter, paymentFilter, sortColumn, sortDirection, addressMap]);
 
-  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const paginatedOrders = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredOrders, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, currentPage, pageSize]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -567,9 +567,9 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap shrink-0 pb-4">
         <h2 className="text-xl font-semibold text-foreground">Zlecenia</h2>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
@@ -590,7 +590,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap shrink-0 pb-4">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -626,7 +626,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
 
       {/* Mobile Bulk Action Bar */}
       {isMobile && bulk.count > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3 shrink-0 mb-4">
           <span className="text-sm font-medium">
             Zaznaczono: {bulk.count}
           </span>
@@ -644,7 +644,7 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
 
       {/* Mobile Cards */}
       {isMobile ? (
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-auto flex-1 min-h-0">
           {isLoading ? (
             <p className="text-center text-muted-foreground py-8">Ładowanie...</p>
           ) : filteredOrders.length === 0 ? (
@@ -829,8 +829,8 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
         </div>
       ) : (
         /* Desktop Table */
-        <div className="rounded-lg border border-border bg-card">
-          <Table className="table-fixed w-full">
+        <div className="rounded-lg border border-border bg-card overflow-auto flex-1 min-h-0">
+          <Table wrapperClassName="overflow-visible" className="table-fixed w-full [&_tbody_td]:py-2 [&_thead_th]:h-6">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[40px] px-2">
@@ -1119,42 +1119,20 @@ const SettlementsView = ({ instanceId, onItemDeleted }: SettlementsViewProps) =>
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-muted-foreground">
-            Strona {currentPage} z {totalPages} ({filteredOrders.length} zleceń)
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            >
-              <ChevronLeftIcon className="w-4 h-4" />
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === currentPage ? 'default' : 'outline'}
-                size="sm"
-                className="w-9"
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            >
-              <ChevronRightIcon className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <div className="shrink-0">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredOrders.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          itemLabel="zleceń"
+        />
+      </div>
 
       {/* Details Drawer */}
       <CalendarItemDetailsDrawer
