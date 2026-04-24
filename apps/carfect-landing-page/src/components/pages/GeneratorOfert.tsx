@@ -262,41 +262,15 @@ const GeneratorOfert = () => {
         {/* Widget Integration Section */}
         <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-              <div className="flex-1 order-2 lg:order-1">
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-6">
-                  Integracja z widgetem do ofertowania na Twojej stronie
-                </h2>
-                <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                  Osadź widget na swojej stronie WWW, by klienci mogli sami wybrać interesujące ich usługi i otrzymać wstępną wycenę. Formularz zbiera dane pojazdu i automatycznie tworzy zapytanie w Twoim CRM.
-                </p>
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground">Klient sam wybiera usługi i opcje</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground">Lead trafia do CRM z danymi pojazdu</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground">Łatwe osadzenie na Twojej stronie WWW</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="flex-1 order-1 lg:order-2">
-                <div className="rounded-2xl overflow-hidden shadow-lg bg-white">
-                  <iframe
-                    src="https://demo.carfect.pl/embed"
-                    width="100%"
-                    height={700}
-                    frameBorder="0"
-                    style={{ border: "none", borderRadius: "8px" }}
-                    title="Widget do ofertowania usług detailingowych Carfect"
-                  />
-                </div>
-              </div>
+            <div className="max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-lg bg-white">
+              <iframe
+                src="https://demo.carfect.pl/embed"
+                width="100%"
+                height={700}
+                frameBorder="0"
+                style={{ border: "none", borderRadius: "8px" }}
+                title="Widget do ofertowania usług detailingowych Carfect"
+              />
             </div>
           </div>
         </section>

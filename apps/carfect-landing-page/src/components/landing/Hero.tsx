@@ -58,7 +58,7 @@ const Hero = () => {
   };
 
   return (
-    <section id="hero" className="relative min-h-[100vh] flex flex-col overflow-hidden bg-[#0c0a09]">
+    <section id="hero" className="relative min-h-[100vh] flex flex-col overflow-hidden bg-black">
       {/* Background effects */}
       <div
         className="absolute inset-0"
@@ -106,8 +106,8 @@ const Hero = () => {
         <div className="container px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-white leading-[1.1]">
-              Skup się na detailingu,{" "}
-              <span className="text-primary">chaos zostaw nam.</span>
+              System do zarządzania{" "}
+              <span className="text-primary">studiem detailingu</span>
             </h1>
 
             <p className="mt-6 md:mt-8 text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
