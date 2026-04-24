@@ -596,21 +596,19 @@ const Dashboard = () => {
     setDetailsOpen(true);
   };
 
-  const handleAddItem = (columnId: string, date: string, time: string) => {
+  const openAddItemDialog = (data: Partial<typeof newItemData> = {}) => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
-    setNewItemData({ columnId, date, time, endDate: '' });
+    setNewItemData({ columnId: '', date: '', time: '', endDate: '', ...data });
     setAddItemOpen(true);
   };
 
-  const handleMonthDateRangeSelect = (fromDate: string, toDate: string) => {
-    setEditingItem(null);
-    setMapOrderPrefill({});
-    setInitialProjectId(undefined);
-    setNewItemData({ columnId: '', date: fromDate, time: '', endDate: toDate });
-    setAddItemOpen(true);
-  };
+  const handleAddItem = (columnId: string, date: string, time: string) =>
+    openAddItemDialog({ columnId, date, time });
+
+  const handleMonthDateRangeSelect = (fromDate: string, toDate: string) =>
+    openAddItemDialog({ date: fromDate, endDate: toDate });
 
   const handleProjectAddOrder = (
     projectId: string,

@@ -18,7 +18,7 @@ import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { CalendarItem, CalendarColumn } from '../AdminCalendar';
-import { getStatusColor } from '../AdminCalendar';
+import { getStatusColor } from './statusColors';
 import { type WeekEvent, toDateOnly, assignLanes, formatDateStr } from './swimLaneUtils';
 import { useDragCalendarItem } from './useDragCalendarItem';
 import { buildHolidayMap } from '@/lib/polishHolidays';
@@ -640,8 +640,6 @@ export const MonthCalendarView = ({
     [items, visibleColumnIds],
   );
 
-  // Build list of months to render: current ± range, plus 5 more into the future
-  // Dynamic month range — expands on scroll
   const [pastMonths, setPastMonths] = useState(monthRange);
   const [futureMonths, setFutureMonths] = useState(monthRange + 5);
 

@@ -1,7 +1,5 @@
 import { useState, useCallback, DragEvent } from 'react';
-import { differenceInDays, addDays, format } from 'date-fns';
 import type { CalendarItem } from '../AdminCalendar';
-import { toDateOnly } from './swimLaneUtils';
 
 export interface DragHandlers {
   onDragStart: (e: DragEvent<HTMLButtonElement>, item: CalendarItem) => void;
@@ -53,17 +51,7 @@ export function useDragCalendarItem(
     const item = items.find((i) => i.id === itemId);
     if (!item || item.item_date === dateStr) return;
 
-    // Calculate shifted end_date — always update to keep dates consistent
-    const oldStart = toDateOnly(item.item_date);
-    const newStart = toDateOnly(dateStr);
-    const dayOffset = differenceInDays(newStart, oldStart);
-
-    const oldEnd = item.end_date ? toDateOnly(item.end_date) : oldStart;
-    const shiftedEnd = addDays(oldEnd, dayOffset);
-    // newEndDate intentionally unused by Month view (only dateStr drives the move),
-    // but computed here to keep parity with carfect's hook for future extension.
-    void format(shiftedEnd, 'yyyy-MM-dd');
-
+    // end_date shifting happens in the parent handler (Dashboard.handleItemMove)
     onItemMove(item.id, item.column_id || '', dateStr);
   }, [items, onItemMove]);
 
