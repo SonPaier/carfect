@@ -204,7 +204,12 @@ const Dashboard = () => {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditingCalendarItem | null>(null);
   const [addBreakOpen, setAddBreakOpen] = useState(false);
-  const [newItemData, setNewItemData] = useState({ columnId: '', date: '', time: '', endDate: '' });
+  const [newItemData, setNewItemData] = useState<{
+    columnId: string;
+    date: string;
+    time: string;
+    endDate?: string;
+  }>({ columnId: '', date: '', time: '' });
   const [initialProjectId, setInitialProjectId] = useState<string | undefined>(undefined);
   const [newBreakData, setNewBreakData] = useState({ columnId: '', date: '', time: '' });
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
@@ -600,7 +605,7 @@ const Dashboard = () => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
-    setNewItemData({ columnId: '', date: '', time: '', endDate: '', ...data });
+    setNewItemData({ columnId: '', date: '', time: '', ...data });
     setAddItemOpen(true);
   };
 
@@ -618,7 +623,7 @@ const Dashboard = () => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(projectId);
-    setNewItemData({ columnId: '', date: '', time: '', endDate: '' });
+    setNewItemData({ columnId: '', date: '', time: '' });
     setAddItemOpen(true);
   };
 
@@ -641,7 +646,7 @@ const Dashboard = () => {
       customerEmail: customer?.email || '',
       customerAddressId: address.id,
     });
-    setNewItemData({ columnId: '', date: '', time: '', endDate: '' });
+    setNewItemData({ columnId: '', date: '', time: '' });
     setAddItemOpen(true);
   };
 
@@ -1336,7 +1341,7 @@ const Dashboard = () => {
           }}
           editingItem={editingItem}
           initialDate={newItemData.date}
-          initialEndDate={newItemData.endDate || undefined}
+          initialEndDate={newItemData.endDate}
           initialTime={newItemData.time}
           initialColumnId={newItemData.columnId}
           initialCustomerId={mapOrderPrefill.customerId}
@@ -1360,7 +1365,7 @@ const Dashboard = () => {
             setFollowUpsDrawerOpen(false);
             setEditingItem(null);
             setFollowUpSourceItem(null);
-            setNewItemData({ columnId: '', date: '', time: '', endDate: '' });
+            setNewItemData({ columnId: '', date: '', time: '' });
             setAddItemOpen(true);
           }}
         />

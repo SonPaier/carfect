@@ -68,7 +68,6 @@ interface WeekRowProps {
   maxLanes: number;
   today: Date;
   monthDate: Date;
-  closedDateSet: Set<string>;
   columns: CalendarColumn[];
   isMobile: boolean;
   showNotes?: boolean;
@@ -93,7 +92,6 @@ const WeekRow = ({
   maxLanes,
   today,
   monthDate,
-  closedDateSet,
   columns,
   isMobile,
   showNotes,
@@ -128,7 +126,6 @@ const WeekRow = ({
       {visibleWeek.map((day) => {
         const dateStr = formatDateStr(day);
         const isToday = isSameDay(day, today);
-        const isClosed = closedDateSet.has(dateStr);
         const isThisMonth = isSameMonth(day, monthDate);
         const holidayName = holidayMap.get(dateStr);
         const isHoliday = !!holidayName;
@@ -144,8 +141,7 @@ const WeekRow = ({
             data-date={dateStr}
             className={cn(
               'rounded-lg group relative cursor-pointer bg-white border border-border/60 hover:border-border transition-colors overflow-hidden',
-              isClosed && 'bg-red-50',
-              !isClosed && isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
+              isInRange(day, highlightRange) && 'bg-primary/5 !border-primary/40',
               drag?.dragOverDate === dateStr && 'ring-2 ring-primary/50 bg-primary/5',
             )}
             onMouseDown={(e) => {
@@ -327,7 +323,6 @@ interface MonthSectionProps {
   monthDate: Date;
   visibleItems: CalendarItem[];
   columns: CalendarColumn[];
-  closedDateSet: Set<string>;
   workingDayIndices: Set<number> | null;
   today: Date;
   isMobile: boolean;
@@ -351,7 +346,6 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
       monthDate,
       visibleItems,
       columns,
-      closedDateSet,
       workingDayIndices,
       today,
       isMobile,
@@ -461,7 +455,6 @@ const MonthSection = forwardRef<HTMLDivElement, MonthSectionProps>(
               maxLanes={maxLanes}
               today={today}
               monthDate={monthDate}
-              closedDateSet={closedDateSet}
               columns={columns}
               isMobile={isMobile}
               showNotes={showNotes}
@@ -624,9 +617,6 @@ export const MonthCalendarView = ({
     return DAY_NAMES.filter((_, idx) => workingDayIndices.has(idx));
   }, [workingDayIndices]);
 
-  // hiservice has no closedDays concept — keep a stable empty set for future wiring
-  const closedDateSet = useMemo(() => new Set<string>(), []);
-
   // Filter out cancelled items and items from hidden columns
   const visibleColumnIds = useMemo(() => new Set(columns.map((c) => c.id)), [columns]);
 
@@ -740,7 +730,6 @@ export const MonthCalendarView = ({
               monthDate={monthDate}
               visibleItems={visibleItems}
               columns={columns}
-              closedDateSet={closedDateSet}
               workingDayIndices={workingDayIndices}
               today={today}
               isMobile={isMobile}
