@@ -204,7 +204,12 @@ const Dashboard = () => {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EditingCalendarItem | null>(null);
   const [addBreakOpen, setAddBreakOpen] = useState(false);
-  const [newItemData, setNewItemData] = useState({ columnId: '', date: '', time: '' });
+  const [newItemData, setNewItemData] = useState<{
+    columnId: string;
+    date: string;
+    time: string;
+    endDate?: string;
+  }>({ columnId: '', date: '', time: '' });
   const [initialProjectId, setInitialProjectId] = useState<string | undefined>(undefined);
   const [newBreakData, setNewBreakData] = useState({ columnId: '', date: '', time: '' });
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
@@ -596,13 +601,19 @@ const Dashboard = () => {
     setDetailsOpen(true);
   };
 
-  const handleAddItem = (columnId: string, date: string, time: string) => {
+  const openAddItemDialog = (data: Partial<typeof newItemData> = {}) => {
     setEditingItem(null);
     setMapOrderPrefill({});
     setInitialProjectId(undefined);
-    setNewItemData({ columnId, date, time });
+    setNewItemData({ columnId: '', date: '', time: '', ...data });
     setAddItemOpen(true);
   };
+
+  const handleAddItem = (columnId: string, date: string, time: string) =>
+    openAddItemDialog({ columnId, date, time });
+
+  const handleMonthDateRangeSelect = (fromDate: string, toDate: string) =>
+    openAddItemDialog({ date: fromDate, endDate: toDate });
 
   const handleProjectAddOrder = (
     projectId: string,
@@ -1004,7 +1015,7 @@ const Dashboard = () => {
 
     if (currentView === 'klienci' && instanceId) {
       return (
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col min-h-0">
           <CustomersView instanceId={instanceId} />
         </div>
       );
@@ -1028,7 +1039,7 @@ const Dashboard = () => {
 
     if (currentView === 'rozliczenia' && instanceId) {
       return (
-        <div className="w-full">
+        <div className="w-full h-full flex flex-col min-h-0">
           <SettlementsView
             instanceId={instanceId}
             onItemDeleted={(itemId) => {
@@ -1161,6 +1172,7 @@ const Dashboard = () => {
             onAddBreak={employeeViewMode ? undefined : handleAddBreak}
             onDeleteBreak={employeeViewMode ? undefined : handleDeleteBreak}
             onItemMove={employeeViewMode ? undefined : handleItemMove}
+            onDateRangeSelect={employeeViewMode ? undefined : handleMonthDateRangeSelect}
             onDateChange={handleDateChange}
             onViewModeChange={(mode) => setCalendarViewMode(mode)}
             selectedItemId={selectedItem?.id}
@@ -1329,6 +1341,7 @@ const Dashboard = () => {
           }}
           editingItem={editingItem}
           initialDate={newItemData.date}
+          initialEndDate={newItemData.endDate}
           initialTime={newItemData.time}
           initialColumnId={newItemData.columnId}
           initialCustomerId={mapOrderPrefill.customerId}

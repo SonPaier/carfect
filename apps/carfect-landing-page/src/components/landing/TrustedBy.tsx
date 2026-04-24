@@ -3,12 +3,14 @@ import logoArmcar from "@/assets/logo-armcar-full.png";
 import logoN2wash from "@/assets/logo-n2wash.webp";
 import logoUltrafit from "@/assets/logo-ultrafit.png";
 import logoBling from "@/assets/logo-bling.svg";
+import logoHotpoint from "@/assets/logo-hotpoint.png";
 
 const logos = [
   { src: logoArmcar, alt: "ARM-CAR Detailing & Wrapping" },
   { src: logoN2wash, alt: "N2Wash" },
   { src: logoUltrafit, alt: "Ultrafit" },
   { src: logoBling, alt: "Bling" },
+  { src: logoHotpoint, alt: "Hot Point PPF & Detailing" },
 ];
 
 const TrustedBy = () => {

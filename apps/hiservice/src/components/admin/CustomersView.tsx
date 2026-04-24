@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Search, Phone, MessageSquare, Plus, Trash2, MapPin, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
+import { Search, Phone, MessageSquare, Plus, Trash2, MapPin, Settings2 } from 'lucide-react';
+import { PaginationFooter } from '@shared/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { normalizeSearchQuery } from '@/lib/textUtils';
 import { formatPhoneDisplay } from '@/lib/phoneUtils';
@@ -53,7 +54,7 @@ interface CustomersViewProps {
   instanceId: string | null;
 }
 
-const ITEMS_PER_PAGE = 10;
+const DEFAULT_PAGE_SIZE = 25;
 
 interface AddressInfo {
   id: string;
@@ -77,6 +78,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isAddMode, setIsAddMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -224,11 +226,11 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     return result;
   }, [customers, searchQuery, addressMap, selectedCategoryIds, customerCategoryMap]);
 
-  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
   const paginatedCustomers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredCustomers.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredCustomers, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, currentPage, pageSize]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -349,23 +351,6 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
     return addrs.map(a => formatAddressShort(a));
   };
 
-  // Pagination page numbers with ellipsis
-  const getPageNumbers = () => {
-    const pages: (number | 'ellipsis')[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('ellipsis');
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-        pages.push(i);
-      }
-      if (currentPage < totalPages - 2) pages.push('ellipsis');
-      pages.push(totalPages);
-    }
-    return pages;
-  };
-
   if (loading) {
     return (
       <div className="space-y-2 p-4">
@@ -377,9 +362,9 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap shrink-0 pb-4">
         <h2 className="text-xl font-semibold text-foreground">Klienci</h2>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => setCategoryDialogOpen(true)} title="Zarządzaj kategoriami">
@@ -397,7 +382,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       </div>
 
       {/* Search + Category filter */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap shrink-0 pb-4">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -435,12 +420,12 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
 
       {/* Customer list */}
       {paginatedCustomers.length === 0 ? (
-        <div className="p-8 text-center text-muted-foreground">
+        <div className="p-8 text-center text-muted-foreground flex-1 min-h-0">
           {searchQuery ? 'Brak wyników' : 'Brak klientów'}
         </div>
       ) : isMobile ? (
         /* Mobile: cards with addresses */
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 overflow-auto flex-1 min-h-0">
           {paginatedCustomers.map(customer => {
             const addrs = addressMap.get(customer.id) || [];
             const visibleAddrs = addrs.slice(0, 2);
@@ -502,14 +487,14 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
         </div>
       ) : (
         /* Desktop: table */
-        <div className="rounded-lg border border-border bg-card overflow-x-auto">
-          <Table>
+        <div className="rounded-lg border border-border bg-card overflow-auto flex-1 min-h-0">
+          <Table className="table-fixed [&_tbody_td]:py-2 [&_thead_th]:h-6" wrapperClassName="overflow-visible">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Imię i nazwisko</TableHead>
-                <TableHead>Adres</TableHead>
-                <TableHead>Telefon</TableHead>
-                <TableHead className="text-right">Akcje</TableHead>
+                <TableHead className="w-[28%] min-w-[180px]">Imię i nazwisko</TableHead>
+                <TableHead className="w-auto">Adres</TableHead>
+                <TableHead className="w-[150px]">Telefon</TableHead>
+                <TableHead className="w-[72px] text-right">Akcje</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -519,7 +504,7 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
                   className="cursor-pointer"
                   onClick={() => openCustomer(customer)}
                 >
-                  <TableCell className="font-medium">{customer.name}</TableCell>
+                  <TableCell className="font-medium truncate">{customer.name}</TableCell>
                   <TableCell className="max-w-[300px]">
                     {(() => {
                       const display = getAddressDisplay(customer.id);
@@ -549,46 +534,20 @@ const CustomersView = ({ instanceId }: CustomersViewProps) => {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-muted-foreground">
-            Strona {currentPage} z {totalPages} ({filteredCustomers.length} klientów)
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            {getPageNumbers().map((page, idx) =>
-              page === 'ellipsis' ? (
-                <span key={`e-${idx}`} className="px-1 text-muted-foreground">…</span>
-              ) : (
-                <Button
-                  key={page}
-                  variant={page === currentPage ? 'default' : 'outline'}
-                  size="sm"
-                  className="w-9"
-                  onClick={() => setCurrentPage(page as number)}
-                >
-                  {page}
-                </Button>
-              )
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => p + 1)}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <div className="shrink-0">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredCustomers.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          itemLabel="klientów"
+        />
+      </div>
 
       {/* Customer Edit Drawer */}
       <CustomerEditDrawer

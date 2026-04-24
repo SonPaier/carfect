@@ -54,7 +54,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import MonthCalendarView from './MonthCalendarView';
+import MonthCalendarView from './calendar/MonthCalendarView';
+import { getStatusColor } from './calendar/statusColors';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -122,6 +123,7 @@ interface AdminCalendarProps {
   onAddBreak?: (columnId: string, date: string, time: string) => void;
   onDeleteBreak?: (breakId: string) => void;
   onItemMove?: (itemId: string, newColumnId: string, newDate: string, newTime?: string) => void;
+  onDateRangeSelect?: (fromDate: string, toDate: string) => void;
   onDateChange?: (date: Date) => void;
   onViewModeChange?: (mode: string) => void;
   selectedItemId?: string | null;
@@ -163,26 +165,6 @@ const computeHourRange = (
   return { startHour: Math.min(...starts), endHour: Math.max(...ends) };
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'confirmed':
-      return 'bg-emerald-200 border-emerald-400 text-emerald-900';
-    case 'in_progress':
-      return 'bg-orange-200 border-orange-400 text-orange-900';
-    case 'completed':
-      return 'bg-slate-200 border-slate-400 text-slate-700';
-    case 'cancelled':
-      return 'bg-red-100/60 border-red-300 text-red-700 line-through opacity-60';
-    case 'change_requested':
-      return 'bg-red-200 border-red-400 text-red-900';
-    case 'unfinished':
-      return 'bg-purple-200 border-purple-500 text-purple-900';
-    case 'follow_up':
-      return 'bg-purple-100 border-purple-300 text-purple-800';
-    default:
-      return 'bg-amber-100 border-amber-300 text-amber-900';
-  }
-};
 
 const parseTime = (time: string | null | undefined): number => {
   if (!time) return 0;
@@ -212,6 +194,7 @@ const AdminCalendar = ({
   onAddBreak,
   onDeleteBreak,
   onItemMove,
+  onDateRangeSelect,
   onDateChange,
   onViewModeChange,
   selectedItemId,
@@ -1604,16 +1587,20 @@ const AdminCalendar = ({
       {viewMode === 'month' && (
         <MonthCalendarView
           items={items}
-          columns={employeeViewActive ? [] : columns}
+          columns={employeeViewActive ? [] : visibleColumns}
           currentDate={currentDate}
-          onMonthChange={(date) => setCurrentDate(date)}
+          workingHours={workingHours}
           onDayClick={(date) => {
             setCurrentDate(date);
             setViewMode('day');
           }}
           onItemClick={(item) => onItemClick?.(item)}
-          onItemMove={
-            onItemMove ? (itemId, colId, newDate) => onItemMove(itemId, colId, newDate) : undefined
+          onItemMove={onItemMove}
+          onDateRangeSelect={
+            onDateRangeSelect
+              ? (from, to) =>
+                  onDateRangeSelect(format(from, 'yyyy-MM-dd'), format(to, 'yyyy-MM-dd'))
+              : undefined
           }
         />
       )}
