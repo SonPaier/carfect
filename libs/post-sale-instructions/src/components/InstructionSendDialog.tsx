@@ -20,7 +20,7 @@ import { useInstructions } from '../hooks/useInstructions';
 import { useCreateInstruction } from '../hooks/useCreateInstruction';
 import { useSendInstruction } from '../hooks/useSendInstruction';
 import { useInstructionSends } from '../hooks/useInstructionSends';
-import type { HardcodedKey, InstructionListItem } from '../types';
+import { filterVisibleItems, type InstructionListItem } from '../types';
 
 interface InstructionSendDialogProps {
   open: boolean;
@@ -29,7 +29,6 @@ interface InstructionSendDialogProps {
   customerId: string | null;
   customerEmail: string | null;
   instanceId: string;
-  instanceSlug: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -50,19 +49,10 @@ export function InstructionSendDialog({
 
   const [selected, setSelected] = useState<InstructionListItem | null>(null);
   const [emailAddress, setEmailAddress] = useState(customerEmail ?? '');
-  const [isSending, setIsSending] = useState(false);
+  const [invokingEmail, setInvokingEmail] = useState(false);
+  const isSending = createMutation.isPending || sendMutation.isPending || invokingEmail;
 
-  // Hide builtins that already have a custom row with the same hardcoded_key —
-  // otherwise the picker shows duplicates after the first send promoted them.
-  const visibleItems = useMemo(() => {
-    const customKeys = new Set(
-      items
-        .filter((i): i is Extract<InstructionListItem, { kind: 'custom' }> => i.kind === 'custom')
-        .map((i) => i.row.hardcoded_key)
-        .filter((k): k is HardcodedKey => k !== null && k !== undefined),
-    );
-    return items.filter((item) => item.kind !== 'builtin' || !customKeys.has(item.template.key));
-  }, [items]);
+  const visibleItems = useMemo(() => filterVisibleItems(items), [items]);
 
   const previousSend = useMemo(() => {
     if (!selected) return null;
@@ -82,8 +72,7 @@ export function InstructionSendDialog({
   // link" intermediate step — the customer-facing URL is implicit (slug-based,
   // resolved by the public route).
   const handleSend = async () => {
-    if (!selected || !emailAddress) return;
-    setIsSending(true);
+    if (!selected || !emailAddress || isSending) return;
     try {
       let instructionId: string;
       if (selected.kind === 'builtin') {
@@ -110,6 +99,7 @@ export function InstructionSendDialog({
         customerId,
         instanceId,
       });
+      setInvokingEmail(true);
       const { error } = await supabase.functions.invoke('send-instruction-email', {
         body: { sendId: sentRow.id, toEmail: emailAddress },
       });
@@ -119,7 +109,7 @@ export function InstructionSendDialog({
     } catch (error: unknown) {
       toast.error((error as Error).message || t('instructions.sendEmailError'));
     } finally {
-      setIsSending(false);
+      setInvokingEmail(false);
     }
   };
 
@@ -193,10 +183,7 @@ export function InstructionSendDialog({
                 onChange={(e) => setEmailAddress(e.target.value)}
                 placeholder="email@example.com"
               />
-              <Button
-                onClick={handleSend}
-                disabled={!selected || !emailAddress || isSending || createMutation.isPending}
-              >
+              <Button onClick={handleSend} disabled={!selected || !emailAddress || isSending}>
                 <Send className="w-4 h-4 mr-2" />
                 {isSending ? t('instructions.sendingEmail') : t('instructions.sendEmail')}
               </Button>

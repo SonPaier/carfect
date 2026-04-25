@@ -1624,7 +1624,6 @@ const ReservationDetailsDrawer = ({
           customerId={reservation.customer_id ?? null}
           customerEmail={reservation.customer_email ?? null}
           instanceId={reservation.instance_id}
-          instanceSlug={instanceSettings.slug}
           supabase={supabase}
         />
       )}

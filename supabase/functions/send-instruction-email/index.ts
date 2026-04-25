@@ -4,7 +4,9 @@ import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import {
   buildInstructionEmailHtml,
   defaultInstructionTemplate,
+  escapeHtml,
   getSmtpConfig,
+  makeLinksClickable,
   sanitizeCustomerEmail,
   type InstanceInfo,
 } from './helpers.ts';
@@ -12,15 +14,6 @@ import {
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Converts plain URLs in text to clickable anchor tags.
-const makeLinksClickable = (text: string): string => {
-  const urlRegex = /(https?:\/\/[^\s<]+)/g;
-  return text.replace(
-    urlRegex,
-    '<a href="$1" style="color:#555;text-decoration:underline;">$1</a>',
-  );
 };
 
 interface InstructionSendRow {
@@ -51,6 +44,31 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the caller against Supabase first — without this, the
+    // function is an open SMTP relay and an enumeration oracle for any
+    // instruction in the DB. The token is validated by the user-context
+    // client; the actual fetches still use the service role afterwards.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: userResult, error: userError } = await userClient.auth.getUser();
+    if (userError || !userResult?.user) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const callerId = userResult.user.id;
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -84,7 +102,7 @@ serve(async (req) => {
         id, public_token, customer_id,
         post_sale_instructions ( title, slug, content ),
         reservations ( customer_name, customer_email, customer_phone ),
-        instances ( name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
+        instances ( id, name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
       `,
         )
         .eq('id', sendId)
@@ -107,7 +125,7 @@ serve(async (req) => {
         .select(
           `
         id, title, slug, content,
-        instances ( name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
+        instances ( id, name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
       `,
         )
         .eq('id', instructionId)
@@ -131,6 +149,34 @@ serve(async (req) => {
         content: instrRow.content,
       };
       instance = instrRow.instances;
+    }
+
+    // Verify the caller has admin/employee role on the resolved instance —
+    // without this, an authenticated user from instance A could send mail on
+    // behalf of instance B by guessing an instructionId from B.
+    const targetInstanceId =
+      (row?.instances as { id?: string } | null | undefined)?.id ??
+      (instance as { id?: string } | null | undefined)?.id ??
+      null;
+    if (targetInstanceId) {
+      const { data: hasRole } = await supabase.rpc('has_instance_role', {
+        _user_id: callerId,
+        _role: 'admin',
+        _instance_id: targetInstanceId,
+      });
+      if (!hasRole) {
+        const { data: empRole } = await supabase.rpc('has_instance_role', {
+          _user_id: callerId,
+          _role: 'employee',
+          _instance_id: targetInstanceId,
+        });
+        if (!empRole) {
+          return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
     }
 
     // Prefer the explicit toEmail from the request body. Fall back to the
@@ -163,17 +209,19 @@ serve(async (req) => {
       });
     }
 
-    // Build plain-text body from custom input or default template
+    // Escape user-supplied body before injecting into the HTML template, then
+    // re-link plain URLs. This prevents stored HTML/JS injection through the
+    // customEmailBody field (the admin types it, but the input flows verbatim
+    // into customer inboxes — never trust it raw).
     const plainBody = customEmailBody ?? defaultInstructionTemplate;
-
-    // Convert to HTML paragraphs with clickable links
-    const bodyHtml = makeLinksClickable(plainBody)
+    const bodyHtml = plainBody
       .split('\n')
-      .map((line) =>
-        line.trim() === ''
+      .map((line) => {
+        const escaped = escapeHtml(line);
+        return escaped.trim() === ''
           ? '<br>'
-          : `<p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;">${line}</p>`,
-      )
+          : `<p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#333;">${makeLinksClickable(escaped)}</p>`;
+      })
       .join('\n');
 
     const instanceInfo: InstanceInfo = {

@@ -1,4 +1,5 @@
 export type * from './types';
+export { filterVisibleItems } from './types';
 export { BUILTIN_TEMPLATES } from './builtinTemplates';
 export { useInstructions } from './hooks/useInstructions';
 export { useCreateInstruction } from './hooks/useCreateInstruction';

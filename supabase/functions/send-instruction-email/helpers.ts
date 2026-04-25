@@ -20,6 +20,35 @@ export interface SmtpConfig {
   pass: string;
 }
 
+/** HTML-escape a value before interpolating into the email template. */
+export function escapeHtml(value: string | null | undefined): string {
+  if (!value) return '';
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Allow only http(s) URLs in href attributes — strip dangerous protocols. */
+export function safeUrl(value: string | null | undefined): string {
+  if (!value) return '';
+  return /^https?:\/\//i.test(value) ? value : '';
+}
+
+/**
+ * Converts plain URLs in plain text to clickable anchor tags. The input must
+ * already be HTML-escaped — this function only injects matched URLs.
+ */
+export function makeLinksClickable(escapedText: string): string {
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  return escapedText.replace(
+    urlRegex,
+    (url) => `<a href="${url}" style="color:#555;text-decoration:underline;">${url}</a>`,
+  );
+}
+
 export const defaultInstructionTemplate = `Dzień dobry,
 
 udostępniamy instrukcję pielęgnacji wykonanej usługi. Prosimy o zapoznanie się z nią — pomoże zachować efekt na dłużej.
@@ -36,30 +65,36 @@ export function buildInstructionEmailHtml(
   instance: InstanceInfo,
   instructionUrl: string,
 ): string {
-  const logoHtml = instance.logo_url
+  const safeLogo = safeUrl(instance.logo_url);
+  const safeName = escapeHtml(instance.name);
+  const logoHtml = safeLogo
     ? `<div style="text-align:center;padding:30px 0 20px;">
-        <img src="${instance.logo_url}" alt="${instance.name || ""}" style="max-height:60px;max-width:200px;" />
+        <img src="${safeLogo}" alt="${safeName}" style="max-height:60px;max-width:200px;" />
       </div>`
     : `<div style="text-align:center;padding:30px 0 20px;">
-        <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${instance.name || ""}</h1>
+        <h1 style="font-family:'Inter',Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin:0;">${safeName}</h1>
       </div>`;
 
   const footerParts: string[] = [];
   if (instance.phone) {
+    const safePhone = escapeHtml(instance.phone);
     footerParts.push(
-      `<span style="margin:0 8px;"><a href="tel:${instance.phone}" style="color:#555;text-decoration:none;">${instance.phone}</a></span>`,
+      `<span style="margin:0 8px;"><a href="tel:${safePhone}" style="color:#555;text-decoration:none;">${safePhone}</a></span>`,
     );
   }
   if (instance.address) {
-    footerParts.push(`<span style="margin:0 8px;">${instance.address}</span>`);
+    footerParts.push(`<span style="margin:0 8px;">${escapeHtml(instance.address)}</span>`);
   }
   if (instance.website) {
-    footerParts.push(
-      `<span style="margin:0 8px;"><a href="${instance.website}" style="color:#555;text-decoration:underline;">${instance.website}</a></span>`,
-    );
+    const safeWeb = safeUrl(instance.website);
+    if (safeWeb) {
+      footerParts.push(
+        `<span style="margin:0 8px;"><a href="${safeWeb}" style="color:#555;text-decoration:underline;">${escapeHtml(instance.website)}</a></span>`,
+      );
+    }
   }
   if (instance.email) {
-    footerParts.push(`<span style="margin:0 8px;">${instance.email}</span>`);
+    footerParts.push(`<span style="margin:0 8px;">${escapeHtml(instance.email)}</span>`);
   }
 
   return `<!DOCTYPE html>
@@ -82,18 +117,18 @@ export function buildInstructionEmailHtml(
       ${body}
     </div>
     <div style="text-align:center;margin:28px 0 12px;">
-      <a href="${instructionUrl}" style="display:inline-block;background-color:#111;color:#ffffff;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;font-family:'Inter',Arial,sans-serif;">Otwórz instrukcję</a>
+      <a href="${safeUrl(instructionUrl)}" style="display:inline-block;background-color:#111;color:#ffffff;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;font-family:'Inter',Arial,sans-serif;">Otwórz instrukcję</a>
     </div>
     <p style="font-size:12px;color:#999;text-align:center;margin-top:16px;">
-      Lub skopiuj link: <a href="${instructionUrl}" style="color:#666;">${instructionUrl}</a>
+      Lub skopiuj link: <a href="${safeUrl(instructionUrl)}" style="color:#666;">${escapeHtml(instructionUrl)}</a>
     </p>
   </div>
 </td></tr>
 <tr><td style="padding:24px 12px 8px;text-align:center;">
-  <p style="margin:0 0 6px;font-size:14px;color:#555;font-weight:600;">${instance.name || ""}</p>
-  ${instance.contact_person ? `<p style="margin:0 0 10px;font-size:13px;color:#777;">${instance.contact_person}</p>` : ""}
+  <p style="margin:0 0 6px;font-size:14px;color:#555;font-weight:600;">${safeName}</p>
+  ${instance.contact_person ? `<p style="margin:0 0 10px;font-size:13px;color:#777;">${escapeHtml(instance.contact_person)}</p>` : ''}
   <div style="font-size:12px;color:#888;line-height:1.8;">
-    ${footerParts.join("<br>")}
+    ${footerParts.join('<br>')}
   </div>
 </td></tr>
 <tr><td style="padding:20px 12px 30px;text-align:center;border-top:1px solid #e0e0e0;margin-top:16px;">
@@ -109,13 +144,17 @@ export function buildInstructionEmailHtml(
 }
 
 /**
- * Strips mailto: prefix and trims whitespace from a raw email string.
- * Returns null if the result is empty.
+ * Strips mailto: prefix and validates the address is a single, well-formed
+ * email — rejects multi-address values, display names, and CR/LF that could
+ * be used for SMTP header injection. Returns null if the value is invalid.
  */
 export function sanitizeCustomerEmail(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const cleaned = raw.replace(/^mailto:/i, "").trim();
-  return cleaned.length > 0 ? cleaned : null;
+  const cleaned = raw.replace(/^mailto:/i, '').trim();
+  if (!cleaned) return null;
+  if (/[\r\n,;<>]/.test(cleaned)) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned)) return null;
+  return cleaned;
 }
 
 /**
@@ -128,13 +167,13 @@ export function sanitizeCustomerEmail(raw: string | null | undefined): string | 
  * Returns null if user or pass is missing.
  */
 export function getSmtpConfig(env: Record<string, string | undefined>): SmtpConfig | null {
-  const host = env["INSTRUCTION_SMTP_HOST"] ?? env["SMTP_HOST"];
-  const portRaw = env["INSTRUCTION_SMTP_PORT"] ?? env["SMTP_PORT"];
+  const host = env['INSTRUCTION_SMTP_HOST'] ?? env['SMTP_HOST'];
+  const portRaw = env['INSTRUCTION_SMTP_PORT'] ?? env['SMTP_PORT'];
   const port = portRaw ? parseInt(portRaw, 10) : 587;
-  const user = env["INSTRUCTION_SMTP_USER"];
-  const pass = env["INSTRUCTION_SMTP_PASS"];
+  const user = env['INSTRUCTION_SMTP_USER'];
+  const pass = env['INSTRUCTION_SMTP_PASS'];
 
   if (!user || !pass) return null;
 
-  return { host: host ?? "", port, user, pass };
+  return { host: host ?? '', port, user, pass };
 }

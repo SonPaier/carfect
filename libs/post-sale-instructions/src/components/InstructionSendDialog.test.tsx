@@ -93,7 +93,6 @@ function renderDialog(props: Partial<Parameters<typeof InstructionSendDialog>[0]
         customerId: 'cust-1',
         customerEmail: 'jan@example.com',
         instanceId: 'inst-1',
-        instanceSlug: 'armcar',
         supabase: supabaseMock,
         ...props,
       }),

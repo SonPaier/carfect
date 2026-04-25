@@ -23,7 +23,7 @@ import { Copy, Download, Eye, Mail, MoreVertical, Pencil, Plus, Trash2 } from 'l
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useInstructions } from '../hooks/useInstructions';
 import { useDeleteInstruction } from '../hooks/useDeleteInstruction';
-import type { HardcodedKey, InstructionListItem } from '../types';
+import { filterVisibleItems, type HardcodedKey, type InstructionListItem } from '../types';
 
 interface InstructionListProps {
   instanceId: string;
@@ -51,18 +51,7 @@ export function InstructionList({
   const deleteMutation = useDeleteInstruction(supabase);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  // Hide builtins that already have a custom row with the same hardcoded_key —
-  // once the user has customized a builtin, the read-only template stops being
-  // a useful entry in the list.
-  const visibleItems = useMemo(() => {
-    const customKeys = new Set(
-      items
-        .filter((i): i is Extract<InstructionListItem, { kind: 'custom' }> => i.kind === 'custom')
-        .map((i) => i.row.hardcoded_key)
-        .filter((k): k is HardcodedKey => k !== null && k !== undefined),
-    );
-    return items.filter((item) => item.kind !== 'builtin' || !customKeys.has(item.template.key));
-  }, [items]);
+  const visibleItems = useMemo(() => filterVisibleItems(items), [items]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDeleteId) return;

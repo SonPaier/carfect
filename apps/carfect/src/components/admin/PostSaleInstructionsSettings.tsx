@@ -15,7 +15,6 @@ import {
   type PostSaleInstructionRow,
   type TiptapDocument,
 } from '@shared/post-sale-instructions';
-import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 
 interface PostSaleInstructionsSettingsProps {
   instanceId: string;
@@ -28,6 +27,7 @@ type Mode =
   | { kind: 'duplicate'; key: HardcodedKey };
 
 interface InstanceRow {
+  slug: string | null;
   name: string | null;
   logo_url: string | null;
   phone: string | null;
@@ -60,12 +60,14 @@ export default function PostSaleInstructionsSettings({
     },
   });
 
+  // Single fetch — selects both the slug (used to build public URLs) and the
+  // preview-info fields (used by the preview dialog) in one round-trip.
   const { data: instanceRow } = useQuery<InstanceRow | null>({
     queryKey: ['instance-preview-info', instanceId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('instances')
-        .select('name, logo_url, phone, email, address, website, contact_person')
+        .select('slug, name, logo_url, phone, email, address, website, contact_person')
         .eq('id', instanceId)
         .single();
       if (error) throw error;
@@ -84,8 +86,7 @@ export default function PostSaleInstructionsSettings({
     contact_person: instanceRow?.contact_person ?? '',
   };
 
-  const { data: instanceSettings } = useInstanceSettings(instanceId);
-  const instanceSlug = instanceSettings?.slug ?? null;
+  const instanceSlug = instanceRow?.slug ?? null;
 
   const handleCopyLink = async (item: InstructionListItem) => {
     if (!instanceSlug) {

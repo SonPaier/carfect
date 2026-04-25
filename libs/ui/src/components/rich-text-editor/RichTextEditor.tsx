@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -59,6 +59,10 @@ export function RichTextEditor({
   onReady,
 }: RichTextEditorProps) {
   const [hasImage, setHasImage] = useState(false);
+  // Cache the last serialised value we accepted so the sync effect can skip
+  // calling editor.getJSON() (which rebuilds the entire doc) on every render.
+  const lastAcceptedValueRef = useRef<string>('');
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -67,25 +71,35 @@ export function RichTextEditor({
     ],
     content: value ?? undefined,
     editable: !disabled,
-    onUpdate: ({ editor: ed }) => {
-      onChange(ed.getJSON() as TiptapDocument);
-      let found = false;
-      ed.state.doc.descendants((n) => {
-        if (n.type.name === 'image') {
-          found = true;
-          return false;
-        }
-        return true;
-      });
-      setHasImage(found);
+    onUpdate: ({ editor: ed, transaction }) => {
+      const json = ed.getJSON() as TiptapDocument;
+      lastAcceptedValueRef.current = JSON.stringify(json);
+      onChange(json);
+      // Only re-walk the tree to detect images when the structure actually
+      // changed (typing inside an existing paragraph yields no docChanged).
+      if (transaction.docChanged) {
+        let found = false;
+        ed.state.doc.descendants((n) => {
+          if (n.type.name === 'image') {
+            found = true;
+            return false;
+          }
+          return true;
+        });
+        setHasImage(found);
+      }
     },
   });
 
-  // Sync external value changes without infinite loops
+  // Sync external value changes without infinite loops. Compare against the
+  // serialised value we last emitted so we only call setContent when an
+  // out-of-band update happened (e.g. parent reset the form).
   useEffect(() => {
-    if (editor && value && JSON.stringify(value) !== JSON.stringify(editor.getJSON())) {
-      editor.commands.setContent(value);
-    }
+    if (!editor || !value) return;
+    const incoming = JSON.stringify(value);
+    if (incoming === lastAcceptedValueRef.current) return;
+    lastAcceptedValueRef.current = incoming;
+    editor.commands.setContent(value);
   }, [value, editor]);
 
   // Sync editable state

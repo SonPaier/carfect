@@ -122,6 +122,83 @@ async function handlePdf(body: string) {
   };
 }
 
+async function handleInstructionPdf(body: string) {
+  const parsed = JSON.parse(body) as {
+    publicToken?: string;
+    preview?: {
+      title?: string;
+      content?: { type: string };
+      instance?: Record<string, string | undefined>;
+    };
+  };
+
+  let title: string;
+  let content: { type: string; content?: unknown[] };
+  let instance: Record<string, string | undefined>;
+
+  if (parsed.preview && parsed.preview.title && parsed.preview.content?.type === 'doc') {
+    title = parsed.preview.title;
+    content = parsed.preview.content as { type: string; content?: unknown[] };
+    instance = parsed.preview.instance ?? {};
+  } else if (parsed.publicToken) {
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { data, error } = await sb.rpc('get_public_instruction', {
+      p_token: parsed.publicToken,
+    });
+    if (error || !data) return { s: 404, b: '{"error":"Instruction not found"}' };
+    const d = data as {
+      title: string;
+      content: { type: string; content?: unknown[] };
+      instance?: Record<string, string | undefined>;
+    };
+    title = d.title;
+    content = d.content;
+    instance = d.instance ?? {};
+  } else {
+    return { s: 400, b: '{"error":"Missing publicToken or preview body"}' };
+  }
+
+  await loadPdf();
+  const logo = instance.logo_url ? await fetchLogo(instance.logo_url) : null;
+  const reactPdf = await import('@react-pdf/renderer');
+  reactPdf.Font.register({
+    family: 'Inter',
+    fonts: [
+      {
+        src: 'https://xsscqmlrnrodwydmgvac.supabase.co/storage/v1/object/public/instance-logos/fonts/Inter-Regular.ttf',
+        fontWeight: 'normal' as const,
+      },
+      {
+        src: 'https://xsscqmlrnrodwydmgvac.supabase.co/storage/v1/object/public/instance-logos/fonts/Inter-Bold.ttf',
+        fontWeight: 'bold' as const,
+      },
+    ],
+  });
+  reactPdf.Font.registerHyphenationCallback((word: string) => [word]);
+  const buf = await reactPdf.renderToBuffer(
+    React.createElement(pdf.InstructionPdfDocument, {
+      title,
+      content,
+      instance,
+      logoBuffer: logo,
+    }),
+  );
+  const safeName = (s: string) =>
+    s
+      .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ \-_]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+  const filename = `Instrukcja-${safeName(title)}.pdf`;
+  return {
+    s: 200,
+    h: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="${filename}"`,
+    },
+    b: Buffer.from(buf),
+  };
+}
+
 createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -133,20 +210,27 @@ createServer(async (req, res) => {
     return;
   }
 
-  if (new URL(req.url || '/', `http://localhost:${PORT}`).pathname === '/api/generate-offer-pdf') {
-    const chunks: Buffer[] = [];
-    for await (const c of req) chunks.push(c as Buffer);
-    try {
-      const r = await handlePdf(Buffer.concat(chunks).toString());
-      res.writeHead(r.s, r.h || { 'Content-Type': 'application/json' });
-      res.end(r.b);
-    } catch (e) {
-      console.error(e);
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: (e as Error).message }));
-    }
-  } else {
+  const path = new URL(req.url || '/', `http://localhost:${PORT}`).pathname;
+  const isOffer = path === '/api/generate-offer-pdf';
+  const isInstruction = path === '/api/generate-instruction-pdf';
+
+  if (!isOffer && !isInstruction) {
     res.writeHead(404);
     res.end('Not found');
+    return;
+  }
+
+  const chunks: Buffer[] = [];
+  for await (const c of req) chunks.push(c as Buffer);
+  try {
+    const r = isOffer
+      ? await handlePdf(Buffer.concat(chunks).toString())
+      : await handleInstructionPdf(Buffer.concat(chunks).toString());
+    res.writeHead(r.s, r.h || { 'Content-Type': 'application/json' });
+    res.end(r.b);
+  } catch (e) {
+    console.error(e);
+    res.writeHead(500);
+    res.end(JSON.stringify({ error: (e as Error).message }));
   }
 }).listen(PORT, () => console.log(`📄 PDF server http://localhost:${PORT}`));

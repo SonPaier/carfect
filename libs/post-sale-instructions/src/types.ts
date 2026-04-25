@@ -24,3 +24,18 @@ export interface BuiltinTemplate {
 export type InstructionListItem =
   | { kind: 'builtin'; template: BuiltinTemplate }
   | { kind: 'custom'; row: PostSaleInstructionRow };
+
+/**
+ * Hide a builtin template once a custom row exists for the same hardcoded_key
+ * — both the settings list and the send picker need this to avoid the user
+ * seeing a stale builtin alongside its customized variant.
+ */
+export function filterVisibleItems(items: InstructionListItem[]): InstructionListItem[] {
+  const customKeys = new Set(
+    items
+      .filter((i): i is Extract<InstructionListItem, { kind: 'custom' }> => i.kind === 'custom')
+      .map((i) => i.row.hardcoded_key)
+      .filter((k): k is HardcodedKey => k !== null && k !== undefined),
+  );
+  return items.filter((item) => item.kind !== 'builtin' || !customKeys.has(item.template.key));
+}

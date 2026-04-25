@@ -20,7 +20,14 @@ const dynamicImport = new Function('specifier', 'return import(specifier)') as (
   specifier: string,
 ) => Promise<Record<string, unknown>>;
 
+/**
+ * Fetch an image to embed in the PDF. Restricted to https URLs to prevent
+ * SSRF — without the guard the preview path lets the caller point logo_url
+ * at internal services (e.g. cloud metadata endpoints) since the body is
+ * unauthenticated and we run inside the Vercel network.
+ */
 async function fetchLogoBuffer(logoUrl: string): Promise<Buffer | null> {
+  if (!/^https:\/\//i.test(logoUrl)) return null;
   try {
     const response = await fetch(logoUrl);
     if (!response.ok) return null;

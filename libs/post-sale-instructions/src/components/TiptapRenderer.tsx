@@ -5,6 +5,10 @@ interface TiptapRendererProps {
   doc: TiptapDocument;
 }
 
+/** Allow only http(s) urls; everything else (incl. javascript:) becomes '#'. */
+const safeHref = (href: string | undefined): string =>
+  href && /^https?:\/\//i.test(href) ? href : '#';
+
 function applyMarks(text: string, marks: TiptapMark[] | undefined): React.ReactNode {
   let node: React.ReactNode = text;
   if (!marks) return node;
@@ -16,7 +20,7 @@ function applyMarks(text: string, marks: TiptapMark[] | undefined): React.ReactN
     } else if (mark.type === 'underline') {
       node = <u>{node}</u>;
     } else if (mark.type === 'link') {
-      const href = (mark.attrs?.href as string) ?? '#';
+      const href = safeHref(mark.attrs?.href as string | undefined);
       node = (
         <a href={href} target="_blank" rel="noopener noreferrer">
           {node}
@@ -51,7 +55,10 @@ function renderNode(node: TiptapNode, key: number | string): React.ReactNode {
     case 'blockquote':
       return <blockquote key={key}>{children}</blockquote>;
     case 'image': {
-      const src = (node.attrs?.src as string | undefined) ?? '';
+      const rawSrc = (node.attrs?.src as string | undefined) ?? '';
+      // Reject non-http(s) image sources — Tiptap will accept javascript:/data:
+      // URIs in the JSON which we never want to render.
+      const src = /^https?:\/\//i.test(rawSrc) ? rawSrc : '';
       const alt = (node.attrs?.alt as string | undefined) ?? '';
       const align =
         (node.attrs?.align as 'left' | 'center' | 'right' | 'full' | undefined) ?? 'center';
