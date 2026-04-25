@@ -38,9 +38,34 @@ async function fetchLogoBuffer(logoUrl: string): Promise<Buffer | null> {
   }
 }
 
+// Build a Content-Disposition-safe ASCII filename. HTTP headers reject
+// non-ASCII bytes, so transliterate Polish diacritics first instead of
+// quoting the original UTF-8 with RFC 5987.
+const PL_DIACRITICS: Record<string, string> = {
+  ą: 'a',
+  ć: 'c',
+  ę: 'e',
+  ł: 'l',
+  ń: 'n',
+  ó: 'o',
+  ś: 's',
+  ź: 'z',
+  ż: 'z',
+  Ą: 'A',
+  Ć: 'C',
+  Ę: 'E',
+  Ł: 'L',
+  Ń: 'N',
+  Ó: 'O',
+  Ś: 'S',
+  Ź: 'Z',
+  Ż: 'Z',
+};
+
 const safeName = (s: string) =>
   s
-    .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ \-_]/g, '')
+    .replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, (ch) => PL_DIACRITICS[ch] ?? ch)
+    .replace(/[^a-zA-Z0-9 \-_]/g, '')
     .trim()
     .replace(/\s+/g, '-');
 

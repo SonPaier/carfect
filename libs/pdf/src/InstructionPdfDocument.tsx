@@ -145,6 +145,11 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
     const attrs = el.attrs as { src?: string; align?: string } | undefined;
     const src = attrs?.src;
     if (!src) return null;
+    // react-pdf's Image only supports jpg/png/gif/bmp. Silently drop other
+    // formats (notably .webp from the editor's upload) — emitting <Image>
+    // with an unsupported source crashes the render at the renderer level
+    // ("Not valid image extension") and aborts the whole document.
+    if (!/\.(jpe?g|png|gif|bmp)(?:\?|#|$)/i.test(src)) return null;
     const align = attrs?.align ?? 'center';
     // react-pdf has no float — map left/right/center to alignSelf,
     // map full to a 100% width block.

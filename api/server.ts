@@ -7,6 +7,35 @@ import { createServer } from 'http';
 import { createClient } from '@supabase/supabase-js';
 import React from 'react';
 
+// Build a Content-Disposition-safe ASCII filename. HTTP headers reject
+// non-ASCII bytes, so transliterate Polish diacritics first.
+const PL_DIACRITICS: Record<string, string> = {
+  ą: 'a',
+  ć: 'c',
+  ę: 'e',
+  ł: 'l',
+  ń: 'n',
+  ó: 'o',
+  ś: 's',
+  ź: 'z',
+  ż: 'z',
+  Ą: 'A',
+  Ć: 'C',
+  Ę: 'E',
+  Ł: 'L',
+  Ń: 'N',
+  Ó: 'O',
+  Ś: 'S',
+  Ź: 'Z',
+  Ż: 'Z',
+};
+const safeName = (s: string) =>
+  s
+    .replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, (ch) => PL_DIACRITICS[ch] ?? ch)
+    .replace(/[^a-zA-Z0-9 \-_]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+
 const PORT = 3333;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -97,11 +126,6 @@ async function handlePdf(body: string) {
   const buf = await reactPdf.renderToBuffer(
     React.createElement(pdf.OfferPdfDocument, { offer, instance, config, logoBuffer: logo }),
   );
-  const safeName = (s: string) =>
-    s
-      .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ \-_]/g, '')
-      .trim()
-      .replace(/\s+/g, '-');
   const parts = [
     offer.offerNumber,
     offer.customerData?.name,
@@ -183,11 +207,6 @@ async function handleInstructionPdf(body: string) {
       logoBuffer: logo,
     }),
   );
-  const safeName = (s: string) =>
-    s
-      .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ \-_]/g, '')
-      .trim()
-      .replace(/\s+/g, '-');
   const filename = `Instrukcja-${safeName(title)}.pdf`;
   return {
     s: 200,

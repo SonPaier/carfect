@@ -93,12 +93,45 @@ export function InstructionEditor({
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  // Re-encode every upload as JPEG via a canvas. react-pdf only accepts
+  // jpg/png/gif/bmp, so an editor user dropping in a .webp file (the
+  // default screenshot format on macOS) would render fine in the browser
+  // but silently disappear in the PDF. Forcing JPEG here keeps both views
+  // in sync and shrinks the file at the same time.
+  const encodeAsJpeg = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas 2D context unavailable'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))),
+          'image/jpeg',
+          0.9,
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Image decode failed'));
+      };
+      img.src = url;
+    });
+
   const uploadImage = async (file: File): Promise<string> => {
-    const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
-    const fileName = `${instanceId}/${crypto.randomUUID()}.${ext}`;
+    const blob = await encodeAsJpeg(file);
+    const fileName = `${instanceId}/${crypto.randomUUID()}.jpg`;
     const { error } = await supabase.storage
       .from('instruction-images')
-      .upload(fileName, file, { contentType: file.type, cacheControl: '3600' });
+      .upload(fileName, blob, { contentType: 'image/jpeg', cacheControl: '3600' });
     if (error) throw error;
     const { data } = supabase.storage.from('instruction-images').getPublicUrl(fileName);
     return data.publicUrl;
