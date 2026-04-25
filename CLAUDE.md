@@ -37,13 +37,38 @@
 - `apps/hiservice/` — polski hardcoded OK (nie będzie tłumaczony)
 - Klucze i18n w `apps/carfect/src/i18n/locales/pl.json`
 
-## Edge Functions (Deno)
+## Backend testing (Edge Functions, RPCs, triggers, libs)
 
-- Każda nowa/zmieniona edge function MUSI mieć unit testy
+**Bezwzględna reguła: każda funkcja edge i KAŻDA logika backend MUSI mieć testy.**
+Dotyczy: edge functions (Deno), Vercel API endpoints (`api/*.ts`),
+PG functions / triggers / RPCs (DB unit tests lub integracyjne),
+oraz shared backend lib code (`libs/*/src/`).
+
+Backend bez testu = backend nie działa. Bez wyjątków, nawet dla
+"oczywistego" 5-liniowego helpera. Jeśli logika jest trudna do przetestowania
+— wydziel ją do pure function w osobnym pliku.
+
+### Edge Functions (Deno) — szczegóły
+
 - Pliki testów: `*_test.ts` obok kodu (konwencja Deno, nie `.test.ts`)
 - Framework: `Deno.test` + `jsr:@std/assert` + `jsr:@std/testing/mock`
 - Pure logic wydzielaj do osobnych plików (np. `helpers.ts`) — `index.ts` odpala `serve()` i nie da się go importować w testach
+- Każdy nowy helper w `helpers.ts` MUSI mieć test (XSS escape, walidacja
+  wejścia, transformacje URL, parsowanie body)
 - CI: `deno test supabase/functions/ --no-check --allow-env --allow-net --allow-read`
+
+### Vercel API endpoints
+
+- `api/server.ts` to lokalny dev server — testuj logikę wydzieloną do helpers,
+  nie samego handlera
+- Każdy endpoint w `api/` musi mieć smoke test wywołania (lokalny server
+  na :3333) udokumentowany w PR
+
+### PG functions / triggers / migrations z logiką
+
+- Trigger generujący slug, RPC z conditional, CHECK constraint — każdy
+  taki nietrywialny kawałek SQL musi mieć test (frontend hook test wywołujący
+  RPC + asercje na zwrócony shape, lub dedykowany SQL test)
 
 ## Skills
 

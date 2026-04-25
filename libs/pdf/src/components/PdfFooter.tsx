@@ -6,9 +6,19 @@ interface PdfFooterProps {
   companyName: string;
   companyPhone?: string;
   companyEmail?: string;
+  /**
+   * Wording for the carfect.pl signature. Use "Ofertę" for offers,
+   * "Dokument" (default) for everything else.
+   */
+  documentLabel?: 'Ofertę' | 'Dokument';
 }
 
-export function PdfFooter({ companyName, companyPhone, companyEmail }: PdfFooterProps) {
+export function PdfFooter({
+  companyName,
+  companyPhone,
+  companyEmail,
+  documentLabel = 'Dokument',
+}: PdfFooterProps) {
   const parts = [companyName, companyPhone, companyEmail].filter(Boolean);
 
   return (
@@ -23,7 +33,7 @@ export function PdfFooter({ companyName, companyPhone, companyEmail }: PdfFooter
           style={{ fontSize: 7, color: '#b0b0b0', marginTop: 2 }}
           render={({ pageNumber, totalPages }) =>
             pageNumber === totalPages
-              ? 'Ofertę przygotowano w systemie do zarządzania studiem detailingu — carfect.pl'
+              ? `${documentLabel} przygotowano w systemie do zarządzania studiem detailingu — carfect.pl`
               : ''
           }
         />

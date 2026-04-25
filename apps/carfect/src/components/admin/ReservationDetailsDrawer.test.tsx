@@ -38,10 +38,19 @@ vi.mock('@/hooks/use-mobile', () => ({
 // Mock instance settings — show_reservation_status enabled for tests
 vi.mock('@/hooks/useInstanceSettings', () => ({
   useInstanceSettings: () => ({
-    data: { assign_employees_to_stations: false, assign_employees_to_reservations: false, show_reservation_status: true },
+    data: { assign_employees_to_stations: false, assign_employees_to_reservations: false, show_reservation_status: true, slug: 'test-slug' },
     isLoading: false,
   }),
   useUpdateInstanceSettings: () => ({ updateSetting: vi.fn() }),
+}));
+
+// Mock @shared/post-sale-instructions to avoid pulling tiptap/sonner into this test
+vi.mock('@shared/post-sale-instructions', () => ({
+  InstructionSendDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="instruction-send-dialog">Send Dialog</div> : null,
+  InstructionSendHistory: ({ reservationId }: { reservationId: string }) => (
+    <div data-testid="instruction-send-history">history:{reservationId}</div>
+  ),
 }));
 
 // Mock SendSmsDialog
@@ -1035,6 +1044,41 @@ describe('ReservationDetailsDrawer', () => {
       });
 
       expect(screen.queryByText('Protokół przyjęcia pojazdu')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Post-sale instructions integration', () => {
+    it('renders the InstructionSendHistory below the action area in admin mode', () => {
+      renderDrawer();
+      expect(screen.getByTestId('instruction-send-history')).toBeInTheDocument();
+      expect(screen.getByText(/history:res-123/)).toBeInTheDocument();
+    });
+
+    it('opens the InstructionSendDialog when the "Wyślij instrukcję" action is clicked', async () => {
+      const user = userEvent.setup();
+      renderDrawer();
+
+      const moreBtns = screen.getAllByRole('button').filter((b) =>
+        b.querySelector('svg.lucide-more-vertical') ||
+        b.querySelector('svg.lucide-ellipsis-vertical'),
+      );
+      // Open at least one of the actions menus
+      if (moreBtns.length > 0) await user.click(moreBtns[0]);
+
+      const sendItems = await screen.findAllByText('Wyślij instrukcję');
+      await user.click(sendItems[0]);
+
+      expect(await screen.findByTestId('instruction-send-dialog')).toBeInTheDocument();
+    });
+
+    it('does not render the instruction history in hall mode', () => {
+      const hallConfig: HallConfig = {
+        instanceId: 'inst-456',
+        hallId: 'hall-1',
+        canEdit: false,
+      };
+      renderDrawer({ mode: 'hall', hallConfig });
+      expect(screen.queryByTestId('instruction-send-history')).not.toBeInTheDocument();
     });
   });
 });

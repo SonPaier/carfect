@@ -26,14 +26,14 @@ export const baseStyles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: '#ffffff',
     padding: 40,
-    paddingTop: 70,
+    paddingTop: 85,
     paddingBottom: 50,
     fontFamily: 'Inter',
     fontSize: 10,
     color: '#111111',
   },
 
-  // Fixed header — ~40pt height
+  // Fixed header — ~50pt height (logo + name/subtitle on left, contact stack on right)
   header: {
     position: 'absolute',
     top: 20,
@@ -41,7 +41,7 @@ export const baseStyles = StyleSheet.create({
     right: 40,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingBottom: 8,
     fontSize: 8,
   },
@@ -57,7 +57,7 @@ export const baseStyles = StyleSheet.create({
   },
   headerSeparator: {
     position: 'absolute',
-    top: 63,
+    top: 75,
     left: 40,
     right: 40,
     height: 1,

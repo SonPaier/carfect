@@ -129,6 +129,10 @@ export default defineConfig(({ mode }) => ({
       '@shared/in-app-hints': path.resolve(__dirname, '../../libs/in-app-hints/src/index.ts'),
       '@shared/custom-fields': path.resolve(__dirname, '../../libs/custom-fields/src/index.ts'),
       '@shared/protocol-config': path.resolve(__dirname, '../../libs/protocol-config/src/index.ts'),
+      '@shared/post-sale-instructions': path.resolve(
+        __dirname,
+        '../../libs/post-sale-instructions/src/index.ts',
+      ),
       '@': path.resolve(__dirname, './src'),
     },
   },

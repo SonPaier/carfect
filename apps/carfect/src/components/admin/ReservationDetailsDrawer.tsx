@@ -28,6 +28,7 @@ import {
   Users,
   UserX,
   ChevronRight,
+  Send,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
@@ -47,6 +48,7 @@ import ReservationPhotosSection from './ReservationPhotosSection';
 import ServiceSelectionDrawer from './ServiceSelectionDrawer';
 import { EmployeeSelectionDrawer } from './EmployeeSelectionDrawer';
 import { AssignedEmployeesChips } from './AssignedEmployeesChips';
+import { InstructionSendDialog, InstructionSendHistory } from '@shared/post-sale-instructions';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { toast } from 'sonner';
@@ -196,6 +198,7 @@ const ReservationDetailsDrawer = ({
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
   const [reservationPhotos, setReservationPhotos] = useState<string[]>([]);
+  const [sendInstructionDialogOpen, setSendInstructionDialogOpen] = useState(false);
   // Service management (add/remove services)
   const {
     savingService,
@@ -651,7 +654,9 @@ const ReservationDetailsDrawer = ({
             {showEmployeeAssignment && !isHallMode && (
               <div className="flex-1">
                 <div>
-                  <div className="text-xs text-foreground">{t('reservationDetails.assignedEmployees')}</div>
+                  <div className="text-xs text-foreground">
+                    {t('reservationDetails.assignedEmployees')}
+                  </div>
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     {/* Employee chips - same style as services */}
                     {localAssignedEmployeeIds.map((empId) => {
@@ -739,7 +744,9 @@ const ReservationDetailsDrawer = ({
                 <div className="flex-1">
                   <div>
                     <div className="text-xs text-foreground">
-                      {pricingMode === 'netto' ? t('reservationDetails.amountNet') : t('reservationDetails.amountGross')}
+                      {pricingMode === 'netto'
+                        ? t('reservationDetails.amountNet')
+                        : t('reservationDetails.amountGross')}
                     </div>
                     <div className="font-semibold text-lg">{displayTotal} zł</div>
                     <div className="text-xs text-muted-foreground">
@@ -845,6 +852,17 @@ const ReservationDetailsDrawer = ({
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {!isHallMode && reservation && instanceSettings?.slug && (
+              <div className="border-t border-border/30 pt-3 mt-3">
+                <InstructionSendHistory
+                  reservationId={reservation.id}
+                  instanceId={reservation.instance_id}
+                  instanceSlug={instanceSettings.slug}
+                  supabase={supabase}
+                />
               </div>
             )}
 
@@ -1088,7 +1106,9 @@ const ReservationDetailsDrawer = ({
                           }}
                         >
                           <FileText className="w-4 h-4 mr-2" />
-                          {existingProtocolId ? t('reservationDetails.editProtocol') : t('reservationDetails.addProtocol')}
+                          {existingProtocolId
+                            ? t('reservationDetails.editProtocol')
+                            : t('reservationDetails.addProtocol')}
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -1114,6 +1134,18 @@ const ReservationDetailsDrawer = ({
                           >
                             <FileText className="w-4 h-4 mr-2" />
                             {t('reservationDetails.prepareOffer')}
+                          </DropdownMenuItem>
+                        )}
+
+                        {reservation && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setActionsMenuOpen(false);
+                              setSendInstructionDialogOpen(true);
+                            }}
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            {t('instructions.sendDialogTitle')}
                           </DropdownMenuItem>
                         )}
 
@@ -1182,7 +1214,10 @@ const ReservationDetailsDrawer = ({
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t('reservationDetails.noShowConfirmTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('reservationDetails.noShowConfirmDescription', { name: customerName, phone: customerPhone })}
+                    {t('reservationDetails.noShowConfirmDescription', {
+                      name: customerName,
+                      phone: customerPhone,
+                    })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1259,6 +1294,12 @@ const ReservationDetailsDrawer = ({
                         >
                           <FileText className="w-4 h-4 mr-2" />
                           {t('reservationDetails.prepareOffer')}
+                        </DropdownMenuItem>
+                      )}
+                      {reservation && (
+                        <DropdownMenuItem onClick={() => setSendInstructionDialogOpen(true)}>
+                          <Send className="w-4 h-4 mr-2" />
+                          {t('instructions.sendDialogTitle')}
                         </DropdownMenuItem>
                       )}
                       {onNoShow && (
@@ -1574,6 +1615,18 @@ const ReservationDetailsDrawer = ({
         open={customerDrawerOpen}
         onClose={() => setCustomerDrawerOpen(false)}
       />
+
+      {reservation && instanceSettings?.slug && (
+        <InstructionSendDialog
+          open={sendInstructionDialogOpen}
+          onOpenChange={setSendInstructionDialogOpen}
+          reservationId={reservation.id}
+          customerId={reservation.customer_id ?? null}
+          customerEmail={reservation.customer_email ?? null}
+          instanceId={reservation.instance_id}
+          supabase={supabase}
+        />
+      )}
 
       {/* Reservation Photos Dialog */}
       {reservation && (

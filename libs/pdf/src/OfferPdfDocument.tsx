@@ -29,6 +29,11 @@ export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferP
       <Page size="A4" style={baseStyles.page}>
         <PdfHeader
           offerNumber={offer.offerNumber}
+          companyName={instance.name ?? config.companyName}
+          companyPhone={instance.phone ?? config.companyPhone}
+          companyEmail={instance.email ?? config.companyEmail}
+          companyAddress={instance.address ?? config.companyAddress}
+          companyWebsite={instance.website}
           logoBuffer={logoBuffer}
           accentColor={config.accentColor}
         />
@@ -82,6 +87,7 @@ export function OfferPdfDocument({ offer, instance, config, logoBuffer }: OfferP
           companyName={config.companyName}
           companyPhone={config.companyPhone}
           companyEmail={config.companyEmail}
+          documentLabel="Ofertę"
         />
       </Page>
     </Document>
