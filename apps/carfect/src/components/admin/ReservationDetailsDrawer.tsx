@@ -28,6 +28,7 @@ import {
   Users,
   UserX,
   ChevronRight,
+  Send,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneDisplay, normalizePhone } from '@shared/utils';
@@ -47,6 +48,10 @@ import ReservationPhotosSection from './ReservationPhotosSection';
 import ServiceSelectionDrawer from './ServiceSelectionDrawer';
 import { EmployeeSelectionDrawer } from './EmployeeSelectionDrawer';
 import { AssignedEmployeesChips } from './AssignedEmployeesChips';
+import {
+  InstructionSendDialog,
+  InstructionSendHistory,
+} from '@shared/post-sale-instructions';
 import { Button } from '@shared/ui';
 import { Badge } from '@shared/ui';
 import { toast } from 'sonner';
@@ -196,6 +201,7 @@ const ReservationDetailsDrawer = ({
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
   const [reservationPhotos, setReservationPhotos] = useState<string[]>([]);
+  const [sendInstructionDialogOpen, setSendInstructionDialogOpen] = useState(false);
   // Service management (add/remove services)
   const {
     savingService,
@@ -1117,6 +1123,18 @@ const ReservationDetailsDrawer = ({
                           </DropdownMenuItem>
                         )}
 
+                        {reservation && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setActionsMenuOpen(false);
+                              setSendInstructionDialogOpen(true);
+                            }}
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            {t('instructions.sendDialogTitle')}
+                          </DropdownMenuItem>
+                        )}
+
                         {onNoShow && (
                           <>
                             <DropdownMenuSeparator />
@@ -1149,6 +1167,17 @@ const ReservationDetailsDrawer = ({
                   )}
                 </div>
               )}
+
+            {!isHallMode && reservation && instanceSettings?.slug && (
+              <div className="mt-4">
+                <InstructionSendHistory
+                  reservationId={reservation.id}
+                  instanceId={reservation.instance_id}
+                  instanceSlug={instanceSettings.slug}
+                  supabase={supabase}
+                />
+              </div>
+            )}
 
             {/* Delete confirmation dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1259,6 +1288,14 @@ const ReservationDetailsDrawer = ({
                         >
                           <FileText className="w-4 h-4 mr-2" />
                           {t('reservationDetails.prepareOffer')}
+                        </DropdownMenuItem>
+                      )}
+                      {reservation && (
+                        <DropdownMenuItem
+                          onClick={() => setSendInstructionDialogOpen(true)}
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          {t('instructions.sendDialogTitle')}
                         </DropdownMenuItem>
                       )}
                       {onNoShow && (
@@ -1574,6 +1611,23 @@ const ReservationDetailsDrawer = ({
         open={customerDrawerOpen}
         onClose={() => setCustomerDrawerOpen(false)}
       />
+
+      {reservation && instanceSettings?.slug && (
+        <InstructionSendDialog
+          open={sendInstructionDialogOpen}
+          onOpenChange={setSendInstructionDialogOpen}
+          reservationId={reservation.id}
+          customerId={reservation.customer_id ?? null}
+          customerEmail={reservation.customer_email ?? null}
+          instanceId={reservation.instance_id}
+          instanceSlug={instanceSettings.slug}
+          supabase={supabase}
+          onRequestDuplicate={() => {
+            setSendInstructionDialogOpen(false);
+            toast.info(t('instructions.builtinNeedsDuplicate'));
+          }}
+        />
+      )}
 
       {/* Reservation Photos Dialog */}
       {reservation && (
