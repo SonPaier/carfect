@@ -5684,7 +5684,9 @@
     "actions": "Aktionen",
     "preview": "Vorschau",
     "copyPublicLink": "Link kopieren",
-    "sendByEmail": "Per E-Mail senden"
+    "sendByEmail": "Per E-Mail senden",
+    "copyLinkBuiltinHint": "Eingebaute Vorlagen haben noch keinen öffentlichen Link — senden Sie sie zuerst an einen Kunden.",
+    "copyLinkNoSendHint": "Senden Sie diese Anleitung zuerst an einen Kunden, um einen öffentlichen Link zu erzeugen."
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

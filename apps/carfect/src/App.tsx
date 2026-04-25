@@ -119,7 +119,7 @@ const InstancePublicRoutes = ({ subdomain }: { subdomain: string }) => (
       <Route path="/moja-rezerwacja" element={<Navigate to="/res" replace />} />
       <Route path="/offers/:token" element={<PublicOfferView />} />
       <Route path="/protocols/:token" element={<PublicProtocolView />} />
-      <Route path="/instructions/:token" element={<PublicInstructionView />} />
+      <Route path="/instrukcje/:token" element={<PublicInstructionView />} />
       <Route
         path="/embed"
         element={
@@ -146,7 +146,7 @@ const InstanceAdminRoutes = ({ subdomain }: { subdomain: string }) => (
       {/* Public routes - no CarModelsProvider needed */}
       <Route path="/offers/:token" element={<PublicOfferView />} />
       <Route path="/protocols/:token" element={<PublicProtocolView />} />
-      <Route path="/instructions/:token" element={<PublicInstructionView />} />
+      <Route path="/instrukcje/:token" element={<PublicInstructionView />} />
 
       {/* All admin routes wrapped in CarModelsProvider */}
       <Route
@@ -214,7 +214,7 @@ const DevRoutes = () => (
         <Route path="/moja-rezerwacja" element={<Navigate to="/res" replace />} />
         <Route path="/offers/:token" element={<PublicOfferView />} />
         <Route path="/protocols/:token" element={<PublicProtocolView />} />
-        <Route path="/instructions/:token" element={<PublicInstructionView />} />
+        <Route path="/instrukcje/:token" element={<PublicInstructionView />} />
         {/* Instance-specific login route */}
         <Route path="/:slug/login" element={<InstanceAuth />} />
         <Route path="/:slug/forgot-password" element={<ForgotPassword />} />

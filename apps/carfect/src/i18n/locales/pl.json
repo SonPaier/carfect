@@ -5700,7 +5700,9 @@
     "actions": "Akcje",
     "preview": "Podgląd",
     "copyPublicLink": "Kopiuj link",
-    "sendByEmail": "Wyślij e-mailem"
+    "sendByEmail": "Wyślij e-mailem",
+    "copyLinkBuiltinHint": "Wbudowane szablony nie mają jeszcze publicznego linku — wyślij je najpierw do klienta.",
+    "copyLinkNoSendHint": "Najpierw wyślij tę instrukcję do klienta — wtedy powstanie publiczny link."
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

@@ -4,7 +4,7 @@ import type { Database } from '../../../../apps/carfect/src/integrations/supabas
 import type { InstructionSendRow } from '../types';
 
 export function buildInstructionPublicUrl(slug: string, token: string): string {
-  return `https://${slug}.carfect.pl/instructions/${token}`;
+  return `https://${slug}.carfect.pl/instrukcje/${token}`;
 }
 
 interface SendInstructionInput {

@@ -110,7 +110,7 @@ serve(async (req) => {
     const instanceName = instance?.name ?? '';
     const publicToken = row.public_token;
 
-    const instructionUrl = `https://${instanceSlug}.carfect.pl/instructions/${publicToken}`;
+    const instructionUrl = `https://${instanceSlug}.carfect.pl/instrukcje/${publicToken}`;
 
     console.log('Preparing email for:', customerEmail);
 

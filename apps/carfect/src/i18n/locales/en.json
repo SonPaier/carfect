@@ -5696,7 +5696,9 @@
     "actions": "Actions",
     "preview": "Preview",
     "copyPublicLink": "Copy link",
-    "sendByEmail": "Send by email"
+    "sendByEmail": "Send by email",
+    "copyLinkBuiltinHint": "Built-in templates have no public link yet — send one to a customer first.",
+    "copyLinkNoSendHint": "Send this instruction to a customer first to create a public link."
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

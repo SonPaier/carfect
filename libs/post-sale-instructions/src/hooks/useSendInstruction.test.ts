@@ -109,6 +109,6 @@ describe('useSendInstruction', () => {
 describe('buildInstructionPublicUrl', () => {
   it('builds a public URL with the provided slug and token', () => {
     const url = buildInstructionPublicUrl('armcar', 'tok-abc123');
-    expect(url).toBe('https://armcar.carfect.pl/instructions/tok-abc123');
+    expect(url).toBe('https://armcar.carfect.pl/instrukcje/tok-abc123');
   });
 });

@@ -7,12 +7,14 @@ import {
   InstructionList,
   InstructionEditor,
   InstructionPreviewDialog,
+  buildInstructionPublicUrl,
   previewInstructionPdf,
   type HardcodedKey,
   type InstructionListItem,
   type PostSaleInstructionRow,
   type TiptapDocument,
 } from '@shared/post-sale-instructions';
+import { useInstanceSettings } from '@/hooks/useInstanceSettings';
 
 interface PostSaleInstructionsSettingsProps {
   instanceId: string;
@@ -80,6 +82,43 @@ export default function PostSaleInstructionsSettings({
     contact_person: instanceRow?.contact_person ?? '',
   };
 
+  const { data: instanceSettings } = useInstanceSettings(instanceId);
+  const instanceSlug = instanceSettings?.slug ?? null;
+
+  const findLatestPublicToken = async (instructionId: string): Promise<string | null> => {
+    const { data, error } = await supabase
+      .from('post_sale_instruction_sends')
+      .select('public_token')
+      .eq('instruction_id', instructionId)
+      .order('sent_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error('Failed to look up public token:', error);
+      return null;
+    }
+    return (data?.public_token as string | undefined) ?? null;
+  };
+
+  const handleCopyLink = async (item: InstructionListItem) => {
+    if (!instanceSlug) {
+      toast.error(t('publicInstruction.loadError'));
+      return;
+    }
+    if (item.kind === 'builtin') {
+      toast.error(t('instructions.copyLinkBuiltinHint'));
+      return;
+    }
+    const token = await findLatestPublicToken(item.row.id);
+    if (!token) {
+      toast.error(t('instructions.copyLinkNoSendHint'));
+      return;
+    }
+    const url = buildInstructionPublicUrl(instanceSlug, token);
+    await navigator.clipboard.writeText(url);
+    toast.success(t('instructions.linkCopied'));
+  };
+
   const handleDownloadPdf = async (item: InstructionListItem) => {
     const title = item.kind === 'builtin' ? item.template.titlePl : item.row.title;
     const content: TiptapDocument =
@@ -101,6 +140,7 @@ export default function PostSaleInstructionsSettings({
           onDuplicateBuiltin={(key) => setMode({ kind: 'duplicate', key })}
           onPreview={(item) => setPreviewItem(item)}
           onDownloadPdf={handleDownloadPdf}
+          onCopyLink={handleCopyLink}
         />
       );
     }
