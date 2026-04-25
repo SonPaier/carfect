@@ -2,26 +2,29 @@ import React from 'react';
 import { Document, Page, View, Text, Image, Link, StyleSheet } from '@react-pdf/renderer';
 import { registerFonts } from './fonts';
 import { baseStyles, defaultPdfConfig } from './styles';
+import { PdfHeader } from './components/PdfHeader';
+import { PdfFooter } from './components/PdfFooter';
 import type { TiptapDocument, TiptapNode, TiptapTextNode, TiptapElementNode } from './tiptapText';
+import type { PrefetchedImage } from './prefetchImages';
 
 // Re-export types so consumers can import from a single location
 export type { TiptapDocument, TiptapNode, TiptapTextNode, TiptapElementNode } from './tiptapText';
 // Re-export the pure helper
 export { flattenTiptapToText } from './tiptapText';
+export { prefetchInstructionImages, collectImageUrls, detectImageFormat } from './prefetchImages';
+export type { PrefetchedImage, ImageFormat } from './prefetchImages';
 
 // ─── Instruction-specific tweaks layered on baseStyles (shared with offers) ───
 
 const styles = StyleSheet.create({
-  headerInstanceName: {
-    fontSize: 8,
-    color: '#555555',
-    textAlign: 'right',
-  },
+  // Section-style instruction title — matches the inline bold heading
+  // used by offers (e.g. "Dane klienta i pojazdu", "Usługi") instead of
+  // a centered cover-page title.
   title: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 16,
+    marginTop: 4,
+    marginBottom: 12,
     color: '#111111',
   },
   paragraph: {
@@ -33,6 +36,18 @@ const styles = StyleSheet.create({
   h2: { fontSize: 15, fontWeight: 'bold', marginTop: 10, marginBottom: 5, color: '#111111' },
   h3: { fontSize: 12, fontWeight: 'bold', marginTop: 8, marginBottom: 4, color: '#111111' },
   image: { marginVertical: 6, maxWidth: '100%' },
+  // Image+text wrap: emulates float:left/right by putting them in a row.
+  // Used when an image has align='left' or 'right' and is followed by paragraphs.
+  imageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 8,
+  },
+  imageRowText: {
+    flex: 1,
+    flexDirection: 'column',
+  },
   listView: {
     marginBottom: 4,
   },
@@ -64,7 +79,11 @@ function renderTextNode(node: TiptapTextNode): React.ReactNode {
   return content;
 }
 
-function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
+function renderTiptapNode(
+  node: TiptapNode,
+  key: number,
+  imageBuffers: Map<string, PrefetchedImage>,
+): React.ReactNode {
   if (node.type === 'text') {
     return renderTextNode(node as TiptapTextNode);
   }
@@ -79,7 +98,7 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
   if (el.type === 'paragraph') {
     return (
       <Text key={key} style={styles.paragraph}>
-        {children.map((child, i) => renderTiptapNode(child, i))}
+        {children.map((child, i) => renderTiptapNode(child, i, imageBuffers))}
       </Text>
     );
   }
@@ -96,7 +115,7 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
           return (
             <Text key={i} style={styles.listItem}>
               {'• '}
-              {innerChildren.map((child, ci) => renderTiptapNode(child, ci))}
+              {innerChildren.map((child, ci) => renderTiptapNode(child, ci, imageBuffers))}
             </Text>
           );
         })}
@@ -115,7 +134,7 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
           return (
             <Text key={i} style={styles.listItem}>
               {`${i + 1}. `}
-              {innerChildren.map((child, ci) => renderTiptapNode(child, ci))}
+              {innerChildren.map((child, ci) => renderTiptapNode(child, ci, imageBuffers))}
             </Text>
           );
         })}
@@ -126,7 +145,7 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
   if (el.type === 'listItem') {
     return (
       <React.Fragment key={key}>
-        {children.map((child, i) => renderTiptapNode(child, i))}
+        {children.map((child, i) => renderTiptapNode(child, i, imageBuffers))}
       </React.Fragment>
     );
   }
@@ -136,40 +155,131 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
     const headingStyle = level === 1 ? styles.h1 : level === 2 ? styles.h2 : styles.h3;
     return (
       <Text key={key} style={headingStyle}>
-        {children.map((child, i) => renderTiptapNode(child, i))}
+        {children.map((child, i) => renderTiptapNode(child, i, imageBuffers))}
       </Text>
     );
   }
 
   if (el.type === 'image') {
-    const attrs = el.attrs as { src?: string; align?: string } | undefined;
-    const src = attrs?.src;
-    if (!src) return null;
-    // react-pdf's Image only supports jpg/png/gif/bmp. Silently drop other
-    // formats (notably .webp from the editor's upload) — emitting <Image>
-    // with an unsupported source crashes the render at the renderer level
-    // ("Not valid image extension") and aborts the whole document.
-    if (!/\.(jpe?g|png|gif|bmp)(?:\?|#|$)/i.test(src)) return null;
-    const align = attrs?.align ?? 'center';
-    // react-pdf has no float — map left/right/center to alignSelf,
-    // map full to a 100% width block.
-    const alignedStyle =
-      align === 'full'
-        ? { ...styles.image, width: '100%' }
-        : align === 'left'
-          ? { ...styles.image, alignSelf: 'flex-start' as const, width: '50%' }
-          : align === 'right'
-            ? { ...styles.image, alignSelf: 'flex-end' as const, width: '50%' }
-            : { ...styles.image, alignSelf: 'center' as const, width: '70%' };
-    return <Image key={key} src={src} style={alignedStyle} />;
+    return renderStandaloneImage(el, key, imageBuffers);
   }
 
   // Unknown node: render children only (graceful fallback)
   return (
     <React.Fragment key={key}>
-      {children.map((child, i) => renderTiptapNode(child, i))}
+      {children.map((child, i) => renderTiptapNode(child, i, imageBuffers))}
     </React.Fragment>
   );
+}
+
+function imageAttrs(el: TiptapElementNode): { src?: string; align?: string } {
+  return (el.attrs as { src?: string; align?: string } | undefined) ?? {};
+}
+
+function renderStandaloneImage(
+  el: TiptapElementNode,
+  key: number,
+  imageBuffers: Map<string, PrefetchedImage>,
+): React.ReactNode {
+  const { src, align = 'center' } = imageAttrs(el);
+  if (!src) return null;
+  // react-pdf in Node will not auto-fetch HTTP image URLs reliably, so
+  // every image must be pre-fetched into a Buffer by the caller. If the
+  // map has no entry, the URL was unsupported (.svg/data:/etc.) or the
+  // fetch failed — drop silently rather than aborting the document.
+  const prefetched = imageBuffers.get(src);
+  if (!prefetched) return null;
+  // react-pdf has no float — left/right paragraphs are wrapped via
+  // renderImageRow. This branch handles "lone" images (no following
+  // paragraphs) and the center/full cases.
+  const alignedStyle =
+    align === 'full'
+      ? { ...styles.image, width: '100%' }
+      : align === 'left'
+        ? { ...styles.image, alignSelf: 'flex-start' as const, width: '50%' }
+        : align === 'right'
+          ? { ...styles.image, alignSelf: 'flex-end' as const, width: '50%' }
+          : { ...styles.image, alignSelf: 'center' as const, width: '70%' };
+  return (
+    <Image
+      key={key}
+      src={{ data: prefetched.data, format: prefetched.format }}
+      style={alignedStyle}
+    />
+  );
+}
+
+function renderImageRow(
+  el: TiptapElementNode,
+  paragraphs: TiptapElementNode[],
+  key: number,
+  imageBuffers: Map<string, PrefetchedImage>,
+): React.ReactNode {
+  const { src, align } = imageAttrs(el);
+  if (!src) return null;
+  const prefetched = imageBuffers.get(src);
+  if (!prefetched) {
+    // Image cannot be embedded — fall back to plain text below the (missing) image.
+    return (
+      <React.Fragment key={key}>
+        {paragraphs.map((p, i) => renderTiptapNode(p, i, imageBuffers))}
+      </React.Fragment>
+    );
+  }
+  const imageNode = (
+    <Image
+      src={{ data: prefetched.data, format: prefetched.format }}
+      style={{ ...styles.image, width: '40%', marginVertical: 0 }}
+    />
+  );
+  const textBlock = (
+    <View style={styles.imageRowText}>
+      {paragraphs.map((p, i) => renderTiptapNode(p, i, imageBuffers))}
+    </View>
+  );
+  return (
+    <View key={key} style={styles.imageRow} wrap={false}>
+      {align === 'right' ? textBlock : imageNode}
+      {align === 'right' ? imageNode : textBlock}
+    </View>
+  );
+}
+
+/**
+ * Renders a sequence of Tiptap nodes. When an image with align='left' or
+ * align='right' is followed by paragraphs, they are grouped into a horizontal
+ * row so text wraps next to the image (mirrors the editor behavior). The
+ * grouping stops at the first non-paragraph (heading, list, image, etc.).
+ */
+function renderNodeList(
+  nodes: TiptapNode[],
+  imageBuffers: Map<string, PrefetchedImage>,
+): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let i = 0;
+  while (i < nodes.length) {
+    const node = nodes[i];
+    if (node.type === 'image') {
+      const el = node as TiptapElementNode;
+      const align = imageAttrs(el).align;
+      if (align === 'left' || align === 'right') {
+        const paragraphs: TiptapElementNode[] = [];
+        let j = i + 1;
+        while (j < nodes.length && (nodes[j] as TiptapElementNode).type === 'paragraph') {
+          paragraphs.push(nodes[j] as TiptapElementNode);
+          j++;
+        }
+        if (paragraphs.length > 0) {
+          out.push(renderImageRow(el, paragraphs, i, imageBuffers));
+          i = j;
+          continue;
+        }
+      }
+    }
+    out.push(renderTiptapNode(node, i, imageBuffers));
+    i++;
+  }
+  return out;
 }
 
 // ─── Component props ───
@@ -189,6 +299,8 @@ export interface InstructionPdfDocumentProps {
   content: TiptapDocument;
   instance: InstructionInstance;
   logoBuffer: Buffer | null;
+  /** URL → prefetched bytes. Provide via `prefetchInstructionImages(content)` before render. */
+  imageBuffers?: Map<string, PrefetchedImage>;
 }
 
 // ─── Main component ───
@@ -198,68 +310,33 @@ export function InstructionPdfDocument({
   content,
   instance,
   logoBuffer,
+  imageBuffers,
 }: InstructionPdfDocumentProps) {
   registerFonts();
 
   const nodes = content.content ?? [];
   const accentColor = defaultPdfConfig.accentColor;
-  const footerParts = [instance.name, instance.phone, instance.email].filter((p): p is string =>
-    Boolean(p),
-  );
+  const images = imageBuffers ?? new Map<string, PrefetchedImage>();
 
   return (
     <Document title={title} language="pl">
       <Page size="A4" style={baseStyles.page}>
-        {/* Fixed header — mirrors PdfHeader (offer PDF) so instructions stay
-            visually consistent with offer documents. */}
-        <View fixed style={baseStyles.header}>
-          {logoBuffer ? (
-            <Image src={{ data: logoBuffer, format: 'png' }} style={baseStyles.headerLogo} />
-          ) : (
-            <View />
-          )}
-          {instance.name ? (
-            <Text style={styles.headerInstanceName}>{instance.name}</Text>
-          ) : (
-            <View />
-          )}
-        </View>
-
-        {/* Accent separator */}
-        <View fixed style={[baseStyles.headerSeparator, { backgroundColor: accentColor }]} />
-
-        {/* Instruction title */}
+        <PdfHeader
+          companyName={instance.name}
+          companyPhone={instance.phone}
+          companyEmail={instance.email}
+          companyAddress={instance.address}
+          companyWebsite={instance.website}
+          logoBuffer={logoBuffer}
+          accentColor={accentColor}
+        />
         <Text style={styles.title}>{title}</Text>
-
-        {/* Tiptap content */}
-        {nodes.map((node, i) => renderTiptapNode(node, i))}
-
-        {/* Fixed footer — mirrors PdfFooter (offer PDF) */}
-        <View fixed style={baseStyles.footer}>
-          <View style={{ flex: 1 }}>
-            {footerParts.length > 0 && (
-              <View style={baseStyles.footerCompanyInfo}>
-                {footerParts.map((part, i) => (
-                  <Text key={i}>{part}</Text>
-                ))}
-              </View>
-            )}
-            <Text
-              style={{ fontSize: 7, color: '#b0b0b0', marginTop: 2 }}
-              render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
-                pageNumber === totalPages
-                  ? 'Dokument przygotowano w systemie do zarządzania studiem detailingu — carfect.pl'
-                  : ''
-              }
-            />
-          </View>
-          <Text
-            style={baseStyles.footerPageNumber}
-            render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
-              `Strona ${pageNumber} z ${totalPages}`
-            }
-          />
-        </View>
+        {renderNodeList(nodes, images)}
+        <PdfFooter
+          companyName={instance.name ?? ''}
+          companyPhone={instance.phone}
+          companyEmail={instance.email}
+        />
       </Page>
     </Document>
   );

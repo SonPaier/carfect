@@ -184,6 +184,7 @@ async function handleInstructionPdf(body: string) {
 
   await loadPdf();
   const logo = instance.logo_url ? await fetchLogo(instance.logo_url) : null;
+  const imageBuffers = await pdf.prefetchInstructionImages(content);
   const reactPdf = await import('@react-pdf/renderer');
   reactPdf.Font.register({
     family: 'Inter',
@@ -205,6 +206,7 @@ async function handleInstructionPdf(body: string) {
       content,
       instance,
       logoBuffer: logo,
+      imageBuffers,
     }),
   );
   const filename = `Instrukcja-${safeName(title)}.pdf`;

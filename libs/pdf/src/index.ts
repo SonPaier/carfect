@@ -31,3 +31,5 @@ export type {
   TiptapElementNode,
 } from './InstructionPdfDocument';
 export { flattenTiptapToText } from './InstructionPdfDocument';
+export { prefetchInstructionImages, collectImageUrls, detectImageFormat } from './prefetchImages';
+export type { PrefetchedImage, ImageFormat } from './prefetchImages';

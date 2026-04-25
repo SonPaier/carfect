@@ -151,6 +151,7 @@ export default function PostSaleInstructionsSettings({
         instanceId={instanceId}
         supabase={supabase}
         mode={editorMode}
+        previewInstance={previewInstance}
         onClose={() => setMode({ kind: 'list' })}
         onSaved={() => setMode({ kind: 'list' })}
       />

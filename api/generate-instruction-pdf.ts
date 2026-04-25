@@ -86,9 +86,10 @@ export default async function handler(req: Request) {
     ]);
 
     const { renderToBuffer } = reactPdf;
-    const { registerFonts, InstructionPdfDocument } =
+    const { registerFonts, InstructionPdfDocument, prefetchInstructionImages } =
       pdfLib as typeof import('../libs/pdf/src/index.js') & {
         InstructionPdfDocument: (typeof import('../libs/pdf/src/InstructionPdfDocument'))['InstructionPdfDocument'];
+        prefetchInstructionImages: (typeof import('../libs/pdf/src/prefetchImages'))['prefetchInstructionImages'];
       };
 
     type InstanceShape = {
@@ -181,6 +182,8 @@ export default async function handler(req: Request) {
       logoBuffer = await fetchLogoBuffer(instance.logo_url);
     }
 
+    const imageBuffers = await prefetchInstructionImages(content);
+
     registerFonts();
 
     const pdfBuffer = await renderToBuffer(
@@ -189,6 +192,7 @@ export default async function handler(req: Request) {
         content,
         instance,
         logoBuffer,
+        imageBuffers,
       }),
     );
 

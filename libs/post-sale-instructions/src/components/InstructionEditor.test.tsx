@@ -61,6 +61,7 @@ function renderEditor(props: {
         instanceId: 'inst-1',
         supabase: {} as never,
         mode: props.mode,
+        previewInstance: { name: 'Test', phone: '+48 000 000 000', email: 'test@example.com' },
         onClose: props.onClose ?? vi.fn(),
         onSaved: props.onSaved ?? vi.fn(),
       }),

@@ -1,15 +1,29 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { Eye, X } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Button, Input, Label, RichTextEditor } from '@shared/ui';
+import { Button, Dialog, DialogContent, Input, Label, RichTextEditor } from '@shared/ui';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useCreateInstruction } from '../hooks/useCreateInstruction';
 import { useUpdateInstruction } from '../hooks/useUpdateInstruction';
 import { BUILTIN_TEMPLATES } from '../builtinTemplates';
+import { previewInstructionPdf } from '../pdfClient';
 import type { HardcodedKey, PostSaleInstructionRow, TiptapDocument } from '../types';
+import { InstructionPublicView } from './InstructionPublicView';
+
+interface PreviewInstance {
+  name?: string;
+  logo_url?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  website?: string;
+  contact_person?: string;
+}
 
 type EditorMode =
   | { kind: 'new' }
@@ -20,6 +34,8 @@ interface InstructionEditorProps {
   instanceId: string;
   supabase: SupabaseClient<Database>;
   mode: EditorMode;
+  /** Instance details used by the in-editor preview dialog (header/footer). */
+  previewInstance: PreviewInstance;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -47,12 +63,14 @@ export function InstructionEditor({
   instanceId,
   supabase,
   mode,
+  previewInstance,
   onClose,
   onSaved,
 }: InstructionEditorProps) {
   const { t } = useTranslation();
   const createMutation = useCreateInstruction(supabase);
   const updateMutation = useUpdateInstruction(supabase);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const schema = z.object({
     title: z.string().min(1, t('instructions.titleRequired')),
@@ -168,15 +186,60 @@ export function InstructionEditor({
           )}
         />
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-between gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? t('common.saving') : t('common.save')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPreviewOpen(true)}
+              disabled={isSaving}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              {t('instructions.preview')}
+            </Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? t('common.saving') : t('common.save')}
+            </Button>
+          </div>
         </div>
       </div>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent
+          style={{ maxWidth: '900px', width: '95vw' }}
+          className="[&>button]:hidden max-h-[100dvh] sm:max-h-[90vh] h-[100dvh] sm:h-auto p-0 overflow-hidden rounded-none sm:rounded-md"
+        >
+          <div className="absolute top-3 right-3 z-50">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(false)}
+              aria-label={t('common.close')}
+              className="p-2 rounded-full bg-white hover:bg-hover transition-colors shadow"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="h-full overflow-y-auto">
+            <InstructionPublicView
+              data={{
+                title: form.watch('title') || t('instructions.untitled'),
+                content: form.watch('content'),
+                instance: previewInstance,
+              }}
+              publicToken="preview"
+              onDownloadPdf={() =>
+                previewInstructionPdf({
+                  title: form.watch('title') || t('instructions.untitled'),
+                  content: form.watch('content'),
+                  instance: previewInstance,
+                })
+              }
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
