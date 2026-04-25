@@ -69,7 +69,7 @@ describe('RichTextEditor', () => {
     expect(capturedEditor!.schema.nodes['orderedList']).toBeDefined();
   });
 
-  it('uses a schema with no heading or italic nodes available', async () => {
+  it('exposes heading levels 1-3 in the schema', async () => {
     let capturedEditor: Editor | null = null;
 
     render(
@@ -86,11 +86,9 @@ describe('RichTextEditor', () => {
       expect(capturedEditor).not.toBeNull();
     });
 
-    // StarterKit.configure({ heading: false }) removes heading from schema
-    expect(capturedEditor!.schema.nodes['heading']).toBeUndefined();
-    // italic is included in StarterKit but we verify it's available (not stripped);
-    // the paste-strip behaviour is schema-based — any node/mark not in schema is dropped.
-    // heading is the key check since it was explicitly disabled.
+    // Heading is enabled with levels 1-3 (configured in RichTextEditor).
+    expect(capturedEditor!.schema.nodes['heading']).toBeDefined();
+    expect(capturedEditor!.schema.nodes['image']).toBeDefined();
   });
 
   it('respects the disabled prop and sets contenteditable to false', async () => {

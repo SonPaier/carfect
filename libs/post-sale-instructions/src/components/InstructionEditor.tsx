@@ -9,11 +9,7 @@ import type { Database } from '../../../../apps/carfect/src/integrations/supabas
 import { useCreateInstruction } from '../hooks/useCreateInstruction';
 import { useUpdateInstruction } from '../hooks/useUpdateInstruction';
 import { BUILTIN_TEMPLATES } from '../builtinTemplates';
-import type {
-  HardcodedKey,
-  PostSaleInstructionRow,
-  TiptapDocument,
-} from '../types';
+import type { HardcodedKey, PostSaleInstructionRow, TiptapDocument } from '../types';
 
 type EditorMode =
   | { kind: 'new' }
@@ -97,6 +93,17 @@ export function InstructionEditor({
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const uploadImage = async (file: File): Promise<string> => {
+    const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+    const fileName = `instructions/${instanceId}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('protocol-photos')
+      .upload(fileName, file, { contentType: file.type, cacheControl: '3600' });
+    if (error) throw error;
+    const { data } = supabase.storage.from('protocol-photos').getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="pb-24">
       <div className="max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
@@ -108,9 +115,7 @@ export function InstructionEditor({
             {...form.register('title')}
           />
           {form.formState.errors.title && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.title.message}
-            </p>
+            <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
           )}
         </div>
 
@@ -123,7 +128,8 @@ export function InstructionEditor({
               <RichTextEditor
                 value={field.value}
                 onChange={field.onChange}
-                className="[&_.ProseMirror]:min-h-[400px]"
+                onUploadImage={uploadImage}
+                className="[&_.ProseMirror]:min-h-[400px] [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:px-3 [&_.ProseMirror]:py-2"
               />
             </div>
           )}

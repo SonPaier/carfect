@@ -62,6 +62,10 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
     fontSize: 10,
   },
+  h1: { fontSize: 18, fontWeight: 'bold', marginTop: 12, marginBottom: 6, color: '#111111' },
+  h2: { fontSize: 15, fontWeight: 'bold', marginTop: 10, marginBottom: 5, color: '#111111' },
+  h3: { fontSize: 12, fontWeight: 'bold', marginTop: 8, marginBottom: 4, color: '#111111' },
+  image: { marginVertical: 6, maxWidth: '100%' },
   listView: {
     marginBottom: 4,
   },
@@ -178,6 +182,34 @@ function renderTiptapNode(node: TiptapNode, key: number): React.ReactNode {
     );
   }
 
+  if (el.type === 'heading') {
+    const level = (el.attrs as { level?: number } | undefined)?.level ?? 2;
+    const headingStyle = level === 1 ? styles.h1 : level === 2 ? styles.h2 : styles.h3;
+    return (
+      <Text key={key} style={headingStyle}>
+        {children.map((child, i) => renderTiptapNode(child, i))}
+      </Text>
+    );
+  }
+
+  if (el.type === 'image') {
+    const attrs = el.attrs as { src?: string; align?: string } | undefined;
+    const src = attrs?.src;
+    if (!src) return null;
+    const align = attrs?.align ?? 'center';
+    // react-pdf has no float — map left/right/center to alignSelf,
+    // map full to a 100% width block.
+    const alignedStyle =
+      align === 'full'
+        ? { ...styles.image, width: '100%' }
+        : align === 'left'
+          ? { ...styles.image, alignSelf: 'flex-start' as const, width: '50%' }
+          : align === 'right'
+            ? { ...styles.image, alignSelf: 'flex-end' as const, width: '50%' }
+            : { ...styles.image, alignSelf: 'center' as const, width: '70%' };
+    return <Image key={key} src={src} style={alignedStyle} />;
+  }
+
   // Unknown node: render children only (graceful fallback)
   return (
     <React.Fragment key={key}>
@@ -215,8 +247,8 @@ export function InstructionPdfDocument({
 }: InstructionPdfDocumentProps) {
   registerFonts();
 
-  const footerParts = [instance.phone, instance.email, instance.website].filter(
-    (p): p is string => Boolean(p),
+  const footerParts = [instance.phone, instance.email, instance.website].filter((p): p is string =>
+    Boolean(p),
   );
 
   const nodes = content.content ?? [];

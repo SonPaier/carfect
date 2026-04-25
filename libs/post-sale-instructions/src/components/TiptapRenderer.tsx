@@ -50,6 +50,22 @@ function renderNode(node: TiptapNode, key: number | string): React.ReactNode {
       return <br key={key} />;
     case 'blockquote':
       return <blockquote key={key}>{children}</blockquote>;
+    case 'image': {
+      const src = (node.attrs?.src as string | undefined) ?? '';
+      const alt = (node.attrs?.alt as string | undefined) ?? '';
+      const align =
+        (node.attrs?.align as 'left' | 'center' | 'right' | 'full' | undefined) ?? 'center';
+      if (!src) return null;
+      const alignClass =
+        align === 'left'
+          ? 'float-left mr-4 mb-2 max-w-[45%]'
+          : align === 'right'
+            ? 'float-right ml-4 mb-2 max-w-[45%]'
+            : align === 'full'
+              ? 'block w-full my-2'
+              : 'block mx-auto my-2 max-w-[80%]';
+      return <img key={key} src={src} alt={alt} className={`${alignClass} h-auto rounded-md`} />;
+    }
     default:
       return <Fragment key={key}>{children}</Fragment>;
   }
