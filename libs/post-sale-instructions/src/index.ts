@@ -11,3 +11,4 @@ export type { PublicInstructionData } from './hooks/usePublicInstruction';
 export { openInstructionPdf } from './pdfClient';
 export { InstructionList } from './components/InstructionList';
 export { InstructionEditor } from './components/InstructionEditor';
+export { InstructionSendDialog } from './components/InstructionSendDialog';
