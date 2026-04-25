@@ -6,3 +6,6 @@ export { useUpdateInstruction } from './hooks/useUpdateInstruction';
 export { useDeleteInstruction } from './hooks/useDeleteInstruction';
 export { useSendInstruction, buildInstructionPublicUrl } from './hooks/useSendInstruction';
 export { useInstructionSends } from './hooks/useInstructionSends';
+export { usePublicInstruction } from './hooks/usePublicInstruction';
+export type { PublicInstructionData } from './hooks/usePublicInstruction';
+export { openInstructionPdf } from './pdfClient';
