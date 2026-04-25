@@ -1,4 +1,5 @@
 import { useState, DragEvent, useRef, useCallback, useEffect } from 'react';
+import { isItemRenderableInCalendar } from './calendar/swimLaneUtils';
 import {
   format,
   addDays,
@@ -87,10 +88,10 @@ export interface CalendarItem {
   address_street?: string | null;
   assigned_employee_ids?: string[] | null;
   assigned_employees?: AssignedEmployee[];
-  item_date: string;
+  item_date: string | null;
   end_date?: string | null;
-  start_time: string;
-  end_time: string;
+  start_time: string | null;
+  end_time: string | null;
   status: string;
   admin_notes?: string | null;
   price?: number | null;
@@ -487,9 +488,9 @@ const AdminCalendar = ({
   const getItemsForColumnAndDate = (columnId: string, dateStr: string) => {
     return items.filter((item) => {
       if (item.column_id !== columnId) return false;
-      if (item.status === 'cancelled') return false;
-      const startDate = item.item_date;
-      const endDate = item.end_date || item.item_date;
+      if (!isItemRenderableInCalendar(item)) return false;
+      const startDate = item.item_date!;
+      const endDate = item.end_date || item.item_date!;
       return dateStr >= startDate && dateStr <= endDate;
     });
   };
@@ -800,9 +801,9 @@ const AdminCalendar = ({
                     const endDay = dayNames[new Date(item.end_date + 'T00:00:00').getDay()];
                     return hideHours
                       ? `${startDay} - ${endDay}`
-                      : `${startDay} ${item.start_time.slice(0, 5)} - ${endDay} ${item.end_time.slice(0, 5)}`;
+                      : `${startDay} ${item.start_time?.slice(0, 5) ?? ''} - ${endDay} ${item.end_time?.slice(0, 5) ?? ''}`;
                   })()
-                : !hideHours && `${item.start_time.slice(0, 5)} - ${item.end_time.slice(0, 5)}`}
+                : !hideHours && `${item.start_time?.slice(0, 5) ?? ''} - ${item.end_time?.slice(0, 5) ?? ''}`}
               {item.status === 'change_requested' && <RefreshCw className="w-3 h-3 text-red-600" />}
             </span>
             <div className="flex items-center gap-0.5 shrink-0">
@@ -923,7 +924,7 @@ const AdminCalendar = ({
           </button>
         </div>
         <div className="text-[8px] md:text-[9px] truncate opacity-80">
-          {breakItem.start_time.slice(0, 5)} - {breakItem.end_time.slice(0, 5)}
+          {breakItem.start_time?.slice(0, 5) ?? ''} - {breakItem.end_time?.slice(0, 5) ?? ''}
         </div>
         {breakItem.note && <div className="text-[8px] truncate opacity-70">{breakItem.note}</div>}
       </div>

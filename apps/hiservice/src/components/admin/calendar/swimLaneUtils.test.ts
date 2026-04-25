@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { assignLanes, toDateOnly, formatDateStr, type WeekEvent } from './swimLaneUtils';
+import {
+  assignLanes,
+  toDateOnly,
+  formatDateStr,
+  isItemRenderableInCalendar,
+  type WeekEvent,
+} from './swimLaneUtils';
 import type { CalendarItem } from '../AdminCalendar';
 
 const makeItem = (id: string, startTime = '09:00'): CalendarItem =>
@@ -110,5 +116,33 @@ describe('assignLanes', () => {
   it('does not crash on empty input', () => {
     const events: WeekEvent[] = [];
     expect(() => assignLanes(events)).not.toThrow();
+  });
+});
+
+describe('isItemRenderableInCalendar', () => {
+  it('renders a normal confirmed item with all dates set', () => {
+    expect(isItemRenderableInCalendar(makeItem('a'))).toBe(true);
+  });
+
+  it('hides cancelled items even if dates are set', () => {
+    const item = { ...makeItem('a'), status: 'cancelled' } as CalendarItem;
+    expect(isItemRenderableInCalendar(item)).toBe(false);
+  });
+
+  it('hides follow_up items (commit 1bedbb9a clears their dates)', () => {
+    const item = {
+      ...makeItem('a'),
+      status: 'follow_up',
+      item_date: null,
+      start_time: null,
+      end_time: null,
+    } as unknown as CalendarItem;
+    expect(isItemRenderableInCalendar(item)).toBe(false);
+  });
+
+  it('hides any item with null item_date as defense in depth', () => {
+    // Even if a future status leaves item_date null, it should not crash the calendar.
+    const item = { ...makeItem('a'), item_date: null } as unknown as CalendarItem;
+    expect(isItemRenderableInCalendar(item)).toBe(false);
   });
 });

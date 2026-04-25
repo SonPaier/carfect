@@ -1,5 +1,19 @@
 import type { CalendarItem } from '../AdminCalendar';
 
+/**
+ * Whether an item should appear on the calendar grid.
+ *
+ * Cancelled items are hidden, and items without item_date (notably
+ * status='follow_up' rows whose date/time were nulled per commit 1bedbb9a)
+ * belong to the unscheduled drawer, not the calendar — letting them through
+ * crashes the renderer at item.start_time.slice(...).
+ */
+export function isItemRenderableInCalendar(item: CalendarItem): boolean {
+  if (item.status === 'cancelled') return false;
+  if (!item.item_date) return false;
+  return true;
+}
+
 export interface WeekEvent {
   item: CalendarItem;
   startCol: number;
