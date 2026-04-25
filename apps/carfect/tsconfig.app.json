@@ -16,7 +16,9 @@
       "@shared/custom-fields": ["../../libs/custom-fields/src/index.ts"],
       "@shared/custom-fields/*": ["../../libs/custom-fields/src/*"],
       "@shared/protocol-config": ["../../libs/protocol-config/src/index.ts"],
-      "@shared/protocol-config/*": ["../../libs/protocol-config/src/*"]
+      "@shared/protocol-config/*": ["../../libs/protocol-config/src/*"],
+      "@shared/post-sale-instructions": ["../../libs/post-sale-instructions/src/index.ts"],
+      "@shared/post-sale-instructions/*": ["../../libs/post-sale-instructions/src/*"]
     }
   },
   "include": [
@@ -27,6 +29,7 @@
     "../../libs/ai/src",
     "../../libs/pdf/src",
     "../../libs/custom-fields/src",
-    "../../libs/protocol-config/src"
+    "../../libs/protocol-config/src",
+    "../../libs/post-sale-instructions/src"
   ]
 }

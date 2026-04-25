@@ -17,6 +17,7 @@ export default defineConfig({
       '../../libs/custom-fields/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/protocol-config/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/pdf/src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/post-sale-instructions/src/**/*.{test,spec}.{ts,tsx}',
     ],
     coverage: {
       reporter: ['text', 'html'],
@@ -33,6 +34,10 @@ export default defineConfig({
       '@shared/in-app-hints': path.resolve(__dirname, '../../libs/in-app-hints/src/index.ts'),
       '@shared/custom-fields': path.resolve(__dirname, '../../libs/custom-fields/src/index.ts'),
       '@shared/protocol-config': path.resolve(__dirname, '../../libs/protocol-config/src/index.ts'),
+      '@shared/post-sale-instructions': path.resolve(
+        __dirname,
+        '../../libs/post-sale-instructions/src/index.ts',
+      ),
     },
   },
 });
