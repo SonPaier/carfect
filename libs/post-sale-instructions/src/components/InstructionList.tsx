@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -11,22 +11,26 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Badge,
   Button,
   Card,
   CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@shared/ui';
-import { Pencil, Plus, Trash2, Copy } from 'lucide-react';
+import { Eye, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useInstructions } from '../hooks/useInstructions';
 import { useDeleteInstruction } from '../hooks/useDeleteInstruction';
-import type { HardcodedKey } from '../types';
+import type { HardcodedKey, InstructionListItem } from '../types';
 
 interface InstructionListProps {
   instanceId: string;
   supabase: SupabaseClient<Database>;
   onEdit: (id: string | null) => void;
   onDuplicateBuiltin: (key: HardcodedKey) => void;
+  onPreview?: (item: InstructionListItem) => void;
 }
 
 export function InstructionList({
@@ -34,11 +38,27 @@ export function InstructionList({
   supabase,
   onEdit,
   onDuplicateBuiltin,
+  onPreview,
 }: InstructionListProps) {
   const { t } = useTranslation();
   const { data: items = [], isLoading } = useInstructions(instanceId, supabase);
   const deleteMutation = useDeleteInstruction(supabase);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  // Hide builtins that already have a custom row with the same hardcoded_key —
+  // once the user has customized a builtin, the read-only template stops being
+  // a useful entry in the list.
+  const visibleItems = useMemo(() => {
+    const customKeys = new Set(
+      items
+        .filter((i): i is Extract<InstructionListItem, { kind: 'custom' }> => i.kind === 'custom')
+        .map((i) => i.row.hardcoded_key)
+        .filter((k): k is HardcodedKey => k !== null && k !== undefined),
+    );
+    return items.filter(
+      (item) => item.kind !== 'builtin' || !customKeys.has(item.template.key),
+    );
+  }, [items]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDeleteId) return;
@@ -54,6 +74,14 @@ export function InstructionList({
         toast.error(t('instructions.deleteError'));
       }
       setPendingDeleteId(null);
+    }
+  };
+
+  const handleEdit = (item: InstructionListItem) => {
+    if (item.kind === 'builtin') {
+      onDuplicateBuiltin(item.template.key);
+    } else {
+      onEdit(item.row.id);
     }
   };
 
@@ -76,50 +104,41 @@ export function InstructionList({
         <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : (
         <div className="space-y-2">
-          {items.map((item) => {
-            if (item.kind === 'builtin') {
-              return (
-                <Card key={`builtin-${item.template.key}`}>
-                  <CardContent className="flex items-center justify-between gap-4 p-4">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium truncate">{item.template.titlePl}</span>
-                      <Badge variant="secondary">{t('instructions.builtinBadge')}</Badge>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onDuplicateBuiltin(item.template.key)}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      {t('instructions.duplicateAndEdit')}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            }
-
+          {visibleItems.map((item) => {
+            const title = item.kind === 'builtin' ? item.template.titlePl : item.row.title;
+            const key = item.kind === 'builtin' ? `builtin-${item.template.key}` : item.row.id;
             return (
-              <Card key={item.row.id}>
+              <Card key={key}>
                 <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <span className="font-medium truncate">{item.row.title}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEdit(item.row.id)}
-                    >
-                      <Pencil className="w-4 h-4 mr-2" />
-                      {t('instructions.edit')}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setPendingDeleteId(item.row.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t('instructions.delete')}
-                    </Button>
-                  </div>
+                  <span className="font-medium truncate">{title}</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label={t('instructions.actions')}>
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(item)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        {t('instructions.edit')}
+                      </DropdownMenuItem>
+                      {onPreview && (
+                        <DropdownMenuItem onClick={() => onPreview(item)}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          {t('instructions.preview')}
+                        </DropdownMenuItem>
+                      )}
+                      {item.kind === 'custom' && (
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setPendingDeleteId(item.row.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {t('instructions.delete')}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardContent>
               </Card>
             );

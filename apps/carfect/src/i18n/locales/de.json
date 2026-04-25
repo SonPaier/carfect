@@ -5680,7 +5680,9 @@
     "openPublicLink": "In neuem Tab öffnen",
     "untitled": "(ohne Titel)",
     "builtinNeedsDuplicate": "Um eine eingebaute Vorlage zu senden, duplizieren und bearbeiten Sie sie zuerst.",
-    "promptUrl": "URL eingeben"
+    "promptUrl": "URL eingeben",
+    "actions": "Aktionen",
+    "preview": "Vorschau"
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

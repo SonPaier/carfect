@@ -28,6 +28,7 @@ vi.mock('../hooks/useDeleteInstruction', () => ({
 function renderList(props: {
   onEdit?: (id: string | null) => void;
   onDuplicateBuiltin?: (key: 'ppf' | 'ceramic') => void;
+  onPreview?: (item: InstructionListItem) => void;
 } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -41,6 +42,7 @@ function renderList(props: {
         supabase: {} as never,
         onEdit: props.onEdit ?? vi.fn(),
         onDuplicateBuiltin: props.onDuplicateBuiltin ?? vi.fn(),
+        onPreview: props.onPreview,
       }),
     ),
   );
@@ -57,6 +59,20 @@ const customRow: InstructionListItem = {
     created_by: null,
     created_at: '2026-04-01T10:00:00Z',
     updated_at: '2026-04-01T10:00:00Z',
+  },
+};
+
+const customFromPpf: InstructionListItem = {
+  kind: 'custom',
+  row: {
+    id: 'row-2',
+    instance_id: 'inst-1',
+    title: 'Customized PPF guide',
+    content: { type: 'doc', content: [] },
+    hardcoded_key: 'ppf',
+    created_by: null,
+    created_at: '2026-04-02T10:00:00Z',
+    updated_at: '2026-04-02T10:00:00Z',
   },
 };
 
@@ -80,6 +96,18 @@ const builtinCeramic: InstructionListItem = {
   },
 };
 
+async function openMenuFor(title: string) {
+  const user = userEvent.setup();
+  const card = screen.getByText(title).closest('[class*="card"], div');
+  // Each card renders one MoreVertical trigger; find the closest trigger button
+  const triggers = screen.getAllByRole('button', { name: 'Akcje' });
+  const titleEl = screen.getByText(title);
+  const trigger = triggers.find((t) => titleEl.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
+  expect(trigger ?? card).toBeDefined();
+  await user.click(trigger!);
+  return user;
+}
+
 beforeEach(() => {
   toastSuccess.mockClear();
   toastError.mockClear();
@@ -88,7 +116,7 @@ beforeEach(() => {
 });
 
 describe('InstructionList', () => {
-  it('renders both built-in templates with the builtin badge', () => {
+  it('renders both built-in templates without a builtin badge', () => {
     mockUseInstructions.mockReturnValue({
       data: [builtinPpf, builtinCeramic],
       isLoading: false,
@@ -98,7 +126,7 @@ describe('InstructionList', () => {
 
     expect(screen.getByText('Pielęgnacja folii PPF')).toBeInTheDocument();
     expect(screen.getByText('Pielęgnacja powłoki ceramicznej')).toBeInTheDocument();
-    expect(screen.getAllByText('Wbudowana')).toHaveLength(2);
+    expect(screen.queryByText('Wbudowana')).not.toBeInTheDocument();
   });
 
   it('renders custom rows after built-ins', () => {
@@ -117,7 +145,22 @@ describe('InstructionList', () => {
     ).toBeTruthy();
   });
 
-  it('shows only the duplicateAndEdit action on built-in rows', () => {
+  it('hides a builtin once a custom row exists with the same hardcoded_key', () => {
+    mockUseInstructions.mockReturnValue({
+      data: [builtinPpf, builtinCeramic, customFromPpf],
+      isLoading: false,
+    });
+
+    renderList();
+
+    // The PPF builtin should be hidden; the customized PPF row replaces it.
+    expect(screen.queryByText('Pielęgnacja folii PPF')).not.toBeInTheDocument();
+    expect(screen.getByText('Customized PPF guide')).toBeInTheDocument();
+    // Ceramic builtin still visible because there is no custom for it.
+    expect(screen.getByText('Pielęgnacja powłoki ceramicznej')).toBeInTheDocument();
+  });
+
+  it('does not show the delete action on built-in rows', async () => {
     mockUseInstructions.mockReturnValue({
       data: [builtinPpf],
       isLoading: false,
@@ -125,9 +168,9 @@ describe('InstructionList', () => {
 
     renderList();
 
-    expect(screen.getByText('Duplikuj i edytuj')).toBeInTheDocument();
-    expect(screen.queryByText('Edytuj')).not.toBeInTheDocument();
-    expect(screen.queryByText('Usuń')).not.toBeInTheDocument();
+    await openMenuFor('Pielęgnacja folii PPF');
+    expect(screen.getByRole('menuitem', { name: /Edytuj/ })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /Usuń/ })).not.toBeInTheDocument();
   });
 
   it('calls onEdit(null) when the new-button is clicked', async () => {
@@ -141,8 +184,7 @@ describe('InstructionList', () => {
     expect(onEdit).toHaveBeenCalledWith(null);
   });
 
-  it('calls onDuplicateBuiltin with the correct key when duplicateAndEdit is clicked', async () => {
-    const user = userEvent.setup();
+  it('auto-promotes a builtin to a custom row when Edit is clicked', async () => {
     const onDuplicateBuiltin = vi.fn();
     mockUseInstructions.mockReturnValue({
       data: [builtinPpf],
@@ -151,12 +193,12 @@ describe('InstructionList', () => {
 
     renderList({ onDuplicateBuiltin });
 
-    await user.click(screen.getByText('Duplikuj i edytuj'));
+    const user = await openMenuFor('Pielęgnacja folii PPF');
+    await user.click(screen.getByRole('menuitem', { name: /Edytuj/ }));
     expect(onDuplicateBuiltin).toHaveBeenCalledWith('ppf');
   });
 
-  it('calls onEdit(rowId) when a custom row edit button is clicked', async () => {
-    const user = userEvent.setup();
+  it('calls onEdit(rowId) when Edit is clicked on a custom row', async () => {
     const onEdit = vi.fn();
     mockUseInstructions.mockReturnValue({
       data: [customRow],
@@ -165,12 +207,37 @@ describe('InstructionList', () => {
 
     renderList({ onEdit });
 
-    await user.click(screen.getByText('Edytuj'));
+    const user = await openMenuFor('My Custom Instruction');
+    await user.click(screen.getByRole('menuitem', { name: /Edytuj/ }));
     expect(onEdit).toHaveBeenCalledWith('row-1');
   });
 
-  it('shows the localized RESTRICT FK error toast when delete fails with INSTRUCTION_RESTRICT_FK', async () => {
-    const user = userEvent.setup();
+  it('calls onPreview with the selected item when Preview is clicked', async () => {
+    const onPreview = vi.fn();
+    mockUseInstructions.mockReturnValue({
+      data: [customRow],
+      isLoading: false,
+    });
+
+    renderList({ onPreview });
+
+    const user = await openMenuFor('My Custom Instruction');
+    await user.click(screen.getByRole('menuitem', { name: /Podgląd/ }));
+    expect(onPreview).toHaveBeenCalledWith(customRow);
+  });
+
+  it('hides the preview menu item when no onPreview prop is supplied', async () => {
+    mockUseInstructions.mockReturnValue({
+      data: [customRow],
+      isLoading: false,
+    });
+
+    renderList();
+    await openMenuFor('My Custom Instruction');
+    expect(screen.queryByRole('menuitem', { name: /Podgląd/ })).not.toBeInTheDocument();
+  });
+
+  it('shows the localized RESTRICT FK error toast when delete fails', async () => {
     mockUseInstructions.mockReturnValue({
       data: [customRow],
       isLoading: false,
@@ -179,8 +246,8 @@ describe('InstructionList', () => {
 
     renderList();
 
-    await user.click(screen.getByText('Usuń'));
-    // Confirm in AlertDialog
+    const user = await openMenuFor('My Custom Instruction');
+    await user.click(screen.getByRole('menuitem', { name: /Usuń/ }));
     const confirmBtn = screen.getAllByText('Usuń').find((el) =>
       el.closest('[role="alertdialog"]'),
     );

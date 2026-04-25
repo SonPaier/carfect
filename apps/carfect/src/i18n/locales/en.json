@@ -5692,7 +5692,9 @@
     "openPublicLink": "Open in a new tab",
     "untitled": "(untitled)",
     "builtinNeedsDuplicate": "To send a built-in template, duplicate and edit it first.",
-    "promptUrl": "Enter the URL"
+    "promptUrl": "Enter the URL",
+    "actions": "Actions",
+    "preview": "Preview"
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

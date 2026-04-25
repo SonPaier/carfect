@@ -5696,7 +5696,9 @@
     "openPublicLink": "Otwórz w nowej karcie",
     "untitled": "(bez tytułu)",
     "builtinNeedsDuplicate": "Aby wysłać wbudowaną instrukcję, najpierw ją zduplikuj i edytuj.",
-    "promptUrl": "Podaj adres URL"
+    "promptUrl": "Podaj adres URL",
+    "actions": "Akcje",
+    "preview": "Podgląd"
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",
