@@ -95,12 +95,12 @@ export function InstructionEditor({
 
   const uploadImage = async (file: File): Promise<string> => {
     const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
-    const fileName = `instructions/${instanceId}/${crypto.randomUUID()}.${ext}`;
+    const fileName = `${instanceId}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage
-      .from('protocol-photos')
+      .from('instruction-images')
       .upload(fileName, file, { contentType: file.type, cacheControl: '3600' });
     if (error) throw error;
-    const { data } = supabase.storage.from('protocol-photos').getPublicUrl(fileName);
+    const { data } = supabase.storage.from('instruction-images').getPublicUrl(fileName);
     return data.publicUrl;
   };
 
@@ -129,7 +129,7 @@ export function InstructionEditor({
                 value={field.value}
                 onChange={field.onChange}
                 onUploadImage={uploadImage}
-                className="[&_.ProseMirror]:min-h-[400px] [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:px-3 [&_.ProseMirror]:py-2"
+                className="[&_.ProseMirror]:min-h-[400px] [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:px-3 [&_.ProseMirror]:py-2 [&_.ProseMirror]:[display:flow-root]"
               />
             </div>
           )}
