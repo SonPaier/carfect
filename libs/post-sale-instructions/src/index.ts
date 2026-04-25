@@ -10,3 +10,4 @@ export { usePublicInstruction } from './hooks/usePublicInstruction';
 export type { PublicInstructionData } from './hooks/usePublicInstruction';
 export { openInstructionPdf } from './pdfClient';
 export { InstructionList } from './components/InstructionList';
+export { InstructionEditor } from './components/InstructionEditor';
