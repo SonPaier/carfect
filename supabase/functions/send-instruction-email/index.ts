@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import {
   buildInstructionEmailHtml,
+  buildInstructionEmailSubject,
   defaultInstructionTemplate,
   escapeHtml,
   getSmtpConfig,
@@ -261,7 +262,7 @@ serve(async (req) => {
       from: `${fromName} <${smtpConfig.user}>`,
       to: customerEmail,
       replyTo: replyTo,
-      subject: `Instrukcja pielęgnacji — ${instanceName}`,
+      subject: buildInstructionEmailSubject(instanceName, instructionPayload?.title ?? ''),
       html: emailBody,
     });
 

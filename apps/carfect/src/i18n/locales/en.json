@@ -5650,7 +5650,7 @@
   "instructions": {
     "settingsTabLabel": "Post-sale instructions",
     "pageTitle": "Post-sale instructions",
-    "pageDescription": "Care instruction templates given to customers after a service.",
+    "pageDescription": "Care instruction templates given to customers after a service. You can also send them directly from a reservation in the calendar.",
     "newButton": "Add",
     "builtinBadge": "Built-in",
     "duplicateAndEdit": "Duplicate and edit",

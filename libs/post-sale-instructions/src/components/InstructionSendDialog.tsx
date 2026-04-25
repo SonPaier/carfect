@@ -181,7 +181,6 @@ export function InstructionSendDialog({
                 type="email"
                 value={emailAddress}
                 onChange={(e) => setEmailAddress(e.target.value)}
-                placeholder="email@example.com"
               />
               <Button onClick={handleSend} disabled={!selected || !emailAddress || isSending}>
                 <Send className="w-4 h-4 mr-2" />

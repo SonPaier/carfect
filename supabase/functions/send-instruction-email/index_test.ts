@@ -1,12 +1,41 @@
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert';
 import {
   buildInstructionEmailHtml,
+  buildInstructionEmailSubject,
   escapeHtml,
   getSmtpConfig,
   makeLinksClickable,
   safeUrl,
   sanitizeCustomerEmail,
 } from './helpers.ts';
+
+Deno.test('buildInstructionEmailSubject formats as "INSTANCE NAME: title"', () => {
+  assertEquals(buildInstructionEmailSubject('Demo', 'Folia PPF'), 'DEMO: Folia PPF');
+  assertEquals(
+    buildInstructionEmailSubject('Armcar Detailing', 'Pielęgnacja powłoki ceramicznej'),
+    'ARMCAR DETAILING: Pielęgnacja powłoki ceramicznej',
+  );
+});
+
+Deno.test('buildInstructionEmailSubject trims surrounding whitespace', () => {
+  assertEquals(buildInstructionEmailSubject('  Demo  ', '  Folia PPF  '), 'DEMO: Folia PPF');
+});
+
+Deno.test('buildInstructionEmailSubject falls back to title alone when name missing', () => {
+  assertEquals(buildInstructionEmailSubject('', 'Folia PPF'), 'Folia PPF');
+  assertEquals(buildInstructionEmailSubject(null, 'Folia PPF'), 'Folia PPF');
+  assertEquals(buildInstructionEmailSubject(undefined, 'Folia PPF'), 'Folia PPF');
+});
+
+Deno.test('buildInstructionEmailSubject falls back to name alone when title missing', () => {
+  assertEquals(buildInstructionEmailSubject('Demo', ''), 'DEMO');
+  assertEquals(buildInstructionEmailSubject('Demo', null), 'DEMO');
+});
+
+Deno.test('buildInstructionEmailSubject uses generic fallback when both missing', () => {
+  assertEquals(buildInstructionEmailSubject('', ''), 'Instrukcja pielęgnacji');
+  assertEquals(buildInstructionEmailSubject(null, undefined), 'Instrukcja pielęgnacji');
+});
 
 // ============================================================================
 // buildInstructionEmailHtml

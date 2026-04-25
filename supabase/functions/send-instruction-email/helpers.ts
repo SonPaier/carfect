@@ -49,6 +49,23 @@ export function makeLinksClickable(escapedText: string): string {
   );
 }
 
+/**
+ * Email subject in the form "INSTANCE NAME: instruction title". The instance
+ * name is uppercased so that the customer immediately recognizes which studio
+ * the email is from. Falls back gracefully when either part is missing.
+ */
+export function buildInstructionEmailSubject(
+  instanceName: string | null | undefined,
+  instructionTitle: string | null | undefined,
+): string {
+  const name = (instanceName ?? '').trim().toUpperCase();
+  const title = (instructionTitle ?? '').trim();
+  if (name && title) return `${name}: ${title}`;
+  if (title) return title;
+  if (name) return name;
+  return 'Instrukcja pielęgnacji';
+}
+
 export const defaultInstructionTemplate = `Dzień dobry,
 
 udostępniamy instrukcję pielęgnacji wykonanej usługi. Prosimy o zapoznanie się z nią — pomoże zachować efekt na dłużej.

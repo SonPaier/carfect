@@ -5638,7 +5638,7 @@
   "instructions": {
     "settingsTabLabel": "Pflegeanleitungen",
     "pageTitle": "Pflegeanleitungen",
-    "pageDescription": "Pflegeanleitungs-Vorlagen, die Kunden nach einer Dienstleistung übergeben werden.",
+    "pageDescription": "Pflegeanleitungs-Vorlagen, die Kunden nach einer Dienstleistung übergeben werden. Sie können sie auch direkt aus einer Reservierung im Kalender versenden.",
     "newButton": "Hinzufügen",
     "builtinBadge": "Vorlage",
     "duplicateAndEdit": "Duplizieren und bearbeiten",

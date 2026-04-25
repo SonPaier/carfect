@@ -5654,7 +5654,7 @@
   "instructions": {
     "settingsTabLabel": "Instrukcje posprzedażowe",
     "pageTitle": "Instrukcje posprzedażowe",
-    "pageDescription": "Szablony instrukcji pielęgnacyjnych przekazywane klientom po realizacji usługi.",
+    "pageDescription": "Szablony instrukcji pielęgnacyjnych przekazywane klientom po realizacji usługi. Możesz je też wysłać bezpośrednio z poziomu rezerwacji w kalendarzu.",
     "newButton": "Dodaj",
     "builtinBadge": "Wbudowana",
     "duplicateAndEdit": "Duplikuj i edytuj",
