@@ -56,47 +56,86 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    const { sendId, customEmailBody, toEmail } = (await req.json()) as {
+    const { sendId, instructionId, customEmailBody, toEmail } = (await req.json()) as {
       sendId?: string;
+      instructionId?: string;
       customEmailBody?: string;
       toEmail?: string;
     };
 
-    if (!sendId) {
-      return new Response(JSON.stringify({ error: 'sendId is required' }), {
+    if (!sendId && !instructionId) {
+      return new Response(JSON.stringify({ error: 'sendId or instructionId required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Fetching instruction send:', sendId);
+    type InstanceRow = InstanceInfo & { name: string; slug: string };
+    let row: InstructionSendRow | null = null;
+    let instructionPayload: { title: string; slug: string; content: unknown } | null = null;
+    let instance: InstanceRow | null = null;
 
-    const { data: send, error: sendError } = await supabase
-      .from('post_sale_instruction_sends')
-      .select(
-        `
+    if (sendId) {
+      console.log('Fetching instruction send:', sendId);
+      const { data: send, error: sendError } = await supabase
+        .from('post_sale_instruction_sends')
+        .select(
+          `
         id, public_token, customer_id,
         post_sale_instructions ( title, slug, content ),
         reservations ( customer_name, customer_email, customer_phone ),
         instances ( name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
       `,
-      )
-      .eq('id', sendId)
-      .single();
+        )
+        .eq('id', sendId)
+        .single();
 
-    if (sendError || !send) {
-      console.error('Send row fetch error:', sendError);
-      return new Response(JSON.stringify({ error: 'Instruction send not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (sendError || !send) {
+        console.error('Send row fetch error:', sendError);
+        return new Response(JSON.stringify({ error: 'Instruction send not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      row = send as InstructionSendRow;
+      instructionPayload = row.post_sale_instructions;
+      instance = row.instances;
+    } else if (instructionId) {
+      console.log('Fetching instruction direct:', instructionId);
+      const { data: instr, error: instrError } = await supabase
+        .from('post_sale_instructions')
+        .select(
+          `
+        id, title, slug, content,
+        instances ( name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
+      `,
+        )
+        .eq('id', instructionId)
+        .single();
+      if (instrError || !instr) {
+        console.error('Instruction fetch error:', instrError);
+        return new Response(JSON.stringify({ error: 'Instruction not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const instrRow = instr as {
+        title: string;
+        slug: string;
+        content: unknown;
+        instances: InstanceRow | null;
+      };
+      instructionPayload = {
+        title: instrRow.title,
+        slug: instrRow.slug,
+        content: instrRow.content,
+      };
+      instance = instrRow.instances;
     }
 
-    const row = send as InstructionSendRow;
-
-    // Prefer the explicit toEmail from the request body (admin can override
-    // the customer's stored address). Fall back to the joined reservation row.
-    const rawEmail = toEmail ?? row.reservations?.customer_email ?? null;
+    // Prefer the explicit toEmail from the request body. Fall back to the
+    // joined reservation row when present (sendId path only).
+    const rawEmail = toEmail ?? row?.reservations?.customer_email ?? null;
     const customerEmail = sanitizeCustomerEmail(rawEmail);
 
     if (!customerEmail) {
@@ -106,10 +145,9 @@ serve(async (req) => {
       });
     }
 
-    const instance = row.instances;
     const instanceSlug = instance?.slug ?? 'app';
     const instanceName = instance?.name ?? '';
-    const instructionSlug = row.post_sale_instructions?.slug ?? row.public_token;
+    const instructionSlug = instructionPayload?.slug ?? row?.public_token ?? '';
 
     const instructionUrl = `https://${instanceSlug}.carfect.pl/instrukcje/${instructionSlug}`;
 

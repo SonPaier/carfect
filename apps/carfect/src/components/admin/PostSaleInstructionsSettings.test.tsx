@@ -57,6 +57,10 @@ vi.mock('@shared/post-sale-instructions', () => ({
     </div>
   ),
   InstructionPreviewDialog: () => <div data-testid="preview-dialog-stub" />,
+  InstructionEmailDialog: () => <div data-testid="email-dialog-stub" />,
+  buildInstructionPublicUrl: (instanceSlug: string, slug: string) =>
+    `https://${instanceSlug}.carfect.pl/instrukcje/${slug}`,
+  previewInstructionPdf: vi.fn(),
 }));
 
 function renderSettings() {

@@ -15,4 +15,5 @@ export { InstructionSendDialog } from './components/InstructionSendDialog';
 export { InstructionSendHistory } from './components/InstructionSendHistory';
 export { InstructionPublicView } from './components/InstructionPublicView';
 export { InstructionPreviewDialog } from './components/InstructionPreviewDialog';
+export { InstructionEmailDialog } from './components/InstructionEmailDialog';
 export { TiptapRenderer } from './components/TiptapRenderer';

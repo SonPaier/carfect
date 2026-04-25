@@ -7,6 +7,7 @@ import {
   InstructionList,
   InstructionEditor,
   InstructionPreviewDialog,
+  InstructionEmailDialog,
   buildInstructionPublicUrl,
   previewInstructionPdf,
   type HardcodedKey,
@@ -42,6 +43,7 @@ export default function PostSaleInstructionsSettings({
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>({ kind: 'list' });
   const [previewItem, setPreviewItem] = useState<InstructionListItem | null>(null);
+  const [emailItem, setEmailItem] = useState<InstructionListItem | null>(null);
 
   const editingId = mode.kind === 'edit' ? mode.id : null;
   const { data: editingRow } = useQuery<PostSaleInstructionRow | null>({
@@ -121,6 +123,13 @@ export default function PostSaleInstructionsSettings({
           onPreview={(item) => setPreviewItem(item)}
           onDownloadPdf={handleDownloadPdf}
           onCopyLink={handleCopyLink}
+          onSendByEmail={(item) => {
+            if (item.kind === 'builtin') {
+              toast.error(t('instructions.copyLinkBuiltinHint'));
+              return;
+            }
+            setEmailItem(item);
+          }}
         />
       );
     }
@@ -157,6 +166,14 @@ export default function PostSaleInstructionsSettings({
         }}
         item={previewItem}
         instance={previewInstance}
+      />
+      <InstructionEmailDialog
+        open={emailItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setEmailItem(null);
+        }}
+        item={emailItem}
+        supabase={supabase}
       />
     </>
   );
