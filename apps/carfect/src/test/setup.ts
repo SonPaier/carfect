@@ -22,3 +22,25 @@ Element.prototype.scrollIntoView = () => {};
 Element.prototype.hasPointerCapture = () => false;
 Element.prototype.setPointerCapture = () => {};
 Element.prototype.releasePointerCapture = () => {};
+
+// Polyfill getClientRects/getBoundingClientRect on Range for ProseMirror/Tiptap in jsdom
+const emptyRect = {
+  x: 0,
+  y: 0,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  width: 0,
+  height: 0,
+  toJSON: () => ({}),
+};
+if (typeof Range !== 'undefined') {
+  Range.prototype.getClientRects = function () {
+    const list = [emptyRect] as unknown as DOMRectList;
+    return list;
+  };
+  Range.prototype.getBoundingClientRect = function () {
+    return emptyRect as DOMRect;
+  };
+}
