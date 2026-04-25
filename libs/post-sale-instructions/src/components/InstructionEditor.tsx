@@ -120,7 +120,11 @@ export function InstructionEditor({
           render={({ field }) => (
             <div className="space-y-2">
               <Label>{t('instructions.contentLabel')}</Label>
-              <RichTextEditor value={field.value} onChange={field.onChange} />
+              <RichTextEditor
+                value={field.value}
+                onChange={field.onChange}
+                className="[&_.ProseMirror]:min-h-[400px]"
+              />
             </div>
           )}
         />
