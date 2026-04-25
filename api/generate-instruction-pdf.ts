@@ -54,73 +54,95 @@ export default async function handler(req: Request) {
     ]);
 
     const { renderToBuffer } = reactPdf;
-    const { registerFonts, InstructionPdfDocument } = pdfLib as typeof import('../libs/pdf/src/index.js') & {
-      InstructionPdfDocument: (typeof import('../libs/pdf/src/InstructionPdfDocument'))['InstructionPdfDocument'];
-    };
+    const { registerFonts, InstructionPdfDocument } =
+      pdfLib as typeof import('../libs/pdf/src/index.js') & {
+        InstructionPdfDocument: (typeof import('../libs/pdf/src/InstructionPdfDocument'))['InstructionPdfDocument'];
+      };
 
-    // Parse token from POST body or GET query
+    type InstanceShape = {
+      name?: string;
+      logo_url?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      website?: string;
+      contact_person?: string;
+    };
+    type ContentShape = import('../libs/pdf/src/InstructionPdfDocument').TiptapDocument;
+    type PreviewBody = { title: string; content: ContentShape; instance: InstanceShape };
+
+    // Body can be either { publicToken } (production: fetch via RPC) or
+    // { preview: { title, content, instance } } (admin preview: render directly).
     let publicToken: string | null = null;
+    let preview: PreviewBody | null = null;
 
     if (req.method === 'POST') {
-      const body = (await req.json()) as { publicToken?: unknown; token?: unknown };
+      const body = (await req.json()) as {
+        publicToken?: unknown;
+        token?: unknown;
+        preview?: unknown;
+      };
       publicToken =
         typeof body.publicToken === 'string'
           ? body.publicToken
           : typeof body.token === 'string'
             ? body.token
             : null;
+      if (
+        body.preview &&
+        typeof body.preview === 'object' &&
+        typeof (body.preview as PreviewBody).title === 'string' &&
+        (body.preview as PreviewBody).content?.type === 'doc'
+      ) {
+        preview = body.preview as PreviewBody;
+      }
     } else if (req.method === 'GET') {
       const url = new URL(req.url);
       publicToken = url.searchParams.get('token');
     }
 
-    if (!publicToken) {
+    if (!publicToken && !preview) {
       return Response.json(
-        { error: 'Missing publicToken' },
+        { error: 'Missing publicToken or preview body' },
         { status: 400, headers: CORS_HEADERS },
       );
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    let title: string;
+    let content: ContentShape;
+    let instance: InstanceShape;
 
-    // Fetch instruction data via public RPC (no skip-mark-viewed needed — WHERE viewed_at IS NULL
-    // makes repeated calls idempotent; add a p_skip_mark_viewed param here if admin preview is needed in future)
-    // TODO: add p_skip_mark_viewed to get_public_instruction RPC if admin-preview behaviour is required
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_instruction', {
-      p_token: publicToken,
-    });
+    if (preview) {
+      title = preview.title;
+      content = preview.content;
+      instance = preview.instance ?? {};
+    } else {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    if (rpcError) {
-      console.error('RPC error:', rpcError.message);
-      return Response.json(
-        { error: 'Failed to fetch instruction data' },
-        { status: 500, headers: CORS_HEADERS },
-      );
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_instruction', {
+        p_token: publicToken,
+      });
+
+      if (rpcError) {
+        console.error('RPC error:', rpcError.message);
+        return Response.json(
+          { error: 'Failed to fetch instruction data' },
+          { status: 500, headers: CORS_HEADERS },
+        );
+      }
+
+      if (!rpcData) {
+        return Response.json(
+          { error: 'Instruction not found' },
+          { status: 404, headers: CORS_HEADERS },
+        );
+      }
+
+      const data = rpcData as { title: string; content: ContentShape; instance: InstanceShape };
+      title = data.title;
+      content = data.content;
+      instance = data.instance ?? {};
     }
-
-    if (!rpcData) {
-      return Response.json(
-        { error: 'Instruction not found' },
-        { status: 404, headers: CORS_HEADERS },
-      );
-    }
-
-    // Extract typed fields from the JSONB result (spec section 3.3)
-    const data = rpcData as {
-      title: string;
-      content: import('../libs/pdf/src/InstructionPdfDocument').TiptapDocument;
-      instance: {
-        name?: string;
-        logo_url?: string;
-        phone?: string;
-        email?: string;
-        address?: string;
-        website?: string;
-        contact_person?: string;
-      };
-    };
-
-    const { title, content, instance } = data;
 
     // Fetch logo as buffer if available
     let logoBuffer: Buffer | null = null;

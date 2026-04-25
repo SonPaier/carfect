@@ -34,9 +34,9 @@ describe('openInstructionPdf', () => {
         get: vi.fn().mockReturnValue('attachment; filename="instrukcja.pdf"'),
       },
     };
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      mockResponse as unknown as Response,
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(mockResponse as unknown as Response);
 
     const { openInstructionPdf } = await import('./pdfClient');
     await openInstructionPdf('tok-dev-123');
@@ -69,9 +69,9 @@ describe('openInstructionPdf', () => {
         get: vi.fn().mockReturnValue('attachment; filename="instrukcja.pdf"'),
       },
     };
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      mockResponse as unknown as Response,
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(mockResponse as unknown as Response);
 
     const { openInstructionPdf } = await import('./pdfClient');
     await openInstructionPdf('tok-prod-456');
@@ -127,5 +127,72 @@ describe('openInstructionPdf', () => {
     expect(createElementSpy).toHaveBeenCalledWith('a');
     expect(mockAnchor.download).toBe('ppf-care-2026.pdf');
     expect(mockAnchor.click).toHaveBeenCalled();
+  });
+});
+
+describe('previewInstructionPdf', () => {
+  it('POSTs the preview body shape (title/content/instance) without a publicToken', async () => {
+    vi.stubEnv('DEV', '');
+
+    const mockAnchor = {
+      href: '',
+      target: '',
+      download: '',
+      click: vi.fn(),
+    };
+    vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor as unknown as HTMLElement);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockAnchor as unknown as Node);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockAnchor as unknown as Node);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(mockObjectUrl);
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+    const mockResponse = {
+      ok: true,
+      blob: vi.fn().mockResolvedValue(mockBlob),
+      headers: {
+        get: vi.fn().mockReturnValue('attachment; filename="preview.pdf"'),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(mockResponse as unknown as Response);
+
+    const { previewInstructionPdf } = await import('./pdfClient');
+    await previewInstructionPdf({
+      title: 'Demo Title',
+      content: { type: 'doc', content: [] },
+      instance: { name: 'Demo' },
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('generate-instruction-pdf'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"preview"'),
+      }),
+    );
+    const callBody = fetchSpy.mock.calls[0][1] as RequestInit;
+    const parsed = JSON.parse(callBody.body as string);
+    expect(parsed.preview.title).toBe('Demo Title');
+    expect(parsed.preview.instance.name).toBe('Demo');
+    expect(parsed.publicToken).toBeUndefined();
+  });
+
+  it('throws when the preview response is not ok', async () => {
+    vi.stubEnv('DEV', '');
+    const mockResponse = {
+      ok: false,
+      json: vi.fn().mockResolvedValue({ error: 'Preview failed' }),
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse as unknown as Response);
+
+    const { previewInstructionPdf } = await import('./pdfClient');
+    await expect(
+      previewInstructionPdf({
+        title: 'Demo',
+        content: { type: 'doc', content: [] },
+        instance: {},
+      }),
+    ).rejects.toThrow('Preview failed');
   });
 });

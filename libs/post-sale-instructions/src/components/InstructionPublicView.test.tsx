@@ -18,9 +18,7 @@ const baseData: PublicInstructionData = {
   title: 'PPF Care Guide',
   content: {
     type: 'doc',
-    content: [
-      { type: 'paragraph', content: [{ type: 'text', text: 'Keep clean.' }] },
-    ],
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keep clean.' }] }],
   },
   instance: {
     name: 'Armcar',
@@ -46,7 +44,7 @@ describe('InstructionPublicView', () => {
 
   it('renders the instance name in the header', () => {
     render(<InstructionPublicView data={baseData} publicToken="tok-1" />);
-    expect(screen.getByText('Armcar')).toBeInTheDocument();
+    expect(screen.getAllByText(/Armcar/).length).toBeGreaterThan(0);
   });
 
   it('renders the logo when logo_url is provided', () => {

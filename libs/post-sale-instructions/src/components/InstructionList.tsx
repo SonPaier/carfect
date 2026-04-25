@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { Eye, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, Eye, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useInstructions } from '../hooks/useInstructions';
 import { useDeleteInstruction } from '../hooks/useDeleteInstruction';
@@ -31,6 +31,7 @@ interface InstructionListProps {
   onEdit: (id: string | null) => void;
   onDuplicateBuiltin: (key: HardcodedKey) => void;
   onPreview?: (item: InstructionListItem) => void;
+  onDownloadPdf?: (item: InstructionListItem) => void;
 }
 
 export function InstructionList({
@@ -39,6 +40,7 @@ export function InstructionList({
   onEdit,
   onDuplicateBuiltin,
   onPreview,
+  onDownloadPdf,
 }: InstructionListProps) {
   const { t } = useTranslation();
   const { data: items = [], isLoading } = useInstructions(instanceId, supabase);
@@ -55,9 +57,7 @@ export function InstructionList({
         .map((i) => i.row.hardcoded_key)
         .filter((k): k is HardcodedKey => k !== null && k !== undefined),
     );
-    return items.filter(
-      (item) => item.kind !== 'builtin' || !customKeys.has(item.template.key),
-    );
+    return items.filter((item) => item.kind !== 'builtin' || !customKeys.has(item.template.key));
   }, [items]);
 
   const handleConfirmDelete = async () => {
@@ -90,9 +90,7 @@ export function InstructionList({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">{t('instructions.pageTitle')}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t('instructions.pageDescription')}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{t('instructions.pageDescription')}</p>
         </div>
         <Button onClick={() => onEdit(null)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -126,6 +124,12 @@ export function InstructionList({
                         <DropdownMenuItem onClick={() => onPreview(item)}>
                           <Eye className="w-4 h-4 mr-2" />
                           {t('instructions.preview')}
+                        </DropdownMenuItem>
+                      )}
+                      {onDownloadPdf && (
+                        <DropdownMenuItem onClick={() => onDownloadPdf(item)}>
+                          <Download className="w-4 h-4 mr-2" />
+                          {t('publicInstruction.downloadPdf')}
                         </DropdownMenuItem>
                       )}
                       {item.kind === 'custom' && (

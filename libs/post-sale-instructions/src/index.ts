@@ -8,10 +8,11 @@ export { useSendInstruction, buildInstructionPublicUrl } from './hooks/useSendIn
 export { useInstructionSends } from './hooks/useInstructionSends';
 export { usePublicInstruction } from './hooks/usePublicInstruction';
 export type { PublicInstructionData } from './hooks/usePublicInstruction';
-export { openInstructionPdf } from './pdfClient';
+export { openInstructionPdf, previewInstructionPdf } from './pdfClient';
 export { InstructionList } from './components/InstructionList';
 export { InstructionEditor } from './components/InstructionEditor';
 export { InstructionSendDialog } from './components/InstructionSendDialog';
 export { InstructionSendHistory } from './components/InstructionSendHistory';
 export { InstructionPublicView } from './components/InstructionPublicView';
+export { InstructionPreviewDialog } from './components/InstructionPreviewDialog';
 export { TiptapRenderer } from './components/TiptapRenderer';

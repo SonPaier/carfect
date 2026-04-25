@@ -56,6 +56,7 @@ vi.mock('@shared/post-sale-instructions', () => ({
       <button onClick={onSaved}>editor:saved</button>
     </div>
   ),
+  InstructionPreviewDialog: () => <div data-testid="preview-dialog-stub" />,
 }));
 
 function renderSettings() {

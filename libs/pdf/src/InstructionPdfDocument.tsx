@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, Link, StyleSheet } from '@react-pdf/renderer';
 import { registerFonts } from './fonts';
+import { baseStyles, defaultPdfConfig } from './styles';
 import type { TiptapDocument, TiptapNode, TiptapTextNode, TiptapElementNode } from './tiptapText';
 
 // Re-export types so consumers can import from a single location
@@ -8,47 +9,13 @@ export type { TiptapDocument, TiptapNode, TiptapTextNode, TiptapElementNode } fr
 // Re-export the pure helper
 export { flattenTiptapToText } from './tiptapText';
 
-// ─── react-pdf styles ───
+// ─── Instruction-specific tweaks layered on baseStyles (shared with offers) ───
 
 const styles = StyleSheet.create({
-  page: {
-    flexDirection: 'column',
-    backgroundColor: '#ffffff',
-    padding: 40,
-    paddingTop: 70,
-    paddingBottom: 50,
-    fontFamily: 'Inter',
-    fontSize: 10,
-    color: '#111111',
-  },
-  header: {
-    position: 'absolute',
-    top: 20,
-    left: 40,
-    right: 40,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 8,
-    fontSize: 8,
-  },
-  headerLogo: {
-    maxWidth: 80,
-    maxHeight: 40,
-    objectFit: 'contain',
-  },
   headerInstanceName: {
     fontSize: 8,
     color: '#555555',
     textAlign: 'right',
-  },
-  headerSeparator: {
-    position: 'absolute',
-    top: 63,
-    left: 40,
-    right: 40,
-    height: 1,
-    backgroundColor: '#2563eb',
   },
   title: {
     fontSize: 18,
@@ -76,24 +43,6 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: 'bold',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 40,
-    right: 40,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: 7,
-    color: '#444444',
-  },
-  footerContact: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  footerPageNumber: {
-    textAlign: 'right',
   },
 });
 
@@ -247,19 +196,20 @@ export function InstructionPdfDocument({
 }: InstructionPdfDocumentProps) {
   registerFonts();
 
-  const footerParts = [instance.phone, instance.email, instance.website].filter((p): p is string =>
+  const nodes = content.content ?? [];
+  const accentColor = defaultPdfConfig.accentColor;
+  const footerParts = [instance.name, instance.phone, instance.email].filter((p): p is string =>
     Boolean(p),
   );
 
-  const nodes = content.content ?? [];
-
   return (
     <Document title={title} language="pl">
-      <Page size="A4" style={styles.page}>
-        {/* Fixed header */}
-        <View fixed style={styles.header}>
+      <Page size="A4" style={baseStyles.page}>
+        {/* Fixed header — mirrors PdfHeader (offer PDF) so instructions stay
+            visually consistent with offer documents. */}
+        <View fixed style={baseStyles.header}>
           {logoBuffer ? (
-            <Image src={{ data: logoBuffer, format: 'png' }} style={styles.headerLogo} />
+            <Image src={{ data: logoBuffer, format: 'png' }} style={baseStyles.headerLogo} />
           ) : (
             <View />
           )}
@@ -270,8 +220,8 @@ export function InstructionPdfDocument({
           )}
         </View>
 
-        {/* Separator line */}
-        <View fixed style={styles.headerSeparator} />
+        {/* Accent separator */}
+        <View fixed style={[baseStyles.headerSeparator, { backgroundColor: accentColor }]} />
 
         {/* Instruction title */}
         <Text style={styles.title}>{title}</Text>
@@ -279,20 +229,32 @@ export function InstructionPdfDocument({
         {/* Tiptap content */}
         {nodes.map((node, i) => renderTiptapNode(node, i))}
 
-        {/* Fixed footer */}
-        {footerParts.length > 0 && (
-          <View fixed style={styles.footer}>
-            <View style={styles.footerContact}>
-              {footerParts.map((part, i) => (
-                <Text key={i}>{part}</Text>
-              ))}
-            </View>
+        {/* Fixed footer — mirrors PdfFooter (offer PDF) */}
+        <View fixed style={baseStyles.footer}>
+          <View style={{ flex: 1 }}>
+            {footerParts.length > 0 && (
+              <View style={baseStyles.footerCompanyInfo}>
+                {footerParts.map((part, i) => (
+                  <Text key={i}>{part}</Text>
+                ))}
+              </View>
+            )}
             <Text
-              style={styles.footerPageNumber}
-              render={({ pageNumber, totalPages }) => `Strona ${pageNumber} z ${totalPages}`}
+              style={{ fontSize: 7, color: '#b0b0b0', marginTop: 2 }}
+              render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
+                pageNumber === totalPages
+                  ? 'Dokument przygotowano w systemie do zarządzania studiem detailingu — carfect.pl'
+                  : ''
+              }
             />
           </View>
-        )}
+          <Text
+            style={baseStyles.footerPageNumber}
+            render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
+              `Strona ${pageNumber} z ${totalPages}`
+            }
+          />
+        </View>
       </Page>
     </Document>
   );

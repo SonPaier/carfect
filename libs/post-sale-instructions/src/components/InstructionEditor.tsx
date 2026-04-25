@@ -105,7 +105,7 @@ export function InstructionEditor({
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="pb-24">
+    <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
         <div className="space-y-2">
           <Label htmlFor="instruction-title">{t('instructions.titleLabel')}</Label>
@@ -134,10 +134,8 @@ export function InstructionEditor({
             </div>
           )}
         />
-      </div>
 
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-background z-40">
-        <div className="max-w-3xl mx-auto w-full px-4 py-3 flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
             {t('common.cancel')}
           </Button>

@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import {
   InstructionList,
   InstructionEditor,
+  InstructionPreviewDialog,
+  previewInstructionPdf,
   type HardcodedKey,
+  type InstructionListItem,
   type PostSaleInstructionRow,
+  type TiptapDocument,
 } from '@shared/post-sale-instructions';
 
 interface PostSaleInstructionsSettingsProps {
@@ -18,10 +24,22 @@ type Mode =
   | { kind: 'edit'; id: string }
   | { kind: 'duplicate'; key: HardcodedKey };
 
+interface InstanceRow {
+  name: string | null;
+  logo_url: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  website: string | null;
+  contact_person: string | null;
+}
+
 export default function PostSaleInstructionsSettings({
   instanceId,
 }: PostSaleInstructionsSettingsProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>({ kind: 'list' });
+  const [previewItem, setPreviewItem] = useState<InstructionListItem | null>(null);
 
   const editingId = mode.kind === 'edit' ? mode.id : null;
   const { data: editingRow } = useQuery<PostSaleInstructionRow | null>({
@@ -38,35 +56,88 @@ export default function PostSaleInstructionsSettings({
     },
   });
 
-  if (mode.kind === 'list') {
+  const { data: instanceRow } = useQuery<InstanceRow | null>({
+    queryKey: ['instance-preview-info', instanceId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instances')
+        .select('name, logo_url, phone, email, address, website, contact_person')
+        .eq('id', instanceId)
+        .single();
+      if (error) throw error;
+      return data as InstanceRow;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const previewInstance = {
+    name: instanceRow?.name ?? '',
+    logo_url: instanceRow?.logo_url ?? '',
+    phone: instanceRow?.phone ?? '',
+    email: instanceRow?.email ?? '',
+    address: instanceRow?.address ?? '',
+    website: instanceRow?.website ?? '',
+    contact_person: instanceRow?.contact_person ?? '',
+  };
+
+  const handleDownloadPdf = async (item: InstructionListItem) => {
+    const title = item.kind === 'builtin' ? item.template.titlePl : item.row.title;
+    const content: TiptapDocument =
+      item.kind === 'builtin' ? item.template.getContent() : (item.row.content as TiptapDocument);
+    try {
+      await previewInstructionPdf({ title, content, instance: previewInstance });
+    } catch {
+      toast.error(t('publicInstruction.loadError'));
+    }
+  };
+
+  const renderBody = () => {
+    if (mode.kind === 'list') {
+      return (
+        <InstructionList
+          instanceId={instanceId}
+          supabase={supabase}
+          onEdit={(id) => setMode(id === null ? { kind: 'new' } : { kind: 'edit', id })}
+          onDuplicateBuiltin={(key) => setMode({ kind: 'duplicate', key })}
+          onPreview={(item) => setPreviewItem(item)}
+          onDownloadPdf={handleDownloadPdf}
+        />
+      );
+    }
+
+    if (mode.kind === 'edit' && !editingRow) {
+      return null;
+    }
+
+    const editorMode =
+      mode.kind === 'new'
+        ? ({ kind: 'new' } as const)
+        : mode.kind === 'duplicate'
+          ? ({ kind: 'duplicate', key: mode.key } as const)
+          : ({ kind: 'edit', row: editingRow! } as const);
+
     return (
-      <InstructionList
+      <InstructionEditor
         instanceId={instanceId}
         supabase={supabase}
-        onEdit={(id) => setMode(id === null ? { kind: 'new' } : { kind: 'edit', id })}
-        onDuplicateBuiltin={(key) => setMode({ kind: 'duplicate', key })}
+        mode={editorMode}
+        onClose={() => setMode({ kind: 'list' })}
+        onSaved={() => setMode({ kind: 'list' })}
       />
     );
-  }
-
-  if (mode.kind === 'edit' && !editingRow) {
-    return null;
-  }
-
-  const editorMode =
-    mode.kind === 'new'
-      ? ({ kind: 'new' } as const)
-      : mode.kind === 'duplicate'
-        ? ({ kind: 'duplicate', key: mode.key } as const)
-        : ({ kind: 'edit', row: editingRow! } as const);
+  };
 
   return (
-    <InstructionEditor
-      instanceId={instanceId}
-      supabase={supabase}
-      mode={editorMode}
-      onClose={() => setMode({ kind: 'list' })}
-      onSaved={() => setMode({ kind: 'list' })}
-    />
+    <>
+      {renderBody()}
+      <InstructionPreviewDialog
+        open={previewItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewItem(null);
+        }}
+        item={previewItem}
+        instance={previewInstance}
+      />
+    </>
   );
 }
