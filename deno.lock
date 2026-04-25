@@ -2,7 +2,10 @@
   "version": "5",
   "specifiers": {
     "jsr:@std/assert@*": "1.0.19",
-    "jsr:@std/internal@^1.0.12": "1.0.12"
+    "jsr:@std/assert@^1.0.19": "1.0.19",
+    "jsr:@std/dotenv@*": "0.225.6",
+    "jsr:@std/internal@^1.0.12": "1.0.12",
+    "jsr:@std/testing@*": "1.0.18"
   },
   "jsr": {
     "@std/assert@1.0.19": {
@@ -11,19 +14,96 @@
         "jsr:@std/internal"
       ]
     },
+    "@std/dotenv@0.225.6": {
+      "integrity": "1d6f9db72f565bd26790fa034c26e45ecb260b5245417be76c2279e5734c421b"
+    },
     "@std/internal@1.0.12": {
       "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
+    },
+    "@std/testing@1.0.18": {
+      "integrity": "d3152f57b11666bf6358d0e127c7e3488e91178b0c2d8fbf0793e1c53cd13cb1",
+      "dependencies": [
+        "jsr:@std/assert@^1.0.19"
+      ]
     }
+  },
+  "remote": {
+    "https://esm.sh/libphonenumber-js@1.11.17": "0c00e16fe481c43b80e691c749d00eea6f069fe68874427c6e42f1830b151038",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/core.mjs": "d751190a00d11727a97e54729dfcc381217c52184f8c88567af469bd1dace8a9",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/AsYouType.mjs": "66ea84caf196bdd29b6aeacc7384277b758e3fcf7498bad3c84c9afe0b3cfa31",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/AsYouTypeFormatter.mjs": "46435102e8314273860aaf20ca4d18c5c17009a4ed14e6d81a9eba2dfac4d291",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/ParseError.mjs": "6331e019c3df7c52e2dbba0990b8f5d1bf72f3dfa3b710e2fdc7a0534736d9b6",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/PhoneNumber.mjs": "9ca31df6c893845c9618d1cadefbf46f84e126c7ba9557db18df69a252ac59a5",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/constants.mjs": "3a8477f6178a26d0a28b95957b302a85aa3cea0fcc28b9aa42c00c30a16f42f3",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/findNumbers/isValidCandidate.mjs": "44760b40547f2a6f8900ad81f73d77900ea785ce14d5c686d4888d7fbd66dfda",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/findNumbers/isValidPreCandidate.mjs": "5ef0f2fe5cbbae5f4d255fc7390215b24828f7becb4c9f062440cab06793952f",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/findNumbers/parsePreCandidate.mjs": "bb3331d43ddc41b5871cc46a51d00a2be1081695511489b5034531533cc2cff5",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/findNumbers/utf-8.mjs": "148b1e2a728f1c354d506e7aa5b846fef33fd7368ceee6bffc2b151c69b63734",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/findNumbers/util.mjs": "286ac947d20d3117cf1dfbdc40970f0bb5065f7dd16cd453791560d572cca1c7",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/format.mjs": "077a3cf22f99d68e18a27d5b76bdc312a4e12b5e753cc45f58ba88420822a152",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/getCountryCallingCode.mjs": "fa87f9c426d478f69e4325a02c59c6552d1b6bfd2f897f1d8e4c70a28f207385",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/RFC3966.mjs": "e9b0b83eb32522d9c9059b7499318ff776642d0aee4ebabce191c234e7704656",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/applyInternationalSeparatorStyle.mjs": "663fa12c7eae1857fcc4373650949fe4c4a60b12db651a394709810504666bc8",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/checkNumberLength.mjs": "e52331e88d77fa0981ecf235ef9d2558fe927c0879b8e62081d1a160bc12a25a",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/extension/createExtensionPattern.mjs": "03a958b2f31bd8f76fd05ee5f83ae8768389b53c3f060ba3316ea95ea7ad3a3e",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/extractCountryCallingCode.mjs": "9447f632cdf88d215e873d8618f626b54f8eb580fdbe3f9c52070b712bfea738",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/extractCountryCallingCodeFromInternationalNumberWithoutPlusSign.mjs": "6587f17e324b23941f75f7d0efa69a0d34aa59cd56223aa3d9c22edc78ce0f5a",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/extractNationalNumber.mjs": "f865ffcb104f0ad2bfc1e4126a7a9b38e4a05212b46115f6e605de18cde65663",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/extractNationalNumberFromPossiblyIncompleteNumber.mjs": "2c00a69ebfb9b71c5cdf1ba57ebf727d1cf13d3ac737f698602685f4a27d73f2",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/formatNationalNumberUsingFormat.mjs": "387169182e6a35ee3c164569e03c6f47e744baacf018076648a5a1c0b361ecaa",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/getCountryByCallingCode.mjs": "6b3a283b39152bc46cd1282fdbdc68e72d906c088abd21835c540d9a056e561e",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/getCountryByNationalNumber.mjs": "cfb599a011661aa24579c3423abab84e6bde1763b05a5a68eb1da6b7c6c53d33",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/getNumberType.mjs": "41f828ce63917263fc4b2a905c80d612387519ea28db5eb05057ed4891b795cd",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/isObject.mjs": "e7873ec4be66c7f7b11f56d0a207d00b391aae642b211117d962ac5e69d7ad09",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/isViablePhoneNumber.mjs": "cbb2fc90eb2c8f05ffa12cb61a02cdf0724687a73e3791b6b1636b0d17d1514a",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/matchesEntirely.mjs": "e98b90b0adc32b0cbaf46c073b4abb6ed83a707a21599a89a65a340b12750e5c",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/parseDigits.mjs": "a20256982cf90df4d6aa31d14f3cf79d5b58e6bbf36d72d96827d6acdf2decf6",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/helpers/stripIddPrefix.mjs": "61bc218a1d308dfee5116031c894cfc37d5863ca448e98a2f38397f8dc41fa48",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/isPossible.mjs": "cccd9ab38afd92293bf30150c7e89af2dda499f5f5983ce47aed9e2b02080e1f",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/isValid.mjs": "fb2ad3f6de6c6fd0640f094baab53a317b26c34197d84f2b276ece7fb589eb23",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/metadata.mjs": "095982c3cf1cc27f3b85660e01dd163e46f20d078d3989dbe5fce8b8b74ea585",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/normalizeArguments.mjs": "3250df3e288e50d37a139837d8fbe56ece7178810926d8a428b50c3ebc4fb7d8",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/parse.mjs": "05152e5567bad2b1603e7ad56e99f9280a47cf9aa0c32462a3a0f1b98183cb8b",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/es6/parseIncompletePhoneNumber.mjs": "7957a7f4b7ed486abaa004a44b5b80fcb5ac48dac0bcf5baede628830e74fca8",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/libphonenumber-js.mjs": "0c4f8f3cb94462dd9ea2861a3f9ba6cd537897654d191d4ab08d5d5ee72e0c58",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/AsYouType.mjs": "ffa8f4e13f1751211fcb68c1ba2a8301940de467f2fe9f122d0e4537f815061d",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/Metadata.mjs": "ff9835e4a38873bab10518f14ac02b66d73a749f54c7f95b67e16bf59db221af",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/PhoneNumberMatcher.mjs": "dd46e5c63d952fdbd9ba54099264f958f5ed163570645667458f177e2c7c953b",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/findNumbers.mjs": "921d94ad2c602cd8f0ff50b0de13b55f36cab3b62c3b4140cee4607d369c3090",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/findPhoneNumbersInText.mjs": "424cf2c786a59d2ef5fde32a73c3d0e778150bf9103be030668c2da0a60389d4",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/formatIncompletePhoneNumber.mjs": "a01bbf2516860478ffaf11fb2c84eeb10f38da263a26339ee649a05c66250820",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/getCountries.mjs": "b067e802d7baa8605b4db06265a64b8aada4fbe2ae413eaf25e4be88ffb38700",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/getCountryCallingCode.mjs": "8622efd109dc01daf3e52949b22ef0179c62e8f8b886b09da36c41e66ca0fcb4",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/getExampleNumber.mjs": "4091d9f581b5ef34b69f73e2b5f9f68a7d8a419481746a62220b5bd4dee4f094",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/getExtPrefix.mjs": "ec2a4d08833e97ea1870762217c8525f49ca8e44b9ebf42b86ca01eed4dfff7b",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/isPossiblePhoneNumber.mjs": "adf6f3163d693fd0741f77481d717a5897ee408ed79852bacab3c1decce478d3",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/isSupportedCountry.mjs": "14b301465d20778a4204559b153c98e81f4dfad7dc9667842e261ed810fc5466",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/isValidPhoneNumber.mjs": "843ef3a0d33c8dc4027583b61d6e85264eb63503e9b8a143bb0dc60488b6397d",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/parsePhoneNumber.mjs": "abf87668ef9c22757e8d12bbbc8db2ff365db05b2485c63f3d0fb7345d1556a2",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/parsePhoneNumberWithError.mjs": "aebc9239857da683f786673a12e19ff00f6a457a24cc84eba793b4223d596731",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/searchNumbers.mjs": "cb8d9ecfb054de49d992d1799b84864e250a0379a4004a8d40c2efa4807b0075",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/searchPhoneNumbersInText.mjs": "e535d2be4d85d35d30a7cf16e59c4847e6ed75558b9a0352edbf719203b929c9",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/validatePhoneNumberLength.mjs": "fe005b7698d377e5304eceb460757521db31d6296606434d7fbf728100b01613",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/exports/withMetadataArgument.mjs": "ba3f91b7dff4fa34c7496c19ae783fdbc9614bf6da1acf207f2642ffeb71fb34",
+    "https://esm.sh/libphonenumber-js@1.11.17/denonext/min/metadata.mjs": "7405f562b230ba9810828f3eebefd8595af56ee10b71fd76d51ef4b8b0a8c7ee"
   },
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@ai-sdk/openai@^3.0.47",
+        "npm:@commitlint/cli@^20.5.0",
+        "npm:@commitlint/config-conventional@^20.5.0",
+        "npm:@playwright/test@^1.59.1",
+        "npm:@react-pdf/renderer@^4.3.0",
+        "npm:@supabase/supabase-js@^2.99.3",
+        "npm:ai@^6.0.134",
         "npm:dompurify@^3.3.3",
         "npm:husky@^9.1.7",
         "npm:lint-staged@^16.4.0",
         "npm:nx@^21.3.2",
         "npm:prettier@^3.8.1",
-        "npm:typescript@^5.8.3"
+        "npm:typescript@^5.8.3",
+        "npm:zod@^3.25.76"
       ]
     }
   }
