@@ -16,6 +16,7 @@ export default defineConfig({
       '../../libs/billing/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/custom-fields/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/protocol-config/src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/pdf/src/**/*.{test,spec}.{ts,tsx}',
     ],
     coverage: {
       reporter: ['text', 'html'],

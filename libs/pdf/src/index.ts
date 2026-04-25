@@ -21,3 +21,13 @@ export { PdfExpertContact } from './components/PdfExpertContact';
 export { OfferPdfDocument } from './OfferPdfDocument';
 export type { OfferPdfDocumentProps } from './OfferPdfDocument';
 export { transformOfferData, transformInstanceData } from './transformOfferData';
+export { InstructionPdfDocument } from './InstructionPdfDocument';
+export type {
+  InstructionPdfDocumentProps,
+  InstructionInstance,
+  TiptapDocument,
+  TiptapNode,
+  TiptapTextNode,
+  TiptapElementNode,
+} from './InstructionPdfDocument';
+export { flattenTiptapToText } from './InstructionPdfDocument';
