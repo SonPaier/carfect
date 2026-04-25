@@ -129,7 +129,7 @@ describe('InstructionSendDialog', () => {
     renderDialog({ onRequestDuplicate });
 
     await user.click(screen.getByText('Pielęgnacja folii PPF'));
-    expect(screen.getByText('instructions.builtinNeedsDuplicate')).toBeInTheDocument();
+    expect(screen.getByText('Aby wysłać wbudowaną instrukcję, najpierw ją zduplikuj i edytuj.')).toBeInTheDocument();
   });
 
   it('calls useSendInstruction when a custom template is selected and Generate is clicked', async () => {
@@ -143,7 +143,7 @@ describe('InstructionSendDialog', () => {
     renderDialog();
 
     await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('instructions.generateLink'));
+    await user.click(screen.getByText('Wygeneruj link'));
 
     await waitFor(() => {
       expect(sendMutateAsync).toHaveBeenCalledWith(
@@ -168,7 +168,7 @@ describe('InstructionSendDialog', () => {
     renderDialog();
 
     await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('instructions.generateLink'));
+    await user.click(screen.getByText('Wygeneruj link'));
 
     await waitFor(() => {
       const input = screen.getByDisplayValue(
@@ -195,7 +195,7 @@ describe('InstructionSendDialog', () => {
     renderDialog();
 
     await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('instructions.generateLink'));
+    await user.click(screen.getByText('Wygeneruj link'));
 
     await waitFor(() => screen.getByDisplayValue(/tok-abc/));
     const buttons = screen.getAllByRole('button');
@@ -206,7 +206,7 @@ describe('InstructionSendDialog', () => {
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('https://armcar.carfect.pl/instructions/tok-abc');
     });
-    expect(toastSuccess).toHaveBeenCalledWith('instructions.linkCopied');
+    expect(toastSuccess).toHaveBeenCalledWith('Link skopiowany');
   });
 
   it('pre-fills the email field with the customer email from props', async () => {
@@ -220,12 +220,12 @@ describe('InstructionSendDialog', () => {
     renderDialog();
 
     await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('instructions.generateLink'));
+    await user.click(screen.getByText('Wygeneruj link'));
 
     await waitFor(() => screen.getByDisplayValue(/tok-abc/));
-    await user.click(screen.getByText('instructions.sendEmailToggle'));
+    await user.click(screen.getByText('Wyślij e-mailem'));
 
-    const emailInput = screen.getByLabelText('instructions.emailToLabel') as HTMLInputElement;
+    const emailInput = screen.getByLabelText('Adres e-mail klienta') as HTMLInputElement;
     expect(emailInput.value).toBe('jan@example.com');
   });
 
@@ -241,14 +241,14 @@ describe('InstructionSendDialog', () => {
     renderDialog();
 
     await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('instructions.generateLink'));
+    await user.click(screen.getByText('Wygeneruj link'));
 
     await waitFor(() => screen.getByDisplayValue(/tok-abc/));
-    await user.click(screen.getByText('instructions.sendEmailToggle'));
+    await user.click(screen.getByText('Wyślij e-mailem'));
 
-    const bodyTextarea = screen.getByLabelText('instructions.emailBodyLabel');
+    const bodyTextarea = screen.getByLabelText('Treść wiadomości');
     await user.type(bodyTextarea, 'Dzień dobry');
-    await user.click(screen.getByText('instructions.sendEmail'));
+    await user.click(screen.getByRole('button', { name: 'Wyślij' }));
 
     await waitFor(() => {
       expect(functionsInvoke).toHaveBeenCalledWith(
@@ -283,6 +283,6 @@ describe('InstructionSendDialog', () => {
     renderDialog();
 
     await user.click(screen.getByText('My Custom Instruction'));
-    expect(screen.getByText(/instructions.alreadySentAt|20\.04\.2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Wysłano:.*20\.04\.2026/)).toBeInTheDocument();
   });
 });

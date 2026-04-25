@@ -98,7 +98,7 @@ describe('InstructionList', () => {
 
     expect(screen.getByText('Pielęgnacja folii PPF')).toBeInTheDocument();
     expect(screen.getByText('Pielęgnacja powłoki ceramicznej')).toBeInTheDocument();
-    expect(screen.getAllByText('instructions.builtinBadge')).toHaveLength(2);
+    expect(screen.getAllByText('Wbudowana')).toHaveLength(2);
   });
 
   it('renders custom rows after built-ins', () => {
@@ -125,9 +125,9 @@ describe('InstructionList', () => {
 
     renderList();
 
-    expect(screen.getByText('instructions.duplicateAndEdit')).toBeInTheDocument();
-    expect(screen.queryByText('instructions.edit')).not.toBeInTheDocument();
-    expect(screen.queryByText('instructions.delete')).not.toBeInTheDocument();
+    expect(screen.getByText('Duplikuj i edytuj')).toBeInTheDocument();
+    expect(screen.queryByText('Edytuj')).not.toBeInTheDocument();
+    expect(screen.queryByText('Usuń')).not.toBeInTheDocument();
   });
 
   it('calls onEdit(null) when the new-button is clicked', async () => {
@@ -137,7 +137,7 @@ describe('InstructionList', () => {
 
     renderList({ onEdit });
 
-    await user.click(screen.getByText('instructions.newButton'));
+    await user.click(screen.getByText('Nowa instrukcja'));
     expect(onEdit).toHaveBeenCalledWith(null);
   });
 
@@ -151,7 +151,7 @@ describe('InstructionList', () => {
 
     renderList({ onDuplicateBuiltin });
 
-    await user.click(screen.getByText('instructions.duplicateAndEdit'));
+    await user.click(screen.getByText('Duplikuj i edytuj'));
     expect(onDuplicateBuiltin).toHaveBeenCalledWith('ppf');
   });
 
@@ -165,7 +165,7 @@ describe('InstructionList', () => {
 
     renderList({ onEdit });
 
-    await user.click(screen.getByText('instructions.edit'));
+    await user.click(screen.getByText('Edytuj'));
     expect(onEdit).toHaveBeenCalledWith('row-1');
   });
 
@@ -179,16 +179,18 @@ describe('InstructionList', () => {
 
     renderList();
 
-    await user.click(screen.getByText('instructions.delete'));
+    await user.click(screen.getByText('Usuń'));
     // Confirm in AlertDialog
-    const confirmBtn = screen.getAllByText('instructions.delete').find((el) =>
+    const confirmBtn = screen.getAllByText('Usuń').find((el) =>
       el.closest('[role="alertdialog"]'),
     );
     expect(confirmBtn).toBeDefined();
     await user.click(confirmBtn!);
 
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith('instructions.deleteRestrictError');
+      expect(toastError).toHaveBeenCalledWith(
+        'Nie można usunąć — ta instrukcja została już wysłana. Edytuj ją zamiast usuwać.',
+      );
     });
   });
 });

@@ -49,7 +49,7 @@ describe('InstructionSendHistory', () => {
   it('renders the empty state when there are no sends', () => {
     mockUseInstructionSends.mockReturnValue({ data: [], isLoading: false });
     renderHistory();
-    expect(screen.getByText('instructions.noSendsYet')).toBeInTheDocument();
+    expect(screen.getByText('Brak wysłanych instrukcji')).toBeInTheDocument();
   });
 
   it('renders one row per send with title, sent_at, and viewed status', () => {
@@ -71,7 +71,7 @@ describe('InstructionSendHistory', () => {
 
     expect(screen.getByText('PPF Care Guide')).toBeInTheDocument();
     expect(screen.getByText('Ceramic')).toBeInTheDocument();
-    expect(screen.getAllByText(/instructions\.alreadySentAt/).length).toBe(2);
+    expect(screen.getAllByText(/Wysłano:/).length).toBe(2);
   });
 
   it('shows the not-viewed label when viewed_at is null', () => {
@@ -82,7 +82,7 @@ describe('InstructionSendHistory', () => {
 
     renderHistory();
 
-    expect(screen.getByText(/instructions\.notViewed/)).toBeInTheDocument();
+    expect(screen.getByText(/Jeszcze nie obejrzane/)).toBeInTheDocument();
   });
 
   it('shows the formatted viewedAt label when viewed_at is present', () => {
@@ -93,8 +93,8 @@ describe('InstructionSendHistory', () => {
 
     renderHistory();
 
-    expect(screen.getByText(/instructions\.viewedAt/)).toBeInTheDocument();
-    expect(screen.queryByText(/instructions\.notViewed/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Otwarto:/)).toBeInTheDocument();
+    expect(screen.queryByText(/Jeszcze nie obejrzane/)).not.toBeInTheDocument();
   });
 
   it('opens the public URL in a new tab via the external link anchor', () => {

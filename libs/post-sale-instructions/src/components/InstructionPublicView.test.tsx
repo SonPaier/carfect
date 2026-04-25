@@ -69,7 +69,7 @@ describe('InstructionPublicView', () => {
     openInstructionPdfMock.mockResolvedValue(undefined);
     render(<InstructionPublicView data={baseData} publicToken="tok-abc" />);
 
-    await user.click(screen.getByText('publicInstruction.downloadPdf'));
+    await user.click(screen.getByText('Pobierz PDF'));
     await waitFor(() => {
       expect(openInstructionPdfMock).toHaveBeenCalledWith('tok-abc');
     });
@@ -85,7 +85,7 @@ describe('InstructionPublicView', () => {
     );
     render(<InstructionPublicView data={baseData} publicToken="tok-1" />);
 
-    const button = screen.getByText('publicInstruction.downloadPdf').closest('button');
+    const button = screen.getByText('Pobierz PDF').closest('button');
     expect(button).toBeDefined();
     await user.click(button!);
     expect(button).toBeDisabled();
@@ -99,9 +99,11 @@ describe('InstructionPublicView', () => {
     openInstructionPdfMock.mockRejectedValue(new Error('boom'));
     render(<InstructionPublicView data={baseData} publicToken="tok-1" />);
 
-    await user.click(screen.getByText('publicInstruction.downloadPdf'));
+    await user.click(screen.getByText('Pobierz PDF'));
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith('publicInstruction.loadError');
+      expect(toastError).toHaveBeenCalledWith(
+        'Nie udało się wczytać instrukcji. Spróbuj ponownie.',
+      );
     });
   });
 });

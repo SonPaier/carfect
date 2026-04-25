@@ -87,19 +87,19 @@ beforeEach(() => {
 describe('InstructionEditor', () => {
   it('renders empty form fields in new mode', () => {
     renderEditor({ mode: { kind: 'new' } });
-    const titleInput = screen.getByLabelText('instructions.titleLabel') as HTMLInputElement;
+    const titleInput = screen.getByLabelText('Tytuł') as HTMLInputElement;
     expect(titleInput.value).toBe('');
   });
 
   it('pre-fills the form with the existing row in edit mode', () => {
     renderEditor({ mode: { kind: 'edit', row: existingRow } });
-    const titleInput = screen.getByLabelText('instructions.titleLabel') as HTMLInputElement;
+    const titleInput = screen.getByLabelText('Tytuł') as HTMLInputElement;
     expect(titleInput.value).toBe('Existing Title');
   });
 
   it('pre-fills the form from the built-in template in duplicate mode', () => {
     renderEditor({ mode: { kind: 'duplicate', key: 'ppf' } });
-    const titleInput = screen.getByLabelText('instructions.titleLabel') as HTMLInputElement;
+    const titleInput = screen.getByLabelText('Tytuł') as HTMLInputElement;
     expect(titleInput.value.length).toBeGreaterThan(0);
   });
 
@@ -110,7 +110,7 @@ describe('InstructionEditor', () => {
     await user.click(screen.getByRole('button', { name: /Zapisz|common\.save/ }));
 
     await waitFor(() => {
-      expect(screen.getByText('instructions.titleRequired')).toBeInTheDocument();
+      expect(screen.getByText('Tytuł jest wymagany')).toBeInTheDocument();
     });
     expect(createMutateAsync).not.toHaveBeenCalled();
   });
