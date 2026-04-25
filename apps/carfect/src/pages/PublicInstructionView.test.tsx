@@ -22,8 +22,8 @@ function renderAt(path: string) {
     <HelmetProvider>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/instructions/:token" element={<PublicInstructionView />} />
-          <Route path="/instructions" element={<PublicInstructionView />} />
+          <Route path="/instrukcje/:slug" element={<PublicInstructionView />} />
+          <Route path="/instrukcje" element={<PublicInstructionView />} />
         </Routes>
       </MemoryRouter>
     </HelmetProvider>,
@@ -41,7 +41,7 @@ describe('PublicInstructionView', () => {
       isLoading: true,
       error: null,
     });
-    renderAt('/instructions/tok-123');
+    renderAt('/instrukcje/tok-123');
     expect(screen.getByText('...')).toBeInTheDocument();
   });
 
@@ -55,7 +55,7 @@ describe('PublicInstructionView', () => {
       isLoading: false,
       error: null,
     });
-    renderAt('/instructions/tok-abc');
+    renderAt('/instrukcje/tok-abc');
     await waitFor(() => {
       expect(screen.getByTestId('public-view')).toBeInTheDocument();
     });
@@ -68,7 +68,7 @@ describe('PublicInstructionView', () => {
       isLoading: false,
       error: new Error('PGRST116'),
     });
-    renderAt('/instructions/tok-bad');
+    renderAt('/instrukcje/tok-bad');
     expect(
       screen.getByText('Nie znaleziono instrukcji lub link jest nieprawidłowy.'),
     ).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('PublicInstructionView', () => {
       isLoading: false,
       error: null,
     });
-    renderAt('/instructions/tok-empty');
+    renderAt('/instrukcje/tok-empty');
     expect(
       screen.getByText('Nie znaleziono instrukcji lub link jest nieprawidłowy.'),
     ).toBeInTheDocument();
@@ -96,7 +96,7 @@ describe('PublicInstructionView', () => {
       isLoading: false,
       error: null,
     });
-    renderAt('/instructions/tok-title');
+    renderAt('/instrukcje/tok-title');
     await waitFor(() => {
       expect(document.title).toBe('PPF Care – Armcar');
     });

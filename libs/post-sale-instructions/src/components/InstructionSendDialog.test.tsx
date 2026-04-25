@@ -28,8 +28,8 @@ vi.mock('../hooks/useInstructionSends', () => ({
 const sendMutateAsync = vi.fn();
 vi.mock('../hooks/useSendInstruction', () => ({
   useSendInstruction: () => ({ mutateAsync: sendMutateAsync, isPending: false }),
-  buildInstructionPublicUrl: (slug: string, token: string) =>
-    `https://${slug}.carfect.pl/instructions/${token}`,
+  buildInstructionPublicUrl: (instanceSlug: string, instructionSlug: string) =>
+    `https://${instanceSlug}.carfect.pl/instrukcje/${instructionSlug}`,
 }));
 
 const createMutateAsync = vi.fn();

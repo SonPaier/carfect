@@ -85,21 +85,6 @@ export default function PostSaleInstructionsSettings({
   const { data: instanceSettings } = useInstanceSettings(instanceId);
   const instanceSlug = instanceSettings?.slug ?? null;
 
-  const findLatestPublicToken = async (instructionId: string): Promise<string | null> => {
-    const { data, error } = await supabase
-      .from('post_sale_instruction_sends')
-      .select('public_token')
-      .eq('instruction_id', instructionId)
-      .order('sent_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) {
-      console.error('Failed to look up public token:', error);
-      return null;
-    }
-    return (data?.public_token as string | undefined) ?? null;
-  };
-
   const handleCopyLink = async (item: InstructionListItem) => {
     if (!instanceSlug) {
       toast.error(t('publicInstruction.loadError'));
@@ -109,12 +94,7 @@ export default function PostSaleInstructionsSettings({
       toast.error(t('instructions.copyLinkBuiltinHint'));
       return;
     }
-    const token = await findLatestPublicToken(item.row.id);
-    if (!token) {
-      toast.error(t('instructions.copyLinkNoSendHint'));
-      return;
-    }
-    const url = buildInstructionPublicUrl(instanceSlug, token);
+    const url = buildInstructionPublicUrl(instanceSlug, item.row.slug);
     await navigator.clipboard.writeText(url);
     toast.success(t('instructions.linkCopied'));
   };

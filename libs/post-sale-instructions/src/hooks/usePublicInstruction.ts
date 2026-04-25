@@ -17,18 +17,24 @@ export interface PublicInstructionData {
   };
 }
 
+/**
+ * Anon-callable lookup for the public route /instrukcje/:slug. Both the
+ * instance subdomain and the instruction slug are part of the URL — we pass
+ * them through so different instances can independently own the same slug.
+ */
 export function usePublicInstruction(
-  token: string | undefined,
+  instanceSlug: string | undefined,
+  instructionSlug: string | undefined,
   supabase: SupabaseClient<Database>,
 ) {
   return useQuery({
-    queryKey: ['public-instruction', token],
-    enabled: Boolean(token),
+    queryKey: ['public-instruction', instanceSlug, instructionSlug],
+    enabled: Boolean(instanceSlug && instructionSlug),
     queryFn: async (): Promise<PublicInstructionData> => {
-      const { data, error } = await supabase.rpc('get_public_instruction', {
-        p_token: token!,
+      const { data, error } = await supabase.rpc('get_public_instruction_by_slug', {
+        p_instance_slug: instanceSlug!,
+        p_instruction_slug: instructionSlug!,
       });
-
       if (error) throw error;
       return data as unknown as PublicInstructionData;
     },

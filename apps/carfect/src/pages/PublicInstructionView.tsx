@@ -4,10 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@shared/ui';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  InstructionPublicView,
-  usePublicInstruction,
-} from '@shared/post-sale-instructions';
+import { InstructionPublicView, usePublicInstruction } from '@shared/post-sale-instructions';
 
 const LoadingCard = () => (
   <div className="min-h-screen flex items-center justify-center bg-muted">
@@ -31,12 +28,31 @@ const ErrorCard = ({ message }: { message: string }) => (
   </div>
 );
 
+/**
+ * Resolve the instance subdomain from the URL.
+ *  - Production: armcar.carfect.pl → 'armcar'
+ *  - Local dev (no subdomain): fall back to the 'demo' instance.
+ */
+function resolveInstanceSlug(): string {
+  if (typeof window === 'undefined') return 'demo';
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return 'demo';
+  if (host.endsWith('.carfect.pl')) {
+    const sub = host.replace('.carfect.pl', '');
+    if (sub.endsWith('.admin')) return sub.replace('.admin', '');
+    if (sub === 'super.admin') return 'demo';
+    return sub;
+  }
+  return 'demo';
+}
+
 const PublicInstructionView = () => {
   const { t } = useTranslation();
-  const { token } = useParams<{ token: string }>();
-  const { data, isLoading, error } = usePublicInstruction(token, supabase);
+  const { slug } = useParams<{ slug: string }>();
+  const instanceSlug = resolveInstanceSlug();
+  const { data, isLoading, error } = usePublicInstruction(instanceSlug, slug, supabase);
 
-  if (!token) return <ErrorCard message={t('publicInstruction.invalidLink')} />;
+  if (!slug) return <ErrorCard message={t('publicInstruction.invalidLink')} />;
   if (isLoading) return <LoadingCard />;
   if (error || !data) return <ErrorCard message={t('publicInstruction.notFound')} />;
 
@@ -50,7 +66,7 @@ const PublicInstructionView = () => {
           })}
         </title>
       </Helmet>
-      <InstructionPublicView data={data} publicToken={token} />
+      <InstructionPublicView data={data} publicToken={slug} />
     </>
   );
 };

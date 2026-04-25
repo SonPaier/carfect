@@ -3,8 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import type { InstructionSendRow } from '../types';
 
-export function buildInstructionPublicUrl(slug: string, token: string): string {
-  return `https://${slug}.carfect.pl/instrukcje/${token}`;
+/**
+ * Build the customer-facing URL for an instruction. Both segments are slugs,
+ * not tokens — the public RPC resolves (instance_slug, instruction_slug) to
+ * a row, with no per-customer state in the URL.
+ */
+export function buildInstructionPublicUrl(instanceSlug: string, instructionSlug: string): string {
+  return `https://${instanceSlug}.carfect.pl/instrukcje/${instructionSlug}`;
 }
 
 interface SendInstructionInput {

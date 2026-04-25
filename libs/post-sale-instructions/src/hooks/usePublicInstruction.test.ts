@@ -41,10 +41,10 @@ const mockPublicInstruction: PublicInstructionData = {
 };
 
 describe('usePublicInstruction', () => {
-  it('does not run the query when token is undefined', async () => {
+  it('does not run the query when slugs are undefined', async () => {
     const supabase = createMockSupabase(mockPublicInstruction);
     const { result } = renderHook(
-      () => usePublicInstruction(undefined, supabase as never),
+      () => usePublicInstruction(undefined, undefined, supabase as never),
       { wrapper: createWrapper() },
     );
 
@@ -54,24 +54,25 @@ describe('usePublicInstruction', () => {
     expect(supabase._mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('calls get_public_instruction RPC with the provided token', async () => {
+  it('calls get_public_instruction_by_slug with both slugs', async () => {
     const supabase = createMockSupabase(mockPublicInstruction);
     const { result } = renderHook(
-      () => usePublicInstruction('tok-abc123', supabase as never),
+      () => usePublicInstruction('armcar', 'ppf-care', supabase as never),
       { wrapper: createWrapper() },
     );
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    expect(supabase._mocks.rpc).toHaveBeenCalledWith('get_public_instruction', {
-      p_token: 'tok-abc123',
+    expect(supabase._mocks.rpc).toHaveBeenCalledWith('get_public_instruction_by_slug', {
+      p_instance_slug: 'armcar',
+      p_instruction_slug: 'ppf-care',
     });
   });
 
   it('returns the typed shape with title, content, and instance fields', async () => {
     const supabase = createMockSupabase(mockPublicInstruction);
     const { result } = renderHook(
-      () => usePublicInstruction('tok-abc123', supabase as never),
+      () => usePublicInstruction('armcar', 'ppf-care', supabase as never),
       { wrapper: createWrapper() },
     );
 
@@ -92,7 +93,7 @@ describe('usePublicInstruction', () => {
     });
 
     const { result } = renderHook(
-      () => usePublicInstruction('tok-invalid', supabase as never),
+      () => usePublicInstruction('armcar', 'tok-invalid', supabase as never),
       {
         wrapper: ({ children }: { children: React.ReactNode }) =>
           React.createElement(QueryClientProvider, { client: queryClient }, children),

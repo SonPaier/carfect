@@ -29,6 +29,7 @@ interface InstructionSendRow {
   customer_id: string | null;
   post_sale_instructions: {
     title: string;
+    slug: string;
     content: unknown;
   } | null;
   reservations: {
@@ -75,7 +76,7 @@ serve(async (req) => {
       .select(
         `
         id, public_token, customer_id,
-        post_sale_instructions ( title, content ),
+        post_sale_instructions ( title, slug, content ),
         reservations ( customer_name, customer_email, customer_phone ),
         instances ( name, slug, email, phone, address, website, contact_person, logo_url, social_facebook, social_instagram )
       `,
@@ -108,9 +109,9 @@ serve(async (req) => {
     const instance = row.instances;
     const instanceSlug = instance?.slug ?? 'app';
     const instanceName = instance?.name ?? '';
-    const publicToken = row.public_token;
+    const instructionSlug = row.post_sale_instructions?.slug ?? row.public_token;
 
-    const instructionUrl = `https://${instanceSlug}.carfect.pl/instrukcje/${publicToken}`;
+    const instructionUrl = `https://${instanceSlug}.carfect.pl/instrukcje/${instructionSlug}`;
 
     console.log('Preparing email for:', customerEmail);
 

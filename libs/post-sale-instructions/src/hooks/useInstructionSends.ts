@@ -7,6 +7,7 @@ interface InstructionSendWithInstruction extends InstructionSendRow {
   post_sale_instructions: {
     id: string;
     title: string;
+    slug: string;
     hardcoded_key: string | null;
   } | null;
 }
@@ -18,7 +19,7 @@ export function useInstructionSends(reservationId: string, supabase: SupabaseCli
     queryFn: async (): Promise<InstructionSendWithInstruction[]> => {
       const { data, error } = await supabase
         .from('post_sale_instruction_sends')
-        .select('*, post_sale_instructions(id, title, hardcoded_key)')
+        .select('*, post_sale_instructions(id, title, slug, hardcoded_key)')
         .eq('reservation_id', reservationId)
         .order('sent_at', { ascending: false });
 

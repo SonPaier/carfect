@@ -9,8 +9,8 @@ vi.mock('../hooks/useInstructionSends', () => ({
 }));
 
 vi.mock('../hooks/useSendInstruction', () => ({
-  buildInstructionPublicUrl: (slug: string, token: string) =>
-    `https://${slug}.carfect.pl/instructions/${token}`,
+  buildInstructionPublicUrl: (instanceSlug: string, instructionSlug: string) =>
+    `https://${instanceSlug}.carfect.pl/instrukcje/${instructionSlug}`,
 }));
 
 function renderHistory() {
@@ -37,6 +37,7 @@ const sendBase = {
   post_sale_instructions: {
     id: 'instr-1',
     title: 'PPF Care Guide',
+    slug: 'ppf-care-guide',
     hardcoded_key: 'ppf',
   },
 };
@@ -107,7 +108,7 @@ describe('InstructionSendHistory', () => {
     renderHistory();
 
     const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('href', 'https://armcar.carfect.pl/instructions/tok-abc');
+    expect(link).toHaveAttribute('href', 'https://armcar.carfect.pl/instrukcje/ppf-care-guide');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
