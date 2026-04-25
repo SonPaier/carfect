@@ -1622,10 +1622,6 @@ const ReservationDetailsDrawer = ({
           instanceId={reservation.instance_id}
           instanceSlug={instanceSettings.slug}
           supabase={supabase}
-          onRequestDuplicate={() => {
-            setSendInstructionDialogOpen(false);
-            toast.info(t('instructions.builtinNeedsDuplicate'));
-          }}
         />
       )}
 

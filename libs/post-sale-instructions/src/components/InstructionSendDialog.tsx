@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -23,12 +22,13 @@ import {
 import { Copy, ExternalLink, Mail, Send, X } from 'lucide-react';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useInstructions } from '../hooks/useInstructions';
+import { useCreateInstruction } from '../hooks/useCreateInstruction';
 import {
   useSendInstruction,
   buildInstructionPublicUrl,
 } from '../hooks/useSendInstruction';
 import { useInstructionSends } from '../hooks/useInstructionSends';
-import type { HardcodedKey, InstructionSendRow } from '../types';
+import type { InstructionListItem, InstructionSendRow } from '../types';
 
 interface InstructionSendDialogProps {
   open: boolean;
@@ -39,7 +39,6 @@ interface InstructionSendDialogProps {
   instanceId: string;
   instanceSlug: string;
   supabase: SupabaseClient<Database>;
-  onRequestDuplicate: (key: HardcodedKey) => void;
 }
 
 export function InstructionSendDialog({
@@ -51,42 +50,66 @@ export function InstructionSendDialog({
   instanceId,
   instanceSlug,
   supabase,
-  onRequestDuplicate,
 }: InstructionSendDialogProps) {
   const { t } = useTranslation();
   const { data: items = [] } = useInstructions(instanceId, supabase);
   const { data: sends = [] } = useInstructionSends(reservationId, supabase);
   const sendMutation = useSendInstruction(supabase);
+  const createMutation = useCreateInstruction(supabase);
 
-  const [selectedInstructionId, setSelectedInstructionId] = useState<string | null>(null);
-  const [selectedBuiltinKey, setSelectedBuiltinKey] = useState<HardcodedKey | null>(null);
+  const [selected, setSelected] = useState<InstructionListItem | null>(null);
   const [sentRow, setSentRow] = useState<InstructionSendRow | null>(null);
   const [emailAddress, setEmailAddress] = useState(customerEmail ?? '');
   const [emailBody, setEmailBody] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
+  // For builtins, surface a previous send only if there is already a custom row
+  // with the same hardcoded_key (which is the row a real send would point to).
   const previousSend = useMemo(() => {
-    if (!selectedInstructionId) return null;
-    return sends.find((s) => s.instruction_id === selectedInstructionId) ?? null;
-  }, [selectedInstructionId, sends]);
+    if (!selected) return null;
+    if (selected.kind === 'custom') {
+      return sends.find((s) => s.instruction_id === selected.row.id) ?? null;
+    }
+    const promotedRow = items.find(
+      (i) => i.kind === 'custom' && i.row.hardcoded_key === selected.template.key,
+    );
+    if (promotedRow && promotedRow.kind === 'custom') {
+      return sends.find((s) => s.instruction_id === promotedRow.row.id) ?? null;
+    }
+    return null;
+  }, [selected, sends, items]);
 
-  const handleSelectInstruction = (id: string) => {
-    setSelectedInstructionId(id);
-    setSelectedBuiltinKey(null);
-    setSentRow(null);
-  };
-
-  const handleSelectBuiltin = (key: HardcodedKey) => {
-    setSelectedBuiltinKey(key);
-    setSelectedInstructionId(null);
+  const handleSelect = (item: InstructionListItem) => {
+    setSelected(item);
     setSentRow(null);
   };
 
   const handleSend = async () => {
-    if (!selectedInstructionId) return;
+    if (!selected) return;
     try {
+      // Promote a builtin to a real DB row before sending — sends.instruction_id
+      // is a FK to post_sale_instructions and builtins live only in code.
+      let instructionId: string;
+      if (selected.kind === 'builtin') {
+        const existing = items.find(
+          (i) => i.kind === 'custom' && i.row.hardcoded_key === selected.template.key,
+        );
+        if (existing && existing.kind === 'custom') {
+          instructionId = existing.row.id;
+        } else {
+          const created = await createMutation.mutateAsync({
+            instanceId,
+            title: selected.template.titlePl,
+            content: selected.template.getContent(),
+            hardcodedKey: selected.template.key,
+          });
+          instructionId = created.id;
+        }
+      } else {
+        instructionId = selected.row.id;
+      }
       const row = await sendMutation.mutateAsync({
-        instructionId: selectedInstructionId,
+        instructionId,
         reservationId,
         customerId,
         instanceId,
@@ -124,6 +147,17 @@ export function InstructionSendDialog({
     }
   };
 
+  const isSelected = (item: InstructionListItem) => {
+    if (!selected) return false;
+    if (item.kind === 'builtin' && selected.kind === 'builtin') {
+      return item.template.key === selected.template.key;
+    }
+    if (item.kind === 'custom' && selected.kind === 'custom') {
+      return item.row.id === selected.row.id;
+    }
+    return false;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="[&>button]:hidden max-w-2xl">
@@ -145,58 +179,23 @@ export function InstructionSendDialog({
             <Label>{t('instructions.pickTemplate')}</Label>
             <div className="space-y-1 max-h-64 overflow-auto">
               {items.map((item) => {
-                if (item.kind === 'builtin') {
-                  return (
-                    <button
-                      key={`builtin-${item.template.key}`}
-                      type="button"
-                      onClick={() => handleSelectBuiltin(item.template.key)}
-                      className={`w-full text-left p-2 rounded border ${
-                        selectedBuiltinKey === item.template.key
-                          ? 'border-primary'
-                          : 'border-border'
-                      } hover:bg-hover flex items-center gap-2`}
-                    >
-                      <span className="flex-1 truncate">{item.template.titlePl}</span>
-                      <Badge variant="secondary">{t('instructions.builtinBadge')}</Badge>
-                    </button>
-                  );
-                }
+                const title = item.kind === 'builtin' ? item.template.titlePl : item.row.title;
+                const key = item.kind === 'builtin' ? `builtin-${item.template.key}` : item.row.id;
                 return (
                   <button
-                    key={item.row.id}
+                    key={key}
                     type="button"
-                    onClick={() => handleSelectInstruction(item.row.id)}
+                    onClick={() => handleSelect(item)}
                     className={`w-full text-left p-2 rounded border ${
-                      selectedInstructionId === item.row.id
-                        ? 'border-primary'
-                        : 'border-border'
+                      isSelected(item) ? 'border-primary' : 'border-border'
                     } hover:bg-hover`}
                   >
-                    <span className="truncate">{item.row.title}</span>
+                    <span className="truncate">{title}</span>
                   </button>
                 );
               })}
             </div>
           </div>
-
-          {selectedBuiltinKey && (
-            <Alert>
-              <AlertDescription className="flex items-center justify-between gap-2">
-                <span>{t('instructions.builtinNeedsDuplicate')}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onRequestDuplicate(selectedBuiltinKey);
-                    onOpenChange(false);
-                  }}
-                >
-                  {t('instructions.duplicateAndEdit')}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
 
           {previousSend && !sentRow && (
             <Alert>
@@ -208,9 +207,12 @@ export function InstructionSendDialog({
             </Alert>
           )}
 
-          {selectedInstructionId && !sentRow && (
+          {selected && !sentRow && (
             <div className="flex justify-end">
-              <Button onClick={handleSend} disabled={sendMutation.isPending}>
+              <Button
+                onClick={handleSend}
+                disabled={sendMutation.isPending || createMutation.isPending}
+              >
                 <Send className="w-4 h-4 mr-2" />
                 {t('instructions.generateLink')}
               </Button>

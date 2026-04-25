@@ -32,6 +32,11 @@ vi.mock('../hooks/useSendInstruction', () => ({
     `https://${slug}.carfect.pl/instructions/${token}`,
 }));
 
+const createMutateAsync = vi.fn();
+vi.mock('../hooks/useCreateInstruction', () => ({
+  useCreateInstruction: () => ({ mutateAsync: createMutateAsync, isPending: false }),
+}));
+
 const customRow: InstructionListItem = {
   kind: 'custom',
   row: {
@@ -88,7 +93,6 @@ function renderDialog(props: Partial<Parameters<typeof InstructionSendDialog>[0]
         instanceId: 'inst-1',
         instanceSlug: 'armcar',
         supabase: supabaseMock,
-        onRequestDuplicate: vi.fn(),
         ...props,
       }),
     ),
@@ -101,6 +105,7 @@ beforeEach(() => {
   mockUseInstructions.mockReset();
   mockUseInstructionSends.mockReset();
   sendMutateAsync.mockReset();
+  createMutateAsync.mockReset();
   functionsInvoke.mockReset();
   mockUseInstructionSends.mockReturnValue({ data: [], isLoading: false });
 });
@@ -118,18 +123,94 @@ describe('InstructionSendDialog', () => {
     expect(screen.getByText('My Custom Instruction')).toBeInTheDocument();
   });
 
-  it('shows duplicate prompt when a built-in template is selected', async () => {
+  it('does not surface a duplicate-needed prompt when a builtin is selected', async () => {
     const user = userEvent.setup();
-    const onRequestDuplicate = vi.fn();
     mockUseInstructions.mockReturnValue({
       data: [builtinPpf],
       isLoading: false,
     });
 
-    renderDialog({ onRequestDuplicate });
+    renderDialog();
 
     await user.click(screen.getByText('Pielęgnacja folii PPF'));
-    expect(screen.getByText('Aby wysłać wbudowaną instrukcję, najpierw ją zduplikuj i edytuj.')).toBeInTheDocument();
+    expect(
+      screen.queryByText(/zduplikuj i edytuj/i),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Wygeneruj link')).toBeInTheDocument();
+  });
+
+  it('auto-creates a custom row before sending when a builtin is selected', async () => {
+    const user = userEvent.setup();
+    const createMutateAsyncLocal = vi.fn().mockResolvedValue({
+      id: 'new-instr-1',
+      hardcoded_key: 'ppf',
+    });
+    createMutateAsync.mockImplementation(createMutateAsyncLocal);
+    sendMutateAsync.mockResolvedValue({ ...sentRow, instruction_id: 'new-instr-1' });
+
+    mockUseInstructions.mockReturnValue({
+      data: [builtinPpf],
+      isLoading: false,
+    });
+
+    renderDialog();
+
+    await user.click(screen.getByText('Pielęgnacja folii PPF'));
+    await user.click(screen.getByText('Wygeneruj link'));
+
+    await waitFor(() => {
+      expect(createMutateAsyncLocal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          instanceId: 'inst-1',
+          hardcodedKey: 'ppf',
+          title: 'Pielęgnacja folii PPF',
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(sendMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          instructionId: 'new-instr-1',
+          reservationId: 'res-1',
+        }),
+      );
+    });
+  });
+
+  it('reuses an existing custom row instead of duplicating when sending a builtin', async () => {
+    const user = userEvent.setup();
+    sendMutateAsync.mockResolvedValue({ ...sentRow, instruction_id: 'existing-1' });
+
+    const existingPpfCustom = {
+      kind: 'custom' as const,
+      row: {
+        id: 'existing-1',
+        instance_id: 'inst-1',
+        title: 'Customized PPF',
+        content: { type: 'doc' as const, content: [] },
+        hardcoded_key: 'ppf' as const,
+        created_by: null,
+        created_at: '2026-04-01T00:00:00Z',
+        updated_at: '2026-04-01T00:00:00Z',
+      },
+    };
+
+    mockUseInstructions.mockReturnValue({
+      data: [builtinPpf, existingPpfCustom],
+      isLoading: false,
+    });
+
+    renderDialog();
+
+    await user.click(screen.getByText('Pielęgnacja folii PPF'));
+    await user.click(screen.getByText('Wygeneruj link'));
+
+    await waitFor(() => {
+      expect(sendMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ instructionId: 'existing-1' }),
+      );
+    });
+    expect(createMutateAsync).not.toHaveBeenCalled();
   });
 
   it('calls useSendInstruction when a custom template is selected and Generate is clicked', async () => {
