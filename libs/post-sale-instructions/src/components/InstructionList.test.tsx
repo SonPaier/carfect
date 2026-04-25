@@ -25,11 +25,13 @@ vi.mock('../hooks/useDeleteInstruction', () => ({
   useDeleteInstruction: () => ({ mutateAsync: mockDeleteMutateAsync }),
 }));
 
-function renderList(props: {
-  onEdit?: (id: string | null) => void;
-  onDuplicateBuiltin?: (key: 'ppf' | 'ceramic') => void;
-  onPreview?: (item: InstructionListItem) => void;
-} = {}) {
+function renderList(
+  props: {
+    onEdit?: (id: string | null) => void;
+    onDuplicateBuiltin?: (key: 'ppf' | 'ceramic') => void;
+    onPreview?: (item: InstructionListItem) => void;
+  } = {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -102,7 +104,9 @@ async function openMenuFor(title: string) {
   // Each card renders one MoreVertical trigger; find the closest trigger button
   const triggers = screen.getAllByRole('button', { name: 'Akcje' });
   const titleEl = screen.getByText(title);
-  const trigger = triggers.find((t) => titleEl.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const trigger = triggers.find(
+    (t) => titleEl.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING,
+  );
   expect(trigger ?? card).toBeDefined();
   await user.click(trigger!);
   return user;
@@ -140,8 +144,7 @@ describe('InstructionList', () => {
     const builtinTitle = screen.getByText('Pielęgnacja folii PPF');
     const customTitle = screen.getByText('My Custom Instruction');
     expect(
-      builtinTitle.compareDocumentPosition(customTitle) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+      builtinTitle.compareDocumentPosition(customTitle) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
@@ -180,7 +183,7 @@ describe('InstructionList', () => {
 
     renderList({ onEdit });
 
-    await user.click(screen.getByText('Nowa instrukcja'));
+    await user.click(screen.getByText('Dodaj'));
     expect(onEdit).toHaveBeenCalledWith(null);
   });
 
@@ -248,9 +251,7 @@ describe('InstructionList', () => {
 
     const user = await openMenuFor('My Custom Instruction');
     await user.click(screen.getByRole('menuitem', { name: /Usuń/ }));
-    const confirmBtn = screen.getAllByText('Usuń').find((el) =>
-      el.closest('[role="alertdialog"]'),
-    );
+    const confirmBtn = screen.getAllByText('Usuń').find((el) => el.closest('[role="alertdialog"]'));
     expect(confirmBtn).toBeDefined();
     await user.click(confirmBtn!);
 

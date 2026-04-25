@@ -5655,7 +5655,7 @@
     "settingsTabLabel": "Instrukcje posprzedażowe",
     "pageTitle": "Instrukcje posprzedażowe",
     "pageDescription": "Szablony instrukcji pielęgnacyjnych przekazywane klientom po realizacji usługi.",
-    "newButton": "Nowa instrukcja",
+    "newButton": "Dodaj",
     "builtinBadge": "Wbudowana",
     "duplicateAndEdit": "Duplikuj i edytuj",
     "edit": "Edytuj",
@@ -5698,7 +5698,9 @@
     "builtinNeedsDuplicate": "Aby wysłać wbudowaną instrukcję, najpierw ją zduplikuj i edytuj.",
     "promptUrl": "Podaj adres URL",
     "actions": "Akcje",
-    "preview": "Podgląd"
+    "preview": "Podgląd",
+    "copyPublicLink": "Kopiuj link",
+    "sendByEmail": "Wyślij e-mailem"
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

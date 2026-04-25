@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@shared/ui';
-import { Download, Eye, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Copy, Download, Eye, Mail, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useInstructions } from '../hooks/useInstructions';
 import { useDeleteInstruction } from '../hooks/useDeleteInstruction';
@@ -32,6 +32,8 @@ interface InstructionListProps {
   onDuplicateBuiltin: (key: HardcodedKey) => void;
   onPreview?: (item: InstructionListItem) => void;
   onDownloadPdf?: (item: InstructionListItem) => void;
+  onCopyLink?: (item: InstructionListItem) => void;
+  onSendByEmail?: (item: InstructionListItem) => void;
 }
 
 export function InstructionList({
@@ -41,6 +43,8 @@ export function InstructionList({
   onDuplicateBuiltin,
   onPreview,
   onDownloadPdf,
+  onCopyLink,
+  onSendByEmail,
 }: InstructionListProps) {
   const { t } = useTranslation();
   const { data: items = [], isLoading } = useInstructions(instanceId, supabase);
@@ -130,6 +134,18 @@ export function InstructionList({
                         <DropdownMenuItem onClick={() => onDownloadPdf(item)}>
                           <Download className="w-4 h-4 mr-2" />
                           {t('publicInstruction.downloadPdf')}
+                        </DropdownMenuItem>
+                      )}
+                      {onCopyLink && (
+                        <DropdownMenuItem onClick={() => onCopyLink(item)}>
+                          <Copy className="w-4 h-4 mr-2" />
+                          {t('instructions.copyPublicLink')}
+                        </DropdownMenuItem>
+                      )}
+                      {onSendByEmail && (
+                        <DropdownMenuItem onClick={() => onSendByEmail(item)}>
+                          <Mail className="w-4 h-4 mr-2" />
+                          {t('instructions.sendByEmail')}
                         </DropdownMenuItem>
                       )}
                       {item.kind === 'custom' && (

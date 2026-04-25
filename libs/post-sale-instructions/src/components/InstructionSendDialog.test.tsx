@@ -69,6 +69,8 @@ const sentRow: InstructionSendRow = {
   instance_id: 'inst-1',
   public_token: 'tok-abc',
   sent_at: '2026-04-25T10:00:00Z',
+  viewed_at: null,
+  created_by: null,
 };
 
 const functionsInvoke = vi.fn();
@@ -111,206 +113,52 @@ beforeEach(() => {
 });
 
 describe('InstructionSendDialog', () => {
-  it('lists all templates including built-ins on open', () => {
+  it('lists templates without the builtin badge', () => {
     mockUseInstructions.mockReturnValue({
       data: [builtinPpf, customRow],
       isLoading: false,
     });
-
     renderDialog();
-
     expect(screen.getByText('Pielęgnacja folii PPF')).toBeInTheDocument();
     expect(screen.getByText('My Custom Instruction')).toBeInTheDocument();
+    expect(screen.queryByText('Wbudowana')).not.toBeInTheDocument();
   });
 
-  it('does not surface a duplicate-needed prompt when a builtin is selected', async () => {
-    const user = userEvent.setup();
-    mockUseInstructions.mockReturnValue({
-      data: [builtinPpf],
-      isLoading: false,
-    });
-
-    renderDialog();
-
-    await user.click(screen.getByText('Pielęgnacja folii PPF'));
-    expect(
-      screen.queryByText(/zduplikuj i edytuj/i),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText('Wygeneruj link')).toBeInTheDocument();
-  });
-
-  it('auto-creates a custom row before sending when a builtin is selected', async () => {
-    const user = userEvent.setup();
-    const createMutateAsyncLocal = vi.fn().mockResolvedValue({
-      id: 'new-instr-1',
-      hardcoded_key: 'ppf',
-    });
-    createMutateAsync.mockImplementation(createMutateAsyncLocal);
-    sendMutateAsync.mockResolvedValue({ ...sentRow, instruction_id: 'new-instr-1' });
-
-    mockUseInstructions.mockReturnValue({
-      data: [builtinPpf],
-      isLoading: false,
-    });
-
-    renderDialog();
-
-    await user.click(screen.getByText('Pielęgnacja folii PPF'));
-    await user.click(screen.getByText('Wygeneruj link'));
-
-    await waitFor(() => {
-      expect(createMutateAsyncLocal).toHaveBeenCalledWith(
-        expect.objectContaining({
-          instanceId: 'inst-1',
-          hardcodedKey: 'ppf',
-          title: 'Pielęgnacja folii PPF',
-        }),
-      );
-    });
-    await waitFor(() => {
-      expect(sendMutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          instructionId: 'new-instr-1',
-          reservationId: 'res-1',
-        }),
-      );
-    });
-  });
-
-  it('reuses an existing custom row instead of duplicating when sending a builtin', async () => {
-    const user = userEvent.setup();
-    sendMutateAsync.mockResolvedValue({ ...sentRow, instruction_id: 'existing-1' });
-
-    const existingPpfCustom = {
+  it('hides a builtin from the picker when a custom row exists with the same hardcoded_key', () => {
+    const promotedPpf = {
       kind: 'custom' as const,
-      row: {
-        id: 'existing-1',
-        instance_id: 'inst-1',
-        title: 'Customized PPF',
-        content: { type: 'doc' as const, content: [] },
-        hardcoded_key: 'ppf' as const,
-        created_by: null,
-        created_at: '2026-04-01T00:00:00Z',
-        updated_at: '2026-04-01T00:00:00Z',
-      },
+      row: { ...customRow.row, id: 'instr-2', hardcoded_key: 'ppf' as const },
     };
-
     mockUseInstructions.mockReturnValue({
-      data: [builtinPpf, existingPpfCustom],
+      data: [builtinPpf, promotedPpf],
       isLoading: false,
     });
-
     renderDialog();
-
-    await user.click(screen.getByText('Pielęgnacja folii PPF'));
-    await user.click(screen.getByText('Wygeneruj link'));
-
-    await waitFor(() => {
-      expect(sendMutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ instructionId: 'existing-1' }),
-      );
-    });
-    expect(createMutateAsync).not.toHaveBeenCalled();
+    // Only the promoted custom title should appear; builtin is filtered out.
+    expect(screen.queryByText('Pielęgnacja folii PPF')).not.toBeInTheDocument();
   });
 
-  it('calls useSendInstruction when a custom template is selected and Generate is clicked', async () => {
-    const user = userEvent.setup();
-    sendMutateAsync.mockResolvedValue(sentRow);
+  it('pre-fills the email field with the customer email from props', () => {
     mockUseInstructions.mockReturnValue({
       data: [customRow],
       isLoading: false,
     });
-
     renderDialog();
-
-    await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('Wygeneruj link'));
-
-    await waitFor(() => {
-      expect(sendMutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          instructionId: 'instr-1',
-          reservationId: 'res-1',
-          customerId: 'cust-1',
-          instanceId: 'inst-1',
-        }),
-      );
-    });
-  });
-
-  it('renders the generated public link in a read-only input after send', async () => {
-    const user = userEvent.setup();
-    sendMutateAsync.mockResolvedValue(sentRow);
-    mockUseInstructions.mockReturnValue({
-      data: [customRow],
-      isLoading: false,
-    });
-
-    renderDialog();
-
-    await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('Wygeneruj link'));
-
-    await waitFor(() => {
-      const input = screen.getByDisplayValue(
-        'https://armcar.carfect.pl/instructions/tok-abc',
-      ) as HTMLInputElement;
-      expect(input).toBeInTheDocument();
-      expect(input.readOnly).toBe(true);
-    });
-  });
-
-  it('copies the link to the clipboard and shows a toast when copy is clicked', async () => {
-    const user = userEvent.setup();
-    sendMutateAsync.mockResolvedValue(sentRow);
-    mockUseInstructions.mockReturnValue({
-      data: [customRow],
-      isLoading: false,
-    });
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText },
-      configurable: true,
-    });
-
-    renderDialog();
-
-    await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('Wygeneruj link'));
-
-    await waitFor(() => screen.getByDisplayValue(/tok-abc/));
-    const buttons = screen.getAllByRole('button');
-    const copyBtn = buttons.find((b) => b.querySelector('svg.lucide-copy'));
-    expect(copyBtn).toBeDefined();
-    await user.click(copyBtn!);
-
-    await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith('https://armcar.carfect.pl/instructions/tok-abc');
-    });
-    expect(toastSuccess).toHaveBeenCalledWith('Link skopiowany');
-  });
-
-  it('pre-fills the email field with the customer email from props', async () => {
-    const user = userEvent.setup();
-    sendMutateAsync.mockResolvedValue(sentRow);
-    mockUseInstructions.mockReturnValue({
-      data: [customRow],
-      isLoading: false,
-    });
-
-    renderDialog();
-
-    await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('Wygeneruj link'));
-
-    await waitFor(() => screen.getByDisplayValue(/tok-abc/));
-    await user.click(screen.getByText('Wyślij e-mailem'));
-
     const emailInput = screen.getByLabelText('Adres e-mail klienta') as HTMLInputElement;
     expect(emailInput.value).toBe('jan@example.com');
   });
 
-  it('invokes send-instruction-email with sendId and customEmailBody on email submit', async () => {
+  it('keeps the send button disabled until both an instruction and an email are present', () => {
+    mockUseInstructions.mockReturnValue({
+      data: [customRow],
+      isLoading: false,
+    });
+    renderDialog({ customerEmail: null });
+    const sendBtn = screen.getByRole('button', { name: /Wyślij/ });
+    expect(sendBtn).toBeDisabled();
+  });
+
+  it('inserts send + invokes email function in one click for a custom instruction', async () => {
     const user = userEvent.setup();
     sendMutateAsync.mockResolvedValue(sentRow);
     functionsInvoke.mockResolvedValue({ data: { ok: true }, error: null });
@@ -320,49 +168,62 @@ describe('InstructionSendDialog', () => {
     });
 
     renderDialog();
-
     await user.click(screen.getByText('My Custom Instruction'));
-    await user.click(screen.getByText('Wygeneruj link'));
+    await user.click(screen.getByRole('button', { name: /Wyślij/ }));
 
-    await waitFor(() => screen.getByDisplayValue(/tok-abc/));
-    await user.click(screen.getByText('Wyślij e-mailem'));
-
-    const bodyTextarea = screen.getByLabelText('Treść wiadomości');
-    await user.type(bodyTextarea, 'Dzień dobry');
-    await user.click(screen.getByRole('button', { name: 'Wyślij' }));
-
+    await waitFor(() => {
+      expect(sendMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ instructionId: 'instr-1', reservationId: 'res-1' }),
+      );
+    });
     await waitFor(() => {
       expect(functionsInvoke).toHaveBeenCalledWith(
         'send-instruction-email',
         expect.objectContaining({
-          body: expect.objectContaining({
-            sendId: 'send-1',
-            customEmailBody: 'Dzień dobry',
-            toEmail: 'jan@example.com',
-          }),
+          body: { sendId: 'send-1', toEmail: 'jan@example.com' },
         }),
       );
     });
   });
 
-  it('shows the alreadySentAt banner when the instruction was previously sent', async () => {
+  it('auto-creates a custom row from a builtin before sending', async () => {
+    const user = userEvent.setup();
+    createMutateAsync.mockResolvedValue({ id: 'new-instr-1', hardcoded_key: 'ppf' });
+    sendMutateAsync.mockResolvedValue({ ...sentRow, instruction_id: 'new-instr-1' });
+    functionsInvoke.mockResolvedValue({ data: { ok: true }, error: null });
+    mockUseInstructions.mockReturnValue({
+      data: [builtinPpf],
+      isLoading: false,
+    });
+
+    renderDialog();
+    await user.click(screen.getByText('Pielęgnacja folii PPF'));
+    await user.click(screen.getByRole('button', { name: /Wyślij/ }));
+
+    await waitFor(() => {
+      expect(createMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ hardcodedKey: 'ppf' }),
+      );
+    });
+    await waitFor(() => {
+      expect(sendMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ instructionId: 'new-instr-1' }),
+      );
+    });
+  });
+
+  it('shows the alreadySentAt banner when the instruction was previously sent to this reservation', async () => {
     const user = userEvent.setup();
     mockUseInstructions.mockReturnValue({
       data: [customRow],
       isLoading: false,
     });
     mockUseInstructionSends.mockReturnValue({
-      data: [
-        {
-          ...sentRow,
-          sent_at: '2026-04-20T10:30:00Z',
-        },
-      ],
+      data: [{ ...sentRow, sent_at: '2026-04-20T10:30:00Z' }],
       isLoading: false,
     });
 
     renderDialog();
-
     await user.click(screen.getByText('My Custom Instruction'));
     expect(screen.getByText(/Wysłano:.*20\.04\.2026/)).toBeInTheDocument();
   });

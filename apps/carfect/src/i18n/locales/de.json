@@ -5639,7 +5639,7 @@
     "settingsTabLabel": "Pflegeanleitungen",
     "pageTitle": "Pflegeanleitungen",
     "pageDescription": "Pflegeanleitungs-Vorlagen, die Kunden nach einer Dienstleistung übergeben werden.",
-    "newButton": "Neue Anleitung",
+    "newButton": "Hinzufügen",
     "builtinBadge": "Vorlage",
     "duplicateAndEdit": "Duplizieren und bearbeiten",
     "edit": "Bearbeiten",
@@ -5682,7 +5682,9 @@
     "builtinNeedsDuplicate": "Um eine eingebaute Vorlage zu senden, duplizieren und bearbeiten Sie sie zuerst.",
     "promptUrl": "URL eingeben",
     "actions": "Aktionen",
-    "preview": "Vorschau"
+    "preview": "Vorschau",
+    "copyPublicLink": "Link kopieren",
+    "sendByEmail": "Per E-Mail senden"
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",

@@ -1,13 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
   Alert,
   AlertDescription,
   Button,
@@ -17,18 +13,14 @@ import {
   DialogTitle,
   Input,
   Label,
-  Textarea,
 } from '@shared/ui';
-import { Copy, ExternalLink, Mail, Send, X } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import type { Database } from '../../../../apps/carfect/src/integrations/supabase/types';
 import { useInstructions } from '../hooks/useInstructions';
 import { useCreateInstruction } from '../hooks/useCreateInstruction';
-import {
-  useSendInstruction,
-  buildInstructionPublicUrl,
-} from '../hooks/useSendInstruction';
+import { useSendInstruction } from '../hooks/useSendInstruction';
 import { useInstructionSends } from '../hooks/useInstructionSends';
-import type { InstructionListItem, InstructionSendRow } from '../types';
+import type { HardcodedKey, InstructionListItem } from '../types';
 
 interface InstructionSendDialogProps {
   open: boolean;
@@ -48,7 +40,6 @@ export function InstructionSendDialog({
   customerId,
   customerEmail,
   instanceId,
-  instanceSlug,
   supabase,
 }: InstructionSendDialogProps) {
   const { t } = useTranslation();
@@ -58,13 +49,21 @@ export function InstructionSendDialog({
   const createMutation = useCreateInstruction(supabase);
 
   const [selected, setSelected] = useState<InstructionListItem | null>(null);
-  const [sentRow, setSentRow] = useState<InstructionSendRow | null>(null);
   const [emailAddress, setEmailAddress] = useState(customerEmail ?? '');
-  const [emailBody, setEmailBody] = useState('');
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
-  // For builtins, surface a previous send only if there is already a custom row
-  // with the same hardcoded_key (which is the row a real send would point to).
+  // Hide builtins that already have a custom row with the same hardcoded_key —
+  // otherwise the picker shows duplicates after the first send promoted them.
+  const visibleItems = useMemo(() => {
+    const customKeys = new Set(
+      items
+        .filter((i): i is Extract<InstructionListItem, { kind: 'custom' }> => i.kind === 'custom')
+        .map((i) => i.row.hardcoded_key)
+        .filter((k): k is HardcodedKey => k !== null && k !== undefined),
+    );
+    return items.filter((item) => item.kind !== 'builtin' || !customKeys.has(item.template.key));
+  }, [items]);
+
   const previousSend = useMemo(() => {
     if (!selected) return null;
     if (selected.kind === 'custom') {
@@ -79,71 +78,48 @@ export function InstructionSendDialog({
     return null;
   }, [selected, sends, items]);
 
-  const handleSelect = (item: InstructionListItem) => {
-    setSelected(item);
-    setSentRow(null);
-  };
-
+  // Send: insert send row + invoke email function in one shot. No "Generate
+  // link" intermediate step — the customer-facing URL is implicit (slug-based,
+  // resolved by the public route).
   const handleSend = async () => {
-    if (!selected) return;
+    if (!selected || !emailAddress) return;
+    setIsSending(true);
     try {
-      // Promote a builtin to a real DB row before sending — sends.instruction_id
-      // is a FK to post_sale_instructions and builtins live only in code.
       let instructionId: string;
       if (selected.kind === 'builtin') {
         const existing = items.find(
           (i) => i.kind === 'custom' && i.row.hardcoded_key === selected.template.key,
         );
-        if (existing && existing.kind === 'custom') {
-          instructionId = existing.row.id;
-        } else {
-          const created = await createMutation.mutateAsync({
-            instanceId,
-            title: selected.template.titlePl,
-            content: selected.template.getContent(),
-            hardcodedKey: selected.template.key,
-          });
-          instructionId = created.id;
-        }
+        instructionId =
+          existing && existing.kind === 'custom'
+            ? existing.row.id
+            : (
+                await createMutation.mutateAsync({
+                  instanceId,
+                  title: selected.template.titlePl,
+                  content: selected.template.getContent(),
+                  hardcodedKey: selected.template.key,
+                })
+              ).id;
       } else {
         instructionId = selected.row.id;
       }
-      const row = await sendMutation.mutateAsync({
+      const sentRow = await sendMutation.mutateAsync({
         instructionId,
         reservationId,
         customerId,
         instanceId,
       });
-      setSentRow(row);
-      toast.success(t('instructions.sendCreated'));
-    } catch (error: unknown) {
-      toast.error((error as Error).message || t('instructions.sendError'));
-    }
-  };
-
-  const publicUrl = sentRow
-    ? buildInstructionPublicUrl(instanceSlug, sentRow.public_token)
-    : null;
-
-  const handleCopyLink = async () => {
-    if (!publicUrl) return;
-    await navigator.clipboard.writeText(publicUrl);
-    toast.success(t('instructions.linkCopied'));
-  };
-
-  const handleSendEmail = async () => {
-    if (!sentRow) return;
-    setIsSendingEmail(true);
-    try {
       const { error } = await supabase.functions.invoke('send-instruction-email', {
-        body: { sendId: sentRow.id, customEmailBody: emailBody, toEmail: emailAddress },
+        body: { sendId: sentRow.id, toEmail: emailAddress },
       });
       if (error) throw error;
       toast.success(t('instructions.sendEmailSent'));
+      onOpenChange(false);
     } catch (error: unknown) {
       toast.error((error as Error).message || t('instructions.sendEmailError'));
     } finally {
-      setIsSendingEmail(false);
+      setIsSending(false);
     }
   };
 
@@ -178,14 +154,14 @@ export function InstructionSendDialog({
           <div className="space-y-2">
             <Label>{t('instructions.pickTemplate')}</Label>
             <div className="space-y-1 max-h-64 overflow-auto">
-              {items.map((item) => {
+              {visibleItems.map((item) => {
                 const title = item.kind === 'builtin' ? item.template.titlePl : item.row.title;
                 const key = item.kind === 'builtin' ? `builtin-${item.template.key}` : item.row.id;
                 return (
                   <button
                     key={key}
                     type="button"
-                    onClick={() => handleSelect(item)}
+                    onClick={() => setSelected(item)}
                     className={`w-full text-left p-2 rounded border ${
                       isSelected(item) ? 'border-primary' : 'border-border'
                     } hover:bg-hover`}
@@ -197,7 +173,7 @@ export function InstructionSendDialog({
             </div>
           </div>
 
-          {previousSend && !sentRow && (
+          {previousSend && (
             <Alert>
               <AlertDescription>
                 {t('instructions.alreadySentAt', {
@@ -207,81 +183,25 @@ export function InstructionSendDialog({
             </Alert>
           )}
 
-          {selected && !sentRow && (
-            <div className="flex justify-end">
+          <div className="space-y-2">
+            <Label htmlFor="instruction-email-to">{t('instructions.emailToLabel')}</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="instruction-email-to"
+                type="email"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                placeholder="email@example.com"
+              />
               <Button
                 onClick={handleSend}
-                disabled={sendMutation.isPending || createMutation.isPending}
+                disabled={!selected || !emailAddress || isSending || createMutation.isPending}
               >
                 <Send className="w-4 h-4 mr-2" />
-                {t('instructions.generateLink')}
+                {isSending ? t('instructions.sendingEmail') : t('instructions.sendEmail')}
               </Button>
             </div>
-          )}
-
-          {sentRow && publicUrl && (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>{t('instructions.publicLink')}</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={publicUrl} readOnly />
-                  <Button variant="outline" size="icon" onClick={handleCopyLink}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => window.open(publicUrl, '_blank', 'noopener,noreferrer')}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <Accordion type="single" collapsible>
-                <AccordionItem value="email">
-                  <AccordionTrigger>
-                    <span className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      {t('instructions.sendEmailToggle')}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pt-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="instruction-email-to">
-                        {t('instructions.emailToLabel')}
-                      </Label>
-                      <Input
-                        id="instruction-email-to"
-                        type="email"
-                        value={emailAddress}
-                        onChange={(e) => setEmailAddress(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="instruction-email-body">
-                        {t('instructions.emailBodyLabel')}
-                      </Label>
-                      <Textarea
-                        id="instruction-email-body"
-                        rows={4}
-                        value={emailBody}
-                        onChange={(e) => setEmailBody(e.target.value)}
-                        placeholder={t('instructions.emailBodyPlaceholder')}
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <Button onClick={handleSendEmail} disabled={isSendingEmail || !emailAddress}>
-                        {isSendingEmail
-                          ? t('instructions.sendingEmail')
-                          : t('instructions.sendEmail')}
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

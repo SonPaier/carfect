@@ -94,7 +94,7 @@ export function InstructionPublicView({
         </div>
       </header>
 
-      <main className="max-w-4xl w-full mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-4xl w-full mx-auto px-8 sm:px-12 py-8 space-y-6">
         <div className="flex justify-end">
           <Button onClick={handleDownload} disabled={isDownloading}>
             {isDownloading ? (

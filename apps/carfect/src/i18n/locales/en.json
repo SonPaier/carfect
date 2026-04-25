@@ -5651,7 +5651,7 @@
     "settingsTabLabel": "Post-sale instructions",
     "pageTitle": "Post-sale instructions",
     "pageDescription": "Care instruction templates given to customers after a service.",
-    "newButton": "New instruction",
+    "newButton": "Add",
     "builtinBadge": "Built-in",
     "duplicateAndEdit": "Duplicate and edit",
     "edit": "Edit",
@@ -5694,7 +5694,9 @@
     "builtinNeedsDuplicate": "To send a built-in template, duplicate and edit it first.",
     "promptUrl": "Enter the URL",
     "actions": "Actions",
-    "preview": "Preview"
+    "preview": "Preview",
+    "copyPublicLink": "Copy link",
+    "sendByEmail": "Send by email"
   },
   "publicInstruction": {
     "metaTitle": "{{title}} – {{name}}",
