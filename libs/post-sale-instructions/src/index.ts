@@ -9,3 +9,4 @@ export { useInstructionSends } from './hooks/useInstructionSends';
 export { usePublicInstruction } from './hooks/usePublicInstruction';
 export type { PublicInstructionData } from './hooks/usePublicInstruction';
 export { openInstructionPdf } from './pdfClient';
+export { InstructionList } from './components/InstructionList';
