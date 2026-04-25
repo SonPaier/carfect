@@ -23,11 +23,7 @@ export function InstructionSendHistory({
   const { data: sends = [], isLoading } = useInstructionSends(reservationId, supabase);
 
   if (isLoading) return null;
-  if (sends.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground">{t('instructions.noSendsYet')}</p>
-    );
-  }
+  if (sends.length === 0) return null;
 
   return (
     <div className="space-y-2">
@@ -43,10 +39,7 @@ export function InstructionSendHistory({
             : t('instructions.notViewed');
           const url = buildInstructionPublicUrl(instanceSlug, send.public_token);
           return (
-            <li
-              key={send.id}
-              className="flex items-center justify-between gap-2 text-sm py-1"
-            >
+            <li key={send.id} className="flex items-center justify-between gap-2 text-sm py-1">
               <div className="min-w-0">
                 <div className="truncate font-medium">{title}</div>
                 <div className="text-xs text-muted-foreground">

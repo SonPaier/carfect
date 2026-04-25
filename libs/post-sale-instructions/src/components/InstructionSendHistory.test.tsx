@@ -46,10 +46,11 @@ beforeEach(() => {
 });
 
 describe('InstructionSendHistory', () => {
-  it('renders the empty state when there are no sends', () => {
+  it('renders nothing when there are no sends', () => {
     mockUseInstructionSends.mockReturnValue({ data: [], isLoading: false });
     renderHistory();
-    expect(screen.getByText('Brak wysłanych instrukcji')).toBeInTheDocument();
+    expect(screen.queryByText('Brak wysłanych instrukcji')).not.toBeInTheDocument();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
   it('renders one row per send with title, sent_at, and viewed status', () => {

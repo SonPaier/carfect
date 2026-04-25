@@ -93,8 +93,9 @@ serve(async (req) => {
 
     const row = send as InstructionSendRow;
 
-    // Resolve and sanitize customer email from the joined reservation
-    const rawEmail = row.reservations?.customer_email ?? null;
+    // Prefer the explicit toEmail from the request body (admin can override
+    // the customer's stored address). Fall back to the joined reservation row.
+    const rawEmail = toEmail ?? row.reservations?.customer_email ?? null;
     const customerEmail = sanitizeCustomerEmail(rawEmail);
 
     if (!customerEmail) {
