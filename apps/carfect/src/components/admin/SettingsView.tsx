@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Link2,
   CreditCard,
+  BookOpen,
 } from 'lucide-react';
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, useIsMobile } from '@shared/ui';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ import { useCombinedFeatures } from '@/hooks/useCombinedFeatures';
 import LanguageSelector from './LanguageSelector';
 import { SubscriptionSettingsTab } from './SubscriptionSettingsTab';
 import { IntegrationsView } from './IntegrationsView';
+import PostSaleInstructionsSettings from './PostSaleInstructionsSettings';
 
 interface SettingsViewProps {
   instanceId: string | null;
@@ -46,6 +48,7 @@ type SettingsTab =
   | 'integrations'
   | 'app'
   | 'sms'
+  | 'instructions'
   | 'users'
   | 'subscription';
 
@@ -82,6 +85,7 @@ const SettingsView = ({
     { key: 'integrations', label: t('settings.tabs.integrations'), icon: <Link2 className="w-4 h-4" /> },
     { key: 'app', label: t('settings.tabs.app'), icon: <Settings2 className="w-4 h-4" /> },
     { key: 'sms', label: t('settings.tabs.sms'), icon: <MessageSquare className="w-4 h-4" /> },
+    { key: 'instructions', label: t('instructions.settingsTabLabel'), icon: <BookOpen className="w-4 h-4" /> },
     { key: 'users', label: t('settings.tabs.users'), icon: <Users className="w-4 h-4" /> },
     { key: 'subscription', label: t('settings.tabs.subscription'), icon: <CreditCard className="w-4 h-4" /> },
   ];
@@ -154,6 +158,9 @@ const SettingsView = ({
             />
           </div>
         );
+
+      case 'instructions':
+        return instanceId ? <PostSaleInstructionsSettings instanceId={instanceId} /> : null;
 
       case 'users':
         return instanceId ? <InstanceUsersTab instanceId={instanceId} /> : null;
