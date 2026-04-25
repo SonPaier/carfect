@@ -42,8 +42,8 @@ export function InstructionSendDialog({
   supabase,
 }: InstructionSendDialogProps) {
   const { t } = useTranslation();
-  const { data: items = [] } = useInstructions(instanceId, supabase);
-  const { data: sends = [] } = useInstructionSends(reservationId, supabase);
+  const { data: items = [] } = useInstructions(instanceId, supabase, { enabled: open });
+  const { data: sends = [] } = useInstructionSends(reservationId, supabase, { enabled: open });
   const sendMutation = useSendInstruction(supabase);
   const createMutation = useCreateInstruction(supabase);
 

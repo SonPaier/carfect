@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { IMAGE_ALIGN_CLASS, type ImageAlign } from '@shared/ui';
 import type { TiptapDocument, TiptapNode, TiptapMark } from '../types';
 
 interface TiptapRendererProps {
@@ -60,18 +61,16 @@ function renderNode(node: TiptapNode, key: number | string): React.ReactNode {
       // URIs in the JSON which we never want to render.
       const src = /^https?:\/\//i.test(rawSrc) ? rawSrc : '';
       const alt = (node.attrs?.alt as string | undefined) ?? '';
-      const align =
-        (node.attrs?.align as 'left' | 'center' | 'right' | 'full' | undefined) ?? 'center';
+      const align = (node.attrs?.align as ImageAlign | undefined) ?? 'center';
       if (!src) return null;
-      const alignClass =
-        align === 'left'
-          ? 'float-left mr-4 mb-2 max-w-[45%]'
-          : align === 'right'
-            ? 'float-right ml-4 mb-2 max-w-[45%]'
-            : align === 'full'
-              ? 'block w-full my-2'
-              : 'block mx-auto my-2 max-w-[80%]';
-      return <img key={key} src={src} alt={alt} className={`${alignClass} h-auto rounded-md`} />;
+      return (
+        <img
+          key={key}
+          src={src}
+          alt={alt}
+          className={`${IMAGE_ALIGN_CLASS[align]} h-auto rounded-md`}
+        />
+      );
     }
     default:
       return <Fragment key={key}>{children}</Fragment>;

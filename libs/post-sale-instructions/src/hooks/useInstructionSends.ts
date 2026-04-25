@@ -12,10 +12,14 @@ interface InstructionSendWithInstruction extends InstructionSendRow {
   } | null;
 }
 
-export function useInstructionSends(reservationId: string, supabase: SupabaseClient<Database>) {
+export function useInstructionSends(
+  reservationId: string,
+  supabase: SupabaseClient<Database>,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['instruction-sends', reservationId],
-    enabled: Boolean(reservationId),
+    enabled: Boolean(reservationId) && options?.enabled !== false,
     queryFn: async (): Promise<InstructionSendWithInstruction[]> => {
       const { data, error } = await supabase
         .from('post_sale_instruction_sends')

@@ -41,7 +41,6 @@ export function InstructionPublicView({
   };
 
   const { instance } = data;
-  const isHttpUrl = instance.website ? /^https?:\/\//i.test(instance.website) : false;
 
   return (
     <div className="min-h-full bg-background">
@@ -79,7 +78,7 @@ export function InstructionPublicView({
                 </a>
               )}
               {instance.address && <span>{instance.address}</span>}
-              {instance.website && isHttpUrl && (
+              {instance.website && /^https?:\/\//i.test(instance.website) && (
                 <a
                   href={instance.website}
                   target="_blank"

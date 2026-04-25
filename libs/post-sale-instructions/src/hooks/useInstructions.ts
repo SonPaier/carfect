@@ -4,10 +4,14 @@ import type { Database } from '../../../../apps/carfect/src/integrations/supabas
 import { BUILTIN_TEMPLATES } from '../builtinTemplates';
 import type { InstructionListItem, PostSaleInstructionRow } from '../types';
 
-export function useInstructions(instanceId: string, supabase: SupabaseClient<Database>) {
+export function useInstructions(
+  instanceId: string,
+  supabase: SupabaseClient<Database>,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['post-sale-instructions', instanceId],
-    enabled: Boolean(instanceId),
+    enabled: Boolean(instanceId) && options?.enabled !== false,
     queryFn: async (): Promise<InstructionListItem[]> => {
       const { data, error } = await supabase
         .from('post_sale_instructions')

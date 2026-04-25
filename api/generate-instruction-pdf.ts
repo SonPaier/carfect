@@ -151,13 +151,11 @@ export default async function handler(req: Request) {
       instance = data.instance ?? {};
     }
 
-    // Fetch logo as buffer if available
     let logoBuffer: Buffer | null = null;
     if (instance.logo_url) {
       logoBuffer = await fetchLogoBuffer(instance.logo_url);
     }
 
-    // Register fonts and render PDF
     registerFonts();
 
     const pdfBuffer = await renderToBuffer(

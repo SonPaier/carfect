@@ -6,16 +6,7 @@ import Image from '@tiptap/extension-image';
 import { AlignCenter, AlignLeft, AlignRight, Maximize2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Toolbar } from './Toolbar';
-import type { TiptapDocument } from './types';
-
-type ImageAlign = 'left' | 'center' | 'right' | 'full';
-
-const ALIGN_CLASS: Record<ImageAlign, string> = {
-  left: 'float-left mr-4 mb-2 max-w-[45%]',
-  right: 'float-right ml-4 mb-2 max-w-[45%]',
-  center: 'block mx-auto my-2 max-w-[80%]',
-  full: 'block w-full my-2',
-};
+import { IMAGE_ALIGN_CLASS, type ImageAlign, type TiptapDocument } from './types';
 
 const AlignedImage = Image.extend({
   addAttributes() {
@@ -28,7 +19,7 @@ const AlignedImage = Image.extend({
           const align = (attributes.align as ImageAlign) ?? 'center';
           return {
             'data-align': align,
-            class: `${ALIGN_CLASS[align]} h-auto rounded-md`,
+            class: `${IMAGE_ALIGN_CLASS[align]} h-auto rounded-md`,
           };
         },
       },
