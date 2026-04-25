@@ -3,6 +3,14 @@ import '@/i18n/config';
 import { beforeEach } from 'vitest';
 import { setViewport } from './utils/viewport';
 
+// Polyfill URL.createObjectURL / revokeObjectURL for jsdom (used by file download flows)
+if (typeof URL.createObjectURL === 'undefined') {
+  URL.createObjectURL = (() => 'blob:mock-url') as typeof URL.createObjectURL;
+}
+if (typeof URL.revokeObjectURL === 'undefined') {
+  URL.revokeObjectURL = (() => undefined) as typeof URL.revokeObjectURL;
+}
+
 // Reset viewport to desktop before each test for isolation
 beforeEach(() => {
   setViewport('desktop');
@@ -43,4 +51,9 @@ if (typeof Range !== 'undefined') {
   Range.prototype.getBoundingClientRect = function () {
     return emptyRect as DOMRect;
   };
+}
+
+// Polyfill document.elementFromPoint for ProseMirror/Tiptap in jsdom (used by posAtCoords)
+if (typeof document !== 'undefined' && !document.elementFromPoint) {
+  document.elementFromPoint = (() => null) as typeof document.elementFromPoint;
 }
