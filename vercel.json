@@ -1,7 +1,12 @@
 {
-  "buildCommand": "pnpm --filter carfect run build",
+  "buildCommand": "pnpm --filter carfect run build && pnpm exec esbuild libs/pdf/src/index.ts --bundle --format=esm --platform=node --packages=external --outfile=libs/pdf/dist/index.mjs",
   "outputDirectory": "apps/carfect/dist",
   "installCommand": "pnpm install",
+  "functions": {
+    "api/*.ts": {
+      "runtime": "@vercel/node@5.7.13"
+    }
+  },
   "redirects": [
     {
       "source": "/(.*)",
