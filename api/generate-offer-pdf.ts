@@ -1,24 +1,26 @@
+import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
+import { renderToBuffer } from '@react-pdf/renderer';
+import React from 'react';
+import {
+  registerFonts,
+  OfferPdfDocument,
+  transformOfferData,
+  transformInstanceData,
+  type PdfConfig,
+} from '../libs/pdf/dist/index.mjs';
 
 export const maxDuration = 30;
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-const CORS_HEADERS = {
+const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
   'Access-Control-Expose-Headers': 'Content-Disposition',
 };
-
-// Trick to prevent Vercel/ncc bundler from converting dynamic import() to require()
-// The bundler statically analyzes import() calls and replaces them with require(),
-// which breaks ESM-only packages like @react-pdf/renderer.
-// Using Function constructor hides the import from static analysis.
-const dynamicImport = new Function('specifier', 'return import(specifier)') as (
-  specifier: string,
-) => Promise<Record<string, unknown>>;
 
 async function fetchLogoBuffer(logoUrl: string): Promise<Buffer | null> {
   try {
@@ -31,42 +33,49 @@ async function fetchLogoBuffer(logoUrl: string): Promise<Buffer | null> {
   }
 }
 
-export default async function handler(req: Request) {
+function setCors(res: ServerResponse): void {
+  for (const [k, v] of Object.entries(CORS_HEADERS)) res.setHeader(k, v);
+}
+
+function sendJson(res: ServerResponse, status: number, body: unknown): void {
+  setCors(res);
+  res.setHeader('Content-Type', 'application/json');
+  res.statusCode = status;
+  res.end(JSON.stringify(body));
+}
+
+async function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
+  const raw = Buffer.concat(chunks).toString('utf-8');
+  if (!raw) return {};
+  return JSON.parse(raw) as Record<string, unknown>;
+}
+
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: CORS_HEADERS });
+    setCors(res);
+    res.statusCode = 200;
+    res.end('ok');
+    return;
   }
 
   try {
-    // Dynamic imports hidden from bundler for ESM-only packages
-    const [reactPdf, React, pdfLib] = await Promise.all([
-      dynamicImport('@react-pdf/renderer') as Promise<typeof import('@react-pdf/renderer')>,
-      dynamicImport('react') as Promise<typeof import('react')>,
-      dynamicImport('../libs/pdf/src/index.js') as Promise<
-        typeof import('../libs/pdf/src/index.js')
-      >,
-    ]);
-
-    const { renderToBuffer } = reactPdf;
-    const { registerFonts, OfferPdfDocument, transformOfferData, transformInstanceData } = pdfLib;
-    type PdfConfig = import('../libs/pdf/src/styles').PdfConfig;
-
     // Parse token from POST body or GET query
     let publicToken: string | null = null;
 
     if (req.method === 'POST') {
-      const body = (await req.json()) as { publicToken?: unknown };
+      const body = await readJsonBody(req);
       publicToken = typeof body.publicToken === 'string' ? body.publicToken : null;
     } else if (req.method === 'GET') {
-      const url = new URL(req.url);
+      const url = new URL(req.url ?? '/', 'http://x');
       publicToken = url.searchParams.get('token');
     }
 
     if (!publicToken) {
-      return Response.json(
-        { error: 'Missing publicToken' },
-        { status: 400, headers: CORS_HEADERS },
-      );
+      sendJson(res, 400, { error: 'Missing publicToken' });
+      return;
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -79,24 +88,21 @@ export default async function handler(req: Request) {
 
     if (rpcError) {
       console.error('RPC error:', rpcError.message);
-      return Response.json(
-        { error: 'Failed to fetch offer data' },
-        { status: 500, headers: CORS_HEADERS },
-      );
+      sendJson(res, 500, { error: 'Failed to fetch offer data' });
+      return;
     }
 
     if (!rpcData) {
-      return Response.json({ error: 'Offer not found' }, { status: 404, headers: CORS_HEADERS });
+      sendJson(res, 404, { error: 'Offer not found' });
+      return;
     }
 
     const data = rpcData as Record<string, unknown>;
 
     // PDF generation only supports v2 offers
     if (data.offer_format !== 'v2') {
-      return Response.json(
-        { error: 'PDF generation is only available for v2 offers' },
-        { status: 400, headers: CORS_HEADERS },
-      );
+      sendJson(res, 400, { error: 'PDF generation is only available for v2 offers' });
+      return;
     }
 
     const instanceId = data.instance_id as string;
@@ -112,10 +118,8 @@ export default async function handler(req: Request) {
 
     if (instanceError || !instanceData) {
       console.error('Instance fetch error:', instanceError?.message);
-      return Response.json(
-        { error: 'Failed to fetch instance data' },
-        { status: 500, headers: CORS_HEADERS },
-      );
+      sendJson(res, 500, { error: 'Failed to fetch instance data' });
+      return;
     }
 
     // Enrich offer_option_items with product descriptions (same as PublicOfferView)
@@ -219,20 +223,14 @@ export default async function handler(req: Request) {
       .map(safeName);
     const filename = `Oferta-${filenameParts.join('-')}.pdf`;
 
-    return new Response(pdfBuffer, {
-      status: 200,
-      headers: {
-        ...CORS_HEADERS,
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${filename}"`,
-        'Content-Length': String(pdfBuffer.length),
-      },
-    });
+    setCors(res);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Length', String(pdfBuffer.length));
+    res.end(pdfBuffer);
   } catch (err: unknown) {
     console.error('PDF generation error:', err);
-    return Response.json(
-      { error: (err as Error).message || 'Internal server error' },
-      { status: 500, headers: CORS_HEADERS },
-    );
+    sendJson(res, 500, { error: (err as Error).message || 'Internal server error' });
   }
 }

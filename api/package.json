@@ -1,3 +1,8 @@
 {
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@react-pdf/renderer": "*",
+    "@supabase/supabase-js": "*",
+    "react": "*"
+  }
 }

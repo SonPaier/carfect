@@ -43,3 +43,4 @@ supabase/.temp/
 supabase-audit-report.md
 supabase-audit-comparison.md
 test-results/
+.vercel

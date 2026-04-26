@@ -1,0 +1,67 @@
+# Dev tooling and editor
+.claude/
+.agents/
+.playwright-mcp/
+.husky/
+.github/
+.nx/
+.cursor/
+.vscode/
+.idea/
+
+# Build outputs (Vercel will build fresh)
+dist/
+**/dist/
+**/build/
+**/coverage/
+playwright-report/
+**/playwright-report/
+.next/
+**/.next/
+**/.turbo/
+
+# Local databases / dumps / scratch (root-level only — NOT app assets)
+bielguide/
+db-pracowniastolarska/
+/details.png
+/details2.png
+/edit.png
+/fixed.png
+/month.png
+/month-april.png
+/invoices-table-element.png
+/subscription-invoices-table.png
+/subscription-settings-bottom.png
+/subscription-settings-tab.png
+/zlecenia-list.png
+/zlecenia.png
+armcar_przypomnienia.txt
+plan.md
+spec.md
+snapshot-admin-after-deploy.md
+water-grass-dump.md
+test-pdf-local.ts
+skills-lock.json
+
+# Tests / e2e (not needed in deployed function bundle)
+e2e/
+**/e2e/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Docs
+docs/
+**/docs/
+
+# OS
+.DS_Store
+**/.DS_Store
+
+# Dev-only API server (not a Vercel Lambda — has top-level .listen())
+api/server.ts
+
+# Other apps not needed by api/
+apps/hiservice/
+apps/carfect-landing-page/
