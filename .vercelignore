@@ -61,7 +61,3 @@ docs/
 
 # Dev-only API server (not a Vercel Lambda — has top-level .listen())
 api/server.ts
-
-# Other apps not needed by api/
-apps/hiservice/
-apps/carfect-landing-page/
