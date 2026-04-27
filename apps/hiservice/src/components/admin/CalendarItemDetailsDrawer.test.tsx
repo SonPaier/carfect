@@ -14,12 +14,23 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+const employeesEnabledMock = { current: false };
 vi.mock('@/hooks/useInstanceFeatures', () => ({
-  useInstanceFeature: () => ({ enabled: false, loading: false, toggle: vi.fn() }),
+  useInstanceFeature: (_id: string | null, feature: string) => ({
+    enabled: feature === 'employees' ? employeesEnabledMock.current : false,
+    loading: false,
+    toggle: vi.fn(),
+  }),
 }));
 
 vi.mock('@/hooks/useEmployees', () => ({
-  useEmployees: () => ({ data: [], isLoading: false }),
+  useEmployees: () => ({
+    data: [
+      { id: 'emp-1', name: 'Anna Nowak' },
+      { id: 'emp-2', name: 'Piotr Wiśniewski' },
+    ],
+    isLoading: false,
+  }),
 }));
 
 vi.mock('@shared/invoicing', () => ({
@@ -217,6 +228,72 @@ describe('CalendarItemDetailsDrawer — admin status controls', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Dodaj zadanie')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('CalendarItemDetailsDrawer — status-independent edit affordances', () => {
+  beforeEach(() => {
+    resetSupabaseMocks();
+    vi.clearAllMocks();
+    employeesEnabledMock.current = true;
+  });
+
+  it('admin can add employees on completed orders', async () => {
+    renderDrawer({
+      item: makeItem({ status: 'completed' }),
+      instanceId: 'test-instance-id',
+    });
+
+    const dodajButtons = await screen.findAllByText('Dodaj');
+    expect(dodajButtons.length).toBeGreaterThan(0);
+  });
+
+  it('admin can add employees on cancelled orders', async () => {
+    renderDrawer({
+      item: makeItem({ status: 'cancelled' }),
+      instanceId: 'test-instance-id',
+    });
+
+    const dodajButtons = await screen.findAllByText('Dodaj');
+    expect(dodajButtons.length).toBeGreaterThan(0);
+  });
+
+  it('admin sees services edit button on completed orders', async () => {
+    renderDrawer({
+      item: makeItem({ status: 'completed' }),
+      instanceId: 'test-instance-id',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Usługi i produkty')).toBeInTheDocument();
+    });
+  });
+
+  it('employee with canEditServices can edit services on completed orders', async () => {
+    renderDrawer({
+      item: makeItem({ status: 'completed' }),
+      instanceId: 'test-instance-id',
+      isEmployee: true,
+      canEditServices: true,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Usługi i produkty')).toBeInTheDocument();
+    });
+  });
+
+  it('employee without canEditServices cannot edit services on completed orders', async () => {
+    renderDrawer({
+      item: makeItem({ status: 'completed' }),
+      instanceId: 'test-instance-id',
+      isEmployee: true,
+      canEditServices: false,
+    });
+
+    // ServicesSummary returns null when no services and !allowEdit
+    await waitFor(() => {
+      expect(screen.queryByText('Usługi i produkty')).not.toBeInTheDocument();
     });
   });
 });

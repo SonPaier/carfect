@@ -86,9 +86,7 @@ export function ConditionTemplatesSection({ instanceId }: ConditionTemplatesSect
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">
-        {t('offerSettings.conditionTemplatesDesc')}
-      </p>
+      <p className="text-sm text-muted-foreground">{t('offerSettings.conditionTemplatesDesc')}</p>
 
       {TEMPLATE_TYPES.map((type) => {
         const items = byType(type);
@@ -225,7 +223,7 @@ function TemplateForm({
       <Input
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
-        placeholder="Nazwa szablonu..."
+        placeholder={t('offers.settings.conditionTemplates.namePlaceholder')}
         className="h-8"
         autoFocus
         onKeyDown={(e) => {
@@ -235,7 +233,7 @@ function TemplateForm({
       <Textarea
         value={content}
         onChange={(e) => onContentChange(e.target.value)}
-        placeholder={t('offerSettings.templateContentPlaceholder')}
+        placeholder={t('offers.settings.conditionTemplates.contentPlaceholder')}
         rows={3}
         onKeyDown={(e) => {
           if (e.key === 'Escape') onCancel();
@@ -244,7 +242,7 @@ function TemplateForm({
       <div className="flex gap-2 justify-end">
         <Button size="sm" variant="ghost" onClick={onCancel} disabled={saving}>
           <X className="w-3.5 h-3.5 mr-1" />
-          Anuluj
+          {t('offers.settings.conditionTemplates.cancel')}
         </Button>
         <Button size="sm" onClick={onSave} disabled={saving || !name.trim() || !content.trim()}>
           {saving ? (
@@ -252,7 +250,7 @@ function TemplateForm({
           ) : (
             <Check className="w-3.5 h-3.5 mr-1" />
           )}
-          Zapisz
+          {t('offers.settings.conditionTemplates.save')}
         </Button>
       </div>
     </div>

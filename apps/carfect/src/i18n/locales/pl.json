@@ -761,7 +761,17 @@
     "send": "Wyślij",
     "settings": {
       "conditionTemplates": {
-        "confirmDelete": "Czy na pewno chcesz usunąć ten szablon?"
+        "confirmDelete": "Czy na pewno chcesz usunąć ten szablon?",
+        "types": {
+          "warranty": "Gwarancja",
+          "payment_terms": "Warunki płatności",
+          "service_info": "Informacje o usłudze",
+          "notes": "Uwagi"
+        },
+        "namePlaceholder": "Nazwa szablonu...",
+        "contentPlaceholder": "Treść szablonu...",
+        "cancel": "Anuluj",
+        "save": "Zapisz"
       },
       "trustHeader": {
         "saveError": "Błąd zapisywania",
