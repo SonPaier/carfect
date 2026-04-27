@@ -10,7 +10,8 @@ export type PaymentStatus =
   | 'collective'
   | 'non_payable'
   | 'sms_blik_sent'
-  | 'sms_bank_sent';
+  | 'sms_bank_sent'
+  | 'complaint';
 
 export type DocumentKind = 'vat' | 'proforma' | 'receipt';
 
@@ -117,4 +118,5 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color
   non_payable: { label: 'Niepłatny', color: 'bg-gray-600 text-white' },
   sms_blik_sent: { label: 'Wysłano SMS BLIK', color: 'bg-amber-600 text-white' },
   sms_bank_sent: { label: 'Wysłano SMS konto', color: 'bg-purple-600 text-white' },
+  complaint: { label: 'Reklamacyjne', color: 'bg-pink-600 text-white' },
 };

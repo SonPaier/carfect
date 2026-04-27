@@ -761,7 +761,17 @@
     "send": "Senden",
     "settings": {
       "conditionTemplates": {
-        "confirmDelete": "Confirm Delete"
+        "confirmDelete": "Sind Sie sicher, dass Sie diese Vorlage löschen möchten?",
+        "types": {
+          "warranty": "Garantie",
+          "payment_terms": "Zahlungsbedingungen",
+          "service_info": "Service-Informationen",
+          "notes": "Notizen"
+        },
+        "namePlaceholder": "Vorlagenname...",
+        "contentPlaceholder": "Vorlageninhalt...",
+        "cancel": "Abbrechen",
+        "save": "Speichern"
       },
       "trustHeader": {
         "saveError": "Save Error",

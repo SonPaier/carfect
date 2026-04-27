@@ -761,7 +761,17 @@
     "send": "Send",
     "settings": {
       "conditionTemplates": {
-        "confirmDelete": "Confirm Delete"
+        "confirmDelete": "Are you sure you want to delete this template?",
+        "types": {
+          "warranty": "Warranty",
+          "payment_terms": "Payment terms",
+          "service_info": "Service information",
+          "notes": "Notes"
+        },
+        "namePlaceholder": "Template name...",
+        "contentPlaceholder": "Template content...",
+        "cancel": "Cancel",
+        "save": "Save"
       },
       "trustHeader": {
         "saveError": "Save Error",
