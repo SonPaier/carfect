@@ -27,15 +27,23 @@ export function positionDiff(
   incomingPositions: InvoicePosition[],
 ): { merged: InvoicePosition[]; statuses: DiffStatus[] } {
   const round = (n: number) => Math.round(Number(n) * 100) / 100;
-  const matchKey = (p: InvoicePosition) =>
-    p.external_id ? `id:${p.external_id}` : `nx:${p.name}|${round(p.unit_price_gross)}`;
+  const idKey = (p: InvoicePosition) => (p.external_id ? `id:${p.external_id}` : null);
+  const nameKey = (p: InvoicePosition) => `nx:${p.name}|${round(p.unit_price_gross)}`;
 
-  const incomingByKey = new Map<string, InvoicePosition[]>();
+  // Index incoming by both keys so invoice rows can match on either.
+  const incomingById = new Map<string, InvoicePosition[]>();
+  const incomingByName = new Map<string, InvoicePosition[]>();
   for (const p of incomingPositions) {
-    const k = matchKey(p);
-    const arr = incomingByKey.get(k) ?? [];
+    const ik = idKey(p);
+    if (ik) {
+      const arr = incomingById.get(ik) ?? [];
+      arr.push(p);
+      incomingById.set(ik, arr);
+    }
+    const nk = nameKey(p);
+    const arr = incomingByName.get(nk) ?? [];
     arr.push(p);
-    incomingByKey.set(k, arr);
+    incomingByName.set(nk, arr);
   }
 
   const merged: InvoicePosition[] = [];
@@ -43,9 +51,10 @@ export function positionDiff(
   const usedIncoming = new Set<InvoicePosition>();
 
   for (const inv of invoicePositions) {
-    const k = matchKey(inv);
-    const candidates = incomingByKey.get(k);
-    const match = candidates?.find((c) => !usedIncoming.has(c));
+    const ik = idKey(inv);
+    let match: InvoicePosition | undefined;
+    if (ik) match = incomingById.get(ik)?.find((c) => !usedIncoming.has(c));
+    if (!match) match = incomingByName.get(nameKey(inv))?.find((c) => !usedIncoming.has(c));
     if (match) {
       usedIncoming.add(match);
       merged.push({ ...inv, ...match, external_id: inv.external_id });

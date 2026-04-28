@@ -64,15 +64,21 @@ export function CreateInvoiceDrawer({
     customerTable,
     bankAccounts,
     existingInvoiceId,
+    incomingPositions,
   });
 
   const isEditMode = form.mode === 'edit';
+  const isEditWithDiff = isEditMode && !!form.positionDiffStatus;
   const headerTitle = isEditMode
     ? form.invoiceNumber
       ? `Edytuj fakturę ${form.invoiceNumber}`
       : 'Edytuj fakturę'
     : 'Wystaw fakturę';
-  const submitLabel = isEditMode ? 'Zapisz zmiany' : 'Wystaw fakturę';
+  const submitLabel = isEditWithDiff
+    ? 'Zatwierdź zmiany'
+    : isEditMode
+      ? 'Zapisz zmiany'
+      : 'Wystaw fakturę';
 
   return (
     <Sheet
@@ -156,6 +162,7 @@ export function CreateInvoiceDrawer({
             sellerPhone={form.sellerPhone}
             onSellerPhoneChange={form.setSellerPhone}
             positions={form.positions}
+            positionDiffStatus={form.positionDiffStatus}
             onAddPosition={form.addPosition}
             onRemovePosition={form.removePosition}
             onUpdatePosition={form.updatePosition}

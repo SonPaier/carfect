@@ -1,8 +1,10 @@
 import { assertEquals } from 'jsr:@std/assert';
 import {
   InternalInvoiceData,
+  InternalInvoicePosition,
   mapBuyerToClient,
   mapInternalInvoiceToFakturownia,
+  mapInternalInvoiceToFakturowniaUpdate,
 } from './mappers.ts';
 
 const baseInvoice: InternalInvoiceData = {
@@ -183,3 +185,126 @@ Deno.test('mapBuyerToClient - copies address fields from buyer_*', () => {
   assertEquals(result?.post_code, '00-001');
   assertEquals(result?.country, 'PL');
 });
+
+// ---- mapInternalInvoiceToFakturowniaUpdate ----
+
+const baseInvoiceForUpdate: InternalInvoiceData = {
+  kind: 'vat',
+  payment_type: 'transfer',
+  buyer_name: 'Acme Sp. z o.o.',
+  positions: [],
+};
+
+const pos = (overrides: Partial<InternalInvoicePosition>): InternalInvoicePosition => ({
+  name: 'Folia',
+  quantity: 1,
+  unit_price_gross: 100,
+  vat_rate: 23,
+  unit: 'szt.',
+  ...overrides,
+});
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - existing position keeps id (edit in place)',
+  () => {
+    const data = { ...baseInvoiceForUpdate, positions: [pos({ external_id: '42', quantity: 5 })] };
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, [pos({ external_id: '42' })]);
+    assertEquals(result.positions.length, 1);
+    const p = result.positions[0] as Record<string, unknown>;
+    assertEquals(p.id, '42');
+    assertEquals(p.quantity, 5);
+    assertEquals(p._destroy, undefined);
+  },
+);
+
+Deno.test('mapInternalInvoiceToFakturowniaUpdate - new position has no id (added)', () => {
+  const data = { ...baseInvoiceForUpdate, positions: [pos({ name: 'New item' })] };
+  const result = mapInternalInvoiceToFakturowniaUpdate(data, []);
+  assertEquals(result.positions.length, 1);
+  const p = result.positions[0] as Record<string, unknown>;
+  assertEquals(p.id, undefined);
+  assertEquals(p.name, 'New item');
+});
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - position missing from current emits {id, _destroy:1}',
+  () => {
+    const data = { ...baseInvoiceForUpdate, positions: [pos({ external_id: '1' })] };
+    const original: InternalInvoicePosition[] = [
+      pos({ external_id: '1' }),
+      pos({ external_id: '2', name: 'Removed item' }),
+    ];
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, original);
+    assertEquals(result.positions.length, 2);
+    const removed = result.positions.find((p) => (p as Record<string, unknown>)._destroy) as Record<
+      string,
+      unknown
+    >;
+    assertEquals(removed?.id, '2');
+    assertEquals(removed?._destroy, 1);
+  },
+);
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - mixed: keep + add + destroy in one payload',
+  () => {
+    const data = {
+      ...baseInvoiceForUpdate,
+      positions: [pos({ external_id: '1', name: 'Keep me' }), pos({ name: 'Brand new' })],
+    };
+    const original: InternalInvoicePosition[] = [
+      pos({ external_id: '1', name: 'Keep me' }),
+      pos({ external_id: '2', name: 'Drop me' }),
+    ];
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, original);
+    assertEquals(result.positions.length, 3);
+    const ids = result.positions.map((p) => (p as Record<string, unknown>).id ?? null);
+    assertEquals(ids, ['1', null, '2']);
+    const destroyed = result.positions.filter((p) => (p as Record<string, unknown>)._destroy);
+    assertEquals(destroyed.length, 1);
+  },
+);
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - originalPositions without external_id are ignored',
+  () => {
+    const data = { ...baseInvoiceForUpdate, positions: [pos({ name: 'Current' })] };
+    const original = [pos({ name: 'No id, untracked' })];
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, original);
+    assertEquals(result.positions.length, 1);
+    assertEquals((result.positions[0] as Record<string, unknown>)._destroy, undefined);
+  },
+);
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - sets show_discount when any position has discount',
+  () => {
+    const data = {
+      ...baseInvoiceForUpdate,
+      positions: [pos({ external_id: '1', discount: 10 })],
+    };
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, [pos({ external_id: '1' })]);
+    assertEquals(result.show_discount, '1');
+    assertEquals(result.discount_kind, 'percent_unit');
+  },
+);
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - omits show_discount when no positions have discount',
+  () => {
+    const data = { ...baseInvoiceForUpdate, positions: [pos({ external_id: '1' })] };
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, [pos({ external_id: '1' })]);
+    assertEquals(result.show_discount, undefined);
+  },
+);
+
+Deno.test(
+  'mapInternalInvoiceToFakturowniaUpdate - only forwards buyer fields that are present',
+  () => {
+    const data = { ...baseInvoiceForUpdate, buyer_name: 'New name', positions: [] };
+    const result = mapInternalInvoiceToFakturowniaUpdate(data, []);
+    assertEquals(result.buyer_name, 'New name');
+    assertEquals(result.buyer_tax_no, undefined);
+    assertEquals(result.buyer_email, undefined);
+  },
+);

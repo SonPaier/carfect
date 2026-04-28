@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { mapProductToInvoicePosition } from './utils/invoicePositionMapper';
+import {
+  mapProductToInvoicePosition,
+  bruttoCostToInvoicePosition,
+} from './utils/invoicePositionMapper';
 import { type AddressData } from './order-drawer/AddressFields';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
@@ -56,8 +59,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { type SalesOrder } from '@/data/salesMockData';
-import { VAT_RATE } from './constants';
-
 type PaymentStatus = SalesOrder['paymentStatus'];
 
 const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { labelKey: string; className: string }> = {
@@ -168,6 +169,8 @@ const SalesOrdersView = () => {
     order: SalesOrder | null;
     /** When set, opens drawer in EDIT mode pre-loading the existing invoice. */
     editInvoiceId?: string;
+    /** When set, drawer opens in edit-with-diff mode (passed as incomingPositions). */
+    incomingPositions?: import('@shared/invoicing').InvoicePosition[];
   }>({ open: false, order: null });
   const [bulkInvoiceState, setBulkInvoiceState] = useState<{
     open: boolean;
@@ -1471,6 +1474,29 @@ const SalesOrdersView = () => {
         }}
         editOrder={editOrder}
         onOrderCreated={fetchOrders}
+        onRequestInvoiceEdit={({
+          invoiceId,
+          orderId,
+          customerId,
+          customerName,
+          incomingPositions,
+        }) => {
+          // Open the existing CreateInvoiceDrawer in edit-with-diff mode, using
+          // the freshly-saved order's positions as the diff baseline.
+          const stubOrder: SalesOrder = {
+            id: orderId,
+            customerId,
+            customerName,
+            products: [],
+            packages: [],
+          } as unknown as SalesOrder;
+          setInvoiceDrawerState({
+            open: true,
+            order: stubOrder,
+            editInvoiceId: invoiceId,
+            incomingPositions,
+          });
+        }}
       />
       <ConfirmDialog
         open={deleteConfirm.open}
@@ -1498,6 +1524,7 @@ const SalesOrdersView = () => {
         <CreateInvoiceDrawer
           open={invoiceDrawerState.open}
           existingInvoiceId={invoiceDrawerState.editInvoiceId}
+          incomingPositions={invoiceDrawerState.incomingPositions}
           onClose={() => setInvoiceDrawerState({ open: false, order: null })}
           instanceId={instanceId!}
           salesOrderId={invoiceDrawerState.order.id}
@@ -1511,29 +1538,23 @@ const SalesOrdersView = () => {
               const shippingPkgs = (invoiceDrawerState.order!.packages || []).filter(
                 (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
               );
-              return shippingPkgs.map((pkg, i) => ({
-                name: shippingPkgs.length === 1 ? t('sales.orders.shipping') : `Wysyłka #${i + 1}`,
-                quantity: 1,
-                // shippingCost is brutto from Apaczka — convert to netto to match product positions
-                unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              }));
+              return shippingPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.shippingCost!,
+                  shippingPkgs.length === 1 ? t('sales.orders.shipping') : `Wysyłka #${i + 1}`,
+                ),
+              );
             })(),
             ...(() => {
               const uberPkgs = (invoiceDrawerState.order!.packages || []).filter(
                 (pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null,
               );
-              return uberPkgs.map((pkg, i) => ({
-                name: uberPkgs.length === 1 ? 'Uber' : `Uber #${i + 1}`,
-                quantity: 1,
-                // uberCost is brutto (user-entered) — convert to netto like shipping does
-                unit_price_gross: Math.round((pkg.uberCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              }));
+              return uberPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.uberCost!,
+                  uberPkgs.length === 1 ? 'Uber' : `Uber #${i + 1}`,
+                ),
+              );
             })(),
           ]}
           onSuccess={fetchOrders}
@@ -1550,38 +1571,36 @@ const SalesOrdersView = () => {
           salesOrderId={bulkInvoiceState.orders[0].id}
           customerId={bulkInvoiceState.orders[0].customerId}
           customerName={bulkInvoiceState.orders[0].customerName}
-          positions={bulkInvoiceState.orders.flatMap((order) => [
-            ...order.products.map((p) => mapProductToInvoicePosition(p, order.customerDiscount)),
-            ...(order.packages || [])
-              .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
-              .map((pkg, i, arr) => ({
-                name:
-                  arr.length === 1
+          positions={bulkInvoiceState.orders.flatMap((order) => {
+            const shippingPkgs = (order.packages || []).filter(
+              (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
+            );
+            const uberPkgs = (order.packages || []).filter(
+              (pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null,
+            );
+            return [
+              ...order.products.map((p) => mapProductToInvoicePosition(p, order.customerDiscount)),
+              ...shippingPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.shippingCost!,
+                  shippingPkgs.length === 1
                     ? t('sales.orders.shippingLabel', { orderNumber: order.orderNumber })
                     : t('sales.orders.shippingLabelMulti', {
                         index: i + 1,
                         orderNumber: order.orderNumber,
                       }),
-                quantity: 1,
-                unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              })),
-            ...(order.packages || [])
-              .filter((pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null)
-              .map((pkg, i, arr) => ({
-                name:
-                  arr.length === 1
+                ),
+              ),
+              ...uberPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.uberCost!,
+                  uberPkgs.length === 1
                     ? `Uber (${order.orderNumber})`
                     : `Uber #${i + 1} (${order.orderNumber})`,
-                quantity: 1,
-                unit_price_gross: Math.round((pkg.uberCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              })),
-          ])}
+                ),
+              ),
+            ];
+          })}
           onSuccess={async () => {
             // Mark all bulk orders as 'collective'
             const ids = bulkInvoiceState.orders.map((o) => o.id);

@@ -497,35 +497,6 @@ Deno.serve(async (req) => {
     }
 
     // ===========================================================
-    //  DELETE INVOICE (hard delete in both)
-    // ===========================================================
-    if (action === 'delete_invoice') {
-      const denied = await requireAdminRole(supabase, user.id, instanceId);
-      if (denied) return denied;
-
-      const { invoiceId } = params;
-      const { data: inv } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', invoiceId)
-        .eq('instance_id', instanceId)
-        .single();
-
-      if (!inv?.external_invoice_id) return json({ error: 'Invoice not found' }, 404);
-      if (!fkClient)
-        return json({ error: 'delete_invoice supported only for Fakturownia (v1)' }, 400);
-
-      try {
-        await fkClient.invoices.delete(inv.external_invoice_id);
-        await supabase.from('invoices').delete().eq('id', invoiceId);
-        return json({ success: true });
-      } catch (e) {
-        const err = fakturowniaError(e);
-        return json({ error: err.error, code: err.code }, err.status);
-      }
-    }
-
-    // ===========================================================
     //  SEND INVOICE BY EMAIL
     // ===========================================================
     if (action === 'send_invoice') {

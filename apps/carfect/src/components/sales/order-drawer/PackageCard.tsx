@@ -410,10 +410,7 @@ const PackageCard = ({
                                   onChange={(v) => {
                                     if (total > 0 && v != null) {
                                       const newPercent = (v / total) * 100;
-                                      onUpdateProductDiscount?.(
-                                        itemKey,
-                                        Math.round(Math.min(newPercent, 100) * 100) / 100,
-                                      );
+                                      onUpdateProductDiscount?.(itemKey, Math.min(newPercent, 100));
                                     } else {
                                       onUpdateProductDiscount?.(itemKey, 0);
                                     }

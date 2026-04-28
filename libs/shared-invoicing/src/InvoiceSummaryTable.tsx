@@ -164,7 +164,7 @@ export function InvoiceSummaryTable({
                 <td className="px-2 py-2 border border-border">{r.name}</td>
                 {showDiscountColumn && (
                   <td className="text-right px-2 py-2 tabular-nums border border-border">
-                    {r.discountPercent > 0 ? `${r.discountPercent}%` : ''}
+                    {r.discountPercent > 0 ? `${fmt(r.discountPercent)}%` : ''}
                   </td>
                 )}
                 <td className="text-right px-2 py-2 tabular-nums border border-border">

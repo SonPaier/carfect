@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical, Download, Mail, Pencil, Ban, Trash2, Loader2 } from 'lucide-react';
+import { MoreVertical, Download, Mail, Pencil, Ban, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -38,7 +38,6 @@ interface SalesOrderInvoiceActionsProps {
 }
 
 const cancellable = (status: string) => status === 'issued' || status === 'sent';
-const deletable = (status: string) => status === 'draft' || status === 'issued';
 const editable = (status: string) => status === 'draft' || status === 'issued' || status === 'sent';
 const sendable = (status: string) => status === 'issued' || status === 'sent';
 
@@ -49,12 +48,14 @@ export function SalesOrderInvoiceActions({
   onChanged,
   onRequestEdit,
 }: SalesOrderInvoiceActionsProps) {
-  const { sendByEmail, cancelInvoice, deleteInvoice, downloadPdf, pendingAction } =
-    useInvoiceMutations({ supabaseClient, instanceId, onSuccess: onChanged });
+  const { sendByEmail, cancelInvoice, downloadPdf, pendingAction } = useInvoiceMutations({
+    supabaseClient,
+    instanceId,
+    onSuccess: onChanged,
+  });
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isFakturownia = invoice.provider === 'fakturownia';
   const status = invoice.status;
@@ -64,7 +65,6 @@ export function SalesOrderInvoiceActions({
   // For non-Fakturownia (iFirma) we only show Pobierz PDF for now.
   const canEdit = isFakturownia && editable(status) && !isCancelled && !isPaid;
   const canCancel = isFakturownia && cancellable(status) && !isCancelled;
-  const canDelete = isFakturownia && deletable(status) && !isCancelled;
   const canSend = sendable(status) && !isCancelled;
 
   const fileName = `faktura-${invoice.number || invoice.externalInvoiceId || invoice.id}.pdf`;
@@ -102,7 +102,7 @@ export function SalesOrderInvoiceActions({
               <Pencil className="w-4 h-4 mr-2" /> Edytuj
             </DropdownMenuItem>
           )}
-          {(canCancel || canDelete) && <DropdownMenuSeparator />}
+          {canCancel && <DropdownMenuSeparator />}
           {canCancel && (
             <DropdownMenuItem
               onClick={() => {
@@ -112,14 +112,6 @@ export function SalesOrderInvoiceActions({
               className="text-destructive focus:text-destructive"
             >
               <Ban className="w-4 h-4 mr-2" /> Anuluj
-            </DropdownMenuItem>
-          )}
-          {canDelete && (
-            <DropdownMenuItem
-              onClick={() => setDeleteDialogOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" /> Usuń
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -158,33 +150,6 @@ export function SalesOrderInvoiceActions({
                 }}
               >
                 Anuluj fakturę
-              </Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Usunąć fakturę {invoice.number}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Faktura zostanie trwale usunięta z Fakturowni i z naszej bazy.{' '}
-              <strong>Tej operacji nie można cofnąć.</strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cofnij</AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                variant="destructive"
-                onClick={async () => {
-                  await deleteInvoice(invoice.id);
-                  setDeleteDialogOpen(false);
-                }}
-              >
-                Usuń fakturę
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>

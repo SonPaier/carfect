@@ -74,16 +74,6 @@ export function useInvoiceMutations({
     }
   };
 
-  const deleteInvoice = async (invoiceId: string) => {
-    try {
-      await invoke('delete_invoice', { invoiceId });
-      toast.success('Faktura usunięta');
-      onSuccess?.();
-    } catch (e) {
-      toast.error((e as Error).message || 'Błąd usuwania faktury');
-    }
-  };
-
   const downloadPdf = async (invoiceId: string, fileName: string) => {
     setPendingAction('get_pdf');
     try {
@@ -130,5 +120,5 @@ export function useInvoiceMutations({
     }
   };
 
-  return { sendByEmail, cancelInvoice, deleteInvoice, downloadPdf, pendingAction };
+  return { sendByEmail, cancelInvoice, downloadPdf, pendingAction };
 }

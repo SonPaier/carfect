@@ -13,8 +13,7 @@ interface Props {
 
 /**
  * Invoice-related items inside the per-order DropdownMenu.
- * Render: Pobierz FV / Wystaw FV / Edytuj FV / Usuń FV
- * Skips itself for `paymentMethod === 'free'` orders.
+ * Render: Pobierz FV / Wystaw FV / Edytuj FV. Skips itself for `paymentMethod === 'free'`.
  */
 export function OrderInvoiceMenuItems({
   order,
@@ -35,7 +34,6 @@ export function OrderInvoiceMenuItems({
   const isFakturownia = order.invoiceProvider === 'fakturownia';
   const status = order.invoiceStatus;
   const canEdit = isFakturownia && order.invoiceId && status !== 'cancelled' && status !== 'paid';
-  const canDelete = isFakturownia && order.invoiceId && (status === 'draft' || status === 'issued');
 
   return (
     <>
@@ -69,20 +67,6 @@ export function OrderInvoiceMenuItems({
           }}
         >
           Edytuj FV
-        </DropdownMenuItem>
-      )}
-      {canDelete && (
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!confirm(`Usunąć fakturę ${order.invoiceNumber}? Tej operacji nie można cofnąć.`)) {
-              return;
-            }
-            mutations.deleteInvoice(order.invoiceId!);
-          }}
-          className="text-destructive focus:text-destructive"
-        >
-          Usuń FV
         </DropdownMenuItem>
       )}
     </>

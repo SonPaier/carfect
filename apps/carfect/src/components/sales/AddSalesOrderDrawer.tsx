@@ -39,6 +39,12 @@ import { PaymentSection } from './order-drawer/PaymentSection';
 import { ShippingAddressSection } from './order-drawer/ShippingAddressSection';
 import { type AddressData } from './order-drawer/AddressFields';
 import { useUnsavedChanges, UnsavedChangesDialog } from './hooks/useUnsavedChanges';
+import type { InvoicePosition } from '@shared/invoicing';
+import {
+  mapProductToInvoicePosition,
+  bruttoCostToInvoicePosition,
+} from './utils/invoicePositionMapper';
+import { UpdateInvoiceConfirmDialog } from './UpdateInvoiceConfirmDialog';
 
 // Re-export types used externally
 export type { OrderPackage, OrderProduct, DeliveryType };
@@ -69,6 +75,17 @@ interface AddSalesOrderDrawerProps {
   initialCustomer?: { id: string; name: string; discountPercent?: number } | null;
   editOrder?: EditOrderData | null;
   onOrderCreated?: () => void;
+  /**
+   * Called after a successful save when the user confirmed they want to update the linked
+   * invoice. Parent should open InvoiceDrawer in edit-with-diff mode.
+   */
+  onRequestInvoiceEdit?: (params: {
+    invoiceId: string;
+    orderId: string;
+    customerId: string;
+    customerName: string;
+    incomingPositions: InvoicePosition[];
+  }) => void;
 }
 
 const AddSalesOrderDrawer = ({
@@ -77,6 +94,7 @@ const AddSalesOrderDrawer = ({
   initialCustomer,
   editOrder,
   onOrderCreated,
+  onRequestInvoiceEdit,
 }: AddSalesOrderDrawerProps) => {
   const { t } = useTranslation();
   const { roles } = useAuth();
@@ -104,6 +122,7 @@ const AddSalesOrderDrawer = ({
   const [products, setProducts] = useState<OrderProduct[]>([]);
   const orderPackages = useOrderPackages({ products, setProducts });
   const {
+    isDirty,
     markDirty,
     resetDirty,
     handleClose: handleUnsavedClose,
@@ -139,12 +158,27 @@ const AddSalesOrderDrawer = ({
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [addCustomerInitialQuery, setAddCustomerInitialQuery] = useState('');
 
+  // Existing invoice (for the "edit order ⇒ update invoice" confirm flow)
+  const [existingInvoice, setExistingInvoice] = useState<{
+    id: string;
+    number: string | null;
+    provider: 'fakturownia' | 'ifirma';
+  } | null>(null);
+  const [confirmInvoiceDialogOpen, setConfirmInvoiceDialogOpen] = useState(false);
+  const pendingInvoiceEditRef = useRef(false);
+  /** Set right before handing off to parent's invoice edit drawer — suppresses the
+   * unsaved-changes prompt that would otherwise fire from focus-steal events. */
+  const closingForInvoiceEditRef = useRef(false);
+
   const isEdit = !!editOrder;
 
   // Set initial data when opening
   useEffect(() => {
     if (open) {
       resetDirty();
+      // Reset on each fresh open — keeps the flag set after close so late
+      // focus-steal events from the spawned InvoiceDrawer don't re-prompt.
+      closingForInvoiceEditRef.current = false;
     }
     if (open && editOrder) {
       customerSearch.setSelectedCustomer({
@@ -182,8 +216,51 @@ const AddSalesOrderDrawer = ({
     }
     if (!open) {
       customerSearch.setSelectedCustomer(null);
+      setExistingInvoice(null);
+      setConfirmInvoiceDialogOpen(false);
+      pendingInvoiceEditRef.current = false;
+      // closingForInvoiceEditRef stays — late focus-steal events still need to short-circuit
     }
   }, [open, initialCustomer, editOrder]);
+
+  // Load active (non-cancelled) invoice linked to the edited order
+  useEffect(() => {
+    if (!open || !editOrder?.id) {
+      setExistingInvoice(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('invoices')
+      .select('id, invoice_number, status, provider')
+      .eq('sales_order_id', editOrder.id)
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(
+        ({
+          data,
+        }: {
+          data: {
+            id: string;
+            invoice_number: string | null;
+            status: string;
+            provider: string | null;
+          } | null;
+        }) => {
+          if (cancelled || !data) return;
+          setExistingInvoice({
+            id: data.id,
+            number: data.invoice_number,
+            provider: (data.provider as 'fakturownia' | 'ifirma') || 'fakturownia',
+          });
+        },
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [open, editOrder?.id]);
 
   // Set default bank account when instance data loads
   useEffect(() => {
@@ -359,6 +436,8 @@ const AddSalesOrderDrawer = ({
   };
 
   const handleClose = () => {
+    // We're handing off to parent's invoice edit drawer — bypass the unsaved prompt.
+    if (closingForInvoiceEditRef.current) return;
     handleUnsavedClose(handleSubmit, () => {
       resetDirty();
       resetForm();
@@ -392,6 +471,34 @@ const AddSalesOrderDrawer = ({
     if (products.length === 0) {
       toast.error(t('sales.order.errorNoProducts'));
       return;
+    }
+
+    // Edit-mode + active invoice + dirty form → ask whether to update the invoice.
+    // pendingInvoiceEditRef === true means the user already chose in the dialog,
+    // so we skip the prompt and proceed with save.
+    if (
+      isEdit &&
+      existingInvoice &&
+      existingInvoice.provider === 'fakturownia' &&
+      isDirty &&
+      !pendingInvoiceEditRef.current &&
+      !confirmInvoiceDialogOpen
+    ) {
+      setConfirmInvoiceDialogOpen(true);
+      return;
+    }
+
+    // If the user chose "Tak edytuj fakturę", validate that we can build invoice
+    // positions BEFORE saving — otherwise we'd end with a saved order but no FV update.
+    if (pendingInvoiceEditRef.current) {
+      try {
+        buildInvoicePositions();
+      } catch (err: unknown) {
+        pendingInvoiceEditRef.current = false;
+        closingForInvoiceEditRef.current = false;
+        toast.error((err as Error).message);
+        return;
+      }
     }
 
     // Validate roll availability before saving (multi-roll assignments)
@@ -661,14 +768,63 @@ const AddSalesOrderDrawer = ({
       }
 
       resetDirty();
+      onOrderCreated?.();
+
+      // After successful save, if the user chose "Tak, edytuj fakturę",
+      // hand off the freshly saved positions to the parent so it can open
+      // InvoiceDrawer in edit-with-diff mode. Then close this drawer.
+      if (
+        pendingInvoiceEditRef.current &&
+        existingInvoice &&
+        onRequestInvoiceEdit &&
+        editOrder?.id &&
+        customerSearch.selectedCustomer
+      ) {
+        const incomingPositions = buildInvoicePositions();
+        closingForInvoiceEditRef.current = true;
+        onRequestInvoiceEdit({
+          invoiceId: existingInvoice.id,
+          orderId: editOrder.id,
+          customerId: customerSearch.selectedCustomer.id,
+          customerName: customerSearch.selectedCustomer.name,
+          incomingPositions,
+        });
+      }
+      pendingInvoiceEditRef.current = false;
       resetForm();
       onOpenChange(false);
-      onOrderCreated?.();
     } catch (err: any) {
+      pendingInvoiceEditRef.current = false;
+      closingForInvoiceEditRef.current = false;
       toast.error(t('salesOrder.orderSaveError', { error: err.message || '' }));
     } finally {
       setSaving(false);
     }
+  };
+
+  // Build invoice positions from current order (used as incomingPositions for the diff)
+  const buildInvoicePositions = () => {
+    const shippingPkgs = orderPackages.packages.filter(
+      (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
+    );
+    const uberPkgs = orderPackages.packages.filter(
+      (pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null,
+    );
+    return [
+      ...products.map((p) => mapProductToInvoicePosition(p, customerDiscount)),
+      ...shippingPkgs.map((pkg, i) =>
+        bruttoCostToInvoicePosition(
+          pkg.shippingCost!,
+          shippingPkgs.length === 1 ? t('sales.orders.shipping') : `Wysyłka #${i + 1}`,
+        ),
+      ),
+      ...uberPkgs.map((pkg, i) =>
+        bruttoCostToInvoicePosition(
+          pkg.uberCost!,
+          uberPkgs.length === 1 ? 'Uber' : `Uber #${i + 1}`,
+        ),
+      ),
+    ];
   };
 
   return (
@@ -688,13 +844,13 @@ const AddSalesOrderDrawer = ({
           hideCloseButton
           onInteractOutside={(e) => {
             e.preventDefault();
-            if (!orderPackages.productDrawerOpen && !addCustomerOpen) {
+            if (!orderPackages.productDrawerOpen && !addCustomerOpen && !confirmInvoiceDialogOpen) {
               handleClose();
             }
           }}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
-            if (!orderPackages.productDrawerOpen && !addCustomerOpen) {
+            if (!orderPackages.productDrawerOpen && !addCustomerOpen && !confirmInvoiceDialogOpen) {
               handleClose();
             }
           }}
@@ -986,6 +1142,22 @@ const AddSalesOrderDrawer = ({
         </>
       )}
       <UnsavedChangesDialog {...dialogProps} />
+      <UpdateInvoiceConfirmDialog
+        open={confirmInvoiceDialogOpen}
+        onOpenChange={setConfirmInvoiceDialogOpen}
+        invoiceNumber={existingInvoice?.number ?? null}
+        onUpdateInvoice={() => {
+          // Set both flags synchronously — async save below + focus-steal could
+          // otherwise trigger the unsaved-changes prompt.
+          pendingInvoiceEditRef.current = true;
+          closingForInvoiceEditRef.current = true;
+          handleSubmit();
+        }}
+        onSaveOnly={() => {
+          pendingInvoiceEditRef.current = false;
+          handleSubmit();
+        }}
+      />
     </>
   );
 };
