@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Label } from '@shared/ui';
 import { Separator } from '@shared/ui';
-import { formatCurrency } from '../constants';
+import { InvoiceSummaryTable, type SummaryLine } from '@shared/invoicing';
 import { VAT_RATE } from '../constants';
 import { mbToM2 } from '../types/rolls';
 import type { OrderProduct } from '../hooks/useOrderPackages';
@@ -21,139 +21,83 @@ interface OrderSummarySectionProps {
   paymentMethod?: 'cod' | 'transfer' | 'free' | 'cash' | 'card';
 }
 
+const VAT_RATE_PERCENT = Math.round(VAT_RATE * 100);
+
+const getProductWidthMm = (p: OrderProduct): number => {
+  const match = p.name.match(/(\d{3,4})\s*mm/);
+  return match ? parseInt(match[1]) : 1524;
+};
+
+const getEffectiveQty = (p: OrderProduct): number => {
+  if (p.priceUnit === 'meter') {
+    if (p.rollAssignments?.length) {
+      return p.rollAssignments.reduce((sum, a) => sum + a.usageM2, 0);
+    }
+    if (p.requiredMb) return mbToM2(p.requiredMb, getProductWidthMm(p));
+  }
+  return p.quantity;
+};
+
+const getUnitLabel = (p: OrderProduct): string => {
+  if (p.priceUnit === 'piece') return 'szt.';
+  if (p.priceUnit === 'meter') return 'm²';
+  return p.priceUnit || 'szt.';
+};
+
 export const OrderSummarySection = ({
   products,
   customerDiscount,
   shippingCosts = [],
   uberCosts = [],
-  totalNet,
-  totalGross,
-  isNetPayer = false,
   paymentMethod,
 }: OrderSummarySectionProps) => {
   const { t } = useTranslation();
+
+  const lines: SummaryLine[] = products.map((p) => {
+    const discount = p.discountPercent ?? (p.excludeFromDiscount ? 0 : (customerDiscount ?? 0));
+    return {
+      name: p.name,
+      unit: getUnitLabel(p),
+      quantity: getEffectiveQty(p),
+      pricePerUnitNet: p.priceNet,
+      discountPercent: discount,
+      vatRate: VAT_RATE_PERCENT,
+    };
+  });
+
   const shippingBruttoTotal = shippingCosts.reduce((s, c) => s + c, 0);
   const uberBruttoTotal = uberCosts.reduce((s, c) => s + c, 0);
-  const deliveryNetTotal = (shippingBruttoTotal + uberBruttoTotal) / (1 + VAT_RATE);
-  const productsNet = totalNet - deliveryNetTotal;
-  const vatAmount = productsNet * VAT_RATE;
 
-  const getProductWidthMm = (p: OrderProduct): number => {
-    const match = p.name.match(/(\d{3,4})\s*mm/);
-    return match ? parseInt(match[1]) : 1524;
-  };
+  const extraLines = [];
+  if (shippingBruttoTotal > 0) {
+    extraLines.push({
+      label:
+        shippingCosts.length === 1
+          ? t('sales.orderSummary.shipping')
+          : t('sales.orderSummary.shippingMultiple', { count: shippingCosts.length }),
+      netValue: shippingBruttoTotal / (1 + VAT_RATE),
+      vatRate: VAT_RATE_PERCENT,
+    });
+  }
+  if (uberBruttoTotal > 0) {
+    extraLines.push({
+      label:
+        uberCosts.length === 1
+          ? t('sales.orderSummary.uber')
+          : t('sales.orderSummary.uberMultiple', { count: uberCosts.length }),
+      netValue: uberBruttoTotal / (1 + VAT_RATE),
+      vatRate: VAT_RATE_PERCENT,
+    });
+  }
 
-  const getEffectiveQty = (p: OrderProduct) => {
-    if (p.priceUnit === 'meter') {
-      if (p.rollAssignments?.length) {
-        return p.rollAssignments.reduce((sum, a) => sum + a.usageM2, 0);
-      }
-      if (p.requiredMb) return mbToM2(p.requiredMb, getProductWidthMm(p));
-    }
-    return p.quantity;
-  };
+  const toPayLabel = paymentMethod === 'free' ? t('sales.orderSummary.free') : undefined;
 
   return (
     <>
       <Separator />
       <div className="space-y-3">
         <Label>{t('sales.orderSummary.title')}</Label>
-
-        <div className="bg-card border border-border rounded-md p-3 space-y-1.5 text-sm">
-          {/* Individual products with their discounts */}
-          {products.map((p, i) => {
-            const qty = getEffectiveQty(p);
-            const lineNet = p.priceNet * qty;
-            const discount =
-              p.discountPercent ?? (p.excludeFromDiscount ? 0 : (customerDiscount ?? 0));
-            const lineNetAfterDiscount = lineNet * (1 - discount / 100);
-            const unit =
-              p.priceUnit === 'piece'
-                ? 'szt.'
-                : p.priceUnit === 'meter'
-                  ? 'm²'
-                  : p.priceUnit || 'szt.';
-            return (
-              <div key={i}>
-                <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground truncate">
-                    {p.name} ({parseFloat(qty.toFixed(2))} {unit} × {formatCurrency(p.priceNet)})
-                  </span>
-                  <span className="tabular-nums shrink-0">{formatCurrency(lineNet)}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex justify-between gap-2 text-destructive">
-                    <span className="text-xs pl-2">
-                      {t('sales.orderSummary.discountLabel', { discount })}
-                    </span>
-                    <span className="tabular-nums text-xs shrink-0">
-                      -{formatCurrency(lineNet - lineNetAfterDiscount)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          <Separator className="my-1" />
-
-          {/* Totals — "Razem netto" always shows products only, shipping always separate */}
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t('sales.orderSummary.totalNet')}</span>
-            <span className="tabular-nums font-medium">{formatCurrency(productsNet)}</span>
-          </div>
-          {shippingCosts.length > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {shippingCosts.length === 1
-                  ? t('sales.orderSummary.shipping')
-                  : t('sales.orderSummary.shippingMultiple', { count: shippingCosts.length })}{' '}
-                {t('sales.orderSummary.gross')}
-              </span>
-              <span className="tabular-nums">{formatCurrency(shippingBruttoTotal)}</span>
-            </div>
-          )}
-          {uberCosts.length > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {uberCosts.length === 1
-                  ? t('sales.orderSummary.uber')
-                  : t('sales.orderSummary.uberMultiple', { count: uberCosts.length })}{' '}
-                {t('sales.orderSummary.gross')}
-              </span>
-              <span className="tabular-nums">{formatCurrency(uberBruttoTotal)}</span>
-            </div>
-          )}
-          {isNetPayer ? (
-            <>
-              <Separator className="my-1" />
-              <div className="flex justify-between font-semibold text-lg">
-                <span>{t('sales.orderSummary.toPay')}</span>
-                <span className="tabular-nums">
-                  {paymentMethod === 'free'
-                    ? t('sales.orderSummary.free')
-                    : formatCurrency(totalGross)}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">VAT (23%)</span>
-                <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
-              </div>
-              <Separator className="my-1" />
-              <div className="flex justify-between font-semibold text-lg">
-                <span>{t('sales.orderSummary.totalGross')}</span>
-                <span className="tabular-nums">
-                  {paymentMethod === 'free'
-                    ? t('sales.orderSummary.free')
-                    : formatCurrency(totalGross)}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+        <InvoiceSummaryTable lines={lines} extraLines={extraLines} toPayLabel={toPayLabel} />
       </div>
     </>
   );

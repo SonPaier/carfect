@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
-import { format, addDays } from 'date-fns';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { format, addDays, addMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { useInvoicingSettings } from './useInvoicingSettings';
 import type { InvoicePosition, DocumentKind, PaymentType } from './invoicing.types';
+import { mapFakturowniaToInternal, type KsefStatusInfo } from './fakturowniaMappers';
+import { positionDiff, type DiffStatus } from './positionDiff';
 
 export type PriceMode = 'netto' | 'brutto';
 
@@ -22,6 +24,20 @@ export interface UseInvoiceFormOptions {
   customerTable?: string;
   /** Available bank accounts from instance config */
   bankAccounts?: { name: string; number: string }[];
+  /**
+   * When set, the form opens in EDIT mode: it fetches the current state of the
+   * invoice from Fakturownia (via get_invoice action), populates the form, and
+   * snapshots positions for the diff/update logic. handleSubmit then dispatches
+   * update_invoice instead of create_invoice.
+   */
+  existingInvoiceId?: string;
+  /**
+   * Optional positions coming from a sales order whose products changed.
+   * When provided alongside `existingInvoiceId`, the form merges Fakturownia
+   * positions with these via positionDiff and exposes diffStatus[] for UI
+   * highlighting (added=green, removed=red).
+   */
+  incomingPositions?: InvoicePosition[];
 }
 
 export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
@@ -39,7 +55,10 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     supabaseClient,
     customerTable = 'customers',
     bankAccounts = [],
+    existingInvoiceId,
+    incomingPositions,
   } = options;
+  const mode: 'create' | 'edit' = existingInvoiceId ? 'edit' : 'create';
 
   const { settings } = useInvoicingSettings(instanceId, supabaseClient);
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +66,8 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const [kind, setKind] = useState<DocumentKind>('vat');
   const [issueDate, setIssueDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [sellDate, setSellDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [paymentDays, setPaymentDays] = useState(14);
+  const [paymentDays, setPaymentDays] = useState<number | 'month'>(14);
+  const [paidAmount, setPaidAmount] = useState<number>(0);
   const [priceMode, setPriceMode] = useState<PriceMode>('netto');
   const [buyerName, setBuyerName] = useState('');
   const [buyerTaxNo, setBuyerTaxNo] = useState('');
@@ -57,10 +77,25 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   const [buyerCity, setBuyerCity] = useState('');
   const [buyerCountry, setBuyerCountry] = useState('PL');
   const [paymentType, setPaymentType] = useState<PaymentType>('transfer');
+  const [splitPayment, setSplitPayment] = useState(false);
   const [selectedBankAccount, setSelectedBankAccount] = useState('');
+  const [sellerName, setSellerName] = useState('');
+  const [sellerTaxNo, setSellerTaxNo] = useState('');
+  const [sellerAddress, setSellerAddress] = useState('');
+  const [sellerEmail, setSellerEmail] = useState('');
+  const [sellerPhone, setSellerPhone] = useState('');
   const [positions, setPositions] = useState<InvoicePosition[]>([
     { name: '', quantity: 1, unit_price_gross: 0, vat_rate: 23, unit: 'szt.', discount: 0 },
   ]);
+
+  // ---- Edit-mode state ----
+  const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
+  const [ksef, setKsef] = useState<KsefStatusInfo | null>(null);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+  /** Snapshot of positions at edit-load time. Used to compute removed positions for update_invoice. */
+  const originalPositionsRef = useRef<InvoicePosition[]>([]);
+  /** Per-row diff status when invoking edit-with-diff (incoming order positions). */
+  const [positionDiffStatus, setPositionDiffStatus] = useState<DiffStatus[] | undefined>(undefined);
 
   // Initialize from props/settings
   useEffect(() => {
@@ -79,12 +114,86 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerCountry('PL');
     setAutoSendEmail(settings?.auto_send_email ?? false);
     setSelectedBankAccount(bankAccounts[0]?.number || '');
+    setSplitPayment(false);
+    setPaidAmount(0);
     if (initialPositions?.length) {
       setPositions(initialPositions);
     }
     setIssueDate(format(new Date(), 'yyyy-MM-dd'));
     setSellDate(format(new Date(), 'yyyy-MM-dd'));
   }, [open]);
+
+  // EDIT mode: fetch fresh invoice state from Fakturownia and populate form.
+  useEffect(() => {
+    if (!open || !existingInvoiceId) return;
+    let cancelled = false;
+    setLoadingExisting(true);
+    (async () => {
+      try {
+        const { data, error } = await supabaseClient.functions.invoke('invoicing-api', {
+          body: { action: 'get_invoice', instanceId, invoiceId: existingInvoiceId },
+        });
+        if (cancelled) return;
+        if (error || data?.error) {
+          toast.error(data?.error || 'Nie udało się wczytać faktury z Fakturowni');
+          return;
+        }
+        const fv = data?.fakturownia;
+        if (!fv) return;
+        const mapped = mapFakturowniaToInternal(fv);
+        setInvoiceNumber(mapped.invoiceNumber);
+        setKsef(mapped.ksef);
+        setKind(mapped.kind);
+        setIssueDate(mapped.issueDate);
+        setSellDate(mapped.sellDate);
+        setPaymentType(mapped.paymentType);
+        setBuyerName(mapped.buyerName);
+        setBuyerTaxNo(mapped.buyerTaxNo);
+        setBuyerEmail(mapped.buyerEmail);
+        setBuyerStreet(mapped.buyerStreet);
+        setBuyerPostCode(mapped.buyerPostCode);
+        setBuyerCity(mapped.buyerCity);
+        setBuyerCountry(mapped.buyerCountry);
+        if (mapped.sellerName) setSellerName(mapped.sellerName);
+        if (mapped.sellerTaxNo) setSellerTaxNo(mapped.sellerTaxNo);
+        if (mapped.sellerEmail) setSellerEmail(mapped.sellerEmail);
+        if (mapped.sellerAddress) setSellerAddress(mapped.sellerAddress);
+        setPaidAmount(mapped.paidAmount);
+        originalPositionsRef.current = mapped.positions.map((p) => ({ ...p }));
+        if (incomingPositions && incomingPositions.length > 0) {
+          const { merged, statuses } = positionDiff(mapped.positions, incomingPositions);
+          setPositions(merged);
+          setPositionDiffStatus(statuses);
+        } else {
+          setPositions(mapped.positions);
+          setPositionDiffStatus(undefined);
+        }
+      } finally {
+        if (!cancelled) setLoadingExisting(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, existingInvoiceId, instanceId]);
+
+  // Fetch sales-CRM seller settings (company shown on the invoice)
+  useEffect(() => {
+    if (!open || !instanceId) return;
+    supabaseClient
+      .from('sales_instance_settings')
+      .select('name, short_name, nip, address, email, phone, invoice_company_name')
+      .eq('instance_id', instanceId)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (!data) return;
+        setSellerName(data.invoice_company_name || data.name || data.short_name || '');
+        setSellerTaxNo(data.nip || '');
+        setSellerAddress(data.address || '');
+        setSellerEmail(data.email || '');
+        setSellerPhone(data.phone || '');
+      });
+  }, [open, instanceId]);
 
   // Fetch customer billing data if not provided
   useEffect(() => {
@@ -160,7 +269,9 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
 
   const paymentTo = useMemo(() => {
     try {
-      return format(addDays(new Date(issueDate), paymentDays), 'yyyy-MM-dd');
+      const base = new Date(issueDate);
+      const target = paymentDays === 'month' ? addMonths(base, 1) : addDays(base, paymentDays);
+      return format(target, 'yyyy-MM-dd');
     } catch {
       return issueDate;
     }
@@ -168,13 +279,14 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
 
   // Calculate totals based on price mode (round per-line to avoid floating point drift)
   const { totalNetto, totalVat, totalGross } = useMemo(() => {
+    // Sum raw (no per-line rounding) to stay consistent with sales-CRM totals.
+    // Rounding only at the very end for display.
     const r = (v: number) => Math.round(v * 100) / 100;
     let netto = 0;
     let brutto = 0;
     for (const p of positions) {
-      const discountMultiplier = 1 - (p.discount || 0) / 100;
-      const lineTotal = r(p.unit_price_gross * p.quantity * discountMultiplier);
-      // vat_rate -1 means "zwolniony" (exempt) — netto equals brutto
+      const discountMultiplier = 1 - (Number(p.discount) || 0) / 100;
+      const lineTotal = Number(p.unit_price_gross) * Number(p.quantity) * discountMultiplier;
       if (p.vat_rate === -1) {
         netto += lineTotal;
         brutto += lineTotal;
@@ -183,10 +295,10 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       const rate = p.vat_rate / 100;
       if (priceMode === 'netto') {
         netto += lineTotal;
-        brutto += r(lineTotal * (1 + rate));
+        brutto += lineTotal * (1 + rate);
       } else {
         brutto += lineTotal;
-        netto += r(lineTotal / (1 + rate));
+        netto += lineTotal / (1 + rate);
       }
     }
     return { totalNetto: r(netto), totalVat: r(brutto - netto), totalGross: r(brutto) };
@@ -217,6 +329,16 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setPositions(updated);
   };
 
+  const movePosition = (from: number, to: number) => {
+    if (from === to) return;
+    if (from < 0 || from >= positions.length) return;
+    if (to < 0 || to >= positions.length) return;
+    const updated = [...positions];
+    const [item] = updated.splice(from, 1);
+    updated.splice(to, 0, item);
+    setPositions(updated);
+  };
+
   const [autoSendEmail, setAutoSendEmail] = useState(false);
 
   const handleSubmit = async () => {
@@ -242,7 +364,13 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     }
 
     // Convert positions to brutto for the API, keeping discount visible on invoice
-    const grossPositions = positions.map((p) => {
+    // Skip rows marked as 'removed' in the diff — they will be sent as _destroy:1
+    // by the update mapper based on originalPositionsRef.
+    const submittablePositions =
+      positionDiffStatus && positionDiffStatus.length === positions.length
+        ? positions.filter((_, i) => positionDiffStatus[i] !== 'removed')
+        : positions;
+    const grossPositions = submittablePositions.map((p) => {
       if (priceMode === 'netto') {
         if (p.vat_rate === -1) return { ...p };
         const rate = p.vat_rate / 100;
@@ -254,37 +382,59 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       return { ...p };
     });
 
+    const invoiceData = {
+      kind,
+      issue_date: issueDate,
+      sell_date: sellDate,
+      payment_to: paymentTo,
+      payment_type: paymentType,
+      buyer_name: buyerName,
+      buyer_tax_no: buyerTaxNo,
+      buyer_email: buyerEmail,
+      buyer_street: buyerStreet,
+      buyer_post_code: buyerPostCode,
+      buyer_city: buyerCity,
+      buyer_country: buyerCountry || 'PL',
+      place: settings?.default_place || undefined,
+      seller_person: settings?.default_seller_person || undefined,
+      seller_name: sellerName || undefined,
+      seller_tax_no: sellerTaxNo || undefined,
+      seller_email: sellerEmail || undefined,
+      seller_address: sellerAddress || undefined,
+      seller_phone: sellerPhone || undefined,
+      bank_account: selectedBankAccount || undefined,
+      split_payment: splitPayment,
+      paid: paidAmount > 0 ? paidAmount : undefined,
+      payment_to_kind: paymentDays === 'month' ? '30' : String(paymentDays),
+      currency: 'PLN',
+      positions: grossPositions,
+      oid: calendarItemId,
+    };
+
     setSubmitting(true);
     try {
+      const requestBody =
+        mode === 'edit'
+          ? {
+              action: 'update_invoice',
+              instanceId,
+              invoiceId: existingInvoiceId,
+              invoiceData,
+              originalPositions: originalPositionsRef.current,
+              autoSendEmail,
+            }
+          : {
+              action: 'create_invoice',
+              instanceId,
+              calendarItemId,
+              salesOrderId,
+              customerId,
+              autoSendEmail,
+              invoiceData,
+            };
+
       const { data, error } = await supabaseClient.functions.invoke('invoicing-api', {
-        body: {
-          action: 'create_invoice',
-          instanceId,
-          calendarItemId,
-          salesOrderId,
-          customerId,
-          autoSendEmail,
-          invoiceData: {
-            kind,
-            issue_date: issueDate,
-            sell_date: sellDate,
-            payment_to: paymentTo,
-            payment_type: paymentType,
-            buyer_name: buyerName,
-            buyer_tax_no: buyerTaxNo,
-            buyer_email: buyerEmail,
-            buyer_street: buyerStreet,
-            buyer_post_code: buyerPostCode,
-            buyer_city: buyerCity,
-            buyer_country: buyerCountry || 'PL',
-            place: settings?.default_place || undefined,
-            seller_person: settings?.default_seller_person || undefined,
-            bank_account: selectedBankAccount || undefined,
-            currency: 'PLN',
-            positions: grossPositions,
-            oid: calendarItemId,
-          },
-        },
+        body: requestBody,
       });
 
       if (error) throw error;
@@ -310,16 +460,20 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         await supabaseClient.from(customerTable).update(updateData).eq('id', customerId);
       }
 
-      toast.success(
-        data?.invoice?.invoice_number
-          ? `Faktura ${data.invoice.invoice_number} wystawiona`
-          : 'Faktura wystawiona',
-      );
+      const successMsg =
+        mode === 'edit'
+          ? `Faktura ${data?.invoice?.invoice_number || invoiceNumber || ''} zaktualizowana`
+          : data?.invoice?.invoice_number
+            ? `Faktura ${data.invoice.invoice_number} wystawiona`
+            : 'Faktura wystawiona';
+      toast.success(successMsg.trim());
       onSuccess?.();
       onClose?.();
     } catch (err: any) {
-      console.error('Invoice creation error:', err);
-      toast.error(err.message || 'Blad wystawiania faktury');
+      console.error(mode === 'edit' ? 'Invoice update error:' : 'Invoice creation error:', err);
+      toast.error(
+        err.message || (mode === 'edit' ? 'Błąd aktualizacji faktury' : 'Blad wystawiania faktury'),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -328,6 +482,11 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
   return {
     settings,
     submitting,
+    mode,
+    loadingExisting,
+    invoiceNumber,
+    ksef,
+    positionDiffStatus,
     kind,
     setKind,
     issueDate,
@@ -354,6 +513,20 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerCountry,
     paymentType,
     setPaymentType,
+    splitPayment,
+    setSplitPayment,
+    paidAmount,
+    setPaidAmount,
+    sellerName,
+    setSellerName,
+    sellerTaxNo,
+    setSellerTaxNo,
+    sellerAddress,
+    setSellerAddress,
+    sellerEmail,
+    setSellerEmail,
+    sellerPhone,
+    setSellerPhone,
     positions,
     paymentTo,
     totalNetto,
@@ -367,6 +540,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     addPosition,
     removePosition,
     updatePosition,
+    movePosition,
     handleSubmit,
   };
 }

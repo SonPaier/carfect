@@ -385,8 +385,18 @@ const PackageCard = ({
                                 <NumericInput
                                   min={0}
                                   max={100}
-                                  value={p.discountPercent != null ? p.discountPercent : undefined}
-                                  onChange={(v) => onUpdateProductDiscount?.(itemKey, v ?? 0)}
+                                  step={0.01}
+                                  value={
+                                    p.discountPercent != null
+                                      ? Math.round(p.discountPercent * 100) / 100
+                                      : undefined
+                                  }
+                                  onChange={(v) =>
+                                    onUpdateProductDiscount?.(
+                                      itemKey,
+                                      v != null ? Math.round(v * 100) / 100 : 0,
+                                    )
+                                  }
                                   placeholder={String(customerDiscount ?? 0)}
                                   className="h-8 text-sm placeholder:text-foreground"
                                 />
@@ -395,11 +405,15 @@ const PackageCard = ({
                                 <Label className="text-xs">Rabat zł</Label>
                                 <NumericInput
                                   min={0}
+                                  step={0.01}
                                   value={discountAmountValue > 0 ? discountAmountValue : undefined}
                                   onChange={(v) => {
                                     if (total > 0 && v != null) {
                                       const newPercent = (v / total) * 100;
-                                      onUpdateProductDiscount?.(itemKey, Math.min(newPercent, 100));
+                                      onUpdateProductDiscount?.(
+                                        itemKey,
+                                        Math.round(Math.min(newPercent, 100) * 100) / 100,
+                                      );
                                     } else {
                                       onUpdateProductDiscount?.(itemKey, 0);
                                     }
@@ -475,13 +489,13 @@ const PackageCard = ({
           {/* Uber cost input — visible only when "uber" is selected */}
           {pkg.shippingMethod === 'uber' && (
             <div className="space-y-1">
-              <Label className="text-xs">{t('sales.orders.uberCostLabel')}</Label>
+              <Label className="text-xs">Koszt Uber brutto (zł)</Label>
               <NumericInput
                 min={0}
                 step={0.01}
                 value={pkg.uberCost}
                 onChange={(v) => onUberCostChange(v)}
-                placeholder="0.00"
+                placeholder="0,00"
                 className="h-8 text-sm"
               />
             </div>
@@ -689,26 +703,36 @@ const PackageCard = ({
                 </div>
               </div>
 
-              {/* Shipping cost valuation */}
-              <div className="flex items-center gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs shrink-0"
-                  onClick={handleCheckValuation}
-                  disabled={valuation.loading}
-                >
-                  {valuation.loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
-                  {t('sales.orders.checkPricing')}
-                </Button>
-                {pkg.shippingCost != null && (
-                  <span className="text-sm font-medium text-foreground">
-                    {t('sales.orders.shippingPrice')}: {formatCurrency(pkg.shippingCost)}
-                  </span>
-                )}
+              {/* Shipping cost — Apaczka valuation OR manual brutto entry */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs shrink-0"
+                    onClick={handleCheckValuation}
+                    disabled={valuation.loading}
+                  >
+                    {valuation.loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                    {t('sales.orders.checkPricing')}
+                  </Button>
+                  <div className="flex items-center gap-2 flex-1">
+                    <Label className="text-xs whitespace-nowrap">Kwota brutto (zł)</Label>
+                    <NumericInput
+                      min={0}
+                      step={0.01}
+                      className="h-9 max-w-[140px]"
+                      value={pkg.shippingCost ?? null}
+                      onChange={(v) => onShippingCostChange(v ?? undefined)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
                 {valuation.error && (
-                  <span className="text-xs text-destructive">{valuation.error}</span>
+                  <span className="block text-xs text-destructive">
+                    {valuation.error} — wpisz kwotę ręcznie
+                  </span>
                 )}
               </div>
 

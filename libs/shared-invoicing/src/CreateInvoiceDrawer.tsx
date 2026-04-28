@@ -4,6 +4,7 @@ import { Button } from '@shared/ui';
 import { useIsMobile } from '@shared/ui';
 import { useInvoiceForm, type UseInvoiceFormOptions } from './useInvoiceForm';
 import { InvoiceForm } from './InvoiceForm';
+import { KsefStatusBadge } from './KsefStatusBadge';
 import type { InvoicePosition } from './invoicing.types';
 
 interface CreateInvoiceDrawerProps {
@@ -22,6 +23,10 @@ interface CreateInvoiceDrawerProps {
   /** Table to query/update customer data. Defaults to 'customers'. */
   customerTable?: string;
   bankAccounts?: { name: string; number: string }[];
+  /** When set, drawer opens in EDIT mode and pre-loads invoice data from Fakturownia. */
+  existingInvoiceId?: string;
+  /** Optional incoming positions (e.g. from order edit) — triggers diff highlighting. */
+  incomingPositions?: InvoicePosition[];
 }
 
 export function CreateInvoiceDrawer({
@@ -39,6 +44,8 @@ export function CreateInvoiceDrawer({
   supabaseClient,
   customerTable,
   bankAccounts,
+  existingInvoiceId,
+  incomingPositions,
 }: CreateInvoiceDrawerProps) {
   const isMobile = useIsMobile();
 
@@ -56,7 +63,16 @@ export function CreateInvoiceDrawer({
     supabaseClient,
     customerTable,
     bankAccounts,
+    existingInvoiceId,
   });
+
+  const isEditMode = form.mode === 'edit';
+  const headerTitle = isEditMode
+    ? form.invoiceNumber
+      ? `Edytuj fakturę ${form.invoiceNumber}`
+      : 'Edytuj fakturę'
+    : 'Wystaw fakturę';
+  const submitLabel = isEditMode ? 'Zapisz zmiany' : 'Wystaw fakturę';
 
   return (
     <Sheet
@@ -69,16 +85,17 @@ export function CreateInvoiceDrawer({
         side="right"
         hideCloseButton
         hideOverlay
-        className="flex flex-col p-0 gap-0 z-[1000] w-full sm:w-[550px] sm:max-w-[550px] h-full bg-white"
+        style={{ width: '1400px', maxWidth: '1400px' }}
+        className="flex flex-col p-0 gap-0 z-[1000] h-full bg-white"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetTitle className="sr-only">Wystaw fakture</SheetTitle>
         <SheetDescription className="sr-only">Formularz wystawiania faktury</SheetDescription>
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+        <div className="px-6 pt-6 pb-4 border-b border-border shrink-0 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Wystaw fakture</h2>
+            <h2 className="text-lg font-bold">{headerTitle}</h2>
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-primary/5 transition-colors"
@@ -86,10 +103,19 @@ export function CreateInvoiceDrawer({
               <X className="w-5 h-5" />
             </button>
           </div>
+          {isEditMode && form.ksef?.status && <KsefStatusBadge ksef={form.ksef} />}
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 relative">
+          {form.loadingExisting && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Wczytuję fakturę z Fakturowni…
+              </div>
+            </div>
+          )}
           <InvoiceForm
             kind={form.kind}
             onKindChange={form.setKind}
@@ -115,10 +141,25 @@ export function CreateInvoiceDrawer({
             onBuyerCountryChange={form.setBuyerCountry}
             paymentType={form.paymentType}
             onPaymentTypeChange={form.setPaymentType}
+            splitPayment={form.splitPayment}
+            onSplitPaymentChange={form.setSplitPayment}
+            paidAmount={form.paidAmount}
+            onPaidAmountChange={form.setPaidAmount}
+            sellerName={form.sellerName}
+            onSellerNameChange={form.setSellerName}
+            sellerTaxNo={form.sellerTaxNo}
+            onSellerTaxNoChange={form.setSellerTaxNo}
+            sellerAddress={form.sellerAddress}
+            onSellerAddressChange={form.setSellerAddress}
+            sellerEmail={form.sellerEmail}
+            onSellerEmailChange={form.setSellerEmail}
+            sellerPhone={form.sellerPhone}
+            onSellerPhoneChange={form.setSellerPhone}
             positions={form.positions}
             onAddPosition={form.addPosition}
             onRemovePosition={form.removePosition}
             onUpdatePosition={form.updatePosition}
+            onMovePosition={form.movePosition}
             priceMode={form.priceMode}
             onPriceModeChange={form.setPriceMode}
             totalNetto={form.totalNetto}
@@ -141,11 +182,11 @@ export function CreateInvoiceDrawer({
           </Button>
           <Button
             onClick={form.handleSubmit}
-            disabled={form.submitting || !form.settings?.active}
+            disabled={form.submitting || form.loadingExisting || !form.settings?.active}
             className="flex-1"
           >
             {form.submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Wystaw fakture
+            {submitLabel}
           </Button>
         </div>
       </SheetContent>
