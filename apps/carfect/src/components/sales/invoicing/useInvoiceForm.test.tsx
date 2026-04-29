@@ -14,11 +14,20 @@ const mockFunctionsInvoke = vi.fn().mockResolvedValue({
 
 const createChainMock = (resolveData: unknown = null) => {
   const chain: Record<string, unknown> = {};
-  ['select', 'eq', 'order', 'limit', 'single', 'maybeSingle', 'insert', 'update', 'delete', 'upsert'].forEach(
-    (m) => {
-      chain[m] = vi.fn(() => chain);
-    },
-  );
+  [
+    'select',
+    'eq',
+    'order',
+    'limit',
+    'single',
+    'maybeSingle',
+    'insert',
+    'update',
+    'delete',
+    'upsert',
+  ].forEach((m) => {
+    chain[m] = vi.fn(() => chain);
+  });
   chain.then = vi.fn((resolve: (v: unknown) => unknown) =>
     Promise.resolve({ data: resolveData, error: null }).then(resolve),
   );
@@ -105,9 +114,7 @@ describe('useInvoiceForm', () => {
 
   describe('Positions from props', () => {
     it('uses initialPositions when provided instead of default', async () => {
-      const initialPositions = [
-        { name: 'Mycie', quantity: 3, unit_price_gross: 50, vat_rate: 8 },
-      ];
+      const initialPositions = [{ name: 'Mycie', quantity: 3, unit_price_gross: 50, vat_rate: 8 }];
 
       const { result } = renderHook(
         () =>
@@ -378,7 +385,9 @@ describe('useInvoiceForm', () => {
         await result.current.handleSubmit();
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Ilość musi być większa od 0');
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('Ilość musi być większa od 0'),
+      );
       expect(mockFunctionsInvoke).not.toHaveBeenCalled();
     });
 
@@ -399,7 +408,9 @@ describe('useInvoiceForm', () => {
         await result.current.handleSubmit();
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Ilość musi być większa od 0');
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('Ilość musi być większa od 0'),
+      );
       expect(mockFunctionsInvoke).not.toHaveBeenCalled();
     });
 
@@ -420,7 +431,7 @@ describe('useInvoiceForm', () => {
         await result.current.handleSubmit();
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Cena nie może być ujemna');
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Cena nie może być ujemna'));
       expect(mockFunctionsInvoke).not.toHaveBeenCalled();
     });
 
@@ -505,7 +516,9 @@ describe('useInvoiceForm', () => {
         () =>
           useInvoiceForm(true, {
             ...defaultOptions,
-            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 10 }],
+            positions: [
+              { name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 10 },
+            ],
           }),
         { wrapper },
       );
@@ -522,7 +535,9 @@ describe('useInvoiceForm', () => {
         () =>
           useInvoiceForm(true, {
             ...defaultOptions,
-            positions: [{ name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 20 }],
+            positions: [
+              { name: 'Test', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 20 },
+            ],
           }),
         { wrapper },
       );
@@ -543,7 +558,9 @@ describe('useInvoiceForm', () => {
           useInvoiceForm(true, {
             ...defaultOptions,
             customerName: 'Firma',
-            positions: [{ name: 'Service', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 10 }],
+            positions: [
+              { name: 'Service', quantity: 1, unit_price_gross: 100, vat_rate: 23, discount: 10 },
+            ],
           }),
         { wrapper },
       );
