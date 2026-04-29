@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.1';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       app_hint_dismissals: {
@@ -1047,6 +1072,41 @@ export type Database = {
           },
         ];
       };
+      instance_portfolio_photos: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          instance_id: string;
+          sort_order: number;
+          url: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          instance_id: string;
+          sort_order?: number;
+          url: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          instance_id?: string;
+          sort_order?: number;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'instance_portfolio_photos_instance_id_fkey';
+            columns: ['instance_id'];
+            isOneToOne: false;
+            referencedRelation: 'instances';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       instance_subscriptions: {
         Row: {
           billing_day: number | null;
@@ -1877,6 +1937,39 @@ export type Database = {
             columns: ['variant_id'];
             isOneToOne: false;
             referencedRelation: 'offer_variants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      offer_portfolio_photos: {
+        Row: {
+          offer_id: string;
+          photo_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          offer_id: string;
+          photo_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          offer_id?: string;
+          photo_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'offer_portfolio_photos_offer_id_fkey';
+            columns: ['offer_id'];
+            isOneToOne: false;
+            referencedRelation: 'offers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'offer_portfolio_photos_photo_id_fkey';
+            columns: ['photo_id'];
+            isOneToOne: false;
+            referencedRelation: 'instance_portfolio_photos';
             referencedColumns: ['id'];
           },
         ];
@@ -5616,6 +5709,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ['super_admin', 'admin', 'user', 'employee', 'hall', 'sales'],

@@ -1011,7 +1011,45 @@
     "viewHistory": "View History",
     "viewCount": "View Count",
     "totalTime": "Total Time",
-    "noViewData": "No View Data"
+    "noViewData": "No View Data",
+    "portfolio": {
+      "title": "Portfolio of work",
+      "description": "Library of photos available when building offers. Upload once, reuse across many offers.",
+      "addPhotos": "Add photos",
+      "uploadingProgress": "Uploading {{percent}}%",
+      "photoCount_one": "{{count}} photo in portfolio",
+      "photoCount_other": "{{count}} photos in portfolio",
+      "empty": "No photos in portfolio yet. Add some to use them in offers.",
+      "deletePhoto": "Delete photo",
+      "deleteTitle": "Delete photo from portfolio?",
+      "deleteDescription": "The photo will be permanently removed from the portfolio and from every offer where it was selected. This action cannot be undone.",
+      "deleteSuccess": "Photo deleted",
+      "deleteError": "Could not delete photo",
+      "uploadSuccess_one": "Uploaded {{count}} photo",
+      "uploadSuccess_other": "Uploaded {{count}} photos",
+      "uploadError": "Failed to upload photos",
+      "loadError": "Failed to load portfolio",
+      "reorderError": "Failed to save order",
+      "fileTooLargeSkipped_one": "Skipped {{count}} file larger than {{limit}} MB",
+      "fileTooLargeSkipped_other": "Skipped {{count}} files larger than {{limit}} MB"
+    },
+    "gallery": {
+      "editorTitle": "Gallery of work",
+      "editorDescription": "Photos shown under services in the offer: {{count}} of {{max}}",
+      "editorEmpty": "No photos selected. Pick from the portfolio to show them in the offer.",
+      "managePhotos": "Pick from portfolio",
+      "removeFromOffer": "Remove from offer",
+      "moveLeft": "Move left",
+      "moveRight": "Move right",
+      "pickerTitle": "Pick photos from the portfolio",
+      "pickerSubtitle": "Selected: {{selected}} of {{max}}",
+      "uploadAndSelect": "Upload new and add to the offer",
+      "emptyPortfolio": "Portfolio is empty. Upload photos to use them in offers.",
+      "maxSelectionError": "You can pick up to {{count}} photos",
+      "applySelection": "Apply ({{count}})",
+      "viewModeGrid": "Grid",
+      "viewModeFull": "Full width"
+    }
   },
   "summary": {
     "customer": "Customer",
@@ -1640,7 +1678,9 @@
     "generating": "Generating...",
     "paymentTermsLabel": "Payment terms",
     "generatingPdf": "Generowanie...",
-    "metaContent": "Quote {{number}} from {{name}}: services, items, and cost summary."
+    "metaContent": "Quote {{number}} from {{name}}: services, items, and cost summary.",
+    "galleryTitle": "Our selected work",
+    "galleryPhotoAlt": "Project {{index}}"
   },
   "superAdmin": {
     "panelTitle": "Management Panel",
@@ -3288,7 +3328,8 @@
     "discountsAbility": "Ability to add discounts to services in quotes",
     "conditionTemplatesDesc": "Create condition templates that you can quickly insert when creating a quote.",
     "templateContentPlaceholder": "Template content...",
-    "discountsFieldDesc": "When enabled, a field will appear for each item in the quote builder for"
+    "discountsFieldDesc": "When enabled, a field will appear for each item in the quote builder for",
+    "portfolioTab": "Portfolio"
   },
   "priceList": {
     "title": "Service price list",

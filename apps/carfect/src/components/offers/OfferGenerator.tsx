@@ -13,6 +13,7 @@ import { SummaryStepV2 } from './SummaryStepV2';
 import { ProductsSummaryStepV2 } from './ProductsSummaryStepV2';
 import { OfferPreviewDialog } from './OfferPreviewDialog';
 import { OfferPreviewPanel } from './OfferPreviewPanel';
+import { OfferGalleryEditor } from './OfferGalleryEditor';
 import { SendOfferEmailDialog } from '@/components/admin/SendOfferEmailDialog';
 import { useIsMobile } from '@shared/ui';
 import { toast } from 'sonner';
@@ -394,6 +395,12 @@ export const OfferGenerator = ({
           />
         </>
       )}
+
+      <OfferGalleryEditor
+        instanceId={instanceId}
+        photos={offer.galleryPhotos ?? []}
+        onChange={(galleryPhotos) => updateOffer({ galleryPhotos })}
+      />
     </div>
   );
 

@@ -1011,7 +1011,45 @@
     "viewHistory": "View History",
     "viewCount": "View Count",
     "totalTime": "Total Time",
-    "noViewData": "No View Data"
+    "noViewData": "No View Data",
+    "portfolio": {
+      "title": "Portfolio",
+      "description": "Bibliothek der Realisierungsfotos, verfügbar im Angebotsgenerator. Einmal hochladen, mehrfach in Angeboten verwenden.",
+      "addPhotos": "Fotos hinzufügen",
+      "uploadingProgress": "Hochladen {{percent}}%",
+      "photoCount_one": "{{count}} Foto im Portfolio",
+      "photoCount_other": "{{count}} Fotos im Portfolio",
+      "empty": "Noch keine Fotos im Portfolio. Lade welche hoch, um sie in Angeboten zu nutzen.",
+      "deletePhoto": "Foto löschen",
+      "deleteTitle": "Foto dauerhaft aus dem Portfolio entfernen?",
+      "deleteDescription": "Das Foto wird dauerhaft aus dem Portfolio und aus allen Angeboten entfernt, in denen es ausgewählt war. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteSuccess": "Foto gelöscht",
+      "deleteError": "Foto konnte nicht gelöscht werden",
+      "uploadSuccess_one": "{{count}} Foto hochgeladen",
+      "uploadSuccess_other": "{{count}} Fotos hochgeladen",
+      "uploadError": "Fehler beim Hochladen",
+      "loadError": "Portfolio konnte nicht geladen werden",
+      "reorderError": "Reihenfolge konnte nicht gespeichert werden",
+      "fileTooLargeSkipped_one": "{{count}} Datei größer als {{limit}} MB übersprungen",
+      "fileTooLargeSkipped_other": "{{count}} Dateien größer als {{limit}} MB übersprungen"
+    },
+    "gallery": {
+      "editorTitle": "Galerie der Realisierungen",
+      "editorDescription": "Fotos im Angebot unter den Leistungen: {{count}} von {{max}}",
+      "editorEmpty": "Keine Fotos ausgewählt. Wähle aus dem Portfolio, um sie im Angebot zu zeigen.",
+      "managePhotos": "Aus Portfolio wählen",
+      "removeFromOffer": "Aus Angebot entfernen",
+      "moveLeft": "Nach links verschieben",
+      "moveRight": "Nach rechts verschieben",
+      "pickerTitle": "Fotos aus dem Portfolio wählen",
+      "pickerSubtitle": "Ausgewählt: {{selected}} von {{max}}",
+      "uploadAndSelect": "Neues Foto hochladen und ins Angebot übernehmen",
+      "emptyPortfolio": "Portfolio ist leer. Lade Fotos hoch, um sie in Angeboten zu nutzen.",
+      "maxSelectionError": "Du kannst maximal {{count}} Fotos auswählen",
+      "applySelection": "Übernehmen ({{count}})",
+      "viewModeGrid": "Raster",
+      "viewModeFull": "Volle Breite"
+    }
   },
   "summary": {
     "customer": "Kunde",
@@ -1638,7 +1676,9 @@
     "discount": "+discount {{percent}}%",
     "servicesSection": "Services",
     "generatingPdf": "Generowanie...",
-    "metaContent": "Angebot {{number}} von {{name}}: Dienstleistungen, Positionen und Kostenübersicht."
+    "metaContent": "Angebot {{number}} von {{name}}: Dienstleistungen, Positionen und Kostenübersicht.",
+    "galleryTitle": "Unsere ausgewählten Realisierungen",
+    "galleryPhotoAlt": "Realisierung {{index}}"
   },
   "superAdmin": {
     "panelTitle": "Verwaltungspanel",
@@ -3286,7 +3326,8 @@
     "discountsAbility": "Möglichkeit, Rabatte zu Diensten in Angeboten hinzuzufügen",
     "conditionTemplatesDesc": "Erstellen Sie Bedingungsvorlagen, die Sie beim Erstellen eines Angebots schnell einfügen können.",
     "templateContentPlaceholder": "Vorlageninhalt...",
-    "discountsFieldDesc": "Wenn aktiviert, erscheint bei jeder Position im Angebots-Builder ein Feld für"
+    "discountsFieldDesc": "Wenn aktiviert, erscheint bei jeder Position im Angebots-Builder ein Feld für",
+    "portfolioTab": "Portfolio"
   },
   "priceList": {
     "title": "Erinnerungen",

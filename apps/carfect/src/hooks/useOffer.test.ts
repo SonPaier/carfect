@@ -1146,6 +1146,45 @@ describe('useOffer', () => {
 
       expect(toast.error).toHaveBeenCalledWith('Błąd podczas wczytywania oferty');
     });
+
+    it('maps offer_portfolio_photos join to galleryPhotos in sort_order', async () => {
+      const { result } = renderHook(() => useOffer(INSTANCE_ID));
+
+      mockSupabaseQuery('offers', {
+        data: {
+          ...mockOfferData,
+          offer_portfolio_photos: [
+            { sort_order: 1, instance_portfolio_photos: { id: 'p2', url: 'https://cdn/p2.jpg' } },
+            { sort_order: 0, instance_portfolio_photos: { id: 'p1', url: 'https://cdn/p1.jpg' } },
+          ],
+        },
+        error: null,
+      });
+
+      await act(async () => {
+        await result.current.loadOffer('offer-123');
+      });
+
+      expect(result.current.offer.galleryPhotos).toEqual([
+        { id: 'p1', url: 'https://cdn/p1.jpg' },
+        { id: 'p2', url: 'https://cdn/p2.jpg' },
+      ]);
+    });
+
+    it('returns empty galleryPhotos when offer has no junction rows', async () => {
+      const { result } = renderHook(() => useOffer(INSTANCE_ID));
+
+      mockSupabaseQuery('offers', {
+        data: { ...mockOfferData, offer_portfolio_photos: [] },
+        error: null,
+      });
+
+      await act(async () => {
+        await result.current.loadOffer('offer-123');
+      });
+
+      expect(result.current.offer.galleryPhotos).toEqual([]);
+    });
   });
 
   describe('saveOffer', () => {
@@ -1653,6 +1692,63 @@ describe('useOffer', () => {
         const id = await result.current.saveOffer(true);
         expect(id).toBe('existing-id');
       });
+    });
+
+    it('persists galleryPhotos via offer_portfolio_photos delete + insert (no error)', async () => {
+      const { result } = renderHook(() => useOffer(INSTANCE_ID));
+
+      act(() => {
+        result.current.updateOffer({
+          id: 'offer-with-gallery',
+          galleryPhotos: [
+            { id: 'p1', url: 'https://cdn/p1.jpg' },
+            { id: 'p2', url: 'https://cdn/p2.jpg' },
+          ],
+        });
+      });
+
+      mockSupabaseQuery('offers', { data: null, error: null }, 'update');
+      mockSupabaseQuery('offer_options', { data: null, error: null }, 'delete');
+      mockSupabaseQuery('offer_portfolio_photos', { data: null, error: null }, 'delete');
+      mockSupabaseQuery('offer_portfolio_photos', { data: null, error: null }, 'insert');
+
+      let savedId: string | undefined;
+      await act(async () => {
+        savedId = await result.current.saveOffer(true);
+      });
+
+      expect(savedId).toBe('offer-with-gallery');
+      expect(result.current.offer.galleryPhotos).toHaveLength(2);
+    });
+
+    it('surfaces gallery delete errors as a thrown exception', async () => {
+      const { result } = renderHook(() => useOffer(INSTANCE_ID));
+
+      act(() => {
+        result.current.updateOffer({
+          id: 'offer-with-gallery',
+          galleryPhotos: [{ id: 'p1', url: 'https://cdn/p1.jpg' }],
+        });
+      });
+
+      mockSupabaseQuery('offers', { data: null, error: null }, 'update');
+      mockSupabaseQuery('offer_options', { data: null, error: null }, 'delete');
+      mockSupabaseQuery(
+        'offer_portfolio_photos',
+        { data: null, error: { message: 'rls denied' } },
+        'delete',
+      );
+
+      let caught: unknown;
+      await act(async () => {
+        try {
+          await result.current.saveOffer(true);
+        } catch (e) {
+          caught = e;
+        }
+      });
+
+      expect(caught).toBeDefined();
     });
 
     it('throws on offer number generation error', async () => {

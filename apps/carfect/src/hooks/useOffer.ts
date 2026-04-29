@@ -15,10 +15,20 @@ import type {
   OfferOption,
   DefaultSelectedState,
   OfferState,
+  OfferGalleryPhoto,
 } from './useOfferTypes';
+import { MAX_GALLERY_PHOTOS } from './useOfferTypes';
 
 // Re-export types for consumers that import from useOffer
-export type { CustomerData, VehicleData, OfferItem, OfferOption, DefaultSelectedState, OfferState };
+export type {
+  CustomerData,
+  VehicleData,
+  OfferItem,
+  OfferOption,
+  DefaultSelectedState,
+  OfferState,
+  OfferGalleryPhoto,
+};
 
 export const useOffer = (instanceId: string) => {
   const { t } = useTranslation();
@@ -42,6 +52,7 @@ export const useOffer = (instanceId: string) => {
     notes: '',
     defaultSelectedState: undefined,
     offerFormat: null,
+    galleryPhotos: [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -757,6 +768,32 @@ export const useOffer = (instanceId: string) => {
           }
         }
 
+        // Replace gallery photo selections (delete + insert).
+        // Hard limit enforced by DB trigger; UI also caps at MAX_GALLERY_PHOTOS.
+        if (!offerId) {
+          throw new Error('Cannot save gallery without an offer id');
+        }
+        const { error: galleryDeleteError } = await supabase
+          .from('offer_portfolio_photos')
+          .delete()
+          .eq('offer_id', offerId);
+        if (galleryDeleteError) throw galleryDeleteError;
+
+        const galleryToInsert = (offer.galleryPhotos ?? [])
+          .slice(0, MAX_GALLERY_PHOTOS)
+          .map((photo, idx) => ({
+            offer_id: offerId,
+            photo_id: photo.id,
+            sort_order: idx,
+          }));
+
+        if (galleryToInsert.length > 0) {
+          const { error: galleryInsertError } = await supabase
+            .from('offer_portfolio_photos')
+            .insert(galleryToInsert);
+          if (galleryInsertError) throw galleryInsertError;
+        }
+
         // Save customer to customers table (unified — no source filter)
         try {
           if (offer.customerData.name || offer.customerData.company) {
@@ -935,6 +972,10 @@ export const useOffer = (instanceId: string) => {
           offer_options (
             *,
             offer_option_items (*)
+          ),
+          offer_portfolio_photos (
+            sort_order,
+            instance_portfolio_photos ( id, url )
           )
         `,
           )
@@ -1151,7 +1192,9 @@ export const useOffer = (instanceId: string) => {
           const budgetSuggestion = offerData.budget_suggestion;
           if (budgetSuggestion) {
             parts.push('');
-            parts.push(t('hooks.offer.budget', { amount: budgetSuggestion.toLocaleString('pl-PL') }));
+            parts.push(
+              t('hooks.offer.budget', { amount: budgetSuggestion.toLocaleString('pl-PL') }),
+            );
           }
 
           // Add customer notes if provided
@@ -1227,6 +1270,18 @@ export const useOffer = (instanceId: string) => {
           ...(generatedInquiryContent && { inquiryContent: generatedInquiryContent }),
         };
 
+        const portfolioRows = (offerData.offer_portfolio_photos || []) as Array<{
+          sort_order: number;
+          instance_portfolio_photos: { id: string; url: string } | null;
+        }>;
+        const galleryPhotos: OfferGalleryPhoto[] = portfolioRows
+          .filter((row) => row.instance_portfolio_photos)
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((row) => {
+            const p = row.instance_portfolio_photos as { id: string; url: string };
+            return { id: p.id, url: p.url };
+          });
+
         setOffer({
           id: isDuplicate ? undefined : offerData.id, // Clear ID for duplicates
           instanceId: offerData.instance_id,
@@ -1248,6 +1303,7 @@ export const useOffer = (instanceId: string) => {
           widgetSelectedExtras,
           widgetDurationSelections,
           offerFormat: (offerData.offer_format as 'v1' | 'v2' | null) ?? null,
+          galleryPhotos,
         });
       } catch (error) {
         console.error('Error loading offer:', error);
@@ -1272,6 +1328,7 @@ export const useOffer = (instanceId: string) => {
       vatRate: 23,
       hideUnitPrices: false,
       status: 'draft',
+      galleryPhotos: [],
     });
   }, [instanceId]);
 

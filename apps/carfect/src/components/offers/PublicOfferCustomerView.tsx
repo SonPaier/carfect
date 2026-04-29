@@ -28,6 +28,7 @@ import { TrustTilesSection } from './public/TrustTilesSection';
 import { ExpertContactCard } from './public/ExpertContactCard';
 import { BankTransferCard } from './public/BankTransferCard';
 import { SocialMediaCard } from './public/SocialMediaCard';
+import { PublicOfferGallery, PublicOfferGalleryPhoto } from './PublicOfferGallery';
 import { getDateLocale } from '@/i18n/dateFnsLocale';
 
 interface OfferScopeRef {
@@ -150,6 +151,7 @@ export interface PublicOfferData {
   selected_state?: SelectedState | null;
   offer_options: OfferOption[];
   instances: Instance;
+  gallery_photos?: PublicOfferGalleryPhoto[];
 }
 
 interface PublicOfferCustomerViewProps {
@@ -824,6 +826,11 @@ export const PublicOfferCustomerView = ({
           </div>
         )}
 
+        {/* Selected portfolio gallery — shown only when admin picked any photos */}
+        {offer.gallery_photos && offer.gallery_photos.length > 0 && (
+          <PublicOfferGallery photos={offer.gallery_photos} branding={branding} />
+        )}
+
         {/* Expert Contact */}
         <ExpertContactCard instance={instance} branding={branding} />
 
@@ -850,7 +857,9 @@ export const PublicOfferCustomerView = ({
                   <span>
                     {t('publicOffer.offerValidUntil')}:{' '}
                     <strong>
-                      {format(new Date(offer.valid_until), 'd MMMM yyyy', { locale: getDateLocale() })}
+                      {format(new Date(offer.valid_until), 'd MMMM yyyy', {
+                        locale: getDateLocale(),
+                      })}
                     </strong>
                   </span>
                 </div>
