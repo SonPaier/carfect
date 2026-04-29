@@ -36,6 +36,25 @@ Zastąpienie obecnego AI Analysta (`api/ai-analyst.ts` + `libs/ai/`) nowym agent
 - **Vanna Premium** — vendor lock-in, recurring cost, dane idą przez ich serwis
 - **Python (Vanna self-hosted)** — drugi runtime/deploy bez wyraźnego ROI
 
+## Wersje paczek (zweryfikowane na npm 2026-04-29)
+
+| Paczka                 | Wersja                                         |
+| ---------------------- | ---------------------------------------------- |
+| `langchain`            | `^1.3.5`                                       |
+| `@langchain/openai`    | `^1.4.5`                                       |
+| `@langchain/community` | `^1.1.27`                                      |
+| `@langchain/langgraph` | `^1.2.9` (transitive)                          |
+| `@ai-sdk/langchain`    | `^2.0.176` (bridge AI SDK ↔ LangChain)         |
+| `ai`                   | `^6.0.170` (już w stacku)                      |
+| `@ai-sdk/react`        | `^3.0.172` (już w stacku, dostarcza `useChat`) |
+
+**Ważne deprecations których unikamy** (zweryfikowane w docs):
+
+- ❌ `createOpenAIToolsAgent`, `AgentExecutor`, `initializeAgentExecutorWithOptions` — legacy, zastąpione przez `createAgent`
+- ❌ `LLMChain`, `RunnableSequence` (do agent loops) — legacy
+- ❌ `LangChainAdapter.toDataStreamResponse` z AI SDK v3/v4 — w v6 nie istnieje, używamy `@ai-sdk/langchain` `toUIMessageStream`
+- ❌ Closure capture `instance_id` w toolach — używamy `contextSchema` + `config.context`
+
 ## Architektura
 
 ```
@@ -115,16 +134,17 @@ Sześć narzędzi, każde z jasną odpowiedzialnością. Wszystkie z Zod schemam
 ### `run_sql`
 
 - **Input**: `{ sql: string, intent: string }`
-- **Output**: `{ rows, row_count, truncated, warning?, execution_ms }`
+- **Output**: `{ rows, row_count, truncated, warning?, execution_ms, auto_overview? }`
 - Wewnętrznie: `execute_readonly_query(sql, instance_id)` RPC
 - Walidator: tylko SELECT, bez `;`, bez DDL keywords, brak walidacji `instance_id` (RLS)
 - LIMIT 50 wstrzykiwany jeśli brak
+- **Hard-coded diagnostic guard**: gdy `row_count === 0`, narzędzie samo wyciąga z SQL pierwszą tabelę FROM-clause i odpala `data_overview` na niej, dokładając wynik jako `auto_overview` w response. Nie polegamy na LLM żeby zawsze pamiętał wywołać `data_overview` — robimy to po stronie kodu.
 
 ### `data_overview`
 
 - **Input**: `{ table: string, date_column?: string }`
 - **Output**: `{ total_rows, date_range?: {min, max, distinct_months}, null_count_in_date? }`
-- Diagnostic narzędzie wywoływane automatycznie gdy `run_sql` zwróci 0 wierszy
+- Wywoływane (a) automatycznie z `run_sql` przy 0 wierszach, lub (b) explicite przez agenta gdy chce zweryfikować dostępność danych przed query
 
 ### `make_chart`
 
@@ -138,13 +158,32 @@ Sześć narzędzi, każde z jasną odpowiedzialnością. Wszystkie z Zod schemam
 - `list_tables` / `describe_table` osobno — zlepione w `lookup_schema`
 - Bezpośredni `information_schema` — schema jest seed-owany
 
-### Agent loop config
+### Agent loop config (LangChain.js v1)
 
-- LangChain `createOpenAIToolsAgent` + `AgentExecutor`
-- `maxIterations: 12` (więcej niż obecne 5 — miejsce na diagnostic loop)
-- Streaming: `streamEvents` → konwertowane do AI SDK `UIMessageStream` przez `LangChainAdapter`
-- Tool error handling: error wraca do modelu jako tool result, model próbuje naprawić
-- Hard timeout: 60s (Vercel `maxDuration`)
+- **`createAgent`** z paczki `langchain` (v1.3+). To zastępuje legacy `createOpenAIToolsAgent` + `AgentExecutor` (już deprecated).
+- `model: new ChatOpenAI({ model: 'gpt-4.1', temperature: 0 })` (env-overridable)
+- **Iteration control**: brak prop `maxIterations` w v1. Używamy:
+  - `toolCallLimitMiddleware({ runLimit: 12, exitBehavior: 'end' })` — twardy limit liczby tool calls
+  - `recursionLimit: 25` (LangGraph default) — safety net na nieskończoną pętlę grafu
+- **Streaming**: `agent.stream({messages}, { streamMode: ['values', 'messages', 'custom'], context })` zwraca AsyncIterable. Tuple `[mode, chunk]`:
+  - `'values'` → snapshot stanu po każdym kroku
+  - `'messages'` → token-level LLM stream
+  - `'custom'` → wartości z `config.writer({...})` w toolach (używamy w `make_chart` żeby wyemitować `data-chart` part)
+- **Bridge do AI SDK v6** (`useChat` na froncie): paczka `@ai-sdk/langchain`. Server handler:
+  ```ts
+  import { toBaseMessages, toUIMessageStream } from '@ai-sdk/langchain';
+  import { createUIMessageStreamResponse } from 'ai';
+  const lcMessages = await toBaseMessages(uiMessages);
+  const stream = await agent.stream(
+    { messages: lcMessages },
+    { streamMode: ['values', 'messages', 'custom'], context },
+  );
+  return createUIMessageStreamResponse({ stream: toUIMessageStream(stream) });
+  ```
+- **Per-request context** (`instance_id`, `jwt`): `contextSchema: z.object({...})` na agencie + `agent.invoke/.stream(input, { context: {...} })`. W toolu czytane z `(args, config) => config.context.instance_id`. **Nie używamy closure** (problem z warm Vercel functions).
+- **Tool error handling**: domyślnie throw z toola **abortuje run**. Dodajemy własny middleware `wrapToolCall` który łapie błędy i zwraca `ToolMessage` z error message — model sam próbuje naprawić.
+- **Hard timeout**: 60s (Vercel `maxDuration`)
+- **TypeScript**: nowy kod zero `any` (CLAUDE.md). Typy Tool args/results inferowane z Zod schema
 
 ## Bezpieczeństwo i izolacja multi-tenant
 
@@ -188,9 +227,15 @@ CREATE POLICY "ai_analyst_tenant_isolation"
       WHERE ur.user_id = auth.uid() AND ur.instance_id = reservations.instance_id
     )
     OR
-    instance_id::text = current_setting('app.current_instance_id', true)
+    (
+      current_setting('app.current_instance_id', true) IS NOT NULL
+      AND current_setting('app.current_instance_id', true) <> ''
+      AND instance_id::text = current_setting('app.current_instance_id', true)
+    )
   );
 ```
+
+**Bezpieczeństwo connection pool** (PostgREST/PgBouncer): `set_config(..., true)` ustawia GUC jako **transaction-local** — wartość znika przy COMMIT/ROLLBACK. PostgREST otwiera transakcję per request, więc GUC nie wycieka między requestami nawet przy reuse pooled connection. Drugi gate w policy (`IS NOT NULL AND <> ''`) to defense-in-depth: ten branch nigdy nie aktywuje się dla zwykłego ruchu PostgREST gdzie GUC nie został ustawiony przez RPC.
 
 LLM **nie dodaje** `WHERE instance_id` — system prompt explicit. RLS automatycznie filtruje.
 
@@ -219,37 +264,55 @@ function validateSql(sql: string): string | null {
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- 20260430140100_ai_training_tables.sql
+-- Schema kompatybilna z LangChain SupabaseVectorStore (content + metadata + embedding):
+-- jedna kolumna `content` (do embeddowania), reszta w `metadata jsonb`.
+-- Trzy oddzielne tabele dla rozdzielenia retrieval-u (nie wspólnota content).
+
 CREATE TABLE ai_analyst_schema_chunks (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  schema_context text NOT NULL CHECK (schema_context IN ('carfect', 'hiservice')),
-  table_name text NOT NULL,
-  description text NOT NULL,
+  id bigserial PRIMARY KEY,
+  content text NOT NULL,             -- table_name + opis kolumn (to embedujemy)
+  metadata jsonb NOT NULL,           -- { schema_context, table_name, columns: [...] }
   embedding vector(1536),
   created_at timestamptz DEFAULT now()
 );
 
 CREATE TABLE ai_analyst_glossary (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  schema_context text NOT NULL,
-  term_pl text NOT NULL,
-  meaning text NOT NULL,
-  related_tables text[],
-  embedding vector(1536)
-);
-
-CREATE TABLE ai_analyst_training_examples (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  schema_context text NOT NULL,
-  question_pl text NOT NULL,
-  sql text NOT NULL,
-  notes text,
+  id bigserial PRIMARY KEY,
+  content text NOT NULL,             -- term_pl + meaning
+  metadata jsonb NOT NULL,           -- { schema_context, term_pl, meaning, related_tables }
   embedding vector(1536),
   created_at timestamptz DEFAULT now()
 );
 
-CREATE INDEX ON ai_analyst_schema_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-CREATE INDEX ON ai_analyst_glossary USING ivfflat (embedding vector_cosine_ops);
-CREATE INDEX ON ai_analyst_training_examples USING ivfflat (embedding vector_cosine_ops);
+CREATE TABLE ai_analyst_training_examples (
+  id bigserial PRIMARY KEY,
+  content text NOT NULL,             -- question_pl
+  metadata jsonb NOT NULL,           -- { schema_context, sql, notes }
+  embedding vector(1536),
+  created_at timestamptz DEFAULT now()
+);
+
+-- ivfflat: lists ≈ sqrt(rows). Startujemy z lists=10 (initial seed ~30-50 rows per table),
+-- ALTER INDEX gdy training set urośnie powyżej 1000 examples.
+CREATE INDEX ON ai_analyst_schema_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10);
+CREATE INDEX ON ai_analyst_glossary USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10);
+CREATE INDEX ON ai_analyst_training_examples USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10);
+
+-- match_* RPCs zgodne z signaturą oczekiwaną przez LangChain SupabaseVectorStore:
+-- match_<queryName>(query_embedding vector(1536), match_count int, filter jsonb)
+--   RETURNS TABLE (id bigint, content text, metadata jsonb, embedding jsonb, similarity float)
+CREATE FUNCTION match_schema_chunks(
+  query_embedding vector(1536), match_count int DEFAULT 5, filter jsonb DEFAULT '{}'
+) RETURNS TABLE (id bigint, content text, metadata jsonb, embedding jsonb, similarity float)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY
+  SELECT c.id, c.content, c.metadata, c.embedding::jsonb,
+         1 - (c.embedding <=> query_embedding) AS similarity
+  FROM ai_analyst_schema_chunks c
+  WHERE c.metadata @> filter
+  ORDER BY c.embedding <=> query_embedding LIMIT match_count;
+END $$;
+-- analogicznie: match_glossary, match_training_examples (filtruje przez metadata @> filter)
 
 ALTER TABLE ai_analyst_schema_chunks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "read_training_chunks" ON ai_analyst_schema_chunks
@@ -304,6 +367,8 @@ Loading states:
 - Po wysłaniu pytania: "Analizuję..."
 - Podczas tool callów: "•••"
 - Po pierwszym tokenie tekstu: spinner znika
+
+**i18n**: wszystkie user-facing stringi w `AiAnalystView` i sugestiach (`AiAnalystTab`) idą przez `t()` z `react-i18next`. Klucze w `apps/carfect/src/i18n/locales/pl.json` pod prefixem `aiAnalyst.*`. `libs/ai` jest shared — biblioteka przyjmuje `t` jako prop albo używa hooka `useTranslation()` (już dostępny w consumers). Polskie stringi w **system promptach i training data** (YAML) zostają hardcoded — tam Polski jest językiem agenta, nie UI.
 
 ### Charts (`libs/ai/src/charts/`)
 
@@ -390,6 +455,142 @@ Backend używa LangChain `streamEvents` → konwertuje przez `LangChainAdapter.t
 ### Integration test
 
 - RLS test sprawdzający że GUC izoluje cross-tenant (pgTAP albo SELECT-based w `supabase/tests/`)
+
+## Code skeleton (referencyjny)
+
+```ts
+// api/ai-analyst-v2.ts
+import {
+  createAgent,
+  tool,
+  toolCallLimitMiddleware,
+  createMiddleware,
+  ToolMessage,
+} from 'langchain';
+import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
+import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { toBaseMessages, toUIMessageStream } from '@ai-sdk/langchain';
+import { createUIMessageStreamResponse, type UIMessage } from 'ai';
+import { z } from 'zod';
+
+const ContextSchema = z.object({
+  instance_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+});
+
+// Tools (skeleton — pełne impls w api/lib/agent/tools/)
+const lookupSchema = tool(async ({ terms }, cfg) => fetchSchema(cfg.context.instance_id, terms), {
+  name: 'lookup_schema',
+  description: 'Find relevant tables/columns/glossary by terms.',
+  schema: z.object({ terms: z.array(z.string()) }),
+});
+const findSimilarQuestions = tool(async ({ question }, cfg) => searchExamples(question), {
+  name: 'find_similar_questions',
+  description: 'Few-shot retrieval.',
+  schema: z.object({ question: z.string() }),
+});
+const getToday = tool(async () => computeTodayBoundaries(), {
+  name: 'get_today',
+  description: 'Deterministic date helpers.',
+  schema: z.object({}),
+});
+const runSql = tool(
+  async ({ sql, intent }, cfg) => executeSql(cfg.context.instance_id, sql, intent),
+  {
+    name: 'run_sql',
+    description: 'Execute read-only SQL. RLS enforces tenant isolation.',
+    schema: z.object({ sql: z.string(), intent: z.string() }),
+  },
+);
+const dataOverview = tool(
+  async ({ table, date_column }, cfg) => overview(cfg.context.instance_id, table, date_column),
+  {
+    name: 'data_overview',
+    description: 'Row counts + date range for diagnostics.',
+    schema: z.object({ table: z.string(), date_column: z.string().optional() }),
+  },
+);
+const makeChart = tool(
+  async ({ type, title, data, x_key, y_keys, unit }, cfg) => {
+    cfg.writer?.({
+      type: 'chart',
+      id: crypto.randomUUID(),
+      spec: { type, title, data, x_key, y_keys, unit },
+    });
+    return 'Chart spec emitted to client.';
+  },
+  {
+    name: 'make_chart',
+    description: 'Render chart from results. Bar/line/pie.',
+    schema: ChartSpecSchema,
+  },
+);
+
+// Tool error → ToolMessage (model self-corrects instead of aborting run)
+const handleToolErrors = createMiddleware({
+  name: 'HandleToolErrors',
+  wrapToolCall: async (req, next) => {
+    try {
+      return await next(req);
+    } catch (e) {
+      return new ToolMessage({
+        content: `Tool error: ${(e as Error).message}. Try a different approach.`,
+        tool_call_id: req.toolCall.id!,
+      });
+    }
+  },
+});
+
+const agent = createAgent({
+  model: new ChatOpenAI({ model: process.env.AI_ANALYST_MODEL ?? 'gpt-4.1', temperature: 0 }),
+  tools: [lookupSchema, findSimilarQuestions, getToday, runSql, dataOverview, makeChart],
+  contextSchema: ContextSchema,
+  systemPrompt: SYSTEM_PROMPT, // patrz sekcja "Prompt structure" niżej
+  middleware: [handleToolErrors, toolCallLimitMiddleware({ runLimit: 12, exitBehavior: 'end' })],
+});
+
+export const config = { runtime: 'nodejs', maxDuration: 60 };
+
+export default async function handler(req: Request) {
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const user = await authenticateUser(req, supabase); // throws on 401
+  const instance_id = await resolveInstanceId(req, supabase, user); // throws on 403
+  await enforceRateLimit(supabase, user.id); // throws on 429
+
+  const { messages } = (await req.json()) as { messages: UIMessage[] };
+  const lcMessages = await toBaseMessages(messages);
+
+  const stream = await agent.stream(
+    { messages: lcMessages },
+    { streamMode: ['values', 'messages', 'custom'], context: { instance_id, user_id: user.id } },
+  );
+
+  // Logging usage z streamu — zapisujemy do ai_analyst_logs po zakończeniu
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream(stream, {
+      onFinish: ({ usage, finalMessage }) =>
+        logRequest(supabase, instance_id, user.id, usage, finalMessage),
+    }),
+  });
+}
+```
+
+**Frontend (`useAiAnalyst.ts` minor update)**:
+
+```ts
+const transport = new DefaultChatTransport({
+  api: '/api/ai-analyst-v2',
+  headers: async () => {
+    const { data } = await supabaseClient.auth.getSession();
+    return {
+      Authorization: `Bearer ${data.session?.access_token}`,
+      'X-Carfect-Instance': currentInstanceId,
+    };
+  },
+});
+return useChat({ transport });
+```
 
 ## Struktura plików (delta)
 
