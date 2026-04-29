@@ -23,6 +23,8 @@ interface CreateInvoiceDrawerProps {
   /** Table to query/update customer data. Defaults to 'customers'. */
   customerTable?: string;
   bankAccounts?: { name: string; number: string }[];
+  /** Pre-select a bank account by number (e.g. from the source sales order). */
+  defaultBankAccountNumber?: string;
   /** When set, drawer opens in EDIT mode and pre-loads invoice data from Fakturownia. */
   existingInvoiceId?: string;
   /** Optional incoming positions (e.g. from order edit) — triggers diff highlighting. */
@@ -44,6 +46,7 @@ export function CreateInvoiceDrawer({
   supabaseClient,
   customerTable,
   bankAccounts,
+  defaultBankAccountNumber,
   existingInvoiceId,
   incomingPositions,
 }: CreateInvoiceDrawerProps) {
@@ -63,6 +66,7 @@ export function CreateInvoiceDrawer({
     supabaseClient,
     customerTable,
     bankAccounts,
+    defaultBankAccountNumber,
     existingInvoiceId,
     incomingPositions,
   });

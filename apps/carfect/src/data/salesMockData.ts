@@ -52,6 +52,7 @@ export interface SalesOrder {
   invoiceProvider?: 'fakturownia' | 'ifirma';
   customerDiscount?: number;
   paymentMethod?: string;
+  bankAccountNumber?: string;
   deliveryType?: 'shipping' | 'pickup' | 'uber';
   createdBy?: string;
   createdByName?: string;

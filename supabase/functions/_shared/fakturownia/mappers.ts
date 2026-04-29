@@ -104,16 +104,12 @@ export function mapInternalInvoiceToFakturownia(
   if (data.currency) out.currency = data.currency;
   if (data.place) out.place = data.place;
   if (data.seller_person) out.seller_person = data.seller_person;
-  if (data.seller_name) out.seller_name = data.seller_name;
-  if (data.seller_tax_no) out.seller_tax_no = data.seller_tax_no;
-  if (data.seller_email) out.seller_email = data.seller_email;
-  if (data.seller_address) {
-    const { street, postCode, city } = parseAddress(data.seller_address);
-    if (street) out.seller_street = street;
-    if (postCode) out.seller_post_code = postCode;
-    if (city) out.seller_city = city;
-  }
-  if (data.bank_account) out.seller_bank_account = data.bank_account;
+  // Don't send seller_name / seller_tax_no / seller_address / seller_bank_account.
+  // Fakturownia's Department is identified by the (name, address, NIP, bank) tuple;
+  // if anything we send doesn't EXACTLY match an existing Department, Fakturownia
+  // tries to auto-create a new one and the security level blocks that with
+  // "Poziom zabezpieczenia przed zmianą konta bankowego nie pozwala na utworzenie działu".
+  // Let Fakturownia use the default Department configured in their settings.
 
   if (data.oid) {
     out.oid = data.oid;

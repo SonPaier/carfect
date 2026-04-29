@@ -61,16 +61,27 @@ Deno.test('mapInternalInvoiceToFakturownia - vat_rate 23 maps to tax: "23" (stri
   assertEquals(result.positions[0].tax, '23');
 });
 
-Deno.test('mapInternalInvoiceToFakturownia - bank_account renamed to seller_bank_account', () => {
-  const data: InternalInvoiceData = { ...baseInvoice, bank_account: 'PL12 3456 7890' };
-  const result = mapInternalInvoiceToFakturownia(data);
-  assertEquals(result.seller_bank_account, 'PL12 3456 7890');
-  assertEquals(
-    (result as Record<string, unknown>).bank_account,
-    undefined,
-    'should not contain raw "bank_account" key',
-  );
-});
+Deno.test(
+  'mapInternalInvoiceToFakturownia - never sends seller_bank_account or seller_* (uses Fakturownia default Department)',
+  () => {
+    const data: InternalInvoiceData = {
+      ...baseInvoice,
+      bank_account: 'PL12 3456 7890',
+      seller_name: 'Foo Sp. z o.o.',
+      seller_tax_no: '1234567890',
+      seller_email: 'seller@foo.pl',
+      seller_address: 'ul. X 1, 00-000 Warszawa',
+    };
+    const result = mapInternalInvoiceToFakturownia(data) as Record<string, unknown>;
+    assertEquals(result.seller_bank_account, undefined);
+    assertEquals(result.bank_account, undefined);
+    assertEquals(result.seller_name, undefined);
+    assertEquals(result.seller_tax_no, undefined);
+    assertEquals(result.seller_email, undefined);
+    assertEquals(result.seller_street, undefined);
+    assertEquals(result.seller_city, undefined);
+  },
+);
 
 Deno.test(
   'mapInternalInvoiceToFakturownia - empty buyer fields are skipped, not sent as ""',

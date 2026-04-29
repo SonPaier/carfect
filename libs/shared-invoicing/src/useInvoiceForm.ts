@@ -24,6 +24,8 @@ export interface UseInvoiceFormOptions {
   customerTable?: string;
   /** Available bank accounts from instance config */
   bankAccounts?: { name: string; number: string }[];
+  /** Pre-select this bank account (e.g. from the source sales order). Falls back to bankAccounts[0]. */
+  defaultBankAccountNumber?: string;
   /**
    * When set, the form opens in EDIT mode: it fetches the current state of the
    * invoice from Fakturownia (via get_invoice action), populates the form, and
@@ -55,6 +57,7 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     supabaseClient,
     customerTable = 'customers',
     bankAccounts = [],
+    defaultBankAccountNumber,
     existingInvoiceId,
     incomingPositions,
   } = options;
@@ -113,7 +116,10 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
     setBuyerCity('');
     setBuyerCountry('PL');
     setAutoSendEmail(settings?.auto_send_email ?? false);
-    setSelectedBankAccount(bankAccounts[0]?.number || '');
+    // Prefer order's chosen bank account if it exists in the available list,
+    // otherwise fall back to the first configured one.
+    const preferred = bankAccounts.find((a) => a.number === defaultBankAccountNumber)?.number;
+    setSelectedBankAccount(preferred || bankAccounts[0]?.number || '');
     setSplitPayment(false);
     setPaidAmount(0);
     if (initialPositions?.length) {
@@ -350,12 +356,14 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
       toast.error('Uzupelnij nazwy pozycji');
       return;
     }
-    if (positions.some((p) => p.quantity <= 0)) {
-      toast.error('Ilość musi być większa od 0');
+    const zeroQtyPos = positions.find((p) => p.quantity <= 0);
+    if (zeroQtyPos) {
+      toast.error(`Ilość musi być większa od 0 — pozycja "${zeroQtyPos.name || '(bez nazwy)'}"`);
       return;
     }
-    if (positions.some((p) => p.unit_price_gross < 0)) {
-      toast.error('Cena nie może być ujemna');
+    const negativePricePos = positions.find((p) => p.unit_price_gross < 0);
+    if (negativePricePos) {
+      toast.error(`Cena nie może być ujemna — pozycja "${negativePricePos.name || '(bez nazwy)'}"`);
       return;
     }
     if (paymentDays < 1) {
@@ -437,7 +445,23 @@ export function useInvoiceForm(open: boolean, options: UseInvoiceFormOptions) {
         body: requestBody,
       });
 
-      if (error) throw error;
+      // Supabase wraps non-2xx as FunctionsHttpError without parsing JSON body.
+      // Read the raw body so user sees Fakturownia's actual validation message.
+      if (error) {
+        let bodyText = '';
+        try {
+          bodyText = (await (error as { context?: Response })?.context?.text?.()) || '';
+        } catch {
+          /* ignore */
+        }
+        try {
+          const parsed = bodyText ? JSON.parse(bodyText) : null;
+          if (parsed?.error) throw new Error(parsed.error);
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected token') throw e;
+        }
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
 
       // Nadpisz cene zlecenia kwota netto z faktury

@@ -177,6 +177,34 @@ interface IfirmaConfigShape {
   invoice_api_key: string;
 }
 
+/** Try to parse Fakturownia 422 body shaped like { code: "error", message: { field: [msg, ...] } }. */
+function parseFakturownia422(body: string): { code: string; error: string } | null {
+  try {
+    const parsed = JSON.parse(body);
+    const messages = parsed?.message;
+    if (!messages || typeof messages !== 'object') return null;
+
+    // Bank-account department lock — user must add the bank account in Fakturownia → Działy
+    const deptMsgs = Array.isArray(messages.department) ? messages.department : null;
+    if (deptMsgs?.some((m: string) => /konta bankowego/i.test(m))) {
+      return {
+        code: 'fakturownia_bank_dept_locked',
+        error:
+          'Konto bankowe nie istnieje w Fakturowni. Dodaj je ręcznie: Fakturownia → Ustawienia → Działy.',
+      };
+    }
+
+    // Generic field validation — flatten to "field: msg"
+    const flat = Object.entries(messages)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : String(v)}`)
+      .join('; ');
+    if (flat) return { code: 'fakturownia_validation', error: flat };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function fakturowniaError(e: unknown): { error: string; code: string; status: number } {
   if (e instanceof FakturowniaApiError) {
     if (e.status === 404)
@@ -185,8 +213,11 @@ function fakturowniaError(e: unknown): { error: string; code: string; status: nu
         code: 'fakturownia_not_found',
         status: 404,
       };
-    if (e.status === 422)
+    if (e.status === 422) {
+      const parsed = parseFakturownia422(e.body || '');
+      if (parsed) return { ...parsed, status: 422 };
       return { error: e.body || 'Operacja niedozwolona', code: 'fakturownia_locked', status: 422 };
+    }
     if (e.status >= 500)
       return { error: 'Fakturownia niedostępna', code: 'fakturownia_unreachable', status: 502 };
     return { error: e.body || e.message, code: 'invalid_payload', status: e.status };
