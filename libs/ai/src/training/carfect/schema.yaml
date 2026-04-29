@@ -1,0 +1,373 @@
+- table_name: reservations
+  description: |
+    Rezerwacje klientów na usługi detailingowe i PPF — główna tabela przychodów i obłożenia.
+    Kluczowe kolumny: customer_name, customer_phone, vehicle_plate, reservation_date, end_date,
+    start_time, end_time, status (enum: pending/confirmed/in_progress/completed/cancelled/no_show/change_request),
+    price (łączna kwota), service_items (jsonb array: [{id, name, price}]), station_id, assigned_employee_ids (jsonb).
+    UWAGA: NIE ma kolumny customer_id — łączenie z customers przez customer_phone.
+    UWAGA: service_items może być NULL — zawsze dodaj "service_items IS NOT NULL" przed jsonb_array_elements.
+    Przychód = SUM(price) WHERE status = 'completed'. Anulowane i no_show NIE wliczają się do przychodu.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: customer_name, type: text }
+    - { name: customer_phone, type: text }
+    - { name: customer_email, type: text }
+    - { name: vehicle_plate, type: text }
+    - { name: car_size, type: enum, values: [small, medium, large] }
+    - { name: service_items, type: jsonb }
+    - { name: reservation_date, type: date }
+    - { name: end_date, type: date }
+    - { name: start_time, type: timestamptz }
+    - { name: end_time, type: timestamptz }
+    - { name: status, type: enum, values: [pending, confirmed, in_progress, completed, cancelled, no_show, change_request] }
+    - { name: price, type: numeric }
+    - { name: station_id, type: uuid }
+    - { name: assigned_employee_ids, type: jsonb }
+    - { name: offer_number, type: text }
+    - { name: confirmation_code, type: text }
+    - { name: admin_notes, type: text }
+    - { name: customer_notes, type: text }
+    - { name: created_at, type: timestamptz }
+    - { name: completed_at, type: timestamptz }
+    - { name: cancelled_at, type: timestamptz }
+
+- table_name: customers
+  description: |
+    Dane master klientów warsztatu. Łączenie z reservations odbywa się przez phone (NIE customer_id — kolumna nie istnieje w reservations).
+    has_no_show = true oznacza klienta który wcześniej nie pojawił się na wizycie.
+    discount_percent — rabat stosowany przy wycenie oferty.
+    is_net_payer = true oznacza klienta B2B (wystawia się fakturę netto z NIP).
+    sms_consent = true oznacza zgodę na SMS-y marketingowe i przypomnienia.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: phone, type: text }
+    - { name: email, type: text }
+    - { name: company, type: text }
+    - { name: nip, type: text }
+    - { name: address, type: text }
+    - { name: notes, type: text }
+    - { name: discount_percent, type: numeric }
+    - { name: is_net_payer, type: boolean }
+    - { name: has_no_show, type: boolean }
+    - { name: sms_consent, type: boolean }
+    - { name: created_at, type: timestamptz }
+
+- table_name: customer_vehicles
+  description: |
+    Pojazdy powiązane z klientami. Jeden klient może mieć wiele pojazdów.
+    usage_count — ile razy pojazd był serwisowany. last_used_at — data ostatniej wizyty z tym pojazdem.
+    Łączenie z customers przez customer_id lub phone.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: customer_id, type: uuid }
+    - { name: phone, type: text }
+    - { name: model, type: text }
+    - { name: plate, type: text }
+    - { name: car_size, type: enum, values: [small, medium, large] }
+    - { name: usage_count, type: integer }
+    - { name: last_used_at, type: timestamptz }
+
+- table_name: stations
+  description: |
+    Stanowiska / boxy warsztatowe. Każda rezerwacja przypisana jest do jednego stanowiska (station_id).
+    type — typ stanowiska (np. detailing, ppf). active — czy stanowisko jest aktywne.
+    color — kolor w kalendarzu. sort_order — kolejność wyświetlania.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: type, type: text }
+    - { name: active, type: boolean }
+    - { name: color, type: text }
+    - { name: sort_order, type: integer }
+
+- table_name: employees
+  description: |
+    Pracownicy warsztatu. assigned_employee_ids w reservations to jsonb array UUID-ów pracowników.
+    hourly_rate — stawka godzinowa używana do obliczeń kosztów pracy.
+    deleted_at — soft delete (pracownicy nie są usuwani twardo, żeby zachować historię).
+    Przy zapytaniach o aktywnych pracowników: WHERE active = true AND deleted_at IS NULL.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: photo_url, type: text }
+    - { name: hourly_rate, type: numeric }
+    - { name: active, type: boolean }
+    - { name: sort_order, type: integer }
+    - { name: deleted_at, type: timestamptz }
+
+- table_name: unified_services
+  description: |
+    Katalog usług warsztatu (detailing, PPF, ceramika, mycie itp.).
+    Ceny mogą być stałe lub uzależnione od rozmiaru pojazdu (price_small/medium/large).
+    price_from = true oznacza cenę "od" (minimalną). service_type określa typ usługi.
+    deleted_at — soft delete. Przy zapytaniach o aktywne usługi: WHERE active = true AND deleted_at IS NULL.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: category_id, type: uuid }
+    - { name: name, type: text }
+    - { name: short_name, type: text }
+    - { name: default_price, type: numeric }
+    - { name: price_small, type: numeric }
+    - { name: price_medium, type: numeric }
+    - { name: price_large, type: numeric }
+    - { name: price_from, type: boolean }
+    - { name: duration_minutes, type: integer }
+    - { name: active, type: boolean }
+    - { name: service_type, type: text }
+    - { name: unit, type: text }
+    - { name: deleted_at, type: timestamptz }
+
+- table_name: unified_categories
+  description: |
+    Kategorie usług (np. Detailing, PPF, Ceramika, Mycie). Grupują unified_services.
+    category_type — typ kategorii. slug — identyfikator URL-friendly.
+    deleted_at — soft delete. active — czy kategoria jest aktywna.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: slug, type: text }
+    - { name: category_type, type: text }
+    - { name: sort_order, type: integer }
+    - { name: active, type: boolean }
+    - { name: deleted_at, type: timestamptz }
+
+- table_name: offers
+  description: |
+    Oferty cenowe wysyłane do klientów (głównie dla usług PPF/ceramiki).
+    status enum: draft/sent/viewed/approved/rejected.
+    customer_data i vehicle_data to jsonb z danymi klienta i pojazdu w momencie tworzenia oferty.
+    Konwersja = approved/(sent+viewed+approved+rejected). total_price — łączna wartość oferty.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: offer_number, type: text }
+    - { name: status, type: enum, values: [draft, sent, viewed, approved, rejected] }
+    - { name: total_price, type: numeric }
+    - { name: customer_data, type: jsonb }
+    - { name: vehicle_data, type: jsonb }
+    - { name: created_at, type: timestamptz }
+    - { name: sent_at, type: timestamptz }
+    - { name: approved_at, type: timestamptz }
+
+- table_name: offer_options
+  description: |
+    Opcje w ramach oferty (np. różne warianty PPF: przód, cały pojazd).
+    Każda opcja należy do oferty (offer_id) i zakresu (scope_id).
+    is_selected — czy opcja została wybrana przez klienta przy akceptacji oferty.
+  columns:
+    - { name: id, type: uuid }
+    - { name: offer_id, type: uuid }
+    - { name: scope_id, type: uuid }
+    - { name: name, type: text }
+    - { name: sort_order, type: integer }
+    - { name: is_selected, type: boolean }
+
+- table_name: offer_option_items
+  description: |
+    Pozycje cennikowe w opcji oferty (produkty/usługi z ceną i ilością).
+    price — cena jednostkowa, quantity — ilość, product_id — powiązany produkt z katalogu.
+    custom_name — jeśli pozycja nie jest z katalogu (ręcznie wpisana nazwa).
+  columns:
+    - { name: id, type: uuid }
+    - { name: option_id, type: uuid }
+    - { name: product_id, type: uuid }
+    - { name: name, type: text }
+    - { name: custom_name, type: text }
+    - { name: price, type: numeric }
+    - { name: quantity, type: numeric }
+    - { name: sort_order, type: integer }
+
+- table_name: offer_scopes
+  description: |
+    Zakresy (sekcje) oferty — np. "PPF", "Ceramika", "Dodatki".
+    has_unified_services — czy zakres korzysta z katalogu usług.
+    is_extras_scope — czy to zakres "dodatków" (akcesoria, usługi dodatkowe).
+    active i deleted_at do filtrowania aktywnych zakresów.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: short_name, type: text }
+    - { name: is_extras_scope, type: boolean }
+    - { name: has_unified_services, type: boolean }
+    - { name: sort_order, type: integer }
+    - { name: active, type: boolean }
+
+- table_name: vehicle_protocols
+  description: |
+    Protokoły przyjęcia i wydania pojazdu (dokumentacja stanu technicznego).
+    protocol_type: reception = przyjęcie pojazdu, release = wydanie pojazdu.
+    Powiązane z ofertą przez offer_id. status — czy protokół jest kompletny.
+    fuel_level, odometer_reading — stan pojazdu w momencie przyjęcia/wydania.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: offer_id, type: uuid }
+    - { name: customer_name, type: text }
+    - { name: vehicle_model, type: text }
+    - { name: registration_number, type: text }
+    - { name: fuel_level, type: text }
+    - { name: odometer_reading, type: numeric }
+    - { name: body_type, type: text }
+    - { name: protocol_type, type: enum, values: [reception, release] }
+    - { name: status, type: text }
+    - { name: protocol_date, type: date }
+    - { name: notes, type: text }
+
+- table_name: sales_orders
+  description: |
+    Zamówienia sprzedażowe — głównie sprzedaż folii PPF/PPS (tzw. "foliarz").
+    status — stan zamówienia. total_amount — łączna wartość zamówienia.
+    customer_id — FK do sales_customers (NIE do customers!).
+    Przychód ze sprzedaży foliarskiej = SUM(total_amount) WHERE status = 'completed'.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: status, type: text }
+    - { name: total_amount, type: numeric }
+    - { name: customer_id, type: uuid }
+    - { name: created_at, type: timestamptz }
+
+- table_name: sales_order_items
+  description: |
+    Pozycje zamówień sprzedażowych. Każda pozycja to produkt/wariant z ilością i ceną.
+    unit_price — cena jednostkowa, total_price — unit_price * quantity.
+    Łączenie z sales_orders przez order_id, z produktami przez product_id i variant_id.
+  columns:
+    - { name: id, type: uuid }
+    - { name: order_id, type: uuid }
+    - { name: product_id, type: uuid }
+    - { name: variant_id, type: uuid }
+    - { name: quantity, type: numeric }
+    - { name: unit_price, type: numeric }
+    - { name: total_price, type: numeric }
+
+- table_name: sales_customers
+  description: |
+    Klienci modułu sprzedażowego (foliarz). Odrębna tabela od customers detailingowych.
+    is_net_payer = true oznacza klienta B2B. discount_percent — domyślny rabat.
+    default_currency — waluta rozliczeniowa (PLN, EUR, USD).
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: phone, type: text }
+    - { name: email, type: text }
+    - { name: nip, type: text }
+    - { name: company, type: text }
+    - { name: default_currency, type: text }
+    - { name: is_net_payer, type: boolean }
+    - { name: discount_percent, type: numeric }
+
+- table_name: sales_products
+  description: |
+    Katalog produktów sprzedażowych (folie PPF, PPS, ceramika w słoiku, akcesoria).
+    sku — unikalny kod produktu. category — kategoria produktu.
+    active = false — produkt wycofany ze sprzedaży (nie wyświetlaj w nowych zamówieniach).
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: name, type: text }
+    - { name: sku, type: text }
+    - { name: category, type: text }
+    - { name: active, type: boolean }
+
+- table_name: trainings
+  description: |
+    Szkolenia pracowników i kursy — rezerwacje blokujące stanowiska na czas szkolenia.
+    training_type — typ szkolenia. assigned_employee_ids — uczestnicy (jsonb array UUIDów).
+    start_date/end_date + start_time/end_time — czas trwania. status — stan szkolenia.
+    UWAGA: trainings są wyjątkiem od reguł rezerwacji wielodniowych — mogą trwać wiele dni.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: training_type, type: text }
+    - { name: title, type: text }
+    - { name: start_date, type: date }
+    - { name: end_date, type: date }
+    - { name: start_time, type: timestamptz }
+    - { name: end_time, type: timestamptz }
+    - { name: station_id, type: uuid }
+    - { name: status, type: text }
+    - { name: assigned_employee_ids, type: jsonb }
+
+- table_name: followup_events
+  description: |
+    Zdarzenia follow-up dla klientów — np. kontakt po usłudze, oferta ponowna.
+    status — stan zdarzenia (open/closed/snoozed). next_reminder_date — kiedy przypomnieć.
+    customer_id FK do customers, customer_name i customer_phone zdublowane dla szybszego wyświetlania.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: customer_id, type: uuid }
+    - { name: customer_name, type: text }
+    - { name: customer_phone, type: text }
+    - { name: notes, type: text }
+    - { name: status, type: text }
+    - { name: next_reminder_date, type: date }
+
+- table_name: customer_reminders
+  description: |
+    Przypomnienia dla klientów o przeglądach, odnawianiu powłoki ceramicznej itp.
+    scheduled_date — kiedy przypomnienie ma być wysłane. sent_at — kiedy faktycznie wysłano.
+    status: pending/sent/failed. vehicle_plate — rejestracja pojazdu dla kontekstu przypomnienia.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: customer_name, type: text }
+    - { name: customer_phone, type: text }
+    - { name: vehicle_plate, type: text }
+    - { name: scheduled_date, type: date }
+    - { name: status, type: text }
+    - { name: sent_at, type: timestamptz }
+
+- table_name: sms_logs
+  description: |
+    Logi wysłanych wiadomości SMS — potwierdzenia, przypomnienia, kampanie marketingowe.
+    message_type — typ wiadomości (confirmation, reminder, marketing itp.).
+    status: sent/failed/pending. phone — numer odbiorcy.
+    Używaj do analizy wolumenu SMS i skuteczności dostarczenia.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: phone, type: text }
+    - { name: message, type: text }
+    - { name: message_type, type: text }
+    - { name: status, type: text }
+    - { name: created_at, type: timestamptz }
+
+- table_name: time_entries
+  description: |
+    Ewidencja czasu pracy pracowników. entry_type — typ wpisu (work, break, training).
+    total_minutes — czas trwania w minutach. Używaj do obliczania godzin przepracowanych i kosztów.
+    entry_date — data wpisu. start_time/end_time — godziny rozpoczęcia i zakończenia.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: employee_id, type: uuid }
+    - { name: entry_date, type: date }
+    - { name: start_time, type: timestamptz }
+    - { name: end_time, type: timestamptz }
+    - { name: total_minutes, type: integer }
+    - { name: entry_type, type: text }
+
+- table_name: employee_days_off
+  description: |
+    Urlopy i dni wolne pracowników. date_from/date_to — zakres dat urlopu.
+    day_off_type — typ (urlop wypoczynkowy, zwolnienie lekarskie, dzień wolny itp.).
+    Używaj do filtrowania dostępności pracowników i obliczania dni urlopowych.
+  columns:
+    - { name: id, type: uuid }
+    - { name: instance_id, type: uuid }
+    - { name: employee_id, type: uuid }
+    - { name: date_from, type: date }
+    - { name: date_to, type: date }
+    - { name: day_off_type, type: text }
