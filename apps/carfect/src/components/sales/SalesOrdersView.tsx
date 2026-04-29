@@ -394,6 +394,7 @@ const SalesOrdersView = () => {
         invoiceTotalNet: inv?.total_net ?? undefined,
         invoiceProvider: inv?.provider || undefined,
         paymentMethod: o.payment_method || undefined,
+        bankAccountNumber: o.bank_account_number || undefined,
         deliveryType: (o.delivery_type as SalesOrder['deliveryType']) || undefined,
       };
     });
@@ -1561,6 +1562,7 @@ const SalesOrdersView = () => {
           supabaseClient={supabase}
           customerTable="sales_customers"
           bankAccounts={bankAccounts}
+          defaultBankAccountNumber={invoiceDrawerState.order.bankAccountNumber}
         />
       )}
       {bulkInvoiceState.open && bulkInvoiceState.orders.length > 0 && (
@@ -1616,6 +1618,7 @@ const SalesOrdersView = () => {
           supabaseClient={supabase}
           customerTable="sales_customers"
           bankAccounts={bankAccounts}
+          defaultBankAccountNumber={bulkInvoiceState.orders[0]?.bankAccountNumber}
         />
       )}
       <Dialog
