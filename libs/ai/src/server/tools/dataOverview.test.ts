@@ -16,18 +16,18 @@ describe('computeDataOverview', () => {
   });
 
   it('returns date range when date_column given', async () => {
-    const calls: string[] = [];
+    let call = 0;
     const supabase = {
       from: vi.fn().mockImplementation(() => ({
-        select: vi.fn().mockImplementation((cols: string) => {
-          calls.push(cols);
-          if (cols.includes('count')) return Promise.resolve({ count: 100, error: null });
-          if (cols.includes('min'))
-            return Promise.resolve({
-              data: [{ min: '2024-01-01', max: '2026-04-30' }],
-              error: null,
-            });
-          return Promise.resolve({ data: [], error: null });
+        select: vi.fn().mockImplementation(() => {
+          call++;
+          // First call is select('*', {count:'exact', head:true}) → total count
+          // Second call is select('min:col.min(),max:col.max()') → range
+          if (call === 1) return Promise.resolve({ count: 100, error: null });
+          return Promise.resolve({
+            data: [{ min: '2024-01-01', max: '2026-04-30' }],
+            error: null,
+          });
         }),
       })),
     } as unknown as Parameters<typeof computeDataOverview>[0];
