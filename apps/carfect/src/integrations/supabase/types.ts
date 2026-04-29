@@ -1409,6 +1409,8 @@ export type Database = {
           buyer_email: string | null;
           buyer_name: string | null;
           buyer_tax_no: string | null;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
           created_at: string | null;
           currency: string | null;
           customer_id: string | null;
@@ -1439,6 +1441,8 @@ export type Database = {
           buyer_email?: string | null;
           buyer_name?: string | null;
           buyer_tax_no?: string | null;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
           created_at?: string | null;
           currency?: string | null;
           customer_id?: string | null;
@@ -1469,6 +1473,8 @@ export type Database = {
           buyer_email?: string | null;
           buyer_name?: string | null;
           buyer_tax_no?: string | null;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
           created_at?: string | null;
           currency?: string | null;
           customer_id?: string | null;

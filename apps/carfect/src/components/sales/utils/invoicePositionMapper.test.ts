@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapProductToInvoicePosition } from './invoicePositionMapper';
+import { mapProductToInvoicePosition, bruttoCostToInvoicePosition } from './invoicePositionMapper';
 import type { SalesOrderProduct } from '@/data/salesMockData';
 
 function makeProduct(overrides: Partial<SalesOrderProduct>): SalesOrderProduct {
@@ -134,5 +134,109 @@ describe('mapProductToInvoicePosition', () => {
       const result = mapProductToInvoicePosition(product);
       expect(result.vat_rate).toBe(23);
     });
+  });
+
+  describe('priceUnit fallback (OrderProduct shape)', () => {
+    it('reads priceUnit when unit field absent', () => {
+      const product = { name: 'X', quantity: 1, priceNet: 10, priceUnit: 'meter' } as Parameters<
+        typeof mapProductToInvoicePosition
+      >[0];
+      const result = mapProductToInvoicePosition(product);
+      expect(result.unit).toBe('m2');
+    });
+
+    it('prefers unit over priceUnit when both present', () => {
+      const product = {
+        name: 'X',
+        quantity: 1,
+        priceNet: 10,
+        unit: 'meter',
+        priceUnit: 'piece',
+      } as Parameters<typeof mapProductToInvoicePosition>[0];
+      const result = mapProductToInvoicePosition(product);
+      expect(result.unit).toBe('m2');
+    });
+  });
+
+  describe('roll meter products: effective quantity from assignments / requiredMb', () => {
+    it('sums usageM2 from rollAssignments when present (ignores raw quantity=1)', () => {
+      const product = {
+        name: 'Ultrafit XP Black - 1524mm',
+        quantity: 1,
+        priceNet: 309,
+        productType: 'roll',
+        priceUnit: 'meter',
+        rollAssignments: [
+          { usageM2: 12.19, widthMm: 1524 },
+          { usageM2: 3.05, widthMm: 1524 },
+        ],
+      } as Parameters<typeof mapProductToInvoicePosition>[0];
+      const result = mapProductToInvoicePosition(product);
+      expect(result.quantity).toBeCloseTo(15.24, 5);
+    });
+
+    it('throws when roll product name has no width and no roll assignments', () => {
+      const product = {
+        name: 'Ultrafit XP Black',
+        quantity: 1,
+        priceNet: 309,
+        productType: 'roll',
+        priceUnit: 'meter',
+        requiredMb: 8,
+      } as Parameters<typeof mapProductToInvoicePosition>[0];
+      expect(() => mapProductToInvoicePosition(product)).toThrow(/szerokości/i);
+    });
+
+    it('extracts width from product name (e.g. "1220mm")', () => {
+      const product = {
+        name: 'Ultrafit XP Black - 1220mm',
+        quantity: 1,
+        priceNet: 309,
+        productType: 'roll',
+        priceUnit: 'meter',
+        requiredMb: 10,
+      } as Parameters<typeof mapProductToInvoicePosition>[0];
+      const result = mapProductToInvoicePosition(product);
+      // 10 mb * 1.220 m = 12.2 m²
+      expect(result.quantity).toBeCloseTo(12.2, 1);
+    });
+
+    it('rollAssignments override requiredMb when both present', () => {
+      const product = {
+        name: 'X - 1524mm',
+        quantity: 1,
+        priceNet: 309,
+        productType: 'roll',
+        priceUnit: 'meter',
+        requiredMb: 100,
+        rollAssignments: [{ usageM2: 5, widthMm: 1524 }],
+      } as Parameters<typeof mapProductToInvoicePosition>[0];
+      const result = mapProductToInvoicePosition(product);
+      expect(result.quantity).toBe(5);
+    });
+  });
+});
+
+describe('bruttoCostToInvoicePosition', () => {
+  it('converts brutto to net using 23% VAT and rounds to 2 decimals', () => {
+    const result = bruttoCostToInvoicePosition(123, 'Wysyłka');
+    // 123 / 1.23 = 100.00
+    expect(result.unit_price_gross).toBe(100);
+    expect(result.name).toBe('Wysyłka');
+    expect(result.vat_rate).toBe(23);
+    expect(result.unit).toBe('szt.');
+    expect(result.quantity).toBe(1);
+    expect(result.discount).toBe(0);
+  });
+
+  it('rounds non-trivial division correctly', () => {
+    // 75 / 1.23 = 60.9756... → 60.98
+    const result = bruttoCostToInvoicePosition(75, 'Uber');
+    expect(result.unit_price_gross).toBe(60.98);
+  });
+
+  it('handles zero amount', () => {
+    const result = bruttoCostToInvoicePosition(0, 'free shipping');
+    expect(result.unit_price_gross).toBe(0);
   });
 });

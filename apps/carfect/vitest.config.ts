@@ -18,6 +18,7 @@ export default defineConfig({
       '../../libs/protocol-config/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/pdf/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/post-sale-instructions/src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/shared-invoicing/src/**/*.{test,spec}.{ts,tsx}',
     ],
     coverage: {
       reporter: ['text', 'html'],

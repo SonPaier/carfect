@@ -69,6 +69,12 @@ vi.mock('./AddSalesOrderDrawer', () => ({
 
 vi.mock('@shared/invoicing', () => ({
   CreateInvoiceDrawer: () => null,
+  useInvoiceMutations: () => ({
+    sendByEmail: vi.fn(),
+    cancelInvoice: vi.fn(),
+    downloadPdf: vi.fn(),
+    pendingAction: null,
+  }),
 }));
 
 // --- Test data ---
@@ -244,9 +250,7 @@ describe('SalesOrdersView', () => {
     const user = userEvent.setup();
     render(<SalesOrdersView />);
 
-    const searchInput = screen.getByPlaceholderText(
-      'Szukaj po firmie, mieście, osobie...',
-    );
+    const searchInput = screen.getByPlaceholderText('Szukaj po firmie, mieście, osobie...');
     expect(searchInput).toBeInTheDocument();
 
     await user.type(searchInput, 'ABC');

@@ -244,8 +244,11 @@ describe('PackageCard', () => {
     it('displays shipping cost when shippingCost is set on package', () => {
       render(<PackageCard {...defaultProps} pkg={{ ...basePackage, shippingCost: 12.4 }} />);
 
-      expect(screen.getByText(/Cena wysyłki:/)).toBeInTheDocument();
-      expect(screen.getByText(/12,40 zł/)).toBeInTheDocument();
+      expect(screen.getByText(/Kwota brutto/)).toBeInTheDocument();
+      const input = document.querySelector(
+        'input[inputmode="decimal"][placeholder="0,00"]',
+      ) as HTMLInputElement;
+      expect(input?.value).toBe('12.4');
     });
 
     it('does not display shipping cost when shippingCost is not set', () => {
@@ -531,7 +534,7 @@ describe('PackageCard', () => {
       );
 
       const input = document.querySelector(
-        'input[inputmode="decimal"][placeholder="0.00"]',
+        'input[inputmode="decimal"][placeholder="0,00"]',
       ) as HTMLInputElement;
       expect(input).toBeInTheDocument();
       await user.type(input, '42.5');
@@ -555,7 +558,7 @@ describe('PackageCard', () => {
       );
 
       const input = document.querySelector(
-        'input[inputmode="decimal"][placeholder="0.00"]',
+        'input[inputmode="decimal"][placeholder="0,00"]',
       ) as HTMLInputElement;
       expect(input).toBeInTheDocument();
       expect(input.value).toBe('75');

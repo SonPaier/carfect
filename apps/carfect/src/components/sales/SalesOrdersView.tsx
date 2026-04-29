@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { mapProductToInvoicePosition } from './utils/invoicePositionMapper';
+import {
+  mapProductToInvoicePosition,
+  bruttoCostToInvoicePosition,
+} from './utils/invoicePositionMapper';
 import { type AddressData } from './order-drawer/AddressFields';
 import { toast } from 'sonner';
 import AddSalesOrderDrawer from './AddSalesOrderDrawer';
@@ -50,12 +53,12 @@ import {
   SelectValue,
 } from '@shared/ui';
 import { CreateInvoiceDrawer } from '@shared/invoicing';
+import { SalesOrderInvoiceActions } from './SalesOrderInvoiceActions';
+import { OrderInvoiceMenuItems } from './order-row/OrderInvoiceMenuItems';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { type SalesOrder } from '@/data/salesMockData';
-import { VAT_RATE } from './constants';
-
 type PaymentStatus = SalesOrder['paymentStatus'];
 
 const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { labelKey: string; className: string }> = {
@@ -114,12 +117,7 @@ export const getNextOrderNumber = async (
   return `${(count || 0) + 1}/${monthStr}/${year}`;
 };
 
-type SortColumn =
-  | 'orderNumber'
-  | 'customerName'
-  | 'createdAt'
-  | 'status'
-  | 'totalNet';
+type SortColumn = 'orderNumber' | 'customerName' | 'createdAt' | 'status' | 'totalNet';
 type SortDirection = 'asc' | 'desc';
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -169,6 +167,10 @@ const SalesOrdersView = () => {
   const [invoiceDrawerState, setInvoiceDrawerState] = useState<{
     open: boolean;
     order: SalesOrder | null;
+    /** When set, opens drawer in EDIT mode pre-loading the existing invoice. */
+    editInvoiceId?: string;
+    /** When set, drawer opens in edit-with-diff mode (passed as incomingPositions). */
+    incomingPositions?: import('@shared/invoicing').InvoicePosition[];
   }>({ open: false, order: null });
   const [bulkInvoiceState, setBulkInvoiceState] = useState<{
     open: boolean;
@@ -266,16 +268,42 @@ const SalesOrdersView = () => {
     const orderIds = (data || []).map((o) => o.id);
     const invoiceMap: Record<
       string,
-      { id: string; invoice_number: string; status: string; pdf_url: string; external_invoice_id: string | null; total_gross: number | null }
+      {
+        id: string;
+        invoice_number: string;
+        status: string;
+        pdf_url: string;
+        external_invoice_id: string | null;
+        total_gross: number | null;
+        total_net: number | null;
+        provider: 'fakturownia' | 'ifirma';
+      }
     > = {};
     if (orderIds.length > 0) {
       const { data: invoices, error: invError } = await supabase
         .from('invoices')
-        .select('id, sales_order_id, invoice_number, status, pdf_url, external_invoice_id, total_gross')
+        .select(
+          'id, sales_order_id, invoice_number, status, pdf_url, external_invoice_id, total_gross, positions, provider',
+        )
         .in('sales_order_id', orderIds);
       if (!invError && invoices) {
         for (const inv of invoices) {
-          invoiceMap[inv.sales_order_id] = inv;
+          // Per-position net sum — handles mixed VAT rates correctly (incl. zw at vat_rate=-1).
+          // unit_price_gross in stored positions is already brutto (mapper-converted on submit).
+          const positions = (inv.positions ?? []) as Array<{
+            unit_price_gross: number;
+            quantity: number;
+            vat_rate: number;
+            discount?: number;
+          }>;
+          const total_net = positions.reduce((sum, p) => {
+            const rate = p.vat_rate === -1 ? 0 : Number(p.vat_rate) / 100;
+            const unitNet =
+              rate > 0 ? Number(p.unit_price_gross) / (1 + rate) : Number(p.unit_price_gross);
+            const lineNet = unitNet * Number(p.quantity) * (1 - (Number(p.discount) || 0) / 100);
+            return sum + lineNet;
+          }, 0);
+          invoiceMap[inv.sales_order_id] = { ...inv, total_net: Math.round(total_net * 100) / 100 };
         }
       }
     }
@@ -346,11 +374,13 @@ const SalesOrdersView = () => {
         comment: o.comment || undefined,
         status: o.status as SalesOrder['status'],
         paymentStatus: inv
-          ? inv.status === 'paid'
-            ? o.payment_status === 'collective'
-              ? 'collective_paid'
-              : 'invoice_paid'
-            : 'invoice_unpaid'
+          ? inv.status === 'cancelled'
+            ? ((o.payment_status || 'unpaid') as PaymentStatus)
+            : inv.status === 'paid'
+              ? o.payment_status === 'collective'
+                ? 'collective_paid'
+                : 'invoice_paid'
+              : 'invoice_unpaid'
           : ((o.payment_status || 'unpaid') as PaymentStatus),
         trackingNumber: o.tracking_number || undefined,
         trackingUrl: o.apaczka_tracking_url || undefined,
@@ -361,6 +391,8 @@ const SalesOrdersView = () => {
         invoicePdfUrl: inv?.pdf_url || undefined,
         invoiceExternalId: inv?.external_invoice_id || undefined,
         invoiceTotalGross: inv?.total_gross ?? undefined,
+        invoiceTotalNet: inv?.total_net ?? undefined,
+        invoiceProvider: inv?.provider || undefined,
         paymentMethod: o.payment_method || undefined,
         deliveryType: (o.delivery_type as SalesOrder['deliveryType']) || undefined,
       };
@@ -1012,8 +1044,11 @@ const SalesOrdersView = () => {
             ) : (
               orders.map((order) => {
                 const isExpanded = expandedRows.has(order.id);
-                const invoiceNetMismatch = order.invoiceTotalGross != null &&
-                  Math.abs(Math.round(order.invoiceTotalGross / 1.23 * 100) / 100 - order.totalNet) > 1;
+                const invoiceNetMismatch =
+                  order.invoiceTotalGross != null &&
+                  Math.abs(
+                    Math.round((order.invoiceTotalGross / 1.23) * 100) / 100 - order.totalNet,
+                  ) > 1;
 
                 return (
                   <Fragment key={order.id}>
@@ -1058,30 +1093,57 @@ const SalesOrdersView = () => {
                         {format(parseISO(order.createdAt), 'dd.MM.yyyy')}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {order.invoiceNumber ? (
-                          <div>
-                            {order.invoicePdfUrl ? (
-                              <a
-                                href={order.invoicePdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {order.invoiceNumber}
-                              </a>
-                            ) : (
-                              <span>{order.invoiceNumber}</span>
-                            )}
-                            {order.invoiceTotalGross != null && (
-                              <div className={`text-xs tabular-nums ${
-                                invoiceNetMismatch
-                                  ? 'text-red-600 font-medium'
-                                  : 'text-muted-foreground'
-                              }`}>
-                                {formatCurrency(Math.round(order.invoiceTotalGross / 1.23 * 100) / 100, order.currency)}
-                              </div>
-                            )}
+                        {order.invoiceNumber && order.invoiceId ? (
+                          <div className="flex items-start gap-1">
+                            <div className="flex-1">
+                              {order.invoicePdfUrl ? (
+                                <a
+                                  href={order.invoicePdfUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {order.invoiceNumber}
+                                </a>
+                              ) : (
+                                <span>{order.invoiceNumber}</span>
+                              )}
+                              {(order.invoiceTotalNet ?? order.invoiceTotalGross) != null && (
+                                <div
+                                  className={`text-xs tabular-nums ${
+                                    invoiceNetMismatch
+                                      ? 'text-red-600 font-medium'
+                                      : 'text-muted-foreground'
+                                  }`}
+                                >
+                                  {formatCurrency(
+                                    order.invoiceTotalNet ??
+                                      Math.round((order.invoiceTotalGross! / 1.23) * 100) / 100,
+                                    order.currency,
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <SalesOrderInvoiceActions
+                              invoice={{
+                                id: order.invoiceId,
+                                number: order.invoiceNumber,
+                                status: order.invoiceStatus || 'issued',
+                                externalInvoiceId: order.invoiceExternalId || null,
+                                provider: order.invoiceProvider || 'fakturownia',
+                              }}
+                              instanceId={instanceId!}
+                              supabaseClient={supabase}
+                              onChanged={() => fetchOrders()}
+                              onRequestEdit={(invoiceId) =>
+                                setInvoiceDrawerState({
+                                  open: true,
+                                  order,
+                                  editInvoiceId: invoiceId,
+                                })
+                              }
+                            />
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -1286,66 +1348,20 @@ const SalesOrdersView = () => {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            {order.paymentMethod !== 'free' &&
-                              (order.invoiceId ? (
-                                <DropdownMenuItem
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (order.invoicePdfUrl) {
-                                      window.open(order.invoicePdfUrl, '_blank');
-                                      return;
-                                    }
-                                    try {
-                                      toast.info('Pobieram PDF...');
-                                      const session = await supabase.auth.getSession();
-                                      const token = session.data.session?.access_token;
-                                      const res = await fetch(
-                                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invoicing-api`,
-                                        {
-                                          method: 'POST',
-                                          headers: {
-                                            'Content-Type': 'application/json',
-                                            Authorization: `Bearer ${token}`,
-                                            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                                          },
-                                          body: JSON.stringify({
-                                            action: 'get_pdf_url',
-                                            instanceId,
-                                            invoiceId: order.invoiceId,
-                                          }),
-                                        },
-                                      );
-                                      if (!res.ok) throw new Error(await res.text());
-                                      const contentType = res.headers.get('content-type') || '';
-                                      if (contentType.includes('application/pdf')) {
-                                        const blob = await res.blob();
-                                        const url = URL.createObjectURL(blob);
-                                        window.open(url, '_blank');
-                                      } else {
-                                        const json = await res.json();
-                                        if (json.pdf_url) {
-                                          window.open(json.pdf_url, '_blank');
-                                        } else {
-                                          toast.error(t('sales.orders.invoicePdfUnavailable'));
-                                        }
-                                      }
-                                    } catch {
-                                      toast.error(t('sales.orders.pdfDownloadFailed'));
-                                    }
-                                  }}
-                                >
-                                  Pobierz FV
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenInvoiceDrawer(order);
-                                  }}
-                                >
-                                  Wystaw FV
-                                </DropdownMenuItem>
-                              ))}
+                            <OrderInvoiceMenuItems
+                              order={order}
+                              instanceId={instanceId}
+                              supabaseClient={supabase}
+                              onIssueInvoice={() => handleOpenInvoiceDrawer(order)}
+                              onEditInvoice={(invoiceId) =>
+                                setInvoiceDrawerState({
+                                  open: true,
+                                  order,
+                                  editInvoiceId: invoiceId,
+                                })
+                              }
+                              onChanged={fetchOrders}
+                            />
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1458,6 +1474,29 @@ const SalesOrdersView = () => {
         }}
         editOrder={editOrder}
         onOrderCreated={fetchOrders}
+        onRequestInvoiceEdit={({
+          invoiceId,
+          orderId,
+          customerId,
+          customerName,
+          incomingPositions,
+        }) => {
+          // Open the existing CreateInvoiceDrawer in edit-with-diff mode, using
+          // the freshly-saved order's positions as the diff baseline.
+          const stubOrder: SalesOrder = {
+            id: orderId,
+            customerId,
+            customerName,
+            products: [],
+            packages: [],
+          } as unknown as SalesOrder;
+          setInvoiceDrawerState({
+            open: true,
+            order: stubOrder,
+            editInvoiceId: invoiceId,
+            incomingPositions,
+          });
+        }}
       />
       <ConfirmDialog
         open={deleteConfirm.open}
@@ -1484,6 +1523,8 @@ const SalesOrdersView = () => {
       {invoiceDrawerState.order && (
         <CreateInvoiceDrawer
           open={invoiceDrawerState.open}
+          existingInvoiceId={invoiceDrawerState.editInvoiceId}
+          incomingPositions={invoiceDrawerState.incomingPositions}
           onClose={() => setInvoiceDrawerState({ open: false, order: null })}
           instanceId={instanceId!}
           salesOrderId={invoiceDrawerState.order.id}
@@ -1497,29 +1538,23 @@ const SalesOrdersView = () => {
               const shippingPkgs = (invoiceDrawerState.order!.packages || []).filter(
                 (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
               );
-              return shippingPkgs.map((pkg, i) => ({
-                name: shippingPkgs.length === 1 ? t('sales.orders.shipping') : `Wysyłka #${i + 1}`,
-                quantity: 1,
-                // shippingCost is brutto from Apaczka — convert to netto to match product positions
-                unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              }));
+              return shippingPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.shippingCost!,
+                  shippingPkgs.length === 1 ? t('sales.orders.shipping') : `Wysyłka #${i + 1}`,
+                ),
+              );
             })(),
             ...(() => {
               const uberPkgs = (invoiceDrawerState.order!.packages || []).filter(
                 (pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null,
               );
-              return uberPkgs.map((pkg, i) => ({
-                name: uberPkgs.length === 1 ? 'Uber' : `Uber #${i + 1}`,
-                quantity: 1,
-                // uberCost is brutto (user-entered) — convert to netto like shipping does
-                unit_price_gross: Math.round((pkg.uberCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              }));
+              return uberPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.uberCost!,
+                  uberPkgs.length === 1 ? 'Uber' : `Uber #${i + 1}`,
+                ),
+              );
             })(),
           ]}
           onSuccess={fetchOrders}
@@ -1536,38 +1571,36 @@ const SalesOrdersView = () => {
           salesOrderId={bulkInvoiceState.orders[0].id}
           customerId={bulkInvoiceState.orders[0].customerId}
           customerName={bulkInvoiceState.orders[0].customerName}
-          positions={bulkInvoiceState.orders.flatMap((order) => [
-            ...order.products.map((p) => mapProductToInvoicePosition(p, order.customerDiscount)),
-            ...(order.packages || [])
-              .filter((pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null)
-              .map((pkg, i, arr) => ({
-                name:
-                  arr.length === 1
+          positions={bulkInvoiceState.orders.flatMap((order) => {
+            const shippingPkgs = (order.packages || []).filter(
+              (pkg) => pkg.shippingMethod === 'shipping' && pkg.shippingCost != null,
+            );
+            const uberPkgs = (order.packages || []).filter(
+              (pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null,
+            );
+            return [
+              ...order.products.map((p) => mapProductToInvoicePosition(p, order.customerDiscount)),
+              ...shippingPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.shippingCost!,
+                  shippingPkgs.length === 1
                     ? t('sales.orders.shippingLabel', { orderNumber: order.orderNumber })
                     : t('sales.orders.shippingLabelMulti', {
                         index: i + 1,
                         orderNumber: order.orderNumber,
                       }),
-                quantity: 1,
-                unit_price_gross: Math.round((pkg.shippingCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              })),
-            ...(order.packages || [])
-              .filter((pkg) => pkg.shippingMethod === 'uber' && pkg.uberCost != null)
-              .map((pkg, i, arr) => ({
-                name:
-                  arr.length === 1
+                ),
+              ),
+              ...uberPkgs.map((pkg, i) =>
+                bruttoCostToInvoicePosition(
+                  pkg.uberCost!,
+                  uberPkgs.length === 1
                     ? `Uber (${order.orderNumber})`
                     : `Uber #${i + 1} (${order.orderNumber})`,
-                quantity: 1,
-                unit_price_gross: Math.round((pkg.uberCost! / (1 + VAT_RATE)) * 100) / 100,
-                vat_rate: 23,
-                unit: 'szt.',
-                discount: 0,
-              })),
-          ])}
+                ),
+              ),
+            ];
+          })}
           onSuccess={async () => {
             // Mark all bulk orders as 'collective'
             const ids = bulkInvoiceState.orders.map((o) => o.id);

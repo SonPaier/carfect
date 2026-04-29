@@ -48,6 +48,8 @@ export interface SalesOrder {
   invoicePdfUrl?: string;
   invoiceExternalId?: string;
   invoiceTotalGross?: number;
+  invoiceTotalNet?: number;
+  invoiceProvider?: 'fakturownia' | 'ifirma';
   customerDiscount?: number;
   paymentMethod?: string;
   deliveryType?: 'shipping' | 'pickup' | 'uber';

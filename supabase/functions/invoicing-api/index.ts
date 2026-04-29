@@ -1,4 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  FakturowniaApiError,
+  FakturowniaClient,
+  mapFakturowniaToInternal,
+  mapInternalInvoiceToFakturownia,
+  mapInternalInvoiceToFakturowniaUpdate,
+} from '../_shared/fakturownia/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,90 +13,9 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// ---- Fakturownia Strategy ----
-
-async function fakturowniaCreateInvoice(
-  config: { domain: string; api_token: string },
-  invoiceData: any,
-) {
-  const url = `https://${config.domain}.fakturownia.pl/invoices.json`;
-  const body = {
-    api_token: config.api_token,
-    invoice: {
-      kind: invoiceData.kind || 'vat',
-      number: null,
-      sell_date: invoiceData.sell_date,
-      issue_date: invoiceData.issue_date,
-      payment_to: invoiceData.payment_to,
-      buyer_name: invoiceData.buyer_name,
-      buyer_tax_no: invoiceData.buyer_tax_no || '',
-      buyer_email: invoiceData.buyer_email || '',
-      buyer_city: invoiceData.buyer_city || '',
-      buyer_street: invoiceData.buyer_street || '',
-      buyer_post_code: invoiceData.buyer_post_code || '',
-      buyer_country: invoiceData.buyer_country || '',
-      currency: invoiceData.currency || 'PLN',
-      payment_type: invoiceData.payment_type || 'transfer',
-      oid: invoiceData.oid || null,
-      oid_unique: invoiceData.oid ? 'yes' : undefined,
-      ...(invoiceData.place ? { place: invoiceData.place } : {}),
-      ...(invoiceData.seller_person ? { seller_person: invoiceData.seller_person } : {}),
-      ...(invoiceData.bank_account ? { bank_account: invoiceData.bank_account } : {}),
-      positions: invoiceData.positions.map((p: any) => ({
-        name: p.name,
-        tax: p.vat_rate === -1 ? 'disabled' : String(p.vat_rate),
-        total_price_gross: Math.round(Number(p.unit_price_gross) * Number(p.quantity) * 100) / 100,
-        quantity: Number(p.quantity),
-        ...(p.discount ? { discount_percent: Number(p.discount) } : {}),
-      })),
-      ...(invoiceData.positions.some((p: any) => p.discount) ? { show_discount: true, discount_kind: 'percent_unit' } : {}),
-      ...(invoiceData.client_id ? { client_id: invoiceData.client_id } : {}),
-    },
-  };
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Fakturownia API error ${res.status}: ${text}`);
-  }
-
-  const data = await res.json();
-  return {
-    external_invoice_id: String(data.id),
-    external_client_id: data.client_id ? String(data.client_id) : null,
-    invoice_number: data.number || null,
-    pdf_url: data.view_url || null,
-  };
-}
-
-async function fakturowniaSendEmail(
-  config: { domain: string; api_token: string },
-  externalId: string,
-) {
-  const url = `https://${config.domain}.fakturownia.pl/invoices/${externalId}/send_by_email.json?api_token=${config.api_token}`;
-  const res = await fetch(url, { method: 'POST' });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Fakturownia send_by_email error ${res.status}: ${text}`);
-  }
-  return true;
-}
-
-async function fakturowniaTestConnection(config: { domain: string; api_token: string }) {
-  const url = `https://${config.domain}.fakturownia.pl/invoices.json?period=last_5&page=1&per_page=1&api_token=${config.api_token}`;
-  const res = await fetch(url);
-  return res.ok;
-}
-
-// ---- iFirma Strategy ----
+// ---- iFirma Strategy (legacy, separate refactor) ----
 
 async function ifirmaHmac(hexKey: string, message: string): Promise<string> {
-  // Decode hex key to raw bytes
   const keyData = new Uint8Array(hexKey.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
   const msgData = new TextEncoder().encode(message);
 
@@ -154,7 +80,6 @@ async function ifirmaCreateInvoice(
   if (invoiceData.seller_person) body.PodpisWystawcy = invoiceData.seller_person;
 
   const bodyStr = JSON.stringify(body);
-  console.log('iFirma request body:', bodyStr);
   const messageToSign = `${url}${config.invoice_api_user}faktura${bodyStr}`;
   const hmacHash = await ifirmaHmac(config.invoice_api_key, messageToSign);
 
@@ -174,8 +99,6 @@ async function ifirmaCreateInvoice(
   }
 
   const data = await res.json();
-  console.log('iFirma response:', JSON.stringify(data));
-
   if (!data?.response?.Identyfikator) {
     throw new Error(`iFirma create_invoice validation failed: ${JSON.stringify(data)}`);
   }
@@ -236,6 +159,79 @@ async function ifirmaTestConnection(config: { invoice_api_user: string; invoice_
   }
 }
 
+// ---- Helpers ----
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+interface FakturowniaConfigShape {
+  domain: string;
+  api_token: string;
+}
+
+interface IfirmaConfigShape {
+  invoice_api_user: string;
+  invoice_api_key: string;
+}
+
+function fakturowniaError(e: unknown): { error: string; code: string; status: number } {
+  if (e instanceof FakturowniaApiError) {
+    if (e.status === 404)
+      return {
+        error: 'Faktura nie istnieje w Fakturowni',
+        code: 'fakturownia_not_found',
+        status: 404,
+      };
+    if (e.status === 422)
+      return { error: e.body || 'Operacja niedozwolona', code: 'fakturownia_locked', status: 422 };
+    if (e.status >= 500)
+      return { error: 'Fakturownia niedostępna', code: 'fakturownia_unreachable', status: 502 };
+    return { error: e.body || e.message, code: 'invalid_payload', status: e.status };
+  }
+  return {
+    error: (e as Error).message || 'Internal error',
+    code: 'fakturownia_unreachable',
+    status: 500,
+  };
+}
+
+function totalGrossOf(positions: any[]): number {
+  return positions.reduce(
+    (sum, p) =>
+      sum + Number(p.unit_price_gross) * Number(p.quantity) * (1 - (Number(p.discount) || 0) / 100),
+    0,
+  );
+}
+
+/**
+ * Require the caller to be super_admin OR admin for the given instance.
+ * Edge function uses SERVICE_ROLE_KEY which bypasses RLS, so explicit checks
+ * are needed for destructive operations (cancel / delete / update_invoice).
+ *
+ * Returns null when authorized, or a Response when access is denied.
+ */
+async function requireAdminRole(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  instanceId: string,
+): Promise<Response | null> {
+  const { data: superAdminCheck } = await supabase.rpc('has_role', {
+    _user_id: userId,
+    _role: 'super_admin',
+  });
+  if (superAdminCheck) return null;
+  const { data: adminCheck } = await supabase.rpc('has_instance_role', {
+    _user_id: userId,
+    _role: 'admin',
+    _instance_id: instanceId,
+  });
+  if (adminCheck) return null;
+  return json({ error: 'Brak uprawnień (wymagana rola admin)', code: 'unauthorized' }, 403);
+}
+
 // ---- Main Handler ----
 
 Deno.serve(async (req) => {
@@ -245,12 +241,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -263,30 +254,24 @@ Deno.serve(async (req) => {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    if (userError || !user) return json({ error: 'Unauthorized' }, 401);
 
     const { action, instanceId, ...params } = await req.json();
 
-    // For test_connection, use provided config directly
+    // ---- test_connection (provider + config from request, not DB) ----
     if (action === 'test_connection') {
       const { provider, config } = params;
       let success = false;
       if (provider === 'fakturownia') {
-        success = await fakturowniaTestConnection(config);
+        const client = new FakturowniaClient(config as FakturowniaConfigShape);
+        success = await client.testConnection();
       } else if (provider === 'ifirma') {
-        success = await ifirmaTestConnection(config);
+        success = await ifirmaTestConnection(config as IfirmaConfigShape);
       }
-      return new Response(JSON.stringify({ success }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ success });
     }
 
-    // Fetch settings
+    // ---- Load invoicing settings for instance ----
     const { data: settings, error: settingsError } = await supabase
       .from('invoicing_settings')
       .select('*')
@@ -294,58 +279,50 @@ Deno.serve(async (req) => {
       .single();
 
     if (settingsError || !settings?.active || !settings.provider) {
-      return new Response(JSON.stringify({ error: 'Invoicing not configured' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ error: 'Invoicing not configured' }, 400);
     }
 
-    const provider = settings.provider;
+    const provider = settings.provider as 'fakturownia' | 'ifirma';
     const config = settings.provider_config as any;
+    const fkClient =
+      provider === 'fakturownia' ? new FakturowniaClient(config as FakturowniaConfigShape) : null;
 
+    // ===========================================================
+    //  CREATE INVOICE
+    // ===========================================================
     if (action === 'create_invoice') {
       const { invoiceData, salesOrderId, customerId, autoSendEmail } = params;
 
-      // Validate invoice data
-      if (!invoiceData?.positions || !Array.isArray(invoiceData.positions) || invoiceData.positions.length === 0) {
-        return new Response(JSON.stringify({ error: 'Brak pozycji na fakturze' }), {
-          status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (!invoiceData.buyer_name?.trim()) {
-        return new Response(JSON.stringify({ error: 'Brak nazwy nabywcy' }), {
-          status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      for (const p of invoiceData.positions) {
-        if (!p.name?.trim()) {
-          return new Response(JSON.stringify({ error: 'Pozycja bez nazwy' }), {
-            status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        if (typeof p.quantity !== 'number' || p.quantity <= 0) {
-          return new Response(JSON.stringify({ error: 'Ilość musi być większa od 0' }), {
-            status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        if (typeof p.unit_price_gross !== 'number' || p.unit_price_gross < 0) {
-          return new Response(JSON.stringify({ error: 'Cena nie może być ujemna' }), {
-            status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-      }
+      if (!invoiceData?.positions?.length) return json({ error: 'Brak pozycji na fakturze' }, 422);
+      if (!invoiceData.buyer_name?.trim()) return json({ error: 'Brak nazwy nabywcy' }, 422);
 
-      let result: any;
+      let result: {
+        external_invoice_id: string;
+        external_client_id: string | null;
+        invoice_number: string | null;
+        pdf_url: string | null;
+      };
 
-      if (provider === 'fakturownia') {
-        result = await fakturowniaCreateInvoice(config, invoiceData);
+      if (fkClient) {
+        try {
+          const fakturowniaPayload = mapInternalInvoiceToFakturownia(invoiceData);
+          const created = await fkClient.invoices.create(fakturowniaPayload);
+          result = {
+            external_invoice_id: String(created.id),
+            external_client_id: null,
+            invoice_number: created.number || null,
+            pdf_url: created.view_url || null,
+          };
+        } catch (e) {
+          const err = fakturowniaError(e);
+          return json({ error: err.error, code: err.code }, err.status);
+        }
       } else if (provider === 'ifirma') {
         result = await ifirmaCreateInvoice(config, invoiceData);
       } else {
-        throw new Error(`Unknown provider: ${provider}`);
+        return json({ error: `Unknown provider: ${provider}` }, 400);
       }
 
-      // Save invoice record
       const { data: invoice, error: insertError } = await supabase
         .from('invoices')
         .insert({
@@ -369,10 +346,7 @@ Deno.serve(async (req) => {
           place: invoiceData.place || null,
           seller_person: invoiceData.seller_person || null,
           positions: invoiceData.positions,
-          total_gross: invoiceData.positions.reduce(
-            (sum: number, p: any) => sum + p.unit_price_gross * p.quantity * (1 - (Number(p.discount) || 0) / 100),
-            0,
-          ),
+          total_gross: totalGrossOf(invoiceData.positions),
           currency: invoiceData.currency || 'PLN',
           pdf_url: result.pdf_url,
           oid: salesOrderId || null,
@@ -382,11 +356,10 @@ Deno.serve(async (req) => {
 
       if (insertError) throw insertError;
 
-      // Auto send email if requested
       if (autoSendEmail && result.external_invoice_id) {
         try {
-          if (provider === 'fakturownia') {
-            await fakturowniaSendEmail(config, result.external_invoice_id);
+          if (fkClient) {
+            await fkClient.invoices.sendByEmail(result.external_invoice_id);
           } else if (provider === 'ifirma') {
             await ifirmaSendEmail(config, result.external_invoice_id, invoiceData.buyer_email);
           }
@@ -396,11 +369,136 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ success: true, invoice }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ success: true, invoice });
     }
 
+    // ===========================================================
+    //  GET INVOICE (fresh from Fakturownia incl. KSeF gov_*)
+    // ===========================================================
+    if (action === 'get_invoice') {
+      const { invoiceId } = params;
+      const { data: inv } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .eq('instance_id', instanceId)
+        .single();
+
+      if (!inv?.external_invoice_id) return json({ error: 'Invoice not found' }, 404);
+      if (!fkClient) return json({ error: 'get_invoice supported only for Fakturownia (v1)' }, 400);
+
+      try {
+        const fakturownia = await fkClient.invoices.get(inv.external_invoice_id);
+        return json({ success: true, invoice: inv, fakturownia });
+      } catch (e) {
+        const err = fakturowniaError(e);
+        return json({ error: err.error, code: err.code }, err.status);
+      }
+    }
+
+    // ===========================================================
+    //  UPDATE INVOICE
+    // ===========================================================
+    if (action === 'update_invoice') {
+      const { invoiceId, invoiceData, originalPositions, autoSendEmail } = params;
+      const { data: inv } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .eq('instance_id', instanceId)
+        .single();
+
+      if (!inv?.external_invoice_id) return json({ error: 'Invoice not found' }, 404);
+      if (!fkClient)
+        return json({ error: 'update_invoice supported only for Fakturownia (v1)' }, 400);
+
+      try {
+        const updatePayload = mapInternalInvoiceToFakturowniaUpdate(
+          invoiceData,
+          originalPositions || [],
+        );
+        const updated = await fkClient.invoices.update(inv.external_invoice_id, updatePayload);
+
+        const { data: invoice } = await supabase
+          .from('invoices')
+          .update({
+            invoice_number: updated.number || inv.invoice_number,
+            issue_date: invoiceData.issue_date,
+            sell_date: invoiceData.sell_date,
+            payment_to: invoiceData.payment_to,
+            payment_type: invoiceData.payment_type || inv.payment_type,
+            buyer_name: invoiceData.buyer_name,
+            buyer_tax_no: invoiceData.buyer_tax_no,
+            buyer_email: invoiceData.buyer_email,
+            buyer_country: invoiceData.buyer_country || null,
+            place: invoiceData.place || null,
+            seller_person: invoiceData.seller_person || null,
+            positions: invoiceData.positions,
+            total_gross: totalGrossOf(invoiceData.positions),
+            currency: invoiceData.currency || inv.currency,
+          })
+          .eq('id', invoiceId)
+          .select()
+          .single();
+
+        if (autoSendEmail && inv.status !== 'sent') {
+          try {
+            await fkClient.invoices.sendByEmail(inv.external_invoice_id);
+            await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoiceId);
+          } catch (e) {
+            console.error('Auto-send after update failed:', e);
+          }
+        }
+
+        return json({ success: true, invoice });
+      } catch (e) {
+        const err = fakturowniaError(e);
+        return json({ error: err.error, code: err.code }, err.status);
+      }
+    }
+
+    // ===========================================================
+    //  CANCEL INVOICE
+    // ===========================================================
+    if (action === 'cancel_invoice') {
+      const denied = await requireAdminRole(supabase, user.id, instanceId);
+      if (denied) return denied;
+
+      const { invoiceId, cancelReason } = params;
+      const { data: inv } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .eq('instance_id', instanceId)
+        .single();
+
+      if (!inv?.external_invoice_id) return json({ error: 'Invoice not found' }, 404);
+      if (!fkClient)
+        return json({ error: 'cancel_invoice supported only for Fakturownia (v1)' }, 400);
+
+      try {
+        await fkClient.invoices.cancel({
+          cancel_invoice_id: Number(inv.external_invoice_id),
+          cancel_reason: cancelReason,
+        });
+        await supabase
+          .from('invoices')
+          .update({
+            status: 'cancelled',
+            cancel_reason: cancelReason || null,
+            cancelled_at: new Date().toISOString(),
+          })
+          .eq('id', invoiceId);
+        return json({ success: true });
+      } catch (e) {
+        const err = fakturowniaError(e);
+        return json({ error: err.error, code: err.code }, err.status);
+      }
+    }
+
+    // ===========================================================
+    //  SEND INVOICE BY EMAIL
+    // ===========================================================
     if (action === 'send_invoice') {
       const { invoiceId } = params;
       const { data: inv } = await supabase
@@ -410,24 +508,27 @@ Deno.serve(async (req) => {
         .eq('instance_id', instanceId)
         .single();
 
-      if (!inv?.external_invoice_id) {
-        throw new Error('Invoice not found or no external ID');
+      if (!inv?.external_invoice_id)
+        return json({ error: 'Invoice not found or no external ID' }, 404);
+
+      try {
+        if (fkClient) {
+          await fkClient.invoices.sendByEmail(inv.external_invoice_id);
+        } else if (provider === 'ifirma') {
+          await ifirmaSendEmail(config, inv.external_invoice_id, inv.buyer_email);
+        }
+        await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoiceId);
+        return json({ success: true });
+      } catch (e) {
+        const err = fakturowniaError(e);
+        return json({ error: err.error, code: err.code }, err.status);
       }
-
-      if (provider === 'fakturownia') {
-        await fakturowniaSendEmail(config, inv.external_invoice_id);
-      } else if (provider === 'ifirma') {
-        await ifirmaSendEmail(config, inv.external_invoice_id, inv.buyer_email);
-      }
-
-      await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoiceId);
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
-    if (action === 'get_pdf_url') {
+    // ===========================================================
+    //  GET PDF (Fakturownia: proxy through edge fn to keep token server-side)
+    // ===========================================================
+    if (action === 'get_pdf_url' || action === 'get_pdf') {
       const { invoiceId } = params;
       const { data: inv } = await supabase
         .from('invoices')
@@ -436,29 +537,28 @@ Deno.serve(async (req) => {
         .eq('instance_id', instanceId)
         .single();
 
-      if (!inv) throw new Error('Invoice not found');
+      if (!inv) return json({ error: 'Invoice not found' }, 404);
 
-      // For Fakturownia, proxy the PDF to avoid exposing API token
-      if (provider === 'fakturownia' && inv.external_invoice_id) {
-        const pdfUrl = `https://${config.domain}.fakturownia.pl/invoices/${inv.external_invoice_id}.pdf?api_token=${config.api_token}`;
-        const pdfRes = await fetch(pdfUrl);
-        if (!pdfRes.ok) throw new Error(`Fakturownia PDF error ${pdfRes.status}`);
-        const pdfData = await pdfRes.arrayBuffer();
-        return new Response(pdfData, {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="faktura-${inv.invoice_number || inv.external_invoice_id}.pdf"`,
-          },
-        });
+      if (fkClient && inv.external_invoice_id) {
+        try {
+          const pdfData = await fkClient.invoices.getPdf(inv.external_invoice_id);
+          return new Response(pdfData, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="faktura-${inv.invoice_number || inv.external_invoice_id}.pdf"`,
+            },
+          });
+        } catch (e) {
+          const err = fakturowniaError(e);
+          return json({ error: err.error, code: err.code }, err.status);
+        }
       }
 
-      // Fallback: return stored pdf_url if any
-      return new Response(JSON.stringify({ pdf_url: inv.pdf_url || null }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ pdf_url: inv.pdf_url || null });
     }
 
+    // ---- iFirma PDF (legacy) ----
     if (action === 'get_ifirma_pdf') {
       const { invoiceId } = params;
       const { data: inv } = await supabase
@@ -468,8 +568,8 @@ Deno.serve(async (req) => {
         .eq('instance_id', instanceId)
         .single();
 
-      if (!inv?.external_invoice_id) throw new Error('Invoice not found');
-      if (provider !== 'ifirma') throw new Error('Not an iFirma invoice');
+      if (!inv?.external_invoice_id) return json({ error: 'Invoice not found' }, 404);
+      if (provider !== 'ifirma') return json({ error: 'Not an iFirma invoice' }, 400);
 
       const pdfUrl = `https://www.ifirma.pl/iapi/fakturakraj/${inv.external_invoice_id}.pdf`;
       const messageToSign = `${pdfUrl}${config.invoice_api_user}faktura`;
@@ -498,15 +598,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Unknown action' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Unknown action' }, 400);
   } catch (error) {
     console.error('Invoicing API error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ error: (error as Error).message || 'Internal error' }, 500);
   }
 });
+
+// silence unused-import warning when only Fakturownia path is exercised
+void mapFakturowniaToInternal;

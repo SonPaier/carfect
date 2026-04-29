@@ -55,6 +55,8 @@ export interface InvoicePosition {
   vat_rate: number;
   unit?: string;
   discount?: number;
+  /** Fakturownia position id — set when row was loaded from Fakturownia (edit mode). */
+  external_id?: string;
 }
 
 export interface Invoice {
