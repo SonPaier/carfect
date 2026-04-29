@@ -42,7 +42,7 @@ CREATE OR REPLACE FUNCTION match_schema_chunks(
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
-    SELECT c.id, c.content, c.metadata, c.embedding::jsonb,
+    SELECT c.id, c.content, c.metadata, (c.embedding::text)::jsonb,
            1 - (c.embedding <=> query_embedding) AS similarity
     FROM ai_analyst_schema_chunks c
     WHERE c.metadata @> filter
@@ -60,7 +60,7 @@ CREATE OR REPLACE FUNCTION match_glossary(
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
-    SELECT c.id, c.content, c.metadata, c.embedding::jsonb,
+    SELECT c.id, c.content, c.metadata, (c.embedding::text)::jsonb,
            1 - (c.embedding <=> query_embedding) AS similarity
     FROM ai_analyst_glossary c
     WHERE c.metadata @> filter
@@ -78,7 +78,7 @@ CREATE OR REPLACE FUNCTION match_training_examples(
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
-    SELECT c.id, c.content, c.metadata, c.embedding::jsonb,
+    SELECT c.id, c.content, c.metadata, (c.embedding::text)::jsonb,
            1 - (c.embedding <=> query_embedding) AS similarity
     FROM ai_analyst_training_examples c
     WHERE c.metadata @> filter
