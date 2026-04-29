@@ -1,4 +1,8 @@
 // Server-only exports for @shared/ai. Importable as `@shared/ai/server`.
-// Populated by Chunks 3-5.
 
-export {};
+export { resolveInstanceId, AiAnalystAuthError } from './resolveInstanceId';
+export { enforceRateLimit, USER_HOURLY_LIMIT } from './rateLimit';
+export { insertAuditLog, computeCostUsd, type AuditLogPayload } from './auditLog';
+export { buildSystemPrompt } from './promptBuilder';
+export { buildAgent, type BuildAgentInput } from './createAgent';
+export { validateSql } from './validateSql';
