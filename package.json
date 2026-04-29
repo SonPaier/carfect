@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "ai:sync-training": "tsx scripts/sync-training-data.ts",
     "dev": "nx run carfect:dev",
     "build": "nx run carfect:build",
     "lint": "nx run-many --target=lint",
