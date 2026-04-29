@@ -119,9 +119,7 @@ export const OfferPreviewPanel = ({
       }
 
       // Fetch scope data
-      const scopeIds = offer.options
-        .map((o) => o.scopeId)
-        .filter((id): id is string => !!id);
+      const scopeIds = offer.options.map((o) => o.scopeId).filter((id): id is string => !!id);
 
       if (scopeIds.length > 0) {
         const { data: scopeData } = await supabase
@@ -253,6 +251,11 @@ export const OfferPreviewPanel = ({
         })),
       })),
       instances: instance,
+      gallery_photos: (offer.galleryPhotos || []).map((photo, idx) => ({
+        id: photo.id,
+        url: photo.url,
+        sort_order: idx,
+      })),
     };
   }, [
     instance,

@@ -68,6 +68,14 @@ export interface DefaultSelectedState {
   selectedItemInOption: Record<string, string>; // optionId → itemId
 }
 
+/** Photo selected from the instance portfolio for an offer's gallery section. */
+export interface OfferGalleryPhoto {
+  id: string;
+  url: string;
+}
+
+export const MAX_GALLERY_PHOTOS = 16;
+
 export interface OfferState {
   id?: string;
   instanceId: string;
@@ -90,6 +98,7 @@ export interface OfferState {
   widgetSelectedExtras?: string[]; // uuid[] from widget
   widgetDurationSelections?: Record<string, number | null>; // templateId → months
   offerFormat?: 'v1' | 'v2' | null;
+  galleryPhotos?: OfferGalleryPhoto[];
 }
 
 export const defaultCustomerData: CustomerData = {

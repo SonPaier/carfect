@@ -1011,7 +1011,51 @@
     "viewHistory": "Historia wyświetleń",
     "viewCount": "Liczba wyświetleń",
     "totalTime": "Łączny czas",
-    "noViewData": "Brak danych o wyświetleniach"
+    "noViewData": "Brak danych o wyświetleniach",
+    "portfolio": {
+      "title": "Portfolio realizacji",
+      "description": "Biblioteka zdjęć realizacji dostępna w generatorze ofert. Dodaj zdjęcia raz, używaj wielokrotnie w wielu ofertach.",
+      "addPhotos": "Dodaj zdjęcia",
+      "uploadingProgress": "Wgrywanie {{percent}}%",
+      "photoCount_one": "{{count}} zdjęcie w portfolio",
+      "photoCount_few": "{{count}} zdjęcia w portfolio",
+      "photoCount_many": "{{count}} zdjęć w portfolio",
+      "photoCount_other": "{{count}} zdjęć w portfolio",
+      "empty": "Brak zdjęć w portfolio. Dodaj pierwsze, aby móc je wybierać w ofertach.",
+      "deletePhoto": "Usuń zdjęcie",
+      "deleteTitle": "Usunąć zdjęcie z portfolio?",
+      "deleteDescription": "Zdjęcie zostanie trwale usunięte z portfolio oraz ze wszystkich ofert, w których było wybrane. Tej akcji nie można cofnąć.",
+      "deleteSuccess": "Zdjęcie usunięte",
+      "deleteError": "Nie udało się usunąć zdjęcia",
+      "uploadSuccess_one": "Wgrano {{count}} zdjęcie",
+      "uploadSuccess_few": "Wgrano {{count}} zdjęcia",
+      "uploadSuccess_many": "Wgrano {{count}} zdjęć",
+      "uploadSuccess_other": "Wgrano {{count}} zdjęć",
+      "uploadError": "Błąd wgrywania zdjęć",
+      "loadError": "Nie udało się załadować portfolio",
+      "reorderError": "Nie udało się zapisać kolejności",
+      "fileTooLargeSkipped_one": "Pominięto {{count}} plik większy niż {{limit}} MB",
+      "fileTooLargeSkipped_few": "Pominięto {{count}} pliki większe niż {{limit}} MB",
+      "fileTooLargeSkipped_many": "Pominięto {{count}} plików większych niż {{limit}} MB",
+      "fileTooLargeSkipped_other": "Pominięto {{count}} plików większych niż {{limit}} MB"
+    },
+    "gallery": {
+      "editorTitle": "Galeria realizacji",
+      "editorDescription": "Zdjęcia widoczne w ofercie pod usługami: {{count}} z {{max}}",
+      "editorEmpty": "Brak wybranych zdjęć. Wybierz z portfolio, aby pojawiły się w ofercie.",
+      "managePhotos": "Wybierz z portfolio",
+      "removeFromOffer": "Usuń z oferty",
+      "moveLeft": "Przesuń w lewo",
+      "moveRight": "Przesuń w prawo",
+      "pickerTitle": "Wybierz zdjęcia z portfolio",
+      "pickerSubtitle": "Wybrane: {{selected}} z {{max}}",
+      "uploadAndSelect": "Wgraj nowe i dodaj do oferty",
+      "emptyPortfolio": "Brak zdjęć w portfolio. Wgraj pierwsze, aby móc wybierać w ofertach.",
+      "maxSelectionError": "Możesz wybrać maksymalnie {{count}} zdjęć",
+      "applySelection": "Zastosuj ({{count}})",
+      "viewModeGrid": "Siatka",
+      "viewModeFull": "Pełna szerokość"
+    }
   },
   "summary": {
     "customer": "Klient",
@@ -1638,7 +1682,9 @@
     "suggestedExtras": "Sugerowane dodatki",
     "discount": "+rabat {{percent}}%",
     "servicesSection": "Usługi",
-    "metaContent": "Oferta {{number}} od {{name}}: usługi, pozycje i podsumowanie kosztów."
+    "metaContent": "Oferta {{number}} od {{name}}: usługi, pozycje i podsumowanie kosztów.",
+    "galleryTitle": "Nasze wybrane realizacje",
+    "galleryPhotoAlt": "Realizacja {{index}}"
   },
   "superAdmin": {
     "panelTitle": "Panel zarządzania",
@@ -3286,7 +3332,8 @@
     "discountsAbility": "Możliwość dodawania rabatów do usług w ofertach",
     "conditionTemplatesDesc": "Twórz szablony warunków, które możesz szybko wstawiać przy tworzeniu oferty.",
     "templateContentPlaceholder": "Treść szablonu...",
-    "discountsFieldDesc": "Gdy włączone, przy każdej pozycji w kreatorze oferty pojawi się pole do"
+    "discountsFieldDesc": "Gdy włączone, przy każdej pozycji w kreatorze oferty pojawi się pole do",
+    "portfolioTab": "Portfolio"
   },
   "priceList": {
     "title": "Cennik usług",
