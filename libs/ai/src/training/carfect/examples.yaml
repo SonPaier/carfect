@@ -1,0 +1,462 @@
+# ───────────────────────────────────────────────────────────────────────────────
+# REVENUE
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Jaki był mój przychód w bieżącym miesiącu?
+  sql: |
+    SELECT SUM(price)::numeric AS revenue, COUNT(*) AS bookings
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= date_trunc('month', CURRENT_DATE)
+      AND reservation_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+  notes: |
+    Filtrujemy po reservation_date, nie created_at.
+    instance_id wstawia RLS automatycznie — NIE dodawaj.
+
+- question: Jaki był przychód w poprzednim miesiącu?
+  sql: |
+    SELECT SUM(price)::numeric AS revenue, COUNT(*) AS bookings
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= date_trunc('month', CURRENT_DATE - interval '1 month')
+      AND reservation_date < date_trunc('month', CURRENT_DATE)
+
+- question: Jaki był przychód w bieżącym roku?
+  sql: |
+    SELECT SUM(price)::numeric AS revenue, COUNT(*) AS bookings
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= date_trunc('year', CURRENT_DATE)
+      AND reservation_date < date_trunc('year', CURRENT_DATE) + interval '1 year'
+
+- question: Przychód według miesiąca w bieżącym roku
+  sql: |
+    SELECT date_trunc('month', reservation_date) AS month,
+           SUM(price)::numeric AS revenue,
+           COUNT(*) AS bookings
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= date_trunc('year', CURRENT_DATE)
+    GROUP BY date_trunc('month', reservation_date)
+    ORDER BY month
+
+- question: Przychód według kategorii usług w ostatnich 30 dniach
+  sql: |
+    SELECT uc.name AS category, SUM(r.price)::numeric AS revenue, COUNT(r.id) AS bookings
+    FROM reservations r
+    JOIN unified_services us ON us.id = (
+      SELECT (si->>'id')::uuid
+      FROM jsonb_array_elements(r.service_items) si
+      LIMIT 1
+    )
+    JOIN unified_categories uc ON uc.id = us.category_id
+    WHERE r.status = 'completed'
+      AND r.reservation_date >= CURRENT_DATE - interval '30 days'
+      AND r.service_items IS NOT NULL
+    GROUP BY uc.name
+    ORDER BY revenue DESC
+  notes: |
+    Uproszczone — bierze pierwszą usługę z service_items dla kategorii.
+    Bardziej precyzyjne podejście rozpakowuje każdy element osobno.
+
+# ───────────────────────────────────────────────────────────────────────────────
+# TOP SERVICES
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Najpopularniejsze usługi w ostatnich 30 dniach
+  sql: |
+    SELECT si->>'name' AS service, COUNT(*) AS booked,
+           SUM((si->>'price')::numeric) AS revenue
+    FROM reservations r,
+         jsonb_array_elements(r.service_items) si
+    WHERE r.service_items IS NOT NULL
+      AND r.reservation_date >= CURRENT_DATE - interval '30 days'
+      AND r.status = 'completed'
+    GROUP BY si->>'name'
+    ORDER BY booked DESC
+    LIMIT 10
+  notes: |
+    service_items może być NULL, dlatego IS NOT NULL przed jsonb_array_elements.
+
+- question: Które usługi generują najwyższy przychód?
+  sql: |
+    SELECT si->>'name' AS service,
+           SUM((si->>'price')::numeric) AS total_revenue,
+           COUNT(*) AS times_booked,
+           AVG((si->>'price')::numeric)::numeric AS avg_price
+    FROM reservations r,
+         jsonb_array_elements(r.service_items) si
+    WHERE r.service_items IS NOT NULL
+      AND r.status = 'completed'
+      AND r.reservation_date >= CURRENT_DATE - interval '3 months'
+    GROUP BY si->>'name'
+    ORDER BY total_revenue DESC
+    LIMIT 10
+
+- question: Jakie są najpopularniejsze kombinacje usług?
+  sql: |
+    SELECT string_agg(si->>'name', ', ' ORDER BY si->>'name') AS services_combo,
+           COUNT(*) AS bookings
+    FROM reservations r,
+         LATERAL (
+           SELECT si FROM jsonb_array_elements(r.service_items) si
+         ) items
+    WHERE r.service_items IS NOT NULL
+      AND r.status = 'completed'
+      AND r.reservation_date >= CURRENT_DATE - interval '90 days'
+    GROUP BY r.id
+    ORDER BY bookings DESC
+    LIMIT 10
+  notes: |
+    Grupuje usługi per rezerwacja, a potem liczy kombinacje.
+
+# ───────────────────────────────────────────────────────────────────────────────
+# TOP CUSTOMERS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Top 10 klientów po liczbie rezerwacji w 3 ostatnich miesiącach
+  sql: |
+    SELECT customer_name, customer_phone,
+           COUNT(*) AS visits,
+           SUM(price)::numeric AS total_spent
+    FROM reservations
+    WHERE reservation_date >= CURRENT_DATE - interval '3 months'
+      AND status = 'completed'
+    GROUP BY customer_name, customer_phone
+    ORDER BY visits DESC
+    LIMIT 10
+  notes: Joinujemy po customer_phone bo nie ma customer_id.
+
+- question: Top 10 klientów po łącznych wydatkach
+  sql: |
+    SELECT customer_name, customer_phone,
+           SUM(price)::numeric AS total_spent,
+           COUNT(*) AS visits,
+           MAX(reservation_date) AS last_visit
+    FROM reservations
+    WHERE status = 'completed'
+    GROUP BY customer_name, customer_phone
+    ORDER BY total_spent DESC
+    LIMIT 10
+
+- question: Którzy klienci nie byli u nas od ponad 6 miesięcy?
+  sql: |
+    SELECT customer_name, customer_phone,
+           MAX(reservation_date) AS last_visit,
+           COUNT(*) AS total_visits
+    FROM reservations
+    WHERE status = 'completed'
+    GROUP BY customer_name, customer_phone
+    HAVING MAX(reservation_date) < CURRENT_DATE - interval '6 months'
+    ORDER BY last_visit ASC
+    LIMIT 50
+
+- question: Ilu mamy stałych klientów (więcej niż 3 wizyty)?
+  sql: |
+    SELECT COUNT(*) AS recurring_customers
+    FROM (
+      SELECT customer_phone
+      FROM reservations
+      WHERE status = 'completed'
+      GROUP BY customer_phone
+      HAVING COUNT(*) > 3
+    ) sub
+
+# ───────────────────────────────────────────────────────────────────────────────
+# TIME ANALYSIS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile rezerwacji mamy w poszczególne dni tygodnia?
+  sql: |
+    SELECT TO_CHAR(reservation_date, 'Day') AS day_of_week,
+           EXTRACT(DOW FROM reservation_date) AS day_num,
+           COUNT(*) AS bookings,
+           SUM(price)::numeric AS revenue
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= CURRENT_DATE - interval '90 days'
+    GROUP BY TO_CHAR(reservation_date, 'Day'), EXTRACT(DOW FROM reservation_date)
+    ORDER BY day_num
+
+- question: W jakich godzinach mamy najwięcej rezerwacji?
+  sql: |
+    SELECT EXTRACT(HOUR FROM start_time) AS hour,
+           COUNT(*) AS bookings
+    FROM reservations
+    WHERE status IN ('completed', 'confirmed', 'in_progress')
+      AND start_time IS NOT NULL
+      AND reservation_date >= CURRENT_DATE - interval '90 days'
+    GROUP BY EXTRACT(HOUR FROM start_time)
+    ORDER BY hour
+
+- question: Jak zmienił się przychód miesiąc do miesiąca w tym roku?
+  sql: |
+    SELECT date_trunc('month', reservation_date) AS month,
+           SUM(price)::numeric AS revenue,
+           COUNT(*) AS bookings,
+           SUM(price)::numeric - LAG(SUM(price)::numeric) OVER (ORDER BY date_trunc('month', reservation_date)) AS mom_change
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= date_trunc('year', CURRENT_DATE)
+    GROUP BY date_trunc('month', reservation_date)
+    ORDER BY month
+
+# ───────────────────────────────────────────────────────────────────────────────
+# NO-SHOWS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile no-show w ubiegłym miesiącu?
+  sql: |
+    SELECT COUNT(*) AS no_show_count
+    FROM reservations
+    WHERE status = 'no_show'
+      AND reservation_date >= date_trunc('month', CURRENT_DATE - interval '1 month')
+      AND reservation_date < date_trunc('month', CURRENT_DATE)
+
+- question: Jaki jest ogólny wskaźnik no-show w ostatnich 3 miesiącach?
+  sql: |
+    SELECT COUNT(*) FILTER (WHERE status = 'no_show') AS no_shows,
+           COUNT(*) AS total_bookings,
+           ROUND(
+             COUNT(*) FILTER (WHERE status = 'no_show') * 100.0 / NULLIF(COUNT(*), 0), 2
+           ) AS no_show_rate_pct
+    FROM reservations
+    WHERE reservation_date >= CURRENT_DATE - interval '3 months'
+
+- question: Którzy klienci mają najwięcej no-show?
+  sql: |
+    SELECT customer_name, customer_phone,
+           COUNT(*) AS no_show_count
+    FROM reservations
+    WHERE status = 'no_show'
+    GROUP BY customer_name, customer_phone
+    ORDER BY no_show_count DESC
+    LIMIT 10
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SALES (FOLIARZ)
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Jaki był przychód z foliarza w bieżącym miesiącu?
+  sql: |
+    SELECT SUM(total_amount)::numeric AS revenue, COUNT(*) AS orders
+    FROM sales_orders
+    WHERE status = 'completed'
+      AND created_at >= date_trunc('month', CURRENT_DATE)
+      AND created_at < date_trunc('month', CURRENT_DATE) + interval '1 month'
+
+- question: Top 10 produktów sprzedanych w foliarzu
+  sql: |
+    SELECT sp.name AS product,
+           SUM(soi.quantity) AS total_qty,
+           SUM(soi.total_price)::numeric AS total_revenue
+    FROM sales_order_items soi
+    JOIN sales_products sp ON sp.id = soi.product_id
+    JOIN sales_orders so ON so.id = soi.order_id
+    WHERE so.status = 'completed'
+      AND so.created_at >= CURRENT_DATE - interval '90 days'
+    GROUP BY sp.name
+    ORDER BY total_revenue DESC
+    LIMIT 10
+
+- question: Przychód z foliarza według kategorii produktów
+  sql: |
+    SELECT sp.category,
+           SUM(soi.total_price)::numeric AS revenue,
+           SUM(soi.quantity) AS total_qty
+    FROM sales_order_items soi
+    JOIN sales_products sp ON sp.id = soi.product_id
+    JOIN sales_orders so ON so.id = soi.order_id
+    WHERE so.status = 'completed'
+      AND so.created_at >= CURRENT_DATE - interval '3 months'
+    GROUP BY sp.category
+    ORDER BY revenue DESC
+
+- question: Sprzedaż foliarza miesiąc po miesiącu
+  sql: |
+    SELECT date_trunc('month', created_at) AS month,
+           SUM(total_amount)::numeric AS revenue,
+           COUNT(*) AS orders
+    FROM sales_orders
+    WHERE status = 'completed'
+      AND created_at >= date_trunc('year', CURRENT_DATE)
+    GROUP BY date_trunc('month', created_at)
+    ORDER BY month
+
+# ───────────────────────────────────────────────────────────────────────────────
+# EMPLOYEES
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile godzin przepracował każdy pracownik w bieżącym miesiącu?
+  sql: |
+    SELECT e.name AS employee,
+           SUM(te.total_minutes) / 60.0 AS hours_worked,
+           COUNT(te.id) AS entries
+    FROM time_entries te
+    JOIN employees e ON e.id = te.employee_id
+    WHERE te.entry_date >= date_trunc('month', CURRENT_DATE)
+      AND te.entry_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+      AND te.entry_type = 'work'
+    GROUP BY e.name
+    ORDER BY hours_worked DESC
+
+- question: Ile dni urlopu wziął każdy pracownik w tym roku?
+  sql: |
+    SELECT e.name AS employee,
+           SUM(edo.date_to - edo.date_from + 1) AS vacation_days
+    FROM employee_days_off edo
+    JOIN employees e ON e.id = edo.employee_id
+    WHERE edo.date_from >= date_trunc('year', CURRENT_DATE)
+      AND edo.day_off_type = 'vacation'
+    GROUP BY e.name
+    ORDER BY vacation_days DESC
+
+- question: Ile rezerwacji obsłużył każdy pracownik w ostatnim miesiącu?
+  sql: |
+    SELECT e.name AS employee, COUNT(DISTINCT r.id) AS bookings_handled
+    FROM reservations r
+    JOIN employees e ON e.id = ANY (
+      ARRAY(SELECT jsonb_array_elements_text(r.assigned_employee_ids)::uuid)
+    )
+    WHERE r.status = 'completed'
+      AND r.reservation_date >= date_trunc('month', CURRENT_DATE - interval '1 month')
+      AND r.reservation_date < date_trunc('month', CURRENT_DATE)
+      AND r.assigned_employee_ids IS NOT NULL
+    GROUP BY e.name
+    ORDER BY bookings_handled DESC
+
+# ───────────────────────────────────────────────────────────────────────────────
+# OFFERS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Jaki jest wskaźnik konwersji ofert?
+  sql: |
+    SELECT COUNT(*) AS total_sent,
+           COUNT(*) FILTER (WHERE status = 'approved') AS approved,
+           COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
+           COUNT(*) FILTER (WHERE status = 'viewed') AS viewed,
+           ROUND(
+             COUNT(*) FILTER (WHERE status = 'approved') * 100.0
+             / NULLIF(COUNT(*) FILTER (WHERE status IN ('sent','viewed','approved','rejected')), 0),
+             2
+           ) AS conversion_rate_pct
+    FROM offers
+    WHERE created_at >= CURRENT_DATE - interval '90 days'
+
+- question: Ile ofert zostało wysłanych w bieżącym miesiącu?
+  sql: |
+    SELECT COUNT(*) AS sent, AVG(total_price)::numeric AS avg_value
+    FROM offers
+    WHERE status IN ('sent', 'viewed', 'approved', 'rejected')
+      AND sent_at >= date_trunc('month', CURRENT_DATE)
+      AND sent_at < date_trunc('month', CURRENT_DATE) + interval '1 month'
+
+# ───────────────────────────────────────────────────────────────────────────────
+# PROTOCOLS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile protokołów przyjęcia jest oczekujących (bez protokołu wydania)?
+  sql: |
+    SELECT COUNT(*) AS pending_releases
+    FROM vehicle_protocols vp
+    WHERE vp.protocol_type = 'reception'
+      AND NOT EXISTS (
+        SELECT 1 FROM vehicle_protocols vp2
+        WHERE vp2.offer_id = vp.offer_id
+          AND vp2.protocol_type = 'release'
+      )
+
+- question: Ile protokołów zostało wystawionych w tym miesiącu?
+  sql: |
+    SELECT protocol_type, COUNT(*) AS count
+    FROM vehicle_protocols
+    WHERE protocol_date >= date_trunc('month', CURRENT_DATE)
+      AND protocol_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+    GROUP BY protocol_type
+
+# ───────────────────────────────────────────────────────────────────────────────
+# TRAININGS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile szkoleń zaplanowano w bieżącym kwartale?
+  sql: |
+    SELECT status, COUNT(*) AS count
+    FROM trainings
+    WHERE start_date >= date_trunc('quarter', CURRENT_DATE)
+      AND start_date < date_trunc('quarter', CURRENT_DATE) + interval '3 months'
+    GROUP BY status
+
+- question: Jakie szkolenia odbyły się w ostatnich 6 miesiącach?
+  sql: |
+    SELECT training_type, title, start_date, end_date, status
+    FROM trainings
+    WHERE start_date >= CURRENT_DATE - interval '6 months'
+      AND status = 'completed'
+    ORDER BY start_date DESC
+
+# ───────────────────────────────────────────────────────────────────────────────
+# REMINDERS & SMS
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile przypomnień zostało wysłanych w tym miesiącu?
+  sql: |
+    SELECT status, COUNT(*) AS count
+    FROM customer_reminders
+    WHERE scheduled_date >= date_trunc('month', CURRENT_DATE)
+      AND scheduled_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+    GROUP BY status
+
+- question: Ile SMS-ów wysłano w ostatnich 30 dniach?
+  sql: |
+    SELECT message_type, status, COUNT(*) AS count
+    FROM sms_logs
+    WHERE created_at >= CURRENT_DATE - interval '30 days'
+    GROUP BY message_type, status
+    ORDER BY count DESC
+
+# ───────────────────────────────────────────────────────────────────────────────
+# DIAGNOSTIC EDGE CASES (trap examples — teach agent to handle 0-result or ambiguous queries)
+# ───────────────────────────────────────────────────────────────────────────────
+
+- question: Ile zleceń w marcu
+  sql: |
+    SELECT COUNT(*) AS bookings
+    FROM reservations
+    WHERE reservation_date >= date_trunc('month', date '2026-03-01')
+      AND reservation_date < date_trunc('month', date '2026-03-01') + interval '1 month'
+  notes: |
+    UWAGA: model powinien wywołać get_today() i podstawić właściwy rok dla "marca".
+    Tutaj zakładamy 2026-03 — ale w realnym query agent dynamicznie wybiera rok.
+
+- question: Jaki był przychód w grudniu 2030?
+  sql: |
+    SELECT SUM(price)::numeric AS revenue, COUNT(*) AS bookings
+    FROM reservations
+    WHERE status = 'completed'
+      AND reservation_date >= '2030-12-01'
+      AND reservation_date < '2031-01-01'
+  notes: |
+    Przyszła data — query zwróci 0 wierszy. Agent powinien wytłumaczyć że dane
+    za ten okres nie istnieją i zaproponować najbliższy dostępny okres (np. bieżący miesiąc).
+    To ćwiczy diagnostic loop: runSql zwraca row_count=0 → agent wywołuje dataOverview.
+
+- question: Pokaż rezerwacje od przyszłego tygodnia
+  sql: |
+    SELECT customer_name, reservation_date, start_time, price, status
+    FROM reservations
+    WHERE reservation_date >= date_trunc('week', CURRENT_DATE + interval '1 week')
+      AND reservation_date < date_trunc('week', CURRENT_DATE + interval '2 weeks')
+    ORDER BY reservation_date, start_time
+  notes: |
+    Przyszłe rezerwacje — mogą mieć status pending/confirmed, nie completed.
+    Agent powinien NIE filtrować po status='completed' dla przyszłych terminów.
+
+- question: Ilu klientów przybyło wczoraj?
+  sql: |
+    SELECT COUNT(*) AS arrivals, SUM(price)::numeric AS revenue
+    FROM reservations
+    WHERE reservation_date = CURRENT_DATE - interval '1 day'
+      AND status IN ('completed', 'in_progress', 'confirmed')
+  notes: |
+    "Wczoraj" — agent musi wywołać get_today() żeby poprawnie obliczyć datę.
+    Jeśli wczoraj był dzień wolny może zwrócić 0 — normalny wynik.
