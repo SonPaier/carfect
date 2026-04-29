@@ -488,19 +488,6 @@ const AddSalesOrderDrawer = ({
       return;
     }
 
-    // If the user chose "Tak edytuj fakturę", validate that we can build invoice
-    // positions BEFORE saving — otherwise we'd end with a saved order but no FV update.
-    if (pendingInvoiceEditRef.current) {
-      try {
-        buildInvoicePositions();
-      } catch (err: unknown) {
-        pendingInvoiceEditRef.current = false;
-        closingForInvoiceEditRef.current = false;
-        toast.error((err as Error).message);
-        return;
-      }
-    }
-
     // Validate roll availability before saving (multi-roll assignments)
     // Aggregate usage per roll across ALL products to catch same-roll-multiple-products
     const allAssignments = products.flatMap((p) =>

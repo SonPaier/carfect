@@ -175,16 +175,18 @@ describe('mapProductToInvoicePosition', () => {
       expect(result.quantity).toBeCloseTo(15.24, 5);
     });
 
-    it('throws when roll product name has no width and no roll assignments', () => {
+    it('falls back to 1524mm default width when name has no width pattern', () => {
       const product = {
-        name: 'Ultrafit XP Black',
+        name: 'XP RETRO MATTE',
         quantity: 1,
         priceNet: 309,
         productType: 'roll',
         priceUnit: 'meter',
         requiredMb: 8,
       } as Parameters<typeof mapProductToInvoicePosition>[0];
-      expect(() => mapProductToInvoicePosition(product)).toThrow(/szerokości/i);
+      const result = mapProductToInvoicePosition(product);
+      // 8 mb * 1.524 m default = 12.192 m²
+      expect(result.quantity).toBeCloseTo(12.19, 1);
     });
 
     it('extracts width from product name (e.g. "1220mm")', () => {

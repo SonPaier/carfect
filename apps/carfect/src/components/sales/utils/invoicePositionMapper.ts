@@ -11,9 +11,11 @@ export interface InvoicePosition {
   discount: number;
 }
 
-function extractWidthMm(name: string): number | null {
+const DEFAULT_WIDTH_MM = 1524;
+
+function extractWidthMm(name: string): number {
   const m = name.match(/(\d{3,4})\s*mm/);
-  return m ? parseInt(m[1]) : null;
+  return m ? parseInt(m[1]) : DEFAULT_WIDTH_MM;
 }
 
 function resolveQuantity(product: MappableProduct, rawUnit: string | undefined): number {
@@ -34,13 +36,9 @@ function resolveQuantity(product: MappableProduct, rawUnit: string | undefined):
       return rollAssignments.reduce((sum, a) => sum + (a.usageM2 || 0), 0);
     }
     if (product.requiredMb && product.requiredMb > 0) {
-      const widthMm = extractWidthMm(product.name);
-      if (widthMm == null) {
-        throw new Error(
-          `Brak szerokości w nazwie produktu "${product.name}". Wymagany format: "... 1524mm" lub przypisz rolki.`,
-        );
-      }
-      return mbToM2(product.requiredMb, widthMm);
+      // No width in name → fall back to 1524mm (most common roll width).
+      // Better than crashing the render path (e.g. orders list summary).
+      return mbToM2(product.requiredMb, extractWidthMm(product.name));
     }
   }
 
