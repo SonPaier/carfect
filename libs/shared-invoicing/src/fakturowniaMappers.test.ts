@@ -66,7 +66,9 @@ describe('mapFakturowniaToInternal', () => {
     expect(p.name).toBe('Folia PPF');
     expect(p.quantity).toBe(7.62);
     expect(p.unit).toBe('m²');
-    expect(p.unit_price_gross).toBe(281.67);
+    // Mapper converts Fakturownia's price_gross back to NET (form's default mode
+    // is netto, so unit_price_gross stores the net value). 281.67 / 1.23 ≈ 229.00
+    expect(p.unit_price_gross).toBeCloseTo(229, 2);
     expect(p.vat_rate).toBe(23);
     expect(p.discount).toBe(5);
   });

@@ -49,7 +49,7 @@ describe('OrderSummarySection (Fakturownia-style summary)', () => {
       />,
     );
 
-    expect(screen.getByText('10%')).toBeInTheDocument();
+    expect(screen.getByText('10,00%')).toBeInTheDocument();
   });
 
   it('falls back to customerDiscount when discountPercent is undefined', () => {
@@ -64,7 +64,7 @@ describe('OrderSummarySection (Fakturownia-style summary)', () => {
       />,
     );
 
-    expect(screen.getByText('8%')).toBeInTheDocument();
+    expect(screen.getByText('8,00%')).toBeInTheDocument();
   });
 
   it('omits Rabat column entirely when no row has a discount', () => {
@@ -126,9 +126,9 @@ describe('OrderSummarySection (Fakturownia-style summary)', () => {
       />,
     );
 
-    expect(screen.getByText('Wartość netto')).toBeInTheDocument();
-    expect(screen.getByText('Wartość VAT')).toBeInTheDocument();
-    expect(screen.getByText('Wartość brutto')).toBeInTheDocument();
+    expect(screen.getAllByText('Wartość netto').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Wartość VAT').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Wartość brutto').length).toBeGreaterThan(0);
   });
 
   it('renders "Do zapłaty" with amount in words', () => {

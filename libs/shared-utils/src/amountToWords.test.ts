@@ -35,7 +35,7 @@ describe('amountToWords', () => {
   });
 
   it('millions', () => {
-    expect(amountToWords(1_000_000)).toBe('milion PLN zero gr');
+    expect(amountToWords(1_000_000)).toBe('jeden milion PLN zero gr');
     expect(amountToWords(2_000_000)).toBe('dwa miliony PLN zero gr');
     expect(amountToWords(5_000_000)).toBe('pięć milionów PLN zero gr');
   });
