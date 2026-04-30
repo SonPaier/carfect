@@ -5635,6 +5635,11 @@
     "deleteConfirm": "Czy na pewno chcesz usunąć pojazd {{plate}} ({{customer}}) z placu?"
   },
   "aiAnalyst": {
+    "title": "Asystent AI",
+    "subtitle": "Zapytaj o swój biznes — przychody, klientów, usługi, rezerwacje...",
+    "analyzing": "Analizuję...",
+    "error": "Nie udało się przetworzyć zapytania",
+    "placeholder": "Zapytaj o swój biznes...",
     "suggestions": {
       "revenue": "Przychód w tym miesiącu",
       "popularServices": "Najpopularniejsze usługi",

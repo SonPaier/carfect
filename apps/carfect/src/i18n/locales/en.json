@@ -5590,6 +5590,11 @@
     "deleteConfirm": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
   },
   "aiAnalyst": {
+    "title": "AI Assistant",
+    "subtitle": "Ask about your business — revenue, customers, services, bookings...",
+    "analyzing": "Analyzing...",
+    "error": "Could not process request",
+    "placeholder": "Ask about your business...",
     "suggestions": {
       "revenue": "Revenue this month",
       "popularServices": "Most popular services",

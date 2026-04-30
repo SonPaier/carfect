@@ -5587,6 +5587,11 @@
     "deleteConfirm": "Möchten Sie das Fahrzeug {{plate}} ({{customer}}) wirklich vom Hof entfernen?"
   },
   "aiAnalyst": {
+    "title": "KI-Assistent",
+    "subtitle": "Fragen Sie über Ihr Geschäft — Umsatz, Kunden, Dienstleistungen, Buchungen...",
+    "analyzing": "Analysiere...",
+    "error": "Anfrage konnte nicht verarbeitet werden",
+    "placeholder": "Fragen Sie über Ihr Geschäft...",
     "suggestions": {
       "revenue": "Revenue this month",
       "popularServices": "Most popular services",
