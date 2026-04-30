@@ -1,7 +1,12 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getApaczkaCredentials, apaczkaFetch } from '../_shared/apaczka/client.ts';
-import { mapPackagesToShipmentItems, formatPostalCode, stripBankAccount } from '../_shared/apaczka/mappers.ts';
+import {
+  mapPackagesToShipmentItems,
+  formatPostalCode,
+  stripBankAccount,
+} from '../_shared/apaczka/mappers.ts';
+import { computePickupDate } from '../_shared/apaczka/pickupDate.ts';
 import type { SenderAddress, OrderPackage, ApaczkaOrderRequest } from '../_shared/apaczka/types.ts';
 
 const corsHeaders = {
@@ -43,19 +48,23 @@ serve(async (req) => {
 
     // Validate token
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
-    const { instanceId, packages, customerAddress, paymentMethod, totalGross, bankAccountNumber } = (await req.json()) as {
-      instanceId?: string;
-      packages?: OrderPackage[];
-      customerAddress?: CustomerAddress;
-      paymentMethod?: string;
-      totalGross?: number;
-      bankAccountNumber?: string;
-    };
+    const { instanceId, packages, customerAddress, paymentMethod, totalGross, bankAccountNumber } =
+      (await req.json()) as {
+        instanceId?: string;
+        packages?: OrderPackage[];
+        customerAddress?: CustomerAddress;
+        paymentMethod?: string;
+        totalGross?: number;
+        bankAccountNumber?: string;
+      };
 
     if (!instanceId) {
       return jsonResponse({ error: 'instanceId jest wymagany' }, 400);
@@ -97,7 +106,8 @@ serve(async (req) => {
 
     // Get service ID — prefer courierServiceId from package, fallback to instance default
     const firstShippingPkg = packages.find((p: OrderPackage) => p.shippingMethod === 'shipping');
-    const apaczkaServices = (instance.apaczka_services as Array<{ name: string; serviceId: number }>) || [];
+    const apaczkaServices =
+      (instance.apaczka_services as Array<{ name: string; serviceId: number }>) || [];
     let serviceId: number | null = (firstShippingPkg as any)?.courierServiceId || null;
     if (!serviceId && firstShippingPkg?.courier && apaczkaServices.length > 0) {
       const matched = apaczkaServices.find(
@@ -110,7 +120,10 @@ serve(async (req) => {
     }
     if (!serviceId) {
       return jsonResponse(
-        { error: 'Brak konfiguracji serwisu kurierskiego — wybierz kuriera lub skonfiguruj w Ustawieniach → Apaczka' },
+        {
+          error:
+            'Brak konfiguracji serwisu kurierskiego — wybierz kuriera lub skonfiguruj w Ustawieniach → Apaczka',
+        },
         422,
       );
     }
@@ -124,13 +137,9 @@ serve(async (req) => {
       return jsonResponse({ error: "Brak paczek z metodą wysyłki 'shipping'" }, 400);
     }
 
-    // Next business day for pickup
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const day = tomorrow.getDay();
-    if (day === 0) tomorrow.setDate(tomorrow.getDate() + 1);
-    if (day === 6) tomorrow.setDate(tomorrow.getDate() + 2);
-    const pickupDate = tomorrow.toISOString().split('T')[0];
+    // Pickup date — same logic as create-shipment: today if before 14:00 Warsaw and
+    // a working day, otherwise next working day (skipping weekends and Polish holidays).
+    const pickupDate = computePickupDate();
 
     // Build minimal order for valuation
     const minimalOrder: ApaczkaOrderRequest = {
@@ -188,9 +197,10 @@ serve(async (req) => {
 
     // Add COD if payment is cash on delivery
     if (paymentMethod === 'cod') {
-      const codAmount = typeof totalGross === 'number' && isFinite(totalGross) && totalGross > 0
-        ? Math.round(totalGross * 100)
-        : null;
+      const codAmount =
+        typeof totalGross === 'number' && isFinite(totalGross) && totalGross > 0
+          ? Math.round(totalGross * 100)
+          : null;
       if (codAmount) {
         const strippedAccount = stripBankAccount(bankAccountNumber?.slice(0, 50));
         minimalOrder.cod = {
