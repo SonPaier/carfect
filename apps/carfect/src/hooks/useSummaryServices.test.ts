@@ -181,6 +181,121 @@ describe('useSummaryServices', () => {
       // Then assert onUpdate was never called
       expect(onUpdate).not.toHaveBeenCalled();
     });
+
+    it('does not overwrite user-edited warranty when scopes change (regression)', async () => {
+      const onUpdate = vi.fn();
+      const offer = createOffer({
+        id: 'existing-offer',
+        warranty: 'User edited warranty',
+        paymentTerms: 'User payment terms',
+        notes: 'User notes',
+        serviceInfo: 'User service info',
+      });
+
+      const { result, rerender } = renderHook(
+        ({ o }) => useSummaryServices(INSTANCE_ID, o, true, onUpdate),
+        { initialProps: { o: offer } },
+      );
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(onUpdate).not.toHaveBeenCalled();
+
+      // Simulate adding a scope (which re-runs the fetch effect after first load).
+      const updatedOffer = { ...offer, selectedScopeIds: ['scope-1', 'scope-2'] };
+      rerender({ o: updatedOffer });
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      // User-edited fields must NEVER be overwritten by scope defaults.
+      const overwritingCalls = onUpdate.mock.calls.filter(
+        ([upd]: [Partial<OfferState>]) =>
+          'warranty' in upd || 'paymentTerms' in upd || 'notes' in upd || 'serviceInfo' in upd,
+      );
+      expect(overwritingCalls).toEqual([]);
+    });
+
+    it('fills only empty condition fields from scope defaults', async () => {
+      const onUpdate = vi.fn();
+      // Offer where warranty is already set but paymentTerms is empty
+      const offer = createOffer({
+        warranty: 'Pre-set warranty',
+        paymentTerms: '',
+        notes: '',
+        serviceInfo: '',
+      });
+
+      renderHook(() => useSummaryServices(INSTANCE_ID, offer, false, onUpdate));
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+
+      // Aggregate every conditions update
+      const conditionUpdates = onUpdate.mock.calls
+        .map(([upd]: [Partial<OfferState>]) => upd)
+        .filter(
+          (upd) =>
+            'warranty' in upd || 'paymentTerms' in upd || 'notes' in upd || 'serviceInfo' in upd,
+        );
+
+      // No call should set warranty (it's already non-empty).
+      const wroteWarranty = conditionUpdates.some((u) => 'warranty' in u);
+      expect(wroteWarranty).toBe(false);
+
+      // paymentTerms was empty → should be filled from scope default.
+      const wrotePaymentTerms = conditionUpdates.find((u) => 'paymentTerms' in u);
+      expect(wrotePaymentTerms?.paymentTerms).toBe('14 dni');
+    });
+
+    it('preserves a template-overwritten value when scopes change', async () => {
+      // Mirrors Playwright "nadpis" scenario: user picks a template (e.g. "dajemy 10 lat"),
+      // then adds/removes a scope. The picked content must survive the re-fetch.
+      const onUpdate = vi.fn();
+      const offer = createOffer({
+        id: 'existing-offer',
+        warranty: 'dajemy 10 lat', // came from TemplatePicker
+      });
+
+      const { result, rerender } = renderHook(
+        ({ o }) => useSummaryServices(INSTANCE_ID, o, true, onUpdate),
+        { initialProps: { o: offer } },
+      );
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      rerender({ o: { ...offer, selectedScopeIds: ['scope-1', 'scope-2'] } });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const wroteWarranty = onUpdate.mock.calls.some(
+        ([upd]: [Partial<OfferState>]) => 'warranty' in upd,
+      );
+      expect(wroteWarranty).toBe(false);
+    });
+
+    it('keeps a cleared field empty across same-mount re-renders (deletion stays)', async () => {
+      // Mirrors Playwright "usunięcie szablonu" scenario: user deletes content,
+      // saves, then a re-render of the same component occurs (e.g. another field
+      // updates via onUpdateOffer). The cleared field must stay empty as long as
+      // the offer.id has not changed (i.e. we are NOT in the "first load" path again).
+      const onUpdate = vi.fn();
+      const offer = createOffer({ id: 'existing-offer', notes: '' });
+
+      const { result, rerender } = renderHook(
+        ({ o }) => useSummaryServices(INSTANCE_ID, o, true, onUpdate),
+        { initialProps: { o: offer } },
+      );
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      // First mount: IF branch, no overwrite at all.
+      expect(onUpdate).not.toHaveBeenCalled();
+
+      // Simulate any later re-render that also keeps notes='' (e.g. user typed in
+      // the customer name elsewhere). The hook should not auto-fill notes from
+      // scope defaults because scope-1 has default_notes=''.
+      rerender({ o: { ...offer, customerData: { ...offer.customerData, name: 'X' } } });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const wroteNotes = onUpdate.mock.calls.some(([upd]: [Partial<OfferState>]) => 'notes' in upd);
+      expect(wroteNotes).toBe(false);
+    });
   });
 
   describe('mutations', () => {

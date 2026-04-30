@@ -11,6 +11,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: [
       'src/**/*.{test,spec}.{ts,tsx}',
+      '../../libs/ai/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/ui/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/shared-utils/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/billing/src/**/*.{test,spec}.{ts,tsx}',
@@ -19,6 +20,7 @@ export default defineConfig({
       '../../libs/pdf/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/post-sale-instructions/src/**/*.{test,spec}.{ts,tsx}',
       '../../libs/shared-invoicing/src/**/*.{test,spec}.{ts,tsx}',
+      '../../api/__tests__/**/*.{test,spec}.{ts,tsx}',
     ],
     coverage: {
       reporter: ['text', 'html'],

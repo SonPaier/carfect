@@ -2335,7 +2335,7 @@
       "reminders": "Przypomnienia",
       "ultrafit": "Ultrafit",
       "settings": "Ustawienia",
-      "aiAssistant": "Asystent AI",
+      "aiAssistant": "Carlos",
       "salesPanel": "Panel Sprzedaży",
       "collapseMenu": "Zwiń menu",
       "expandMenu": "Rozwiń menu",
@@ -5635,15 +5635,33 @@
     "deleteConfirm": "Czy na pewno chcesz usunąć pojazd {{plate}} ({{customer}}) z placu?"
   },
   "aiAnalyst": {
+    "title": "Carlos",
+    "tagline": "Twój asystent AI, zapytaj o cokolwiek o swoim studio",
+    "subtitle": "Zapytaj o swoje studio — przychody, klientów, usługi, rezerwacje...",
+    "analyzing": "Analizuję...",
+    "error": "Nie udało się przetworzyć zapytania",
+    "placeholder": "Zapytaj o swoje studio...",
     "suggestions": {
       "revenue": "Przychód w tym miesiącu",
+      "revenueYear": "Przychód w tym roku",
+      "revenueByMonth": "Porównaj miesiące",
       "popularServices": "Najpopularniejsze usługi",
-      "topClients": "Top klienci"
+      "servicesRanking": "Ranking usług po przychodzie",
+      "topClients": "Top klienci",
+      "offersConversion": "Konwersja ofert",
+      "noShowRate": "Ile no-show w tym miesiącu",
+      "avgRevenue": "Średnia kwota rezerwacji"
     },
     "prompts": {
       "revenue": "Jaki był mój łączny przychód w bieżącym miesiącu? Podaj sumę i liczbę rezerwacji.",
+      "revenueYear": "Jaki jest mój łączny przychód od początku tego roku? Pokaż sumę i liczbę zrealizowanych rezerwacji.",
+      "revenueByMonth": "Pokaż przychód miesiąc po miesiącu w bieżącym roku.",
       "popularServices": "Jakie usługi były najczęściej rezerwowane w ostatnich 30 dniach? Pokaż ranking.",
-      "topClients": "Którzy klienci mieli najwięcej rezerwacji w ostatnich 3 miesiącach? Pokaż top 10 z liczbą wizyt i łączną kwotą."
+      "servicesRanking": "Pokaż ranking usług w tym miesiącu po przychodzie netto i liczbie wykonań.",
+      "topClients": "Którzy klienci mieli najwięcej rezerwacji w ostatnich 3 miesiącach? Pokaż top 10 z liczbą wizyt i łączną kwotą.",
+      "offersConversion": "Ile ofert wysłałem w tym roku i jaki procent został zaakceptowany?",
+      "noShowRate": "Ile było no-show w tym miesiącu i jaki to procent wszystkich rezerwacji?",
+      "avgRevenue": "Jaka jest średnia kwota zrealizowanej rezerwacji w tym miesiącu?"
     }
   },
   "serviceForm": {

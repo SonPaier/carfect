@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "ai:sync-training": "tsx scripts/sync-training-data.ts",
     "dev": "nx run carfect:dev",
     "build": "nx run carfect:build",
     "lint": "nx run-many --target=lint",
@@ -33,11 +34,15 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/langchain": "^2.0.176",
     "@ai-sdk/openai": "^3.0.47",
+    "@langchain/community": "^1.1.27",
+    "@langchain/openai": "^1.4.5",
     "@react-pdf/renderer": "^4.3.0",
     "@supabase/supabase-js": "^2.99.3",
     "ai": "^6.0.134",
     "dompurify": "^3.3.3",
+    "langchain": "^1.3.5",
     "zod": "^3.25.76"
   }
 }

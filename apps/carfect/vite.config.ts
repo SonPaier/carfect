@@ -34,6 +34,10 @@ export default defineConfig(({ mode }) => ({
     host: '::',
     port: 8080,
     proxy: {
+      '/api/ai-analyst-v2': {
+        target: 'http://localhost:3334',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'https://carfect-bk87-git-feature-offer-print-view-sonpaiers-projects.vercel.app',
         changeOrigin: true,
@@ -80,7 +84,7 @@ export default defineConfig(({ mode }) => ({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB limit
       },
       devOptions: {
         enabled: false,

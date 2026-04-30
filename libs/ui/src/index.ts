@@ -19,6 +19,7 @@ export * from './components/card';
 export * from './components/color-palette-picker';
 export * from './components/carousel';
 export * from './components/checkbox';
+export * from './components/chart-renderer';
 export * from './components/checklist-section';
 export * from './components/collapsible';
 export * from './components/command';

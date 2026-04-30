@@ -1,0 +1,266 @@
+- term_pl: zlecenia
+  meaning: |
+    W carfect "zlecenia" zwykle znaczą rezerwacje detailingowe — tabela `reservations`.
+    Wyjątek: w kontekście sprzedaży foliarskiej oznaczają `sales_orders`.
+    Domyślnie wybieraj reservations chyba że pytanie wyraźnie dotyczy sprzedaży folii/PPF.
+  related_tables: [reservations, sales_orders]
+
+- term_pl: przychód
+  meaning: |
+    Suma kwot zrealizowanych usług — RAPORTUJEMY ZAWSZE NETTO.
+    W carfect = SUM(price_netto) FROM reservations WHERE status = 'completed'
+    AND reservation_date BETWEEN ... (nie created_at).
+    Anulowane (cancelled) i no_show NIE wliczają się do przychodu.
+    Sprzedaż foliarska to osobny przychód z sales_orders (też netto, jeśli kolumna istnieje).
+    UWAGA: price = brutto (z VAT), price_netto = netto. Zawsze wybieraj price_netto.
+  related_tables: [reservations, sales_orders]
+
+- term_pl: klient
+  meaning: |
+    Tabela `customers` (master data detailingowy). Łączenie z reservations przez phone
+    (NIE przez customer_id — kolumna nie istnieje w reservations).
+    Klienci sprzedażowi (foliarz) są w osobnej tabeli `sales_customers`.
+  related_tables: [customers, reservations, sales_customers]
+
+- term_pl: no-show
+  meaning: |
+    Klient który nie przyszedł na rezerwację bez anulowania.
+    Sygnały: reservations.status = 'no_show' LUB customers.has_no_show = true.
+    Wskaźnik no-show = COUNT(*) WHERE status='no_show' / COUNT(*) total.
+  related_tables: [customers, reservations]
+
+- term_pl: foliarz
+  meaning: |
+    Moduł sprzedaży folii PPF i PPS. Dane w tabelach sales_orders, sales_order_items,
+    sales_products, sales_customers. Odrębny od modułu detailingowego (reservations).
+  related_tables: [sales_orders, sales_order_items, sales_products, sales_customers]
+
+- term_pl: folia
+  meaning: |
+    Folia ochronna PPF (Paint Protection Film) lub PPS. Sprzedawana przez moduł
+    foliarza — tabela sales_products, zamówienia w sales_orders.
+  related_tables: [sales_orders, sales_products]
+
+- term_pl: PPF
+  meaning: |
+    Paint Protection Film — folia ochronna na lakier. Sprzedaż przez sales_orders.
+    Usługi aplikacji PPF mogą być też w reservations (service_items).
+  related_tables: [sales_orders, sales_products, reservations]
+
+- term_pl: PPS
+  meaning: |
+    Paint Protection Solution — folia ochronna (alternatywna nazwa dla PPF/PPS).
+    Tak samo jak PPF — sprzedaż przez sales_orders, aplikacja w reservations.
+  related_tables: [sales_orders, sales_products]
+
+- term_pl: detailing
+  meaning: |
+    Usługi szczegółowego czyszczenia i pielęgnacji pojazdu. Głównie tabela reservations
+    i katalog unified_services z kategorią "Detailing".
+  related_tables: [reservations, unified_services, unified_categories]
+
+- term_pl: pracownik
+  meaning: |
+    Tabela `employees`. Przypisanie do rezerwacji: assigned_employee_ids w reservations
+    to jsonb array UUID-ów. Czas pracy w time_entries, urlopy w employee_days_off.
+    Przy zapytaniach o aktywnych: WHERE active = true AND deleted_at IS NULL.
+  related_tables: [employees, reservations, time_entries, employee_days_off]
+
+- term_pl: pracownicy
+  meaning: |
+    Tabela `employees`. assigned_employee_ids w reservations to jsonb array UUID-ów pracowników.
+    Do rozwinięcia listy UUID-ów: jsonb_array_elements_text(assigned_employee_ids)::uuid.
+    Czas pracy w time_entries, urlopy w employee_days_off.
+  related_tables: [employees, reservations, time_entries, employee_days_off]
+
+- term_pl: stanowisko
+  meaning: |
+    Tabela `stations` — boxy/miejsca pracy w studio. Każda rezerwacja przypisana
+    jest do jednego stanowiska przez station_id. Używaj JOIN stations s ON s.id = r.station_id.
+  related_tables: [stations, reservations]
+
+- term_pl: box
+  meaning: |
+    Synonim stanowiska — tabela `stations`. Boxy to fizyczne miejsca pracy w studio.
+  related_tables: [stations]
+
+- term_pl: usługa
+  meaning: |
+    Katalog usług w tabeli `unified_services`, zgrupowanych w `unified_categories`.
+    Usługi wykonane na konkretnej rezerwacji są w service_items (jsonb) w reservations.
+    KSZTAŁT service_items: [{name, service_id, custom_price, custom_price_netto, short_name}].
+    Cena pozycji NETTO: COALESCE(custom_price_netto, custom_price/1.23, catalog_brutto/1.23).
+    Cena z katalogu zależy od car_size: price_small / price_medium / price_large / default_price.
+    Match po nazwie ZAWSZE przez `lower(si->>'name') ILIKE lower('%query%')` — nigdy `=`
+    (nazwy w bazie mają wielkie litery i polskie znaki, np. "Mycie zewnętrzne").
+  related_tables: [unified_services, unified_categories, reservations]
+
+- term_pl: usługi
+  meaning: |
+    Patrz "usługa". Lista WSZYSTKICH usług = unified_services (katalog).
+    Lista FAKTYCZNIE wykonanych: LEFT JOIN unified_services × jsonb_array_elements(service_items)
+    po service_id — pokazuje też usługi z 0 wykonaniami w okresie.
+  related_tables: [unified_services, unified_categories, reservations]
+
+- term_pl: rezerwacja
+  meaning: |
+    Jeden wpis w tabeli `reservations`. Reprezentuje konkretną wizytę klienta.
+    Status: pending (oczekuje) / confirmed (potwierdzona) / in_progress (w trakcie) /
+    completed (zakończona) / cancelled (anulowana) / no_show / change_request.
+  related_tables: [reservations]
+
+- term_pl: wizyta
+  meaning: |
+    Synonim rezerwacji — jeden wpis w tabeli `reservations`. Zakończona wizyta
+    ma status = 'completed'.
+  related_tables: [reservations]
+
+- term_pl: oferta
+  meaning: |
+    Wycena wysłana do klientowi — tabela `offers`.
+    Status (faktyczne wartości): draft / sent / viewed / accepted / rejected / completed.
+    UWAGA: zaakceptowana = status IN ('accepted','completed'). NIE 'approved' (taka wartość nie istnieje).
+    Kwoty: total_net (NETTO — raportujemy to), total_gross (brutto), vat_rate. Brak kolumny total_price.
+    Szczegóły: offer_options i offer_option_items. Zakresy oferty: offer_scopes.
+  related_tables: [offers, offer_options, offer_option_items, offer_scopes]
+
+- term_pl: oferty
+  meaning: |
+    Wyceny wysyłane do klientów — tabela `offers`.
+    Konwersja = COUNT(*) FILTER (WHERE status IN ('accepted','completed'))
+              / NULLIF(COUNT(*) FILTER (WHERE status IN ('sent','viewed','accepted','rejected','completed')), 0).
+    'draft' to wersja robocza — nie wlicza się do wysłanych.
+    Kwoty raportujemy z total_net (NETTO).
+  related_tables: [offers, offer_options, offer_option_items]
+
+- term_pl: protokół
+  meaning: |
+    Protokół przyjęcia lub wydania pojazdu — tabela `vehicle_protocols`.
+    protocol_type: reception = przyjęcie (auto wjeżdża), release = wydanie (auto wyjeżdża).
+    Powiązany z ofertą przez offer_id.
+  related_tables: [vehicle_protocols, offers]
+
+- term_pl: przyjęcie pojazdu
+  meaning: |
+    Protokół przyjęcia — vehicle_protocols WHERE protocol_type = 'reception'.
+    Dokumentuje stan pojazdu przy przyjęciu (paliwo, przebieg, uszkodzenia).
+  related_tables: [vehicle_protocols]
+
+- term_pl: powłoka ceramiczna
+  meaning: |
+    Usługa aplikacji ceramiki ochronnej na lakier. W reservations jako pozycja w service_items.
+    W unified_services jako usługa w kategorii ceramiki. Może być też w offers (offer_option_items).
+  related_tables: [reservations, unified_services, offer_option_items]
+
+- term_pl: mycie
+  meaning: |
+    Usługa mycia pojazdu. W reservations jako pozycja w service_items.
+    W unified_services jako usługa w kategorii myjni/czyszczenia.
+  related_tables: [reservations, unified_services]
+
+- term_pl: polerowanie
+  meaning: |
+    Usługa korekty lakieru / polerowania. W reservations jako pozycja w service_items.
+    W unified_services jako usługa detailingowa.
+  related_tables: [reservations, unified_services]
+
+- term_pl: termin
+  meaning: |
+    Data i godzina rezerwacji: reservation_date (data), start_time/end_time (godziny).
+    Terminarz to widok kalendarza — zapytania o terminy to zapytania na tabeli reservations.
+  related_tables: [reservations]
+
+- term_pl: terminarz
+  meaning: |
+    Harmonogram rezerwacji — tabela `reservations` posortowana po reservation_date i start_time.
+    Obłożenie = ile rezerwacji/stanowisk zajętych w danym okresie.
+  related_tables: [reservations, stations]
+
+- term_pl: zwrot
+  meaning: |
+    Anulowanie rezerwacji lub korekta. Anulowane rezerwacje: status = 'cancelled' (cancelled_at IS NOT NULL).
+    Faktury korygujące nie są w DB — obsługuje je zewnętrzny system fakturowania (Fakturownia/iFirma).
+  related_tables: [reservations]
+
+- term_pl: faktura
+  meaning: |
+    Faktury NIE są przechowywane w głównej bazie danych carfect.
+    Faktury generuje zewnętrzny system (Fakturownia lub iFirma) przez edge function.
+    W DB jest tylko informacja o płatności (price w reservations, is_net_payer w customers).
+  related_tables: [reservations, customers]
+
+- term_pl: stały klient
+  meaning: |
+    Klient wracający wielokrotnie. Brak osobnego flaga w DB — identyfikuj przez
+    COUNT(*) GROUP BY customer_phone HAVING COUNT(*) > N w reservations.
+    Lub przez usage_count w customer_vehicles dla pojazdów.
+  related_tables: [reservations, customers, customer_vehicles]
+
+- term_pl: jednorazowi
+  meaning: |
+    Klienci z tylko jedną wizytą. COUNT(*) GROUP BY customer_phone HAVING COUNT(*) = 1.
+  related_tables: [reservations, customers]
+
+- term_pl: rabat
+  meaning: |
+    Rabat procentowy klienta: customers.discount_percent.
+    Rabat sprzedażowy: sales_customers.discount_percent.
+    W rezerwacjach cena jest już po rabacie (pole price = cena końcowa).
+  related_tables: [customers, sales_customers]
+
+- term_pl: zniżka
+  meaning: |
+    Synonim rabatu — customers.discount_percent (detailing) lub sales_customers.discount_percent (foliarz).
+  related_tables: [customers, sales_customers]
+
+- term_pl: NIP-owiec
+  meaning: |
+    Klient B2B z NIP-em — customers.is_net_payer = true LUB sales_customers.is_net_payer = true.
+    Dla takich klientów wystawiana jest faktura VAT (nie paragon).
+  related_tables: [customers, sales_customers]
+
+- term_pl: szkolenie
+  meaning: |
+    Szkolenie pracowników — tabela `trainings`. Blokuje stanowisko na czas szkolenia.
+    Szkolenia NIE są rezerwacjami detailingowymi (nie mają price, service_items).
+    training_type — typ szkolenia, assigned_employee_ids — uczestnicy.
+  related_tables: [trainings, stations, employees]
+
+- term_pl: urlop
+  meaning: |
+    Dni wolne pracownika — tabela `employee_days_off`. date_from/date_to — zakres urlopu.
+    day_off_type — typ (urlop, zwolnienie lekarskie, dzień wolny na żądanie itp.).
+  related_tables: [employee_days_off, employees]
+
+- term_pl: przypomnienie
+  meaning: |
+    Przypomnienia dla klientów — tabela `customer_reminders`.
+    Automatyczne SMS-y z informacją o potrzebie odnowienia ceramiki, przeglądu itp.
+    scheduled_date — planowana data wysyłki, sent_at — faktyczna data wysłania.
+  related_tables: [customer_reminders, sms_logs]
+
+- term_pl: SMS
+  meaning: |
+    Logi SMS — tabela `sms_logs`. Zawiera historię wszystkich wysłanych wiadomości.
+    message_type — typ wiadomości (potwierdzenie, przypomnienie, marketing).
+    status: sent/failed/pending. Używaj do analizy wolumenu i skuteczności dostarczenia.
+  related_tables: [sms_logs, customer_reminders]
+
+- term_pl: obłożenie
+  meaning: |
+    Procent zajętości stanowisk w danym okresie. Obliczane jako:
+    (suma godzin zarezerwowanych / suma godzin dostępnych) * 100.
+    Przybliżenie: COUNT(reservations) per station per day / max możliwych rezerwacji.
+  related_tables: [reservations, stations]
+
+- term_pl: przyjazd
+  meaning: |
+    Przyjazd klienta = data/godzina rezerwacji: reservation_date + start_time.
+    Pojazdy oczekujące na odbiór: tabela yard_vehicles (status = 'waiting').
+  related_tables: [reservations, yard_vehicles]
+
+- term_pl: wyjazd
+  meaning: |
+    Wyjazd klienta po zakończeniu usługi: end_time lub completed_at w reservations.
+    Pojazdy wydane: yard_vehicles WHERE status = 'picked_up' LUB reservation.status = 'completed'.
+  related_tables: [reservations, yard_vehicles]

@@ -12,16 +12,16 @@ interface UseAiAnalystOptions {
 export function useAiAnalyst({ instanceId, schemaContext, supabaseClient }: UseAiAnalystOptions) {
   const transport = useMemo(() => {
     return new DefaultChatTransport({
-      api: '/api/ai-analyst',
+      api: '/api/ai-analyst-v2',
       headers: async () => {
         const { data } = await supabaseClient.auth.getSession();
         return {
-          Authorization: `Bearer ${data.session?.access_token || ''}`,
+          Authorization: `Bearer ${data.session?.access_token ?? ''}`,
+          'X-Carfect-Instance': instanceId,
         };
       },
-      body: { instanceId, schemaContext },
     });
-  }, [instanceId, schemaContext, supabaseClient]);
-
+  }, [instanceId, supabaseClient]);
+  void schemaContext; // Server resolves this from instance config; kept in signature for v1 compat.
   return useChat({ transport });
 }
