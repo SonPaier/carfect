@@ -239,8 +239,8 @@ function buildDefaultNotification(): ApaczkaNotification {
 }
 
 function buildDefaultPickup(): ApaczkaPickup {
-  // Pick up today if it's a working day and we're before the 14:00 Warsaw cutoff;
-  // otherwise the next working day (skipping weekends and Polish public holidays).
+  // Pick up today if it's a working day, otherwise the next working day
+  // (skipping weekends and Polish public holidays).
   return {
     type: 'COURIER',
     date: computePickupDate(),

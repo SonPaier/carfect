@@ -2,7 +2,7 @@
  * Compute the courier pickup date for Apaczka.
  *
  * Behaviour:
- * - Use TODAY (Europe/Warsaw) if it's a working day and Warsaw-local hour < cutoff (default 14).
+ * - Use TODAY (Europe/Warsaw) if it's a working day.
  * - Otherwise advance day-by-day until a working day is found.
  * - "Working day" = Mon–Fri AND not a Polish public holiday.
  *
@@ -20,8 +20,6 @@ const FIXED_POLISH_HOLIDAYS: ReadonlyArray<readonly [number, number]> = [
   [12, 25], // Boże Narodzenie
   [12, 26], // 2. dzień Bożego Narodzenia
 ];
-
-const DEFAULT_CUTOFF_HOUR = 14;
 
 /**
  * Easter Sunday using Meeus/Jones/Butcher Gregorian algorithm.
@@ -89,52 +87,30 @@ export function isWorkingDay(date: Date): boolean {
   return !isPolishHoliday(date);
 }
 
-/** Decompose a `Date` into Warsaw-local Y/M/D/H integers. */
-function getWarsawParts(now: Date): {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-} {
+/** Decompose a `Date` into Warsaw-local Y/M/D integers. */
+function getWarsawDate(now: Date): { year: number; month: number; day: number } {
   const fmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Warsaw',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    hour12: false,
   });
   const parts = fmt.formatToParts(now);
   const get = (type: string) => parseInt(parts.find((p) => p.type === type)!.value, 10);
-  // Some runtimes emit hour="24" at midnight — normalise to 0.
-  const rawHour = get('hour');
-  return {
-    year: get('year'),
-    month: get('month'),
-    day: get('day'),
-    hour: rawHour === 24 ? 0 : rawHour,
-  };
+  return { year: get('year'), month: get('month'), day: get('day') };
 }
 
 /**
  * Compute the pickup date string for Apaczka.
  *
- * @param now      Reference moment (defaults to current time). Pass a fixed Date in tests.
- * @param cutoffHour Warsaw-local hour at/after which we roll over to next working day.
+ * @param now Reference moment (defaults to current time). Pass a fixed Date in tests.
  * @returns `YYYY-MM-DD` (Warsaw local calendar day).
  */
-export function computePickupDate(
-  now: Date = new Date(),
-  cutoffHour: number = DEFAULT_CUTOFF_HOUR,
-): string {
-  const { year, month, day, hour } = getWarsawParts(now);
+export function computePickupDate(now: Date = new Date()): string {
+  const { year, month, day } = getWarsawDate(now);
 
   // Warsaw-local midnight, represented as UTC midnight (so getUTC* reads back the same Y/M/D).
   let date = new Date(Date.UTC(year, month - 1, day));
-
-  if (hour >= cutoffHour) {
-    date = addUtcDays(date, 1);
-  }
 
   while (!isWorkingDay(date)) {
     date = addUtcDays(date, 1);
