@@ -1432,8 +1432,7 @@ const AdminDashboard = () => {
                     {!sidebarCollapsed && t('navigation.products')}
                   </Button>
                   {/* 8. Powiadomienia - ukryte */}
-                  {/* AI Analyst - hidden until env vars deployed */}
-                  {/* {hasFeature('ai_analyst') && (
+                  {hasFeature('ai_analyst') && (
                     <Button
                       variant="ghost"
                       className={cn(
@@ -1451,7 +1450,7 @@ const AdminDashboard = () => {
                       <Sparkles className="w-4 h-4 shrink-0" />
                       {!sidebarCollapsed && 'Asystent AI'}
                     </Button>
-                  )} */}
+                  )}
                   {/* 9. Przypomnienia */}
                   {hasFeature('reminders') && (
                     <Button
@@ -1839,7 +1838,7 @@ const AdminDashboard = () => {
               <UltrafitOrdersView instanceId={instanceId} />
             )}
 
-            {currentView === 'ai_analyst' && instanceId && <AiAnalystTab instanceId={instanceId} />}
+            {currentView === 'ai_analyst' && instanceId && hasFeature('ai_analyst') && <AiAnalystTab instanceId={instanceId} />}
 
             {currentView === 'employees' && instanceId && <EmployeesView instanceId={instanceId} />}
           </div>
