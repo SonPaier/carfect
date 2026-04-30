@@ -71,7 +71,9 @@ describe('AiAnalystView', () => {
         supabaseClient={{} as never}
       />,
     );
-    // data-chart parts are hidden — no SVG chart rendered
-    expect(container.querySelector('svg')).not.toBeInTheDocument();
+    // No Recharts container should appear (only the send-button icon SVG would).
+    expect(container.querySelector('.recharts-wrapper')).not.toBeInTheDocument();
+    // No raw spec text leaked into the DOM.
+    expect(screen.queryByText(/x_key/)).not.toBeInTheDocument();
   });
 });
