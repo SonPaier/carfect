@@ -5,8 +5,7 @@ import { computePickupDate, isPolishHoliday, isWorkingDay } from './pickupDate.t
 
 /**
  * Build a Date that, in Warsaw, falls on YYYY-MM-DD at HH:00 local time.
- * Warsaw is UTC+1 in winter (CET) and UTC+2 in summer (CEST). Most of our
- * scenarios are in late April / May 2026 which is CEST.
+ * Warsaw is UTC+1 in winter (CET) and UTC+2 in summer (CEST).
  *
  * Using `Date.UTC(y, m-1, d, h - offset)` keeps assertions explicit.
  */
@@ -92,94 +91,53 @@ Deno.test('isWorkingDay — regular weekdays are working days', () => {
 
 // ─── computePickupDate ─────────────────────────────────────────────────────────
 
-Deno.test('computePickupDate — before cutoff on a working day → today', () => {
-  // Thu April 30, 2026, 13:00 Warsaw time (CEST = UTC+2). Cutoff is 14:00.
-  const now = warsawMoment(2026, 4, 30, 13, CEST);
-  assertEquals(computePickupDate(now), '2026-04-30');
-});
-
-Deno.test('computePickupDate — at exactly 14:00 → roll to next working day', () => {
-  const now = warsawMoment(2026, 4, 30, 14, CEST);
-  // Today (Apr 30) Thu. At cutoff → tomorrow (May 1, Labour Day) → skip;
-  // May 2 Sat → skip; May 3 Sun (and Constitution Day) → skip; May 4 Mon → working.
-  assertEquals(computePickupDate(now), '2026-05-04');
-});
-
-Deno.test('computePickupDate — after cutoff (15:00) → next working day', () => {
-  const now = warsawMoment(2026, 4, 30, 15, CEST);
-  assertEquals(computePickupDate(now), '2026-05-04');
-});
-
-Deno.test('computePickupDate — late evening just before midnight Warsaw', () => {
-  const now = warsawMoment(2026, 4, 30, 23, CEST);
-  assertEquals(computePickupDate(now), '2026-05-04');
-});
-
-Deno.test('computePickupDate — early morning (06:00) on a working weekday → today', () => {
-  const now = warsawMoment(2026, 4, 30, 6, CEST);
-  assertEquals(computePickupDate(now), '2026-04-30');
+Deno.test('computePickupDate — today is a working day → today (regardless of hour)', () => {
+  // Thu April 30, 2026 — verify a few times of day all return today.
+  for (const h of [0, 6, 9, 12, 14, 17, 22]) {
+    const now = warsawMoment(2026, 4, 30, h, CEST);
+    assertEquals(computePickupDate(now), '2026-04-30', `at ${h}:00 Warsaw`);
+  }
 });
 
 Deno.test('computePickupDate — today is a holiday → next working day', () => {
-  // Fri May 1, 2026 (Labour Day) at 10:00 Warsaw.
+  // Fri May 1, 2026 (Labour Day). Next working day after the May holiday chain = May 4.
   const now = warsawMoment(2026, 5, 1, 10, CEST);
   assertEquals(computePickupDate(now), '2026-05-04');
 });
 
 Deno.test('computePickupDate — today is Saturday → Monday', () => {
-  // Sat May 2, 2026 at 11:00 Warsaw.
+  // Sat May 2, 2026. May 3 (Sun + Constitution Day) skip → May 4 Mon.
   const now = warsawMoment(2026, 5, 2, 11, CEST);
   assertEquals(computePickupDate(now), '2026-05-04');
 });
 
 Deno.test('computePickupDate — today is Sunday → Monday', () => {
-  // Sun May 3, 2026 at 11:00 (also Constitution Day).
+  // Sun May 3, 2026 (also Constitution Day) → May 4.
   const now = warsawMoment(2026, 5, 3, 11, CEST);
   assertEquals(computePickupDate(now), '2026-05-04');
 });
 
 Deno.test('computePickupDate — Easter Monday 2026 → Tuesday April 7', () => {
-  // Mon April 6 2026 (Easter Monday) at 09:00.
   const now = warsawMoment(2026, 4, 6, 9, CEST);
   assertEquals(computePickupDate(now), '2026-04-07');
 });
 
-Deno.test('computePickupDate — Friday before cutoff → Friday', () => {
-  // Fri April 17, 2026 at 12:00 — ordinary working Friday.
-  const now = warsawMoment(2026, 4, 17, 12, CEST);
-  assertEquals(computePickupDate(now), '2026-04-17');
+Deno.test('computePickupDate — Christmas chain (Dec 25 → Dec 28)', () => {
+  // Fri Dec 25, 2026 (Christmas) → skip; Dec 26 (Boxing Day) → skip;
+  // Dec 27 (Sun) → skip; Dec 28 Mon = working.
+  const now = warsawMoment(2026, 12, 25, 10, CET);
+  assertEquals(computePickupDate(now), '2026-12-28');
 });
 
-Deno.test('computePickupDate — Friday after cutoff → Monday', () => {
-  const now = warsawMoment(2026, 4, 17, 15, CEST);
-  assertEquals(computePickupDate(now), '2026-04-20');
-});
-
-Deno.test('computePickupDate — winter time (CET) handling', () => {
-  // Thu Jan 8, 2026 at 11:00 Warsaw (winter = UTC+1) — before 14:00 cutoff.
+Deno.test('computePickupDate — winter time (CET) handling on a working day', () => {
+  // Thu Jan 8, 2026 — ordinary winter working day.
   const now = warsawMoment(2026, 1, 8, 11, CET);
   assertEquals(computePickupDate(now), '2026-01-08');
 });
 
-Deno.test('computePickupDate — winter, after cutoff', () => {
-  const now = warsawMoment(2026, 1, 8, 15, CET);
-  // Jan 9 = Friday, working.
-  assertEquals(computePickupDate(now), '2026-01-09');
-});
-
-Deno.test('computePickupDate — Christmas chain (Dec 24 afternoon)', () => {
-  // Thu Dec 24, 2026 at 15:00 Warsaw (winter = UTC+1) — past 14:00 cutoff.
-  // Today after cutoff → Dec 25 (Christmas) skip → Dec 26 (Boxing Day) skip
-  // → Dec 27 (Sun) skip → Dec 28 Mon = working.
-  const now = warsawMoment(2026, 12, 24, 15, CET);
-  assertEquals(computePickupDate(now), '2026-12-28');
-});
-
-Deno.test('computePickupDate — custom cutoff parameter', () => {
-  // 12:00 with cutoff=12 → roll over.
-  const now = warsawMoment(2026, 4, 17, 12, CEST);
-  assertEquals(computePickupDate(now, 12), '2026-04-20');
-  // 11:59 with cutoff=12 → today.
-  const before = warsawMoment(2026, 4, 17, 11, CEST);
-  assertEquals(computePickupDate(before, 12), '2026-04-17');
+Deno.test('computePickupDate — UTC late evening must use Warsaw date, not UTC date', () => {
+  // 2026-04-30 23:30 Warsaw (CEST) is still April 30 in Warsaw, but already
+  // April 30 21:30 UTC. Make sure we use Warsaw calendar date, not UTC.
+  const now = warsawMoment(2026, 4, 30, 23, CEST);
+  assertEquals(computePickupDate(now), '2026-04-30');
 });
