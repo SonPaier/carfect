@@ -31,4 +31,22 @@ describe('buildSystemPrompt', () => {
     const prompt = buildSystemPrompt({ schemaContext: 'carfect', todayIso: '2026-04-30' });
     expect(prompt).toMatch(/nie wymyślaj|nigdy.*wymyślaj/i);
   });
+
+  it('forbids leaking technical details (UUIDs, table names, column names)', () => {
+    const prompt = buildSystemPrompt({ schemaContext: 'carfect', todayIso: '2026-04-30' });
+    expect(prompt).toMatch(/nie ujawniaj|nigdy.*nie.*ujawniaj/i);
+    expect(prompt).toMatch(/UUID/);
+    expect(prompt).toMatch(/nazw tabel|nazw kolumn/i);
+  });
+
+  it('refuses cross-tenant queries from the user', () => {
+    const prompt = buildSystemPrompt({ schemaContext: 'carfect', todayIso: '2026-04-30' });
+    expect(prompt).toMatch(/innego warsztatu|innej instancji/i);
+    expect(prompt).toMatch(/odmów|odpowiedz odmownie/i);
+  });
+
+  it('requires business language over technical', () => {
+    const prompt = buildSystemPrompt({ schemaContext: 'carfect', todayIso: '2026-04-30' });
+    expect(prompt).toMatch(/biznesowym|biznesowy/i);
+  });
 });
