@@ -11,6 +11,7 @@ import type {
   TubaDimensions,
   ValidationResult,
 } from './types.ts';
+import { computePickupDate } from './pickupDate.ts';
 
 const DEFAULT_WEIGHT_KG = 1;
 
@@ -238,18 +239,11 @@ function buildDefaultNotification(): ApaczkaNotification {
 }
 
 function buildDefaultPickup(): ApaczkaPickup {
-  // Next business day
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  // Skip weekends
-  const day = tomorrow.getDay();
-  if (day === 0) tomorrow.setDate(tomorrow.getDate() + 1); // Sunday → Monday
-  if (day === 6) tomorrow.setDate(tomorrow.getDate() + 2); // Saturday → Monday
-
-  const dateStr = tomorrow.toISOString().split('T')[0];
+  // Pick up today if it's a working day and we're before the 14:00 Warsaw cutoff;
+  // otherwise the next working day (skipping weekends and Polish public holidays).
   return {
     type: 'COURIER',
-    date: dateStr,
+    date: computePickupDate(),
     hours_from: '',
     hours_to: '',
   };
