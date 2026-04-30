@@ -36,7 +36,7 @@ const safeName = (s: string) =>
     .trim()
     .replace(/\s+/g, '-');
 
-const PORT = 3333;
+const PORT = Number(process.env.PORT ?? 3333);
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
@@ -234,10 +234,50 @@ createServer(async (req, res) => {
   const path = new URL(req.url || '/', `http://localhost:${PORT}`).pathname;
   const isOffer = path === '/api/generate-offer-pdf';
   const isInstruction = path === '/api/generate-instruction-pdf';
+  const isAiAnalyst = path === '/api/ai-analyst-v2';
 
-  if (!isOffer && !isInstruction) {
+  if (!isOffer && !isInstruction && !isAiAnalyst) {
     res.writeHead(404);
     res.end('Not found');
+    return;
+  }
+
+  if (isAiAnalyst) {
+    const chunks: Buffer[] = [];
+    for await (const c of req) chunks.push(c as Buffer);
+    const body = Buffer.concat(chunks);
+    const headers = new Headers();
+    for (const [k, v] of Object.entries(req.headers)) {
+      if (typeof v === 'string') headers.set(k, v);
+      else if (Array.isArray(v)) headers.set(k, v.join(', '));
+    }
+    const webReq = new Request(`http://localhost:${PORT}${req.url}`, {
+      method: req.method ?? 'POST',
+      headers,
+      body: req.method === 'POST' ? body : undefined,
+    });
+    try {
+      const { default: handler } = await import('./ai-analyst-v2.ts');
+      const webRes = await handler(webReq);
+      const resHeaders: Record<string, string> = {};
+      webRes.headers.forEach((v, k) => {
+        resHeaders[k] = v;
+      });
+      res.writeHead(webRes.status, resHeaders);
+      if (webRes.body) {
+        const reader = webRes.body.getReader();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(Buffer.from(value));
+        }
+      }
+      res.end();
+    } catch (e) {
+      console.error('[ai-analyst-v2]', e);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: (e as Error).message }));
+    }
     return;
   }
 

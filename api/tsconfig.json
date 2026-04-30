@@ -10,5 +10,10 @@
     "baseUrl": ".",
     "paths": {}
   },
-  "include": ["./**/*.ts", "../libs/pdf/src/**/*.ts", "../libs/pdf/src/**/*.tsx"]
+  "include": [
+    "./**/*.ts",
+    "../libs/pdf/src/**/*.ts",
+    "../libs/pdf/src/**/*.tsx",
+    "../libs/ai/src/**/*.ts"
+  ]
 }

@@ -16,9 +16,9 @@ export async function enforceRateLimit(
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .gte('created_at', oneHourAgo);
-  if (error) throw new AiAnalystAuthError(429, `Rate limit check failed: ${error.message}`);
+  if (error) throw AiAnalystAuthError(429, `Rate limit check failed: ${error.message}`);
   if ((count ?? 0) >= USER_HOURLY_LIMIT) {
-    throw new AiAnalystAuthError(429, 'Hourly request limit exceeded');
+    throw AiAnalystAuthError(429, 'Hourly request limit exceeded');
   }
   // NOTE: instance daily limit check intentionally simplified for v1 — single user-hour check is enough
   // to block runaway costs. Extend to per-instance daily check in v2 (separate query, same pattern).

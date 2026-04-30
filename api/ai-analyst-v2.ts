@@ -3,15 +3,20 @@ import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { createClient } from '@supabase/supabase-js';
 import { toBaseMessages, toUIMessageStream } from '@ai-sdk/langchain';
 import { createUIMessageStreamResponse, type UIMessage } from 'ai';
-import {
-  resolveInstanceId,
-  AiAnalystAuthError,
-  enforceRateLimit,
-  insertAuditLog,
-  buildAgent,
-  computeCostUsd,
-} from '../libs/ai/src/server';
-import { computeTodayBoundaries } from '../libs/ai/src/server/tools/getToday';
+import * as _resolveMod from '../libs/ai/src/server/resolveInstanceId';
+import * as _rateMod from '../libs/ai/src/server/rateLimit';
+import * as _auditMod from '../libs/ai/src/server/auditLog';
+import * as _agentMod from '../libs/ai/src/server/createAgent';
+import * as _todayMod from '../libs/ai/src/server/tools/getToday';
+
+// tsx dynamic-import via Node ESM/CJS interop wraps named exports under `default`.
+// Static-import-only callers see them flat. Unwrap defensively.
+type Mod<T> = T & { default?: T };
+const resolveMod = ((_resolveMod as Mod<typeof _resolveMod>).default ?? _resolveMod) as typeof _resolveMod;
+const rateMod = ((_rateMod as Mod<typeof _rateMod>).default ?? _rateMod) as typeof _rateMod;
+const auditMod = ((_auditMod as Mod<typeof _auditMod>).default ?? _auditMod) as typeof _auditMod;
+const agentMod = ((_agentMod as Mod<typeof _agentMod>).default ?? _agentMod) as typeof _agentMod;
+const todayMod = ((_todayMod as Mod<typeof _todayMod>).default ?? _todayMod) as typeof _todayMod;
 
 export const config = { runtime: 'nodejs', maxDuration: 60 };
 
@@ -72,11 +77,20 @@ export default async function handler(req: Request): Promise<Response> {
   let instance_id = '',
     user_id = '';
   try {
-    ({ instance_id, user_id } = await resolveInstanceId(req, supabase));
-    await enforceRateLimit(supabase, user_id, instance_id);
+    ({ instance_id, user_id } = await resolveMod.resolveInstanceId(req, supabase));
+    await rateMod.enforceRateLimit(supabase, user_id, instance_id);
+
+    // execute_readonly_query requires auth.role()='authenticated', so the agent's
+    // tools (esp. run_sql) need a Supabase client carrying the user's JWT.
+    // Service-role client is kept only for auth resolution + audit logging.
+    const userJwt = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+    const supabaseUser = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      global: { headers: { Authorization: `Bearer ${userJwt}` } },
+      auth: { persistSession: false },
+    });
 
     const { messages } = (await req.json()) as { messages: UIMessage[] };
-    if (!messages?.length) throw new AiAnalystAuthError(403, 'No messages');
+    if (!messages?.length) throw resolveMod.AiAnalystAuthError(403, 'No messages');
     const lcMessages = await toBaseMessages(messages);
 
     const llm = new ChatOpenAI({ model: MODEL, temperature: 0, apiKey: OPENAI_API_KEY });
@@ -85,12 +99,12 @@ export default async function handler(req: Request): Promise<Response> {
       apiKey: OPENAI_API_KEY,
     });
     const embed = (text: string) => embeddings.embedQuery(text);
-    const today = computeTodayBoundaries();
+    const today = todayMod.computeTodayBoundaries();
 
-    const agent = buildAgent({
+    const agent = agentMod.buildAgent({
       llm,
       embed,
-      supabase,
+      supabase: supabaseUser,
       schemaContext: 'carfect',
       instanceId: instance_id,
       allowedTables: ALLOWED_TABLES_CARFECT,
@@ -111,7 +125,7 @@ export default async function handler(req: Request): Promise<Response> {
           usage?: { promptTokens?: number; completionTokens?: number };
           finalMessage?: { content?: string };
         }) => {
-          void insertAuditLog(supabase, {
+          void auditMod.insertAuditLog(supabase, {
             instance_id,
             user_id,
             question: extractLastUserText(messages),
@@ -128,12 +142,14 @@ export default async function handler(req: Request): Promise<Response> {
       headers: { 'Access-Control-Allow-Origin': '*' },
     });
   } catch (err) {
-    if (err instanceof AiAnalystAuthError) {
-      return Response.json({ error: err.message }, { status: err.status });
+    console.error('[ai-analyst-v2] handler error:', err);
+    const e = err as { status?: number; message?: string; isAiAnalystAuthError?: boolean };
+    if (e?.isAiAnalystAuthError === true && typeof e.status === 'number') {
+      return Response.json({ error: e.message }, { status: e.status });
     }
-    const message = (err as Error).message ?? 'Internal error';
+    const message = e?.message ?? 'Internal error';
     if (instance_id && user_id) {
-      void insertAuditLog(supabase, {
+      void auditMod.insertAuditLog(supabase, {
         instance_id,
         user_id,
         question: '',
