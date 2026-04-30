@@ -137,8 +137,8 @@ serve(async (req) => {
       return jsonResponse({ error: "Brak paczek z metodą wysyłki 'shipping'" }, 400);
     }
 
-    // Pickup date — same logic as create-shipment: today if it's a working day,
-    // otherwise next working day (skipping weekends and Polish holidays).
+    // Pickup date — same logic as create-shipment: today, rolled forward off weekends.
+    // Apaczka validates holidays itself.
     const pickupDate = computePickupDate();
 
     // Build minimal order for valuation

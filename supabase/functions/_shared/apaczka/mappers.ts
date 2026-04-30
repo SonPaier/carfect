@@ -239,8 +239,8 @@ function buildDefaultNotification(): ApaczkaNotification {
 }
 
 function buildDefaultPickup(): ApaczkaPickup {
-  // Pick up today if it's a working day, otherwise the next working day
-  // (skipping weekends and Polish public holidays).
+  // Pick up today, rolling forward off weekends. Polish public holiday validation
+  // is handled by Apaczka itself.
   return {
     type: 'COURIER',
     date: computePickupDate(),
