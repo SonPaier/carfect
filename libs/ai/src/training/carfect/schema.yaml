@@ -3,10 +3,39 @@
     Rezerwacje klientów na usługi detailingowe i PPF — główna tabela przychodów i obłożenia.
     Kluczowe kolumny: customer_name, customer_phone, vehicle_plate, reservation_date, end_date,
     start_time, end_time, status (enum: pending/confirmed/in_progress/completed/cancelled/no_show/change_request),
-    price (łączna kwota), service_items (jsonb array: [{id, name, price}]), station_id, assigned_employee_ids (jsonb).
+    price (BRUTTO = z VAT), price_netto (NETTO — używane do raportowania kwot użytkownikowi),
+    service_items (jsonb array — patrz niżej), station_id, assigned_employee_ids (jsonb),
+    car_size (small/medium/large — wpływa na cenę z katalogu).
     UWAGA: NIE ma kolumny customer_id — łączenie z customers przez customer_phone.
     UWAGA: service_items może być NULL — zawsze dodaj "service_items IS NOT NULL" przed jsonb_array_elements.
-    Przychód = SUM(price) WHERE status = 'completed'. Anulowane i no_show NIE wliczają się do przychodu.
+    Przychód = SUM(price_netto) WHERE status = 'completed'. Anulowane i no_show NIE wliczają się do przychodu.
+
+    KRYTYCZNE — zawsze raportuj kwoty NETTO. price_netto na rezerwacji jest gotowe.
+    Dla service_items użyj custom_price_netto. Tylko jeśli brak netto, podziel brutto / 1.23 (VAT 23%).
+
+    KSZTAŁT service_items (jsonb array):
+    [
+      {
+        "name": "Mycie zewnętrzne",         // nazwa usługi z dużej litery, z polskimi znakami
+        "service_id": "uuid",                // FK do unified_services.id (może być NULL dla custom)
+        "short_name": "MZ" | null,
+        "custom_price": 250 | null,          // brutto override z UI; NULL = użyj cennika z unified_services
+        "custom_price_netto": 203.25 | null  // netto override
+      }
+    ]
+
+    KRYTYCZNE — wycena pojedynczej linii usługi (gdy chcesz przychód per usługa):
+    Linia ma cenę brutto = COALESCE((si->>'custom_price')::numeric, catalog_price), gdzie
+    catalog_price = CASE r.car_size WHEN 'small' THEN us.price_small WHEN 'medium' THEN us.price_medium
+                    WHEN 'large' THEN us.price_large ELSE us.default_price END.
+    Join: jsonb_array_elements(r.service_items) si LEFT JOIN unified_services us
+          ON us.id = (si->>'service_id')::uuid.
+
+    KRYTYCZNE — dopasowanie po nazwie usługi:
+    Nazwy w service_items.name mają polskie znaki i wielkie litery ("Mycie zewnętrzne", "Pranie fotela").
+    Użytkownik często pisze małymi literami i bez akcentów. ZAWSZE używaj
+    `lower(si->>'name') ILIKE lower('%' || $query || '%')` lub similarity (pg_trgm). NIGDY `=`.
+    Extension unaccent NIE jest dostępne — preferuj match po service_id z unified_services jeśli możesz.
   columns:
     - { name: id, type: uuid }
     - { name: instance_id, type: uuid }
@@ -21,7 +50,8 @@
     - { name: start_time, type: timestamptz }
     - { name: end_time, type: timestamptz }
     - { name: status, type: enum, values: [pending, confirmed, in_progress, completed, cancelled, no_show, change_request] }
-    - { name: price, type: numeric }
+    - { name: price, type: numeric, note: BRUTTO (z VAT) — łączna kwota rezerwacji }
+    - { name: price_netto, type: numeric, note: NETTO — przelicz przy raportowaniu kwot użytkownikowi }
     - { name: station_id, type: uuid }
     - { name: assigned_employee_ids, type: jsonb }
     - { name: offer_number, type: text }
@@ -34,7 +64,7 @@
 
 - table_name: customers
   description: |
-    Dane master klientów warsztatu. Łączenie z reservations odbywa się przez phone (NIE customer_id — kolumna nie istnieje w reservations).
+    Dane master klientów studia. Łączenie z reservations odbywa się przez phone (NIE customer_id — kolumna nie istnieje w reservations).
     has_no_show = true oznacza klienta który wcześniej nie pojawił się na wizycie.
     discount_percent — rabat stosowany przy wycenie oferty.
     is_net_payer = true oznacza klienta B2B (wystawia się fakturę netto z NIP).
@@ -73,7 +103,7 @@
 
 - table_name: stations
   description: |
-    Stanowiska / boxy warsztatowe. Każda rezerwacja przypisana jest do jednego stanowiska (station_id).
+    Stanowiska / boxy studio. Każda rezerwacja przypisana jest do jednego stanowiska (station_id).
     type — typ stanowiska (np. detailing, ppf). active — czy stanowisko jest aktywne.
     color — kolor w kalendarzu. sort_order — kolejność wyświetlania.
   columns:
@@ -87,7 +117,7 @@
 
 - table_name: employees
   description: |
-    Pracownicy warsztatu. assigned_employee_ids w reservations to jsonb array UUID-ów pracowników.
+    Pracownicy studia. assigned_employee_ids w reservations to jsonb array UUID-ów pracowników.
     hourly_rate — stawka godzinowa używana do obliczeń kosztów pracy.
     deleted_at — soft delete (pracownicy nie są usuwani twardo, żeby zachować historię).
     Przy zapytaniach o aktywnych pracowników: WHERE active = true AND deleted_at IS NULL.
@@ -103,7 +133,7 @@
 
 - table_name: unified_services
   description: |
-    Katalog usług warsztatu (detailing, PPF, ceramika, mycie itp.).
+    Katalog usług studia (detailing, PPF, ceramika, mycie itp.).
     Ceny mogą być stałe lub uzależnione od rozmiaru pojazdu (price_small/medium/large).
     price_from = true oznacza cenę "od" (minimalną). service_type określa typ usługi.
     deleted_at — soft delete. Przy zapytaniach o aktywne usługi: WHERE active = true AND deleted_at IS NULL.
@@ -142,20 +172,50 @@
 - table_name: offers
   description: |
     Oferty cenowe wysyłane do klientów (głównie dla usług PPF/ceramiki).
-    status enum: draft/sent/viewed/approved/rejected.
+    status enum (faktyczne wartości w bazie): draft / sent / viewed / accepted / rejected / completed.
+    UWAGA: status zaakceptowanej oferty to **'accepted'** (NIE 'approved' — w bazie nie ma takiej wartości).
+    'completed' = oferta zaakceptowana i transakcja zakończona (np. usługa wykonana).
+    approved_at — timestamp akceptacji (nazwa kolumny zostawiona jako 'approved_at' z legacy);
+    może być wypełniony także dla status='completed'.
     customer_data i vehicle_data to jsonb z danymi klienta i pojazdu w momencie tworzenia oferty.
-    Konwersja = approved/(sent+viewed+approved+rejected). total_price — łączna wartość oferty.
+
+    KRYTYCZNE — definicje "zaakceptowana":
+    - "zaakceptowane oferty" = status IN ('accepted','completed')   ← obie zostały zaakceptowane przez klienta
+    - "konwersja" = COUNT(*) FILTER (WHERE status IN ('accepted','completed'))
+                    / NULLIF(COUNT(*) FILTER (WHERE status IN ('sent','viewed','accepted','rejected','completed')), 0)
+    - "wysłane do klienta" = status IN ('sent','viewed','accepted','rejected','completed')
+    - 'draft' to wersja robocza — nie wlicza się ani do wysłanych ani do akceptacji
+
+    UWAGA: dla agregacji po dacie akceptacji preferuj approved_at (timestamp), a po dacie utworzenia — created_at.
+
+    KOLUMNY KWOT:
+    - total_net = NETTO (raportuj to użytkownikowi)
+    - total_gross = BRUTTO
+    - vat_rate = procent VAT (zwykle 23)
+    NIE MA kolumny "total_price" — używaj total_net (lub total_gross gdy user wprost prosi o brutto).
   columns:
     - { name: id, type: uuid }
     - { name: instance_id, type: uuid }
     - { name: offer_number, type: text }
-    - { name: status, type: enum, values: [draft, sent, viewed, approved, rejected] }
-    - { name: total_price, type: numeric }
+    - { name: public_token, type: text }
+    - { name: status, type: enum, values: [draft, sent, viewed, accepted, rejected, completed] }
+    - { name: total_net, type: numeric }
+    - { name: total_gross, type: numeric }
+    - { name: vat_rate, type: numeric }
     - { name: customer_data, type: jsonb }
     - { name: vehicle_data, type: jsonb }
+    - { name: notes, type: text }
+    - { name: payment_terms, type: text }
+    - { name: valid_until, type: date }
+    - { name: hide_unit_prices, type: boolean }
     - { name: created_at, type: timestamptz }
+    - { name: created_by, type: uuid }
     - { name: sent_at, type: timestamptz }
+    - { name: viewed_at, type: timestamptz }
+    - { name: responded_at, type: timestamptz }
     - { name: approved_at, type: timestamptz }
+    - { name: approved_by, type: uuid }
+    - { name: updated_at, type: timestamptz }
 
 - table_name: offer_options
   description: |
@@ -173,16 +233,24 @@
 - table_name: offer_option_items
   description: |
     Pozycje cennikowe w opcji oferty (produkty/usługi z ceną i ilością).
-    price — cena jednostkowa, quantity — ilość, product_id — powiązany produkt z katalogu.
-    custom_name — jeśli pozycja nie jest z katalogu (ręcznie wpisana nazwa).
+    unit_price — cena jednostkowa BRUTTO. quantity — ilość. discount_percent — rabat (0-100).
+    product_id — FK do unified_services (jeśli pozycja z katalogu).
+    is_custom = true → custom_name/custom_description użyte zamiast nazwy z katalogu.
+    is_optional = true → pozycja opcjonalna (nie wlicza się do automatycznej sumy).
+    UWAGA: brak kolumny 'name' i 'price' — użyj unit_price * quantity * (1 - discount_percent/100).
+    NETTO = BRUTTO / (1 + offers.vat_rate/100). Dla raportowania kwot — NETTO.
   columns:
     - { name: id, type: uuid }
     - { name: option_id, type: uuid }
     - { name: product_id, type: uuid }
-    - { name: name, type: text }
     - { name: custom_name, type: text }
-    - { name: price, type: numeric }
+    - { name: custom_description, type: text }
+    - { name: unit, type: text }
+    - { name: unit_price, type: numeric }
     - { name: quantity, type: numeric }
+    - { name: discount_percent, type: numeric }
+    - { name: is_custom, type: boolean }
+    - { name: is_optional, type: boolean }
     - { name: sort_order, type: integer }
 
 - table_name: offer_scopes

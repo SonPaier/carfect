@@ -1,21 +1,28 @@
 # Typical CRM prompts — slim seed for PoC.
 # Expand later once we see what users ACTUALLY ask.
+#
+# REGUŁA NETTO: kwoty raportowane użytkownikowi są ZAWSZE w NETTO (bez VAT).
+# - reservations: SUM(price_netto)
+# - offers: total_net (NIE total_price — taka kolumna nie istnieje)
+# - service_items: COALESCE((si->>'custom_price_netto')::numeric, (si->>'custom_price')::numeric/1.23)
+# - unified_services (katalog ma tylko brutto): podziel cenę / 1.23
 
 - question: Jaki był mój przychód w bieżącym miesiącu?
   sql: |
-    SELECT SUM(price)::numeric AS revenue, COUNT(*) AS bookings
+    SELECT SUM(price_netto)::numeric AS revenue_netto, COUNT(*) AS bookings
     FROM reservations
     WHERE status = 'completed'
       AND reservation_date >= date_trunc('month', CURRENT_DATE)
       AND reservation_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
   notes: |
-    Przychód = SUM(price) WHERE status='completed'.
+    Przychód NETTO = SUM(price_netto) WHERE status='completed'.
+    Kwoty zawsze raportujemy NETTO (bez VAT).
     Filtrujemy po reservation_date, nie created_at.
     instance_id wstawia RLS — NIE dodawaj.
 
 - question: Jaki był przychód w poprzednim miesiącu?
   sql: |
-    SELECT SUM(price)::numeric AS revenue, COUNT(*) AS bookings
+    SELECT SUM(price_netto)::numeric AS revenue_netto, COUNT(*) AS bookings
     FROM reservations
     WHERE status = 'completed'
       AND reservation_date >= date_trunc('month', CURRENT_DATE - interval '1 month')
@@ -24,7 +31,7 @@
 - question: Przychód według miesiąca w bieżącym roku
   sql: |
     SELECT date_trunc('month', reservation_date) AS month,
-           SUM(price)::numeric AS revenue,
+           SUM(price_netto)::numeric AS revenue_netto,
            COUNT(*) AS bookings
     FROM reservations
     WHERE status = 'completed'
@@ -36,9 +43,19 @@
   sql: |
     SELECT si->>'name' AS service,
            COUNT(*) AS booked,
-           SUM((si->>'price')::numeric) AS revenue
-    FROM reservations r,
-         jsonb_array_elements(r.service_items) si
+           SUM(COALESCE(
+             (si->>'custom_price_netto')::numeric,
+             (si->>'custom_price')::numeric / 1.23,
+             CASE r.car_size
+               WHEN 'small'  THEN us.price_small  / 1.23
+               WHEN 'medium' THEN us.price_medium / 1.23
+               WHEN 'large'  THEN us.price_large  / 1.23
+               ELSE us.default_price              / 1.23
+             END
+           ))::numeric AS revenue_netto
+    FROM reservations r
+    CROSS JOIN LATERAL jsonb_array_elements(r.service_items) si
+    LEFT JOIN unified_services us ON us.id = NULLIF(si->>'service_id','')::uuid
     WHERE r.service_items IS NOT NULL
       AND r.reservation_date >= CURRENT_DATE - interval '30 days'
       AND r.status = 'completed'
@@ -46,13 +63,151 @@
     ORDER BY booked DESC
     LIMIT 10
   notes: |
+    UWAGA: cena pozycji = COALESCE(custom_price, catalog_price_for_car_size).
+    custom_price w service_items bywa NULL — wtedy join do unified_services i bierzemy cenę z katalogu.
     service_items może być NULL — zawsze IS NOT NULL przed jsonb_array_elements.
+
+- question: Lista wszystkich moich usług z liczbą wykonań i przychodem w danym okresie
+  sql: |
+    -- Pełny katalog usług + agregacja wykonań w okresie. Pokazuje też usługi z 0 wykonaniami.
+    WITH executed AS (
+      SELECT NULLIF(si->>'service_id','')::uuid AS service_id,
+             si->>'name' AS line_name,
+             COUNT(*) AS executions,
+             SUM(COALESCE(
+               (si->>'custom_price_netto')::numeric,
+               (si->>'custom_price')::numeric / 1.23,
+               CASE r.car_size
+                 WHEN 'small'  THEN us.price_small  / 1.23
+                 WHEN 'medium' THEN us.price_medium / 1.23
+                 WHEN 'large'  THEN us.price_large  / 1.23
+                 ELSE us.default_price              / 1.23
+               END
+             ))::numeric AS revenue_netto
+      FROM reservations r
+      CROSS JOIN LATERAL jsonb_array_elements(r.service_items) si
+      LEFT JOIN unified_services us ON us.id = NULLIF(si->>'service_id','')::uuid
+      WHERE r.service_items IS NOT NULL
+        AND r.status = 'completed'
+        AND r.reservation_date >= date_trunc('month', CURRENT_DATE)
+        AND r.reservation_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+      GROUP BY 1,2
+    )
+    SELECT cat.name AS service,
+           COALESCE(SUM(e.executions), 0) AS executions,
+           COALESCE(SUM(e.revenue_netto), 0)::numeric AS revenue_netto
+    FROM unified_services cat
+    LEFT JOIN executed e ON e.service_id = cat.id
+    WHERE cat.active = true AND cat.deleted_at IS NULL
+    GROUP BY cat.id, cat.name
+    ORDER BY revenue_netto DESC NULLS LAST, executions DESC
+  notes: |
+    Wzór: katalog (LEFT JOIN) wykonania. Dzięki LEFT JOIN widać też usługi z 0 wykonaniami.
+    Cena pozycji NETTO: COALESCE(custom_price_netto, custom_price/1.23, catalog_brutto_for_car_size/1.23).
+    Kwoty raportujemy NETTO.
+
+- question: Ile zarobiłem na konkretnej usłudze (np. mycie zewnętrzne) w okresie
+  sql: |
+    -- Match po nazwie z ILIKE — case-insensitive, częściowe dopasowanie.
+    -- Dla pewniejszego dopasowania: jeśli znasz service_id z lookup_schema/find_similar, użyj go.
+    SELECT si->>'name' AS service,
+           COUNT(*) AS executions,
+           SUM(COALESCE(
+             (si->>'custom_price_netto')::numeric,
+             (si->>'custom_price')::numeric / 1.23,
+             CASE r.car_size
+               WHEN 'small'  THEN us.price_small  / 1.23
+               WHEN 'medium' THEN us.price_medium / 1.23
+               WHEN 'large'  THEN us.price_large  / 1.23
+               ELSE us.default_price              / 1.23
+             END
+           ))::numeric AS revenue_netto
+    FROM reservations r
+    CROSS JOIN LATERAL jsonb_array_elements(r.service_items) si
+    LEFT JOIN unified_services us ON us.id = NULLIF(si->>'service_id','')::uuid
+    WHERE r.service_items IS NOT NULL
+      AND r.status = 'completed'
+      AND r.reservation_date >= date_trunc('month', CURRENT_DATE)
+      AND r.reservation_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
+      AND lower(si->>'name') ILIKE lower('%mycie zewn%')
+    GROUP BY si->>'name'
+    ORDER BY revenue_netto DESC NULLS LAST
+  notes: |
+    KRYTYCZNE: nazwy w service_items mają wielkie litery i polskie znaki ("Mycie zewnętrzne").
+    NIGDY nie używaj `=` — zawsze `lower(...) ILIKE lower(...)` z wildcardami.
+    Dla typowych nieoczywistych nazw rozbij query na kawałki: "mycie zewn" zamiast "mycie zewnętrzne".
+
+- question: Ile ofert zrobiłem w tym roku i ile zostało zaakceptowanych
+  sql: |
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE status = 'draft') AS drafts,
+      COUNT(*) FILTER (WHERE status IN ('sent','viewed','accepted','rejected','completed')) AS sent_to_client,
+      COUNT(*) FILTER (WHERE status IN ('accepted','completed')) AS accepted_total,
+      COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
+      ROUND(
+        100.0 * COUNT(*) FILTER (WHERE status IN ('accepted','completed'))
+              / NULLIF(COUNT(*) FILTER (WHERE status IN ('sent','viewed','accepted','rejected','completed')), 0),
+        1
+      ) AS conversion_rate_pct
+    FROM offers
+    WHERE created_at >= date_trunc('year', CURRENT_DATE)
+  notes: |
+    KRYTYCZNE: status zaakceptowanej oferty to 'accepted' (NIE 'approved').
+    Status 'completed' też oznacza zaakceptowaną (transakcja zakończona po akceptacji).
+    Konwersja liczona względem ofert wysłanych do klienta (z pominięciem 'draft').
+
+- question: Ranking ofert per status w bieżącym roku
+  sql: |
+    SELECT status,
+           COUNT(*) AS count,
+           SUM(total_net)::numeric AS sum_value_netto,
+           ROUND(AVG(total_net)::numeric, 2) AS avg_value_netto
+    FROM offers
+    WHERE created_at >= date_trunc('year', CURRENT_DATE)
+    GROUP BY status
+    ORDER BY count DESC
+  notes: |
+    Status enum: draft, sent, viewed, accepted, rejected, completed.
+    Kwoty: total_net (NETTO — raportujemy to). NIE używaj nieistniejącego total_price.
+
+- question: Top 10 rezerwacji po kwocie z deduplikacją po tym samym kliencie i pojeździe oraz tym samym koszyku usług
+  sql: |
+    -- Dedupe: pierwsza (najwcześniejsza) rezerwacja w grupie (customer_phone, vehicle_plate, sygnatura usług).
+    -- Sygnatura = posortowane service_id. Dwie rezerwacje z dokładnie tymi samymi usługami liczą się jako jedna.
+    WITH ranked AS (
+      SELECT
+        r.id, r.customer_name, r.customer_phone, r.vehicle_plate,
+        r.reservation_date, r.price_netto,
+        ROW_NUMBER() OVER (
+          PARTITION BY
+            r.customer_phone,
+            r.vehicle_plate,
+            (SELECT array_agg(si->>'service_id' ORDER BY si->>'service_id')
+             FROM jsonb_array_elements(r.service_items) si)
+          ORDER BY r.reservation_date ASC, r.id ASC
+        ) AS rn
+      FROM reservations r
+      WHERE r.status = 'completed'
+        AND r.reservation_date >= date_trunc('month', CURRENT_DATE - interval '1 month')
+        AND r.reservation_date < date_trunc('month', CURRENT_DATE)
+        AND r.service_items IS NOT NULL
+    )
+    SELECT customer_name, vehicle_plate, reservation_date, price_netto
+    FROM ranked
+    WHERE rn = 1
+    ORDER BY price_netto DESC NULLS LAST
+    LIMIT 10
+  notes: |
+    Klucz dedupe: (customer_phone, vehicle_plate, posortowane service_id z service_items).
+    Dwie rezerwacje tego samego klienta i pojazdu z dokładnie tym samym koszykiem usług → liczą się raz.
+    Jeśli chcemy dedupe po dacie zamiast koszyka — zamień klucz na (customer_phone, vehicle_plate, reservation_date).
 
 - question: Top 10 klientów po liczbie wizyt w ostatnich 3 miesiącach
   sql: |
     SELECT customer_name, customer_phone,
            COUNT(*) AS visits,
-           SUM(price)::numeric AS total_spent
+           SUM(price_netto)::numeric AS total_spent_netto
     FROM reservations
     WHERE reservation_date >= CURRENT_DATE - interval '3 months'
       AND status = 'completed'
@@ -66,7 +221,7 @@
   sql: |
     SELECT customer_name, customer_phone,
            COUNT(*) AS visits,
-           SUM(price)::numeric AS total_spent
+           SUM(price_netto)::numeric AS total_spent_netto
     FROM reservations
     WHERE reservation_date >= date_trunc('year', CURRENT_DATE)
       AND status = 'completed'
@@ -95,7 +250,7 @@
 - question: Porównaj przychód miesiąc do miesiąca (ostatnie 6 miesięcy)
   sql: |
     SELECT date_trunc('month', reservation_date) AS month,
-           SUM(price)::numeric AS revenue,
+           SUM(price_netto)::numeric AS revenue_netto,
            COUNT(*) AS bookings
     FROM reservations
     WHERE status = 'completed'
@@ -120,7 +275,7 @@
 
 - question: Średni przychód na rezerwację w bieżącym miesiącu
   sql: |
-    SELECT AVG(price)::numeric AS avg_revenue,
+    SELECT AVG(price_netto)::numeric AS avg_revenue_netto,
            COUNT(*) AS bookings
     FROM reservations
     WHERE status = 'completed'

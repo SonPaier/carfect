@@ -7,10 +7,12 @@
 
 - term_pl: przychód
   meaning: |
-    Suma kwot zrealizowanych usług. W carfect = SUM(price) FROM reservations
-    WHERE status = 'completed' AND reservation_date BETWEEN ... (nie created_at).
+    Suma kwot zrealizowanych usług — RAPORTUJEMY ZAWSZE NETTO.
+    W carfect = SUM(price_netto) FROM reservations WHERE status = 'completed'
+    AND reservation_date BETWEEN ... (nie created_at).
     Anulowane (cancelled) i no_show NIE wliczają się do przychodu.
-    Sprzedaż foliarska to osobny przychód z SUM(total_amount) z sales_orders.
+    Sprzedaż foliarska to osobny przychód z sales_orders (też netto, jeśli kolumna istnieje).
+    UWAGA: price = brutto (z VAT), price_netto = netto. Zawsze wybieraj price_netto.
   related_tables: [reservations, sales_orders]
 
 - term_pl: klient
@@ -73,26 +75,31 @@
 
 - term_pl: stanowisko
   meaning: |
-    Tabela `stations` — boxy/miejsca pracy w warsztacie. Każda rezerwacja przypisana
+    Tabela `stations` — boxy/miejsca pracy w studio. Każda rezerwacja przypisana
     jest do jednego stanowiska przez station_id. Używaj JOIN stations s ON s.id = r.station_id.
   related_tables: [stations, reservations]
 
 - term_pl: box
   meaning: |
-    Synonim stanowiska — tabela `stations`. Boxy to fizyczne miejsca pracy w warsztacie.
+    Synonim stanowiska — tabela `stations`. Boxy to fizyczne miejsca pracy w studio.
   related_tables: [stations]
 
 - term_pl: usługa
   meaning: |
     Katalog usług w tabeli `unified_services`, zgrupowanych w `unified_categories`.
     Usługi wykonane na konkretnej rezerwacji są w service_items (jsonb) w reservations.
-    Użyj jsonb_array_elements(service_items) do rozwinięcia listy usług z rezerwacji.
+    KSZTAŁT service_items: [{name, service_id, custom_price, custom_price_netto, short_name}].
+    Cena pozycji NETTO: COALESCE(custom_price_netto, custom_price/1.23, catalog_brutto/1.23).
+    Cena z katalogu zależy od car_size: price_small / price_medium / price_large / default_price.
+    Match po nazwie ZAWSZE przez `lower(si->>'name') ILIKE lower('%query%')` — nigdy `=`
+    (nazwy w bazie mają wielkie litery i polskie znaki, np. "Mycie zewnętrzne").
   related_tables: [unified_services, unified_categories, reservations]
 
 - term_pl: usługi
   meaning: |
-    Katalog usług w tabeli `unified_services`, zgrupowanych w `unified_categories`.
-    Faktycznie wykonane usługi: jsonb_array_elements(r.service_items) WHERE service_items IS NOT NULL.
+    Patrz "usługa". Lista WSZYSTKICH usług = unified_services (katalog).
+    Lista FAKTYCZNIE wykonanych: LEFT JOIN unified_services × jsonb_array_elements(service_items)
+    po service_id — pokazuje też usługi z 0 wykonaniami w okresie.
   related_tables: [unified_services, unified_categories, reservations]
 
 - term_pl: rezerwacja
@@ -110,15 +117,20 @@
 
 - term_pl: oferta
   meaning: |
-    Wycena wysłana do klienta — tabela `offers`. Status: draft/sent/viewed/approved/rejected.
+    Wycena wysłana do klientowi — tabela `offers`.
+    Status (faktyczne wartości): draft / sent / viewed / accepted / rejected / completed.
+    UWAGA: zaakceptowana = status IN ('accepted','completed'). NIE 'approved' (taka wartość nie istnieje).
+    Kwoty: total_net (NETTO — raportujemy to), total_gross (brutto), vat_rate. Brak kolumny total_price.
     Szczegóły: offer_options i offer_option_items. Zakresy oferty: offer_scopes.
-    Konwersja = oferty approved / (sent + viewed + approved + rejected).
   related_tables: [offers, offer_options, offer_option_items, offer_scopes]
 
 - term_pl: oferty
   meaning: |
-    Wyceny wysyłane do klientów — tabela `offers`. Do analizy konwersji:
-    COUNT(*) FILTER (WHERE status='approved') / NULLIF(COUNT(*) FILTER (WHERE status IN ('sent','viewed','approved','rejected')), 0).
+    Wyceny wysyłane do klientów — tabela `offers`.
+    Konwersja = COUNT(*) FILTER (WHERE status IN ('accepted','completed'))
+              / NULLIF(COUNT(*) FILTER (WHERE status IN ('sent','viewed','accepted','rejected','completed')), 0).
+    'draft' to wersja robocza — nie wlicza się do wysłanych.
+    Kwoty raportujemy z total_net (NETTO).
   related_tables: [offers, offer_options, offer_option_items]
 
 - term_pl: protokół

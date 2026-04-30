@@ -403,18 +403,32 @@ export function useSummaryServices(
         return parts.join('\n\n');
       };
 
-      // Update conditions — skip overwriting on first load of existing offer
+      // Conditions: never overwrite a non-empty field — user edits are sacred.
+      // Only auto-fill empty fields from scope defaults. On first load of an
+      // existing offer just mark initialized; loaded values stay untouched.
       if (isEditing && offer.id && !conditionsInitializedRef.current) {
         conditionsInitializedRef.current = true;
       } else {
         conditionsInitializedRef.current = true;
-        const updates: Partial<OfferState> = {
-          warranty: combineWithHeaders('default_warranty'),
-          paymentTerms: combineWithHeaders('default_payment_terms'),
-          notes: combineWithHeaders('default_notes'),
-          serviceInfo: combineWithHeaders('default_service_info'),
-        };
-        onUpdateOffer(updates);
+        const current = offerRef.current;
+        const updates: Partial<OfferState> = {};
+        if (!current.warranty) {
+          const v = combineWithHeaders('default_warranty');
+          if (v) updates.warranty = v;
+        }
+        if (!current.paymentTerms) {
+          const v = combineWithHeaders('default_payment_terms');
+          if (v) updates.paymentTerms = v;
+        }
+        if (!current.notes) {
+          const v = combineWithHeaders('default_notes');
+          if (v) updates.notes = v;
+        }
+        if (!current.serviceInfo) {
+          const v = combineWithHeaders('default_service_info');
+          if (v) updates.serviceInfo = v;
+        }
+        if (Object.keys(updates).length > 0) onUpdateOfferRef.current(updates);
       }
 
       setLoading(false);

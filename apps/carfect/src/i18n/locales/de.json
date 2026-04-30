@@ -2329,7 +2329,7 @@
       "reminders": "Erinnerungen",
       "ultrafit": "Ultrafit",
       "settings": "Einstellungen",
-      "aiAssistant": "KI-Assistent",
+      "aiAssistant": "Carlos",
       "salesPanel": "Vertriebspanel",
       "collapseMenu": "Menü einklappen",
       "expandMenu": "Menü ausklappen",
@@ -5587,20 +5587,33 @@
     "deleteConfirm": "Möchten Sie das Fahrzeug {{plate}} ({{customer}}) wirklich vom Hof entfernen?"
   },
   "aiAnalyst": {
-    "title": "KI-Assistent",
-    "subtitle": "Fragen Sie über Ihr Geschäft — Umsatz, Kunden, Dienstleistungen, Buchungen...",
+    "title": "Carlos",
+    "tagline": "Ihr KI-Assistent — fragen Sie alles über Ihr Studio",
+    "subtitle": "Fragen Sie über Ihr Studio — Umsatz, Kunden, Dienstleistungen, Buchungen...",
     "analyzing": "Analysiere...",
     "error": "Anfrage konnte nicht verarbeitet werden",
-    "placeholder": "Fragen Sie über Ihr Geschäft...",
+    "placeholder": "Fragen Sie über Ihr Studio...",
     "suggestions": {
-      "revenue": "Revenue this month",
-      "popularServices": "Most popular services",
-      "topClients": "Top clients"
+      "revenue": "Umsatz diesen Monat",
+      "revenueYear": "Umsatz dieses Jahr",
+      "revenueByMonth": "Monate vergleichen",
+      "popularServices": "Beliebteste Dienstleistungen",
+      "servicesRanking": "Dienstleistungen nach Umsatz",
+      "topClients": "Top-Kunden",
+      "offersConversion": "Angebots-Conversion",
+      "noShowRate": "No-Shows diesen Monat",
+      "avgRevenue": "Durchschnittlicher Buchungswert"
     },
     "prompts": {
-      "revenue": "What was my total revenue this month? Provide the total and number of bookings.",
-      "popularServices": "Which services were booked most frequently in the last 30 days? Show the ranking.",
-      "topClients": "Which customers had the most bookings in the last 3 months? Show the top 10 with visit count and total amount."
+      "revenue": "Wie hoch war mein Gesamtumsatz diesen Monat? Gib die Summe und die Anzahl der Buchungen an.",
+      "revenueYear": "Wie hoch ist mein Gesamtumsatz seit Jahresbeginn? Zeige die Summe und die Anzahl der abgeschlossenen Buchungen.",
+      "revenueByMonth": "Zeige den Umsatz Monat für Monat im laufenden Jahr.",
+      "popularServices": "Welche Dienstleistungen wurden in den letzten 30 Tagen am häufigsten gebucht? Zeige das Ranking.",
+      "servicesRanking": "Reihe die Dienstleistungen diesen Monat nach Netto-Umsatz und Anzahl der Ausführungen.",
+      "topClients": "Welche Kunden hatten die meisten Buchungen in den letzten 3 Monaten? Zeige die Top 10 mit Besuchsanzahl und Gesamtbetrag.",
+      "offersConversion": "Wie viele Angebote habe ich dieses Jahr versendet und wie viel Prozent wurden angenommen?",
+      "noShowRate": "Wie viele No-Shows hatte ich diesen Monat und welchen Prozentsatz aller Buchungen macht das aus?",
+      "avgRevenue": "Wie hoch ist der durchschnittliche Wert einer abgeschlossenen Buchung diesen Monat?"
     }
   },
   "serviceForm": {

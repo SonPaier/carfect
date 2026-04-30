@@ -1445,10 +1445,10 @@ const AdminDashboard = () => {
                         setSidebarOpen(false);
                         setCurrentView('ai_analyst');
                       }}
-                      title="Asystent AI"
+                      title={t('adminDashboard.nav.aiAssistant')}
                     >
                       <Sparkles className="w-4 h-4 shrink-0" />
-                      {!sidebarCollapsed && 'Asystent AI'}
+                      {!sidebarCollapsed && t('adminDashboard.nav.aiAssistant')}
                     </Button>
                   )}
                   {/* 9. Przypomnienia */}
@@ -1830,15 +1830,13 @@ const AdminDashboard = () => {
               <ProtocolsView instanceId={instanceId} onEditModeChange={setProtocolEditMode} />
             )}
 
-            {currentView === 'reminders' && instanceId && (
-              <RemindersView instanceId={instanceId} />
-            )}
+            {currentView === 'reminders' && instanceId && <RemindersView instanceId={instanceId} />}
 
-            {currentView === 'ultrafit' && (
-              <UltrafitOrdersView instanceId={instanceId} />
-            )}
+            {currentView === 'ultrafit' && <UltrafitOrdersView instanceId={instanceId} />}
 
-            {currentView === 'ai_analyst' && instanceId && hasFeature('ai_analyst') && <AiAnalystTab instanceId={instanceId} />}
+            {currentView === 'ai_analyst' && instanceId && hasFeature('ai_analyst') && (
+              <AiAnalystTab instanceId={instanceId} />
+            )}
 
             {currentView === 'employees' && instanceId && <EmployeesView instanceId={instanceId} />}
           </div>

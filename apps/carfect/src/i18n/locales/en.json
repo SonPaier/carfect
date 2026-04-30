@@ -2331,7 +2331,7 @@
       "reminders": "Reminders",
       "ultrafit": "Ultrafit",
       "settings": "Settings",
-      "aiAssistant": "AI Assistant",
+      "aiAssistant": "Carlos",
       "salesPanel": "Sales Panel",
       "collapseMenu": "Collapse menu",
       "expandMenu": "Expand menu",
@@ -5590,20 +5590,33 @@
     "deleteConfirm": "Are you sure you want to remove vehicle {{plate}} ({{customer}}) from the yard?"
   },
   "aiAnalyst": {
-    "title": "AI Assistant",
-    "subtitle": "Ask about your business — revenue, customers, services, bookings...",
+    "title": "Carlos",
+    "tagline": "Your AI assistant — ask anything about your studio",
+    "subtitle": "Ask about your studio — revenue, customers, services, bookings...",
     "analyzing": "Analyzing...",
     "error": "Could not process request",
-    "placeholder": "Ask about your business...",
+    "placeholder": "Ask about your studio...",
     "suggestions": {
       "revenue": "Revenue this month",
+      "revenueYear": "Revenue this year",
+      "revenueByMonth": "Compare months",
       "popularServices": "Most popular services",
-      "topClients": "Top clients"
+      "servicesRanking": "Services ranked by revenue",
+      "topClients": "Top clients",
+      "offersConversion": "Offer conversion rate",
+      "noShowRate": "No-shows this month",
+      "avgRevenue": "Average booking value"
     },
     "prompts": {
       "revenue": "What was my total revenue this month? Provide the total and number of bookings.",
+      "revenueYear": "What is my total revenue year-to-date? Show the total and number of completed bookings.",
+      "revenueByMonth": "Show revenue month by month for the current year.",
       "popularServices": "Which services were booked most frequently in the last 30 days? Show the ranking.",
-      "topClients": "Which customers had the most bookings in the last 3 months? Show the top 10 with visit count and total amount."
+      "servicesRanking": "Rank services this month by net revenue and number of executions.",
+      "topClients": "Which customers had the most bookings in the last 3 months? Show the top 10 with visit count and total amount.",
+      "offersConversion": "How many offers did I send this year and what percentage was accepted?",
+      "noShowRate": "How many no-shows did I have this month and what percentage of all bookings is that?",
+      "avgRevenue": "What is the average value of a completed booking this month?"
     }
   },
   "serviceForm": {

@@ -3,8 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { ChartRenderer, type ChartRendererSpec } from '@shared/ui';
 import { useAiAnalyst } from './useAiAnalyst';
 import type { AiAnalystSuggestion } from './types';
+import { ChartSpecSchema, type ChartSpec } from './charts/chartSpec';
 
 interface Props {
   instanceId: string;
@@ -13,9 +15,26 @@ interface Props {
   supabaseClient: SupabaseClient;
 }
 
-// All tool-* and data-* parts are hidden in v1.
-// TODO: Chunk 8 will add chart rendering for 'data-chart' parts via ChartRenderer.
-const HIDDEN_PART_PREFIXES = ['tool-', 'data-'];
+// tool-* parts (LLM tool invocations) stay hidden; data-chart is rendered below.
+const HIDDEN_PART_PREFIXES = ['tool-'];
+
+export function specToRenderer(spec: ChartSpec): ChartRendererSpec {
+  return {
+    type: spec.type,
+    title: spec.title,
+    data: spec.data,
+    xKey: spec.x_key,
+    yKeys: spec.y_keys,
+    unit: spec.unit,
+  };
+}
+
+export function parseChartPart(part: { type: string }): ChartSpec | null {
+  if (part.type !== 'data-chart') return null;
+  const rawSpec = (part as { data?: { spec?: unknown } }).data?.spec;
+  const result = ChartSpecSchema.safeParse(rawSpec);
+  return result.success ? result.data : null;
+}
 
 export function AiAnalystView({ instanceId, suggestions, schemaContext, supabaseClient }: Props) {
   const { t } = useTranslation();
@@ -63,13 +82,15 @@ export function AiAnalystView({ instanceId, suggestions, schemaContext, supabase
 
   return (
     <div className="flex flex-col h-full">
+      <header className="shrink-0 border-b bg-background px-4 py-3">
+        <div className="max-w-3xl mx-auto w-full flex items-baseline gap-2 flex-wrap">
+          <h2 className="text-base font-semibold">{t('aiAnalyst.title')}</h2>
+          <span className="text-sm text-muted-foreground">— {t('aiAnalyst.tagline')}</span>
+        </div>
+      </header>
       <div className="flex-1 overflow-y-auto px-4 min-h-0">
         {!hasMessages && (
-          <div className="flex flex-col items-center justify-center h-full gap-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold">{t('aiAnalyst.title')}</h2>
-              <p className="text-sm text-muted-foreground">{t('aiAnalyst.subtitle')}</p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-full gap-4 py-8">
             <div className="flex flex-wrap justify-center gap-2">
               {suggestions.map((s) => (
                 <button
@@ -113,6 +134,10 @@ export function AiAnalystView({ instanceId, suggestions, schemaContext, supabase
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
                           </div>
                         ) : null;
+                      }
+                      const chartSpec = parseChartPart(part);
+                      if (chartSpec) {
+                        return <ChartRenderer key={i} spec={specToRenderer(chartSpec)} />;
                       }
                       return null;
                     })}
