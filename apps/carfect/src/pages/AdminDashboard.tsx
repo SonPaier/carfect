@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import { useIsMobile } from '@shared/ui';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
@@ -74,7 +74,8 @@ import PriceListSettings from '@/components/admin/PriceListSettings';
 import { ProtocolsView } from '@/components/protocols/ProtocolsView';
 import RemindersView from '@/components/admin/RemindersView';
 import UltrafitOrdersView from '@/components/ultrafit/UltrafitOrdersView';
-import AiAnalystTab from '@/components/admin/AiAnalystTab';
+// Lazy-loaded — pulls recharts and @shared/ai which would bloat the main bundle.
+const AiAnalystTab = lazy(() => import('@/components/admin/AiAnalystTab'));
 import { useUltrafitLink } from '@/hooks/useUltrafitLink';
 import { EmployeesView } from '@/components/admin/employees';
 import { AddTrainingDrawer } from '@/components/admin/AddTrainingDrawer';
@@ -1835,7 +1836,9 @@ const AdminDashboard = () => {
             {currentView === 'ultrafit' && <UltrafitOrdersView instanceId={instanceId} />}
 
             {currentView === 'ai_analyst' && instanceId && hasFeature('ai_analyst') && (
-              <AiAnalystTab instanceId={instanceId} />
+              <Suspense fallback={null}>
+                <AiAnalystTab instanceId={instanceId} />
+              </Suspense>
             )}
 
             {currentView === 'employees' && instanceId && <EmployeesView instanceId={instanceId} />}
