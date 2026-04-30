@@ -137,7 +137,7 @@ serve(async (req) => {
       return jsonResponse({ error: "Brak paczek z metodą wysyłki 'shipping'" }, 400);
     }
 
-    // Pickup date — same logic as create-shipment: today if before 17:00 Warsaw and
+    // Pickup date — same logic as create-shipment: today if before 14:00 Warsaw and
     // a working day, otherwise next working day (skipping weekends and Polish holidays).
     const pickupDate = computePickupDate();
 
